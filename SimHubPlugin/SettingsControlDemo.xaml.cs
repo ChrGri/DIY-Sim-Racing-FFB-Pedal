@@ -21,6 +21,7 @@ using System.Windows.Forms;
 using static System.Net.Mime.MediaTypeNames;
 using System.Runtime.InteropServices.ComTypes;
 using Microsoft.Win32;
+using System.Xml.Linq;
 
 namespace User.PluginSdkDemo
 {
@@ -157,12 +158,14 @@ namespace User.PluginSdkDemo
                 {
                     SerialPortSelectionArray.Add(new SerialPortChoice(portName, portName));
                 }
+                TextBox1.Text = "Serial port List updated";
             }
             else
             {
                 SerialPortSelectionArray.Add(new SerialPortChoice("NA", "NA"));
+                TextBox1.Text = "No Serial port found";
             }
-
+            
             SerialPortSelection.DataContext = SerialPortSelectionArray;
         }
 
@@ -414,16 +417,27 @@ namespace User.PluginSdkDemo
 
 
             //// Select serial port accordingly
+            string tmp1 = "NA";
             string tmp = (string)Plugin._serialPort[indexOfSelectedPedal_u].PortName;
-            try
+            if (!string.Equals(tmp,"NA") && tmp != null)
             {
-                SerialPortSelection.SelectedValue = tmp;
-                TextBox1.Text = "Serial port selected: " + SerialPortSelection.SelectedValue;
+                try
+                {
+                    SerialPortSelection.SelectedValue = tmp;
+                    TextBox1.Text = "Serial port selected: " + SerialPortSelection.SelectedValue;
 
+                }
+                catch (Exception caughtEx)
+                {
+                }
             }
-            catch (Exception caughtEx)
+            
+            else
             {
+                
+                TextBox1.Text = "No Serial port found";
             }
+            
 
 
             if (Plugin._serialPort[indexOfSelectedPedal_u].IsOpen == true)
@@ -828,6 +842,10 @@ namespace User.PluginSdkDemo
                 }
                 catch (TimeoutException) { }
             }
+            else
+            {
+                TextBox1.Text = "Serial port not open";
+            }
         }
 
 
@@ -955,13 +973,17 @@ namespace User.PluginSdkDemo
                     {
                         string message = Plugin._serialPort[indexOfSelectedPedal_u].ReadLine();
 
-                        TextBox1.Text += "      -->   " + message;
+                        TextBox1.Text += "Pedal   -->   " + message;
                     }
                 }
                 catch (TimeoutException) { }
 
 
 
+            }
+            else
+            {
+                TextBox1.Text = "Serial port not open";
             }
         }
 
@@ -983,7 +1005,7 @@ namespace User.PluginSdkDemo
                     try
                     {
                         Plugin._serialPort[indexOfSelectedPedal_u].Open();
-                        TextBox1.Text = "Serialport open";
+                        TextBox1.Text = "Serial port "+ Plugin._serialPort[indexOfSelectedPedal_u].PortName+" open";
                         ConnectToPedal.IsChecked = true;
 
                         try
@@ -1005,16 +1027,10 @@ namespace User.PluginSdkDemo
                 }
                 else
                 {
-                    Plugin._serialPort[indexOfSelectedPedal_u].Close();
-                    ConnectToPedal.IsChecked = false;
-                    TextBox1.Text = "Serialport already open, close it";
+                    //Plugin._serialPort[indexOfSelectedPedal_u].Close();
+                    //ConnectToPedal.IsChecked = false;
+                    TextBox1.Text = "Serial port already open";
                 }
-            }
-            else
-            {
-                ConnectToPedal.IsChecked = false;
-                Plugin._serialPort[indexOfSelectedPedal_u].Close();
-                TextBox1.Text = "Serialport close";
             }
 
         }
@@ -1042,21 +1058,30 @@ namespace User.PluginSdkDemo
             //    string errorMessage = caughtEx.Message;
             //    TextBox1.Text = errorMessage;
             //}
-
-            try
+            if (!string.Equals(tmp, "NA") && tmp != null)
             {
-                Plugin.Settings.selectedComPortNames[indexOfSelectedPedal_u] = tmp;
-                Plugin._serialPort[indexOfSelectedPedal_u].PortName = tmp;
+                    try
+                    {
+                        Plugin.Settings.selectedComPortNames[indexOfSelectedPedal_u] = tmp;
+                        Plugin._serialPort[indexOfSelectedPedal_u].PortName = tmp;
+                        Plugin._serialPort[indexOfSelectedPedal_u].ReadTimeout = 2000;
+                        Plugin._serialPort[indexOfSelectedPedal_u].WriteTimeout = 500;
 
-                TextBox1.Text = "COM port selected: " + Plugin.Settings.selectedComPortNames[indexOfSelectedPedal_u];
-            }
-            catch (Exception caughtEx)
+
+                        TextBox1.Text = "Serial port selected: " + Plugin.Settings.selectedComPortNames[indexOfSelectedPedal_u];
+                        
+                }
+                    catch (Exception caughtEx)
+                    {
+                        string errorMessage = caughtEx.Message;
+                        TextBox1.Text = errorMessage;
+                    }
+                }
+            
+            else
             {
-                string errorMessage = caughtEx.Message;
-                TextBox1.Text = errorMessage;
+                TextBox1.Text = "No Serial port found";
             }
-
-
 
         }
         private void OpenButton_Click(object sender, EventArgs e)
@@ -1136,18 +1161,108 @@ namespace User.PluginSdkDemo
             {
                 Plugin._serialPort[indexOfSelectedPedal_u].Close();
                 ConnectToPedal.IsChecked = false;
-                TextBox1.Text = "Serialport close";
+                TextBox1.Text = "Serial port "+ Plugin._serialPort[indexOfSelectedPedal_u].PortName+" close";
             }           
             else
             {
                 ConnectToPedal.IsChecked = false;
                 Plugin._serialPort[indexOfSelectedPedal_u].Close();
-                TextBox1.Text = "Not Checked Serialport close";
+                TextBox1.Text = "Not Checked Serial port close";
             }
 
         }
 
-        
+        unsafe public void LoadConfigfromPedal_click(object sender, RoutedEventArgs e)
+        {
+            if (Plugin._serialPort[indexOfSelectedPedal_u].IsOpen)
+            {
+                Plugin._serialPort[indexOfSelectedPedal_u].Write("4");
+                TextBox1.Text = "Load Config from Pedal\r";
+                System.Threading.Thread.Sleep(1000);
+                try
+                {
+                    while (Plugin._serialPort[indexOfSelectedPedal_u].BytesToRead > 0)
+                    {
+                        string message = Plugin._serialPort[indexOfSelectedPedal_u].ReadLine();
+                        if (string.Equals(message, "Send Config\r"))
+                        { 
+                            TextBox1.Text += "Pedal --> " + message;
+                            System.Threading.Thread.Sleep(500);
+                        }
+                        else if (string.Equals(message, "Default case:\r"))
+                        {
+                            TextBox1.Text += "Ende   " + message+"\r";
+                            
+                            //System.Threading.Thread.Sleep(100);
+                        }
+                        else 
+                        {
+                            TextBox1.Text += "Data   " + message + "\r";
+                            DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(DAP_config_st));
+                            var ms = new MemoryStream(Encoding.UTF8.GetBytes(message));
+                            dap_config_st[indexOfSelectedPedal_u] = (DAP_config_st)deserializer.ReadObject(ms);
+                            //TextBox1.Text = "Config loaded!";
+                            //TextBox1.Text += ComboBox_JsonFileSelected.Text;
+                            //TextBox1.Text += "    ";
+                            //TextBox1.Text += ComboBox_JsonFileSelected.SelectedIndex;
+                            updateTheGuiFromConfig();
+                            TextBox1.Text = "Loaded Config from Pedal";
+                        }
+                        //this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.version = (byte)pedalConfigPayload_version;
+                        //this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.storeToEeprom = true;
+                        //this.dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_ = message;
+                    }
+                }
+                catch (TimeoutException) { }
+                //// compute checksum
+                ////getBytes(this.dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_)
+                //payloadPedalConfig tmp = this.dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_;
+                //payloadPedalConfig* v = &tmp;
+                //byte* p = (byte*)v;
+                //this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.checkSum = checksumCalc(p, sizeof(payloadPedalConfig));
+
+
+                //TextBox1.Text = "CRC simhub calc: " + this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.checkSum + "    ";
+
+
+                //try
+                //{
+                //    this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.version = (byte)pedalConfigPayload_version;
+                //    this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.storeToEeprom = true;
+                //    int length = sizeof(DAP_config_st);
+                //    int val = this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.checkSum;
+                //    string msg = "CRC value: " + val.ToString();
+                //    byte[] newBuffer = new byte[length];
+                //    newBuffer = getBytes(this.dap_config_st[indexOfSelectedPedal_u]);
+                //    Plugin._serialPort[indexOfSelectedPedal_u].Write(newBuffer, 0, newBuffer.Length);
+                //    //Plugin._serialPort[indexOfSelectedPedal_u].Write("\n");
+                //}
+                //catch (Exception caughtEx)
+                //{
+                //    string errorMessage = caughtEx.Message;
+                //    TextBox1.Text = errorMessage;
+                //}
+
+                //System.Threading.Thread.Sleep(100);
+                //try
+                //{
+                //    while (Plugin._serialPort[indexOfSelectedPedal_u].BytesToRead > 0)
+                //    {
+                //        string message = Plugin._serialPort[indexOfSelectedPedal_u].ReadLine();
+
+                //        TextBox1.Text += "      -->   " + message;
+                //    }
+                //}
+                //catch (TimeoutException) { }
+
+
+
+            }
+            else
+            { 
+                TextBox1.Text = "Serial port not open";
+            }
+        }
     }
     
 }

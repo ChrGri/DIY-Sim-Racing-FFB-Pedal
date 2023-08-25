@@ -114,9 +114,9 @@ namespace User.PluginSdkDemo
 
 
         //https://www.c-sharpcorner.com/uploadfile/eclipsed4utoo/communicating-with-serial-port-in-C-Sharp/
-        public SerialPort[] _serialPort = new SerialPort[3] {new SerialPort("COM7", 921600, Parity.None, 8, StopBits.One),
-            new SerialPort("COM7", 921600, Parity.None, 8, StopBits.One),
-            new SerialPort("COM7", 921600, Parity.None, 8, StopBits.One)};
+        public SerialPort[] _serialPort = new SerialPort[3] {new SerialPort("NA", 921600, Parity.None, 8, StopBits.One),
+            new SerialPort("NA", 921600, Parity.None, 8, StopBits.One),
+            new SerialPort("NA", 921600, Parity.None, 8, StopBits.One)};
         
     
 
@@ -269,8 +269,8 @@ namespace User.PluginSdkDemo
 
 
             //Settings.selectedJsonIndexLast[0]
-            SimHub.Logging.Current.Info("Diy active pedas plugin - Test 1");
-            SimHub.Logging.Current.Info("Diy active pedas plugin - COM port: " + Settings.selectedComPortNames[0]);
+            //SimHub.Logging.Current.Info("Diy active pedas plugin - Test 1");
+            //SimHub.Logging.Current.Info("Diy active pedas plugin - COM port: " + Settings.selectedComPortNames[0]);
 
 
 
@@ -279,27 +279,27 @@ namespace User.PluginSdkDemo
 
 
             // prepare serial port interfaces
-            for (uint pedalIdx = 0; pedalIdx<3; pedalIdx++)
-			{
-				if (_serialPort[pedalIdx].IsOpen)
-				{
-					_serialPort[pedalIdx].Close();
-				}
+   //         for (uint pedalIdx = 0; pedalIdx<3; pedalIdx++)
+			//{
+			//	if (_serialPort[pedalIdx].IsOpen)
+			//	{
+			//		_serialPort[pedalIdx].Close();
+			//	}
 				
-				//_serialPort.Handshake = Handshake.None;
-				_serialPort[pedalIdx].ReadTimeout = 2000;
-				_serialPort[pedalIdx].WriteTimeout = 500;
+			//	//_serialPort.Handshake = Handshake.None;
+			//	_serialPort[pedalIdx].ReadTimeout = 2000;
+			//	_serialPort[pedalIdx].WriteTimeout = 500;
 
-                try
-                {
-                    _serialPort[pedalIdx].PortName = Settings.selectedComPortNames[pedalIdx];
-                }
-                catch (Exception caughtEx)
-                {
-                }
+   //             try
+   //             {
+   //                 _serialPort[pedalIdx].PortName = Settings.selectedComPortNames[pedalIdx];
+   //             }
+   //             catch (Exception caughtEx)
+   //             {
+   //             }
 
 
-            }
+            //}
 
             //// check if Json config files are present, otherwise create new ones
             //for (uint jsonIndex = 0; jsonIndex < ComboBox_JsonFileSelected.Items.Count; jsonIndex++)
