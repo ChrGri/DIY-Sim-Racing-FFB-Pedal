@@ -8,7 +8,7 @@
 /*                                                                                            */
 /**********************************************************************************************/
 void updatePedalCalcParameters();
-void sendConfig(DAP_config_st data);
+
 
 bool systemIdentificationMode_b = false;
 #include "sendConfig.h"
@@ -189,7 +189,7 @@ void setup()
   //Serial.begin(115200);
   Serial.begin(921600);
   Serial.setTimeout(5);
-
+void sendConfig(DAP_config_st data);
   
 
   
