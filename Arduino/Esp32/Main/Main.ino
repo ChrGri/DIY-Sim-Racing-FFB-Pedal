@@ -8,10 +8,10 @@
 /*                                                                                            */
 /**********************************************************************************************/
 void updatePedalCalcParameters();
-
+void sendConfig(DAP_config_st data);
 
 bool systemIdentificationMode_b = false;
-
+#include "sendConfig.h"
 
 
 
@@ -21,6 +21,7 @@ bool splineDebug_b = false;
 
 
 #include <EEPROM.h>
+#include <ArduinoJson.h>	
 
 
 
@@ -696,7 +697,11 @@ void serialCommunicationTask( void * pvParameters )
             Serial.println("Start system identification");
             systemIdentificationMode_b = true;
             break;
-
+			case 4:
+            Serial.println("Send Config");
+            delay(1000);           
+            sendConfig(dap_config_st);
+            break; 
           default:
             Serial.println("Default case:");
             break;
