@@ -1198,65 +1198,27 @@ namespace User.PluginSdkDemo
                         else 
                         {
                             TextBox1.Text += "Data   " + message + "\r";
-                            DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(DAP_config_st));
-                            var ms = new MemoryStream(Encoding.UTF8.GetBytes(message));
-                            dap_config_st[indexOfSelectedPedal_u] = (DAP_config_st)deserializer.ReadObject(ms);
+                            string currentDirectory = Directory.GetCurrentDirectory();
+                            string dirName = currentDirectory + "\\PluginsData\\Common";
+                            string jsonFileName = "DiyPedalConfig_TMP";                           
+                            string fileName = dirName + "\\" + jsonFileName + ".json";
+                            System.IO.File.WriteAllText(fileName, message);
+
+                            //DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(DAP_config_st));
+                            //var ms = new MemoryStream(Encoding.UTF8.GetBytes(message));
+                            //dap_config_st[indexOfSelectedPedal_u] = (DAP_config_st)deserializer.ReadObject(ms);
+
                             //TextBox1.Text = "Config loaded!";
                             //TextBox1.Text += ComboBox_JsonFileSelected.Text;
                             //TextBox1.Text += "    ";
                             //TextBox1.Text += ComboBox_JsonFileSelected.SelectedIndex;
-                            updateTheGuiFromConfig();
+
+                            //updateTheGuiFromConfig();
                             TextBox1.Text = "Loaded Config from Pedal";
-                        }
-                        //this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.version = (byte)pedalConfigPayload_version;
-                        //this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.storeToEeprom = true;
-                        //this.dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_ = message;
+                        }                        
                     }
                 }
-                catch (TimeoutException) { }
-                //// compute checksum
-                ////getBytes(this.dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_)
-                //payloadPedalConfig tmp = this.dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_;
-                //payloadPedalConfig* v = &tmp;
-                //byte* p = (byte*)v;
-                //this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.checkSum = checksumCalc(p, sizeof(payloadPedalConfig));
-
-
-                //TextBox1.Text = "CRC simhub calc: " + this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.checkSum + "    ";
-
-
-                //try
-                //{
-                //    this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.version = (byte)pedalConfigPayload_version;
-                //    this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.storeToEeprom = true;
-                //    int length = sizeof(DAP_config_st);
-                //    int val = this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.checkSum;
-                //    string msg = "CRC value: " + val.ToString();
-                //    byte[] newBuffer = new byte[length];
-                //    newBuffer = getBytes(this.dap_config_st[indexOfSelectedPedal_u]);
-                //    Plugin._serialPort[indexOfSelectedPedal_u].Write(newBuffer, 0, newBuffer.Length);
-                //    //Plugin._serialPort[indexOfSelectedPedal_u].Write("\n");
-                //}
-                //catch (Exception caughtEx)
-                //{
-                //    string errorMessage = caughtEx.Message;
-                //    TextBox1.Text = errorMessage;
-                //}
-
-                //System.Threading.Thread.Sleep(100);
-                //try
-                //{
-                //    while (Plugin._serialPort[indexOfSelectedPedal_u].BytesToRead > 0)
-                //    {
-                //        string message = Plugin._serialPort[indexOfSelectedPedal_u].ReadLine();
-
-                //        TextBox1.Text += "      -->   " + message;
-                //    }
-                //}
-                //catch (TimeoutException) { }
-
-
-
+                catch (TimeoutException) { }                
             }
             else
             { 
