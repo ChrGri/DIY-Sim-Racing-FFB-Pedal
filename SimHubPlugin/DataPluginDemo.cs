@@ -95,7 +95,11 @@ public struct DAP_config_st
     public payloadPedalConfig payloadPedalConfig_;
 }
 
-
+public struct DAP_config_st_tmp
+{
+    public payloadHeader payloadHeader_;
+    public payloadPedalConfig payloadPedalConfig_;
+}
 
 namespace User.PluginSdkDemo
 {

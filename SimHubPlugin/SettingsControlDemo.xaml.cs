@@ -22,6 +22,7 @@ using static System.Net.Mime.MediaTypeNames;
 using System.Runtime.InteropServices.ComTypes;
 using Microsoft.Win32;
 using System.Xml.Linq;
+using System.Windows.Interop;
 
 
 namespace User.PluginSdkDemo
@@ -42,6 +43,7 @@ namespace User.PluginSdkDemo
         public DataPluginDemo Plugin { get; }
 
         public DAP_config_st[] dap_config_st = new DAP_config_st[3];
+        public DAP_config_st_tmp[] dap_config_st_tmp = new DAP_config_st_tmp[1];
         private string stringValue;
         private unsafe byte* loadedConfig_p;
 
@@ -1199,43 +1201,33 @@ namespace User.PluginSdkDemo
                         }
                         else 
                         {
-                            TextBox1.Text += "Data   " + message + "\r";
+                            //TextBox1.Text += "Data   " + message + "\r";
+                            
+                            DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(DAP_config_st_tmp));
+                            var ms = new MemoryStream(Encoding.UTF8.GetBytes(message));
+                            DataContractJsonSerializer deserializer1 = new DataContractJsonSerializer(typeof(DAP_config_st));
+                            var ms1 = new MemoryStream(Encoding.UTF8.GetBytes(message));
+                            dap_config_st_tmp[0] = (DAP_config_st_tmp)deserializer.ReadObject(ms);
+                            
 
-                            //string currentDirectory = Directory.GetCurrentDirectory();
-                            //string dirName = currentDirectory + "\\PluginsData\\Common";
-                            //string jsonFileName = "DiyPedalConfig_TMP";                           
-                            //string fileName = dirName + "\\" + jsonFileName + ".json";
-                            //System.IO.File.WriteAllText(fileName, message);
+                            payloadPedalConfig tmp = this.dap_config_st_tmp[0].payloadPedalConfig_;
+                            payloadPedalConfig* v = &tmp;
+                            byte* p = (byte*)v;
+                            ushort crc_e = checksumCalc(p, sizeof(payloadPedalConfig));
+                            TextBox1.Text += "calculated CRC = " + crc_e + "\r";                           
+                            TextBox1.Text +="Pedal CRC = "+ dap_config_st_tmp[0].payloadHeader_.checkSum + "\r";
 
-                            var jsonObject = JsonDocument.Parse(message).RootElement;
-                            var pedalConfig = jsonObject.GetProperty("payloadPedalConfig_");
-
-                            // Convert the JSON payloadPedalConfig_ to bytes
-                            var loadedConfig = Encoding.UTF8.GetBytes(pedalConfig.ToString());
-                            fixed (byte* loadedConfig_p = loadedConfig)
+                            if (crc_e == dap_config_st_tmp[0].payloadHeader_.checkSum)
                             {
-                                int loadedConfiglenght = loadedConfig.Length;
-                                ushort a = checksumCalc(loadedConfig_p, loadedConfiglenght);
-                                TextBox1.Text += "calculated CRC = " + a + "\r";
-                            
-                                var headerConfig = jsonObject.GetProperty("payloadHeader_");
-                                var check1 = headerConfig.TryGetProperty("checkSum", out JsonElement value);
-                                TextBox1.Text +="Pedal CRC = "+ value.ToString() + "\r";
-                                
-                            }   
-                            
-
-                            //DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(DAP_config_st));
-                            //var ms = new MemoryStream(Encoding.UTF8.GetBytes(message));
-                            //dap_config_st[indexOfSelectedPedal_u] = (DAP_config_st)deserializer.ReadObject(ms);
-
-                            ////TextBox1.Text = "Config loaded!";
-                            ////TextBox1.Text += ComboBox_JsonFileSelected.Text;
-                            ////TextBox1.Text += "    ";
-                            ////TextBox1.Text += ComboBox_JsonFileSelected.SelectedIndex;
-                            TextBox1.Text += "Loaded Config from Pedal";
-                            //updateTheGuiFromConfig();
-                            
+                                TextBox1.Text += "CRC is equal\r";                                
+                                dap_config_st[indexOfSelectedPedal_u] = (DAP_config_st)deserializer1.ReadObject(ms1);
+                                TextBox1.Text += "Loaded Config from Pedal";
+                                updateTheGuiFromConfig();
+                            }
+                            else
+                            {
+                                TextBox1.Text += "CRC is not equal\r";                                
+                            }
                         }                        
                     }
                 }
