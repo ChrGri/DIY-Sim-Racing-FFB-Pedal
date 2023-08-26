@@ -23,6 +23,7 @@ using System.Runtime.InteropServices.ComTypes;
 using Microsoft.Win32;
 using System.Xml.Linq;
 
+
 namespace User.PluginSdkDemo
 {
 
@@ -42,6 +43,7 @@ namespace User.PluginSdkDemo
 
         public DAP_config_st[] dap_config_st = new DAP_config_st[3];
         private string stringValue;
+        private unsafe byte* loadedConfig_p;
 
 
 
@@ -128,7 +130,7 @@ namespace User.PluginSdkDemo
                 DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(DAP_config_st));
                 var ms = new MemoryStream(Encoding.UTF8.GetBytes(text));
                 dap_config_st[indexOfSelectedPedal_u] = (DAP_config_st)deserializer.ReadObject(ms);
-                TextBox1.Text = "Config loaded!"+ jsonFileName;
+                TextBox1.Text = "Config loaded!";
                 //TextBox1.Text += ComboBox_JsonFileSelected.Text;
                 //TextBox1.Text += "    ";
                 //TextBox1.Text += ComboBox_JsonFileSelected.SelectedIndex;
@@ -417,14 +419,13 @@ namespace User.PluginSdkDemo
 
 
             //// Select serial port accordingly
-            string tmp1 = "NA";
             string tmp = (string)Plugin._serialPort[indexOfSelectedPedal_u].PortName;
             if (!string.Equals(tmp,"NA") && tmp != null)
             {
                 try
                 {
                     SerialPortSelection.SelectedValue = tmp;
-                    TextBox1.Text = "Serial port selected: " + SerialPortSelection.SelectedValue;
+                    TextBox1.Text += "\rSerial port selected: " + SerialPortSelection.SelectedValue;
 
                 }
                 catch (Exception caughtEx)
@@ -432,11 +433,11 @@ namespace User.PluginSdkDemo
                 }
             }
             
-            else
-            {
+            //else
+            //{
                 
-                TextBox1.Text = "No Serial port found";
-            }
+            //    TextBox1.Text += "\rNo Serial port found";
+            //}
             
 
 
@@ -521,11 +522,11 @@ namespace User.PluginSdkDemo
             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.cubic_spline_param_b_4 = (float)b[4];
 
 
-            TextBox1.Text = "";
-            for (uint i = 0; i < a.Length; i++)
-            {
-                TextBox1.Text += "\na[" + i + "]: " + a[i] + "      b[" + i + "]: " + b[i];
-            }
+            //TextBox1.Text = "";
+            //for (uint i = 0; i < a.Length; i++)
+            //{
+            //    TextBox1.Text += "\na[" + i + "]: " + a[i] + "      b[" + i + "]: " + b[i];
+            //}
 
 
             System.Windows.Media.PointCollection myPointCollection2 = new System.Windows.Media.PointCollection();
@@ -562,7 +563,7 @@ namespace User.PluginSdkDemo
         private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             indexOfSelectedPedal_u = (uint)MyTab.SelectedIndex;
-
+            TextBox1.Text = "";
             // update the sliders & serial port selection accordingly
             updateTheGuiFromConfig();
         }
@@ -822,6 +823,7 @@ namespace User.PluginSdkDemo
                     byte[] b = BitConverter.GetBytes(myInt);
                     Plugin._serialPort[indexOfSelectedPedal_u].Write(b, 0, 4);
                     Plugin._serialPort[indexOfSelectedPedal_u].Write("\n");
+                    TextBox1.Text = "Reset Pedal position";
                     System.Threading.Thread.Sleep(100);
                 }
                 catch (Exception caughtEx)
@@ -944,8 +946,8 @@ namespace User.PluginSdkDemo
                 byte* p = (byte*)v;
                 this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.checkSum = checksumCalc(p, sizeof(payloadPedalConfig));
 
-
-                TextBox1.Text = "CRC simhub calc: " + this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.checkSum + "    ";
+                TextBox1.Text = "Send Config to Pedal\r";
+                TextBox1.Text += "CRC simhub calc: " + this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.checkSum + "\r";
 
 
                 try
@@ -973,7 +975,7 @@ namespace User.PluginSdkDemo
                     {
                         string message = Plugin._serialPort[indexOfSelectedPedal_u].ReadLine();
 
-                        TextBox1.Text += "Pedal   -->   " + message;
+                        TextBox1.Text += "Pedal --> " + message;
                     }
                 }
                 catch (TimeoutException) { }
@@ -1149,7 +1151,7 @@ namespace User.PluginSdkDemo
 
 
                 System.IO.File.WriteAllText(fileName, jsonString);
-                TextBox1.Text = "Config new exported!";
+                TextBox1.Text = "Config exported!";
                 TextBox2.Text = "Save " + saveFileDialog.FileName;
                 }
             }
@@ -1198,23 +1200,42 @@ namespace User.PluginSdkDemo
                         else 
                         {
                             TextBox1.Text += "Data   " + message + "\r";
-                            string currentDirectory = Directory.GetCurrentDirectory();
-                            string dirName = currentDirectory + "\\PluginsData\\Common";
-                            string jsonFileName = "DiyPedalConfig_TMP";                           
-                            string fileName = dirName + "\\" + jsonFileName + ".json";
-                            System.IO.File.WriteAllText(fileName, message);
+
+                            //string currentDirectory = Directory.GetCurrentDirectory();
+                            //string dirName = currentDirectory + "\\PluginsData\\Common";
+                            //string jsonFileName = "DiyPedalConfig_TMP";                           
+                            //string fileName = dirName + "\\" + jsonFileName + ".json";
+                            //System.IO.File.WriteAllText(fileName, message);
+
+                            var jsonObject = JsonDocument.Parse(message).RootElement;
+                            var pedalConfig = jsonObject.GetProperty("payloadPedalConfig_");
+
+                            // Convert the JSON payloadPedalConfig_ to bytes
+                            var loadedConfig = Encoding.UTF8.GetBytes(pedalConfig.ToString());
+                            fixed (byte* loadedConfig_p = loadedConfig)
+                            {
+                                int loadedConfiglenght = loadedConfig.Length;
+                                ushort a = checksumCalc(loadedConfig_p, loadedConfiglenght);
+                                TextBox1.Text += "calculated CRC = " + a + "\r";
+                            
+                                var headerConfig = jsonObject.GetProperty("payloadHeader_");
+                                var check1 = headerConfig.TryGetProperty("checkSum", out JsonElement value);
+                                TextBox1.Text +="Pedal CRC = "+ value.ToString() + "\r";
+                                
+                            }   
+                            
 
                             //DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(DAP_config_st));
                             //var ms = new MemoryStream(Encoding.UTF8.GetBytes(message));
                             //dap_config_st[indexOfSelectedPedal_u] = (DAP_config_st)deserializer.ReadObject(ms);
 
-                            //TextBox1.Text = "Config loaded!";
-                            //TextBox1.Text += ComboBox_JsonFileSelected.Text;
-                            //TextBox1.Text += "    ";
-                            //TextBox1.Text += ComboBox_JsonFileSelected.SelectedIndex;
-
+                            ////TextBox1.Text = "Config loaded!";
+                            ////TextBox1.Text += ComboBox_JsonFileSelected.Text;
+                            ////TextBox1.Text += "    ";
+                            ////TextBox1.Text += ComboBox_JsonFileSelected.SelectedIndex;
+                            TextBox1.Text += "Loaded Config from Pedal";
                             //updateTheGuiFromConfig();
-                            TextBox1.Text = "Loaded Config from Pedal";
+                            
                         }                        
                     }
                 }

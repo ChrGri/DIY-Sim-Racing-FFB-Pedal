@@ -4,7 +4,7 @@
 library
 C#
 .cs
-C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Debug\
+C:\Program Files (x86)\SimHub\PluginSdk\SimHubPlugin\obj\Debug\
 User.PluginSdkDemo
 none
 false
@@ -12,9 +12,9 @@ DEBUG;TRACE
 
 1-1832596077
 1-1358375093
-6-1877648187
-34-1198878998
+7-893686490
+3381977272
 SettingsControlDemo.xaml;
 
-True
+False
 

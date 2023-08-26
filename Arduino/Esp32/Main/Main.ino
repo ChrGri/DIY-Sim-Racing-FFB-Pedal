@@ -720,10 +720,10 @@ void serialCommunicationTask( void * pvParameters )
           joystickNormalizedToInt32_local = joystickNormalizedToInt32;
           xSemaphoreGive(semaphore_updateJoystick);
         }
-        else
-        {
-          Serial.println("semaphore_updateJoystick == 0");
-        }
+        // else
+        // {
+          // Serial.println("semaphore_updateJoystick == 0");
+        // }
       }
       SetControllerOutputValue(joystickNormalizedToInt32_local);
     }

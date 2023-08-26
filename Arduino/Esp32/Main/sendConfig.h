@@ -4,56 +4,52 @@
 void sendConfig(DAP_config_st data)
 {
   //Serial.println(data.payLoadHeader_.payloadType);
-  StaticJsonDocument<560> doc;
-  doc ["payloadType"] = data.payLoadHeader_.payloadType;
-  doc ["version"] = data.payLoadHeader_.version;
-  doc ["storeToEeprom"] = data.payLoadHeader_.storeToEeprom;
+  StaticJsonDocument<610> doc;
 
-  doc ["pedalStartPosition"] = data.payLoadPedalConfig_.pedalStartPosition;
-  doc ["pedalEndPosition"] = data.payLoadPedalConfig_.pedalEndPosition;
 
-  doc ["maxForce"] = data.payLoadPedalConfig_.maxForce;
-  doc ["preloadForce"] = data.payLoadPedalConfig_.preloadForce;
+    JsonObject payloadHeader = doc.createNestedObject("payloadHeader_");
+    payloadHeader["checkSum"] =data.payLoadHeader_.checkSum;
+    payloadHeader["payloadType"] =data.payLoadHeader_.payloadType;
+    payloadHeader["storeToEeprom"] =data.payLoadHeader_.storeToEeprom;
+    payloadHeader["version"] =data.payLoadHeader_.version;
 
-  doc ["relativeForce_p000"] = data.payLoadPedalConfig_.relativeForce_p000;
-  doc ["relativeForce_p020"] = data.payLoadPedalConfig_.relativeForce_p020;
-  doc ["relativeForce_p040"] = data.payLoadPedalConfig_.relativeForce_p040;
-  doc ["relativeForce_p060"] = data.payLoadPedalConfig_.relativeForce_p060;
-  doc ["relativeForce_p080"] = data.payLoadPedalConfig_.relativeForce_p080;
-  doc ["relativeForce_p100"] = data.payLoadPedalConfig_.relativeForce_p100;
-
-  doc ["dampingPress"] = data.payLoadPedalConfig_.dampingPress;
-  doc ["dampingPull"] = data.payLoadPedalConfig_.dampingPull;
-
-  doc ["absFrequency"] = data.payLoadPedalConfig_.absFrequency;
-  doc ["absAmplitude"] = data.payLoadPedalConfig_.absAmplitude;
-
-  doc ["lengthPedal_AC"] = data.payLoadPedalConfig_.lengthPedal_AC;
-  doc ["horPos_AB"] = data.payLoadPedalConfig_.horPos_AB;
-  doc ["verPos_AB"] = data.payLoadPedalConfig_.verPos_AB;
-  doc ["lengthPedal_CB"] = data.payLoadPedalConfig_.lengthPedal_CB;
-
-  doc ["cubic_spline_param_a_array[0]"] = data.payLoadPedalConfig_.cubic_spline_param_a_array[0];
-  doc ["cubic_spline_param_a_array[1]"] = data.payLoadPedalConfig_.cubic_spline_param_a_array[1];
-  doc ["cubic_spline_param_a_array[2]"] = data.payLoadPedalConfig_.cubic_spline_param_a_array[2];
-  doc ["cubic_spline_param_a_array[3]"] = data.payLoadPedalConfig_.cubic_spline_param_a_array[3];
-  doc ["cubic_spline_param_a_array[4]"] = data.payLoadPedalConfig_.cubic_spline_param_a_array[4];
-
-  doc ["cubic_spline_param_b_array[0]"] = data.payLoadPedalConfig_.cubic_spline_param_b_array[0];
-  doc ["cubic_spline_param_b_array[1]"] = data.payLoadPedalConfig_.cubic_spline_param_b_array[1];
-  doc ["cubic_spline_param_b_array[2]"] = data.payLoadPedalConfig_.cubic_spline_param_b_array[2];
-  doc ["cubic_spline_param_b_array[3]"] = data.payLoadPedalConfig_.cubic_spline_param_b_array[3];
-  doc ["cubic_spline_param_b_array[4]"] = data.payLoadPedalConfig_.cubic_spline_param_b_array[4];
-
-  doc ["PID_p_gain"] = data.payLoadPedalConfig_.PID_p_gain;
-  doc ["PID_i_gain"] = data.payLoadPedalConfig_.PID_i_gain;
-  doc ["PID_d_gain"] = data.payLoadPedalConfig_.PID_d_gain;
-
-  doc ["maxGameOutput"] = data.payLoadPedalConfig_.maxGameOutput;
+    JsonObject payloadPedalConfig = doc.createNestedObject("payloadPedalConfig_");
+    payloadPedalConfig["PID_d_gain"] = data.payLoadPedalConfig_.PID_d_gain;
+    payloadPedalConfig["PID_i_gain"] = data.payLoadPedalConfig_.PID_i_gain;
+    payloadPedalConfig["PID_p_gain"] = data.payLoadPedalConfig_.PID_p_gain;
+    payloadPedalConfig["absAmplitude"] = data.payLoadPedalConfig_.absAmplitude;
+    payloadPedalConfig["absFrequency"] = data.payLoadPedalConfig_.absFrequency;
+    payloadPedalConfig["cubic_spline_param_a_0"] = data.payLoadPedalConfig_.cubic_spline_param_a_array[0];
+    payloadPedalConfig["cubic_spline_param_a_1"] = data.payLoadPedalConfig_.cubic_spline_param_a_array[1];
+    payloadPedalConfig["cubic_spline_param_a_2"] = data.payLoadPedalConfig_.cubic_spline_param_a_array[2];
+    payloadPedalConfig["cubic_spline_param_a_3"] = data.payLoadPedalConfig_.cubic_spline_param_a_array[3];
+    payloadPedalConfig["cubic_spline_param_a_4"] = data.payLoadPedalConfig_.cubic_spline_param_a_array[4];
+    payloadPedalConfig["cubic_spline_param_b_0"] = data.payLoadPedalConfig_.cubic_spline_param_b_array[0];
+    payloadPedalConfig["cubic_spline_param_b_1"] = data.payLoadPedalConfig_.cubic_spline_param_b_array[1];
+    payloadPedalConfig["cubic_spline_param_b_2"] = data.payLoadPedalConfig_.cubic_spline_param_b_array[2];
+    payloadPedalConfig["cubic_spline_param_b_3"] = data.payLoadPedalConfig_.cubic_spline_param_b_array[3];
+    payloadPedalConfig["cubic_spline_param_b_4"] = data.payLoadPedalConfig_.cubic_spline_param_b_array[4];
+    payloadPedalConfig["dampingPress"] = data.payLoadPedalConfig_.dampingPress;
+    payloadPedalConfig["dampingPull"] = data.payLoadPedalConfig_.dampingPull;
+    payloadPedalConfig["horPos_AB"] = data.payLoadPedalConfig_.horPos_AB;
+    payloadPedalConfig["lengthPedal_AC"] = data.payLoadPedalConfig_.lengthPedal_AC;
+    payloadPedalConfig["lengthPedal_CB"] = data.payLoadPedalConfig_.lengthPedal_CB;
+    payloadPedalConfig["maxForce"] = data.payLoadPedalConfig_.maxForce;
+    payloadPedalConfig["maxGameOutput"] = data.payLoadPedalConfig_.maxGameOutput;
+    payloadPedalConfig["pedalEndPosition"] = data.payLoadPedalConfig_.pedalEndPosition;
+    payloadPedalConfig["pedalStartPosition"] = data.payLoadPedalConfig_.pedalStartPosition;
+    payloadPedalConfig["preloadForce"] = data.payLoadPedalConfig_.preloadForce;
+    payloadPedalConfig["relativeForce_p000"] = data.payLoadPedalConfig_.relativeForce_p000;
+    payloadPedalConfig["relativeForce_p020"] = data.payLoadPedalConfig_.relativeForce_p020;
+    payloadPedalConfig["relativeForce_p040"] = data.payLoadPedalConfig_.relativeForce_p040;
+    payloadPedalConfig["relativeForce_p060"] = data.payLoadPedalConfig_.relativeForce_p060;
+    payloadPedalConfig["relativeForce_p080"] = data.payLoadPedalConfig_.relativeForce_p080;
+    payloadPedalConfig["relativeForce_p100"] = data.payLoadPedalConfig_.relativeForce_p100;
+    payloadPedalConfig["verPos_AB"] = data.payLoadPedalConfig_.verPos_AB;
 
   String jsonString;
     serializeJson(doc, jsonString);
 
     Serial.println(jsonString);
-    delay(1000);
+    
 }
