@@ -11,7 +11,7 @@ void updatePedalCalcParameters();
 
 
 bool systemIdentificationMode_b = false;
-
+#include "sendConfig.h"
 
 
 
@@ -21,6 +21,7 @@ bool splineDebug_b = false;
 
 
 #include <EEPROM.h>
+#include <ArduinoJson.h>	
 
 
 
@@ -188,7 +189,7 @@ void setup()
   //Serial.begin(115200);
   Serial.begin(921600);
   Serial.setTimeout(5);
-
+void sendConfig(DAP_config_st data);
   
 
   
@@ -696,7 +697,11 @@ void serialCommunicationTask( void * pvParameters )
             Serial.println("Start system identification");
             systemIdentificationMode_b = true;
             break;
-
+			case 4:
+            Serial.println("Send Config");
+            delay(1000);           
+            sendConfig(dap_config_st);
+            break; 
           default:
             Serial.println("Default case:");
             break;
@@ -715,10 +720,10 @@ void serialCommunicationTask( void * pvParameters )
           joystickNormalizedToInt32_local = joystickNormalizedToInt32;
           xSemaphoreGive(semaphore_updateJoystick);
         }
-        else
-        {
-          Serial.println("semaphore_updateJoystick == 0");
-        }
+        // else
+        // {
+          // Serial.println("semaphore_updateJoystick == 0");
+        // }
       }
       SetControllerOutputValue(joystickNormalizedToInt32_local);
     }

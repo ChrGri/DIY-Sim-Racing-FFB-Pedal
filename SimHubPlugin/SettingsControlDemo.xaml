@@ -12,77 +12,77 @@
 
 
 
+    <ScrollViewer>
+        <!-- Define the GUI interface, common for all pedals -->
+        <Grid>
 
-    <!-- Define the GUI interface, common for all pedals -->
-    <Grid>
+            <!-- Define the GUI grid -->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="46"/>
+                <RowDefinition Height="46"/>
+                <RowDefinition Height="46"/>
+                <RowDefinition Height="46"/>
+                <RowDefinition Height="46"/>
+                <RowDefinition Height="46"/>
+                <RowDefinition Height="120"/>
+                <RowDefinition Height="46"/>
+                <RowDefinition Height="46"/>
+                <RowDefinition Height="300"/>
+                <RowDefinition Height="46"/>
+                <RowDefinition Height="200"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="400"/>
+                <ColumnDefinition Width="500"/>
+                <ColumnDefinition Width="400"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
 
-        <!-- Define the GUI grid -->
-        <Grid.RowDefinitions>
-            <RowDefinition Height="46"/>
-            <RowDefinition Height="46"/>
-            <RowDefinition Height="46"/>
-            <RowDefinition Height="46"/>
-            <RowDefinition Height="46"/>
-            <RowDefinition Height="46"/>
-            <RowDefinition Height="120"/>
-            <RowDefinition Height="46"/>
-            <RowDefinition Height="46"/>
-            <RowDefinition Height="300"/>
-            <RowDefinition Height="46"/>
-            <RowDefinition Height="200"/>
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="400"/>
-            <ColumnDefinition Width="500"/>
-            <ColumnDefinition Width="400"/>
-            <ColumnDefinition/>
-        </Grid.ColumnDefinitions>
-
-        <!-- Define the tabs to select the pedal -->
-        <TabControl x:Name="MyTab" SelectionChanged="TabControl_SelectionChanged">
-            <TabItem x:Name="tabPedalSelection_clutch" Header="Clutch"/>
-            <TabItem x:Name="tabPedalSelection_brake" Header="Brake"/>
-            <TabItem x:Name="tabPedalSelection_accelerator" Header="Accelerator"/>
-        </TabControl>
+            <!-- Define the tabs to select the pedal -->
+            <TabControl x:Name="MyTab" SelectionChanged="TabControl_SelectionChanged">
+                <TabItem x:Name="tabPedalSelection_clutch" Header="Clutch"/>
+                <TabItem x:Name="tabPedalSelection_brake" Header="Brake"/>
+                <TabItem x:Name="tabPedalSelection_accelerator" Header="Accelerator"/>
+            </TabControl>
 
 
 
-        <!-- serial port selection -->
-        <TextBlock Text="Serial port selection:" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="500,0,0,0"  Grid.Row="1" Grid.Column="0" Width="180" />
+            <!-- serial port selection -->
+            <TextBlock Text="Serial port selection:" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="500,0,0,0"  Grid.Row="1" Grid.Column="0" Width="180" />
 
-        <ComboBox x:Name="SerialPortSelection" SelectionChanged="SerialPortSelectionChanged" Margin="200,0,0,0"  Grid.Row="1" Grid.Column="0"
-                  Width="120" HorizontalAlignment="Left"
+            <ComboBox x:Name="SerialPortSelection" SelectionChanged="SerialPortSelectionChanged" Margin="200,0,0,0"  Grid.Row="1" Grid.Column="0"
+                  Width="131.2" HorizontalAlignment="Left"
                   ItemsSource="{Binding}" DisplayMemberPath="Display" SelectedValuePath="Value"/>
 
-        <styles:SHButtonPrimary Click="UpdateSerialPortList_click" HorizontalAlignment="Left" Grid.Row="1" Grid.Column="0" Width="180" >Update serial port list</styles:SHButtonPrimary>
+            <styles:SHButtonPrimary Click="UpdateSerialPortList_click" HorizontalAlignment="Left" Grid.Row="1" Grid.Column="0" Width="180" >Update serial port list</styles:SHButtonPrimary>
 
-        <!-- serial connection -->
-        <styles:SHButtonSecondary Click="ConnectToPedal_click" HorizontalAlignment="Left" Grid.Row="2" Grid.Column="0" Width="120" Margin="200,5,0,13" FontSize="10" Background="#FF08FF00" >Connect to Pedal</styles:SHButtonSecondary>
-        <!--<TextBlock Text="Connect to pedal:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="200,10,0,0"  Grid.Row="2" Width="200" Foreground="Red" />-->
-        <CheckBox x:Name="ConnectToPedal" Grid.Column="0" HorizontalAlignment="Right" Grid.Row="2"
+            <!-- serial connection -->
+            <styles:SHButtonSecondary Click="ConnectToPedal_click" HorizontalAlignment="Left" Grid.Row="2" Grid.Column="0" Margin="200,5,0,0" FontSize="10" Background="#FF08FF00" Width="132" Height="28" VerticalAlignment="Top" >Connect to Pedal</styles:SHButtonSecondary>
+            <!--<TextBlock Text="Connect to pedal:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="200,10,0,0"  Grid.Row="2" Width="200" Foreground="Red" />-->
+            <CheckBox x:Name="ConnectToPedal" Grid.Column="0" HorizontalAlignment="Right" Grid.Row="2"
                   Width="65"
-                  Height="26" Margin="0,6,3,0" VerticalAlignment="Top" IsChecked="False" IsEnabled="False" Content="Connected" FontSize="8"/>
+                  Height="26" Margin="0,6,499,0" VerticalAlignment="Top" IsChecked="False" IsEnabled="False" Content="Connected" FontSize="8" Grid.ColumnSpan="2"/>
 
 
 
-        <!-- send config buttons -->
-        <styles:SHButtonPrimary Click="ResetPedalPosition_click" HorizontalAlignment="Left" Grid.Row="2" Grid.Column="0" Width="180" >Reset pedal position</styles:SHButtonPrimary>
-        <styles:SHButtonPrimary Click="SendConfigToPedal_click" HorizontalAlignment="Left" Grid.Row="3"  Grid.Column="0" Width="180" >Send config to pedal</styles:SHButtonPrimary>
+            <!-- send config buttons -->
+            <styles:SHButtonPrimary Click="ResetPedalPosition_click" HorizontalAlignment="Left" Grid.Row="2" Grid.Column="0" Width="180" >Reset pedal position</styles:SHButtonPrimary>
+            <styles:SHButtonPrimary Click="SendConfigToPedal_click" HorizontalAlignment="Left" Grid.Row="3"  Grid.Column="0" Width="180" >Send config to pedal</styles:SHButtonPrimary>
 
-        <!-- read/write config from/to JSON file buttons -->
-        <!--<styles:SHButtonPrimary Click="SaveStructToJson_click" HorizontalAlignment="Left" Grid.Row="4"  Grid.Column="1" Width="180" >Save config to JSON</styles:SHButtonPrimary>-->
-        <styles:SHButtonPrimary Click="OpenButton_Click" HorizontalAlignment="Left" Grid.Row="2"  Grid.Column="1" Width="180" Margin="10,44,0,10" Grid.RowSpan="2" >open config from JSON</styles:SHButtonPrimary>
-        <!--<styles:SHButtonPrimary Click="ReadStructFromJson_click" HorizontalAlignment="Right" Grid.Row="4"  Grid.Column="1" Width="180" >Read config from JSON</styles:SHButtonPrimary>-->
+            <!-- read/write config from/to JSON file buttons -->
+            <!--<styles:SHButtonPrimary Click="SaveStructToJson_click" HorizontalAlignment="Left" Grid.Row="4"  Grid.Column="1" Width="180" >Save config to JSON</styles:SHButtonPrimary>-->
+            <styles:SHButtonPrimary Click="OpenButton_Click" HorizontalAlignment="Left" Grid.Row="2"  Grid.Column="1" Width="180" Margin="10,44,0,10" Grid.RowSpan="2" >open config from JSON</styles:SHButtonPrimary>
+            <!--<styles:SHButtonPrimary Click="ReadStructFromJson_click" HorizontalAlignment="Right" Grid.Row="4"  Grid.Column="1" Width="180" >Read config from JSON</styles:SHButtonPrimary>-->
 
-        <!-- Serial communication debug textbox -->
-        <TextBox x:Name="TextBox1" Grid.Column="2" HorizontalAlignment="Left" Margin="54,0,0,0" Grid.Row="3" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="336" AutomationProperties.Name="TextBox2" Height="138" Grid.RowSpan="3"/>
-
-
+            <!-- Serial communication debug textbox -->
+            <TextBox x:Name="TextBox1" Grid.Column="2" HorizontalAlignment="Left" Margin="54,0,0,0" Grid.Row="3" TextWrapping="Wrap" VerticalAlignment="Top" Width="336" AutomationProperties.Name="TextBox2" Height="138" Grid.RowSpan="3" VerticalScrollBarVisibility="Auto" IsReadOnly="True"/>
 
 
 
-        <!-- Pedal preforce slider -->
-        <TextBlock HorizontalAlignment="Left" 
+
+
+            <!-- Pedal preforce slider -->
+            <TextBlock HorizontalAlignment="Left" 
                    VerticalAlignment="Top" 
                    Margin="5,0,0,0" 
                    Text="Pedal min force:" 
@@ -90,7 +90,7 @@
                    Grid.Column="0" 
                    Width="120" 
                    Foreground="White"/>
-        <Slider x:Name="PedalMinForce_Slider" 
+            <Slider x:Name="PedalMinForce_Slider" 
             HorizontalAlignment="Left" 
             VerticalAlignment="Center" 
             Margin="5,0,0,0" 
@@ -108,8 +108,8 @@
             />
 
 
-        <!-- Pedal max force slider -->
-        <TextBlock HorizontalAlignment="Center" 
+            <!-- Pedal max force slider -->
+            <TextBlock HorizontalAlignment="Center" 
                    VerticalAlignment="Top" 
                    Margin="5,0,0,0" 
                    Text="Pedal max force:" 
@@ -117,7 +117,7 @@
                    Grid.Column="0" 
                    Width="120" 
                    Foreground="White"/>
-        <Slider x:Name="PedalMaxForce_Slider" 
+            <Slider x:Name="PedalMaxForce_Slider" 
             HorizontalAlignment="Center" 
             VerticalAlignment="Center" 
             Margin="5,0,0,0" 
@@ -137,8 +137,8 @@
 
 
 
-        <!-- Pedal min position slider -->
-        <TextBlock HorizontalAlignment="Left" 
+            <!-- Pedal min position slider -->
+            <TextBlock HorizontalAlignment="Left" 
                    VerticalAlignment="Top" 
                    Margin="5,0,0,0" 
                    Text="Pedal min position:" 
@@ -146,7 +146,7 @@
                    Grid.Column="1" 
                    Width="120" 
                    Foreground="White"/>
-        <Slider x:Name="PedalMinPos_Slider" 
+            <Slider x:Name="PedalMinPos_Slider" 
             HorizontalAlignment="Left" 
             VerticalAlignment="Center" 
             Margin="5,0,0,0" 
@@ -164,8 +164,8 @@
             />
 
 
-        <!-- Pedal max position slider -->
-        <TextBlock HorizontalAlignment="Center" 
+            <!-- Pedal max position slider -->
+            <TextBlock HorizontalAlignment="Center" 
                    VerticalAlignment="Top" 
                    Margin="5,0,0,0" 
                    Text="Pedal max position:" 
@@ -173,7 +173,7 @@
                    Grid.Column="1" 
                    Width="120" 
                    Foreground="White"/>
-        <Slider x:Name="PedalMaxPos_Slider" 
+            <Slider x:Name="PedalMaxPos_Slider" 
             HorizontalAlignment="Center" 
             VerticalAlignment="Center" 
             Margin="5,0,0,0" 
@@ -192,8 +192,8 @@
 
 
 
-        <!-- Pedal ABS amplitude slider -->
-        <TextBlock HorizontalAlignment="Left" 
+            <!-- Pedal ABS amplitude slider -->
+            <TextBlock HorizontalAlignment="Left" 
                    VerticalAlignment="Top" 
                    Margin="5,0,0,0" 
                    Text="ABS/TC amplitude:" 
@@ -201,7 +201,7 @@
                    Grid.Column="0" 
                    Width="180" 
                    Foreground="White"/>
-        <Slider x:Name="PedalAbsAmplitude_Slider" 
+            <Slider x:Name="PedalAbsAmplitude_Slider" 
             HorizontalAlignment="Left" 
             VerticalAlignment="Top" 
             Margin="0,20,0,0" 
@@ -219,8 +219,8 @@
             />
 
 
-        <!-- Pedal ABS frequency slider -->
-        <TextBlock HorizontalAlignment="Center" 
+            <!-- Pedal ABS frequency slider -->
+            <TextBlock HorizontalAlignment="Center" 
                    VerticalAlignment="Top" 
                    Margin="5,0,0,0" 
                    Text="ABS/TC frequency:" 
@@ -228,7 +228,7 @@
                    Grid.Column="0" 
                    Width="120" 
                    Foreground="White"/>
-        <Slider x:Name="PedalAbsFrequency_Slider" 
+            <Slider x:Name="PedalAbsFrequency_Slider" 
             HorizontalAlignment="Center" 
             VerticalAlignment="Top" 
             Margin="5,20,0,0" 
@@ -245,15 +245,14 @@
             Value="13"
             />
 
-        <!-- Pedal ABS test signal checkbox -->
-        <!--<TextBlock HorizontalAlignment="Right" VerticalAlignment="Top" Margin="5,0,0,0" Text="ABS test signal" Grid.Row="6" Grid.Column="0" Width="120" />-->
-        <CheckBox x:Name="TestAbs" Grid.Column="0" HorizontalAlignment="Left" Grid.Row="6"
-                  Width="112"
-                  Height="34" Margin="108,50,0,0" VerticalAlignment="Top" IsEnabled="False" Content="ABS/TC-Signal aktiv" Foreground="White"/>
+            <!-- Pedal ABS test signal checkbox -->
+            <!--<TextBlock HorizontalAlignment="Right" VerticalAlignment="Top" Margin="5,0,0,0" Text="ABS test signal" Grid.Row="6" Grid.Column="0" Width="120" />-->
+            <CheckBox x:Name="TestAbs" Grid.Column="0" HorizontalAlignment="Left" Grid.Row="6"
+                  Height="34" Margin="108,50,0,0" VerticalAlignment="Top" IsEnabled="False" Content="ABS/TC-Signal aktiv" Foreground="White" Width="128"/>
 
 
-        <!-- Pedal dampening slider -->
-        <TextBlock HorizontalAlignment="Left" 
+            <!-- Pedal dampening slider -->
+            <TextBlock HorizontalAlignment="Left" 
                    VerticalAlignment="Top" 
                    Margin="5,0,0,0" 
                    Text="Dampening:" 
@@ -261,7 +260,7 @@
                    Grid.Column="0" 
                    Width="120" 
                    Foreground="White"/>
-        <Slider x:Name="PedalDampening_Slider" 
+            <Slider x:Name="PedalDampening_Slider" 
             HorizontalAlignment="Left" 
             VerticalAlignment="Center" 
             Margin="5,0,0,0" 
@@ -279,76 +278,76 @@
             />
 
 
-        <!-- Travel vs Force curve GUI elements -->
-        <Canvas Height="100" Width="400" Background="#FF333333" HorizontalAlignment="Left" Grid.Row="9" Opacity="0.5" VerticalAlignment="Top" RenderTransformOrigin="0.5,0.5" Margin="0,20,0,0" Grid.Column="1" >
-            <Canvas.RenderTransform>
-                <TransformGroup>
-                    <ScaleTransform ScaleX="1" ScaleY="1"/>
-                    <SkewTransform/>
-                    <RotateTransform/>
-                    <TranslateTransform/>
-                </TransformGroup>
-            </Canvas.RenderTransform>
+            <!-- Travel vs Force curve GUI elements -->
+            <Canvas Height="100" Width="400" Background="#FF333333" HorizontalAlignment="Left" Grid.Row="9" Opacity="0.5" VerticalAlignment="Top" RenderTransformOrigin="0.5,0.5" Margin="0,20,0,0" Grid.Column="1" >
+                <Canvas.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        <SkewTransform/>
+                        <RotateTransform/>
+                        <TranslateTransform/>
+                    </TransformGroup>
+                </Canvas.RenderTransform>
 
 
 
-            <TextBlock HorizontalAlignment="Left" 
+                <TextBlock HorizontalAlignment="Left" 
                    VerticalAlignment="Top" 
                    Text="Force ->" 
                    Width="60" 
                    Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Left="-40" Canvas.Top="35">
-                <TextBlock.RenderTransform>
-                    <TransformGroup>
-                        <ScaleTransform/>
-                        <SkewTransform/>
-                        <RotateTransform Angle="-90"/>
-                        <TranslateTransform/>
-                    </TransformGroup>
-                </TextBlock.RenderTransform>
-            </TextBlock>
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="-90"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform>
+                </TextBlock>
 
 
-            <TextBlock HorizontalAlignment="Left" 
+                <TextBlock HorizontalAlignment="Left" 
                    VerticalAlignment="Top" 
                    Text="Travel ->" 
                    Width="60" 
                    Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Left="170" Canvas.Top="105">
-                <TextBlock.RenderTransform>
-                    <TransformGroup>
-                        <ScaleTransform/>
-                        <SkewTransform/>
-                        <RotateTransform Angle="0"/>
-                        <TranslateTransform/>
-                    </TransformGroup>
-                </TextBlock.RenderTransform>
-            </TextBlock>
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform Angle="0"/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform>
+                </TextBlock>
 
 
 
 
-            <Polyline x:Name="Polyline_BrakeForceCurve"
+                <Polyline x:Name="Polyline_BrakeForceCurve"
                       Height="400" Width="400"
                     Points="0,0 80,20 160,40 240,60 320,80 400,100"
                     Stroke="#FF1585B5"
                     StrokeThickness="4" RenderTransformOrigin="1,0.5" Canvas.Top="-300" HorizontalAlignment="Left" VerticalAlignment="Center" >
-                <Polyline.RenderTransform>
-                    <TransformGroup>
-                        <ScaleTransform ScaleX="1" ScaleY="-1"/>
-                        <SkewTransform/>
-                        <RotateTransform/>
-                        <TranslateTransform X="0"/>
-                    </TransformGroup>
-                </Polyline.RenderTransform>
-            </Polyline>
+                    <Polyline.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform ScaleX="1" ScaleY="-1"/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform X="0"/>
+                        </TransformGroup>
+                    </Polyline.RenderTransform>
+                </Polyline>
 
-        </Canvas>
-
-
+            </Canvas>
 
 
 
-        <!-- Travel vs Force curve adjustment sliders -->
-        <TextBlock HorizontalAlignment="Left" 
+
+
+            <!-- Travel vs Force curve adjustment sliders -->
+            <TextBlock HorizontalAlignment="Left" 
                    VerticalAlignment="Top" 
                    Margin="5,0,0,0" 
                    Text="Force curve adjustment:" 
@@ -357,7 +356,7 @@
                    Width="120" 
                    Foreground="White"/>
 
-        <Slider x:Name="PedalForceCurve000_Slider" 
+            <Slider x:Name="PedalForceCurve000_Slider" 
             HorizontalAlignment="Left" 
             VerticalAlignment="Top" 
             Margin="0,155,0,0" 
@@ -375,9 +374,9 @@
             Value="0" Grid.ColumnSpan="2"
                  Orientation="Vertical"
             >
-        </Slider>
+            </Slider>
 
-        <Slider x:Name="PedalForceCurve020_Slider" 
+            <Slider x:Name="PedalForceCurve020_Slider" 
             HorizontalAlignment="Left" 
             VerticalAlignment="Top" 
             Margin="80,155,0,0" 
@@ -395,9 +394,9 @@
             Value="20"
             Orientation="Vertical"
             >
-        </Slider>
+            </Slider>
 
-        <Slider x:Name="PedalForceCurve040_Slider" 
+            <Slider x:Name="PedalForceCurve040_Slider" 
             HorizontalAlignment="Left" 
             VerticalAlignment="Top" 
             Margin="160,155,0,0" 
@@ -415,9 +414,9 @@
             Value="40"
             Orientation="Vertical"
             >
-        </Slider>
+            </Slider>
 
-        <Slider x:Name="PedalForceCurve060_Slider" 
+            <Slider x:Name="PedalForceCurve060_Slider" 
             HorizontalAlignment="Left" 
             VerticalAlignment="Top" 
             Margin="240,155,0,0" 
@@ -435,9 +434,9 @@
             Value="60"
             Orientation="Vertical"
             >
-        </Slider>
+            </Slider>
 
-        <Slider x:Name="PedalForceCurve080_Slider" 
+            <Slider x:Name="PedalForceCurve080_Slider" 
             HorizontalAlignment="Left" 
             VerticalAlignment="Top" 
             Margin="320,155,0,0" 
@@ -455,10 +454,10 @@
             Value="80"
                  Orientation="Vertical"
             >
-        </Slider>
+            </Slider>
 
 
-        <Slider x:Name="PedalForceCurve100_Slider" 
+            <Slider x:Name="PedalForceCurve100_Slider" 
             HorizontalAlignment="Left" 
             VerticalAlignment="Top" 
             Margin="400,155,0,0" 
@@ -475,7 +474,7 @@
 			TickFrequency="5" RenderTransformOrigin="0.508,0.525"
             Value="80" Orientation="Vertical"
             >
-        </Slider>
+            </Slider>
 
 
 
@@ -484,9 +483,9 @@
 
 
 
-        <!-- PID sliders -->
+            <!-- PID sliders -->
 
-        <TextBlock HorizontalAlignment="Left" 
+            <TextBlock HorizontalAlignment="Left" 
                    VerticalAlignment="Top" 
                    Margin="0,-10,0,0" 
                    Text="PID parameters:" 
@@ -496,7 +495,7 @@
                    Foreground="White"/>
 
 
-        <TextBlock HorizontalAlignment="Left" 
+            <TextBlock HorizontalAlignment="Left" 
                    VerticalAlignment="Top" 
                    Margin="5,10,0,0" 
                    Text="P-gain:" 
@@ -504,7 +503,7 @@
                    Grid.Column="0" 
                    Width="120" 
                    Foreground="White"/>
-        <Slider x:Name="PID_tuning_P_gain_slider" 
+            <Slider x:Name="PID_tuning_P_gain_slider" 
             HorizontalAlignment="Left" 
             VerticalAlignment="Top" 
             Margin="50,10,0,0" 
@@ -523,7 +522,7 @@
             SmallChange="0.05"
             />
 
-        <TextBlock HorizontalAlignment="Left" 
+            <TextBlock HorizontalAlignment="Left" 
                    VerticalAlignment="Top" 
                    Margin="5,50,0,0" 
                    Text="I-gain:" 
@@ -531,7 +530,7 @@
                    Grid.Column="0" 
                    Width="120" 
                    Foreground="White"/>
-        <Slider x:Name="PID_tuning_I_gain_slider" 
+            <Slider x:Name="PID_tuning_I_gain_slider" 
             HorizontalAlignment="Left" 
             VerticalAlignment="Top" 
             Margin="50,50,0,0" 
@@ -549,7 +548,7 @@
             IsSnapToTickEnabled="False"
             />
 
-        <TextBlock HorizontalAlignment="Left" 
+            <TextBlock HorizontalAlignment="Left" 
                    VerticalAlignment="Top" 
                    Margin="5,90,0,0" 
                    Text="D-gain:" 
@@ -557,7 +556,7 @@
                    Grid.Column="0" 
                    Width="120" 
                    Foreground="White"/>
-        <Slider x:Name="PID_tuning_D_gain_slider" 
+            <Slider x:Name="PID_tuning_D_gain_slider" 
             HorizontalAlignment="Left" 
             VerticalAlignment="Top" 
             Margin="50,90,0,0" 
@@ -577,14 +576,14 @@
 
 
 
-        <styles:SHButtonPrimary Click="StartSystemIdentification_click" HorizontalAlignment="Left" Grid.Row="11"  Grid.Column="1" Width="180" Margin="20,11,0,152" >System identification</styles:SHButtonPrimary>
+            <styles:SHButtonPrimary Click="StartSystemIdentification_click" HorizontalAlignment="Left" Grid.Row="11"  Grid.Column="1" Width="180" Margin="20,11,0,152" >System identification</styles:SHButtonPrimary>
 
 
 
 
 
 
-        <TextBlock HorizontalAlignment="Left" 
+            <TextBlock HorizontalAlignment="Left" 
                    VerticalAlignment="Top" 
                    Margin="5,0,0,0" 
                    Text="Max game output:" 
@@ -592,7 +591,7 @@
                    Grid.Column="0" 
                    Width="120" 
                    Foreground="White"/>
-        <Slider x:Name="maxGameOutput_slider" 
+            <Slider x:Name="maxGameOutput_slider" 
             HorizontalAlignment="Left" 
             VerticalAlignment="Top" 
             Margin="120,0,0,0" 
@@ -615,8 +614,8 @@
 
 
 
-        <!-- JSON config file selection -->
-        <!--<ComboBox x:Name="ComboBox_JsonFileSelected" SelectionChanged="ComboBox_SelectionChanged" Grid.Column="1" HorizontalAlignment="Left" Grid.Row="3" VerticalAlignment="Center" Width="179" Margin="5,0,0,0" >
+            <!-- JSON config file selection -->
+            <!--<ComboBox x:Name="ComboBox_JsonFileSelected" SelectionChanged="ComboBox_SelectionChanged" Grid.Column="1" HorizontalAlignment="Left" Grid.Row="3" VerticalAlignment="Center" Width="179" Margin="5,0,0,0" >
             <ComboBoxItem IsSelected="True">DiyPedalConfig_clutch_1</ComboBoxItem>
             <ComboBoxItem>DiyPedalConfig_clutch_2</ComboBoxItem>
             <ComboBoxItem>DiyPedalConfig_clutch_3</ComboBoxItem>
@@ -627,12 +626,14 @@
             <ComboBoxItem>DiyPedalConfig_accelerator_2</ComboBoxItem>
             <ComboBoxItem>DiyPedalConfig_accelerator_3</ComboBoxItem>
         </ComboBox>-->
-        <styles:SHButtonPrimary Click="SaveButton_Click" HorizontalAlignment="Left" Grid.Row="2"  Grid.Column="1" Width="180" Margin="200,44,0,10" Content="Save config to JSON new" Grid.RowSpan="2" />
-        <TextBox x:Name="TextBox2" Grid.Column="1" HorizontalAlignment="Left" Margin="7,36,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="373" AutomationProperties.Name="TextBox2" Height="46" Grid.RowSpan="2"/>
-        <Button Content="Test-ABS/TC" Margin="27,54,0,0" Grid.Row="6" VerticalAlignment="Top" Click="TestAbs_click" Height="20" Background="#FF050550" HorizontalAlignment="Left" FontWeight="Bold" FontSize="9"/>
-        <styles:SHButtonSecondary Click="DisconnectToPedal_click" HorizontalAlignment="Left" Grid.Row="2" Grid.Column="0" Width="120" Margin="200,35,0,29" FontSize="10" Background="Red" Content="Disconnect from Pedal" Grid.RowSpan="2" />
+            <styles:SHButtonPrimary Click="SaveButton_Click" HorizontalAlignment="Left" Grid.Row="2"  Grid.Column="1" Width="180" Margin="200,44,0,10" Content="Save config to JSON new" Grid.RowSpan="2" />
+            <TextBox x:Name="TextBox2" Grid.Column="1" HorizontalAlignment="Left" Margin="7,36,0,0" Grid.Row="1" TextWrapping="Wrap" VerticalAlignment="Top" Width="373" AutomationProperties.Name="TextBox2" Height="46" Grid.RowSpan="2" IsReadOnly="True"/>
+            <Button Content="Test-ABS/TC" Margin="27,54,0,0" Grid.Row="6" VerticalAlignment="Top" Click="TestAbs_click" Height="20" Background="#FF050550" HorizontalAlignment="Left" FontWeight="Bold" FontSize="9"/>
+            <styles:SHButtonSecondary Click="DisconnectToPedal_click" HorizontalAlignment="Left" Grid.Row="2" Grid.Column="0" Margin="200,35,0,29" FontSize="10" Background="Red" Content="Disconnect from Pedal" Grid.RowSpan="2" Width="132" />
+            <styles:SHButtonPrimary Click="LoadConfigfromPedal_click" HorizontalAlignment="Left" Grid.Row="4"  Grid.Column="0" Width="180" Content="Load config from pedal" Margin="4,3,0,5" />
 
 
 
-    </Grid>
+        </Grid>
+    </ScrollViewer>
 </UserControl>
