@@ -1759,11 +1759,11 @@ namespace User.PluginSdkDemo
 
             if (Plugin.Settings.RTSDTR_False[indexOfSelectedPedal_u] == true)
             {
-                CheckBox_RTSDTR.IsChecked = true;
+                //CheckBox_RTSDTR.IsChecked = true;
             }
             else
             { 
-                CheckBox_RTSDTR.IsChecked = false;
+                //CheckBox_RTSDTR.IsChecked = false;
             }
 
             if (Plugin.Settings.auto_connect_flag[indexOfSelectedPedal_u] == 1)
@@ -8663,7 +8663,7 @@ namespace User.PluginSdkDemo
 
         unsafe private void btn_PedalBootMode_Click(object sender, RoutedEventArgs e)
         {
-            System.Windows.MessageBox.Show("Pedal will restart into download mode, only work with V4/V5 control board(This function will only support GIlphilbert board V2).");
+            System.Windows.MessageBox.Show("Pedal will restart into download mode, only work with V4/V5 control board(This function will support GIlphilbert board V2 in the future, but not V1.2).");
             DAP_action_st tmp;
             tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
