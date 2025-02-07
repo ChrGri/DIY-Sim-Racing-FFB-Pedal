@@ -56,6 +56,7 @@ using System.Media;
 using System.Windows.Threading;
 using System.Net.Http;
 using System.Threading.Tasks;
+using static User.PluginSdkDemo.DIY_FFB_Pedal;
 
 // Win 11 install, see https://github.com/jshafer817/vJoy/releases
 //using vJoy.Wrapper;
@@ -1184,6 +1185,7 @@ namespace User.PluginSdkDemo
             }
 
             string plugin_version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            
             if (plugin_version == "1.0.0.0")
             {
                 plugin_version = "Dev.";
@@ -8657,6 +8659,22 @@ namespace User.PluginSdkDemo
                     
                 }
             }
+        }
+
+        unsafe private void btn_PedalBootMode_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.MessageBox.Show("Pedal will restart into download mode, only work with V4/V5 control board(This function will only support GIlphilbert board V2).");
+            DAP_action_st tmp;
+            tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
+            tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
+            tmp.payloadPedalAction_.system_action_u8 = (byte)PedalSystemAction.ESP_BOOT_INTO_DOWNLOAD_MODE;
+            tmp.payloadHeader_.PedalTag = (byte)indexOfSelectedPedal_u;
+            DAP_action_st* v = &tmp;
+            byte* p = (byte*)v;
+            tmp.payloadFooter_.checkSum = Plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
+            Plugin.SendPedalAction(tmp, (byte)indexOfSelectedPedal_u);
+
+
         }
     }
     

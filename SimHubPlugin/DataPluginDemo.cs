@@ -389,7 +389,17 @@ namespace User.PluginSdkDemo
             ClearRudderStatus,
             EnableRudderThreePedals
 
-        }
+        };
+
+        public enum PedalSystemAction
+        {
+            NONE,
+            RESET_PEDAL_POSITION,//not in use
+            PEDAL_RESTART,
+            ENABLE_OTA,//not in use
+            ENABLE_PAIRING,//not in use
+            ESP_BOOT_INTO_DOWNLOAD_MODE
+        };
 
         //https://www.c-sharpcorner.com/uploadfile/eclipsed4utoo/communicating-with-serial-port-in-C-Sharp/
         public SerialPort[] _serialPort = new SerialPort[4] {new SerialPort("COM7", 921600, Parity.None, 8, StopBits.One),
@@ -553,6 +563,47 @@ namespace User.PluginSdkDemo
             }
 
             return value;
+        }
+
+        unsafe public void SendPedalAction(DAP_action_st action_tmp, Byte PedalID)
+        {
+            //DAP_action_st* v = &action_tmp;
+            //byte* p = (byte*)v;
+            int length = sizeof(DAP_action_st);
+            byte[] newBuffer = new byte[length];
+            newBuffer = getBytes_Action(action_tmp);
+            try
+            {
+                if (Settings.Pedal_ESPNow_Sync_flag[PedalID])
+                {
+                    if (ESPsync_serialPort.IsOpen)
+                    {
+                        ESPsync_serialPort.DiscardInBuffer();
+                        ESPsync_serialPort.DiscardOutBuffer();
+                        // send query command
+                        ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
+                    }
+                }
+                else
+                {
+                    
+                    if (_serialPort[PedalID].IsOpen)
+                    {
+                        
+                        // clear inbuffer 
+                        _serialPort[PedalID].DiscardInBuffer();
+                        _serialPort[PedalID].DiscardOutBuffer();
+                        // send data
+                        _serialPort[PedalID].Write(newBuffer, 0, newBuffer.Length);
+                    }
+                }
+            }
+            catch (Exception caughtEx)
+            {
+                string errorMessage = caughtEx.Message;
+                SimHub.Logging.Current.Error("FFB_Pedal_Action_Sending_error:"+errorMessage);
+            }
+
         }
         unsafe public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
@@ -1815,18 +1866,30 @@ namespace User.PluginSdkDemo
                 Action_lastTime[pedali] = DateTime.Now;
             }
 
-            Version inputVersion = new Version(Simhub_version);
-            string MSFS_Version_Above = "9.5.99";
-            Version versionThreshold = new Version(MSFS_Version_Above);
-            if (inputVersion > versionThreshold)
-            {
-                Version_Check_Simhub_MSFS = true;
-            }
-            else
+            //get version length
+            int Version_text_length = Simhub_version.Length;
+            //if (Simhub_version[Version_text_length - 2] == 'b')
+            if(Simhub_version.Contains("b"))
             {
                 Version_Check_Simhub_MSFS = false;
             }
+            else
+            {
+                Version inputVersion = new Version(Simhub_version);
+                string MSFS_Version_Above = "9.5.99";
+                Version versionThreshold = new Version(MSFS_Version_Above);
+                if (inputVersion > versionThreshold)
+                {
+                    Version_Check_Simhub_MSFS = true;
+                }
+                else
+                {
+                    Version_Check_Simhub_MSFS = false;
+                }
+            }
 
+            
+            Version_Check_Simhub_MSFS = true;
             this.AddAction("ChangeSlotA", (a, b) =>
             {
                 profile_index = 0;
@@ -2046,6 +2109,7 @@ namespace User.PluginSdkDemo
                 SimHub.Logging.Current.Info("Rudder Brake");
 
             });
+            
             /*
             this.AddAction("Rudder", (a, b) =>
             {
