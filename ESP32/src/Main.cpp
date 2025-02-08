@@ -352,7 +352,7 @@ void setup()
   Serial.println(" ");
   #ifndef CONTROLLER_SPECIFIC_VIDPID
     // init controller
-    #ifdef BLUETOOTH_GAMEPAD ||USB_JOYSTICK
+    #if defined(BLUETOOTH_GAMEPAD) || defined(USB_JOYSTICK)
     SetupController();
     #endif
     //delay(3000);
@@ -1177,7 +1177,7 @@ void pedalUpdateTask( void * pvParameters )
     stepper->configSteplossRecovAndCrashDetection(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.stepLossFunctionFlags_u8);
     if (stepper->isAtMinPos())
     {
-      #ifdef OTA_update_ESP32 || OTA_update
+      #if defined(OTA_update_ESP32) || defined(OTA_update)
         if(OTA_status==false)
         {
           stepper->correctPos();
@@ -1227,7 +1227,7 @@ void pedalUpdateTask( void * pvParameters )
   
   if (!moveSlowlyToPosition_b)
   {
-    #ifdef OTA_update_ESP32 || OTA_update
+    #if defined(OTA_update_ESP32) || defined(OTA_update)
       if(OTA_status==false)
       {
         stepper->moveTo(Position_Next, false);
@@ -1238,7 +1238,7 @@ void pedalUpdateTask( void * pvParameters )
   }
   else
   {
-    #ifdef OTA_update_ESP32 || OTA_update
+    #if defined(OTA_update_ESP32) || defined(OTA_update)
       if(OTA_status==false)
       {
         moveSlowlyToPosition_b = false;
@@ -1836,7 +1836,7 @@ void serialCommunicationTask( void * pvParameters )
         xSemaphoreGive(semaphore_updateJoystick);
       }
     }
-    #ifdef USB_JOYSTICK || BLUETOOTH_GAMEPAD
+    #if defined(USB_JOYSTICK) || defined(BLUETOOTH_GAMEPAD)
       if (IsControllerReady()) 
       {
         if(dap_calculationVariables_st.Rudder_status==false)
