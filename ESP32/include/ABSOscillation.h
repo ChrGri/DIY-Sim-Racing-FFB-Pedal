@@ -10,6 +10,16 @@ static const long WS_ACTIVE_TIME_PER_TRIGGER_MILLIS = 100;
 static const long CV_ACTIVE_TIME_PER_TRIGGER_MILLIS = 100;
 static int RPM_VALUE_LAST = 0;
 
+enum class TrackCondition
+{
+  Dry,
+  MostlyDry,
+  VeryLightWet,
+  LightWet,
+  ModeratelyWet,
+  VeryWet,
+  ExtremelyWet
+};
 class ABSOscillation {
 private:
   long _timeLastTriggerMillis;
@@ -32,6 +42,10 @@ public:
     long timeNowMillis = millis();
     float timeSinceTrigger = (timeNowMillis - _timeLastTriggerMillis);
     float absForceOffset_local = 0.00f;
+    float absFreq=calcVars_st->absFrequency;
+    //frequency depend on road condition
+    absFreq=absFreq*(1+(float)calcVars_st->TrackCondition/10.0f);
+    constrain(absFreq,calcVars_st->absFrequency,50.0f);
 
     if (timeSinceTrigger > ABS_ACTIVE_TIME_PER_TRIGGER_MILLIS)
     {
