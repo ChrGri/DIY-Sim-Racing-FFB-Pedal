@@ -499,6 +499,19 @@ namespace User.PluginSdkDemo
             return (UInt16)x;
         }
 
+        unsafe public byte[] getBytesConfig(DAP_config_st aux)
+        {
+            int length = Marshal.SizeOf(aux);
+            IntPtr ptr = Marshal.AllocHGlobal(length);
+
+            //int length = sizeof(DAP_config_st);
+            byte[] myBuffer = new byte[length];
+
+            Marshal.StructureToPtr(aux, ptr, true);
+            Marshal.Copy(ptr, myBuffer, 0, length);
+            Marshal.FreeHGlobal(ptr);
+            return myBuffer;
+        }
         public byte[] getBytes_Action(DAP_action_st aux)
         {
             int length = Marshal.SizeOf(aux);
@@ -604,6 +617,47 @@ namespace User.PluginSdkDemo
                 SimHub.Logging.Current.Error("FFB_Pedal_Action_Sending_error:"+errorMessage);
             }
 
+        }
+
+        unsafe public void SendConfig(DAP_config_st tmp, byte PedalIDX)
+        {
+            int length = sizeof(DAP_config_st);
+            //int val = this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.checkSum;
+            //string msg = "CRC value: " + val.ToString();
+            byte[] newBuffer = new byte[length];
+            newBuffer = getBytesConfig(tmp);
+            if (Settings.Pedal_ESPNow_Sync_flag[PedalIDX])
+            {
+                if (ESPsync_serialPort.IsOpen)
+                {
+                    try
+                    {
+                        ESPsync_serialPort.DiscardInBuffer();
+                        ESPsync_serialPort.DiscardOutBuffer();
+                        // send data
+                        ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
+                        //Plugin._serialPort[indexOfSelectedPedal_u].Write("\n");
+                        System.Threading.Thread.Sleep(100);
+                    }
+                    catch (Exception caughtEx)
+                    {
+                        string errorMessage = caughtEx.Message;
+                        SimHub.Logging.Current.Error("FFB_Pedal_Config_Sending_error:" + errorMessage);
+                    }
+                }
+            }
+            else
+            {
+                if (_serialPort[PedalIDX].IsOpen)
+                {
+
+                    // clear inbuffer 
+                    _serialPort[PedalIDX].DiscardInBuffer();
+                    _serialPort[PedalIDX].DiscardOutBuffer();
+                    // send data
+                    _serialPort[PedalIDX].Write(newBuffer, 0, newBuffer.Length);
+                }
+            }
         }
         unsafe public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {

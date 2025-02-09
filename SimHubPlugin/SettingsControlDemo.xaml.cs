@@ -2525,13 +2525,15 @@ namespace User.PluginSdkDemo
             this.dap_config_st_rudder.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             this.dap_config_st_rudder.payloadHeader_.payloadType = (byte)Constants.pedalConfigPayload_type;
             this.dap_config_st_rudder.payloadHeader_.PedalTag = (byte)pedalIdx;
-            this.dap_config_st_rudder.payloadHeader_.storeToEeprom = 1;
+            this.dap_config_st_rudder.payloadHeader_.storeToEeprom = 0;
             this.dap_config_st_rudder.payloadPedalConfig_.pedal_type = (byte)pedalIdx;
             DAP_config_st tmp = this.dap_config_st_rudder;
 
             DAP_config_st* v = &tmp;
             byte* p = (byte*)v;
             this.dap_config_st_rudder.payloadFooter_.checkSum = Plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
+            Plugin.SendConfig(this.dap_config_st_rudder, (byte)pedalIdx);
+            /*
             int length = sizeof(DAP_config_st);
             //int val = this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.checkSum;
             //string msg = "CRC value: " + val.ToString();
@@ -2561,6 +2563,7 @@ namespace User.PluginSdkDemo
                     }
                 }
             }
+            */
 
         }
         unsafe public void Sendconfigtopedal_shortcut()
@@ -7837,7 +7840,7 @@ namespace User.PluginSdkDemo
 
 
 
-        private void btn_rudder_initialize_Click(object sender, RoutedEventArgs e)
+        unsafe private void btn_rudder_initialize_Click(object sender, RoutedEventArgs e)
         {
             if (Plugin.ESPsync_serialPort.IsOpen)
             {
@@ -7866,14 +7869,29 @@ namespace User.PluginSdkDemo
                         DelayCall(300, () =>
                         {
                             text_rudder_log.Visibility = Visibility.Visible;
-                            Sendconfig(Plugin.Rudder_Pedal_idx[0]);
+                            
+                            DAP_config_st tmp = this.dap_config_st[Plugin.Rudder_Pedal_idx[0]];
+                            tmp.payloadHeader_.storeToEeprom = 0;
+                            DAP_config_st* v = &tmp;
+                            byte* p = (byte*)v;
+                            tmp.payloadFooter_.checkSum = Plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
+                            Plugin.SendConfig(tmp, Plugin.Rudder_Pedal_idx[0]);
+                            //Sendconfig(Plugin.Rudder_Pedal_idx[0]);
+                            
                             text_rudder_log.Text += "Send Original config back to" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[0]] +"\n";
                             
                         });
                         DelayCall(600, () =>
                         {
                             text_rudder_log.Visibility = Visibility.Visible;
-                            Sendconfig(Plugin.Rudder_Pedal_idx[1]);
+                            DAP_config_st tmp = this.dap_config_st[Plugin.Rudder_Pedal_idx[1]];
+                            tmp.payloadHeader_.storeToEeprom = 0;
+                            DAP_config_st* v = &tmp;
+                            byte* p = (byte*)v;
+                            tmp.payloadFooter_.checkSum = Plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
+                            Plugin.SendConfig(tmp, Plugin.Rudder_Pedal_idx[1]);
+                            //Sendconfig(Plugin.Rudder_Pedal_idx[1]);
+                            
                             text_rudder_log.Text += "Send Original config back to"+ Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[1]] + "\n";
                             
                         });
