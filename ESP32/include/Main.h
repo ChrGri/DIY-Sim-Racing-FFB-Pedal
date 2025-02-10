@@ -22,6 +22,12 @@
 /*                      Other defines       */
 /********************************************************************/
 
+// Define for Loadcell_ADS1256 pedalType
+#define PEDAL_TYPE_CLUTCH 0
+#define PEDAL_TYPE_BRAKE 1
+#define PEDAL_TYPE_GAS 2
+#define PEDAL_TYPE_EXT 3
+
 // target cycle time for pedal update task, to get constant cycle times, required for FIR filtering
 #define DAP_MICROSECONDS_PER_SECOND 1000000
 
