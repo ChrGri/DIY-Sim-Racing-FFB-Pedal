@@ -54,6 +54,9 @@ void LoadCell_ADS1256::setLoadcellRating(uint8_t loadcellRating_u8) {
   {
       updatedConversionFactor_f64 = 2.0f * ((float)loadcellRating_u8) * (CONVERSION_FACTOR/LOADCELL_WEIGHT_RATING_KG);
   }
+
+  _conversionFactor = updatedConversionFactor_f64;
+  
   Serial.print("OrigConversionFactor: ");
   Serial.print(originalConversionFactor_f64);
   Serial.print(",     NewConversionFactor:");
