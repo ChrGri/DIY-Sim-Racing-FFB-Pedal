@@ -16,6 +16,10 @@ float updatedConversionFactor_f64 = 1.0f;
 #define CONVERSION_FACTOR LOADCELL_WEIGHT_RATING_KG / (LOADCELL_EXCITATION_V * (LOADCELL_SENSITIVITY_MV_V/1000.0f))
 
 
+
+uint8_t global_channel0_u8, global_channel1_u8, global_channel2_u8;
+
+
 ADS1256& ADC() {
   static ADS1256 adc(ADC_CLOCK_MHZ, ADC_VREF, /*useresetpin=*/false
   , PIN_DRDY, PIN_SCK, PIN_MISO, PIN_MOSI, PIN_CS);    // RESETPIN is permanently tied to 3.3v
@@ -56,7 +60,7 @@ void LoadCell_ADS1256::setLoadcellRating(uint8_t loadcellRating_u8) const {
   ADS1256& adc = ADC();
   float originalConversionFactor_f64 = CONVERSION_FACTOR;
   
-  float updatedConversionFactor_f64 = 1.0f;
+  updatedConversionFactor_f64 = 1.0f;
   if (LOADCELL_WEIGHT_RATING_KG>0)
   {
       updatedConversionFactor_f64 = 2.0f * ((float)loadcellRating_u8) * (CONVERSION_FACTOR/LOADCELL_WEIGHT_RATING_KG);
@@ -67,7 +71,8 @@ void LoadCell_ADS1256::setLoadcellRating(uint8_t loadcellRating_u8) const {
   Serial.println(updatedConversionFactor_f64);
 
 
-  adc.setConversionFactor( updatedConversionFactor_f64 );
+  // adc.setConversionFactor( updatedConversionFactor_f64 );
+  adc.setConversionFactor( 1 );
 }
 
 
@@ -76,6 +81,9 @@ void LoadCell_ADS1256::setLoadcellRating(uint8_t loadcellRating_u8) const {
 LoadCell_ADS1256::LoadCell_ADS1256(uint8_t channel0, uint8_t channel1)
   : _zeroPoint(0.0f), _varianceEstimate(DEFAULT_VARIANCE_ESTIMATE)
 {
+
+  global_channel0_u8 = channel0;
+  global_channel1_u8 = channel1;
   ADC().setChannel(channel0,channel1);   // Set the MUX for differential between ch0 and ch1 
   //ADC().setChannel(channel1, channel0);   // Set the MUX for differential between ch0 and ch1 
 }
@@ -83,10 +91,19 @@ LoadCell_ADS1256::LoadCell_ADS1256(uint8_t channel0, uint8_t channel1)
 float LoadCell_ADS1256::getReadingKg() const {
   ADS1256& adc = ADC();
   adc.waitDRDY();        // wait for DRDY to go low before next register read
-
+  // adc.setGain(ADS1256_GAIN_64);
+  // adc.setChannel(global_channel0_u8, global_channel1_u8);   // Set the MUX for differential between ch0 and ch1
   // correct bias, assume AWGN --> 3 * sigma is 99.9 %
-  return adc.readCurrentChannel() - ( _zeroPoint + 3.0f * _standardDeviationEstimate );
+  return adc.readCurrentChannel()*updatedConversionFactor_f64 - ( _zeroPoint + 3.0f * _standardDeviationEstimate );
 }
+
+// float LoadCell_ADS1256::getAngleMeasurement() const {
+//   ADS1256& adc = ADC();
+//   adc.waitDRDY();        // wait for DRDY to go low before next register read
+//   adc.setGain(ADS1256_GAIN_1);
+//   adc.setChannel(global_channel2_u8);  
+//   return adc.readCurrentChannel();
+// }
 
 void LoadCell_ADS1256::setZeroPoint() {
   Serial.println("ADC: Identify loadcell offset");
