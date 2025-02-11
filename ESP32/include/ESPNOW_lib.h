@@ -283,10 +283,18 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
                     ESPNOW_BootIntoDownloadMode = true;
                   }
                   // trigger ABS effect
-                  if (dap_actions_st.payloadPedalAction_.triggerAbs_u8)
+                  if (dap_actions_st.payloadPedalAction_.triggerAbs_u8>0)
                   {
                     absOscillation.trigger();
-                    dap_calculationVariables_st.TrackCondition=dap_actions_st.payloadPedalAction_.triggerAbs_u8-1;
+                    if(dap_actions_st.payloadPedalAction_.triggerAbs_u8>1)
+                    {
+                      dap_calculationVariables_st.TrackCondition=dap_actions_st.payloadPedalAction_.triggerAbs_u8-1;
+                    }
+                    else
+                    {
+                      dap_calculationVariables_st.TrackCondition=dap_actions_st.payloadPedalAction_.triggerAbs_u8=0;
+                    }
+                    
                   }
                   //RPM effect
                   _RPMOscillation.RPM_value=dap_actions_st.payloadPedalAction_.RPM_u8;
