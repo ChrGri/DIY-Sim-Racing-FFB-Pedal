@@ -44,8 +44,8 @@ public:
     float absForceOffset_local = 0.00f;
     float absFreq=calcVars_st->absFrequency;
     //frequency depend on road condition
-    absFreq=absFreq*(1+(float)calcVars_st->TrackCondition/10.0f);
-    absFreq=constrain(absFreq,calcVars_st->absFrequency,50.0f);
+    absFreq=absFreq*(1+((float)calcVars_st->TrackCondition)/10.0f);
+    absFreq=constrain(absFreq,0,50.0f);
 
     if (timeSinceTrigger > ABS_ACTIVE_TIME_PER_TRIGGER_MILLIS)
     {
