@@ -322,6 +322,12 @@ void setup()
   digitalWrite(BRAKE_RESISTOR_PIN, LOW);  // Turn the LED on
 #endif
 
+#ifdef ANGLE_SENSOR_GPIO
+
+  pinMode(ANGLE_SENSOR_GPIO, INPUT);
+  pinMode(ANGLE_SENSOR_GPIO_2, INPUT);
+#endif
+
 
 
   //Serial.begin(115200);
@@ -649,7 +655,7 @@ void setup()
     #ifdef PEDAL_HARDWARE_ASSIGNMENT
       Serial.println("Pedal Role Assignment:4, reading from CFG pins....");
     #else
-      Serial.println("Pedal Role Assignment:4, Role assignment Error, Please send the ocnfig in to finish role assignment");
+      Serial.println("Pedal Role Assignment:4, Role assignment Error, Please send the config in to finish role assignment.");
     #endif
   }
   
@@ -1012,6 +1018,29 @@ void pedalUpdateTask( void * pvParameters )
 
     // Get the loadcell reading
     float loadcellReading = loadcell->getReadingKg();
+
+    uint16_t angleReading_ui16 = 0;
+    #ifdef ANGLE_SENSOR_GPIO
+      angleReading_ui16 = analogRead(ANGLE_SENSOR_GPIO);
+      // if (pos_printCount >= 100)
+      // {
+      //   Serial.printf("Ang.: %f\n", angleReading_ui16);
+      //   pos_printCount = 0;
+      // }
+      // pos_printCount++;
+    #endif
+
+    // Get the angle measurement reading
+    // float angleReading = loadcell->getAngleMeasurement();
+
+    
+    // if (pos_printCount >= 100)
+    // {
+    //   Serial.printf("Ang.: %f\n", angleReading);
+    //   pos_printCount = 0;
+    // }
+    // pos_printCount++;
+  
 
     // Invert the loadcell reading digitally if desired
     if (dap_config_pedalUpdateTask_st.payLoadPedalConfig_.invertLoadcellReading_u8 == 1)
@@ -1392,6 +1421,7 @@ void pedalUpdateTask( void * pvParameters )
 
         //dap_state_extended_st.payloadPedalState_Extended_.servoPositionTarget_i16 = stepper->getCurrentPositionFromMin();
         dap_state_extended_st.payloadPedalState_Extended_.servoPositionTarget_i16 = stepper->getCurrentPosition() - stepper->getMinPosition();
+        dap_state_extended_st.payloadPedalState_Extended_.angleSensorOutput_ui16 = angleReading_ui16;
         dap_state_extended_st.payLoadHeader_.PedalTag=dap_config_pedalUpdateTask_st.payLoadPedalConfig_.pedal_type;
         dap_state_extended_st.payLoadHeader_.payloadType = DAP_PAYLOAD_TYPE_STATE_EXTENDED;
         dap_state_extended_st.payLoadHeader_.version = DAP_VERSION_CONFIG;

@@ -4,17 +4,17 @@
 library
 C#
 .cs
-C:\Users\tcfshcrw\Documents\GitHub\DIY-Sim-Racing-FFB-Pedal\SimHubPlugin\obj\Release\
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\
 User.PluginSdkDemo
 none
 false
 TRACE
 
-1-1832596077
+5-16505915
 1-1358375093
-7917360102
-143-526872061
-SettingsControlDemo.xaml;
+11116455568
+144211365502
+OnlineProfile.xaml;SerialMonitor.xaml;SettingsControlDemo.xaml;UIElement\CheckboxWithLabel.xaml;UIElement\SliderWithLabel.xaml;
 
 True
 

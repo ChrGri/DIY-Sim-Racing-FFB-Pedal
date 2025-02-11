@@ -30,7 +30,7 @@ using IPlugin = SimHub.Plugins.IPlugin;
 static class Constants
 {
     // payload revisiom
-    public const uint pedalConfigPayload_version = 142;
+    public const uint pedalConfigPayload_version = 143;
 
 
     // pyload types
@@ -92,6 +92,7 @@ public struct payloadPedalState_Extended
     // register values from servo
     public Int16 servoPosition_i16;
     public Int16 servoPositionTarget_i16;
+    public UInt16 angleSensorOutput_ui16;
     public Int16 servo_voltage_0p1V_i16;
     public Int16 servo_current_percent_i16;
 };
@@ -361,7 +362,7 @@ namespace User.PluginSdkDemo
         public string Simhub_version = "";
         public bool Version_Check_Simhub_MSFS = false;
         public byte[] Rudder_Pedal_idx = new byte[2] { 1, 2 };
-
+        public string Current_Game = "";
         //effect trigger timer
         DateTime[] Action_currentTime = new DateTime[3];
         DateTime[] Action_lastTime = new DateTime[3];
@@ -702,6 +703,7 @@ namespace User.PluginSdkDemo
             // Send ABS signal when triggered by the game
             if (data.GameRunning)
             {
+                Current_Game=(string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame");
                 if (data.OldData != null && data.NewData != null)
                 {
                     if (data.NewData.ABSActive > 0)
@@ -976,33 +978,38 @@ namespace User.PluginSdkDemo
                         }
 
                     }
-
-
-
-
-                        if (pedalIdx == 1)
+                    //ABS/TC function
+                    if (pedalIdx == 1)
+                    {
+                        if (sendAbsSignal_local_b && Settings.ABS_enable_flag[pedalIdx] == 1)
                         {
-                            if (sendAbsSignal_local_b && Settings.ABS_enable_flag[pedalIdx] ==1)
-                            {
-                                //_serialPort[1].Write("2");
+                            //_serialPort[1].Write("2");
 
-                                // compute checksum
-                                tmp.payloadPedalAction_.triggerAbs_u8 = 1;
-                                update_flag = true;
-
+                            // compute checksum
+                            tmp.payloadPedalAction_.triggerAbs_u8 = 1;
+                            if (Current_Game == "IRacing")
+                            { 
+                                byte TrackCondition = Convert.ToByte(pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Telemetry.TrackWetness"));
+                                if (TrackCondition != 0)
+                                {
+                                    tmp.payloadPedalAction_.triggerAbs_u8 += (byte)(TrackCondition - 1);
+                                }
                             }
+                            update_flag = true;
+
                         }
-                        if (pedalIdx == 2)
+                    }
+                    if (pedalIdx == 2)
+                    {
+                        if (sendTcSignal_local_b && Settings.ABS_enable_flag[pedalIdx] == 1)
                         {
-                            if (sendTcSignal_local_b && Settings.ABS_enable_flag[pedalIdx] == 1)
-                            {
-                                // compute checksum
+                            // compute checksum
 
-                                tmp.payloadPedalAction_.triggerAbs_u8 = 1;
-                                update_flag = true;
+                            tmp.payloadPedalAction_.triggerAbs_u8 = 1;
+                            update_flag = true;
 
-                            }
                         }
+                    }
                     // check the update interval
                     if (update_flag)
                     {

@@ -285,7 +285,7 @@ bool isv57communication::findServosSlaveId()
           break;
         }
 
-        delay(200);
+        delay(5);
     }
   }
   

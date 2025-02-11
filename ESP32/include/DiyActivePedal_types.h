@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 // define the payload revision
-#define DAP_VERSION_CONFIG 142
+#define DAP_VERSION_CONFIG 143
 
 // define the payload types
 #define DAP_PAYLOAD_TYPE_CONFIG 100
@@ -63,6 +63,7 @@ struct payloadPedalState_Extended {
   // register values from servo
   int16_t servoPosition_i16;
   int16_t servoPositionTarget_i16;
+  uint16_t angleSensorOutput_ui16;
   int16_t servo_voltage_0p1V;
   int16_t servo_current_percent_i16;
 };

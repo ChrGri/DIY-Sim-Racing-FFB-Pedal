@@ -21,6 +21,7 @@ public:
   float getReadingKg(uint8_t differential=DIFFERENTIAL_0_1) const;
   void setLoadcellRating(uint8_t loadcellRating_u8);
   void clearADCBuffer(uint8_t differential=DIFFERENTIAL_0_1);
+
 public:
 void setZeroPoint(uint8_t differential=DIFFERENTIAL_0_1);
 void estimateVariance(uint8_t differential=DIFFERENTIAL_0_1);

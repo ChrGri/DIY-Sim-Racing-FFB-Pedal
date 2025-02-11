@@ -463,4 +463,6 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
   #define Pairing_GPIO 0
   #define OTA_update
   #define CONTROLLER_SPECIFIC_VIDPID
+
+  // #define ANGLE_SENSOR_GPIO 11 // disabled by default, since to much runtime impact of ADC
 #endif

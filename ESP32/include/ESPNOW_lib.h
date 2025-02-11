@@ -286,6 +286,7 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
                   if (dap_actions_st.payloadPedalAction_.triggerAbs_u8)
                   {
                     absOscillation.trigger();
+                    dap_calculationVariables_st.TrackCondition=dap_actions_st.payloadPedalAction_.triggerAbs_u8-1;
                   }
                   //RPM effect
                   _RPMOscillation.RPM_value=dap_actions_st.payloadPedalAction_.RPM_u8;

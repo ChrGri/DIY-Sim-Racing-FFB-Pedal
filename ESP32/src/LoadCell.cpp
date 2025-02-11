@@ -15,7 +15,6 @@ static const float LOADCELL_VARIANCE_MIN = 0.001f;
 float updatedConversionFactor_f64 = 1.0f;
 #define CONVERSION_FACTOR LOADCELL_WEIGHT_RATING_KG / (LOADCELL_EXCITATION_V * (LOADCELL_SENSITIVITY_MV_V/1000.0f))
 
-
 ADS1256& ADC() {
   static ADS1256 adc(ADC_VREF, PIN_DRDY, 
     PIN_CS, PIN_SCK, PIN_MISO, PIN_MOSI);    // RESETPIN is permanently tied to 3.3v
@@ -49,7 +48,7 @@ void LoadCell_ADS1256::setLoadcellRating(uint8_t loadcellRating_u8) {
   ADS1256& adc = ADC();
   float originalConversionFactor_f64 = CONVERSION_FACTOR;
   
-  float updatedConversionFactor_f64 = 1.0f;
+  updatedConversionFactor_f64 = 1.0f;
   if (LOADCELL_WEIGHT_RATING_KG>0)
   {
       updatedConversionFactor_f64 = 2.0f * ((float)loadcellRating_u8) * (CONVERSION_FACTOR/LOADCELL_WEIGHT_RATING_KG);
@@ -88,6 +87,7 @@ float LoadCell_ADS1256::getReadingKg(uint8_t differential) const {
 }
 
 void LoadCell_ADS1256::setZeroPoint(uint8_t differential) {
+
   Serial.println("ADC: Identify loadcell offset");
   
   // Due to construction and gravity, the loadcell measures an initial voltage difference.
