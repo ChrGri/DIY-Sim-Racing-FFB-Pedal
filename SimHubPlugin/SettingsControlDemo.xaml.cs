@@ -136,7 +136,7 @@ namespace User.PluginSdkDemo
         public bool Pedal_Log_warning_1st_show_b = true;
         private string[] Rudder_Pedal_idx_Name= new string[3] {"Clutch", "Brake","Throttle"};
         public byte Pedal_connect_status = 0;
-
+        DateTime ConfigLiveSending_last = DateTime.Now;
 
         public enum PedalAvailability        
         {
@@ -1075,11 +1075,28 @@ namespace User.PluginSdkDemo
             if (plugin.Settings.reading_config == 1)
             {
                 checkbox_pedal_read.IsChecked = true;
+                CheckBox_LivePreview.IsEnabled = true;
+                for (int i = 0; i < 3; i++)
+                {
+                    if (Plugin.Settings.MinPosLivePreview[i])
+                    {
+                        CheckBox_LivePreview.IsChecked = true;
+                    }
+                    else
+                    { 
+                        CheckBox_LivePreview.IsChecked= false;
+                    }
+                }
 
             }
             else
             {
                 checkbox_pedal_read.IsChecked = false;
+                CheckBox_LivePreview.IsEnabled = false;
+                for (int i = 0; i < 3; i++)
+                {
+                    Plugin.Settings.MinPosLivePreview[i] = false;
+                }
             }
             indexOfSelectedPedal_u = plugin.Settings.table_selected;
             MyTab.SelectedIndex = (int)indexOfSelectedPedal_u;
@@ -1756,7 +1773,7 @@ namespace User.PluginSdkDemo
             {
                 checkbox_enable_impact.IsChecked = false;
             }
-
+            /*
             if (Plugin.Settings.RTSDTR_False[indexOfSelectedPedal_u] == true)
             {
                 //CheckBox_RTSDTR.IsChecked = true;
@@ -1765,6 +1782,7 @@ namespace User.PluginSdkDemo
             { 
                 //CheckBox_RTSDTR.IsChecked = false;
             }
+            */
 
             if (Plugin.Settings.auto_connect_flag[indexOfSelectedPedal_u] == 1)
             {
@@ -2945,11 +2963,13 @@ namespace User.PluginSdkDemo
                         Plugin._serialPort[pedalIdx].Open();
 
                         // ESP32 S3
+                        /*
                         if (Plugin.Settings.RTSDTR_False[pedalIdx] == true)
                         {
                             Plugin._serialPort[pedalIdx].RtsEnable = false;
                             Plugin._serialPort[pedalIdx].DtrEnable = false;
                         }
+                        */
                         //
 
                         if (Plugin.Settings.USING_ESP32S3[pedalIdx] == true)
@@ -3107,6 +3127,11 @@ namespace User.PluginSdkDemo
                             dap_bridge_state_st.payloadBridgeState_.Pedal_availability_0 = 0;
                             dap_bridge_state_st.payloadBridgeState_.Pedal_availability_1 = 0;
                             dap_bridge_state_st.payloadBridgeState_.Pedal_availability_2 = 0;
+                            for (int i = 0; i < 3; i++)
+                            {
+                                Plugin.PedalConfigRead_b[i] = false;
+                            }
+                            
                         }
                         
                         btn_connect_espnow_port.Content = "Connect";
@@ -3170,6 +3195,7 @@ namespace User.PluginSdkDemo
                             {
                                 Plugin.connectSerialPort[pedalIdx] = false;
                                 Plugin.Settings.connect_status[pedalIdx] = 0;
+                                Plugin.PedalConfigRead_b[pedalIdx] = false;
                                 updateTheGuiFromConfig();
                             }
 
@@ -3211,11 +3237,13 @@ namespace User.PluginSdkDemo
             if (Plugin._serialPort[pedalIdx].IsOpen)
             {
                 // ESP32 S3
+                /*
                 if (Plugin.Settings.RTSDTR_False[pedalIdx] == true)
                 {
                     Plugin._serialPort[pedalIdx].RtsEnable = false;
                     Plugin._serialPort[pedalIdx].DtrEnable = false;
                 }
+                */
 
 
                 Plugin._serialPort[pedalIdx].DiscardInBuffer();
@@ -3772,6 +3800,7 @@ namespace User.PluginSdkDemo
                                 {
                                     waiting_for_pedal_config[pedalSelected] = false;
                                     dap_config_st[pedalSelected] = pedalConfig_read_st;
+                                    Plugin.PedalConfigRead_b[pedalSelected] = true;
                                     updateTheGuiFromConfig();
 
                                     continue;
@@ -4876,10 +4905,17 @@ namespace User.PluginSdkDemo
         private void CheckBox_Reading_Checked(object sender, RoutedEventArgs e)
         {
             Plugin.Settings.reading_config = 1;
+            CheckBox_LivePreview.IsEnabled = true;
         }
         private void CheckBox_Reading_Unchecked(object sender, RoutedEventArgs e)
         {
             Plugin.Settings.reading_config = 0;
+            for (int i = 0; i < 3; i++)
+            {
+                Plugin.Settings.MinPosLivePreview[i] = false;
+            }
+            CheckBox_LivePreview.IsChecked = false;
+            CheckBox_LivePreview.IsEnabled = false;
         }
 
         private void checkbox_auto_connect_Checked(object sender, RoutedEventArgs e)
@@ -6197,8 +6233,22 @@ namespace User.PluginSdkDemo
             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalStartPosition = (byte)e.NewValue;
             if (Plugin != null)
             {
-                Label_min_pos.Content = "MIN\n" + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalStartPosition + "%\n" + Math.Round((float)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.lengthPedal_travel * dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalStartPosition) / 100) + "mm";         
+                Label_min_pos.Content = "MIN\n" + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalStartPosition + "%\n" + Math.Round((float)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.lengthPedal_travel * dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalStartPosition) / 100) + "mm";
+                if (Plugin.Settings.MinPosLivePreview[indexOfSelectedPedal_u] && Plugin.PedalConfigRead_b[indexOfSelectedPedal_u])
+                {
+                    DateTime ConfigLiveSending_now = DateTime.Now;
+                    TimeSpan diff = ConfigLiveSending_now - ConfigLiveSending_last;
+                    int millisceonds = (int)diff.TotalMilliseconds;
+                    if (millisceonds > Plugin.Settings.Pedal_action_interval[indexOfSelectedPedal_u])
+                    {
+                        Plugin.SendConfigWithoutSaveToEEPROM(dap_config_st[indexOfSelectedPedal_u], (byte)indexOfSelectedPedal_u);
+                        ConfigLiveSending_last = DateTime.Now;
+                    }
+                    
+                }
+                
             }
+            
             
 
         }
@@ -6302,6 +6352,7 @@ namespace User.PluginSdkDemo
             Plugin.Rudder_enable_flag = true;
         }
 
+        /*
         private void CheckBox_RTSDTR_Checked(object sender, RoutedEventArgs e)
         {
             Plugin.Settings.RTSDTR_False[indexOfSelectedPedal_u] = true;
@@ -6311,6 +6362,7 @@ namespace User.PluginSdkDemo
         {
             Plugin.Settings.RTSDTR_False[indexOfSelectedPedal_u] = false;
         }
+        */
 
         private void Bind_CV1_Click(object sender, RoutedEventArgs e)
         {
@@ -7133,7 +7185,7 @@ namespace User.PluginSdkDemo
                                         waiting_for_pedal_config[pedalSelected] = false;
                                         dap_config_st[pedalSelected] = pedalConfig_read_st;
                                         updateTheGuiFromConfig();
-
+                                        Plugin.PedalConfigRead_b[pedalSelected] = true;
                                         continue;
                                     }
                                     else
@@ -8696,6 +8748,33 @@ namespace User.PluginSdkDemo
             Plugin.SendPedalAction(tmp, (byte)indexOfSelectedPedal_u);
 
 
+        }
+
+        private void Rangeslider_travel_range_LowerThumbDragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
+        {
+            if (Plugin != null)
+            {
+                if (Plugin.Settings.MinPosLivePreview[indexOfSelectedPedal_u] && Plugin.PedalConfigRead_b[indexOfSelectedPedal_u])
+                {
+                    Plugin.SendConfig(dap_config_st[indexOfSelectedPedal_u], (byte)indexOfSelectedPedal_u);
+                }
+            }
+        }
+
+        private void CheckBox_LivePreview_Checked(object sender, RoutedEventArgs e)
+        {
+            if (Plugin != null)
+            {
+                Plugin.Settings.MinPosLivePreview[indexOfSelectedPedal_u] = true;
+            }
+        }
+
+        private void CheckBox_LivePreview_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (Plugin != null)
+            {
+                Plugin.Settings.MinPosLivePreview[indexOfSelectedPedal_u] = false;
+            }
         }
     }
     

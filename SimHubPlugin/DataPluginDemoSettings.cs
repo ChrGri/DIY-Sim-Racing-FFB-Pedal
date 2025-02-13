@@ -38,7 +38,6 @@ namespace User.PluginSdkDemo
         public double kinematicDiagram_zeroPos_OX = 100;
         public double kinematicDiagram_zeroPos_OY = 20;
         public double kinematicDiagram_zeroPos_scale = 1.5;
-        public bool[] RTSDTR_False = new bool[3] { true, true, true };
         public bool[] USING_ESP32S3 = new bool[3] { true, true, true };
         public bool[] CV1_enable_flag = new bool[3] { false, false, false };
         public int[] CV1_trigger = new int[3] { 0, 0, 0 };
@@ -60,6 +59,7 @@ namespace User.PluginSdkDemo
         public bool[,,] Effect_status_prolife = new bool[6, 3, 8] { { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } } };
         public string SSID_string = "";
         public string PASS_string = "";
+        public bool[] MinPosLivePreview = new bool[3] { false, false, false };
     }
         
 

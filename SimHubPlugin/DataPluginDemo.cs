@@ -363,6 +363,8 @@ namespace User.PluginSdkDemo
         public bool Version_Check_Simhub_MSFS = false;
         public byte[] Rudder_Pedal_idx = new byte[2] { 1, 2 };
         public string Current_Game = "";
+        public byte TrackSurfaceCondition = 0;
+        public bool[] PedalConfigRead_b = new bool[3] { false, false, false };
         //effect trigger timer
         DateTime[] Action_currentTime = new DateTime[3];
         DateTime[] Action_lastTime = new DateTime[3];
@@ -400,6 +402,19 @@ namespace User.PluginSdkDemo
             ENABLE_OTA,//not in use
             ENABLE_PAIRING,//not in use
             ESP_BOOT_INTO_DOWNLOAD_MODE
+        };
+
+        public enum TrackConditionEnum
+        {
+            Dry,
+            MostlyDry,
+            VeryLightWet,
+            LightWet,
+            ModeratelyWet,
+            VeryWet,
+            ExtremelyWet,
+            DIRT,
+            ICED
         };
 
         //https://www.c-sharpcorner.com/uploadfile/eclipsed4utoo/communicating-with-serial-port-in-C-Sharp/
@@ -660,6 +675,16 @@ namespace User.PluginSdkDemo
                 }
             }
         }
+
+        unsafe public void SendConfigWithoutSaveToEEPROM(DAP_config_st tmp, byte PedalIDX)
+        {
+            tmp.payloadHeader_.storeToEeprom = 0;
+            tmp.payloadHeader_.PedalTag=PedalIDX;
+            DAP_config_st* v = &tmp;
+            byte* p = (byte*)v;
+            tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
+            SendConfig(tmp, PedalIDX);
+        }
         unsafe public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
 			
@@ -704,6 +729,38 @@ namespace User.PluginSdkDemo
             if (data.GameRunning)
             {
                 Current_Game=(string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame");
+                TrackSurfaceCondition = 0;
+                if (Current_Game == "IRacing")
+                {
+                    byte TrackCondition = Convert.ToByte(pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Telemetry.TrackWetness"));
+                    switch (TrackCondition)
+                    {
+                        case 0:
+                            TrackSurfaceCondition = 0;
+                            break;
+                        case 1:
+                            TrackSurfaceCondition = (byte)TrackConditionEnum.Dry;
+                            break;
+                        case 2:
+                            TrackSurfaceCondition = (byte)TrackConditionEnum.MostlyDry;
+                            break;
+                        case 3:
+                            TrackSurfaceCondition = (byte)TrackConditionEnum.VeryLightWet;
+                            break;
+                        case 4:
+                            TrackSurfaceCondition = (byte)TrackConditionEnum.LightWet;
+                            break;
+                        case 5:
+                            TrackSurfaceCondition = (byte)TrackConditionEnum.ModeratelyWet;
+                            break;
+                        case 6:
+                            TrackSurfaceCondition = (byte)TrackConditionEnum.VeryWet;
+                            break;
+                        case 7:
+                            TrackSurfaceCondition = (byte)TrackConditionEnum.ExtremelyWet;
+                            break;
+                    }
+                }
                 if (data.OldData != null && data.NewData != null)
                 {
                     if (data.NewData.ABSActive > 0)
@@ -986,15 +1043,7 @@ namespace User.PluginSdkDemo
                             //_serialPort[1].Write("2");
 
                             // compute checksum
-                            tmp.payloadPedalAction_.triggerAbs_u8 = 1;
-                            if (Current_Game == "IRacing")
-                            { 
-                                byte TrackCondition = Convert.ToByte(pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.Telemetry.TrackWetness"));
-                                if (TrackCondition != 0)
-                                {
-                                    tmp.payloadPedalAction_.triggerAbs_u8 += (byte)(TrackCondition - 1);
-                                }
-                            }
+                            tmp.payloadPedalAction_.triggerAbs_u8 = (byte)(TrackSurfaceCondition +1);
                             update_flag = true;
 
                         }
