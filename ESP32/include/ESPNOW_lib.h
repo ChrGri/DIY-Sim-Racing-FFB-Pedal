@@ -35,6 +35,7 @@ bool Config_update_b=false;
 bool Rudder_initializing = false;
 bool Rudder_deinitializing = false;
 bool ESPNOW_BootIntoDownloadMode = false;
+bool Get_Rudder_action_b=false;
 
 struct ESPNow_Send_Struct
 { 
@@ -345,6 +346,7 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
                   }
                   if(dap_actions_st.payloadPedalAction_.Rudder_action==1 || dap_actions_st.payloadPedalAction_.Rudder_action==3)
                   {
+                    Get_Rudder_action_b=true;
                     if(dap_actions_st.payloadPedalAction_.Rudder_action==3)
                     {
                       if(dap_config_st.payLoadPedalConfig_.pedal_type==2)
@@ -374,6 +376,7 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
                   }
                   if(dap_actions_st.payloadPedalAction_.Rudder_brake_action==1)
                   {
+                    Get_Rudder_action_b=true;
                     if(dap_calculationVariables_st.rudder_brake_status==false&&dap_calculationVariables_st.Rudder_status==true)
                     {
                       dap_calculationVariables_st.rudder_brake_status=true;

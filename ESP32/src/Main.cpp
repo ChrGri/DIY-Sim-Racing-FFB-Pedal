@@ -1582,8 +1582,12 @@ void serialCommunicationTask( void * pvParameters )
                   {
                     Serial.println("Updating pedal config");
                     configUpdateAvailable = true;  
+                    
                     #ifdef USING_BUZZER
-                      Buzzer.single_beep_tone(700,100);
+                      if(dap_config_st_local.payLoadHeader_.storeToEeprom==1)
+                      {
+                        Buzzer.single_beep_tone(700,100);
+                      }     
                     #endif        
                   }
                   xSemaphoreGive(semaphore_updateConfig);
@@ -2272,7 +2276,10 @@ void ESPNOW_SyncTask( void * pvParameters )
       {
         Config_update_b=false;
         #ifdef USING_BUZZER
-          Buzzer.single_beep_tone(700,100);
+          if(dap_config_st_local.payLoadHeader_.storeToEeprom==1)
+          {
+            Buzzer.single_beep_tone(700,100);
+          }          
         #endif 
       }
       if(ESPNow_OTA_enable)
@@ -2303,6 +2310,11 @@ void ESPNOW_SyncTask( void * pvParameters )
           }
           #endif
 
+      }
+      if(Get_Rudder_action_b)
+      {
+        Get_Rudder_action_b=false;
+        Buzzer.single_beep_tone(700,100);
       }
 
       if(ESPNOW_BootIntoDownloadMode)
