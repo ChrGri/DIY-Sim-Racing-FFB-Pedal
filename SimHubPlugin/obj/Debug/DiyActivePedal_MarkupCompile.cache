@@ -4,7 +4,7 @@
 library
 C#
 .cs
-X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0125\SimHubPlugin\obj\Debug\
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Debug\
 User.PluginSdkDemo
 none
 false
@@ -13,7 +13,7 @@ DEBUG;TRACE
 5-16505915
 1-1358375093
 10678598151
-144922074796
+1442087215321
 OnlineProfile.xaml;SerialMonitor.xaml;SettingsControlDemo.xaml;UIElement\CheckboxWithLabel.xaml;UIElement\SliderWithLabel.xaml;
 
 False

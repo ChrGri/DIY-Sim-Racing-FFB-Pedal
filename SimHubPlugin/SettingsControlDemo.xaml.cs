@@ -1271,7 +1271,7 @@ namespace User.PluginSdkDemo
 
             Slider_WS_freq.SliderValue = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.WS_freq;
             Slider_WS_AMP.SliderValue = (double)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.WS_amp) / (double)20.0f;           
-            Slider_WS_trigger.SliderValue = Plugin.Settings.WS_trigger+50;
+            Slider_WS_trigger.SliderValue = Plugin.Settings.WS_trigger;
             
 
             Slider_G_force_smoothness.SliderValue = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.G_window;            
@@ -6177,7 +6177,7 @@ namespace User.PluginSdkDemo
         {
             if (Plugin!= null)
             {
-                Plugin.Settings.WS_trigger = (int)(e.NewValue-50);
+                Plugin.Settings.WS_trigger = (int)(e.NewValue);
                 PedalParameterLiveUpdate();
             }
 

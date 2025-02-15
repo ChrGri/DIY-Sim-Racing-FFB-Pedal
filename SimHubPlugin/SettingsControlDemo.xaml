@@ -1332,7 +1332,7 @@
 
 
                                                     
-                                                    <localUI:SliderWithLabel x:Name="Slider_WS_trigger" Width="400" Height="40" SliderLength="400" SliderValue="60" MinValue="60" Unit="%" SliderName="Notification Trigger" SliderValueChanged="Slider_WS_trigger_ValueChanged"/>
+                                                    <localUI:SliderWithLabel x:Name="Slider_WS_trigger" Width="400" Height="40" SliderLength="400" Unit=" " SliderName="Notification Trigger" SliderValueChanged="Slider_WS_trigger_ValueChanged" SliderValue="80"/>
                                                     <localUI:SliderWithLabel x:Name="Slider_WS_AMP" Width="400" Height="40" TickFrequency="0.05" MaxValue="12.5" SliderLength="400" Unit="kg" SliderName="Notification Amplitude" SliderValueChanged="Slider_WS_AMP_ValueChanged"/>
                                                     <localUI:SliderWithLabel x:Name="Slider_WS_freq" Width="400" Height="40" SliderValue="10" Unit="Hz" SliderLength="400" MinValue="10" MaxValue="50" SliderValueChanged="Slider_WS_freq_ValueChanged" SliderName="Notification Frequency"/>
 

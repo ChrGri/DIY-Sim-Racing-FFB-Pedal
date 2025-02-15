@@ -70,3 +70,24 @@ C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\GeneratedInternalTypeHelper.g.cs
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIElement\CheckboxWithLabel.baml
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIElement\SliderWithLabel.baml
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\User.PluginSdkDemo.csproj.AssemblyReference.cache
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\OnlineProfile.g.cs
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\SerialMonitor.g.cs
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\SettingsControlDemo.g.cs
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\UIElement\CheckboxWithLabel.g.cs
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\UIElement\SliderWithLabel.g.cs
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\GeneratedInternalTypeHelper.g.cs
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\DiyActivePedal_MarkupCompile.cache
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\DiyActivePedal_MarkupCompile.lref
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\OnlineProfile.baml
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\SerialMonitor.baml
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\SettingsControlDemo.baml
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\UIElement\CheckboxWithLabel.baml
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\UIElement\SliderWithLabel.baml
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\DiyActivePedal.g.resources
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\User.PluginSdkDemo.Properties.Resources.resources
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\User.PluginSdkDemo.csproj.GenerateResource.cache
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\User.PluginSdkDemo.csproj.CoreCompileInputs.cache
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\User.Plu.EBCE15C6.Up2Date
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\DiyActivePedal.dll
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\DiyActivePedal.pdb

@@ -952,7 +952,7 @@ namespace User.PluginSdkDemo
                                 */
                                 WS_value = Convert.ToByte(pluginManager.GetPropertyValue(Settings.WSeffect_bind));
                                 //pluginManager.SetPropertyValue("Wheelslip-test", this.GetType(), WS_value);
-                                if (WS_value >= (Settings.WS_trigger + 50))
+                                if (WS_value >= (Settings.WS_trigger ))
                                 {
                                     tmp.payloadPedalAction_.WS_u8 = 1;
                                     update_flag = true;
