@@ -2314,7 +2314,9 @@ void ESPNOW_SyncTask( void * pvParameters )
       if(Get_Rudder_action_b)
       {
         Get_Rudder_action_b=false;
+        #ifdef USING_BUZZER
         Buzzer.single_beep_tone(700,100);
+        #endif
       }
 
       if(ESPNOW_BootIntoDownloadMode)

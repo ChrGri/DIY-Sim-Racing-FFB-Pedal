@@ -6178,7 +6178,7 @@ namespace User.PluginSdkDemo
             if (Plugin!= null)
             {
                 Plugin.Settings.WS_trigger = (int)(e.NewValue);
-                PedalParameterLiveUpdate();
+                
             }
 
         }

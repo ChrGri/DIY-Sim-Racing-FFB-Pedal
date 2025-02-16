@@ -3,16 +3,16 @@
   "WorkspaceRootPath": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0215\\SimHubPlugin\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|User.PluginSdkDemo.csproj|X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0215\\SimHubPlugin\\settingscontroldemo.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|User.PluginSdkDemo.csproj|X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0215\\SimHubPlugin\\settingscontroldemo.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|User.PluginSdkDemo.csproj|solutionrelative:settingscontroldemo.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|User.PluginSdkDemo.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v88-0215\\simhubplugin\\settingscontroldemo.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|User.PluginSdkDemo.csproj|solutionrelative:settingscontroldemo.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|User.PluginSdkDemo.csproj|X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0215\\SimHubPlugin\\dataplugindemo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|User.PluginSdkDemo.csproj|solutionrelative:dataplugindemo.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|User.PluginSdkDemo.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v88-0215\\simhubplugin\\settingscontroldemo.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|User.PluginSdkDemo.csproj|solutionrelative:settingscontroldemo.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|User.PluginSdkDemo.csproj|X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0215\\SimHubPlugin\\dataplugindemosettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -29,11 +29,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 1796,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "DataPluginDemo.cs",
               "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0215\\SimHubPlugin\\DataPluginDemo.cs",
               "RelativeDocumentMoniker": "DataPluginDemo.cs",
@@ -41,18 +41,17 @@
               "RelativeToolTip": "DataPluginDemo.cs",
               "ViewState": "AgIAAKgDAAAAAAAAAAAYwLoDAABFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-09-22T01:27:42.551Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-09-22T01:27:42.551Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "SettingsControlDemo.xaml.cs",
               "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0215\\SimHubPlugin\\SettingsControlDemo.xaml.cs",
               "RelativeDocumentMoniker": "SettingsControlDemo.xaml.cs",
               "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0215\\SimHubPlugin\\SettingsControlDemo.xaml.cs",
               "RelativeToolTip": "SettingsControlDemo.xaml.cs",
-              "ViewState": "AgIAAOoEAAAAAAAAAAAQwPkEAABGAAAAAAAAAA==",
+              "ViewState": "AgIAABMYAAAAAAAAAAAAACQYAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-09-22T01:27:42.579Z",
               "EditorCaption": ""
@@ -67,12 +66,11 @@
               "RelativeToolTip": "DataPluginDemoSettings.cs",
               "ViewState": "AgIAACYAAAAAAAAAAAAAwCgAAAA/AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-09-22T01:27:42.58Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-09-22T01:27:42.58Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "SettingsControlDemo.xaml",
               "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0215\\SimHubPlugin\\SettingsControlDemo.xaml",
               "RelativeDocumentMoniker": "SettingsControlDemo.xaml",
