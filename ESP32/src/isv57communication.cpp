@@ -142,6 +142,8 @@ void isv57communication::sendTunedServoParameters(bool commandRotationDirection,
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_0_00+18, 0); // vibration suppression
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_0_00+19, 0);
 
+  
+
   // Pr1 register
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+0, 600); // 1st position gain
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+1, 300); // 1st velocity loop gain
@@ -157,7 +159,8 @@ void isv57communication::sendTunedServoParameters(bool commandRotationDirection,
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+35, 0); // position command filter
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+36, 0); // encoder feedback
   //retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+37, 1052); // special function register
-  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+37, 4); // special function register
+  uint16_t special_function_flags = 0x4 | 0x8 | 0x10 | 0x40 | 0x400;
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+37, special_function_flags); // special function register
   // see https://www.oyostepper.com/images/upload/File/ISV57T-180.pdf
   // 0x01 = 1: velocity feedforward disabled
   // 0x02 = 2: torque feedforward disabled

@@ -1,15 +1,8 @@
 #pragma once
-
-#include <Kalman.h>
-
-static const int Nobs = 1;      // 1 filter input:   observed value
-static const int Nstate = 2;    // 2 filter outputs: change & velocity
-static const int Ncom = 1; // Number of commands, u vector
-
+#include <Arduino.h>
 
 class KalmanFilter {
 private:
-  KALMAN<Nstate, Nobs, Ncom> _K;
   unsigned long _timeLastObservation;
 
 public:
