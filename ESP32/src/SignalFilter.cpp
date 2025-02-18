@@ -9,8 +9,7 @@
 // a = s / t^2
 // a = 300 / delta_t^2
 // adjust model noise here s = 0.5 * a * delta_t^2 --> a = 2 * s / delta_t^2
-static const float KF_MODEL_NOISE_FORCE_ACCELERATION = ( 2.0f * 4.0f / 0.001f );
-
+static const float KF_MODEL_NOISE_FORCE_ACCELERATION = 20000.0f; // the higher the value, the faster the pedal response
 
 float position = 0;        // Estimated position
 float velocity = 0;        // Estimated velocity
@@ -170,7 +169,6 @@ float KalmanFilter::filteredValue(float observation, float command, uint8_t mode
   }
 
   return position;
-
 }
 
 float KalmanFilter::changeVelocity() {
