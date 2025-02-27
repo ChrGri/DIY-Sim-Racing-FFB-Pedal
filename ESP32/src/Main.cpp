@@ -118,6 +118,7 @@ Custom_vibration CV1;
 Custom_vibration CV2;
 Rudder _rudder;
 Rudder_G_Force _rudder_g_force;
+MovingAverageFilter averagefilter_joystick(40);
 #define ABS_OSCILLATION
 
 
@@ -217,7 +218,7 @@ float motorRevolutionsPerSteps_fl32 = 1.0f / 3200.0f;
 
 #include "SignalFilter.h"
 KalmanFilter* kalman = NULL;
-
+KalmanFilter* kalman_joystick = NULL;
 
 #include "SignalFilter_2nd_order.h"
 KalmanFilter_2nd_order* kalman_2nd_order = NULL;
@@ -493,6 +494,7 @@ void setup()
   Serial.print("Given loadcell variance: ");
   Serial.println(loadcell->getVarianceEstimate());
   kalman = new KalmanFilter(loadcell->getVarianceEstimate());
+  kalman_joystick =new KalmanFilter(0.1f);
   kalman_2nd_order = new KalmanFilter_2nd_order(loadcell->getVarianceEstimate());
 
 
@@ -1102,8 +1104,8 @@ void pedalUpdateTask( void * pvParameters )
     }
       
 
-
-
+    float FilterReadingJoystick=kalman_joystick->filteredValue(filteredReading,0.0f,1);
+    //float FilterReadingJoystick=averagefilter_joystick.process(filteredReading);
 
     float stepperPosFraction = stepper->getCurrentPositionFraction();
     int32_t Position_Next = 0;
@@ -1315,7 +1317,7 @@ void pedalUpdateTask( void * pvParameters )
           }
           else
           {
-            joystickNormalizedToInt32 = NormalizeControllerOutputValue((filteredReading), dap_calculationVariables_st.Force_Min, dap_calculationVariables_st.Force_Max, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.maxGameOutput);
+            joystickNormalizedToInt32 = NormalizeControllerOutputValue((FilterReadingJoystick/*filteredReading*/), dap_calculationVariables_st.Force_Min, dap_calculationVariables_st.Force_Max, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.maxGameOutput);
           }
         }
         else
@@ -1326,7 +1328,7 @@ void pedalUpdateTask( void * pvParameters )
           }
           else
           {            
-            joystickNormalizedToInt32 = NormalizeControllerOutputValue(filteredReading, dap_calculationVariables_st.Force_Min, dap_calculationVariables_st.Force_Max, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.maxGameOutput);
+            joystickNormalizedToInt32 = NormalizeControllerOutputValue(FilterReadingJoystick/*filteredReading*/, dap_calculationVariables_st.Force_Min, dap_calculationVariables_st.Force_Max, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.maxGameOutput);
           }
         }
         

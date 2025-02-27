@@ -1127,7 +1127,7 @@ void Joystick_Task( void * pvParameters )
       }
 
     #endif
-      delay(2);
+      delay(1);
   }
 }
 
