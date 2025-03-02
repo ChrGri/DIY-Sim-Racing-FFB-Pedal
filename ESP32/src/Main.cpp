@@ -1379,16 +1379,12 @@ void pedalUpdateTask( void * pvParameters )
       if(xSemaphoreTake(semaphore_updatePedalStates, (TickType_t)1)==pdTRUE) 
       {
         
+        
         // update basic pedal state struct
         dap_state_basic_st.payloadPedalState_Basic_.pedalForce_u16 =  normalizedPedalReading_fl32 * 65535.0f;
         dap_state_basic_st.payloadPedalState_Basic_.pedalPosition_u16 = constrain(stepperPosFraction, 0.0f, 1.0f) * 65535.0f;
         dap_state_basic_st.payloadPedalState_Basic_.joystickOutput_u16 = (float)joystickNormalizedToInt32 / 10000.0f * 32767.0f;//65535;
-
-        dap_state_basic_st.payLoadHeader_.payloadType = DAP_PAYLOAD_TYPE_STATE_BASIC;
-        dap_state_basic_st.payLoadHeader_.version = DAP_VERSION_CONFIG;
-        dap_state_basic_st.payloadFooter_.checkSum = checksumCalculator((uint8_t*)(&(dap_state_basic_st.payLoadHeader_)), sizeof(dap_state_basic_st.payLoadHeader_) + sizeof(dap_state_basic_st.payloadPedalState_Basic_));
-        dap_state_basic_st.payLoadHeader_.PedalTag=dap_config_pedalUpdateTask_st.payLoadPedalConfig_.pedal_type;
-        
+        parse_version(DAP_FIRMWARE_VERSION, &dap_state_basic_st.payloadPedalState_Basic_.pedalFirmwareVersion_u8[0], &dap_state_basic_st.payloadPedalState_Basic_.pedalFirmwareVersion_u8[1], &dap_state_basic_st.payloadPedalState_Basic_.pedalFirmwareVersion_u8[2]);
         //error code
         dap_state_basic_st.payloadPedalState_Basic_.erroe_code_u8=0;
         #ifdef ESPNOW_Enable
@@ -1408,6 +1404,13 @@ void pedalUpdateTask( void * pvParameters )
         {
           dap_state_basic_st.payloadPedalState_Basic_.erroe_code_u8=12;
         }
+        //fill the header
+        dap_state_basic_st.payLoadHeader_.payloadType = DAP_PAYLOAD_TYPE_STATE_BASIC;
+        dap_state_basic_st.payLoadHeader_.version = DAP_VERSION_CONFIG;
+        dap_state_basic_st.payloadFooter_.checkSum = checksumCalculator((uint8_t*)(&(dap_state_basic_st.payLoadHeader_)), sizeof(dap_state_basic_st.payLoadHeader_) + sizeof(dap_state_basic_st.payloadPedalState_Basic_));
+        dap_state_basic_st.payLoadHeader_.PedalTag=dap_config_pedalUpdateTask_st.payLoadPedalConfig_.pedal_type;        
+        
+        
         // update extended struct 
         dap_state_extended_st.payloadPedalState_Extended_.timeInMs_u32 = millis();
         dap_state_extended_st.payloadPedalState_Extended_.pedalForce_raw_fl32 =  loadcellReading;

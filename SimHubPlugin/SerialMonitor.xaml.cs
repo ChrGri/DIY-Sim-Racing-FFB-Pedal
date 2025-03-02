@@ -16,8 +16,8 @@ namespace User.PluginSdkDemo
 {
     public partial class SerialMonitor_Window : Window
     {
-        SettingsControlDemo _main_UI;
-        public SerialMonitor_Window(SettingsControlDemo Main_UI)
+        DIYFFBPedalControlUI _main_UI;
+        public SerialMonitor_Window(DIYFFBPedalControlUI Main_UI)
         {
             InitializeComponent();
             _main_UI = Main_UI;

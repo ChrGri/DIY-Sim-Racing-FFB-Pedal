@@ -993,9 +993,11 @@ void Serial_Task( void * pvParameters)
       dap_bridge_state_st.payLoadHeader_.PedalTag=5; //5 means bridge
       dap_bridge_state_st.payLoadHeader_.payloadType=DAP_PAYLOAD_TYPE_BRIDGE_STATE;
       dap_bridge_state_st.payLoadHeader_.version=DAP_VERSION_CONFIG;
+      dap_bridge_state_st.payloadBridgeState_.Bridge_action=0;
+      parse_version(BRIDGE_FIRMWARE_VERSION,&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[0],&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[1],&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[2]);
+      //CRC check should be in the final
       crc = checksumCalculator((uint8_t*)(&(dap_bridge_state_st.payLoadHeader_)), sizeof(dap_bridge_state_st.payLoadHeader_) + sizeof(dap_bridge_state_st.payloadBridgeState_));
       dap_bridge_state_st.payloadFooter_.checkSum=crc;
-      dap_bridge_state_st.payloadBridgeState_.Bridge_action=0;
       DAP_bridge_state_st * dap_bridge_st_local_ptr;
       dap_bridge_st_local_ptr = &dap_bridge_state_st;
       Serial.write((char*)dap_bridge_st_local_ptr, sizeof(DAP_bridge_state_st));
@@ -1403,20 +1405,7 @@ void FanatecUpdate(void * pvParameters)
   }
 }
 
-/**********************************************************************************************/
-/*                                                                                            */
-/*                         pedal update task                                                  */
-/*                                                                                            */
-/**********************************************************************************************/
 
-
-//long lastCallTime = micros();
-//unsigned long cycleTimeLastCall = micros();
-////unsigned long minCyclesForFirToInit = 1000;
-//unsigned long firCycleIncrementer = 0;
-
-//float filteredReading_exp_filter = 0;
-//unsigned long printCycleCounter = 0;
 
 
 
