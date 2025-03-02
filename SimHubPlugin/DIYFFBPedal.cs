@@ -707,7 +707,7 @@ namespace User.PluginSdkDemo
             double RELATIVE_WIND_VELOCITY_BODY_Z_Simhub = 0;
             double ACCELERATION_BODY_Z_Simhub = 0;
             double ACCELERATION_BODY_Y_Simhub = 0;
-            bool MSFS_running_simhub = false;
+            bool Flight_running_simhub = false;
             
             //bool WS_flag = false;
 
@@ -1168,7 +1168,7 @@ namespace User.PluginSdkDemo
                     RELATIVE_WIND_VELOCITY_BODY_Z_Simhub = Convert.ToDouble(pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.FSStatus.AircraftWindZ"));
                     ACCELERATION_BODY_Z_Simhub = Convert.ToDouble(pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.FSStatus.AccelerationBodyZ"));
                     ACCELERATION_BODY_Y_Simhub = Convert.ToDouble(pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.FSStatus.AccelerationBodyY"));
-                    MSFS_running_simhub = true;
+                    Flight_running_simhub = true;
                 }
                 else
                 {
@@ -1177,9 +1177,26 @@ namespace User.PluginSdkDemo
                     RELATIVE_WIND_VELOCITY_BODY_Z_Simhub = 0;
                     ACCELERATION_BODY_Z_Simhub = 0;
                     ACCELERATION_BODY_Y_Simhub = 0;
-                    MSFS_running_simhub = false;
+                    Flight_running_simhub = false;
                 }
-                
+                if (((string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame")) == "DCS")
+                {
+                    MSFS_RPM_Value_Simhub = Convert.ToDouble(pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.EngineInfo.Rpm.Left"));
+                    //RUDDER_DEFLECTION_Simhub = Convert.ToDouble(pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.FSStatus.RUDDER_DEFLECTION")); 
+                    RELATIVE_WIND_VELOCITY_BODY_Z_Simhub = 0;
+                    ACCELERATION_BODY_Z_Simhub = 0;
+                    ACCELERATION_BODY_Y_Simhub = 0;
+                    Flight_running_simhub = true;
+                }
+                else
+                {
+                    MSFS_RPM_Value_Simhub = 0;
+                    //RUDDER_DEFLECTION_Simhub = 0; 
+                    RELATIVE_WIND_VELOCITY_BODY_Z_Simhub = 0;
+                    ACCELERATION_BODY_Z_Simhub = 0;
+                    ACCELERATION_BODY_Y_Simhub = 0;
+                    Flight_running_simhub = false;
+                }
             }
             else
             {
@@ -1318,7 +1335,7 @@ namespace User.PluginSdkDemo
 
             if (Rudder_status)
             {
-                if (MSFS_Plugin_Status || MSFS_running_simhub)
+                if (MSFS_Plugin_Status || Flight_running_simhub)
                 {
                     if (Convert.ToByte(pluginManager.GetPropertyValue("FlightPlugin.IS_MSFS_DATA_UPDATING")) == 1)
                     {
@@ -1333,7 +1350,7 @@ namespace User.PluginSdkDemo
                             MSFS_status = false;
                         }
                     }
-                    if (MSFS_status || MSFS_running_simhub)
+                    if (MSFS_status || Flight_running_simhub)
                     {
                         Rudder_Action_currentTime = DateTime.Now;
                         TimeSpan diff_action = Rudder_Action_currentTime - Rudder_Action_lastTime;
@@ -1364,7 +1381,7 @@ namespace User.PluginSdkDemo
                                 {
                                     Rudder_RPM_value = Convert.ToByte(pluginManager.GetPropertyValue("FlightPlugin.FlightData.GENERAL_ENG_PCT_MAX_RPM_1"));
                                 }
-                                if (MSFS_running_simhub)
+                                if (Flight_running_simhub)
                                 {
                                     Rudder_RPM_value = (byte)MSFS_RPM_Value_Simhub;
                                 }
@@ -1395,7 +1412,7 @@ namespace User.PluginSdkDemo
                                     RELATIVE_WIND_VELOCITY_BODY_Z = Math.Abs(Convert.ToDouble(pluginManager.GetPropertyValue("FlightPlugin.FlightData.RELATIVE_WIND_VELOCITY_BODY_Z")));
                                     Rudder_Radians = Math.Abs(Convert.ToDouble(pluginManager.GetPropertyValue("FlightPlugin.FlightData.RUDDER_DEFLECTION")));
                                 }
-                                if (MSFS_running_simhub)
+                                if (Flight_running_simhub)
                                 {
                                     Rudder_G_value_dz = ACCELERATION_BODY_Z_Simhub;
                                     Rudder_G_value_dy = ACCELERATION_BODY_Y_Simhub;
