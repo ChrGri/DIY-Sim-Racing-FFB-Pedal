@@ -11,6 +11,8 @@
 #define DAP_PAYLOAD_TYPE_STATE_BASIC 120
 #define DAP_PAYLOAD_TYPE_STATE_EXTENDED 130
 #define DAP_PAYLOAD_TYPE_ESPNOW_PAIRING 140
+#define DAP_PAYLOAD_TYPE_ESPNOW_RUDDER 150
+#define DAP_PAYLOAD_TYPE_ESPNOW_JOYSTICK 160
 #define DAP_PAYLOAD_TYPE_BRIDGE_STATE 210
 
 struct payloadHeader {
@@ -73,6 +75,12 @@ struct payloadBridgeState {
   uint8_t Pedal_RSSI;
   uint8_t Pedal_availability[3];
   uint8_t Bridge_action;//0=none, 1=enable pairing
+
+};
+
+struct payloadRudderState {
+  uint16_t pedal_position;
+  float pedal_position_ratio;
 
 };
 struct payloadPedalConfig {
@@ -249,6 +257,11 @@ struct DAP_config_st {
 struct DAP_ESPPairing_st {
   payloadHeader payLoadHeader_;
   payloadESPNowInfo payloadESPNowInfo_;
+  payloadFooter payloadFooter_; 
+};
+struct DAP_Rudder_st {
+  payloadHeader payLoadHeader_;
+  payloadRudderState payloadRudderState_;
   payloadFooter payloadFooter_; 
 };
 

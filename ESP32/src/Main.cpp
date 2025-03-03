@@ -357,13 +357,6 @@ void setup()
   Serial.println(" ");
   Serial.println(" ");
   Serial.println(" ");
-  #ifndef CONTROLLER_SPECIFIC_VIDPID
-    // init controller
-    #if defined(BLUETOOTH_GAMEPAD) || defined(USB_JOYSTICK)
-    SetupController();
-    #endif
-    //delay(3000);
-  #endif
   //delay(3000);
   Serial.println("This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.");
   Serial.println("Please check github repo for more detail: https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal");
@@ -753,7 +746,7 @@ void setup()
     xTaskCreatePinnedToCore(
                         ESPNOW_SyncTask,   
                         "ESPNOW_update_Task", 
-                        5000,  
+                        10000,  
                         //STACK_SIZE_FOR_TASK_2,    
                         NULL,      
                         1,         
@@ -766,10 +759,19 @@ void setup()
     Serial.println("ESPNOW task did not started due to Assignment error, please usb connect to Simhub and finish Assignment.");
   }
   #endif
+  Serial.println("Setup Controller");
   #ifdef CONTROLLER_SPECIFIC_VIDPID
     SetupController_USB(dap_config_st.payLoadPedalConfig_.pedal_type);
     delay(500);
+  #endif  
+  #ifndef CONTROLLER_SPECIFIC_VIDPID
+  // init controller
+  #if defined(BLUETOOTH_GAMEPAD) || defined(USB_JOYSTICK)
+  SetupController();
   #endif
+  //delay(3000);
+  #endif
+
 
   Serial.println("Setup end");
   #ifdef USING_LED
@@ -2259,8 +2261,8 @@ void ESPNOW_SyncTask( void * pvParameters )
           }
         }
       #endif
-      //joystick sync
-      sendMessageToMaster(joystickNormalizedToInt32);
+      //joystick value broadcast
+      ESPNow_Joystick_Broadcast(joystickNormalizedToInt32);
 
       if(basic_state_send_b)
       {
@@ -2341,20 +2343,27 @@ void ESPNOW_SyncTask( void * pvParameters )
       if(dap_calculationVariables_st.Rudder_status)
       {              
         dap_calculationVariables_st.current_pedal_position_ratio=((float)(dap_calculationVariables_st.current_pedal_position-dap_calculationVariables_st.stepperPosMin_default))/((float)dap_calculationVariables_st.stepperPosRange_default);
-        _ESPNow_Send.pedal_position_ratio=dap_calculationVariables_st.current_pedal_position_ratio;
-        _ESPNow_Send.pedal_position=dap_calculationVariables_st.current_pedal_position;
+        dap_rudder_sending.payloadRudderState_.pedal_position_ratio=dap_calculationVariables_st.current_pedal_position_ratio;
+        dap_rudder_sending.payloadRudderState_.pedal_position=dap_calculationVariables_st.current_pedal_position;
+        dap_rudder_sending.payLoadHeader_.payloadType=DAP_PAYLOAD_TYPE_ESPNOW_RUDDER;
+        dap_rudder_sending.payLoadHeader_.PedalTag=dap_config_st.payLoadPedalConfig_.pedal_type;
+        dap_rudder_sending.payLoadHeader_.version=DAP_VERSION_CONFIG;
+        uint16_t crc=0;
+        crc = checksumCalculator((uint8_t*)(&(dap_rudder_sending.payLoadHeader_)), sizeof(dap_rudder_sending.payLoadHeader_) + sizeof(dap_rudder_sending.payloadRudderState_));
+        dap_rudder_sending.payloadFooter_.checkSum=crc;
+        ESPNow.send_message(Recv_mac,(uint8_t *) &dap_rudder_sending,sizeof(dap_rudder_sending));   
         //ESPNow_send=dap_calculationVariables_st.current_pedal_position; 
-        esp_err_t result =ESPNow.send_message(Recv_mac,(uint8_t *) &_ESPNow_Send,sizeof(_ESPNow_Send));                
+        //esp_err_t result =ESPNow.send_message(Recv_mac,(uint8_t *) &_ESPNow_Send,sizeof(_ESPNow_Send));                
         //if (result == ESP_OK) 
         //{
         //  Serial.println("Error sending the data");
         //}                
-        if(ESPNow_update)
+        if(ESPNow_Rudder_Update)
         {
           //dap_calculationVariables_st.sync_pedal_position=ESPNow_recieve;
-          dap_calculationVariables_st.sync_pedal_position=_ESPNow_Recv.pedal_position;
-          dap_calculationVariables_st.Sync_pedal_position_ratio=_ESPNow_Recv.pedal_position_ratio;
-          ESPNow_update=false;
+          dap_calculationVariables_st.sync_pedal_position=dap_rudder_receiving.payloadRudderState_.pedal_position;
+          dap_calculationVariables_st.Sync_pedal_position_ratio=dap_rudder_receiving.payloadRudderState_.pedal_position_ratio;
+          ESPNow_Rudder_Update=false;
         }                
       }
           

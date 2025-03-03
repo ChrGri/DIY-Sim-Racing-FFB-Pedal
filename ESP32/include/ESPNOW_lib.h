@@ -19,7 +19,7 @@ uint16_t ESPNow_recieve=0;
 //bool MAC_get=false;
 bool ESPNOW_status =false;
 bool ESPNow_initial_status=false;
-bool ESPNow_update= false;
+bool ESPNow_Rudder_Update= false;
 bool ESPNow_no_device=false;
 bool ESPNow_config_request=false;
 bool ESPNow_restart=false;
@@ -36,19 +36,23 @@ bool Rudder_initializing = false;
 bool Rudder_deinitializing = false;
 bool ESPNOW_BootIntoDownloadMode = false;
 bool Get_Rudder_action_b=false;
-
+DAP_Rudder_st dap_rudder_receiving;
+DAP_Rudder_st dap_rudder_sending;
+/*
 struct ESPNow_Send_Struct
 { 
   uint16_t pedal_position;
   float pedal_position_ratio;
 };
+*/
 
-typedef struct struct_message {
+typedef struct DAP_Joystick_Message {
+  uint8_t payloadtype;
   uint64_t cycleCnt_u64;
   int64_t timeSinceBoot_i64;
 	int32_t controllerValue_i32;
   int8_t pedal_status; //0=default, 1=rudder, 2=rudder brake
-} struct_message;
+} DAP_Joystick_Message;
 
 typedef struct ESP_pairing_reg
 {
@@ -56,10 +60,10 @@ typedef struct ESP_pairing_reg
   uint8_t Pair_mac[4][6];
 } ESP_pairing_reg;
 // Create a struct_message called myData
-struct_message myData;
+DAP_Joystick_Message _dap_joystick_message;
 
-ESPNow_Send_Struct _ESPNow_Recv;
-ESPNow_Send_Struct _ESPNow_Send;
+//ESPNow_Send_Struct _ESPNow_Recv;
+//ESPNow_Send_Struct _ESPNow_Send;
 ESP_pairing_reg _ESP_pairing_reg;
 
 bool MacCheck(uint8_t* Mac_A, uint8_t*  Mac_B)
@@ -83,28 +87,28 @@ bool MacCheck(uint8_t* Mac_A, uint8_t*  Mac_B)
 }
 
 
-void sendMessageToMaster(int32_t controllerValue)
+void ESPNow_Joystick_Broadcast(int32_t controllerValue)
 {
-
-  myData.cycleCnt_u64++;
-  myData.timeSinceBoot_i64 = esp_timer_get_time() / 1000;
-  myData.controllerValue_i32 = controllerValue;
+  _dap_joystick_message.payloadtype=DAP_PAYLOAD_TYPE_ESPNOW_JOYSTICK;
+  _dap_joystick_message.cycleCnt_u64++;
+  _dap_joystick_message.timeSinceBoot_i64 = esp_timer_get_time() / 1000;
+  _dap_joystick_message.controllerValue_i32 = controllerValue;
   if(dap_calculationVariables_st.Rudder_status)
   {
     if(dap_calculationVariables_st.rudder_brake_status)
     {
-      myData.pedal_status=2;
+      _dap_joystick_message.pedal_status=2;
     }
     else
     {
-      myData.pedal_status=1;
+      _dap_joystick_message.pedal_status=1;
     }
   }
   else
   {
-    myData.pedal_status=0;
+    _dap_joystick_message.pedal_status=0;
   }
-  esp_now_send(broadcast_mac, (uint8_t *) &myData, sizeof(myData));
+  esp_now_send(broadcast_mac, (uint8_t *) &_dap_joystick_message, sizeof(_dap_joystick_message));
 
   
   
@@ -168,12 +172,38 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
   }
   if(ESPNOW_status)
   {
+    //rudder message
     if(MacCheck(Recv_mac,(uint8_t *)mac_addr))
     {
-      if(data_len==sizeof(_ESPNow_Recv))
+      if(data_len==sizeof(DAP_Rudder_st))
       {
-        memcpy(&_ESPNow_Recv, data, sizeof(_ESPNow_Recv));
-        ESPNow_update=true;
+
+        bool structChecker = true;
+        uint16_t crc;
+        DAP_Rudder_st dap_rudder_st_local;
+        memcpy(&dap_rudder_st_local, data, sizeof(DAP_Rudder_st));
+        // check if data is plausible  
+        if ( dap_rudder_st_local.payLoadHeader_.payloadType != DAP_PAYLOAD_TYPE_ESPNOW_RUDDER )
+        {
+          structChecker = false;
+        }  
+        if ( dap_rudder_st_local.payLoadHeader_.version != DAP_VERSION_CONFIG )
+        {
+          structChecker = false;
+        }
+        // checksum validation
+        crc = checksumCalculator((uint8_t*)(&(dap_rudder_st_local.payLoadHeader_)), sizeof(dap_rudder_st_local.payLoadHeader_) + sizeof(dap_rudder_st_local.payloadRudderState_));
+        if (crc != dap_rudder_st_local.payloadFooter_.checkSum)
+        {
+          structChecker = false;
+        }
+        // if checks are successfull, overwrite global configuration struct
+        if (structChecker == true)
+        {
+          memcpy(&dap_rudder_receiving, data, sizeof(DAP_Rudder_st));
+          ESPNow_Rudder_Update=true;
+        }
+
       }
     }
     if(MacCheck(esp_Host,(uint8_t *)mac_addr))
