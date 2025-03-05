@@ -1361,8 +1361,8 @@ namespace User.PluginSdkDemo
             }
             if (Plugin != null)
             {
-                Label_max_force.Content = "Max force:\n" + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.maxForce  + "kgf";
-                Label_min_force.Content = "Preload:\n" + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.preloadForce  + "kgf";
+                Label_max_force.Content = "Max force:\n" + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.maxForce  + "kg";
+                Label_min_force.Content = "Preload:\n" + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.preloadForce  + "kg";
             }            
             Slider_damping.SliderValue = (double)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.dampingPress*(double)Slider_damping.TickFrequency);
             Slider_LC_rate.SliderValue = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.loadcell_rating * 2;
@@ -1510,7 +1510,7 @@ namespace User.PluginSdkDemo
             {
                 case 0:
                     //label_ABS_AMP.Content = "ABS/TC Amplitude: " + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absAmplitude / 20.0f + "kg";
-                    Slider_ABS_AMP.Unit = "kgf";
+                    Slider_ABS_AMP.Unit = "kg";
                     break;
                 case 1:
                     Slider_ABS_AMP.Unit = "%";
@@ -4137,6 +4137,7 @@ namespace User.PluginSdkDemo
             {
                 dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.spindlePitch_mmPerRev_u8 = (byte)SpindlePitch.SelectedIndex;
                 PedalParameterLiveUpdate();
+                PedalServoForceCheck();
             }
             catch (Exception caughtEx)
             {
@@ -5785,7 +5786,7 @@ namespace User.PluginSdkDemo
             this.Line_Pedal_Travel.Y1 = canvas_kinematic.Height - shifting_OY;
             this.Line_Pedal_Travel.X2 = (OB_length + Travel_length) / scale_factor + shifting_OX;
             this.Line_Pedal_Travel.Y2 = canvas_kinematic.Height - shifting_OY;
-
+            PedalServoForceCheck();
 
 
 
@@ -6293,7 +6294,7 @@ namespace User.PluginSdkDemo
             switch (dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absForceOrTarvelBit)
             {
                 case 0:
-                    Slider_ABS_AMP.Unit = "kgf";
+                    Slider_ABS_AMP.Unit = "kg";
                     //label_ABS_AMP.Content = "ABS/TC Amplitude: " + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absAmplitude / 20.0f + "kg";
                     break;
                 case 1:
@@ -6334,7 +6335,7 @@ namespace User.PluginSdkDemo
             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.maxForce = (float)e.NewValue;
             if (Plugin != null)
             {
-                Label_max_force.Content = "Max force:\n" + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.maxForce + "kgf";
+                Label_max_force.Content = "Max force:\n" + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.maxForce + "kg";
                 PedalParameterLiveUpdate();
                 PedalServoForceCheck();
             }
@@ -6345,7 +6346,7 @@ namespace User.PluginSdkDemo
             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.preloadForce = (float)e.NewValue;
             if (Plugin != null)
             {
-                Label_min_force.Content = "Preload:\n" + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.preloadForce + "kgf";
+                Label_min_force.Content = "Preload:\n" + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.preloadForce + "kg";
                 PedalParameterLiveUpdate();
             }
         }
@@ -7860,7 +7861,7 @@ namespace User.PluginSdkDemo
             if (Plugin != null)
             {
                 dap_config_st_rudder.payloadPedalConfig_.preloadForce = (float)e.NewValue;
-                Label_min_force_rudder.Content = "Preload:\n" + dap_config_st_rudder.payloadPedalConfig_.preloadForce + "kgf";
+                Label_min_force_rudder.Content = "Preload:\n" + dap_config_st_rudder.payloadPedalConfig_.preloadForce + "kg";
             }      
             
         }
@@ -7870,7 +7871,7 @@ namespace User.PluginSdkDemo
             if (Plugin != null)
             {
                 dap_config_st_rudder.payloadPedalConfig_.maxForce = (float)e.NewValue;
-                Label_max_force_rudder.Content = "Max force:\n" + dap_config_st_rudder.payloadPedalConfig_.maxForce + "kgf";
+                Label_max_force_rudder.Content = "Max force:\n" + dap_config_st_rudder.payloadPedalConfig_.maxForce + "kg";
             }
         }
 
@@ -8922,21 +8923,28 @@ namespace User.PluginSdkDemo
             TextBlock_Warning.Text += "\nAlpha+=" + Math.Round(min_angle_2 / Math.PI * 180);
             TextBlock_Warning.Text += "\nE=" + Math.Round(((angle_beta_max - min_angle_2) / Math.PI * 180));
             double Force_calculated = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.maxForce * 9.8 * (Math.Cos(angle_beta_max - min_angle_2) / Math.Sin(angle_gamma)) * od / b;
-            TextBlock_Warning.Text += "\nForce=" + Math.Round(Force_calculated) + "N";
             double Servo_max_force = 1.1 * 2 * Math.PI / (double)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.spindlePitch_mmPerRev_u8 / 1000.0) * 0.83;
             if (Force_calculated > Servo_max_force)
             {
                 TextBlock_Warning.Text = "Caution, the config may cause servo overloaded!!";
-                TextBlock_Warning.Text += "\nCalculated max force=" + Math.Round(Force_calculated) + "N(" + Math.Round(Force_calculated / 9.8) + "kgf)";
-                TextBlock_Warning.Text += "\nMax servo force=" + Math.Round(Servo_max_force) + "N(" + Math.Round(Servo_max_force / 9.8) + "kgf)";
+                TextBlock_Warning.Text += "\nExpected max push force=" + Math.Round(Force_calculated)+"N";
+                TextBlock_Warning.Text += "\nMax servo holding force=" + Math.Round(Servo_max_force)+"N";
                 TextBlock_Warning.Visibility = Visibility.Visible;
             }
             else
             {
-                TextBlock_Warning.Text = "Calculated max force=" + Math.Round(Force_calculated)+"N("+Math.Round(Force_calculated/9.8)+"kgf)";
-                TextBlock_Warning.Text += "\nMax servo force=" + Math.Round(Servo_max_force) + "N(" + Math.Round(Servo_max_force / 9.8) + "kgf)";
+                TextBlock_Warning.Text = "Expected max push force=" + Math.Round(Force_calculated);
+                TextBlock_Warning.Text += "\nMax servo holding force=" + Math.Round(Servo_max_force);
                 TextBlock_Warning.Visibility= Visibility.Hidden;
             }
+            c_hort_max = c_hor + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.lengthPedal_travel;
+            oc_max = Math.Sqrt((c_hort_max) * (c_hort_max) + c_vert * c_vert);           
+            min_angle_1 = Math.Acos((b * b + oc_max * oc_max - a * a) / (2 * b * oc_max));
+            min_angle_2 = Math.Atan2(c_vert, c_hort_max);
+            angle_beta_max = Math.Acos((oc_max * oc_max + a * a - b * b) / (2 * oc_max * a));
+            angle_gamma = Math.Acos((b * b + a * a - oc_max * oc_max) / (2 * b * a));
+            double servo_max_force_output_in_kg = Servo_max_force / 9.8 * Math.Sin(angle_gamma) * b / od / Math.Cos(angle_beta_max - min_angle_2);
+            TextBlock_Warning_kinematics.Text = "Expected max force:" + Math.Round(servo_max_force_output_in_kg)+"kg";
         }
     }
     

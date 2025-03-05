@@ -861,6 +861,7 @@
                                                     <StackPanel Height="205" Width="540" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,5,0,0">
                                                         <!-- Travel vs Force curve GUI elements -->
                                                         <Canvas x:Name="canvas_kinematic" Height="200" Width="400" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="70,0,0,0" >
+                                                            <TextBlock x:Name="TextBlock_Warning_kinematics" Height="40" Width="200" FontFamily="Arial" FontSize="9" Foreground="#FFF44343" />
                                                             <Line x:Name="Line_kinematic_b" X1="5" Y1="28" X2="405" Y2="28" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="5" StrokeEndLineCap="Round" StrokeStartLineCap="Round" Opacity="0.7"/>
                                                             <Line x:Name="Line_kinematic_c_hort" X1="5" Y1="28" X2="405" Y2="28" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="5" StrokeEndLineCap="Round" StrokeStartLineCap="Round" Opacity="0.7"/>
                                                             <Line x:Name="Line_kinematic_c_vert" X1="5" Y1="28" X2="405" Y2="28" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="5" StrokeEndLineCap="Round" StrokeStartLineCap="Round" Opacity="0.7"/>
@@ -999,7 +1000,7 @@
                                                     </StackPanel>
                                                     <localUI:SliderWithLabel x:Name="Slider_damping" SliderLength="400" SliderName="Damping factor" TickFrequency="0.00015" Unit="s" Width="400" Height="40" MaxValue="0.0375" SliderValueChanged="Slider_damping_ValueChanged"/>
                                                     <StackPanel Height="40" Width="540" HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal">
-                                                        <localUI:SliderWithLabel x:Name="Slider_LC_rate" Width="200" SliderLength="190" SliderName="Loadcell Rate" MaxValue="500" Height="40" Unit="kgf" TickFrequency="10" SliderValue="300" SliderValueChanged="Slider_LC_rate_ValueChanged" Margin="70,0,0,0"/>
+                                                        <localUI:SliderWithLabel x:Name="Slider_LC_rate" Width="200" SliderLength="190" SliderName="Loadcell Rate" MaxValue="500" Height="40" Unit="kg" TickFrequency="10" SliderValue="300" SliderValueChanged="Slider_LC_rate_ValueChanged" Margin="70,0,0,0"/>
                                                         <localUI:SliderWithLabel x:Name="Slider_maxgame_output" SliderName="Max Game Output" SliderLength="190" SliderValue="100" Width="190" Height="40" Margin="10,0,0,0" Unit="%" SliderValueChanged="Slider_maxgame_output_ValueChanged"/>
                                                     </StackPanel>
                                                     <StackPanel Height="40" Width="540" Orientation="Horizontal" HorizontalAlignment="Left">
@@ -1215,7 +1216,7 @@
                                                     </StackPanel>
 
                                                     
-                                                    <localUI:SliderWithLabel x:Name="Slider_ABS_AMP" Width="400" Height="40" SliderLength="400" MaxValue="12.5" TickFrequency="0.05" SliderName="ABS/TC Amplitude" Unit="kgf" SliderValueChanged="Slider_ABS_AMP_ValueChanged" />
+                                                    <localUI:SliderWithLabel x:Name="Slider_ABS_AMP" Width="400" Height="40" SliderLength="400" MaxValue="12.5" TickFrequency="0.05" SliderName="ABS/TC Amplitude" Unit="kg" SliderValueChanged="Slider_ABS_AMP_ValueChanged" />
                                                     <localUI:SliderWithLabel x:Name="Slider_ABS_freq" Width="400" Height="40" SliderLength="400" SliderName="ABS/TC Frequency" MaxValue="50" Unit="Hz" SliderValueChanged="Slider_ABS_freq_ValueChanged"/>
 
                                                 </StackPanel>
@@ -1247,7 +1248,7 @@
 
 
                                                     
-                                                    <localUI:SliderWithLabel x:Name="Slider_RPM_AMP" Width="400" Height="40" TickFrequency="0.01" MaxValue="2" SliderLength="400" Unit="kgf" SliderName="Effect Amplitude" SliderValueChanged="Slider_RPM_AMP_ValueChanged"/>
+                                                    <localUI:SliderWithLabel x:Name="Slider_RPM_AMP" Width="400" Height="40" TickFrequency="0.01" MaxValue="2" SliderLength="400" Unit="kg" SliderName="Effect Amplitude" SliderValueChanged="Slider_RPM_AMP_ValueChanged"/>
                                                     <StackPanel Width="400" Height="50">
                                                         <StackPanel Width="400" Height="12" Orientation="Horizontal">
                                                             <Label x:Name="label_RPM_freq"  Width="250" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Effect Frequency:" Height="12" Padding="0,0,0,0"/>
@@ -1279,7 +1280,7 @@
 
                                                     </Canvas>
                                                     
-                                                    <localUI:SliderWithLabel x:Name="Slider_BP_AMP" Width="400" Height="40" TickFrequency="0.01" SliderLength="400" MaxValue="2" SliderName="Bite Point Amplitude" Unit="kgf" SliderValueChanged="Slider_BP_AMP_ValueChanged"/>
+                                                    <localUI:SliderWithLabel x:Name="Slider_BP_AMP" Width="400" Height="40" TickFrequency="0.01" SliderLength="400" MaxValue="2" SliderName="Bite Point Amplitude" Unit="kg" SliderValueChanged="Slider_BP_AMP_ValueChanged"/>
                                                     <localUI:SliderWithLabel x:Name="Slider_BP_freq" Width="400" Height="40" Unit="Hz" SliderLength="400" MinValue="10" MaxValue="50" SliderName="Bite Point Frequency" SliderValueChanged="Slider_BP_freq_ValueChanged"/>
                                                     
                                                 </StackPanel>
@@ -1334,7 +1335,7 @@
 
                                                     
                                                     <localUI:SliderWithLabel x:Name="Slider_WS_trigger" Width="400" Height="40" SliderLength="400" Unit=" " SliderName="Notification Trigger" SliderValueChanged="Slider_WS_trigger_ValueChanged" SliderValue="80"/>
-                                                    <localUI:SliderWithLabel x:Name="Slider_WS_AMP" Width="400" Height="40" TickFrequency="0.05" MaxValue="12.5" SliderLength="400" Unit="kgf" SliderName="Notification Amplitude" SliderValueChanged="Slider_WS_AMP_ValueChanged"/>
+                                                    <localUI:SliderWithLabel x:Name="Slider_WS_AMP" Width="400" Height="40" TickFrequency="0.05" MaxValue="12.5" SliderLength="400" Unit="kg" SliderName="Notification Amplitude" SliderValueChanged="Slider_WS_AMP_ValueChanged"/>
                                                     <localUI:SliderWithLabel x:Name="Slider_WS_freq" Width="400" Height="40" SliderValue="10" Unit="Hz" SliderLength="400" MinValue="10" MaxValue="50" SliderValueChanged="Slider_WS_freq_ValueChanged" SliderName="Notification Frequency"/>
 
                                                 </StackPanel>
@@ -1389,7 +1390,7 @@
                                                         </StackPanel>
                                                     </StackPanel>
                                                     <localUI:SliderWithLabel x:Name="Slider_CV1_trigger" Width="400" Height="40" SliderLength="400" SliderName="Effect Trigger" SliderValueChanged="Slider_CV1_trigger_ValueChanged"/>
-                                                    <localUI:SliderWithLabel x:Name="Slider_CV1_AMP" Width="400" Height="40" SliderLength="400" Unit="kgf" MaxValue="12.5" TickFrequency="0.05" SliderName="Effect Amplitude" SliderValueChanged="Slider_CV1_AMP_ValueChanged"/>
+                                                    <localUI:SliderWithLabel x:Name="Slider_CV1_AMP" Width="400" Height="40" SliderLength="400" Unit="kg" MaxValue="12.5" TickFrequency="0.05" SliderName="Effect Amplitude" SliderValueChanged="Slider_CV1_AMP_ValueChanged"/>
                                                     <localUI:SliderWithLabel x:Name="Slider_CV1_freq" Width="400" Height="40" MinValue="10" MaxValue="50" SliderValue="10" Unit="Hz" SliderName="Effect Frequency" SliderValueChanged="Slider_CV1_freq_ValueChanged" SliderLength="400"/>
                                                     
                                                 </StackPanel>
@@ -1419,7 +1420,7 @@
                                                         </StackPanel>
                                                     </StackPanel>
                                                     <localUI:SliderWithLabel x:Name="Slider_CV2_trigger" Width="400" Height="40" SliderLength="400" SliderName="Effect Trigger" SliderValueChanged="Slider_CV2_trigger_ValueChanged"/>
-                                                    <localUI:SliderWithLabel x:Name="Slider_CV2_AMP" Width="400" Height="40" SliderLength="400" Unit="kgf" MaxValue="12.5" TickFrequency="0.05" SliderName="Effect Amplitude" SliderValueChanged="Slider_CV2_AMP_ValueChanged"/>
+                                                    <localUI:SliderWithLabel x:Name="Slider_CV2_AMP" Width="400" Height="40" SliderLength="400" Unit="kg" MaxValue="12.5" TickFrequency="0.05" SliderName="Effect Amplitude" SliderValueChanged="Slider_CV2_AMP_ValueChanged"/>
                                                     <localUI:SliderWithLabel x:Name="Slider_CV2_freq" Width="400" Height="40" MinValue="10" MaxValue="50" SliderValue="10" Unit="Hz" SliderName="Effect Frequency" SliderValueChanged="Slider_CV2_freq_ValueChanged" SliderLength="400"/>
                                                 </StackPanel>
                                             </Border>
