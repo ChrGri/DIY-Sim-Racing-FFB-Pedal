@@ -1,4 +1,4 @@
-#define DAP_FIRMWARE_VERSION  "0.89.07 "
+const char *DAP_FIRMWARE_VERSION = "0.89.07 ";
 
 #if PCB_VERSION==3
 	#define CONTROL_BOARD "V3_ESP32"
@@ -32,6 +32,6 @@
 	#define CONTROL_BOARD "V5_ESP32S3"
 #endif
 
-void parse_version(char *version, uint8_t *major, uint8_t *minor, uint8_t *patch) {
+void parse_version(const char *version, uint8_t *major, uint8_t *minor, uint8_t *patch) {
     sscanf(version, "%d.%d.%d", major, minor, patch);
 }

@@ -269,7 +269,7 @@ char* APhost;
   char* APhost;
 #endif
 
-#ifndef OTA_update || OTA_update_ESP32
+#if !defined(OTA_update) && !defined(OTA_update_ESP32)
   #include "ota.h"
 #endif
 
@@ -306,6 +306,7 @@ char* APhost;
 #ifdef USING_BUZZER
   #include "Buzzer.h"
 #endif
+#include <cstring>
 
 
 
@@ -565,16 +566,24 @@ void setup()
     switch(dap_config_st.payLoadPedalConfig_.pedal_type)
     {
       case 0:
-        APhost="FFBPedalClutch";
+        APhost=new char[strlen("FFBPedalClutch") + 1];
+        strcpy(APhost, "FFBPedalClutch");
+        //APhost="FFBPedalClutch";
         break;
       case 1:
-        APhost="FFBPedalBrake";
+        APhost=new char[strlen("FFBPedalBrake") + 1];
+        strcpy(APhost, "FFBPedalBrake");
+        //APhost="FFBPedalBrake";
         break;
       case 2:
-        APhost="FFBPedalGas";
+        APhost=new char[strlen("FFBPedalGas") + 1];
+        strcpy(APhost, "FFBPedalGas");
+        //APhost="FFBPedalGas";
         break;
       default:
-        APhost="FFBPedal";
+        APhost=new char[strlen("FFBPedal") + 1];
+        strcpy(APhost, "FFBPedal");
+        //APhost="FFBPedal";
         break;        
 
     }   
@@ -2019,12 +2028,16 @@ void OTATask( void * pvParameters )
           char* version_tag;
           if(_basic_wifi_info.wifi_action==1)
           {
-            version_tag="0.0.0";
+            const char* str ="0.0.0";
+            version_tag=new char[strlen(str) + 1];
+            strcpy(version_tag, str);
             Serial.println("Force update");
           }
           else
           {
-            version_tag=DAP_FIRMWARE_VERSION;
+            version_tag=new char[strlen(DAP_FIRMWARE_VERSION) + 1];
+            strcpy(version_tag, DAP_FIRMWARE_VERSION);
+            //version_tag=DAP_FIRMWARE_VERSION;
           }
           switch (_basic_wifi_info.mode_select)
           {
@@ -2042,6 +2055,7 @@ void OTATask( void * pvParameters )
               break;
             default:
             break;
+            delete[] version_tag; 
           }
           #endif
 

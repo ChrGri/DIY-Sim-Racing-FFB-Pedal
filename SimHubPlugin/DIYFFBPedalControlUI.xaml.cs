@@ -1361,8 +1361,8 @@ namespace User.PluginSdkDemo
             }
             if (Plugin != null)
             {
-                Label_max_force.Content = "Max force:\n" + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.maxForce  + "kg";
-                Label_min_force.Content = "Preload:\n" + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.preloadForce  + "kg";
+                Label_max_force.Content = "Max force:\n" + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.maxForce  + "kgf";
+                Label_min_force.Content = "Preload:\n" + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.preloadForce  + "kgf";
             }            
             Slider_damping.SliderValue = (double)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.dampingPress*(double)Slider_damping.TickFrequency);
             Slider_LC_rate.SliderValue = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.loadcell_rating * 2;
@@ -1510,7 +1510,7 @@ namespace User.PluginSdkDemo
             {
                 case 0:
                     //label_ABS_AMP.Content = "ABS/TC Amplitude: " + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absAmplitude / 20.0f + "kg";
-                    Slider_ABS_AMP.Unit = "kg";
+                    Slider_ABS_AMP.Unit = "kgf";
                     break;
                 case 1:
                     Slider_ABS_AMP.Unit = "%";
@@ -1844,6 +1844,8 @@ namespace User.PluginSdkDemo
 
             //pedal joint draw
             Pedal_joint_draw();
+            PedalServoForceCheck();
+            //Canvas.SetRight(TextBlock_Warning, 0);
 
 
             //Rudder UI initialized
@@ -1855,8 +1857,8 @@ namespace User.PluginSdkDemo
                 Rangeslider_rudder_travel_range.UpperValue = dap_config_st_rudder.payloadPedalConfig_.pedalEndPosition;
                 Label_min_pos_rudder.Content = "MIN\n" + dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition + "%";
                 Label_max_pos_rudder.Content = "MAX\n" + dap_config_st_rudder.payloadPedalConfig_.pedalEndPosition + "%" ;
-                Label_max_force_rudder.Content = "Max force:\n" + dap_config_st_rudder.payloadPedalConfig_.maxForce + "kg";
-                Label_min_force_rudder.Content = "Preload:\n" + dap_config_st_rudder.payloadPedalConfig_.preloadForce + "kg";
+                Label_max_force_rudder.Content = "Max force:\n" + dap_config_st_rudder.payloadPedalConfig_.maxForce + "kgf";
+                Label_min_force_rudder.Content = "Preload:\n" + dap_config_st_rudder.payloadPedalConfig_.preloadForce + "kgf";
                 Rangeslider_RPM_freq_rudder.LowerValue = dap_config_st_rudder.payloadPedalConfig_.RPM_min_freq;
                 Rangeslider_RPM_freq_rudder.UpperValue = dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq;
                 label_RPM_freq_max_rudder.Content = "MAX:" + dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq + "Hz";
@@ -5703,11 +5705,13 @@ namespace User.PluginSdkDemo
             double OC_Min = Math.Sqrt((OB_length) * (OB_length) + BC_length * BC_length);
             double max_angle_1= Math.Acos((OA_length * OA_length + OC_Min * OC_Min - CA_length * CA_length) / (2 * OA_length * OC_Min));
             double max_angle_2= Math.Atan2(BC_length, OB_length);
+
+            double angle_beta_max = Math.Acos((OC_Max*OC_Max+CA_length*CA_length-OA_length*OA_length)/(2*OC_Max*CA_length));
+            double angle_gamma = Math.Acos((OA_length*OA_length+CA_length*CA_length-OC_Max*OC_Max)/(2*OA_length*CA_length));
             Label_kinematic_pedal_angle.Content = "Current Pedal Angle: " + Math.Round(pedal_angle/Math.PI*180)+ "°,";
             Label_kinematic_pedal_angle.Content = Label_kinematic_pedal_angle.Content + " Max Pedal Angle:" + Math.Round((max_angle_1+max_angle_2) / Math.PI * 180) + "°,";
             Label_kinematic_pedal_angle.Content = Label_kinematic_pedal_angle.Content + " Min Pedal Angle:" + Math.Round((min_angle_1 + min_angle_2) / Math.PI * 180) + "°,";
             Label_kinematic_pedal_angle.Content = Label_kinematic_pedal_angle.Content + " Angle Travel:" + Math.Round((max_angle_1 + max_angle_2-min_angle_1-min_angle_2) / Math.PI * 180) + "°";
-
 
             double A_X = OA_length * Math.Cos(pedal_angle);
             double A_Y = OA_length * Math.Sin(pedal_angle);
@@ -6289,7 +6293,7 @@ namespace User.PluginSdkDemo
             switch (dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absForceOrTarvelBit)
             {
                 case 0:
-                    Slider_ABS_AMP.Unit = "kg";
+                    Slider_ABS_AMP.Unit = "kgf";
                     //label_ABS_AMP.Content = "ABS/TC Amplitude: " + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absAmplitude / 20.0f + "kg";
                     break;
                 case 1:
@@ -6320,6 +6324,8 @@ namespace User.PluginSdkDemo
             { 
                 Label_max_pos.Content = "MAX\n" + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalEndPosition + "%\n" + Math.Round((float)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.lengthPedal_travel * dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalEndPosition) / 100) + "mm";
                 PedalParameterLiveUpdate();
+                PedalServoForceCheck();
+
             }
         }
 
@@ -6328,8 +6334,9 @@ namespace User.PluginSdkDemo
             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.maxForce = (float)e.NewValue;
             if (Plugin != null)
             {
-                Label_max_force.Content = "Max force:\n" + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.maxForce + "kg";
+                Label_max_force.Content = "Max force:\n" + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.maxForce + "kgf";
                 PedalParameterLiveUpdate();
+                PedalServoForceCheck();
             }
         }
 
@@ -6338,7 +6345,7 @@ namespace User.PluginSdkDemo
             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.preloadForce = (float)e.NewValue;
             if (Plugin != null)
             {
-                Label_min_force.Content = "Preload:\n" + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.preloadForce + "kg";
+                Label_min_force.Content = "Preload:\n" + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.preloadForce + "kgf";
                 PedalParameterLiveUpdate();
             }
         }
@@ -6873,7 +6880,36 @@ namespace User.PluginSdkDemo
                                     {
                                         Plugin.PedalErrorCode = pedalState_read_st.payloadPedalBasicState_.error_code_u8;
                                         Plugin.PedalErrorIndex = pedalState_read_st.payloadHeader_.PedalTag;
-                                        TextBox2.Text = "Pedal:" + pedalState_read_st.payloadHeader_.PedalTag + " ErrorCode" + pedalState_read_st.payloadPedalBasicState_.error_code_u8;
+                                        string errorcodetext = "";
+                                        //errorcode
+                                        switch (Plugin.PedalErrorCode)
+                                        {
+                                            case 12:
+                                                errorcodetext = "Servo Lost connection";
+                                                break;
+                                            case 101:
+                                                errorcodetext = "Config payload type error";
+                                                break;
+                                            case 102:
+                                                errorcodetext = "Config version error";
+                                                break;
+                                            case 103:
+                                                errorcodetext = "Config CRC error";
+                                                break;
+                                            case 111:
+                                                errorcodetext = "Action payload type error";
+                                                break;
+                                            case 122:
+                                                errorcodetext = "Action version error";
+                                                break;
+                                            case 123:
+                                                errorcodetext = "Action CRC error";
+                                                break;
+                                        }
+                                        string temp_str= "Pedal:" + pedalState_read_st.payloadHeader_.PedalTag + " E:" + pedalState_read_st.payloadPedalBasicState_.error_code_u8 + "-" + errorcodetext;
+                                        //TextBox2.Text = temp_str;
+                                        SimHub.Logging.Current.Info("DIYFFBPedal "+temp_str);
+                                        TextBox_serialMonitor_bridge.Text = temp_str;
 
                                     }
                                     if ((pedalStateHasAlreadyBeenUpdated_b == false) && (indexOfSelectedPedal_u == pedalSelected))
@@ -6898,6 +6934,7 @@ namespace User.PluginSdkDemo
 
                                             current_pedal_travel_state = x_showed;
                                             Plugin.pedal_state_in_ratio = (byte)current_pedal_travel_state;
+                                            Pedal_joint_draw();
                                         }
                                         else
                                         {
@@ -7823,7 +7860,7 @@ namespace User.PluginSdkDemo
             if (Plugin != null)
             {
                 dap_config_st_rudder.payloadPedalConfig_.preloadForce = (float)e.NewValue;
-                Label_min_force_rudder.Content = "Preload:\n" + dap_config_st_rudder.payloadPedalConfig_.preloadForce + "kg";
+                Label_min_force_rudder.Content = "Preload:\n" + dap_config_st_rudder.payloadPedalConfig_.preloadForce + "kgf";
             }      
             
         }
@@ -7833,7 +7870,7 @@ namespace User.PluginSdkDemo
             if (Plugin != null)
             {
                 dap_config_st_rudder.payloadPedalConfig_.maxForce = (float)e.NewValue;
-                Label_max_force_rudder.Content = "Max force:\n" + dap_config_st_rudder.payloadPedalConfig_.maxForce + "kg";
+                Label_max_force_rudder.Content = "Max force:\n" + dap_config_st_rudder.payloadPedalConfig_.maxForce + "kgf";
             }
         }
 
@@ -8860,6 +8897,45 @@ namespace User.PluginSdkDemo
                 Plugin.Settings.LivePreview[indexOfSelectedPedal_u] = false;
                 btn_SendConfig.Content = "Send Config to Pedal";
                 btn_SendConfig.ToolTip = "Send Config to Pedal and save in storage";
+            }
+        }
+        private void PedalServoForceCheck()
+        {
+            //parameter calculation
+            double b = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.lengthPedal_b;
+            double c_hor = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.lengthPedal_c_horizontal;
+            double c_vert = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.lengthPedal_c_vertical;
+            double travel_setup_max = (double)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.lengthPedal_travel*(double)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalEndPosition/100.0;
+            double a = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.lengthPedal_a;
+            double od = b + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.lengthPedal_d;
+            double c_hort_max = c_hor + travel_setup_max;
+            double oc_max = Math.Sqrt((c_hort_max) * (c_hort_max) + c_vert * c_vert);
+            double min_angle_1 = Math.Acos((b * b + oc_max * oc_max - a * a) / (2 * b * oc_max));
+            double min_angle_2 = Math.Atan2(c_vert, c_hort_max);
+            double oc_min = Math.Sqrt((c_hor) * (c_hor) + c_vert * c_vert);
+            double max_angle_1 = Math.Acos((b * b + oc_min * oc_min - a * a) / (2 * b * oc_min));
+            double max_angle_2 = Math.Atan2(c_vert, c_hor);
+
+            double angle_beta_max = Math.Acos((oc_max * oc_max + a * a - b * b) / (2 * oc_max * a));
+            double angle_gamma = Math.Acos((b * b + a * a - oc_max * oc_max) / (2 * b * a));          
+            TextBlock_Warning.Text = "beta=" + Math.Round(angle_beta_max / Math.PI * 180);
+            TextBlock_Warning.Text += "\nAlpha+=" + Math.Round(min_angle_2 / Math.PI * 180);
+            TextBlock_Warning.Text += "\nE=" + Math.Round(((angle_beta_max - min_angle_2) / Math.PI * 180));
+            double Force_calculated = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.maxForce * 9.8 * (Math.Cos(angle_beta_max - min_angle_2) / Math.Sin(angle_gamma)) * od / b;
+            TextBlock_Warning.Text += "\nForce=" + Math.Round(Force_calculated) + "N";
+            double Servo_max_force = 1.1 * 2 * Math.PI / (double)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.spindlePitch_mmPerRev_u8 / 1000.0) * 0.83;
+            if (Force_calculated > Servo_max_force)
+            {
+                TextBlock_Warning.Text = "Caution, the config may cause servo overloaded!!";
+                TextBlock_Warning.Text += "\nCalculated max force=" + Math.Round(Force_calculated) + "N(" + Math.Round(Force_calculated / 9.8) + "kgf)";
+                TextBlock_Warning.Text += "\nMax servo force=" + Math.Round(Servo_max_force) + "N(" + Math.Round(Servo_max_force / 9.8) + "kgf)";
+                TextBlock_Warning.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                TextBlock_Warning.Text = "Calculated max force=" + Math.Round(Force_calculated)+"N("+Math.Round(Force_calculated/9.8)+"kgf)";
+                TextBlock_Warning.Text += "\nMax servo force=" + Math.Round(Servo_max_force) + "N(" + Math.Round(Servo_max_force / 9.8) + "kgf)";
+                TextBlock_Warning.Visibility= Visibility.Hidden;
             }
         }
     }
