@@ -116,6 +116,8 @@ namespace User.PluginSdkDemo
         private SolidColorBrush color_RSSI_2;
         private SolidColorBrush color_RSSI_3;
         private SolidColorBrush color_RSSI_4;
+        private SolidColorBrush Red_Warning;
+        private SolidColorBrush White_Default;
         private string info_text_connection;
         private string system_info_text_connection;
         private int current_pedal_travel_state= 0;
@@ -137,8 +139,9 @@ namespace User.PluginSdkDemo
         private string[] Rudder_Pedal_idx_Name= new string[3] {"Clutch", "Brake","Throttle"};
         public byte Pedal_connect_status = 0;
         DateTime ConfigLiveSending_last = DateTime.Now;
+        DateTime PedalTabChange_last = DateTime.Now;
         public byte[,] PedalFirmwareVersion = new byte[3, 3] { { 0, 0, 0}, { 0, 0, 0 }, { 0, 0, 0 } };
-
+        public bool PedalTabChange = false;
         public enum PedalAvailability        
         {
             NopedalConnect,
@@ -754,7 +757,8 @@ namespace User.PluginSdkDemo
             color_RSSI_2 = new SolidColorBrush(Color.FromArgb(180, buttonBackground_.Color.R, buttonBackground_.Color.G, buttonBackground_.Color.B));
             color_RSSI_3 = new SolidColorBrush(Color.FromArgb(210, buttonBackground_.Color.R, buttonBackground_.Color.G, buttonBackground_.Color.B));
             color_RSSI_4 = new SolidColorBrush(Color.FromArgb(255, buttonBackground_.Color.R, buttonBackground_.Color.G, buttonBackground_.Color.B));
-            RSSI_1.Fill = color_RSSI_1;
+            Red_Warning = new SolidColorBrush(Color.FromArgb(255, 244, 67, 67));
+            White_Default = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
             RSSI_2.Fill = color_RSSI_2;
             RSSI_3.Fill = color_RSSI_3;
             RSSI_4.Fill = color_RSSI_4;
@@ -1250,7 +1254,7 @@ namespace User.PluginSdkDemo
                 }
                 else
                 {
-                    info_text += "\n" + "none";
+                    info_text += "\n" + "No data";
                 }
 
                 if (dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[2] != 0)
@@ -1267,7 +1271,7 @@ namespace User.PluginSdkDemo
                 }
                 else
                 {
-                    system_info_text += "\n" + "none";
+                    system_info_text += "\n" + "No data";
                 }
                 
                 /*
@@ -2280,11 +2284,34 @@ namespace User.PluginSdkDemo
                     DateTime ConfigLiveSending_now = DateTime.Now;
                     TimeSpan diff = ConfigLiveSending_now - ConfigLiveSending_last;
                     int millisceonds = (int)diff.TotalMilliseconds;
-                    if (millisceonds > Plugin.Settings.Pedal_action_interval[indexOfSelectedPedal_u])
+                    bool live_preview_b = true;
+                    
+                    if (PedalTabChange)
                     {
+                        diff = ConfigLiveSending_now-PedalTabChange_last ;
+                        int millseconds_pedaltabchange = (int)diff.TotalMilliseconds;
+                        if (millseconds_pedaltabchange > 100)
+                        {
+                            PedalTabChange = false;
+                            PedalTabChange_last=DateTime.Now;
+                            
+                        }
+                        else
+                        {
+                            live_preview_b = false;
+                        }
+                    }
+                    
+                    if (millisceonds > Plugin.Settings.Pedal_action_interval[indexOfSelectedPedal_u] && live_preview_b)
+                    {
+                        //live_preview_b = true;
                         Plugin.SendConfigWithoutSaveToEEPROM(dap_config_st[indexOfSelectedPedal_u], (byte)indexOfSelectedPedal_u);
                         ConfigLiveSending_last = DateTime.Now;
                     }
+
+
+
+
 
                 }
             }
@@ -2303,6 +2330,8 @@ namespace User.PluginSdkDemo
                 indexOfSelectedPedal_u = (uint)MyTab.SelectedIndex;
                 Plugin.Settings.table_selected = (uint)MyTab.SelectedIndex;
                 Update_CV_textbox = true;
+                PedalTabChange=true;
+                PedalTabChange_last=DateTime.Now;
                 updateTheGuiFromConfig();
             }
         }
@@ -8922,29 +8951,32 @@ namespace User.PluginSdkDemo
             TextBlock_Warning.Text = "beta=" + Math.Round(angle_beta_max / Math.PI * 180);
             TextBlock_Warning.Text += "\nAlpha+=" + Math.Round(min_angle_2 / Math.PI * 180);
             TextBlock_Warning.Text += "\nE=" + Math.Round(((angle_beta_max - min_angle_2) / Math.PI * 180));
-            double Force_calculated = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.maxForce * 9.8 * (Math.Cos(angle_beta_max - min_angle_2) / Math.Sin(angle_gamma)) * od / b;
-            double Servo_max_force = 1.1 * 2 * Math.PI / (double)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.spindlePitch_mmPerRev_u8 / 1000.0) * 0.83;
-            if (Force_calculated > Servo_max_force)
+            double Force_calculated = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.maxForce * (Math.Cos(angle_beta_max - min_angle_2) / Math.Sin(angle_gamma)) * od / b;
+            double Servo_max_force = 1.1 * 2 * Math.PI / (double)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.spindlePitch_mmPerRev_u8 / 1000.0) * 0.83 / 9.8;
+            c_hort_max = c_hor + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.lengthPedal_travel;
+            oc_max = Math.Sqrt((c_hort_max) * (c_hort_max) + c_vert * c_vert);
+            min_angle_1 = Math.Acos((b * b + oc_max * oc_max - a * a) / (2 * b * oc_max));
+            min_angle_2 = Math.Atan2(c_vert, c_hort_max);
+            angle_beta_max = Math.Acos((oc_max * oc_max + a * a - b * b) / (2 * oc_max * a));
+            angle_gamma = Math.Acos((b * b + a * a - oc_max * oc_max) / (2 * b * a));
+            double servo_max_force_output_in_kg = Servo_max_force * Math.Sin(angle_gamma) * b / od / Math.Cos(angle_beta_max - min_angle_2);
+            if (dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.maxForce > servo_max_force_output_in_kg)
             {
-                TextBlock_Warning.Text = "Caution, the config may cause servo overloaded!!";
-                TextBlock_Warning.Text += "\nExpected max push force=" + Math.Round(Force_calculated)+"N";
-                TextBlock_Warning.Text += "\nMax servo holding force=" + Math.Round(Servo_max_force)+"N";
+                TextBlock_Warning.Text = "Caution, the config and pedal kinematics may cause servo overloaded!!";
+                //TextBlock_Warning.Text += "\nExpected max force= " + Math.Round(Force_calculated)+"kg";
+                TextBlock_Warning.Text += "\nMax servo output force= " + Math.Round(servo_max_force_output_in_kg)+"kg";
                 TextBlock_Warning.Visibility = Visibility.Visible;
+                Label_max_force.Foreground = Red_Warning;
             }
             else
             {
                 TextBlock_Warning.Text = "Expected max push force=" + Math.Round(Force_calculated);
                 TextBlock_Warning.Text += "\nMax servo holding force=" + Math.Round(Servo_max_force);
                 TextBlock_Warning.Visibility= Visibility.Hidden;
+                Label_max_force.Foreground = White_Default;
             }
-            c_hort_max = c_hor + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.lengthPedal_travel;
-            oc_max = Math.Sqrt((c_hort_max) * (c_hort_max) + c_vert * c_vert);           
-            min_angle_1 = Math.Acos((b * b + oc_max * oc_max - a * a) / (2 * b * oc_max));
-            min_angle_2 = Math.Atan2(c_vert, c_hort_max);
-            angle_beta_max = Math.Acos((oc_max * oc_max + a * a - b * b) / (2 * oc_max * a));
-            angle_gamma = Math.Acos((b * b + a * a - oc_max * oc_max) / (2 * b * a));
-            double servo_max_force_output_in_kg = Servo_max_force / 9.8 * Math.Sin(angle_gamma) * b / od / Math.Cos(angle_beta_max - min_angle_2);
-            TextBlock_Warning_kinematics.Text = "Expected max force:" + Math.Round(servo_max_force_output_in_kg)+"kg";
+            
+            TextBlock_Warning_kinematics.Text = "Expected max force at max travel:" + Math.Round(servo_max_force_output_in_kg)+"kg";
         }
     }
     

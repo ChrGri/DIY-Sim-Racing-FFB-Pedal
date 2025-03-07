@@ -695,7 +695,7 @@
                                                                 </TransformGroup>
 
                                                             </Canvas.RenderTransform>
-                                                            <TextBlock x:Name="TextBlock_Warning" Height="40" Width="200" FontFamily="Arial" FontSize="9" Margin="100,80,0,0" Foreground="#FFF44343" />
+                                                            <TextBlock x:Name="TextBlock_Warning" Height="60" Width="300" FontFamily="Arial" FontSize="9" Margin="50,70,0,0" Foreground="#FFF44343" />
 
 
                                                             <TextBlock HorizontalAlignment="Center" 
