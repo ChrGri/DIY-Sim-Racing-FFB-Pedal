@@ -22,3 +22,27 @@ X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Rele
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\DIYFFBPedalUI.csproj.GenerateResource.cache
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\DIYFFBPedalUI.csproj.CoreCompileInputs.cache
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0215\SimHubPlugin\obj\Release\DIYFFBPe.469A4AA0.Up2Date
+C:\Program Files (x86)\SimHub\DiyActivePedal.dll.config
+C:\Program Files (x86)\SimHub\DiyActivePedal.dll
+C:\Program Files (x86)\SimHub\DiyActivePedal.pdb
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DIYFFBPedalUI.csproj.AssemblyReference.cache
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\OnlineProfile.g.cs
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\SerialMonitor.g.cs
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DIYFFBPedalControlUI.g.cs
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIElement\CheckboxWithLabel.g.cs
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIElement\SliderWithLabel.g.cs
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\GeneratedInternalTypeHelper.g.cs
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DiyActivePedal_MarkupCompile.cache
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DiyActivePedal_MarkupCompile.lref
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\OnlineProfile.baml
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\SerialMonitor.baml
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DIYFFBPedalControlUI.baml
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIElement\CheckboxWithLabel.baml
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIElement\SliderWithLabel.baml
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DiyActivePedal.g.resources
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\User.PluginSdkDemo.Properties.Resources.resources
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DIYFFBPedalUI.csproj.GenerateResource.cache
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DIYFFBPedalUI.csproj.CoreCompileInputs.cache
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DIYFFBPedalUI.csproj.CopyComplete
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DiyActivePedal.dll
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DiyActivePedal.pdb

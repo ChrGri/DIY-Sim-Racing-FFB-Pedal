@@ -753,7 +753,7 @@ void StepperWithLimits::servoCommunicationTask(void *pvParameters)
 
 			// Activate brake resistor once a certain voltage level is exceeded
 			#ifdef BRAKE_RESISTOR_PIN
-				if ( stepper_cl->getServosVoltage() > ((servoBusVoltageParameterized_fl32 + 5.0f)*10.0f) )
+				if ( stepper_cl->getServosVoltage() > ((servoBusVoltageParameterized_fl32 + 4.0f)*10.0f) )
 				{
 				digitalWrite(BRAKE_RESISTOR_PIN, HIGH);
 				}
