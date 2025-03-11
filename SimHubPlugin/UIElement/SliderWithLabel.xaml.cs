@@ -47,7 +47,7 @@ namespace User.PluginSdkDemo.UIElement
         // Dependency Property for Value
         public static readonly DependencyProperty ValueProperty =
             DependencyProperty.Register(nameof(SliderValue), typeof(double), typeof(SliderWithLabel),
-                new PropertyMetadata(0.0, OnPropertyChanged));
+                /*new PropertyMetadata(0.0, OnPropertyChanged),*/ new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPropertyChanged));
 
         public double SliderValue
         {

@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:User.PluginSdkDemo"
              xmlns:localUI="clr-namespace:User.PluginSdkDemo.UIElement"
+             xmlns:localFunction="clr-namespace:User.PluginSdkDemo.UIFunction"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:ui="clr-namespace:SimHub.Plugins.UI;assembly=SimHub.Plugins" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
@@ -967,59 +968,7 @@
                                                     <Label Content="General"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <Border Background="#7F4E4E4E" Height="190" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
-                                                <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540">
-                                                    <StackPanel Height="20" Width="540" Orientation="Horizontal">
-                                                        <Label Content="General Setting" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
-                                                    </StackPanel>
-                                                    <StackPanel Height="40" Width="540" Orientation="Horizontal" HorizontalAlignment="Left">
-                                                        <Label Content="Linear Module Pitch:" Height="20" Width="95" FontSize="10" Padding="0,0,0,0" VerticalContentAlignment="Center" Margin="70,0,0,0" FontFamily="Arial"/>
-                                                        <ComboBox x:Name="SpindlePitch" SelectionChanged="SpindlePitchChanged"   Width="50" Height="20" FontSize="10" SelectedIndex="5" Margin="3,0,0,0" HorizontalAlignment="Left" MinHeight="20" ToolTip="Spindle Pitch in mm/rev" BorderThickness="0,0,0,0">
-                                                            <ComboBoxItem Content="0" />
-                                                            <ComboBoxItem Content="1" />
-                                                            <ComboBoxItem Content="2"/>
-                                                            <ComboBoxItem Content="3"/>
-                                                            <ComboBoxItem Content="4"/>
-                                                            <ComboBoxItem Content="5"/>
-                                                            <ComboBoxItem Content="6"/>
-                                                            <ComboBoxItem Content="7"/>
-                                                            <ComboBoxItem Content="8"/>
-                                                            <ComboBoxItem Content="9"/>
-                                                            <ComboBoxItem Content="10"/>
-                                                        </ComboBox>
-                                                        <StackPanel Height="20" Width="304" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
-                                                            <styles:SHToggleButton x:Name="EnableStepLossRecov_check" Content="" Checked="EnableStepLossRecov_check_Checked" Unchecked="EnableStepLossRecov_check_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                                                            <Label Content="Enable step loss recov." Height="20" Width="110" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" Margin="4,0,0,0"/>
-                                                            <styles:SHToggleButton x:Name="EnableCrashDetection_check" Content="" Checked="EnableCrashDetection_check_Checked" Unchecked="EnableCrashDetection_check_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                                                            <Label Content="Enable crash detect." Height="20" Width="108" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" Margin="4,0,0,0"/>
-
-                                                        </StackPanel>
-
-
-
-                                                    </StackPanel>
-                                                    <localUI:SliderWithLabel x:Name="Slider_damping" SliderLength="400" SliderName="Damping factor" TickFrequency="0.00015" Unit="s" Width="400" Height="40" MaxValue="0.0375" SliderValueChanged="Slider_damping_ValueChanged"/>
-                                                    <StackPanel Height="40" Width="540" HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal">
-                                                        <localUI:SliderWithLabel x:Name="Slider_LC_rate" Width="200" SliderLength="190" SliderName="Loadcell Rate" MaxValue="500" Height="40" Unit="kg" TickFrequency="10" SliderValue="300" SliderValueChanged="Slider_LC_rate_ValueChanged" Margin="70,0,0,0"/>
-                                                        <localUI:SliderWithLabel x:Name="Slider_maxgame_output" SliderName="Max Game Output" SliderLength="190" SliderValue="100" Width="190" Height="40" Margin="10,0,0,0" Unit="%" SliderValueChanged="Slider_maxgame_output_ValueChanged"/>
-                                                    </StackPanel>
-                                                    <StackPanel Height="40" Width="540" Orientation="Horizontal" HorizontalAlignment="Left">
-                                                        <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="70,0,0,0">
-                                                            <styles:SHToggleButton x:Name="JoystickOutput_check" Content="" Checked="JoystickOutput_checked" Unchecked="JoystickOutput_unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Enable for  outputing the joystick value depend on pedal travel" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                                                            <Label Content="Joystick output from travel" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                                                        </StackPanel>
-                                                        <StackPanel Height="20" Width="120" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                                            <styles:SHToggleButton x:Name="InvertLoadcellReading_check" Content="" Checked="InvertLoadcellReading_checked" Unchecked="InvertLoadcellReading_unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="-10,0,0,0" />
-                                                            <Label x:Name="Label_reverse_LC" Content="Reverse LC reading" Height="20" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                                                        </StackPanel>
-                                                        <StackPanel Height="20" Width="140" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="2,0,0,0">
-                                                            <styles:SHToggleButton x:Name="InvertMotorDir_check" Content="" Checked="InvertMotorDir_checked" Unchecked="InvertMotorDir_unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="-10,0,0,0" />
-                                                            <Label x:Name="Label_reverse_servo" Content="Reverse Servo Direction" Height="20" Width="120" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                                                        </StackPanel>
-
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </Border>
+                                            <localFunction:GeneralSetting_PedalSetting x:Name="Misc_Tab" ConfigChanged="Misc_Tab_ConfigChanged"/>
                                         </TabItem>
 
 
@@ -1030,32 +979,8 @@
                                                     <Label Content="Filter"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <Border Background="#7F4E4E4E" Height="190" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
-                                                <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540">
-                                                    <StackPanel Height="20" Width="540" Orientation="Horizontal">
-                                                        <Label Content="Noise Reduction Filter" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
-                                                    </StackPanel>
+                                            <localFunction:GeneralSetting_KF x:Name="KF_Tab" KF_value="8" KF_selection="2" KF_ValueChanged="GeneralSetting_KF_KF_ValueChanged" KF_SelectionChanged="KF_Tab_KF_SelectionChanged"/>
 
-
-                                                    <StackPanel Height="40" Width="540" Orientation="Horizontal" HorizontalAlignment="Left">
-                                                        <Label Content="Filter Model:" Height="20" Width="60" FontSize="10" Padding="0,0,0,0" VerticalContentAlignment="Center" Margin="70,0,0,0"/>
-                                                        <ComboBox x:Name="KF_filter_order" SelectionChanged="KF_filter_order_changed"   Width="120" Height="10" FontSize="10" SelectedIndex="0" Margin="0,0,0,0" BorderThickness="0,0,0,0">
-                                                            <ComboBoxItem Content="KF const. vel."/>
-                                                            <ComboBoxItem Content="KF const. accel."/>
-                                                            <ComboBoxItem Content="Exponential filter"/>
-                                                            <ComboBoxItem Content="NONE"/>
-                                                        </ComboBox>
-                                                    </StackPanel>
-                                                    <StackPanel Width="400" Height="50">
-                                                        <StackPanel Width="400" Height="10" Orientation="Horizontal">
-                                                            <Label  Width="250" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Loadcell Denoising Factor (slow to fast)" Height="10" Padding="0,0,0,0"/>
-                                                        </StackPanel>
-                                                        
-                                                        <localUI:SliderWithLabel x:Name="Slider_KF" SliderLength="400" SliderName="KF" SliderValue="1" MinValue="1" MaxValue="255"  SliderValueChanged="Slider_KF_ValueChanged"/>
-                                                    </StackPanel>
-                                                </StackPanel>
-
-                                            </Border>
                                         </TabItem>
 
                                         <TabItem Width="108" Height="30" Padding="0,0,0,0">
@@ -1064,21 +989,7 @@
                                                     <Label Content="Control"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Control stretegy for Pedal"  />
                                                 </Border>
                                             </TabItem.Header>
-
-                                            <Border Background="#7F4E4E4E" Height="190" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
-                                                <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540">
-                                                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal" Width="540" Height="20">
-                                                        <Label Content="Control Strategy:"  FontFamily="Arial Black" FontSize="12" Height="20" Width="119.8" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" UseLayoutRounding="True" Margin="70,0,0,0"  />
-                                                    </StackPanel>
-                                                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal" Width="540" Height="20">
-
-                                                        <RadioButton x:Name="ControlStrategy_Sel_1" Content="Static PID" GroupName="StrategySel_options" Checked="StrategySel" Width="100" Height="20" Margin="70,0,0,0" BorderThickness="0,0,0,0"/>
-                                                        <RadioButton x:Name="ControlStrategy_Sel_2" Content="Dynamic PID" GroupName="StrategySel_options" Checked="StrategySel" Width="100" Height="20" Margin="5,0,0,0" BorderThickness="0,0,0,0"/>
-                                                        <RadioButton x:Name="ControlStrategy_Sel_3" Content="MPC based control" GroupName="StrategySel_options" Checked="StrategySel" Width="125" Height="20" Margin="5,0,0,0" BorderThickness="0,0,0,0" Padding="6,0,0,0"/>
-
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </Border>
+                                            <localFunction:GeneralSetting_ControlStrategy x:Name="ControlStrategy_Tab" ControlStrategy="0" ControlStrategyChanged="ControlStrategy_Tab_ControlStrategyChanged" />
                                         </TabItem>
 
 
@@ -1089,17 +1000,7 @@
                                                     <Label Content="PID"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="PID control tuning was here"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <Border Background="#7F4E4E4E" Height="190" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
-                                                <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540">
-                                                    <StackPanel Height="20" Width="540" Orientation="Horizontal">
-                                                        <Label Content="PID Tuning" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
-                                                    </StackPanel>
-                                                    <localUI:SliderWithLabel x:Name="Slider_Pgain" Width="400" Height="40" SliderLength="400" SliderName="P-Gain" TickFrequency="0.01" MaxValue="0.5" SliderValueChanged="Slider_Pgain_ValueChanged"/>
-                                                    <localUI:SliderWithLabel x:Name="Slider_Igain" Width="400" Height="40" SliderLength="400" SliderName="I-Gain" MaxValue="10"  SliderValueChanged="Slider_Igain_ValueChanged"/>
-                                                    <localUI:SliderWithLabel x:Name="Slider_Dgain" Width="400" Height="40" TickFrequency="0.0001" SliderLength="400" SliderName="D-Gain" MaxValue="0.001" SliderValueChanged="Slider_Dgain_ValueChanged"/>
-                                                    <localUI:SliderWithLabel x:Name="Slider_VFgain" SliderName="Feed Forward Gain" Width="400" Height="40" SliderLength="400" TickFrequency="0.1" MaxValue="20"  SliderValueChanged="Slider_VFgain_ValueChanged"/>
-                                                </StackPanel>
-                                            </Border>
+                                            <localFunction:GeneralSetting_PID x:Name="PID_Tab" P_ValueChanged="PID_Tab_P_ValueChanged" I_ValueChanged="PID_Tab_I_ValueChanged" D_ValueChanged="PID_Tab_D_ValueChanged" FeedForwardGainChanged="PID_Tab_FeedForwardGainChanged"/>
                                         </TabItem>
 
 
@@ -1115,23 +1016,7 @@
                                             </TabItem.Header>
 
 
-                                            <Border Background="#7F4E4E4E" Height="190" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
-                                                <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540">
-                                                    <StackPanel Height="20" Width="540" Orientation="Horizontal">
-                                                        <Label Content="MPC gain tuning" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
-                                                    </StackPanel>
-                                                    <localUI:SliderWithLabel x:Name="Slider_MPC_0th_gain" Width="400" Height="40" SliderName="Foot spring stiffness" TickFrequency="0.1" SliderValue="10" SliderLength="400" MaxValue="10" SliderValueChanged="Slider_MPC_0th_gain_ValueChanged" Unit="kg/mm"/>
-
-                                                        <!-- dampening--><!--
-                                                    <StackPanel Width="400" Height="40">
-                                                        <StackPanel Width="400" Height="20" Orientation="Horizontal">
-                                                            <Label x:Name="label_MPC_1st_gain"  Width="170" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Foot spring damping:" Height="12" Padding="0,0,0,0"/>
-                                                        </StackPanel>
-                                                        <Slider x:Name="Slider_MPC_1st_gain" Style="{DynamicResource SliderStyle_single_H}" HorizontalAlignment="Left" Grid.Row="1" VerticalAlignment="Top" Width="400" Height="10" Maximum="1.0" ValueChanged="Slider_MPC_1st_gain_ValueChanged" IsSnapToTickEnabled="True" Value="1" SmallChange="0.01" LargeChange="0.1" TickFrequency="0.01"/>
-                                                    </StackPanel>-->
-
-                                                </StackPanel>
-                                            </Border>
+                                            <localFunction:GeneralSetting_MPC x:Name="MPC_tab" MPC_Gain="10" MPCGain_ValueChanged="MPC_tab_MPCGain_ValueChanged"/>
 
                                         </TabItem>
                                     </TabControl>
@@ -1141,13 +1026,13 @@
                                                 <Setter Property="Template">
                                                     <Setter.Value>
                                                         <ControlTemplate TargetType="TabItem">
-                                                            <!--The four values of CornerRadius represent the four corners of the TabItem.-->
+                                                           
                                                             <Border Name="Border" BorderThickness="0,0,0,0" BorderBrush="Gainsboro" CornerRadius="5,5,5,5" Margin="0,0,2,0">
                                                                 <ContentPresenter x:Name="ContentSite"  
-                            VerticalAlignment="Center"  
-                            HorizontalAlignment="Left"  
-                            ContentSource="Header"  
-                            Margin="0,0"/>
+                                                                    VerticalAlignment="Center"  
+                                                                    HorizontalAlignment="Left"  
+                                                                    ContentSource="Header"  
+                                                                    Margin="0,0"/>
                                                             </Border>
                                                             <ControlTemplate.Triggers>
                                                                 <Trigger Property="IsSelected" Value="True">
@@ -1691,6 +1576,14 @@
                                                     </StackPanel>
                                                 </StackPanel>
                                             </Border>
+                                        </TabItem>
+                                        <TabItem  Width="90" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
+                                            <TabItem.Header>
+                                                <Border  Width="90" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="Test"  FontFamily="Arial Black" FontSize="10" Height="30" Width="90" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                </Border>
+                                            </TabItem.Header>
+                                            
                                         </TabItem>
                                     </TabControl>
 

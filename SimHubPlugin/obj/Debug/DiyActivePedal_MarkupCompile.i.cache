@@ -4,17 +4,17 @@
 library
 C#
 .cs
-C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Debug\
+Y:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\obj\Debug\
 User.PluginSdkDemo
 none
 false
 DEBUG;TRACE
 
-2765160973
+10630972720
 1-1358375093
-8-812964556
-144211365502
-OnlineProfile.xaml;SettingsControlDemo.xaml;
+16567233001
+144883168814
+OnlineProfile.xaml;SerialMonitor.xaml;DIYFFBPedalControlUI.xaml;UIElement\CheckboxWithLabel.xaml;UIElement\SliderWithLabel.xaml;UIFunction\GeneralSetting_ControlStrategy.xaml;UIFunction\GeneralSetting_KF.xaml;UIFunction\GeneralSetting_MPC.xaml;UIFunction\GeneralSetting_PedalSetting.xaml;UIFunction\GeneralSetting_PID.xaml;
 
 True
 

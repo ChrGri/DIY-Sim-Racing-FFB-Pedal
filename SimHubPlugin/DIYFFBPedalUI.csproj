@@ -172,6 +172,21 @@
     <Compile Include="UIElement\SliderWithLabel.xaml.cs">
       <DependentUpon>SliderWithLabel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\GeneralSetting_ControlStrategy.xaml.cs">
+      <DependentUpon>GeneralSetting_ControlStrategy.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\GeneralSetting_KF.xaml.cs">
+      <DependentUpon>GeneralSetting_KF.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\GeneralSetting_MPC.xaml.cs">
+      <DependentUpon>GeneralSetting_MPC.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\GeneralSetting_PedalSetting.xaml.cs">
+      <DependentUpon>GeneralSetting_PedalSetting.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\GeneralSetting_PID.xaml.cs">
+      <DependentUpon>GeneralSetting_PID.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Page Include="OnlineProfile.xaml">
@@ -199,6 +214,26 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="UIFunction\GeneralSetting_ControlStrategy.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\GeneralSetting_KF.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\GeneralSetting_MPC.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\GeneralSetting_PedalSetting.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\GeneralSetting_PID.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Content Include="sdkmenuicon.png" />
@@ -213,6 +248,7 @@
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy /y $(ProjectDir)obj\Release\DiyActivePedal.dll  $(ProjectDir)bin 
