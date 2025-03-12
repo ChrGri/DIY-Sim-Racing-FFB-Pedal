@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
+
 namespace User.PluginSdkDemo.UIFunction
 {
     /// <summary>
@@ -25,32 +26,47 @@ namespace User.PluginSdkDemo.UIFunction
             InitializeComponent();
             DataContext = this;
         }
+        public static readonly DependencyProperty DAP_Config_Property = DependencyProperty.Register(
+            nameof(dap_config_st),
+            typeof(DAP_config_st),
+            typeof(GeneralSetting_MPC),
+            new FrameworkPropertyMetadata(new DAP_config_st(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPropertyChanged));
 
-        public static readonly DependencyProperty MPCGain_Property =
-DependencyProperty.Register(nameof(MPC_Gain), typeof(double), typeof(GeneralSetting_MPC),
-new FrameworkPropertyMetadata(10.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPropertyChanged));
 
-        public double MPC_Gain
+        public DAP_config_st dap_config_st
         {
-            get => (double)GetValue(MPCGain_Property);
-            set {
-                SetValue(MPCGain_Property, value);
-                //Slider_MPC_0th_gain.SliderValue= value;
-                
-            } 
-        }
-        private static void OnPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (d is GeneralSetting_MPC control)
+
+            get => (DAP_config_st)GetValue(DAP_Config_Property);
+            set
             {
-                //control.UpdateLabelContent();
+                SetValue(DAP_Config_Property, value);
             }
         }
-        public event RoutedPropertyChangedEventHandler<double> MPCGain_ValueChanged;
+
+        private static void OnPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is GeneralSetting_MPC control && e.NewValue is DAP_config_st newData)
+            {
+                try
+                {
+                    control.Slider_MPC_0th_gain.SliderValue=newData.payloadPedalConfig_.MPC_0th_order_gain;
+                }
+                catch
+                { 
+                }
+            }
+        }
+        public event EventHandler<DAP_config_st> ConfigChanged;
+        protected void ConfigChangedEvent(DAP_config_st newValue)
+        {
+            ConfigChanged?.Invoke(this, newValue);
+        }
         public void MPCGainValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            MPC_Gain = e.NewValue;
-            MPCGain_ValueChanged?.Invoke(this, e);
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.MPC_0th_order_gain = (float)e.NewValue;
+            dap_config_st= tmp;
+            ConfigChangedEvent(dap_config_st);
         }
     }
 }

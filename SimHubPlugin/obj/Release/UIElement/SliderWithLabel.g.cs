@@ -41,6 +41,7 @@ using WoteverCommon.WPF.AutoGrid;
 using WoteverCommon.WPF.Behaviors;
 using WoteverCommon.WPF.Converters;
 using WoteverCommon.WPF.Styles;
+using WoteverLocalization;
 
 
 namespace User.PluginSdkDemo.UIElement {

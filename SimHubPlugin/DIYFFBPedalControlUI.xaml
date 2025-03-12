@@ -968,7 +968,7 @@
                                                     <Label Content="General"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <localFunction:GeneralSetting_PedalSetting x:Name="Misc_Tab" ConfigChanged="Misc_Tab_ConfigChanged"/>
+                                            <localFunction:GeneralSetting_PedalSetting x:Name="Misc_Tab" ConfigChanged="Tab_ConfigChanged"/>
                                         </TabItem>
 
 
@@ -979,7 +979,7 @@
                                                     <Label Content="Filter"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <localFunction:GeneralSetting_KF x:Name="KF_Tab" KF_value="8" KF_selection="2" KF_ValueChanged="GeneralSetting_KF_KF_ValueChanged" KF_SelectionChanged="KF_Tab_KF_SelectionChanged"/>
+                                            <localFunction:GeneralSetting_KF x:Name="KF_Tab" KF_value="8" KF_selection="2" ConfigChanged="Tab_ConfigChanged"/>
 
                                         </TabItem>
 
@@ -989,7 +989,7 @@
                                                     <Label Content="Control"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Control stretegy for Pedal"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <localFunction:GeneralSetting_ControlStrategy x:Name="ControlStrategy_Tab" ControlStrategy="0" ControlStrategyChanged="ControlStrategy_Tab_ControlStrategyChanged" />
+                                            <localFunction:GeneralSetting_ControlStrategy x:Name="ControlStrategy_Tab" ConfigChanged="Tab_ConfigChanged" />
                                         </TabItem>
 
 
@@ -1000,7 +1000,7 @@
                                                     <Label Content="PID"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="PID control tuning was here"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <localFunction:GeneralSetting_PID x:Name="PID_Tab" P_ValueChanged="PID_Tab_P_ValueChanged" I_ValueChanged="PID_Tab_I_ValueChanged" D_ValueChanged="PID_Tab_D_ValueChanged" FeedForwardGainChanged="PID_Tab_FeedForwardGainChanged"/>
+                                            <localFunction:GeneralSetting_PID x:Name="PID_Tab" ConfigChanged="Tab_ConfigChanged"/>
                                         </TabItem>
 
 
@@ -1016,7 +1016,7 @@
                                             </TabItem.Header>
 
 
-                                            <localFunction:GeneralSetting_MPC x:Name="MPC_tab" MPC_Gain="10" MPCGain_ValueChanged="MPC_tab_MPCGain_ValueChanged"/>
+                                            <localFunction:GeneralSetting_MPC x:Name="MPC_tab" ConfigChanged="Tab_ConfigChanged"/>
 
                                         </TabItem>
                                     </TabControl>

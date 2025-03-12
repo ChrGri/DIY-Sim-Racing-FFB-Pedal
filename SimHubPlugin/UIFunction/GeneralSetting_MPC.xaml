@@ -311,7 +311,7 @@
                 <StackPanel Height="20" Width="540" Orientation="Horizontal">
                     <Label Content="MPC gain tuning" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
                 </StackPanel>
-                <localUI:SliderWithLabel x:Name="Slider_MPC_0th_gain" Width="400" Height="40" SliderName="Foot spring stiffness" TickFrequency="0.1"  SliderLength="400" MaxValue="10" SliderValueChanged="MPCGainValueChanged" Unit="kg/mm" SliderValue="{Binding MPC_Gain, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"/>
+                <localUI:SliderWithLabel x:Name="Slider_MPC_0th_gain" Width="400" Height="40" SliderName="Foot spring stiffness" TickFrequency="0.1"  SliderLength="400" MaxValue="10" SliderValueChanged="MPCGainValueChanged" Unit="kg/mm" SliderValue="0"/>
             </StackPanel>
         </Border>
     </Grid>

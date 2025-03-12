@@ -24,49 +24,106 @@ namespace User.PluginSdkDemo.UIFunction
         public GeneralSetting_KF()
         {
             InitializeComponent();
-            DataContext = this;
+            dap_config_st= new DAP_config_st();
+            //DataContext = this;
         }
+        public static readonly DependencyProperty DAP_Config_Property = DependencyProperty.Register(
+            nameof(dap_config_st),
+            typeof(DAP_config_st),
+            typeof(GeneralSetting_KF),
+            new FrameworkPropertyMetadata(new DAP_config_st(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPropertyChanged));
 
+
+        public DAP_config_st dap_config_st
+        {
+
+            get 
+            {
+                
+                return (DAP_config_st)GetValue(DAP_Config_Property);
+            } 
+            set
+            {
+                SetValue(DAP_Config_Property, value);
+                //KF_selection = value.payloadPedalConfig_.kf_modelOrder;
+                //KF_value = value.payloadPedalConfig_.kf_modelNoise;
+            }
+        }
+        /*
         public static readonly DependencyProperty KF_selectionProperty =
     DependencyProperty.Register(nameof(KF_selection), typeof(int), typeof(GeneralSetting_KF),
         new FrameworkPropertyMetadata(0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPropertyChanged));
-
+        */
         public int KF_selection
         {
+            /*
             get => (int)GetValue(KF_selectionProperty);
             set => SetValue(KF_selectionProperty, value);
+            */
+            get;set;
         }
+        /*
         public static readonly DependencyProperty KF_valueProperty =
     DependencyProperty.Register(nameof(KF_value), typeof(double), typeof(GeneralSetting_KF),
         new FrameworkPropertyMetadata(1.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPropertyChanged));
-
+        */
         public double KF_value
         {
+            /*
             get => (double)GetValue(KF_valueProperty);
             set => SetValue(KF_valueProperty, value);
+            */
+            get;set;
         }
 
         private static void OnPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is GeneralSetting_KF control)
+            
+            if (d is GeneralSetting_KF control && e.NewValue is DAP_config_st newData)
             {
                 //control.UpdateLabelContent();
+                if (control != null)
+                {
+                    try
+                    {
+                        control.KF_filter_order.SelectedIndex = newData.payloadPedalConfig_.kf_modelOrder;
+                        control.Slider_KF.SliderValue = newData.payloadPedalConfig_.kf_modelNoise;
+                    }
+                    catch
+                    {
+
+                    }
+                }
+
             }
         }
+
+        public event EventHandler<DAP_config_st> ConfigChanged;
+        protected void ConfigChangedEvent(DAP_config_st newValue)
+        {
+            ConfigChanged?.Invoke(this, newValue);
+        }
         
-        public event RoutedPropertyChangedEventHandler<double> KF_ValueChanged;
+        //public event RoutedPropertyChangedEventHandler<double> KF_ValueChanged;
         public void KFValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             KF_value = e.NewValue;
-            KF_ValueChanged?.Invoke(this, e);
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.kf_modelNoise=(byte)KF_value;
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
         }
-        public event RoutedEventHandler KF_SelectionChanged;
+        //public event RoutedEventHandler KF_SelectionChanged;
         public void KF_filter_order_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             KF_selection = KF_filter_order.SelectedIndex;
-            KF_SelectionChanged?.Invoke(this, e);
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.kf_modelOrder = (byte)KF_selection;
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
 
         }
+        
 
     }
 }

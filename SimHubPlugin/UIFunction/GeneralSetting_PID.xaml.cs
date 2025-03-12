@@ -25,76 +25,77 @@ namespace User.PluginSdkDemo.UIFunction
             InitializeComponent();
             DataContext = this;
         }
-        public static readonly DependencyProperty P_valueProperty =
-DependencyProperty.Register(nameof(P_value), typeof(double), typeof(GeneralSetting_PID),
-new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPropertyChanged));
+        public static readonly DependencyProperty DAP_Config_Property = DependencyProperty.Register(
+            nameof(dap_config_st),
+            typeof(DAP_config_st),
+            typeof(GeneralSetting_PID),
+            new FrameworkPropertyMetadata(new DAP_config_st(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPropertyChanged));
 
-        public double P_value
+
+        public DAP_config_st dap_config_st
         {
-            get => (double)GetValue(P_valueProperty);
-            set => SetValue(P_valueProperty, value);
-        }
 
-        public static readonly DependencyProperty I_valueProperty =
-DependencyProperty.Register(nameof(I_value), typeof(double), typeof(GeneralSetting_PID),
-new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPropertyChanged));
-
-        public double I_value
-        {
-            get => (double)GetValue(I_valueProperty);
-            set => SetValue(I_valueProperty, value);
-        }
-
-        public static readonly DependencyProperty D_valueProperty =
-DependencyProperty.Register(nameof(D_value), typeof(double), typeof(GeneralSetting_PID),
-new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPropertyChanged));
-
-        public double D_value
-        {
-            get => (double)GetValue(D_valueProperty);
-            set => SetValue(D_valueProperty, value);
-        }
-
-        public static readonly DependencyProperty FeedForwardGainProperty =
-DependencyProperty.Register(nameof(FeedForwardGain), typeof(double), typeof(GeneralSetting_PID),
-new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPropertyChanged));
-
-        public double FeedForwardGain
-        {
-            get => (double)GetValue(FeedForwardGainProperty);
-            set => SetValue(FeedForwardGainProperty, value);
+            get => (DAP_config_st)GetValue(DAP_Config_Property);
+            set
+            {
+                SetValue(DAP_Config_Property, value);
+            }
         }
 
         private static void OnPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is GeneralSetting_PID control)
+            if (d is GeneralSetting_PID control && e.NewValue is DAP_config_st newData)
             {
                 //control.UpdateLabelContent();
+                try
+                {
+                    control.Slider_Pgain.SliderValue = newData.payloadPedalConfig_.PID_p_gain;
+                    control.Slider_Igain.SliderValue = newData.payloadPedalConfig_.PID_i_gain;
+                    control.Slider_Dgain.SliderValue = newData.payloadPedalConfig_.PID_d_gain;
+                    control.Slider_VFgain.SliderValue = newData.payloadPedalConfig_.PID_velocity_feedforward_gain;
+                }
+                catch
+                { 
+                }
             }
         }
-        public event RoutedPropertyChangedEventHandler<double> P_ValueChanged;
+
+        public event EventHandler<DAP_config_st> ConfigChanged;
+        protected void ConfigChangedEvent(DAP_config_st newValue)
+        {
+            ConfigChanged?.Invoke(this, newValue);
+        }
+
         private void Slider_Pgain_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            P_value = e.NewValue;
-            P_ValueChanged?.Invoke(this, e);
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.PID_p_gain = (float)e.NewValue;
+            dap_config_st= tmp;
+            ConfigChangedEvent(dap_config_st);
         }
-        public event RoutedPropertyChangedEventHandler<double> D_ValueChanged;
-        private void Slider_Dgain_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            D_value = e.NewValue;
-            D_ValueChanged?.Invoke(this, e);
-        }
-        public event RoutedPropertyChangedEventHandler<double> FeedForwardGainChanged;
-        private void Slider_VFgain_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            FeedForwardGain = e.NewValue;
-            FeedForwardGainChanged?.Invoke(this, e);
-        }
-        public event RoutedPropertyChangedEventHandler<double> I_ValueChanged;
+
         private void Slider_Igain_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            I_value = e.NewValue;
-            I_ValueChanged?.Invoke(this, e);
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.PID_i_gain = (float)e.NewValue;
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
+
+        private void Slider_Dgain_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.PID_d_gain = (float)e.NewValue;
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
+
+        private void Slider_VFgain_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.PID_velocity_feedforward_gain = (float)e.NewValue;
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
         }
     }
 }

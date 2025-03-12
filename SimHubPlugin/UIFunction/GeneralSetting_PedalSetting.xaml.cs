@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -18,7 +19,7 @@ namespace User.PluginSdkDemo.UIFunction
     /// <summary>
     /// GeneralSetting_PedalSetting.xaml 的互動邏輯
     /// </summary>
-    public partial class GeneralSetting_PedalSetting : UserControl
+    public partial class GeneralSetting_PedalSetting : System.Windows.Controls.UserControl
     {
         public GeneralSetting_PedalSetting()
         {
@@ -40,11 +41,68 @@ namespace User.PluginSdkDemo.UIFunction
             set
             {
                 SetValue(DAP_Config_Property, value);
-
             }
-            
-            //get;set;
+        }
 
+        public static readonly DependencyProperty Settings_Property = DependencyProperty.Register(
+            nameof(Settings),
+            typeof(DIYFFBPedalSettings),
+            typeof(GeneralSetting_PedalSetting),
+            new FrameworkPropertyMetadata(new DIYFFBPedalSettings(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnSettingsChanged));
+
+        public DIYFFBPedalSettings Settings
+        {
+            get => (DIYFFBPedalSettings)GetValue(Settings_Property);
+            set 
+            {
+                SetValue(Settings_Property, value);
+                updateUI();
+            } 
+        }
+
+        private static void OnSettingsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            /*
+            var control = d as GeneralSetting_PedalSetting;
+            if (control != null && e.NewValue is DIYFFBPedalSettings newData)
+            {
+                try
+                {
+                    if (newData.advanced_b)
+                    {
+                        control.Slider_LC_rate.TickFrequency = 1;
+                    }
+                    else
+                    {
+                        control.Slider_LC_rate.TickFrequency = 10;
+                    }
+                }
+                catch 
+                {
+                
+                }
+            }
+            */
+        }
+        private void updateUI()
+        {
+            try 
+            {
+                if (Settings != null)
+                {
+                    if (Settings.advanced_b)
+                    {
+                        Slider_LC_rate.TickFrequency = 1;
+                    }
+                    else
+                    {
+                        Slider_LC_rate.TickFrequency = 10;
+                    }
+                }
+            }
+            catch 
+            {  
+            }
         }
         private static void OnPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -126,6 +184,11 @@ namespace User.PluginSdkDemo.UIFunction
             ConfigChanged?.Invoke(this, newValue);
         }
 
+        public event EventHandler<DIYFFBPedalSettings> SettingsChanged;
+        protected void SettingsChangedEvent(DIYFFBPedalSettings newValue)
+        {
+            SettingsChanged?.Invoke(this, newValue);
+        }
         private void ComboboxPitchSelection_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var tmp = dap_config_st;

@@ -311,10 +311,10 @@
                 <StackPanel Height="20" Width="540" Orientation="Horizontal">
                     <Label Content="PID Tuning" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
                 </StackPanel>
-                <localUI:SliderWithLabel x:Name="Slider_Pgain" Width="400" Height="40" SliderLength="400" SliderName="P-Gain" TickFrequency="0.01" MaxValue="0.5" SliderValueChanged="Slider_Pgain_SliderValueChanged" SliderValue="{Binding P_value, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"/>
-                <localUI:SliderWithLabel x:Name="Slider_Igain" Width="400" Height="40" SliderLength="400" SliderName="I-Gain" MaxValue="10"  SliderValueChanged="Slider_Igain_SliderValueChanged" SliderValue="{Binding I_value, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"/>
-                <localUI:SliderWithLabel x:Name="Slider_Dgain" Width="400" Height="40" TickFrequency="0.0001" SliderLength="400" SliderName="D-Gain" MaxValue="0.001" SliderValueChanged="Slider_Dgain_SliderValueChanged" SliderValue="{Binding D_value, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"/>
-                <localUI:SliderWithLabel x:Name="Slider_VFgain" SliderName="Feed Forward Gain" Width="400" Height="40" SliderLength="400" TickFrequency="0.1" MaxValue="20"  SliderValueChanged="Slider_VFgain_SliderValueChanged" SliderValue="{Binding FeedForwardGain, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"/>
+                <localUI:SliderWithLabel x:Name="Slider_Pgain" Width="400" Height="40" SliderLength="400" SliderName="P-Gain" TickFrequency="0.01" MaxValue="0.5" SliderValue="0.1" SliderValueChanged="Slider_Pgain_SliderValueChanged"/>
+                <localUI:SliderWithLabel x:Name="Slider_Igain" Width="400" Height="40" SliderLength="400" SliderName="I-Gain" MaxValue="10" SliderValue="0" SliderValueChanged="Slider_Igain_SliderValueChanged"/>
+                <localUI:SliderWithLabel x:Name="Slider_Dgain" Width="400" Height="40" TickFrequency="0.0001" SliderLength="400" SliderName="D-Gain" MaxValue="0.001" SliderValue="0" SliderValueChanged="Slider_Dgain_SliderValueChanged"/>
+                <localUI:SliderWithLabel x:Name="Slider_VFgain" SliderName="Feed Forward Gain" Width="400" Height="40" SliderLength="400" TickFrequency="0.1" MaxValue="20"   SliderValue="0" SliderValueChanged="Slider_VFgain_SliderValueChanged"/>
             </StackPanel>
         </Border>
     </Grid>

@@ -1377,16 +1377,14 @@ namespace User.PluginSdkDemo
 
             //Slider_KF.SliderValue= dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.kf_modelNoise;
             if (Plugin != null)
-            {
-                KF_Tab.KF_value = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.kf_modelNoise;
-                KF_Tab.KF_selection = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.kf_modelOrder;
-                MPC_tab.MPC_Gain = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.MPC_0th_order_gain;
-                PID_Tab.P_value= dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.PID_p_gain;
-                PID_Tab.I_value = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.PID_i_gain;
-                PID_Tab.D_value = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.PID_d_gain;
-                PID_Tab.FeedForwardGain = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.PID_velocity_feedforward_gain;
+            {                
                 var tmp_struct = dap_config_st[indexOfSelectedPedal_u];
                 Misc_Tab.dap_config_st = tmp_struct;
+                KF_Tab.dap_config_st=tmp_struct;
+                ControlStrategy_Tab.dap_config_st=tmp_struct;
+                PID_Tab.dap_config_st = tmp_struct;
+                MPC_tab.dap_config_st = tmp_struct;
+                Misc_Tab.Settings = Plugin.Settings;
             }
             
 
@@ -1543,11 +1541,6 @@ namespace User.PluginSdkDemo
                 Simulate_ABS_check.IsChecked = false;
             }
 
-            //control strategy
-            if (Plugin != null)
-            {
-                ControlStrategy_Tab.ControlStrategy = (int)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.control_strategy_b;
-            }
             
 
 
@@ -4887,6 +4880,7 @@ namespace User.PluginSdkDemo
             //Slider_LC_rate.TickFrequency = 1;
             Rangeslider_force_range.TickFrequency = 0.1;
             TextBox_debug_count.Visibility=Visibility.Visible;
+            updateTheGuiFromConfig();
 
 
         }
@@ -4913,6 +4907,7 @@ namespace User.PluginSdkDemo
             //Slider_LC_rate.TickFrequency = 10;
             Rangeslider_force_range.TickFrequency = 1;
             TextBox_debug_count.Visibility = Visibility.Hidden;
+            updateTheGuiFromConfig();
         }
 
 
@@ -8440,7 +8435,7 @@ namespace User.PluginSdkDemo
                 }
                 else
                 {
-                    Rangeslider_force_range.UpperValue = Rangeslider_force_range.UpperValue + 1;
+                    Rangeslider_force_range.UpperValue = Rangeslider_force_range.UpperValue + 1; 
                 }
                 
             }
@@ -8822,80 +8817,7 @@ namespace User.PluginSdkDemo
             TextBlock_Warning_kinematics.Text = "Expected max force at max travel:" + Math.Round(servo_max_force_output_in_kg)+"kg";
         }
 
-        private void GeneralSetting_KF_KF_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (Plugin != null)
-            {
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.kf_modelNoise = (byte)e.NewValue;
-                PedalParameterLiveUpdate();
-            }
-           
-        }
-        private void KF_Tab_KF_SelectionChanged(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.kf_modelOrder = (byte)KF_Tab.KF_selection;
-                PedalParameterLiveUpdate();
-            }
-        }
-
-        private void ControlStrategy_Tab_ControlStrategyChanged(object sender, int e)
-        {
-            if (Plugin != null)
-            {
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.control_strategy_b = (byte)ControlStrategy_Tab.ControlStrategy;
-                PedalParameterLiveUpdate();
-            }
-
-        }
-
-        private void MPC_tab_MPCGain_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (Plugin != null)
-            {
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.MPC_0th_order_gain = (float)e.NewValue;
-                PedalParameterLiveUpdate();
-            }
-        }
-
-        private void PID_Tab_P_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (Plugin != null)
-            {
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.PID_p_gain = (float)e.NewValue;
-                PedalParameterLiveUpdate();
-            }
-        }
-
-        private void PID_Tab_I_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (Plugin != null)
-            {
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.PID_i_gain = (float)e.NewValue;
-                PedalParameterLiveUpdate();
-            }
-        }
-
-        private void PID_Tab_D_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (Plugin != null)
-            {
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.PID_d_gain = (float)e.NewValue;
-                PedalParameterLiveUpdate();
-            }
-        }
-
-        private void PID_Tab_FeedForwardGainChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (Plugin != null)
-            {
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.PID_velocity_feedforward_gain = (float)e.NewValue;
-                PedalParameterLiveUpdate();
-            }
-        }
-
-        private void Misc_Tab_ConfigChanged(object sender, DAP_config_st e)
+        private void Tab_ConfigChanged(object sender, DAP_config_st e)
         {
             if (Plugin != null)
             {

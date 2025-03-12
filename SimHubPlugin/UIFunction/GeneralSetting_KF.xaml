@@ -312,7 +312,7 @@
                 </StackPanel>
                 <StackPanel Height="40" Width="540" Orientation="Horizontal" HorizontalAlignment="Left">
                     <Label Content="Filter Model:" Height="20" Width="60" FontSize="10" Padding="0,0,0,0" VerticalContentAlignment="Center" Margin="70,0,0,0"/>
-                    <ComboBox x:Name="KF_filter_order"    Width="120" Height="10" FontSize="10" SelectedIndex="{Binding KF_selection , RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}" Margin="0,0,0,0" BorderThickness="0,0,0,0" SelectionChanged="KF_filter_order_SelectionChanged">
+                    <ComboBox x:Name="KF_filter_order"    Width="120" Height="10" FontSize="10" SelectedIndex="0" Margin="0,0,0,0" BorderThickness="0,0,0,0" SelectionChanged="KF_filter_order_SelectionChanged">
                         <ComboBoxItem Content="KF const. vel."/>
                         <ComboBoxItem Content="KF const. accel."/>
                         <ComboBoxItem Content="Exponential filter"/>
@@ -324,7 +324,7 @@
                         <Label  Width="250" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Loadcell Denoising Factor (slow to fast)" Height="10" Padding="0,0,0,0"/>
                     </StackPanel>
 
-                    <localUI:SliderWithLabel x:Name="Slider_KF" SliderLength="400" SliderName="KF" SliderValue="{Binding KF_value , RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}" MinValue="1" MaxValue="255" SliderValueChanged="KFValueChanged"/>
+                    <localUI:SliderWithLabel x:Name="Slider_KF" SliderLength="400" SliderName="KF" SliderValue="128" MinValue="1" MaxValue="255" SliderValueChanged="KFValueChanged"/>
                 </StackPanel>
             </StackPanel>
 
