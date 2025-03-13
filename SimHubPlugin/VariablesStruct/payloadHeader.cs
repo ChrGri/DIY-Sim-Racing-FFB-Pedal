@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 namespace User.PluginSdkDemo
 {
     // https://stackoverflow.com/questions/14344305/best-way-to-structure-class-struct-in-c-sharp
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    [Serializable]
+    //[StructLayout(LayoutKind.Sequential, Pack = 1)]
+    //[Serializable]
     public struct payloadHeader
     {
         // structure identification via payload

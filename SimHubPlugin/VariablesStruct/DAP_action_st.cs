@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace User.PluginSdkDemo
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    [Serializable]
+    //[StructLayout(LayoutKind.Sequential, Pack = 1)]
+    //[Serializable]
     public struct DAP_action_st
     {
         public payloadHeader payloadHeader_;

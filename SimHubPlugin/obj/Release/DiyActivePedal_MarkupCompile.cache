@@ -10,11 +10,11 @@ none
 false
 TRACE
 
-10630972720
+11-1732454274
 1-1358375093
-32-600433373
+331179475585
 145-574512487
-OnlineProfile.xaml;SerialMonitor.xaml;DIYFFBPedalControlUI.xaml;UIElement\CheckboxWithLabel.xaml;UIElement\SliderWithLabel.xaml;UIFunction\GeneralSetting_ControlStrategy.xaml;UIFunction\GeneralSetting_KF.xaml;UIFunction\GeneralSetting_MPC.xaml;UIFunction\GeneralSetting_PedalSetting.xaml;UIFunction\GeneralSetting_PID.xaml;
+OnlineProfile.xaml;SerialMonitor.xaml;DIYFFBPedalControlUI.xaml;UIElement\CheckboxWithLabel.xaml;UIElement\SliderWithLabel.xaml;UIFunction\EffectsTab_ABS.xaml;UIFunction\GeneralSetting_ControlStrategy.xaml;UIFunction\GeneralSetting_KF.xaml;UIFunction\GeneralSetting_MPC.xaml;UIFunction\GeneralSetting_PedalSetting.xaml;UIFunction\GeneralSetting_PID.xaml;
 
 False
 

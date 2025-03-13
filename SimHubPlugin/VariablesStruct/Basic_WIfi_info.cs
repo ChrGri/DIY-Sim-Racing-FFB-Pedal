@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace User.PluginSdkDemo
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    [Serializable]
+    //[Serializable]
     unsafe public struct Basic_WIfi_info
     {
         public byte payload_Type;

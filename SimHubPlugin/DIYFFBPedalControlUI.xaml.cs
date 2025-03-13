@@ -1164,7 +1164,7 @@ namespace User.PluginSdkDemo
         {
             // update the sliders
 
-            update_plot_ABS();
+            
             update_plot_BP();
             update_plot_WS();
             update_plot_RPM();
@@ -1334,9 +1334,7 @@ namespace User.PluginSdkDemo
             Slider_RPM_AMP.SliderValue = (double)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.RPM_AMP) / (double)100.0f;
             
 
-            Slider_ABS_freq.SliderValue = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absFrequency;
-            
-            Slider_ABS_AMP.SliderValue = ((double)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absAmplitude) / (double)20.0f;
+
             if (dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalStartPosition < 5)
             {
                 dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalStartPosition = 5;
@@ -1384,7 +1382,11 @@ namespace User.PluginSdkDemo
                 ControlStrategy_Tab.dap_config_st=tmp_struct;
                 PID_Tab.dap_config_st = tmp_struct;
                 MPC_tab.dap_config_st = tmp_struct;
+                EffectsABS_Tab.dap_config_st = tmp_struct;
                 Misc_Tab.Settings = Plugin.Settings;
+                EffectsABS_Tab.Settings = Plugin.Settings;
+
+                EffectsABS_Tab.calculation = Plugin._calculaitons;
             }
             
 
@@ -1514,32 +1516,11 @@ namespace User.PluginSdkDemo
 
 
 
-            switch (dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absForceOrTarvelBit)
-            {
-                case 0:
-                    //label_ABS_AMP.Content = "ABS/TC Amplitude: " + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absAmplitude / 20.0f + "kg";
-                    Slider_ABS_AMP.Unit = "kg";
-                    break;
-                case 1:
-                    Slider_ABS_AMP.Unit = "%";
-                    //label_ABS_AMP.Content = "ABS/TC Amplitude: " + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absAmplitude / 20.0f + "%";
-                    break;
-                default:
-                    break;
-            }
 
 
             
             Update_BrakeForceCurve();
-            //Simulated ABS trigger
-            if (dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.Simulate_ABS_trigger == 1)
-            {
-                Simulate_ABS_check.IsChecked = true;
-            }
-            else
-            {
-                Simulate_ABS_check.IsChecked = false;
-            }
+
 
             
 
@@ -1599,23 +1580,7 @@ namespace User.PluginSdkDemo
             //set for travel slider;
             double dx = 0;
 
-            // ABS pattern
-            try
-            {
-                AbsPattern.SelectedIndex = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absPattern;
-            }
-            catch (Exception caughtEx)
-            {
-            }
 
-            // ABS force or travel dependent
-            try
-            {
-                EffectAppliedOnForceOrTravel_combobox.SelectedIndex = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absForceOrTarvelBit;
-            }
-            catch (Exception caughtEx)
-            {
-            }
 
             
 
@@ -1666,16 +1631,7 @@ namespace User.PluginSdkDemo
                 checkbox_enable_RPM.Content = "Effect Disabled";
             }
 
-            if (Plugin.Settings.ABS_enable_flag[indexOfSelectedPedal_u] == 1)
-            {
-                checkbox_enable_ABS.IsChecked = true;
-                checkbox_enable_ABS.Content = "ABS/TC Effect Enabled";
-            }
-            else
-            {
-                checkbox_enable_ABS.IsChecked = false;
-                checkbox_enable_ABS.Content = "ABS/TC Effect Disabled";
-            }
+
             if (dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.BP_trigger == 1)
             {
                 checkbox_enable_bite_point.IsChecked = true;
@@ -2104,44 +2060,7 @@ namespace User.PluginSdkDemo
 
         }
 
-        private void update_plot_ABS()
-        {
-            int x_quantity = 200;
-            double[] x = new double[x_quantity];
-            double[] y = new double[x_quantity];
-            
-            double y_max =50;
-            double dx = canvas_plot_ABS.Width / x_quantity;
-            double dy = canvas_plot_ABS.Height / y_max;
-            double freq = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absFrequency;
-            double max_force = 255 / 20;
-            double amp = ((double)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absAmplitude) /20;
-            double peroid = x_quantity / freq;
-            System.Windows.Media.PointCollection myPointCollection2 = new System.Windows.Media.PointCollection();
-            if (dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absPattern == 0)
-            {
-                for (int idx = 0; idx < x_quantity; idx++)
-                {
-                    x[idx] = idx;
-                    y[idx] = -1 * amp / max_force * Math.Sin(2 * x[idx] / peroid * Math.PI) * y_max / 2;
-                    System.Windows.Point Pointlcl = new System.Windows.Point(dx * x[idx], dy * y[idx] + 25);
-                    myPointCollection2.Add(Pointlcl);
-                }
-
-            }
-            if (dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absPattern == 1)
-            {
-                for (int idx = 0; idx < x_quantity; idx++)
-                {
-                    x[idx] = idx;     
-                    y[idx] = -1 * amp / max_force  * y_max * (x[idx]%peroid)/peroid+0.5* amp / max_force * y_max ;
-                    System.Windows.Point Pointlcl = new System.Windows.Point(dx * x[idx], dy * y[idx] + 25);
-                    myPointCollection2.Add(Pointlcl);
-                }
-            }
-
-            this.Polyline_plot_ABS.Points = myPointCollection2;
-        }
+        
         private void update_plot_BP()
         {
             int x_quantity = 200;
@@ -2296,30 +2215,6 @@ namespace User.PluginSdkDemo
 
 
 
-        /********************************************************************************************************************/
-        /*							Slider callbacks																		*/
-        /********************************************************************************************************************/
-
-        public void TestAbs_click(object sender, RoutedEventArgs e)
-        {
-            //if (indexOfSelectedPedal_u == 1)
-            if (TestAbs_check.IsChecked == false)
-            {
-                TestAbs_check.IsChecked = true;
-                Plugin.sendAbsSignal = (bool)TestAbs_check.IsChecked;
-                TextBox_debugOutput.Text = "ABS-Test begin";
-                updateTheGuiFromConfig();
-            }
-            else
-            {
-                TestAbs_check.IsChecked = false;
-                //Plugin.sendAbsSignal = !Plugin.sendAbsSignal;
-                Plugin.sendAbsSignal = (bool)TestAbs_check.IsChecked;
-                TextBox_debugOutput.Text = "ABS-Test stopped";
-                updateTheGuiFromConfig();
-            }
-
-        }
 
 
 
@@ -2327,30 +2222,6 @@ namespace User.PluginSdkDemo
 
 
 
-
-
-        /********************************************************************************************************************/
-        /*							PID tuning                      														*/
-        /********************************************************************************************************************/
-        public void PID_tuning_P_gain_changed(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.PID_p_gain = (float)e.NewValue;
-        }
-
-        public void PID_tuning_I_gain_changed(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.PID_i_gain = (float)e.NewValue;
-        }
-
-        public void PID_tuning_D_gain_changed(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.PID_d_gain = (float)e.NewValue;
-        }
-
-        public void PID_tuning_Feedforward_gain_changed(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.PID_velocity_feedforward_gain = (float)e.NewValue;
-        }
 
 
 
@@ -4086,36 +3957,8 @@ namespace User.PluginSdkDemo
 
 
 
-        public void AbsPatternChanged(object sender, SelectionChangedEventArgs e)
-        {
-            try
-            {
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absPattern = (byte)AbsPattern.SelectedIndex;
-                PedalParameterLiveUpdate();
-            }
-            catch (Exception caughtEx)
-            {
-                string errorMessage = caughtEx.Message;
-                TextBox_debugOutput.Text = errorMessage;
-            }
-            update_plot_ABS();
-        }
 
-        /*
-        public void KF_filter_order_changed(object sender, SelectionChangedEventArgs e)
-        {
-            try
-            {
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.kf_modelOrder = (byte)KF_filter_order.SelectedIndex;
-                PedalParameterLiveUpdate();
-            }
-            catch (Exception caughtEx)
-            {
-                string errorMessage = caughtEx.Message;
-                TextBox_debugOutput.Text = errorMessage;
-            }
-        }
-        */
+
 
 
 
@@ -4969,16 +4812,6 @@ namespace User.PluginSdkDemo
             Plugin.Settings.auto_connect_flag[indexOfSelectedPedal_u] = 0 ;
         }
 
-        private void checkbox_enable_ABS_Checked(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.ABS_enable_flag[indexOfSelectedPedal_u] = 1;
-            checkbox_enable_ABS.Content = "ABS/TC Effect Enabled";
-        }
-        private void checkbox_enable_ABS_Unchecked(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.ABS_enable_flag[indexOfSelectedPedal_u] = 0;
-            checkbox_enable_ABS.Content = "ABS/TC Effect Disabled";
-        }
 
         private void checkbox_enable_RPM_Checked(object sender, RoutedEventArgs e)
         {
@@ -5021,41 +4854,6 @@ namespace User.PluginSdkDemo
             //CheckBox_rudder.IsEnabled = false;
         }
 
-
-        public void EffectAppliedOnForceOrTravel_combobox_changed(object sender, SelectionChangedEventArgs e)
-        {
-            try
-            {
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absForceOrTarvelBit = (byte)EffectAppliedOnForceOrTravel_combobox.SelectedIndex;
-
-                if (Slider_ABS_AMP != null)
-                {
-                    switch (dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absForceOrTarvelBit)
-                    {
-                        case 0:
-                            Slider_ABS_AMP.Unit = "kg";
-                            //label_ABS_AMP.Content = "ABS/TC Amplitude: " + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absAmplitude / 20.0f + "kg";
-                            break;
-                        case 1:
-                            Slider_ABS_AMP.Unit = "%";
-                            //label_ABS_AMP.Content = "ABS/TC Amplitude: " + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absAmplitude / 20.0f + "%";
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                PedalParameterLiveUpdate();
-
-
-            }
-            catch (Exception caughtEx)
-            {
-                string errorMessage = caughtEx.Message;
-                TextBox_debugOutput.Text = errorMessage;
-            }
-
-
-        }
 
         private void vjoy_plus_click(object sender, RoutedEventArgs e)
         {
@@ -6237,32 +6035,9 @@ namespace User.PluginSdkDemo
             PedalParameterLiveUpdate();
         }
 
-        private void Slider_ABS_freq_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absFrequency = (Byte)(e.NewValue);
-            PedalParameterLiveUpdate();
-            update_plot_ABS();
-        }
 
-        private void Slider_ABS_AMP_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absAmplitude = (Byte)(e.NewValue * 20);
-            switch (dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absForceOrTarvelBit)
-            {
-                case 0:
-                    Slider_ABS_AMP.Unit = "kg";
-                    //label_ABS_AMP.Content = "ABS/TC Amplitude: " + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absAmplitude / 20.0f + "kg";
-                    break;
-                case 1:
-                    Slider_ABS_AMP.Unit = "%";
-                    //label_ABS_AMP.Content = "ABS/TC Amplitude: " + (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.absAmplitude / 20.0f + "%";
-                    break;
-                default:
-                    break;
-            }
-            update_plot_ABS();
-            PedalParameterLiveUpdate();
-        }
+
+
 
         private void Rangeslider_travel_range_LowerValueChanged(object sender, RangeParameterChangedEventArgs e)
         {
@@ -8606,26 +8381,6 @@ namespace User.PluginSdkDemo
                 return JsonConvert.DeserializeObject<DAP_config_st>(jsonString);
             }
         }
-        private void DisplayProfileData(Profile_Online profile)
-        {
-            if (profile?.Basic_Config != null)
-            {
-                TextBox_debug_count.Text = $"Max Force: {profile.Basic_Config.MaxForce}\n" +
-                                     $"Preload Force: {profile.Basic_Config.PreloadForce}\n" +
-                                     $"Damping: {profile.Basic_Config.Damping}\n" +
-                                     $"Travel: {profile.Basic_Config.Travel}\n" +
-                                     $"Relative Force (0%): {profile.Basic_Config.relativeForce_p000}\n" +
-                                     $"Relative Force (20%): {profile.Basic_Config.relativeForce_p020}\n" +
-                                     $"Relative Force (40%): {profile.Basic_Config.relativeForce_p040}\n" +
-                                     $"Relative Force (60%): {profile.Basic_Config.relativeForce_p060}\n" +
-                                     $"Relative Force (80%): {profile.Basic_Config.relativeForce_p080}\n" +
-                                     $"Relative Force (100%): {profile.Basic_Config.relativeForce_p100}";
-            }
-            else
-            {
-                TextBox_debug_count.Text = "No data available.";
-            }
-        }
         private void btn_SerialMonitorWindow_Click(object sender, RoutedEventArgs e)
         {
             if (_serial_monitor_window == null || !_serial_monitor_window.IsVisible)
@@ -8821,12 +8576,23 @@ namespace User.PluginSdkDemo
         {
             if (Plugin != null)
             {
-                dap_config_st[indexOfSelectedPedal_u] = e;
+                dap_config_st[indexOfSelectedPedal_u] = e;                
                 PedalParameterLiveUpdate();
             }
             
         }
 
+        private void Tab_SettingsChanged(object sender, DIYFFBPedalSettings e)
+        {
+            Plugin.Settings = e;
+            updateTheGuiFromConfig();
+        }
+
+        private void Tab_CalculationChanged(object sender, CalculationVariables e)
+        {
+            Plugin._calculaitons = e;
+            updateTheGuiFromConfig();
+        }
     }
     
 }

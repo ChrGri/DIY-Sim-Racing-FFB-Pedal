@@ -924,7 +924,7 @@ namespace User.PluginSdkDemo
 
 
             // Send ABS test signal if requested
-            if (sendAbsSignal)
+            if (sendAbsSignal || _calculaitons.SendAbsSignal)
             {
                 sendAbsSignal_local_b = true;
                 sendTcSignal_local_b = true;
@@ -1421,7 +1421,7 @@ namespace User.PluginSdkDemo
         {
 
             pluginHandle = pluginManager;
-        
+            _calculaitons = new CalculationVariables();
             SimHub.Logging.Current.Info("Starting DIY active pedal plugin");
 
             // Load settings

@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace User.PluginSdkDemo
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    [Serializable]
+    //[StructLayout(LayoutKind.Sequential, Pack = 1)]
+    //[Serializable]
     unsafe public struct payloadPedalState_Basic
     {
         public UInt16 pedalPosition_u16;

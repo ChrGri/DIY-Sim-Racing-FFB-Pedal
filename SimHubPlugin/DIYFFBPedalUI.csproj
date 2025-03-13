@@ -177,6 +177,9 @@
     <Compile Include="UIElement\SliderWithLabel.xaml.cs">
       <DependentUpon>SliderWithLabel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\EffectsTab_ABS.xaml.cs">
+      <DependentUpon>EffectsTab_ABS.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\GeneralSetting_ControlStrategy.xaml.cs">
       <DependentUpon>GeneralSetting_ControlStrategy.xaml</DependentUpon>
     </Compile>
@@ -233,6 +236,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIElement\SliderWithLabel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\EffectsTab_ABS.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

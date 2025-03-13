@@ -10,11 +10,12 @@ namespace User.PluginSdkDemo
     {
         public int PedalCurrentTravel { get; set; }
         public int PedalCurrentForce { get; set; }
-
+        public bool SendAbsSignal { get; set; }
         public CalculationVariables()
         {
             PedalCurrentForce = 0;
             PedalCurrentTravel = 0;
+            SendAbsSignal = false;
         }
     }
 }

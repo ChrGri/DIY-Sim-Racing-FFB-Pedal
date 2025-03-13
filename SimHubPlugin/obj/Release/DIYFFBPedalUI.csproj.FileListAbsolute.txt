@@ -115,3 +115,7 @@ X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\Si
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\obj\Release\UIFunction\GeneralSetting_PedalSetting.baml
 Y:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\obj\Release\UIFunction\GeneralSetting_PedalSetting.g.cs
 Y:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\obj\Release\UIFunction\GeneralSetting_PedalSetting.baml
+Y:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\obj\Release\UIFunction\EffectsTab_ABS.g.cs
+Y:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\obj\Release\UIFunction\EffectsTab_ABS.baml
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\obj\Release\UIFunction\EffectsTab_ABS.g.cs
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\obj\Release\UIFunction\EffectsTab_ABS.baml

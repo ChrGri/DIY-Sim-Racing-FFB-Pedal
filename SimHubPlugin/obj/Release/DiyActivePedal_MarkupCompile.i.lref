@@ -5,9 +5,10 @@ FY:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\S
 FY:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\DIYFFBPedalControlUI.xaml;;
 FY:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\UIElement\CheckboxWithLabel.xaml;;
 FY:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\UIElement\SliderWithLabel.xaml;;
+FY:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\UIFunction\EffectsTab_ABS.xaml;;
 FY:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\UIFunction\GeneralSetting_ControlStrategy.xaml;;
 FY:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\UIFunction\GeneralSetting_KF.xaml;;
-FY:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\UIFunction\GeneralSetting_Misc.xaml;;
 FY:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\UIFunction\GeneralSetting_MPC.xaml;;
+FY:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\UIFunction\GeneralSetting_PedalSetting.xaml;;
 FY:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\UIFunction\GeneralSetting_PID.xaml;;
 
