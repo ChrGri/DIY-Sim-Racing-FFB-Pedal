@@ -158,6 +158,7 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
   //#define ESPNow_debug_rudder
   #define OTA_update_ESP32
   #define BRAKE_RESISTOR_PIN 13
+  //#define OTA_update_ESP32
   
 #endif
 

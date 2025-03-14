@@ -1817,6 +1817,14 @@ void serialCommunicationTask( void * pvParameters )
               OTA_enable_b=true;
             }
           #endif
+          #ifdef OTA_update_ESP32
+            Serial.println("Get OTA command");
+            OTA_enable_b=true;
+            //OTA_enable_start=true;
+            ESPNow_OTA_enable=false;
+            //Serial.println("get basic wifi info");
+            //Serial.readBytes((char*)&_basic_wifi_info, sizeof(Basic_WIfi_info));
+          #endif
           
           break;
           default:
