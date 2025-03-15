@@ -180,6 +180,27 @@
     <Compile Include="UIFunction\EffectsTab_ABS.xaml.cs">
       <DependentUpon>EffectsTab_ABS.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\EffectsTab_BitePoint.xaml.cs">
+      <DependentUpon>EffectsTab_BitePoint.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\EffectsTab_Custom1.xaml.cs">
+      <DependentUpon>EffectsTab_Custom1.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\EffectsTab_Custom2.xaml.cs">
+      <DependentUpon>EffectsTab_Custom2.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\EffectsTab_GForce.xaml.cs">
+      <DependentUpon>EffectsTab_GForce.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\EffectsTab_RoadImpact.xaml.cs">
+      <DependentUpon>EffectsTab_RoadImpact.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\EffectsTab_RPM.xaml.cs">
+      <DependentUpon>EffectsTab_RPM.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\EffectsTab_WheelSlip.xaml.cs">
+      <DependentUpon>EffectsTab_WheelSlip.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\GeneralSetting_ControlStrategy.xaml.cs">
       <DependentUpon>GeneralSetting_ControlStrategy.xaml</DependentUpon>
     </Compile>
@@ -195,7 +216,6 @@
     <Compile Include="UIFunction\GeneralSetting_PID.xaml.cs">
       <DependentUpon>GeneralSetting_PID.xaml</DependentUpon>
     </Compile>
-    <Compile Include="VariablesStruct\Basic_config.cs" />
     <Compile Include="VariablesStruct\Basic_WIfi_info.cs" />
     <Compile Include="VariablesStruct\CalculationVariables.cs" />
     <Compile Include="VariablesStruct\constants.cs" />
@@ -211,7 +231,6 @@
     <Compile Include="VariablesStruct\payloadPedalConfig.cs" />
     <Compile Include="VariablesStruct\payloadPedalState_Basic.cs" />
     <Compile Include="VariablesStruct\payloadPedalState_Extended.cs" />
-    <Compile Include="VariablesStruct\Profile_Online.cs" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="OnlineProfile.xaml">
@@ -240,6 +259,34 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\EffectsTab_ABS.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\EffectsTab_BitePoint.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\EffectsTab_Custom1.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\EffectsTab_Custom2.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\EffectsTab_GForce.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\EffectsTab_RoadImpact.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\EffectsTab_RPM.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\EffectsTab_WheelSlip.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -60,29 +60,25 @@ namespace User.PluginSdkDemo.UIFunction
             } 
         }
 
+        public static readonly DependencyProperty Cauculation_Property = DependencyProperty.Register(
+            nameof(calculation),
+            typeof(CalculationVariables),
+            typeof(GeneralSetting_PedalSetting),
+            new FrameworkPropertyMetadata(new CalculationVariables(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnCalculationChanged));
+
+        public CalculationVariables calculation
+        {
+            get => (CalculationVariables)GetValue(Cauculation_Property);
+            set
+            {
+                SetValue(Cauculation_Property, value);
+                //updateUI();
+            }
+        }
+
         private static void OnSettingsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            /*
-            var control = d as GeneralSetting_PedalSetting;
-            if (control != null && e.NewValue is DIYFFBPedalSettings newData)
-            {
-                try
-                {
-                    if (newData.advanced_b)
-                    {
-                        control.Slider_LC_rate.TickFrequency = 1;
-                    }
-                    else
-                    {
-                        control.Slider_LC_rate.TickFrequency = 10;
-                    }
-                }
-                catch 
-                {
-                
-                }
-            }
-            */
+
         }
         private void updateUI()
         {
@@ -163,21 +159,32 @@ namespace User.PluginSdkDemo.UIFunction
                         }
                     }
                     catch (Exception caughtEx)
-                    { 
-                        
+                    {                         
                     }
-                    
 
                 }
-
-
-
-
-
             }
 
         }
+        private static void OnCalculationChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var control = d as EffectsTab_ABS;
+            if (control != null && e.NewValue is CalculationVariables newData)
+            {
+                try
+                {
+                }
+                catch
+                {
+                }
+            }
+        }
 
+        public event EventHandler<CalculationVariables> CalculationChanged;
+        protected void CalculationChangedEvent(CalculationVariables newValue)
+        {
+            CalculationChanged?.Invoke(this, newValue);
+        }
         public event EventHandler<DAP_config_st> ConfigChanged;
         protected void ConfigChangedEvent(DAP_config_st newValue)
         {
@@ -191,6 +198,7 @@ namespace User.PluginSdkDemo.UIFunction
         }
         private void ComboboxPitchSelection_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            
             var tmp = dap_config_st;
             tmp.payloadPedalConfig_.spindlePitch_mmPerRev_u8 = (byte)ComboboxPitchSelection.SelectedIndex;
             if (tmp.payloadPedalConfig_.spindlePitch_mmPerRev_u8 == 0)
@@ -198,8 +206,10 @@ namespace User.PluginSdkDemo.UIFunction
                 tmp.payloadPedalConfig_.spindlePitch_mmPerRev_u8 = 5;
                 //ComboboxPitchSelection.SelectedIndex = 5;
             }
+            calculation.IsUIRefreshNeeded = true;
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
+
         }
 
         private void CheckBox_StepLossRecov_Checked(object sender, RoutedEventArgs e)

@@ -109,7 +109,6 @@ namespace User.PluginSdkDemo
         //public VirtualJoystick joystick;
         internal vJoyInterfaceWrap.vJoy joystick;
 
-        private Profile_Online Online_profile;
 
         public bool[] dumpPedalToResponseFile = new bool[3];
         public bool[] dumpPedalToResponseFile_clearFile = new bool[3];
@@ -134,7 +133,7 @@ namespace User.PluginSdkDemo
         public int Bridge_baudrate = 3000000;
         public bool Fanatec_mode = false;
         public bool Update_Profile_Checkbox_b = false;
-        public bool Update_CV_textbox = false;
+        //public bool Update_CV_textbox = false;
         public bool[] Version_error_warning_b = new bool[3] { false, false, false };
         public bool[] Version_warning_first_show_b= new bool[3] { false, false, false };
         public bool Version_warning_first_show_b_bridge = false;
@@ -775,16 +774,6 @@ namespace User.PluginSdkDemo
             Rangeslider_force_range.TickFrequency = 1;
             TextBox_debug_count.Visibility= Visibility.Hidden;
             text_rudder_log.Visibility=Visibility.Hidden;
-            Online_profile = new Profile_Online();
-            Online_profile.Basic_Config=new BasicConfig();
-
-
-
-
-
-
-
-
         }
 
 
@@ -934,7 +923,7 @@ namespace User.PluginSdkDemo
             this.Plugin = plugin;
             plugin.testValue = 1;
             plugin.wpfHandle = this;
-
+            
 
             UpdateSerialPortList_click();
             //closeSerialAndStopReadCallback(1);
@@ -1159,15 +1148,10 @@ namespace User.PluginSdkDemo
 
 
 
-
+        //manually fresh the UI element
         unsafe public void updateTheGuiFromConfig()
         {
-            // update the sliders
 
-            
-            update_plot_BP();
-            update_plot_WS();
-            update_plot_RPM();
             info_label.Content = "State:\nDAP Version:\nPlugin Version:\nPedal Version:";
             info_label_system.Content = "Bridge:\nDAP Version:\nPlugin Version:\nBridge Verison:";
             //RSSI canvas
@@ -1279,22 +1263,6 @@ namespace User.PluginSdkDemo
                     system_info_text += "\n" + "No data";
                 }
                 
-                /*
-                if (Plugin.Rudder_status)
-                {
-                    info_text += "\nIn Action";
-                    system_info_text += "\nIn Action";
-                    info_label.Content += "\nRudder:";
-                    info_label_system.Content += "\nRudder:";
-                }
-                if (Fanatec_mode)
-                {
-                    info_text += "\nIn Action";
-                    system_info_text += "\nIn Action";
-                    info_label.Content += "\nFanatec:";
-                    info_label_system.Content += "\nFanatec:";
-                }
-                */
                 info_label_2.Content = info_text;
                 info_label_2_system.Content = system_info_text;
             }
@@ -1306,33 +1274,7 @@ namespace User.PluginSdkDemo
             int debugFlagValue_0 = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.debug_flags_0;
             textBox_debug_Flag_0.Text = debugFlagValue_0.ToString();
 
-            //slider setting
 
-            Slider_impact_smoothness.SliderValue = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.Impact_window;            
-            Slider_impact_multi.SliderValue = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.Impact_multi;
-            
-
-            Slider_WS_freq.SliderValue = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.WS_freq;
-            Slider_WS_AMP.SliderValue = (double)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.WS_amp) / (double)20.0f;           
-            Slider_WS_trigger.SliderValue = Plugin.Settings.WS_trigger;
-            
-
-            Slider_G_force_smoothness.SliderValue = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.G_window;            
-            Slider_G_force_multi.SliderValue = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.G_multi;
-            
-
-            Slider_BP_freq.SliderValue = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.BP_freq;
-            Slider_BP_AMP.SliderValue = (double)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.BP_amp) / (double)100.0f;
-            
-
-            Rangeslider_RPM_freq.LowerValue = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.RPM_min_freq;
-            Rangeslider_RPM_freq.UpperValue = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.RPM_max_freq;
-            label_RPM_freq_max.Content = "MAX:" + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.RPM_max_freq + "Hz";
-            label_RPM_freq_min.Content = "MIN:" + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.RPM_min_freq + "Hz";
-
-
-            Slider_RPM_AMP.SliderValue = (double)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.RPM_AMP) / (double)100.0f;
-            
 
 
             if (dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalStartPosition < 5)
@@ -1383,46 +1325,40 @@ namespace User.PluginSdkDemo
                 PID_Tab.dap_config_st = tmp_struct;
                 MPC_tab.dap_config_st = tmp_struct;
                 EffectsABS_Tab.dap_config_st = tmp_struct;
+                EffectsRPM_Tab.dap_config_st = tmp_struct;
+                EffectsBitePoint_Tab.dap_config_st = tmp_struct;
+                EffectsGFroce_Tab.dap_config_st = tmp_struct;
+                EffectsWheelSlip_Tab.dap_config_st = tmp_struct;
+                EffectsRoadImpact_Tab.dap_config_st = tmp_struct;
+                EffectsCustom1_tab.dap_config_st=tmp_struct; 
+                EffectsCustom2_Tab.dap_config_st=tmp_struct;
+
                 Misc_Tab.Settings = Plugin.Settings;
                 EffectsABS_Tab.Settings = Plugin.Settings;
+                EffectsRPM_Tab.Settings = Plugin.Settings;
+                EffectsGFroce_Tab.Settings=Plugin.Settings;
+                EffectsWheelSlip_Tab.Settings = Plugin.Settings;
+                EffectsRoadImpact_Tab.Settings=Plugin.Settings;
+                EffectsCustom1_tab.Settings=Plugin.Settings;
+                EffectsCustom2_Tab.Settings=Plugin.Settings;
 
                 EffectsABS_Tab.calculation = Plugin._calculaitons;
+                EffectsBitePoint_Tab.calculation=Plugin._calculaitons;
+                EffectsCustom1_tab.calculation = Plugin._calculaitons;
+                EffectsCustom2_Tab.calculation = Plugin._calculaitons;
+                Misc_Tab.calculation = Plugin._calculaitons;
+
+
+                EffectsCustom1_tab.Plugin = Plugin;
+                EffectsCustom2_Tab.Plugin = Plugin;
+                
             }
             
 
             
             if (Plugin != null)
             {
-                if (Plugin.Settings.CV1_enable_flag[indexOfSelectedPedal_u] == true)
-                {
-                    checkbox_enable_CV1.IsChecked = true;
-                }
-                else
-                {
-                    checkbox_enable_CV1.IsChecked = false;
-                }
-
-                if (Plugin.Settings.CV2_enable_flag[indexOfSelectedPedal_u] == true)
-                {
-                    checkbox_enable_CV2.IsChecked = true;
-                }
-                else
-                {
-                    checkbox_enable_CV2.IsChecked = false;
-                }
-                Slider_CV1_trigger.SliderValue = Plugin.Settings.CV1_trigger[indexOfSelectedPedal_u];
-                Slider_CV1_AMP.SliderValue = (double)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.CV_amp_1/(double)20.0f;
-                Slider_CV1_freq.SliderValue = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.CV_freq_1;
-                Slider_CV2_trigger.SliderValue = Plugin.Settings.CV2_trigger[indexOfSelectedPedal_u];
-                Slider_CV2_AMP.SliderValue = (double)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.CV_amp_2/(double)20.0f;
-                Slider_CV2_freq.SliderValue = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.CV_freq_2;
-
-                if (Update_CV_textbox)
-                {
-                    Update_CV_textbox = false;
-                    textBox_CV1_string.Text = Plugin.Settings.CV1_bindings[indexOfSelectedPedal_u];
-                    textBox_CV2_string.Text = Plugin.Settings.CV2_bindings[indexOfSelectedPedal_u];
-                }
+                
                 Label_Pedal_interval_trigger.Content = "Action Interval: "+Plugin.Settings.Pedal_action_interval[indexOfSelectedPedal_u] + "ms";
                 Slider_Pedal_interval_trigger.Value = Plugin.Settings.Pedal_action_interval[indexOfSelectedPedal_u];
 
@@ -1620,63 +1556,21 @@ namespace User.PluginSdkDemo
                 btn_pedal_connect.Content = "Connect To Pedal";
             }
 
-            if (Plugin.Settings.RPM_enable_flag[indexOfSelectedPedal_u] == 1)
-            {
-                checkbox_enable_RPM.IsChecked = true;
-                checkbox_enable_RPM.Content = "Effect Enabled";
-            }
-            else
-            {
-                checkbox_enable_RPM.IsChecked = false;
-                checkbox_enable_RPM.Content = "Effect Disabled";
-            }
 
 
             if (dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.BP_trigger == 1)
             {
-                checkbox_enable_bite_point.IsChecked = true;
+   
                 text_BP.Visibility = Visibility.Visible;
                 rect_BP_Control.Visibility = Visibility.Visible;
-                checkbox_enable_bite_point.Content = "Bite Point Vibration Enabled";
-
             }
             else
-            {
-                checkbox_enable_bite_point.IsChecked = false;
+            {           
                 text_BP.Visibility = Visibility.Hidden;
                 rect_BP_Control.Visibility = Visibility.Hidden;
-                checkbox_enable_bite_point.Content = "Bite Point Vibration Disabled";
             }
 
-            if (indexOfSelectedPedal_u == 1)
-            {
-                checkbox_enable_G_force.IsEnabled = true;
-                if (Plugin.Settings.G_force_enable_flag[indexOfSelectedPedal_u] == 1)
-                {
-                    checkbox_enable_G_force.IsChecked = true;
-                    checkbox_enable_G_force.Content = "G Force Effect Enabled";
-                }
-                else
-                {
-                    checkbox_enable_G_force.IsChecked = false;
-                    checkbox_enable_G_force.Content = "G Force Effect Disabled";
-                }
-            }
-            else
-            {
-                checkbox_enable_G_force.IsEnabled = false;
-                checkbox_enable_G_force.IsChecked = false;
-                checkbox_enable_G_force.Content = "G Force Effect Disabled";
-            }
 
-            if (Plugin.Settings.RPM_effect_type == 0)
-            {
-                RPMeffecttype_Sel_1.IsChecked = true;
-            }
-            else
-            {
-                RPMeffecttype_Sel_2.IsChecked = true;
-            }
             
             if (Plugin.Settings.file_enable_check[profile_select, 0] == 1)
             {
@@ -1710,34 +1604,6 @@ namespace User.PluginSdkDemo
                 Gas_file_check.IsChecked = false;
             }
             
-            if (Plugin.Settings.WS_enable_flag[indexOfSelectedPedal_u] == 1)
-            {
-                checkbox_enable_wheelslip.IsChecked = true;
-            }
-            else
-            {
-                checkbox_enable_wheelslip.IsChecked = false;
-            }
-
-
-            if (Plugin.Settings.Road_impact_enable_flag[indexOfSelectedPedal_u] == 1)
-            {
-                checkbox_enable_impact.IsChecked = true;
-            }
-            else
-            {
-                checkbox_enable_impact.IsChecked = false;
-            }
-            /*
-            if (Plugin.Settings.RTSDTR_False[indexOfSelectedPedal_u] == true)
-            {
-                //CheckBox_RTSDTR.IsChecked = true;
-            }
-            else
-            { 
-                //CheckBox_RTSDTR.IsChecked = false;
-            }
-            */
 
             if (Plugin.Settings.auto_connect_flag[indexOfSelectedPedal_u] == 1)
             {
@@ -1748,12 +1614,6 @@ namespace User.PluginSdkDemo
                 checkbox_auto_connect.IsChecked= false;
             }
 
-            textBox_wheelslip_effect_string.Text = Plugin.Settings.WSeffect_bind;
-            textBox_impact_effect_string.Text = Plugin.Settings.Road_impact_bind;
-
-           
-
-            
             Label_vjoy_order.Content = Plugin.Settings.vjoy_order;
             textbox_profile_name.Text = Plugin.Settings.Profile_name[profile_select];
 
@@ -2060,84 +1920,6 @@ namespace User.PluginSdkDemo
 
         }
 
-        
-        private void update_plot_BP()
-        {
-            int x_quantity = 200;
-            double[] x = new double[x_quantity];
-            double[] y = new double[x_quantity];
-
-            double y_max = 50;
-            double dx = canvas_plot_BP.Width / x_quantity;
-            double dy = canvas_plot_BP.Height / y_max;
-            double freq = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.BP_freq;
-            double max_force = 200 / 20;
-            double amp = ((double)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.BP_amp) / 20;
-            double peroid = x_quantity / freq;
-            System.Windows.Media.PointCollection myPointCollection2 = new System.Windows.Media.PointCollection();
-                for (int idx = 0; idx < x_quantity; idx++)
-                {
-                    x[idx] = idx;
-                    y[idx] = -1 * amp / max_force * Math.Sin(2 * x[idx] / peroid * Math.PI) * y_max / 2;
-                    System.Windows.Point Pointlcl = new System.Windows.Point(dx * x[idx], dy * y[idx] + 25);
-                    myPointCollection2.Add(Pointlcl);
-                }
-            this.Polyline_plot_BP.Points = myPointCollection2;
-        }
-        private void update_plot_WS()
-        {
-            int x_quantity = 200;
-            double[] x = new double[x_quantity];
-            double[] y = new double[x_quantity];
-
-            double y_max = 50;
-            double dx = canvas_plot_WS.Width / x_quantity;
-            double dy = canvas_plot_WS.Height / y_max;
-            double freq = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.WS_freq;
-            double max_force = 250 / 20;
-            double amp = ((double)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.WS_amp) / 20;
-            double peroid = x_quantity / freq;
-            System.Windows.Media.PointCollection myPointCollection2 = new System.Windows.Media.PointCollection();
-            for (int idx = 0; idx < x_quantity; idx++)
-            {
-                x[idx] = idx;
-                y[idx] = -1 * amp / max_force * Math.Sin(2 * x[idx] / peroid * Math.PI) * y_max / 2;
-                System.Windows.Point Pointlcl = new System.Windows.Point(dx * x[idx], dy * y[idx] + 25);
-                myPointCollection2.Add(Pointlcl);
-            }
-            this.Polyline_plot_WS.Points = myPointCollection2;
-        }
-        private void update_plot_RPM()
-        {
-            int x_quantity = 1601;
-            double[] x = new double[x_quantity];
-            double[] y = new double[x_quantity];
-            double[] peroid_x = new double[x_quantity];
-            double[] freq= new double[x_quantity];
-            double[] amp=new double[x_quantity];
-            double y_max = 50;
-            double dx = canvas_plot_RPM.Width / (x_quantity-1);
-            double dy = canvas_plot_RPM.Height / y_max;
-            double freq_max = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.RPM_max_freq;
-            double freq_min= dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.RPM_min_freq;
-            double max_force = 200 / 20*1.3;
-            double amp_base = ((double)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.RPM_AMP) / 20;
-            //double peroid = x_quantity / freq;
-            System.Windows.Media.PointCollection myPointCollection2 = new System.Windows.Media.PointCollection();
-            for (int idx = 0; idx < x_quantity; idx++)
-            {
-                x[idx] = idx;
-                freq[idx] = freq_min+(((double)idx)/(double)x_quantity)*(freq_max-freq_min);
-                peroid_x[idx] = x_quantity / freq[idx];
-                amp[idx] = amp_base + amp_base * idx / x_quantity * 0.3;
-                y[idx] = -1 * amp[idx] / max_force * Math.Sin(2* x[idx] / peroid_x[idx] * Math.PI) * y_max / 2;
-                System.Windows.Point Pointlcl = new System.Windows.Point(dx * x[idx], dy * y[idx] + 25);
-                myPointCollection2.Add(Pointlcl);
-            }
-            this.Polyline_plot_RPM.Points = myPointCollection2;
-        }
-
-
         public class SerialPortChoice
         {
             public SerialPortChoice(string display, string value)
@@ -2204,30 +1986,14 @@ namespace User.PluginSdkDemo
             {
                 indexOfSelectedPedal_u = (uint)MyTab.SelectedIndex;
                 Plugin.Settings.table_selected = (uint)MyTab.SelectedIndex;
-                Update_CV_textbox = true;
-                PedalTabChange=true;
+                //Update_CV_textbox = true;
+                Plugin._calculaitons.Update_CV1_textbox = true;
+                Plugin._calculaitons.Update_CV2_textbox = true;
+                PedalTabChange =true;
                 PedalTabChange_last=DateTime.Now;
                 updateTheGuiFromConfig();
             }
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         private void NumericTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
@@ -4813,17 +4579,9 @@ namespace User.PluginSdkDemo
         }
 
 
-        private void checkbox_enable_RPM_Checked(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.RPM_enable_flag[indexOfSelectedPedal_u] = 1;
-            checkbox_enable_RPM.Content = "Effect Enabled";
-        }
+ 
 
-        private void checkbox_enable_RPM_Unchecked(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.RPM_enable_flag[indexOfSelectedPedal_u] = 0;
-            checkbox_enable_RPM.Content = "Effect Disabled";
-        }
+
 
         private void Vjoy_out_check_Checked(object sender, RoutedEventArgs e)
         {
@@ -4972,27 +4730,9 @@ namespace User.PluginSdkDemo
 
 
         }
-        private void checkbox_enable_bite_point_Checked(object sender, RoutedEventArgs e)
-        {
-
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.BP_trigger = 1;
-            text_BP.Visibility = Visibility.Visible;
-            rect_BP_Control.Visibility = Visibility.Visible;
-            checkbox_enable_bite_point.Content = "Bite Point Vibration Enabled";
 
 
-        }
 
-        private void checkbox_enable_bite_point_Unchecked(object sender, RoutedEventArgs e)
-        {
-
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.BP_trigger = 0;
-            text_BP.Visibility = Visibility.Hidden;
-            rect_BP_Control.Visibility = Visibility.Hidden;
-            checkbox_enable_bite_point.Content = "Bite Point Vibration Disabled";
-
-
-        }
 
         private void btn_reset_default_Click(object sender, RoutedEventArgs e)
         {
@@ -5000,36 +4740,8 @@ namespace User.PluginSdkDemo
             updateTheGuiFromConfig();
         }
 
-        private void checkbox_enable_G_force_Unchecked(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.G_force_enable_flag[indexOfSelectedPedal_u] = 0;
-            checkbox_enable_G_force.Content = "G Force Effect Disabled";
-
-
-        }
-        private void checkbox_enable_G_force_Checked(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.G_force_enable_flag[indexOfSelectedPedal_u] = 1;
-            checkbox_enable_G_force.Content = "G Force Effect Enabled";
-
-
-        }
-
-
         // RPM effect select
-        private void RPMeffecttype_Sel_1_Checked(object sender, RoutedEventArgs e)
-        {
-            if (RPMeffecttype_Sel_1.IsChecked == true)
-            {
-                Plugin.Settings.RPM_effect_type = 0;
-                //TextBox_debugOutput.Text = "" + Plugin.Settings.RPM_effect_type;
-            }
-            if (RPMeffecttype_Sel_2.IsChecked == true)
-            {
-                Plugin.Settings.RPM_effect_type = 1;
-                //TextBox_debugOutput.Text = "" + Plugin.Settings.RPM_effect_type;
-            }
-        }
+
 
         private void TabControl_file_path(object sender, SelectionChangedEventArgs e)
         {
@@ -5184,19 +4896,6 @@ namespace User.PluginSdkDemo
 
         }
 
-        private void effect_bind_click(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.WSeffect_bind = (string)textBox_wheelslip_effect_string.Text;
-            Plugin.Settings.WS_enable_flag[indexOfSelectedPedal_u] = 1;
-            updateTheGuiFromConfig();
-        }
-        private void effect_clear_click(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.WSeffect_bind = "";
-            textBox_wheelslip_effect_string.Text = "";
-            Plugin.Settings.WS_enable_flag[indexOfSelectedPedal_u] = 0;
-            updateTheGuiFromConfig();
-        }
 
         private void checkbox_enable_WS_Checked(object sender, RoutedEventArgs e)
         {
@@ -5357,22 +5056,6 @@ namespace User.PluginSdkDemo
         {
             Plugin.Settings.Road_impact_enable_flag[indexOfSelectedPedal_u] = 0;
         }
-
-        private void Bind_Impacteffect_Click(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.Road_impact_bind = (string)textBox_impact_effect_string.Text;
-            Plugin.Settings.Road_impact_enable_flag[indexOfSelectedPedal_u] = 1;
-            updateTheGuiFromConfig();
-        }
-
-        private void Clear_Impacteffect_Click(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.Road_impact_bind = "";
-            Plugin.Settings.Road_impact_enable_flag[indexOfSelectedPedal_u] = 0;
-            updateTheGuiFromConfig();
-        }
-
-
 
         private void rect_joint_MouseMove(object sender, MouseEventArgs e)
         {
@@ -5586,7 +5269,7 @@ namespace User.PluginSdkDemo
 
             
         }
-
+        
         private void btn_plus_OA_Click(object sender, RoutedEventArgs e)
         {
             double OA = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.lengthPedal_b;
@@ -5949,96 +5632,6 @@ namespace User.PluginSdkDemo
             updateTheGuiFromConfig();
         }
 
-        private void Slider_impact_smoothness_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.Impact_window = (Byte)Slider_impact_smoothness.SliderValue;
-            PedalParameterLiveUpdate();
-        }
-
-        private void Slider_impact_multi_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.Impact_multi = (Byte)e.NewValue;
-            PedalParameterLiveUpdate();
-        }
-
-        private void Slider_WS_freq_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.WS_freq = (Byte)e.NewValue;            
-            update_plot_WS();
-        }
-
-        private void Slider_WS_AMP_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.WS_amp = (Byte)(e.NewValue*20);
-            PedalParameterLiveUpdate();
-            update_plot_WS();
-        }
-
-        private void Slider_WS_trigger_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (Plugin!= null)
-            {
-                Plugin.Settings.WS_trigger = (int)(e.NewValue);
-                
-            }
-
-        }
-
-        private void Slider_G_force_smoothness_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.G_window=(Byte)e.NewValue;
-            
-            PedalParameterLiveUpdate();
-
-        }
-
-        private void Slider_G_force_multi_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.G_multi=(Byte)e.NewValue;
-            PedalParameterLiveUpdate();
-        }
-
-        private void Slider_BP_freq_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.BP_freq = (Byte)e.NewValue;
-            update_plot_BP();
-            PedalParameterLiveUpdate();
-        }
-
-        private void Slider_BP_AMP_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.BP_amp = (Byte)(e.NewValue * 100);          
-            update_plot_BP();
-            PedalParameterLiveUpdate();
-        }
-
-        private void Slider_RPM_AMP_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.RPM_AMP = (Byte)(e.NewValue * 100);
-            PedalParameterLiveUpdate();
-            update_plot_RPM();
-        }
-
-        private void Rangeslider_RPM_freq_LowerValueChanged(object sender, RangeParameterChangedEventArgs e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.RPM_min_freq = (byte)e.NewValue;
-            label_RPM_freq_min.Content = "MIN:"+ dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.RPM_min_freq+"Hz";
-            PedalParameterLiveUpdate();
-            update_plot_RPM();
-        }
-
-        private void Rangeslider_RPM_freq_UpperValueChanged(object sender, RangeParameterChangedEventArgs e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.RPM_max_freq = (byte)e.NewValue;
-            label_RPM_freq_max.Content = "MAX:" + dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.RPM_max_freq + "Hz";
-            update_plot_RPM();
-            PedalParameterLiveUpdate();
-        }
-
-
-
-
-
         private void Rangeslider_travel_range_LowerValueChanged(object sender, RangeParameterChangedEventArgs e)
         {
             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalStartPosition = (byte)e.NewValue;
@@ -6083,114 +5676,7 @@ namespace User.PluginSdkDemo
         }
 
 
-        private void Bind_CV1_Click(object sender, RoutedEventArgs e)
-        {
-            if (Plugin.Ncalc_reading(textBox_CV1_string.Text) != "Error")
-            {
-                Plugin.Settings.CV1_bindings[indexOfSelectedPedal_u] = (string)textBox_CV1_string.Text;
-                Plugin.Settings.CV1_enable_flag[indexOfSelectedPedal_u] = true;
-            }
-            else
-            {
-                Plugin.Settings.CV1_enable_flag[indexOfSelectedPedal_u] = false;
-                string MSG_tmp = "ERROR! String can not be evaluated";
-                System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-
-            }
-            //updateTheGuiFromConfig();
-        }
-
-        private void checkbox_enable_CV_1_Checked(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.CV1_enable_flag[indexOfSelectedPedal_u] = true;
-        }
-
-        private void checkbox_enable_CV_1_Unchecked(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.CV1_enable_flag[indexOfSelectedPedal_u] = false;
-        }
-
-        private void Clear_CV1_Click(object sender, RoutedEventArgs e)
-        {
-            textBox_CV1_string.Text = "";
-            Plugin.Settings.CV1_bindings[indexOfSelectedPedal_u] = (string)textBox_CV1_string.Text;
-            Plugin.Settings.CV1_enable_flag[indexOfSelectedPedal_u] = false;
-            //updateTheGuiFromConfig();
-        }
-
-        private void Slider_CV2_AMP_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.CV_amp_2 = (Byte)(e.NewValue*20);
-            PedalParameterLiveUpdate();
-        }
-
-        private void Slider_CV1_AMP_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.CV_amp_1 = (Byte)(e.NewValue*20);
-            PedalParameterLiveUpdate();
-        }
-
-        private void Slider_CV1_trigger_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            Plugin.Settings.CV1_trigger[indexOfSelectedPedal_u]= (Byte)e.NewValue;
-            
-        }
-
-        private void Slider_CV1_freq_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.CV_freq_1 = (Byte)e.NewValue;
-            PedalParameterLiveUpdate();
-        }
-
-        private void checkbox_enable_CV2_Checked(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.CV2_enable_flag[indexOfSelectedPedal_u] = true;
-            
-        }
-
-        private void checkbox_enable_CV2_Unchecked(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.CV2_enable_flag[indexOfSelectedPedal_u] = false;
-        }
-
-        private void Bind_CV2_Click(object sender, RoutedEventArgs e)
-        {
-            if (Plugin.Ncalc_reading(textBox_CV2_string.Text) != "Error")
-            {
-                Plugin.Settings.CV2_bindings[indexOfSelectedPedal_u] = (string)textBox_CV2_string.Text;
-                Plugin.Settings.CV2_enable_flag[indexOfSelectedPedal_u] = true;
-            }
-            else
-            {
-                Plugin.Settings.CV2_enable_flag[indexOfSelectedPedal_u] = false;
-                string MSG_tmp = "ERROR! String can not be evaluated";
-                System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-
-            }
-            /*
-            Plugin.Settings.CV2_bindings[indexOfSelectedPedal_u] = (string)textBox_CV2_string.Text;
-            Plugin.Settings.CV2_enable_flag[indexOfSelectedPedal_u] = true;
-            */
-        }
-
-        private void Clear_CV2_Click(object sender, RoutedEventArgs e)
-        {
-            textBox_CV2_string.Text = "";
-            Plugin.Settings.CV2_bindings[indexOfSelectedPedal_u] = (string)textBox_CV2_string.Text;
-            Plugin.Settings.CV2_enable_flag[indexOfSelectedPedal_u] = false;
-        }
-
-        private void Slider_CV2_trigger_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            Plugin.Settings.CV2_trigger[indexOfSelectedPedal_u] = (Byte)e.NewValue;
-           
-        }
-
-        private void Slider_CV2_freq_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.CV_freq_2 = (Byte)e.NewValue;
-            PedalParameterLiveUpdate();
-        }
+        
 
 
         public void ESPNow_SerialPortSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -8176,29 +7662,21 @@ namespace User.PluginSdkDemo
                 updateTheGuiFromConfig();
             }
         }
-        private void textBox_CV1_string_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            string var1 = "";
-            var1 = Plugin.Ncalc_reading(textBox_CV1_string.Text.ToString());
-            Label_NCALC_CUS1.Content = var1;
-        }
+
 
         private void TabControl_SelectionChanged_1(object sender, SelectionChangedEventArgs e)
         {
             if (Plugin != null)
             {
-                Update_CV_textbox = true;
+                //Update_CV_textbox = true;
+                Plugin._calculaitons.Update_CV1_textbox = true;
+                Plugin._calculaitons.Update_CV2_textbox = true;
                 updateTheGuiFromConfig();
             }
 
         }
 
-        private void textBox_CV2_string_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            string var1 = "";
-            var1 = Plugin.Ncalc_reading(textBox_CV2_string.Text.ToString());
-            Label_NCALC_CUS2.Content = var1;
-        }
+
 
         private void btn_plus_maxforce_Click(object sender, RoutedEventArgs e)
         {
@@ -8337,41 +7815,7 @@ namespace User.PluginSdkDemo
             }
         }
 
-        private void btn_Export_OnlineProfile_Click(object sender, RoutedEventArgs e)
-        {
-            Online_profile.Basic_Config.Travel = (int)((float)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalEndPosition - dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalStartPosition)/100.0f* (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.lengthPedal_travel);
-            Online_profile.Basic_Config.MaxForce = (int)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.maxForce;
-            Online_profile.Basic_Config.PreloadForce = (int)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.preloadForce;
-            Online_profile.Basic_Config.Damping = (int)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.dampingPress;
-            Online_profile.Basic_Config.relativeForce_p000 = (int)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce_p000;
-            Online_profile.Basic_Config.relativeForce_p020 = (int)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce_p020;
-            Online_profile.Basic_Config.relativeForce_p040 = (int)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce_p040;
-            Online_profile.Basic_Config.relativeForce_p060 = (int)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce_p060;
-            Online_profile.Basic_Config.relativeForce_p080 = (int)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce_p080;
-            Online_profile.Basic_Config.relativeForce_p100 = (int)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce_p100;
-            
-            if (Online_profile != null)
-            {
-                Microsoft.Win32.SaveFileDialog saveFileDialog = new Microsoft.Win32.SaveFileDialog
-                {
-                    Filter = "JSON files (*.json)|*.json",
-                    DefaultExt = "json",
-                    FileName = "Profile.json"
-                };
-
-                if (saveFileDialog.ShowDialog() == true)
-                {
-                    string jsonString = JsonConvert.SerializeObject(Online_profile, Formatting.Indented);
-                    File.WriteAllText(saveFileDialog.FileName, jsonString);
-                    System.Windows.MessageBox.Show("File saved successfully.");
-                    
-                }
-            }
-            else
-            {
-                System.Windows.MessageBox.Show("No profile data to save.");
-            }
-        }
+        
         private async Task<DAP_config_st> GetProfileDataAsync(string url)
         {
             using (HttpClient client = new HttpClient())
@@ -8576,7 +8020,12 @@ namespace User.PluginSdkDemo
         {
             if (Plugin != null)
             {
-                dap_config_st[indexOfSelectedPedal_u] = e;                
+                dap_config_st[indexOfSelectedPedal_u] = e;
+                if (Plugin._calculaitons.IsUIRefreshNeeded)
+                {
+                    updateTheGuiFromConfig();
+                    Plugin._calculaitons.IsUIRefreshNeeded = false;
+                }
                 PedalParameterLiveUpdate();
             }
             
