@@ -177,6 +177,9 @@
     <Compile Include="UIElement\SliderWithLabel.xaml.cs">
       <DependentUpon>SliderWithLabel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\CurveTab_PedalForceTravel.xaml.cs">
+      <DependentUpon>CurveTab_PedalForceTravel.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\EffectsTab_ABS.xaml.cs">
       <DependentUpon>EffectsTab_ABS.xaml</DependentUpon>
     </Compile>
@@ -215,6 +218,9 @@
     </Compile>
     <Compile Include="UIFunction\GeneralSetting_PID.xaml.cs">
       <DependentUpon>GeneralSetting_PID.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\KinematicsTab_Pedal.xaml.cs">
+      <DependentUpon>KinematicsTab_Pedal.xaml</DependentUpon>
     </Compile>
     <Compile Include="VariablesStruct\Basic_WIfi_info.cs" />
     <Compile Include="VariablesStruct\CalculationVariables.cs" />
@@ -255,6 +261,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIElement\SliderWithLabel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\CurveTab_PedalForceTravel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -307,6 +317,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\GeneralSetting_PID.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\KinematicsTab_Pedal.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

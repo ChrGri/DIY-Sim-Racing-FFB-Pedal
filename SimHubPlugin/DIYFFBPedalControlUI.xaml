@@ -388,16 +388,8 @@
             </Style>
         </ResourceDictionary>
     </UserControl.Resources>
-
-
-
-
-
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Width="810">
         <Grid RenderTransformOrigin="0,0" Width="810" Height="900">
-
-
-
             <TabControl  x:Name="Function_Tab_seleciton"  SelectionChanged="Function_Tab_seleciton_SelectionChanged" Width="810" Grid.ColumnSpan="2" HorizontalContentAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Height="910" RenderTransformOrigin="0,0" Grid.RowSpan="1">
                 <TabControl.Resources>
                     <Style TargetType="TabItem">
@@ -665,262 +657,21 @@
                                                 </Setter>
                                             </Style>
                                         </TabControl.Resources>
-                                        <TabItem Width="180" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
+                                        <TabItem Width="270" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
                                             <TabItem.Header>
-                                                <Border  Width="180" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="FORCE-TRAVEL CURVE"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="180"  />
+                                                <Border  Width="270" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="FORCE-TRAVEL CURVE"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="270"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <Border  HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="5,5,5,5"  Margin="0,3,0,0">
-                                                <StackPanel HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540">
-                                                    <!-- Travel vs Force curve adjustment sliders -->
-                                                    <StackPanel Height="20" Width="540" VerticalAlignment="Top" HorizontalAlignment="Left" Orientation="Horizontal">
-                                                        <Label Content="FORCE CURVE ADJUSTMENT" Width="200" Foreground="White" FontFamily="Arial Black" HorizontalAlignment="Center" Margin="70,0,0,0" Height="20" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
-                                                        <styles:SHButtonPrimary x:Name="btn_linearcurve" Click="btn_linearcurve_Click" Width="40" Content="Linear" Height="15" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" MinHeight="15" VerticalContentAlignment="Center" />
-                                                        <styles:SHButtonPrimary x:Name="btn_Scurve" Click="btn_scurve_Click" Width="45" Content="S-Curve" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="15" />
-                                                        <styles:SHButtonPrimary x:Name="btn_10xcurve" Click="btn_10xcurve_Click" Width="50" Content="Exponent" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="15" />
-                                                        <styles:SHButtonPrimary x:Name="btn_logcurve" Click="btn_logcurve_Click" Width="50" Content="Logarithm" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" MinHeight="15" VerticalContentAlignment="Center" />
-
-                                                    </StackPanel>
-                                                    <StackPanel Height="220" Width="540" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,5,0,0">
-
-
-                                                        <!-- Travel vs Force curve GUI elements -->
-                                                        <Canvas x:Name="canvas" Height="200" Width="400" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="70,0,0,0" >
-                                                            <Canvas.RenderTransform>
-                                                                <TransformGroup>
-                                                                    <ScaleTransform ScaleX="1" ScaleY="1"/>
-                                                                    <SkewTransform/>
-                                                                    <RotateTransform/>
-                                                                    <TranslateTransform/>
-                                                                </TransformGroup>
-
-                                                            </Canvas.RenderTransform>
-                                                            <TextBlock x:Name="TextBlock_Warning" Height="60" Width="300" FontFamily="Arial" FontSize="9" Margin="50,70,0,0" Foreground="#FFF44343" />
-
-
-                                                            <TextBlock HorizontalAlignment="Center" 
-                               VerticalAlignment="Top" 
-                               Text="FORCE" 
-                               Width="60" 
-                               Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="-25" Canvas.Top="85" FontFamily="Arial Black" Height="13">
-                                                                <TextBlock.RenderTransform>
-                                                                    <TransformGroup>
-                                                                        <ScaleTransform/>
-                                                                        <SkewTransform/>
-                                                                        <RotateTransform Angle="-90"/>
-                                                                        <TranslateTransform/>
-                                                                    </TransformGroup>
-                                                                </TextBlock.RenderTransform>
-                                                            </TextBlock>
-
-
-                                                            <TextBlock HorizontalAlignment="Center" 
-                               VerticalAlignment="Center" 
-                               Text="TRAVEL" 
-                               Width="60" 
-                               Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="170" Canvas.Top="186" FontFamily="Arial Black" TextAlignment="Center" Height="14">
-                                                                <TextBlock.RenderTransform>
-                                                                    <TransformGroup>
-                                                                        <ScaleTransform/>
-                                                                        <SkewTransform/>
-                                                                        <RotateTransform Angle="0"/>
-                                                                        <TranslateTransform/>
-                                                                    </TransformGroup>
-                                                                </TextBlock.RenderTransform>
-                                                            </TextBlock>
-
-
-
-                                                            <TextBlock x:Name="text_point_pos" HorizontalAlignment="Left" VerticalAlignment="Top" Text="pos" Width="60" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Left="5" Canvas.Top="15" Height="30" FontSize="10" FontFamily="Arial">
-                                                                <TextBlock.RenderTransform>
-                                                                    <TransformGroup>
-                                                                        <ScaleTransform/>
-                                                                        <SkewTransform/>
-                                                                        <RotateTransform Angle="0"/>
-                                                                        <TranslateTransform/>
-                                                                    </TransformGroup>
-                                                                </TextBlock.RenderTransform>
-                                                            </TextBlock>
-                                                            <!-- serial port selection -->
-
-                                                            <Polyline x:Name="Polyline_BrakeForceCurve"
-                            Stroke="{DynamicResource AccentColorBrush}"
-                            Height="300" Width="400"
-                            Opacity="0.7"
-                            Points="0,0 80,20 160,40 240,60 320,80 400,100"
-                            StrokeThickness="4" RenderTransformOrigin="1,0.5" Canvas.Top="-100" HorizontalAlignment="Left" VerticalAlignment="Center" >
-                                                                <Polyline.RenderTransform>
-                                                                    <TransformGroup>
-                                                                        <ScaleTransform ScaleX="1" ScaleY="-1"/>
-                                                                        <SkewTransform/>
-                                                                        <RotateTransform/>
-                                                                        <TranslateTransform X="0"/>
-                                                                    </TransformGroup>
-                                                                </Polyline.RenderTransform>
-                                                            </Polyline>
-
-                                                            <TextBlock x:Name="text_SABS" HorizontalAlignment="Left" VerticalAlignment="Top" Text="Simulated ABS" Width="120" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Left="320" Canvas.Top="80.2" FontSize="8" Height="10">
-                                                                <TextBlock.RenderTransform>
-                                                                    <TransformGroup>
-                                                                        <ScaleTransform/>
-                                                                        <SkewTransform/>
-                                                                        <RotateTransform Angle="0"/>
-                                                                        <TranslateTransform/>
-                                                                    </TransformGroup>
-                                                                </TextBlock.RenderTransform>
-                                                            </TextBlock>
-                                                            <Rectangle x:Name="rect_SABS" Width="400" Height="40" Fill="#4C8B0000" Canvas.Left="0" Canvas.Top="0" />
-                                                            <Rectangle x:Name="rect_SABS_Control" Width="400" Height="6" Fill="#998B0000" Canvas.Left="0" Canvas.Top="37" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove_ABS" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp"/>
-                                                            <Rectangle x:Name="rect_BP_Control" Width="32" Height="200" Fill="#990954CE" Canvas.Left="200" Canvas.Top="0" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove_sigle_slider_H" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp"/>
-                                                            <Ellipse x:Name="rect_State" Width="15" Height="15" Canvas.Left="25" Canvas.Top="76" Opacity="0.5" Fill="#CCEF0707" StrokeThickness="0" >
-                                                                <Ellipse.Effect>
-                                                                    <BlurEffect KernelType="Gaussian" RenderingBias="Quality" Radius="7"/>
-                                                                </Ellipse.Effect>
-                                                            </Ellipse>
-                                                            <TextBlock x:Name="text_state" Width="20" Height="10" Foreground="#7FFFFFFF" Text="10%" FontSize="8" FontFamily="Arial"/>
-                                                            <Rectangle x:Name="rect0" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="-5" Canvas.Top="195" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8" StrokeThickness="0"/>
-                                                            <Rectangle x:Name="rect1" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="75" Canvas.Top="155" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8"/>
-                                                            <Rectangle x:Name="rect2" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="155" Canvas.Top="115" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8"/>
-                                                            <Rectangle x:Name="rect3" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="235" Canvas.Top="75" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8"/>
-                                                            <Rectangle x:Name="rect4" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="315" Canvas.Top="35" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8"/>
-                                                            <Rectangle x:Name="rect5" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="395" Canvas.Top="-5" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8"/>
-                                                            <TextBlock x:Name="text_BP" Text="BitePoint:" Width="120" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Left="235" Canvas.Top="187" FontSize="8" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top">
-                                                                <TextBlock.RenderTransform>
-                                                                    <TransformGroup>
-                                                                        <ScaleTransform/>
-                                                                        <SkewTransform/>
-                                                                        <RotateTransform Angle="0"/>
-                                                                        <TranslateTransform/>
-                                                                    </TransformGroup>
-                                                                </TextBlock.RenderTransform>
-                                                            </TextBlock>
-
-
-                                                        </Canvas>
-
-                                                        <StackPanel Width="50" Height="230" Margin="10,-10,0,0">
-                                                            <Label x:Name="Label_max_force" Width="50" Height="24" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" Margin="0,-15,0,0"/>
-                                                            <StackPanel Height="15" Width="32" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                                                <Button x:Name="btn_plus_maxforce"  Click="btn_plus_maxforce_Click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Margin="-1,0,0,0"/>
-                                                                <Button x:Name="btn_minus_maxforce"  Click="btn_minus_maxforce_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10" Margin="2,0,0,0"/>
-                                                            </StackPanel>
-                                                            <controls:RangeSlider x:Name="Rangeslider_force_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="1" Grid.Column="2" Height="166" LowerValueChanged="Rangeslider_force_range_LowerValueChanged" UpperValueChanged="Rangeslider_force_range_UpperValueChanged" IsSnapToTickEnabled="True" UpperValue="50" Width="30" Orientation="Vertical" Maximum="200" HorizontalAlignment="Left" LargeChange="10" TickFrequency="0.1" MinRange="3"/>
-                                                            <StackPanel Height="15" Width="32" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                                                <Button x:Name="btn_plus_preload"  Click="btn_plus_preload_Click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Margin="-1,0,0,0"/>
-                                                                <Button x:Name="btn_minus_preload"  Click="btn_minus_preload_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10" Margin="2,0,0,0"/>
-                                                            </StackPanel>
-                                                            <Label x:Name="Label_min_force" Width="50" Height="24" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0"/>
-                                                        </StackPanel>
-                                                    </StackPanel>
-
-
-                                                    <StackPanel Width="430" Height="40" Orientation="Horizontal" Margin="0,-10,0,0">
-                                                        <Label x:Name="Label_min_pos" Width="30" Height="40" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" HorizontalContentAlignment="Center"/>
-                                                        <controls:RangeSlider x:Name="Rangeslider_travel_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="1" Grid.Column="2" Height="20" LowerValueChanged="Rangeslider_travel_range_LowerValueChanged" UpperValueChanged="Rangeslider_travel_range_UpperValueChanged" MinRange="1" SmallChange="1" IsSnapToTickEnabled="True" UpperValue="80" Width="365" VerticalAlignment="Top" LowerValue="35" Minimum="5" Maximum="95"/>
-                                                        <Label x:Name="Label_max_pos" Width="30" Height="40" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" HorizontalContentAlignment="Center"/>
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </Border>
+                                            <localFunction:CurveTab_PedalForceTravel x:Name="PedalForceTravel_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
                                         </TabItem>
-
-                                        <TabItem Width="180" Height="30" Padding="0,0,0,0" ToolTip="Joystick settings, will save to pedal">
+                                        <TabItem x:Name="pedalKinematicTab" Width="270" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
                                             <TabItem.Header>
-                                                <Border  Width="180" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="JOYSTICK-OUTPUT CURVE"  FontFamily="Arial Black" FontSize="10" Height="30" Width="180" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
-                                                </Border>
-
-
-
-                                            </TabItem.Header>
-                                            <Border  HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="5,5,5,5"  Margin="0,3,0,0">
-
-                                                <Canvas x:Name="canvas_plot_joystickCurve" Height="200" Width="400" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Margin="70,2,0,0" >
-                                                    <Polyline x:Name="Polyline_plot_joystickCurve" Height="200" Width="400" Points="0,200 80,160 160,120 240,80 320,40 400,0" Stroke="{DynamicResource AccentColorBrush}" Opacity="0.7" HorizontalAlignment="Left" VerticalAlignment="Center" StrokeThickness="2" />
-                                                </Canvas>
-
-
-
-
-                                            </Border>
-
-
-
-                                        </TabItem>
-
-                                        <TabItem x:Name="pedalKinematicTab" Width="180" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
-                                            <TabItem.Header>
-                                                <Border  Width="180" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="PEDAL KINEMATIC"  FontFamily="Arial Black" FontSize="10" Height="30" Width="180" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                <Border  Width="270" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="PEDAL KINEMATIC"  FontFamily="Arial Black" FontSize="10" Height="30" Width="270" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <Border  HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="5,5,5,5"  Margin="0,3,0,0">
-                                                <StackPanel HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540">
-                                                    <StackPanel Height="20" Width="540" VerticalAlignment="Top" HorizontalAlignment="Left" Orientation="Horizontal">
-                                                        <Label Content="PEDAL KINEMATIC SETTING" Width="200" Foreground="White" FontFamily="Arial Black" HorizontalAlignment="Center" Margin="70,0,0,0" Height="20" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
-                                                    </StackPanel>
-                                                    <StackPanel Height="205" Width="540" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,5,0,0">
-                                                        <!-- Travel vs Force curve GUI elements -->
-                                                        <Canvas x:Name="canvas_kinematic" Height="200" Width="400" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="70,0,0,0" >
-                                                            <TextBlock x:Name="TextBlock_Warning_kinematics" Height="40" Width="200" FontFamily="Arial" FontSize="9" Foreground="#FFF44343" />
-                                                            <Line x:Name="Line_kinematic_b" X1="5" Y1="28" X2="405" Y2="28" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="5" StrokeEndLineCap="Round" StrokeStartLineCap="Round" Opacity="0.7"/>
-                                                            <Line x:Name="Line_kinematic_c_hort" X1="5" Y1="28" X2="405" Y2="28" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="5" StrokeEndLineCap="Round" StrokeStartLineCap="Round" Opacity="0.7"/>
-                                                            <Line x:Name="Line_kinematic_c_vert" X1="5" Y1="28" X2="405" Y2="28" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="5" StrokeEndLineCap="Round" StrokeStartLineCap="Round" Opacity="0.7"/>
-                                                            <Line x:Name="Line_kinematic_a" X1="5" Y1="28" X2="405" Y2="28" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="5" StrokeDashCap="Round" StrokeStartLineCap="Round" Opacity="0.7"/>
-                                                            <Line x:Name="Line_kinematic_d" X1="5" Y1="28" X2="405" Y2="28" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="5" StrokeEndLineCap="Round" StrokeStartLineCap="Round" Opacity="0.7"/>
-                                                            <Line x:Name="Line_Pedal_Travel" X1="5" Y1="28" X2="405" Y2="28" Stroke="#CCFA8787" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
-                                                            <Rectangle x:Name="rect_joint_O" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="-5" Canvas.Top="195" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="rect_joint_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.9"/>
-                                                            <Rectangle x:Name="rect_joint_A" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="-5" Canvas.Top="195" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="rect_joint_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.9"/>
-                                                            <Rectangle x:Name="rect_joint_B" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="-5" Canvas.Top="195" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="rect_joint_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.9"/>
-                                                            <Rectangle x:Name="rect_joint_C" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="-5" Canvas.Top="195" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="rect_joint_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.9"/>
-                                                            <Rectangle x:Name="rect_joint_D" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="-5" Canvas.Top="195" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="rect_joint_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.9"/>
-                                                            <Label x:Name="Label_joint_C" Content="C" Width="10" Foreground="White" FontFamily="Arial" HorizontalAlignment="Center" Height="10" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center" FontSize="10" HorizontalContentAlignment="Center" FontStyle="Italic"/>
-                                                            <Label x:Name="Label_joint_A" Content="A" Width="10" Foreground="White" FontFamily="Arial" HorizontalAlignment="Center" Height="10" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center" FontSize="10" HorizontalContentAlignment="Center" FontStyle="Italic"/>
-                                                            <Label x:Name="Label_joint_B" Content="B" Width="10" Foreground="White" FontFamily="Arial" HorizontalAlignment="Center" Height="10" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center" FontSize="10" HorizontalContentAlignment="Center" FontStyle="Italic"/>
-                                                            <Label x:Name="Label_joint_D" Content="D" Width="10" Foreground="White" FontFamily="Arial" HorizontalAlignment="Center" Height="10" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center" FontSize="10" HorizontalContentAlignment="Center" FontStyle="Italic"/>
-                                                            <Label x:Name="Label_joint_O" Content="O" Width="10" Foreground="White" FontFamily="Arial" HorizontalAlignment="Center" Height="10" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center" FontSize="10" HorizontalContentAlignment="Center" FontStyle="Italic"/>
-                                                            <StackPanel x:Name="SP_kinematic_b_canvas" Height="20" Width="60" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" MouseEnter="SP_canvas_MouseEnter" MouseLeave="SP_canvas_MouseLeave">
-                                                                <Button x:Name="btn_plus_kinematic_b_canvas"  Click="btn_plus_OA_Click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Visibility="Hidden"/>
-                                                                <TextBox x:Name="Label_kinematic_b_canvas" PreviewTextInput="NumericTextBox_PreviewTextInput" TextChanged="Kinematic_TextBox_TextChanged" Height="20" Width="30" FontFamily="Yu Gothic UI" FontSize="10" VerticalContentAlignment="Center" Padding="0,0,0,0" HorizontalContentAlignment="Center" Background="#00252525" BorderBrush="#00CCCCCC" Margin="0,-3,0,0" CaretBrush="Transparent" BorderThickness="0,0,0,0"/>
-                                                                <Button x:Name="btn_minus_kinematic_b_canvas"  Click="btn_minus_OA_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10" Visibility="Hidden"/>
-                                                            </StackPanel>
-                                                            <StackPanel x:Name="SP_kinematic_c_hort_canvas" Height="20" Width="60" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" MouseEnter="SP_canvas_MouseEnter" MouseLeave="SP_canvas_MouseLeave">
-                                                                <Button x:Name="btn_plus_kinematic_c_hort_canvas"  Click="btn_plus_OB_Click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Visibility="Hidden"/>
-                                                                <TextBox x:Name="Label_kinematic_c_hort_canvas" PreviewTextInput="NumericTextBox_PreviewTextInput" TextChanged="Kinematic_TextBox_TextChanged" Height="20" Width="30" FontFamily="Yu Gothic UI" FontSize="10" VerticalContentAlignment="Center" Padding="0,0,0,0" HorizontalContentAlignment="Center" Background="#00252525" BorderBrush="#00CCCCCC" Margin="0,-3,0,0" CaretBrush="Transparent" BorderThickness="0,0,0,0"/>
-                                                                <Button x:Name="btn_minus_kinematic_c_hort_canvas"  Click="btn_minus_OB_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10" Visibility="Hidden"/>
-                                                            </StackPanel>
-                                                            <StackPanel x:Name="SP_kinematic_c_vert_canvas" Height="20" Width="60" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" MouseEnter="SP_canvas_MouseEnter" MouseLeave="SP_canvas_MouseLeave">
-                                                                <Button x:Name="btn_plus_kinematic_c_vert_canvas"  Click="btn_plus_BC_Click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Visibility="Hidden"/>
-                                                                <TextBox x:Name="Label_kinematic_c_vert_canvas" PreviewTextInput="NumericTextBox_PreviewTextInput" TextChanged="Kinematic_TextBox_TextChanged" Height="20" Width="30" FontFamily="Yu Gothic UI" FontSize="10" VerticalContentAlignment="Center" Padding="0,0,0,0" HorizontalContentAlignment="Center" Background="#00252525" BorderBrush="#00CCCCCC" Margin="0,-3,0,0" CaretBrush="Transparent" BorderThickness="0,0,0,0"/>
-                                                                <Button x:Name="btn_minus_kinematic_c_vert_canvas"  Click="btn_minus_BC_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10" Visibility="Hidden"/>
-                                                            </StackPanel>
-                                                            <StackPanel x:Name="SP_kinematic_a_canvas" Height="20" Width="60" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" MouseEnter="SP_canvas_MouseEnter" MouseLeave="SP_canvas_MouseLeave">
-                                                                <Button x:Name="btn_plus_kinematic_a_canvas"  Click="btn_plus_CA_Click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Visibility="Hidden"/>
-                                                                <TextBox x:Name="Label_kinematic_a_canvas" PreviewTextInput="NumericTextBox_PreviewTextInput" TextChanged="Kinematic_TextBox_TextChanged" Height="20" Width="30" FontFamily="Yu Gothic UI" FontSize="10" VerticalContentAlignment="Center" Padding="0,0,0,0" HorizontalContentAlignment="Center" Background="#00252525" BorderBrush="#00CCCCCC" Margin="0,-3,0,0" CaretBrush="Transparent" BorderThickness="0,0,0,0"/>
-                                                                <Button x:Name="btn_minus_kinematic_a_canvas"  Click="btn_minus_CA_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10" Visibility="Hidden"/>
-                                                            </StackPanel>
-                                                            <StackPanel x:Name="SP_kinematic_d_canvas" Height="20" Width="60" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" MouseEnter="SP_canvas_MouseEnter" MouseLeave="SP_canvas_MouseLeave">
-                                                                <Button x:Name="btn_plus_kinematic_d_canvas"  Click="btn_plus_AD_Click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Visibility="Hidden"/>
-                                                                <TextBox x:Name="Label_kinematic_d_canvas" PreviewTextInput="NumericTextBox_PreviewTextInput" TextChanged="Kinematic_TextBox_TextChanged" Height="20" Width="30" FontFamily="Yu Gothic UI" FontSize="10" VerticalContentAlignment="Center" Padding="0,0,0,0" HorizontalContentAlignment="Center" Background="#00252525" BorderBrush="#00CCCCCC" Margin="0,-3,0,0" CaretBrush="Transparent" Foreground="White" BorderThickness="0,0,0,0"/>
-                                                                <Button x:Name="btn_minus_kinematic_d_canvas"  Click="btn_minus_AD_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10" Visibility="Hidden"/>
-                                                            </StackPanel>
-                                                            <StackPanel x:Name="SP_travel_canvas" Height="20" Width="60" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" MouseEnter="SP_canvas_MouseEnter" MouseLeave="SP_canvas_MouseLeave">
-                                                                <Button x:Name="btn_plus_travel_canvas"  Click="btn_plus_travel_Click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Visibility="Hidden"/>
-                                                                <TextBox x:Name="Label_travel_canvas" PreviewTextInput="NumericTextBox_PreviewTextInput" TextChanged="Kinematic_TextBox_TextChanged" Height="20" Width="30" FontFamily="Yu Gothic UI" FontSize="10" VerticalContentAlignment="Center" Padding="0,0,0,0" HorizontalContentAlignment="Center" Background="#00252525" BorderBrush="#00CCCCCC" Foreground="White" CaretBrush="Transparent" Margin="0,-3,0,0" BorderThickness="0,0,0,0"/>
-                                                                <Button x:Name="btn_minus_travel_canvas"  Click="btn_minus_travel_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10" Visibility="Hidden"/>
-                                                            </StackPanel>
-                                                            <StackPanel  Height="60" Width="15" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="385,0,0,0">
-                                                                <Button x:Name="btn_plus_kinematic_scale"  Click="btn_plus_kinematic_scale_Click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold"/>
-                                                                <Label x:Name="Label_kinematic_scale"  Height="15" Width="15" FontFamily="Yu Gothic UI" FontSize="10" VerticalContentAlignment="Center" Padding="0,0,0,0" HorizontalContentAlignment="Center"/>
-                                                                <Button x:Name="btn_minus_kinematic_scale"  Click="btn_minus_kinematic_scale_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10"/>
-                                                            </StackPanel>
-                                                        </Canvas>
-                                                    </StackPanel>
-                                                    <StackPanel Height="15" Width="540" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
-                                                        <Label x:Name="Label_kinematic_pedal_angle" Content=" " Height="15" Width="400" FontFamily="Yu Gothic UI" FontSize="10" VerticalContentAlignment="Center" Padding="0,0,0,0" HorizontalContentAlignment="Center" Margin="70,0,0,0"/>
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </Border>
+                                            <localFunction:KinematicsTab_Pedal x:Name="PedalKinematics_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
                                         </TabItem>
 
 
@@ -1323,7 +1074,7 @@
                                                     </StackPanel>
                                                     <localUI:SliderWithLabel x:Name="Slider_damping_rudder" Width="400" Height="40" SliderLength="400" TickFrequency="0.00015" MaxValue="0.0375" SliderName="Damping factor" Unit="s" SliderValueChanged="Slider_damping_rudder_ValueChanged"/>
                                                     <localUI:SliderWithLabel x:Name="Slider_MPC_0th_gain_rudder" Width="400" Height="40" SliderLength="400" TickFrequency="0.1" MaxValue="10" SliderName="Foot spring stiffness" Unit="kg/mm" SliderValueChanged="Slider_MPC_0th_gain_rudder_ValueChanged"/>
-                                                    <localUI:SliderWithLabel x:Name="Slider_MPC_1st_gain_rudder" Width="400" Height="40" SliderLength="400" SliderName="Foot spring damping" Unit="kg*s/mm" MaxValue="1" TickFrequency="0.01" SliderValueChanged="Slider_MPC_1st_gain_rudder_ValueChanged"/>
+                                                    
                                                 </StackPanel>
                                             </Border>
                                         </TabItem>
@@ -1381,7 +1132,7 @@
                                             
                                         </TabItem>
                                     </TabControl>
-
+                                    
                                 </StackPanel>
                                 
                             </StackPanel>

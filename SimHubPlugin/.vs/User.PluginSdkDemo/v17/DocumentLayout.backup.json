@@ -7,8 +7,20 @@
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:diyffbpedalcontrolui.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v88-0309-separateusecontrol\\simhubplugin\\diyffbpedalcontrolui.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0309-separateUseControl\\SimHubPlugin\\diyffbpedalcontrolui.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:diyffbpedalcontrolui.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v88-0309-separateusecontrol\\simhubplugin\\uifunction\\kinematicstab_pedal.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\kinematicstab_pedal.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0309-separateUseControl\\SimHubPlugin\\uifunction\\kinematicstab_pedal.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\kinematicstab_pedal.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0309-separateUseControl\\SimHubPlugin\\variablesstruct\\calculationvariables.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:variablesstruct\\calculationvariables.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0309-separateUseControl\\SimHubPlugin\\diyffbpedal.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -30,8 +42,44 @@
       "DocumentGroups": [
         {
           "DockedWidth": 1796,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 4,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "KinematicsTab_Pedal.xaml.cs",
+              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0309-separateUseControl\\SimHubPlugin\\UIFunction\\KinematicsTab_Pedal.xaml.cs",
+              "RelativeDocumentMoniker": "UIFunction\\KinematicsTab_Pedal.xaml.cs",
+              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0309-separateUseControl\\SimHubPlugin\\UIFunction\\KinematicsTab_Pedal.xaml.cs",
+              "RelativeToolTip": "UIFunction\\KinematicsTab_Pedal.xaml.cs",
+              "ViewState": "AgIAAAEBAAAAAAAAAAAiwF4BAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-15T22:35:11.189Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "KinematicsTab_Pedal.xaml",
+              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0309-separateUseControl\\SimHubPlugin\\UIFunction\\KinematicsTab_Pedal.xaml",
+              "RelativeDocumentMoniker": "UIFunction\\KinematicsTab_Pedal.xaml",
+              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0309-separateUseControl\\SimHubPlugin\\UIFunction\\KinematicsTab_Pedal.xaml",
+              "RelativeToolTip": "UIFunction\\KinematicsTab_Pedal.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-03-15T22:33:00.862Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "CalculationVariables.cs",
+              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0309-separateUseControl\\SimHubPlugin\\VariablesStruct\\CalculationVariables.cs",
+              "RelativeDocumentMoniker": "VariablesStruct\\CalculationVariables.cs",
+              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0309-separateUseControl\\SimHubPlugin\\VariablesStruct\\CalculationVariables.cs",
+              "RelativeToolTip": "VariablesStruct\\CalculationVariables.cs",
+              "ViewState": "AgIAABYAAAAAAAAAAAA/wC0AAABUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-15T09:46:05.005Z"
+            },
             {
               "$type": "Document",
               "DocumentIndex": 1,
@@ -52,27 +100,26 @@
               "RelativeDocumentMoniker": "DIYFFBPedalControlUI.xaml.cs",
               "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0309-separateUseControl\\SimHubPlugin\\DIYFFBPedalControlUI.xaml.cs",
               "RelativeToolTip": "DIYFFBPedalControlUI.xaml.cs",
-              "ViewState": "AgIAAI4eAAAAAAAAAAAowMwHAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAADoZAAAAAAAAAAAtwEgZAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-03-13T09:49:19.915Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 5,
               "Title": "DIYFFBPedal.cs",
               "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0309-separateUseControl\\SimHubPlugin\\DIYFFBPedal.cs",
               "RelativeDocumentMoniker": "DIYFFBPedal.cs",
               "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0309-separateUseControl\\SimHubPlugin\\DIYFFBPedal.cs",
               "RelativeToolTip": "DIYFFBPedal.cs",
-              "ViewState": "AgIAAN4BAAAAAAAAAAAYwCEAAAAeAAAAAAAAAA==",
+              "ViewState": "AgIAADgAAAAAAAAAAAAkwEYAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-03-11T11:38:26.54Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-03-11T11:38:26.54Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 7,
               "Title": "DIYFFBPedal.cs",
               "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0309-separateUseControl\\SimHubPlugin\\DIYFFBPedal.cs",
               "RelativeDocumentMoniker": "DIYFFBPedal.cs",
@@ -84,7 +131,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 6,
               "Title": "DIYFFBPedalSettings.cs",
               "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V88-0309-separateUseControl\\SimHubPlugin\\DIYFFBPedalSettings.cs",
               "RelativeDocumentMoniker": "DIYFFBPedalSettings.cs",
