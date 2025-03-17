@@ -29,6 +29,10 @@ namespace User.PluginSdkDemo
         public SolidColorBrush defaultcolor;
         public SolidColorBrush Red_Warning;
         public SolidColorBrush White_Default;
+        public string btn_SendConfig_Content;
+        public string btn_SendConfig_tooltip;
+        public bool[] dumpPedalToResponseFile_clearFile;
+        public bool[] dumpPedalToResponseFile;
         public CalculationVariables()
         {
             PedalCurrentForce = 0;
@@ -45,7 +49,10 @@ namespace User.PluginSdkDemo
             Red_Warning = new SolidColorBrush(Color.FromArgb(255, 244, 67, 67));
             White_Default = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
             offset = new Point();
-
+            btn_SendConfig_Content = "Send Config to Pedal";
+            btn_SendConfig_tooltip = "Send Config to Pedal and save in storage";
+            dumpPedalToResponseFile_clearFile = new bool[3] { false, false, false };
+            dumpPedalToResponseFile = new bool[3] { false, false, false };
 
         }
     }

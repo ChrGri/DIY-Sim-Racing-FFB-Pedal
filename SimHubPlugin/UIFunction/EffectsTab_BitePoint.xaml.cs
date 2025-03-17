@@ -130,23 +130,30 @@ namespace User.PluginSdkDemo.UIFunction
 
         private void checkbox_enable_bite_point_Checked(object sender, RoutedEventArgs e)
         {
-            calculation.IsUIRefreshNeeded = true;
-            
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.BP_trigger = 1;
-            dap_config_st= tmp;
-            ConfigChangedEvent(dap_config_st);
+            if (dap_config_st.payloadPedalConfig_.BP_trigger != 1)
+            {
+                calculation.IsUIRefreshNeeded = true;
+
+                var tmp = dap_config_st;
+                tmp.payloadPedalConfig_.BP_trigger = 1;
+                dap_config_st = tmp;
+                ConfigChangedEvent(dap_config_st);
+            }
+
 
         }
 
         private void checkbox_enable_bite_point_Unchecked(object sender, RoutedEventArgs e)
         {
-            calculation.IsUIRefreshNeeded = true;
-            
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.BP_trigger = 0;
-            dap_config_st = tmp;
-            ConfigChangedEvent(dap_config_st);
+            if (dap_config_st.payloadPedalConfig_.BP_trigger != 0)
+            {
+                calculation.IsUIRefreshNeeded = true;
+                var tmp = dap_config_st;
+                tmp.payloadPedalConfig_.BP_trigger = 0;
+                dap_config_st = tmp;
+                ConfigChangedEvent(dap_config_st);
+            }
+
 
         }
 

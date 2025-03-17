@@ -222,6 +222,9 @@
     <Compile Include="UIFunction\KinematicsTab_Pedal.xaml.cs">
       <DependentUpon>KinematicsTab_Pedal.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\SettingSection_Pedal.xaml.cs">
+      <DependentUpon>SettingSection_Pedal.xaml</DependentUpon>
+    </Compile>
     <Compile Include="VariablesStruct\Basic_WIfi_info.cs" />
     <Compile Include="VariablesStruct\CalculationVariables.cs" />
     <Compile Include="VariablesStruct\constants.cs" />
@@ -321,6 +324,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\KinematicsTab_Pedal.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\SettingSection_Pedal.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

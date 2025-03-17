@@ -58,6 +58,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using static User.PluginSdkDemo.DIY_FFB_Pedal;
 using User.PluginSdkDemo.UIFunction;
+using Windows.UI.ViewManagement;
 
 
 
@@ -68,12 +69,6 @@ using User.PluginSdkDemo.UIFunction;
 
 namespace User.PluginSdkDemo
 {
-
-    public static class StaticConfig
-    {
-
-    }
-
     /// <summary>
     /// Logique d'interaction pour SettingsControlDemo.xaml
     /// </summary>
@@ -109,7 +104,7 @@ namespace User.PluginSdkDemo
         public bool debug_flag = false;
 
         //public VirtualJoystick joystick;
-        internal vJoyInterfaceWrap.vJoy joystick;
+        
 
 
         public bool[] dumpPedalToResponseFile = new bool[3];
@@ -228,23 +223,6 @@ namespace User.PluginSdkDemo
 
 
         }
-
-        private void vjoy_axis_initialize()
-        {
-            //center all axis/hats reader
-            joystick.SetAxis(16384, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_X);
-            joystick.SetAxis(16384, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_Y);
-            joystick.SetAxis(16384, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_Z);
-            joystick.SetAxis(16384, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RX);
-            joystick.SetAxis(16384, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RY);
-            joystick.SetAxis(16384, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RZ);
-            //joystick.SetJoystickHat(0, Hats.Hat);
-            //joystick.SetJoystickHat(0, Hats.HatExt1);
-            //joystick.SetJoystickHat(0, Hats.HatExt2);
-            //joystick.SetJoystickHat(0, Hats.HatExt3);
-
-        }
-
 
         private void DrawGridLines()
         {
@@ -988,15 +966,6 @@ namespace User.PluginSdkDemo
             indexOfSelectedPedal_u = plugin.Settings.table_selected;
             MyTab.SelectedIndex = (int)indexOfSelectedPedal_u;
 
-            //reconnect to com port
-            if (plugin.Settings.auto_connect_flag[indexOfSelectedPedal_u] == 1)
-            {
-                checkbox_auto_connect.IsChecked = true;
-            }
-            else
-            {
-                checkbox_auto_connect.IsChecked = false;
-            }
 
             //auto connection with timmer
             if (connect_timer != null)
@@ -1038,25 +1007,6 @@ namespace User.PluginSdkDemo
                 }
             }
             */
-
-
-            //vjoy initialized
-            if (Plugin.Settings.vjoy_output_flag == 1)
-            {
-                Vjoy_out_check.IsChecked = true;
-                uint vJoystickId = Plugin.Settings.vjoy_order;
-                //joystick = new VirtualJoystick(Plugin.Settings.vjoy_order);
-                joystick = new vJoyInterfaceWrap.vJoy();
-
-                joystick.AcquireVJD(vJoystickId);
-                //joystick.Aquire();
-                vjoy_axis_initialize();
-            }
-            else
-            {
-                Vjoy_out_check.IsChecked = false;
-            }
-
 
         }
 
@@ -1180,13 +1130,6 @@ namespace User.PluginSdkDemo
                 info_label_2.Content = info_text;
                 info_label_2_system.Content = system_info_text;
             }
-
-
-
-
-
-            int debugFlagValue_0 = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.debug_flags_0;
-            textBox_debug_Flag_0.Text = debugFlagValue_0.ToString();
             if (Plugin != null)
             {                
                 var tmp_struct = dap_config_st[indexOfSelectedPedal_u];
@@ -1205,6 +1148,7 @@ namespace User.PluginSdkDemo
                 EffectsCustom2_Tab.dap_config_st=tmp_struct;
                 PedalForceTravel_Tab.dap_config_st = tmp_struct;
                 PedalKinematics_Tab.dap_config_st= tmp_struct;
+                PedalSettingsSection.dap_config_st = tmp_struct;
 
                 Misc_Tab.Settings = Plugin.Settings;
                 EffectsABS_Tab.Settings = Plugin.Settings;
@@ -1216,6 +1160,7 @@ namespace User.PluginSdkDemo
                 EffectsCustom2_Tab.Settings=Plugin.Settings;
                 PedalForceTravel_Tab.Settings=Plugin.Settings;
                 PedalKinematics_Tab.Settings = Plugin.Settings;
+                PedalSettingsSection.Settings=Plugin.Settings;
 
                 EffectsABS_Tab.calculation = Plugin._calculaitons;
                 EffectsBitePoint_Tab.calculation=Plugin._calculaitons;
@@ -1223,11 +1168,15 @@ namespace User.PluginSdkDemo
                 EffectsCustom2_Tab.calculation = Plugin._calculaitons;
                 Misc_Tab.calculation = Plugin._calculaitons;
                 PedalForceTravel_Tab.calculation=Plugin._calculaitons;
+                PedalSettingsSection.calculation=Plugin._calculaitons;
 
 
                 EffectsCustom1_tab.Plugin = Plugin;
                 EffectsCustom2_Tab.Plugin = Plugin;
-                
+
+
+                btn_SendConfig.Content= Plugin._calculaitons.btn_SendConfig_Content;
+                btn_SendConfig.ToolTip = Plugin._calculaitons.btn_SendConfig_tooltip;
             }
             
 
@@ -1235,36 +1184,7 @@ namespace User.PluginSdkDemo
             if (Plugin != null)
             {
                 
-                Label_Pedal_interval_trigger.Content = "Action Interval: "+Plugin.Settings.Pedal_action_interval[indexOfSelectedPedal_u] + "ms";
-                Slider_Pedal_interval_trigger.Value = Plugin.Settings.Pedal_action_interval[indexOfSelectedPedal_u];
-
-
-                if (Plugin.Settings.reading_config == 1)
-                {
-                    checkbox_pedal_read.IsChecked = true;
-                    CheckBox_LivePreview.IsEnabled = true;
-                    if (Plugin.Settings.LivePreview[indexOfSelectedPedal_u])
-                    {
-                        CheckBox_LivePreview.IsChecked = true;
-                    }
-                    else
-                    {
-                        CheckBox_LivePreview.IsChecked = false;
-                    }
-
-
-
-                }
-                else
-                {
-                    checkbox_pedal_read.IsChecked = false;
-                    for (int i = 0; i < 3; i++)
-                    {
-                        Plugin.Settings.LivePreview[i] = false;
-                    }
-                    CheckBox_LivePreview.IsChecked = false;
-                    CheckBox_LivePreview.IsEnabled = false;
-                }
+                
 
                 if (Plugin.Sync_esp_connection_flag)
                 {
@@ -1275,14 +1195,6 @@ namespace User.PluginSdkDemo
                     btn_connect_espnow_port.Content = "Connect";
                 }
 
-                if (Plugin.Settings.Pedal_ESPNow_Sync_flag[indexOfSelectedPedal_u])
-                {
-                    CheckBox_Pedal_ESPNow_SyncFlag.IsChecked = true;
-                }
-                else
-                {
-                    CheckBox_Pedal_ESPNow_SyncFlag.IsChecked = false;
-                }
 
                 if (Plugin.Settings.Pedal_ESPNow_auto_connect_flag)
                 {
@@ -1310,14 +1222,7 @@ namespace User.PluginSdkDemo
                 {
                     CheckBox_using_CDC_for_bridge.IsChecked = false;
                 }
-                if (Plugin.Settings.USING_ESP32S3[indexOfSelectedPedal_u] == true)
-                {
-                    CheckBox_USINGESP32S3.IsChecked = true;
-                }
-                else
-                {
-                    CheckBox_USINGESP32S3.IsChecked = false;
-                }
+
 
                 
                 
@@ -1385,16 +1290,6 @@ namespace User.PluginSdkDemo
             }
             
 
-            if (Plugin.Settings.auto_connect_flag[indexOfSelectedPedal_u] == 1)
-            {
-                checkbox_auto_connect.IsChecked = true;
-            }
-            else
-            {
-                checkbox_auto_connect.IsChecked= false;
-            }
-
-            Label_vjoy_order.Content = Plugin.Settings.vjoy_order;
             textbox_profile_name.Text = Plugin.Settings.Profile_name[profile_select];
 
 
@@ -1727,19 +1622,7 @@ namespace User.PluginSdkDemo
             }
         }
 
-        private void NumericTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            //labelEingabe.Content = "Sie haben '" + textBox_debug_Flag_0.Text + "' eingegeben!";
-            //TextBox_debugOutput.Text = textBox_debug_Flag_0.Text;
 
-            if (int.TryParse(textBox_debug_Flag_0.Text, out int result))
-            {
-                if ((result >= 0) && (result <= 255))
-                {
-                    dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.debug_flags_0 = (byte)result;
-                }
-            }
-        }
         private void NumericTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
 
@@ -2943,16 +2826,16 @@ namespace User.PluginSdkDemo
                                             {
 
                                                 case 0:
-                                                    //joystick.SetJoystickAxis(pedalState_read_st.payloadPedalState_.joystickOutput_u16, Axis.HID_USAGE_RX);  // Center X axis
-                                                    joystick.SetAxis(pedalState_read_st.payloadPedalBasicState_.joystickOutput_u16, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RX);   // HID_USAGES Enums
+                                                //joystick.SetJoystickAxis(pedalState_read_st.payloadPedalState_.joystickOutput_u16, Axis.HID_USAGE_RX);  // Center X axis
+                                                    PedalSettingsSection._joystick.SetAxis(pedalState_read_st.payloadPedalBasicState_.joystickOutput_u16, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RX);   // HID_USAGES Enums
                                                     break;
                                                 case 1:
-                                                    //joystick.SetJoystickAxis(pedalState_read_st.payloadPedalState_.joystickOutput_u16, Axis.HID_USAGE_RY);  // Center X axis
-                                                    joystick.SetAxis(pedalState_read_st.payloadPedalBasicState_.joystickOutput_u16, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RY);   // HID_USAGES Enums
+                                                //joystick.SetJoystickAxis(pedalState_read_st.payloadPedalState_.joystickOutput_u16, Axis.HID_USAGE_RY);  // Center X axis
+                                                    PedalSettingsSection._joystick.SetAxis(pedalState_read_st.payloadPedalBasicState_.joystickOutput_u16, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RY);   // HID_USAGES Enums
                                                     break;
                                                 case 2:
-                                                    //joystick.SetJoystickAxis(pedalState_read_st.payloadPedalState_.joystickOutput_u16, Axis.HID_USAGE_RZ);  // Center X axis
-                                                    joystick.SetAxis(pedalState_read_st.payloadPedalBasicState_.joystickOutput_u16, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RZ);   // HID_USAGES Enums
+                                                //joystick.SetJoystickAxis(pedalState_read_st.payloadPedalState_.joystickOutput_u16, Axis.HID_USAGE_RZ);  // Center X axis
+                                                    PedalSettingsSection._joystick.SetAxis(pedalState_read_st.payloadPedalBasicState_.joystickOutput_u16, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RZ);   // HID_USAGES Enums
                                                     break;
                                                 default:
                                                     break;
@@ -3334,7 +3217,7 @@ namespace User.PluginSdkDemo
 
             ////reading config from pedal
 
-            if (checkbox_pedal_read.IsChecked == true)
+            if (Plugin.Settings.reading_config==1)
             {
                 Reading_config_auto(indexOfSelectedPedal_u);
             }
@@ -3378,26 +3261,7 @@ namespace User.PluginSdkDemo
                 string errorMessage = caughtEx.Message;
                 TextBox_debugOutput.Text = errorMessage;
             }
-
-
-
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         unsafe private void RestartPedal_click(object sender, RoutedEventArgs e)
         {
@@ -3627,11 +3491,7 @@ namespace User.PluginSdkDemo
 
             updateTheGuiFromConfig();
         }
-    
 
-        
-
-        
         private void OpenButton_Click(object sender, EventArgs e)
         {
             using (System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog())
@@ -3987,216 +3847,16 @@ namespace User.PluginSdkDemo
         }
 
 
-        private void JoystickOutput_checked(object sender, RoutedEventArgs e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.travelAsJoystickOutput_u8 = 1;
-
-        }
-        private void JoystickOutput_unchecked(object sender, RoutedEventArgs e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.travelAsJoystickOutput_u8 = 0;
-        }
-
-
-        private void InvertLoadcellReading_checked(object sender, RoutedEventArgs e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.invertLoadcellReading_u8 = 1;
-        }
-        private void InvertLoadcellReading_unchecked(object sender, RoutedEventArgs e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.invertLoadcellReading_u8 = 0;
-        }
-
-
-        private void InvertMotorDir_checked(object sender, RoutedEventArgs e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.invertMotorDirection_u8 = 1;
-        }
-        private void InvertMotorDir_unchecked(object sender, RoutedEventArgs e)
-        {
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.invertMotorDirection_u8 = 0;
-        }
 
 
 
-        private void CheckBox_Reading_Checked(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.reading_config = 1;
-            CheckBox_LivePreview.IsEnabled = true;
-        }
-        private void CheckBox_Reading_Unchecked(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.reading_config = 0;
-            for (int i = 0; i < 3; i++)
-            {
-                Plugin.Settings.LivePreview[i] = false;
-            }
-            CheckBox_LivePreview.IsChecked = false;
-            CheckBox_LivePreview.IsEnabled = false;
-        }
-
-        private void checkbox_auto_connect_Checked(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.auto_connect_flag[indexOfSelectedPedal_u] = 1;
-        }
-
-        private void checkbox_auto_connect_Unchecked(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.auto_connect_flag[indexOfSelectedPedal_u] = 0 ;
-        }
 
 
  
 
 
 
-        private void Vjoy_out_check_Checked(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.vjoy_output_flag = 1;
-            ////// vJoy c# wrapper, see https://github.com/bobhelander/vJoy.Wrapper
-            ////uint vJoystickId = Plugin.Settings.vjoy_order;
-            ////joystick = new VirtualJoystick(Plugin.Settings.vjoy_order);
-            ////joystick.Aquire();
-            ////vjoy_axis_initialize();
-
-            uint vJoystickId = Plugin.Settings.vjoy_order;
-            //joystick = new VirtualJoystick(Plugin.Settings.vjoy_order);
-            joystick = new vJoyInterfaceWrap.vJoy();
-
-            joystick.AcquireVJD(vJoystickId);
-            //joystick.Aquire();
-            vjoy_axis_initialize();
-            //CheckBox_rudder.IsEnabled = true;
-
-        }
-
-
-        private void Vjoy_out_check_Unchecked(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.vjoy_output_flag = 0;
-            //joystick.Release();
-            joystick.RelinquishVJD(Plugin.Settings.vjoy_order);
-            //CheckBox_rudder.IsEnabled = false;
-        }
-
-
-        private void vjoy_plus_click(object sender, RoutedEventArgs e)
-        {
-            // release old joystick
-            joystick.RelinquishVJD(Plugin.Settings.vjoy_order);
-
-            Plugin.Settings.vjoy_order += 1;
-            uint max = 16;
-            uint min = 1;
-            Plugin.Settings.vjoy_order = Math.Max(min, Math.Min(Plugin.Settings.vjoy_order, max));
-            Label_vjoy_order.Content = Plugin.Settings.vjoy_order;
-            if (Plugin.Settings.vjoy_output_flag == 1)
-            {
-                //joystick.Release();
-                
-                //VjdStat status;
-                VjdStat status = joystick.GetVJDStatus(Plugin.Settings.vjoy_order);
-                //status = joystick.Joystick.GetVJDStatus(Plugin.Settings.vjoy_order);
-                switch (status)
-                {
-                    case VjdStat.VJD_STAT_OWN:
-                        TextBox_debugOutput.Text = "vjoy already aquaried";
-                        Plugin.Settings.vjoy_output_flag = 0;
-                        Vjoy_out_check.IsChecked = false;
-                        break;
-                    case VjdStat.VJD_STAT_FREE:
-
-                        TextBox_debugOutput.Text = "vjoy aquaried";
-                        //joystick = new VirtualJoystick(Plugin.Settings.vjoy_order);
-                        //joystick.Aquire();
-                        joystick.AcquireVJD(Plugin.Settings.vjoy_order);
-                        if (Vjoy_out_check.IsChecked == false)
-                        {
-                            Vjoy_out_check.IsChecked = true;
-                        }
-                        //Console.WriteLine("vJoy Device {0} is free\n", id);
-                        break;
-                    case VjdStat.VJD_STAT_BUSY:
-                        TextBox_debugOutput.Text = "vjoy was aquaried by other program";
-                        Plugin.Settings.vjoy_output_flag = 0;
-                        Vjoy_out_check.IsChecked = false;
-                        //Console.WriteLine("vJoy Device {0} is already owned by another feeder\nCannot continue\n", id);
-                        return;
-                    case VjdStat.VJD_STAT_MISS:
-                        TextBox_debugOutput.Text = "the selected vjoy device not enabled";
-                        Plugin.Settings.vjoy_output_flag = 0;
-                        Vjoy_out_check.IsChecked = false;
-                        //Console.WriteLine("vJoy Device {0} is not installed or disabled\nCannot continue\n", id);
-                        return;
-                    default:
-                        TextBox_debugOutput.Text = "vjoy device error";
-                        Plugin.Settings.vjoy_output_flag = 0;
-                        Vjoy_out_check.IsChecked = false;
-                        //Console.WriteLine("vJoy Device {0} general error\nCannot continue\n", id);
-                        return;
-                };
-            }
-            
-
-        }
-
-        private void vjoy_minus_click(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.vjoy_order -= 1;
-            uint max = 16;
-            uint min = 1;
-            Plugin.Settings.vjoy_order = Math.Max(min, Math.Min(Plugin.Settings.vjoy_order, max));
-            Label_vjoy_order.Content = Plugin.Settings.vjoy_order;
-            if (Plugin.Settings.vjoy_output_flag == 1)
-            {
-                //joystick.Release();
-                joystick.RelinquishVJD(Plugin.Settings.vjoy_order);
-                VjdStat status;
-                status = joystick.GetVJDStatus(Plugin.Settings.vjoy_order);
-                switch (status)
-                {
-                    case VjdStat.VJD_STAT_OWN:
-                        TextBox_debugOutput.Text = "vjoy already aquaried";
-                        Plugin.Settings.vjoy_output_flag = 0;
-                        Vjoy_out_check.IsChecked = false;
-                        break;
-                    case VjdStat.VJD_STAT_FREE:
-
-                        TextBox_debugOutput.Text = "vjoy aquaried";
-                        //joystick = new VirtualJoystick(Plugin.Settings.vjoy_order);
-                        joystick.AcquireVJD(Plugin.Settings.vjoy_order);
-                        //joystick.Aquire();
-                        if (Vjoy_out_check.IsChecked == false)
-                        {
-                            Vjoy_out_check.IsChecked = true;
-                        }
-                        //Console.WriteLine("vJoy Device {0} is free\n", id);
-                        break;
-                    case VjdStat.VJD_STAT_BUSY:
-                        TextBox_debugOutput.Text = "vjoy was aquaried by other program";
-                        Plugin.Settings.vjoy_output_flag = 0;
-                        Vjoy_out_check.IsChecked = false;
-                        //Console.WriteLine("vJoy Device {0} is already owned by another feeder\nCannot continue\n", id);
-                        return;
-                    case VjdStat.VJD_STAT_MISS:
-                        TextBox_debugOutput.Text = "the selected vjoy device not enabled";
-                        Plugin.Settings.vjoy_output_flag = 0;
-                        Vjoy_out_check.IsChecked = false;
-                        //Console.WriteLine("vJoy Device {0} is not installed or disabled\nCannot continue\n", id);
-                        return;
-                    default:
-                        TextBox_debugOutput.Text = "vjoy device error";
-                        Plugin.Settings.vjoy_output_flag = 0;
-                        Vjoy_out_check.IsChecked = false;
-                        //Console.WriteLine("vJoy Device {0} general error\nCannot continue\n", id);
-                        return;
-                };
-            }
-
-
-
-
-        }
+        
 
 
 
@@ -5297,7 +4957,7 @@ namespace User.PluginSdkDemo
             }
         }
 
- unsafe private void btn_OTA_enable_Click(object sender, RoutedEventArgs e)
+        unsafe private void btn_OTA_enable_Click(object sender, RoutedEventArgs e)
         {
             
             Basic_WIfi_info tmp_2;
@@ -5467,54 +5127,6 @@ namespace User.PluginSdkDemo
                 }
             }
         }
-
-        unsafe private void btn_PedalID_Reset_Click(object sender, RoutedEventArgs e)
-        {
-            // compute checksum
-            //getBytes(this.dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_)
-            dap_config_st[indexOfSelectedPedal_u].payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
-            dap_config_st[indexOfSelectedPedal_u].payloadHeader_.payloadType = (byte)Constants.pedalConfigPayload_type;
-            dap_config_st[indexOfSelectedPedal_u].payloadHeader_.PedalTag = (byte)indexOfSelectedPedal_u;
-            dap_config_st[indexOfSelectedPedal_u].payloadHeader_.storeToEeprom = 1;
-            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedal_type = 4;//back to default value 4.
-            DAP_config_st tmp = dap_config_st[indexOfSelectedPedal_u];
-            DAP_config_st* v = &tmp;
-            byte* p = (byte*)v;
-            dap_config_st[indexOfSelectedPedal_u].payloadFooter_.checkSum = Plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
-            int length = sizeof(DAP_config_st);
-            //int val = this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.checkSum;
-            //string msg = "CRC value: " + val.ToString();
-            byte[] newBuffer = new byte[length];
-            newBuffer = getBytes(dap_config_st[indexOfSelectedPedal_u]);
-
-            //TextBox_debugOutput.Text = "CRC simhub calc: " + this.dap_config_st[indexOfSelectedPedal_u].payloadFooter_.checkSum + "    ";
-
-            TextBox_debugOutput.Text = String.Empty;
-            if (Plugin.Settings.Pedal_ESPNow_Sync_flag[indexOfSelectedPedal_u])
-            {
-                if (Plugin.ESPsync_serialPort.IsOpen)
-                {
-                    try
-                    {
-                        TextBox2.Text = "Buffer sent size:" + length;
-                        Plugin.ESPsync_serialPort.DiscardInBuffer();
-                        Plugin.ESPsync_serialPort.DiscardOutBuffer();
-                        // send data
-                        Plugin.ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
-                        //Plugin._serialPort[indexOfSelectedPedal_u].Write("\n");
-                        System.Threading.Thread.Sleep(100);
-                        string MSG_tmp = "Pedal:"+indexOfSelectedPedal_u+" ID is reset, please adjust jumpper on the control board then re-send config in.";
-                        System.Windows.MessageBox.Show(MSG_tmp, "OTA warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    }
-                    catch (Exception caughtEx)
-                    {
-                        string errorMessage = caughtEx.Message;
-                        TextBox_debugOutput.Text = errorMessage;
-                    }
-                }
-            }
-        }
-
         private void CheckBox_using_CDC_for_bridge_Checked(object sender, RoutedEventArgs e)
         {
             if (Plugin != null)
@@ -5531,32 +5143,7 @@ namespace User.PluginSdkDemo
             }
         }
 
-        private void Slider_Pedal_interval_trigger_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (Plugin != null)
-            {
-                Plugin.Settings.Pedal_action_interval[indexOfSelectedPedal_u] = (byte)e.NewValue;
-                Label_Pedal_interval_trigger.Content = "Action Interval: "+ Plugin.Settings.Pedal_action_interval[indexOfSelectedPedal_u]+"ms";
-            }
-        }
 
-        
-
-        private void CheckBox_USINGESP32S3_Checked(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                Plugin.Settings.USING_ESP32S3[indexOfSelectedPedal_u] = true;
-            }
-        }
-
-        private void CheckBox_USINGESP32S3_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                Plugin.Settings.USING_ESP32S3[indexOfSelectedPedal_u] = false;
-            }
-        }
 
         private void Rangeslider_rudder_travel_range_LowerValueChanged(object sender, RangeParameterChangedEventArgs e)
         {

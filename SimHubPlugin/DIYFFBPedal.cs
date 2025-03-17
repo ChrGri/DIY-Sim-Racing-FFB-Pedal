@@ -84,6 +84,7 @@ namespace User.PluginSdkDemo
         public string Current_Game = "";
         public byte TrackSurfaceCondition = 0;
         public bool[] PedalConfigRead_b = new bool[3] { false, false, false };
+        //public vJoyInterfaceWrap.vJoy joystick;
         //effect trigger timer
         DateTime[] Action_currentTime = new DateTime[3];
         DateTime[] Action_lastTime = new DateTime[3];
@@ -1369,14 +1370,13 @@ namespace User.PluginSdkDemo
             // close serial communication
             if (wpfHandle != null)
             {
-
+                
                 try
                 {
-                    //wpfHandle.joystick.Release();
-                    //wpfHandle.joystick.Dispose();
-                    if (wpfHandle.joystick != null)
+                    
+                    if (wpfHandle.PedalSettingsSection._joystick!= null)
                     {
-                        wpfHandle.joystick.RelinquishVJD(Settings.vjoy_order);
+                        wpfHandle.PedalSettingsSection._joystick.RelinquishVJD(Settings.vjoy_order);
                     }
                     
                     
@@ -1384,6 +1384,7 @@ namespace User.PluginSdkDemo
                 catch (Exception caughtEx)
                 { 
                 }
+                
                 
 
                 for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)

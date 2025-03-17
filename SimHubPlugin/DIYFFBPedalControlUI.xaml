@@ -555,63 +555,13 @@
                                                 <styles:SHButtonPrimary x:Name="btn_OnlineProfile" Click="btn_OnlineProfile_Click" Width="160" Content="Community Config" Height="25" Margin="0,2,0,0" HorizontalAlignment="Center" Padding="15,0,15,0" VerticalContentAlignment="Center" />
                                                 <styles:SHButtonPrimary x:Name="button_pedal_restart" Click="RestartPedal_click" Width="160" Content="Restart Pedal" Height="25" Margin="0,2,0,0" HorizontalAlignment="Center" MinHeight="20" Padding="15,0,15,0" VerticalContentAlignment="Center" />
                                                 <styles:SHButtonPrimary x:Name="btn_reset_default" Click="btn_reset_default_Click" Width="160"  Content="Reset Config to Default" Height="25" Margin="0,2,0,0" HorizontalAlignment="Center" ToolTip="Reset the config to default" Padding="15,0,15,0" VerticalContentAlignment="Center" />
-                                                <styles:SHButtonPrimary x:Name="btn_PedalID_Reset" Click="btn_PedalID_Reset_Click" Width="160" Content="Reset Pedal ID" Height="25" Margin="0,2,0,0" HorizontalAlignment="Center" VerticalContentAlignment="Center" Padding="15,0,15,0" />
                                                 <styles:SHButtonPrimary x:Name="btn_OTA_enable" Click="btn_OTA_enable_Click" Width="160" Content="Pedal FW OTA Update" Height="25" Margin="0,2,0,0" HorizontalAlignment="Center" Padding="15,0,15,0" VerticalContentAlignment="Center" />
                                                 <styles:SHButtonPrimary x:Name="btn_PedalBootMode" Click="btn_PedalBootMode_Click" Width="160" Content="Pedal Download Mode" Height="25" Margin="0,2,0,0" HorizontalAlignment="Center" Padding="15,0,15,0" VerticalContentAlignment="Center" />
                                                 <styles:SHButtonPrimary x:Name="btn_SerialMonitorWindow" Click="btn_SerialMonitorWindow_Click" Width="160" Content="Pedal Log Monitor" Height="25" Margin="0,2,0,0" HorizontalAlignment="Center" Padding="15,0,15,0" VerticalContentAlignment="Center" />
                                                 <Border Background="#FF4E4E4E" Height="62" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="160" HorizontalAlignment="Center" Margin="0,2,0,0" >
                                                     <TextBox x:Name="TextBox2" TextWrapping="Wrap" Width="160" AutomationProperties.Name="TextBox2" Height="62" FontSize="9" Background="#004E4E4E" BorderBrush="#00CCCCCC" IsHitTestVisible="False" AllowDrop="True" HorizontalAlignment="Center"/>
                                                 </Border>
-                                                <Border Background="#FF4E4E4E" Height="255" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="160" HorizontalAlignment="Left" Margin="0,3,0,0" >
-                                                    <StackPanel HorizontalAlignment="Center" Height="255" VerticalAlignment="Top" Width="160">
-                                                        <Label Content="Pedal Setting" Height="20" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" FontSize="10" Margin="2,0,0,0"/>
-                                                        <StackPanel Width="155" Height="10" Orientation="Horizontal" Margin="2,1,0,0">
-                                                            <Label x:Name="Label_Pedal_interval_trigger"  Width="155" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="8" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Action Interval:" Height="10" Padding="0,0,0,0"/>
-                                                        </StackPanel>
-                                                        <Slider x:Name="Slider_Pedal_interval_trigger" Style="{DynamicResource SliderStyle_single_H}" HorizontalAlignment="Left" Grid.Row="1" VerticalAlignment="Top" Width="155" Height="10" Maximum="100" SmallChange="1" ValueChanged="Slider_Pedal_interval_trigger_ValueChanged" LargeChange="10" IsSnapToTickEnabled="True" Minimum="20" ToolTip="Adjust for the serial write interval, when meet I/O error, increase the interval" Margin="3,2,0,0"/>
-                                                        <StackPanel x:Name="text_debug_flag" Height="20" Width="150" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,2,0,0">
-                                                            <Label Content="Debug flag 0:" Height="20" Width="60" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="5,0,0,0"/>
-                                                            <TextBox x:Name="textBox_debug_Flag_0" Width="40" Height="20" PreviewTextInput="NumericTextBox_PreviewTextInput" TextChanged="NumericTextBox_TextChanged" Margin="2,0,0,0" HorizontalAlignment="Left" MinHeight="20" FontSize="8" ToolTip="DebugFlag input, please check ESP32 sketch for cheatcode" BorderThickness="0,0,0,0"/>
-                                                        </StackPanel>
-                                                        <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
-                                                            <styles:SHToggleButton x:Name="checkbox_auto_connect" Content="" Checked="checkbox_auto_connect_Checked" Unchecked="checkbox_auto_connect_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Auto connect with scan the port every 5s, and connect back the pedal you have connect until you press disconnect" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                                                            <Label Content="Auto Connect" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                                                        </StackPanel>
-                                                        <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
-                                                            <styles:SHToggleButton x:Name="checkbox_pedal_read" Content="" Checked="CheckBox_Reading_Checked" Unchecked="CheckBox_Reading_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Auto Read Config from Pedal when connected" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                                                            <Label Content="Auto Read Config" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                                                        </StackPanel>
-                                                        <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
-                                                            <styles:SHToggleButton x:Name="CheckBox_LivePreview" Content="" Checked="CheckBox_LivePreview_Checked" Unchecked="CheckBox_LivePreview_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="The preview is not save to pedal storage, please save config after you feel comfortable. The preview interval is binding with action interval" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" IsEnabled="False" />
-                                                            <Label Content="Config Live Preview" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                                                        </StackPanel>
-                                                        <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
-                                                            <styles:SHToggleButton x:Name="CheckBox_Pedal_ESPNow_SyncFlag" Content="" Checked="CheckBox_Pedal_ESPNow_SyncFlag_Checked" Unchecked="CheckBox_Pedal_ESPNow_SyncFlag_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                                                            <Label Content="Wireless Comunication" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                                                        </StackPanel>
-
-                                                        <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
-                                                            <styles:SHToggleButton x:Name="CheckBox_USINGESP32S3" Content="" Checked="CheckBox_USINGESP32S3_Checked" Unchecked="CheckBox_USINGESP32S3_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Enable it for V4, and GIlphilbert 1.2 board, Disable it in V3 board" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                                                            <Label Content="CDC Serial for ESP32S3" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                                                        </StackPanel>
-                                                        <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
-                                                            <styles:SHToggleButton x:Name="dump_pedal_response_to_file" Content="" Checked="dump_pedal_response_to_file_checked" Unchecked="dump_pedal_response_to_file_unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Dump pedal realtime status to file, it should be off when not in use" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                                                            <Label Content="Log pedal states" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                                                        </StackPanel>
-                                                        <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
-                                                            <styles:SHToggleButton x:Name="Vjoy_out_check" Content="" Checked="Vjoy_out_check_Checked" Unchecked="Vjoy_out_check_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Output the joystick value via vJoy" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                                                            <Label Content="vJoy Output" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                                                        </StackPanel>
-                                                        <StackPanel Height="15" Width="80" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="35,2,0,0">
-                                                            <Button x:Name="btn_plus"  Click="vjoy_plus_click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold"/>
-                                                            <Label x:Name="Label_vjoy_order" Content="1" Height="15" Width="30" FontFamily="Yu Gothic UI" FontSize="10" VerticalContentAlignment="Center" Padding="0,0,0,0" HorizontalContentAlignment="Center"/>
-                                                            <Button x:Name="btn_minus"  Click="vjoy_minus_click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10"/>
-                                                        </StackPanel>
-
-
-
-                                                    </StackPanel>
-                                                </Border>
+                                                <localFunction:SettingSection_Pedal x:Name="PedalSettingsSection" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
 
                                             </StackPanel>
                                         </Border>
@@ -918,6 +868,7 @@
                                             <styles:SHButtonPrimary Click="SHButtonPrimary_Click" Width="160" Content="Load Config from Local" Height="25" Margin="0,2,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Padding="15,0,15,0" VerticalContentAlignment="Center" />
                                             <styles:SHButtonPrimary Click="SaveButton_Click" Width="160" Content="Export Config to Local" Height="25" Margin="0,2,0,0" HorizontalAlignment="Left" Padding="15,0,15,0" VerticalContentAlignment="Center" />
                                             <styles:SHButtonPrimary x:Name="btn_rudder_status_clear" Click="btn_rudder_status_clear_Click" Width="160" Content="Clear Rudder Status" Height="25" Margin="0,2,0,0" HorizontalAlignment="Left" Padding="15,0,15,0" VerticalContentAlignment="Center" />
+                                            
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
@@ -1143,8 +1094,8 @@
                     <TabItem.Header>
                         <Border  Width="200" Height="40" Margin="0,0,0,0" >
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Label Content="SYSTEM"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
                                 <Image Width="26" Height="26" Source="{StaticResource Settings}" />
+                                <Label Content="SYSTEM"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
                             </StackPanel>
                         </Border>
                     </TabItem.Header>

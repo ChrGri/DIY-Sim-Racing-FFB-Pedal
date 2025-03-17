@@ -198,17 +198,21 @@ namespace User.PluginSdkDemo.UIFunction
         }
         private void ComboboxPitchSelection_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.spindlePitch_mmPerRev_u8 = (byte)ComboboxPitchSelection.SelectedIndex;
-            if (tmp.payloadPedalConfig_.spindlePitch_mmPerRev_u8 == 0)
+            byte pitch_last = dap_config_st.payloadPedalConfig_.spindlePitch_mmPerRev_u8;
+            if (pitch_last != (byte)ComboboxPitchSelection.SelectedIndex)
             {
-                tmp.payloadPedalConfig_.spindlePitch_mmPerRev_u8 = 5;
-                //ComboboxPitchSelection.SelectedIndex = 5;
+                var tmp = dap_config_st;
+                tmp.payloadPedalConfig_.spindlePitch_mmPerRev_u8 = (byte)ComboboxPitchSelection.SelectedIndex;
+                if (tmp.payloadPedalConfig_.spindlePitch_mmPerRev_u8 == 0)
+                {
+                    tmp.payloadPedalConfig_.spindlePitch_mmPerRev_u8 = 5;
+                    //ComboboxPitchSelection.SelectedIndex = 5;
+                }
+                calculation.IsUIRefreshNeeded = true;
+                dap_config_st = tmp;
+                ConfigChangedEvent(dap_config_st);
             }
-            calculation.IsUIRefreshNeeded = true;
-            dap_config_st = tmp;
-            ConfigChangedEvent(dap_config_st);
+
 
         }
 
@@ -221,6 +225,7 @@ namespace User.PluginSdkDemo.UIFunction
         }
         private void CheckBox_StepLossRecov_Unchecked(object sender, RoutedEventArgs e)
         {
+            
             var tmp_class = dap_config_st;
             byte tmp = dap_config_st.payloadPedalConfig_.stepLossFunctionFlags_u8;
             tmp = (byte)(tmp & ~(1 << 0));

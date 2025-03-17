@@ -228,23 +228,31 @@ namespace User.PluginSdkDemo.UIFunction
 
         private void Simulate_ABS_check_Checked(object sender, RoutedEventArgs e)
         {
-            calculation.IsUIRefreshNeeded = true;
-            CalculationChangedEvent(calculation);
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.Simulate_ABS_trigger = 1;
-            dap_config_st = tmp;
-            ConfigChangedEvent(dap_config_st);
+            if (dap_config_st.payloadPedalConfig_.Simulate_ABS_trigger != 1)
+            {
+                calculation.IsUIRefreshNeeded = true;
+                CalculationChangedEvent(calculation);
+                var tmp = dap_config_st;
+                tmp.payloadPedalConfig_.Simulate_ABS_trigger = 1;
+                dap_config_st = tmp;
+                ConfigChangedEvent(dap_config_st);
+            }
+
 
         }
 
         private void Simulate_ABS_check_Unchecked(object sender, RoutedEventArgs e)
         {
-            calculation.IsUIRefreshNeeded = true;
-            CalculationChangedEvent(calculation);
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.Simulate_ABS_trigger = 0;
-            dap_config_st = tmp;
-            ConfigChangedEvent(dap_config_st);
+            if (dap_config_st.payloadPedalConfig_.Simulate_ABS_trigger != 0)
+            {
+                calculation.IsUIRefreshNeeded = true;
+                CalculationChangedEvent(calculation);
+                var tmp = dap_config_st;
+                tmp.payloadPedalConfig_.Simulate_ABS_trigger = 0;
+                dap_config_st = tmp;
+                ConfigChangedEvent(dap_config_st);
+            }
+
 
         }
 
