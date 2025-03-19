@@ -1113,9 +1113,19 @@ void pedalUpdateTask( void * pvParameters )
       static RTDebugOutput<float, 3> rtDebugFilter({ "rawReading_g", "pedalForce_fl32", "filtered_g"});
       rtDebugFilter.offerData({ loadcellReading * 1000.0f, pedalForce_fl32*1000.0f, filteredReading * 1000.0f});
     }
-      
 
-    float FilterReadingJoystick=kalman_joystick->filteredValue(filteredReading,0.0f,1);
+    
+    float FilterReadingJoystick=0.0f;
+    if(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.kf_Joystick_u8==1)
+    {
+      FilterReadingJoystick=kalman_joystick->filteredValue(filteredReading,0.0f,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.kf_modelNoise_joystick);
+
+    }
+    else
+    {
+      FilterReadingJoystick=filteredReading;
+
+    }
     //float FilterReadingJoystick=averagefilter_joystick.process(filteredReading);
 
     float stepperPosFraction = stepper->getCurrentPositionFraction();

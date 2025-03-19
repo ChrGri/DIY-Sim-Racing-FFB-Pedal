@@ -390,7 +390,7 @@
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Width="810">
         <Grid RenderTransformOrigin="0,0" Width="810" Height="900">
-            <TabControl  x:Name="Function_Tab_seleciton"  SelectionChanged="Function_Tab_seleciton_SelectionChanged" Width="810" Grid.ColumnSpan="2" HorizontalContentAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Height="910" RenderTransformOrigin="0,0" Grid.RowSpan="1">
+            <TabControl  x:Name="Function_Tab_seleciton"  SelectionChanged="Function_Tab_seleciton_SelectionChanged" Width="770" Grid.ColumnSpan="2" HorizontalContentAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Height="910" RenderTransformOrigin="0,0" Grid.RowSpan="1">
                 <TabControl.Resources>
                     <Style TargetType="TabItem">
                         <Setter Property="Template">
@@ -420,6 +420,9 @@
                                 </ControlTemplate>
                             </Setter.Value>
                         </Setter>
+                    </Style>
+                    <Style TargetType="TabPanel">
+                        <Setter Property="HorizontalAlignment" Value="Center"/>
                     </Style>
                 </TabControl.Resources>
                 <TabControl.Background>
@@ -874,107 +877,7 @@
                                 </StackPanel>
                                 <StackPanel Width="540" Height="900" Margin="3,0,0,0">
                                     <StackPanel Width="540" Height="272" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="1,0,0,0">
-                                        <Border  HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="5,5,5,5">
-                                            <StackPanel HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540">
-                                                <StackPanel Height="20" Width="540" VerticalAlignment="Top" HorizontalAlignment="Left" Orientation="Horizontal">
-                                                    <Label Content="FORCE CURVE ADJUSTMENT" Width="200" Foreground="White" FontFamily="Arial Black" HorizontalAlignment="Center" Margin="70,0,0,0" Height="20" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
-                                                    <styles:SHButtonPrimary x:Name="btn_linearcurve_rudder" Click="btn_linearcurve_rudder_Click" Width="40" Content="Linear" Height="15" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" MinHeight="15" VerticalContentAlignment="Center" />
-                                                    <styles:SHButtonPrimary x:Name="btn_Scurve_rudder" Click="btn_Scurve_rudder_Click" Width="45" Content="S-Curve" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="15" />
-                                                    <styles:SHButtonPrimary x:Name="btn_10xcurve_rudder" Click="btn_10xcurve_rudder_Click" Width="50" Content="Exponent" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="15" />
-                                                    <styles:SHButtonPrimary x:Name="btn_logcurve_rudder" Click="btn_logcurve_rudder_Click" Width="50" Content="Logarithm" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" MinHeight="15" VerticalContentAlignment="Center" />
-
-                                                </StackPanel>
-                                                <StackPanel Height="220" Width="540" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,5,0,0">
-
-
-                                                    <!-- Travel vs Force curve GUI elements -->
-                                                    <Canvas x:Name="canvas_rudder_curve" Height="200" Width="400" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="70,0,0,0" >
-                                                        <Canvas.RenderTransform>
-                                                            <TransformGroup>
-                                                                <ScaleTransform ScaleX="1" ScaleY="1"/>
-                                                                <SkewTransform/>
-                                                                <RotateTransform/>
-                                                                <TranslateTransform/>
-                                                            </TransformGroup>
-
-                                                        </Canvas.RenderTransform>
-
-
-
-                                                        <TextBlock HorizontalAlignment="Center" 
-                                                   VerticalAlignment="Top" 
-                                                   Text="FORCE" 
-                                                   Width="60" 
-                                                   Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="-25" Canvas.Top="85" FontFamily="Arial Black" Height="13">
-                                                            <TextBlock.RenderTransform>
-                                                                <TransformGroup>
-                                                                    <ScaleTransform/>
-                                                                    <SkewTransform/>
-                                                                    <RotateTransform Angle="-90"/>
-                                                                    <TranslateTransform/>
-                                                                </TransformGroup>
-                                                            </TextBlock.RenderTransform>
-                                                        </TextBlock>
-
-
-                                                        <TextBlock HorizontalAlignment="Center" 
-                                                   VerticalAlignment="Center" 
-                                                   Text="TRAVEL" 
-                                                   Width="60" 
-                                                   Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="170" Canvas.Top="186" FontFamily="Arial Black" TextAlignment="Center" Height="14">
-                                                            <TextBlock.RenderTransform>
-                                                                <TransformGroup>
-                                                                    <ScaleTransform/>
-                                                                    <SkewTransform/>
-                                                                    <RotateTransform Angle="0"/>
-                                                                    <TranslateTransform/>
-                                                                </TransformGroup>
-                                                            </TextBlock.RenderTransform>
-                                                        </TextBlock>
-
-                                                        <Polyline x:Name="Polyline_RudderForceCurve"
-                                                    Stroke="{DynamicResource AccentColorBrush}"
-                                                    Height="300" Width="400"
-                                                    Opacity="0.7"
-                                                    Points="0,0 80,20 160,40 240,60 320,80 400,100"
-                                                    StrokeThickness="4" RenderTransformOrigin="1,0.5" Canvas.Top="-100" HorizontalAlignment="Left" VerticalAlignment="Center" >
-                                                            <Polyline.RenderTransform>
-                                                                <TransformGroup>
-                                                                    <ScaleTransform ScaleX="1" ScaleY="-1"/>
-                                                                    <SkewTransform/>
-                                                                    <RotateTransform/>
-                                                                    <TranslateTransform X="0"/>
-                                                                </TransformGroup>
-                                                            </Polyline.RenderTransform>
-                                                        </Polyline>
-                                                        <TextBlock x:Name="text_point_pos_rudder" HorizontalAlignment="Left" VerticalAlignment="Top" Text="pos" Width="60" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Left="5" Canvas.Top="15" Height="30" FontSize="10" FontFamily="Arial"/>
-                                                        <Rectangle x:Name="rect0_rudder" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="-5" Canvas.Top="195" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove_Rudder" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8" StrokeThickness="0"/>
-                                                        <Rectangle x:Name="rect1_rudder" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="75" Canvas.Top="155" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove_Rudder" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8"/>
-                                                        <Rectangle x:Name="rect2_rudder" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="155" Canvas.Top="115" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove_Rudder" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8"/>
-                                                        <Rectangle x:Name="rect3_rudder" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="235" Canvas.Top="75" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove_Rudder" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8"/>
-                                                        <Rectangle x:Name="rect4_rudder" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="315" Canvas.Top="35" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove_Rudder" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8"/>
-                                                        <Rectangle x:Name="rect5_rudder" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="395" Canvas.Top="-5" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove_Rudder" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8"/>
-                                                        <TextBox x:Name="text_rudder_log" HorizontalAlignment="Left" VerticalAlignment="Top" Text="" Width="400" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Left="0" Canvas.Top="0" Height="100" FontSize="10" FontFamily="Arial" Background="{x:Null}" BorderBrush="{x:Null}" CaretBrush="{x:Null}" SelectionTextBrush="{x:Null}" BorderThickness="0,0,0,0" IsReadOnly="True"/>
-
-
-
-                                                    </Canvas>
-
-                                                    <StackPanel Width="50" Height="230" Margin="10,-10,0,0">
-                                                        <Label x:Name="Label_max_force_rudder" Width="50" Height="24" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" Margin="0,-9,0,0"/>
-                                                        <controls:RangeSlider x:Name="Rangeslider_rudder_force_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="1" Grid.Column="2" Height="180" LowerValueChanged="Rangeslider_rudder_force_range_LowerValueChanged" UpperValueChanged="Rangeslider_rudder_force_range_UpperValueChanged" MinRange="3" IsSnapToTickEnabled="True" UpperValue="10" Width="20" Orientation="Vertical" Maximum="30" HorizontalAlignment="Left" LargeChange="0.1" Minimum="1" LowerValue="1" Value="1"/>
-                                                        <Label x:Name="Label_min_force_rudder" Width="50" Height="24" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0"/>
-                                                    </StackPanel>
-                                                </StackPanel>
-
-
-                                                <StackPanel Width="430" Height="40" Orientation="Horizontal" Margin="0,-10,0,0">
-                                                    <Label x:Name="Label_min_pos_rudder" Width="30" Height="40" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" HorizontalContentAlignment="Center"/>
-                                                    <controls:RangeSlider x:Name="Rangeslider_rudder_travel_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="1" Grid.Column="2" Height="20" LowerValueChanged="Rangeslider_rudder_travel_range_LowerValueChanged" UpperValueChanged="Rangeslider_rudder_travel_range_UpperValueChanged" MinRange="1" SmallChange="1" IsSnapToTickEnabled="True" UpperValue="95" Width="370" VerticalAlignment="Top" LowerValue="5" Minimum="5" Maximum="95" Value="85"/>
-                                                    <Label x:Name="Label_max_pos_rudder" Width="30" Height="40" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" HorizontalContentAlignment="Center"/>
-                                                </StackPanel>
-                                            </StackPanel>
-                                        </Border>
+                                        <localFunction:CurveTab_Rudder x:Name="CurveRudderForce_Tab" ConfigChanged="CurveRudderForce_Tab_ConfigChanged" CalculationChanged="Tab_CalculationChanged"/>
                                     </StackPanel>
                                     <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="222" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,4,0,0">
                                         <TabControl.Resources>

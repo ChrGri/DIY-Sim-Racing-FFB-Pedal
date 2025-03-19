@@ -10,11 +10,11 @@ none
 false
 TRACE
 
-21553538539
+22696029674
 1-1358375093
-421636896499
+43-2109069768
 145-574512487
-OnlineProfile.xaml;SerialMonitor.xaml;DIYFFBPedalControlUI.xaml;UIElement\CheckboxWithLabel.xaml;UIElement\SliderWithLabel.xaml;UIFunction\CurveTab_PedalForceTravel.xaml;UIFunction\EffectsTab_ABS.xaml;UIFunction\EffectsTab_BitePoint.xaml;UIFunction\EffectsTab_Custom1.xaml;UIFunction\EffectsTab_Custom2.xaml;UIFunction\EffectsTab_GForce.xaml;UIFunction\EffectsTab_RoadImpact.xaml;UIFunction\EffectsTab_RPM.xaml;UIFunction\EffectsTab_WheelSlip.xaml;UIFunction\GeneralSetting_ControlStrategy.xaml;UIFunction\GeneralSetting_KF.xaml;UIFunction\GeneralSetting_MPC.xaml;UIFunction\GeneralSetting_PedalSetting.xaml;UIFunction\GeneralSetting_PID.xaml;UIFunction\KinematicsTab_Pedal.xaml;UIFunction\SettingSection_Pedal.xaml;
+OnlineProfile.xaml;SerialMonitor.xaml;DIYFFBPedalControlUI.xaml;UIElement\CheckboxWithLabel.xaml;UIElement\SliderWithLabel.xaml;UIFunction\CurveTab_PedalForceTravel.xaml;UIFunction\CurveTab_Rudder.xaml;UIFunction\EffectsTab_ABS.xaml;UIFunction\EffectsTab_BitePoint.xaml;UIFunction\EffectsTab_Custom1.xaml;UIFunction\EffectsTab_Custom2.xaml;UIFunction\EffectsTab_GForce.xaml;UIFunction\EffectsTab_RoadImpact.xaml;UIFunction\EffectsTab_RPM.xaml;UIFunction\EffectsTab_WheelSlip.xaml;UIFunction\GeneralSetting_ControlStrategy.xaml;UIFunction\GeneralSetting_KF.xaml;UIFunction\GeneralSetting_MPC.xaml;UIFunction\GeneralSetting_PedalSetting.xaml;UIFunction\GeneralSetting_PID.xaml;UIFunction\KinematicsTab_Pedal.xaml;UIFunction\SettingSection_Pedal.xaml;
 
 True
 

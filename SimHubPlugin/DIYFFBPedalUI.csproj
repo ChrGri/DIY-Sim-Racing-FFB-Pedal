@@ -180,6 +180,9 @@
     <Compile Include="UIFunction\CurveTab_PedalForceTravel.xaml.cs">
       <DependentUpon>CurveTab_PedalForceTravel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\CurveTab_Rudder.xaml.cs">
+      <DependentUpon>CurveTab_Rudder.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\EffectsTab_ABS.xaml.cs">
       <DependentUpon>EffectsTab_ABS.xaml</DependentUpon>
     </Compile>
@@ -268,6 +271,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\CurveTab_PedalForceTravel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\CurveTab_Rudder.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

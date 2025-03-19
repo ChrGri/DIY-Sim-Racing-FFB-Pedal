@@ -9,7 +9,7 @@ namespace User.PluginSdkDemo
     static class Constants
     {
         // payload revisiom
-        public const uint pedalConfigPayload_version = 144;
+        public const uint pedalConfigPayload_version = 145;
 
 
         // pyload types
@@ -19,6 +19,6 @@ namespace User.PluginSdkDemo
         public const uint pedalStateExtendedPayload_type = 130;
         public const uint bridgeStatePayloadType = 210;
         public const uint Basic_Wifi_info_type = 220;
-        public const string pluginVersion = "0.89.07";
+        public const string pluginVersion = "0.89.08";
     }
 }

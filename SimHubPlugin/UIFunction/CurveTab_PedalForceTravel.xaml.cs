@@ -332,7 +332,7 @@ namespace User.PluginSdkDemo.UIFunction
                     Color = Colors.White,
                     Opacity = 1
                 };
-                rectangle.Fill = calculation.lightcolor;
+                //rectangle.Fill = calculation.lightcolor;
                 rectangle.Effect = dropShadowEffect;
             }
         }
@@ -390,7 +390,7 @@ namespace User.PluginSdkDemo.UIFunction
                         Color = Colors.White,
                         Opacity = 0
                     };
-                    rectangle.Fill = calculation.defaultcolor;
+                    //rectangle.Fill = calculation.defaultcolor;
                     rectangle.Effect = dropShadowEffect;
                 }
             }

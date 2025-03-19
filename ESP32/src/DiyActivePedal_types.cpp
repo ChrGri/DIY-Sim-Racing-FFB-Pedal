@@ -101,6 +101,8 @@ void DAP_config_st::initialiseDefaults() {
   //payLoadPedalConfig_.OTA_flag=0;
   payLoadPedalConfig_.stepLossFunctionFlags_u8=0b11;
   //payLoadPedalConfig_.Joystick_ESPsync_to_ESP=0;
+  payLoadPedalConfig_.kf_modelNoise_joystick=1;
+  payLoadPedalConfig_.kf_Joystick_u8=0;
 }
 
 

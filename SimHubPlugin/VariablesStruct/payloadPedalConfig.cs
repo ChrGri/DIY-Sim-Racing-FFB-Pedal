@@ -131,6 +131,9 @@ namespace User.PluginSdkDemo
 
         // Misc flags
         public byte stepLossFunctionFlags_u8;
+        // Kalman filter model noise
+        public byte kf_Joystick_u8;
+        public byte kf_modelNoise_joystick;
 
     }
 }

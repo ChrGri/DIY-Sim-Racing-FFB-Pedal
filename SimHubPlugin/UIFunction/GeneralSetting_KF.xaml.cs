@@ -47,6 +47,14 @@ namespace User.PluginSdkDemo.UIFunction
                 SetValue(DAP_Config_Property, value);
                 //KF_selection = value.payloadPedalConfig_.kf_modelOrder;
                 //KF_value = value.payloadPedalConfig_.kf_modelNoise;
+                try
+                {
+                    if (dap_config_st.payloadPedalConfig_.kf_Joystick_u8 == 1) Checkbox_joystick_denoise.IsChecked = true;
+                    else Checkbox_joystick_denoise.IsChecked = false;
+                }
+                catch
+                { }
+
             }
         }
         /*
@@ -88,6 +96,7 @@ namespace User.PluginSdkDemo.UIFunction
                     {
                         control.KF_filter_order.SelectedIndex = newData.payloadPedalConfig_.kf_modelOrder;
                         control.Slider_KF.SliderValue = newData.payloadPedalConfig_.kf_modelNoise;
+                        control.Slider_KF_Joystick.SliderValue = newData.payloadPedalConfig_.kf_modelNoise_joystick;
                     }
                     catch
                     {
@@ -123,7 +132,29 @@ namespace User.PluginSdkDemo.UIFunction
             ConfigChangedEvent(dap_config_st);
 
         }
-        
 
+        private void Checkbox_joystick_denoise_Checked(object sender, RoutedEventArgs e)
+        {
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.kf_Joystick_u8 = (byte)1;
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
+
+        private void Checkbox_joystick_denoise_Unchecked(object sender, RoutedEventArgs e)
+        {
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.kf_Joystick_u8 = (byte)0;
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
+
+        private void Slider_KF_Joystick_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.kf_modelNoise_joystick = (byte)e.NewValue;
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
     }
 }

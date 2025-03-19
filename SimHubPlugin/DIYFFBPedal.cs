@@ -1028,11 +1028,9 @@ namespace User.PluginSdkDemo
                             System.Threading.Thread.Sleep(5);
                         }
                     }
-
-                    
-                    Rudder_enable_flag = false;
                     System.Threading.Thread.Sleep(50);
                 }
+                Rudder_enable_flag = false;
                 SystemSounds.Beep.Play();
 
             }

@@ -223,62 +223,6 @@ namespace User.PluginSdkDemo
 
 
         }
-
-        private void DrawGridLines()
-        {
-            // Specify the number of rows and columns for the grid
-            int rowCount = 5;
-            int columnCount = 5;
-
-            // Calculate the width and height of each cell
-            double cellWidth = canvas_rudder_curve.Width / columnCount;
-            double cellHeight = canvas_rudder_curve.Height / rowCount;
-
-
-            
-            // Draw horizontal gridlines
-            for (int i = 1; i < rowCount; i++)
-            {
-
-                Line line2 = new Line
-                {
-                    X1 = 0,
-                    Y1 = i * cellHeight,
-                    X2 = canvas_rudder_curve.Width,
-                    Y2 = i * cellHeight,
-                    //Stroke = Brush.Black,
-                    Stroke = System.Windows.Media.Brushes.LightSteelBlue,
-                    StrokeThickness = 1,
-                    Opacity = 0.1
-
-                };
-                canvas_rudder_curve.Children.Add(line2);
-            }
-
-            // Draw vertical gridlines
-            for (int i = 1; i < columnCount; i++)
-            {
-                Line line2 = new Line
-                {
-                    X1 = i * cellWidth,
-                    Y1 = 0,
-                    X2 = i * cellWidth,
-                    Y2 = canvas_rudder_curve.Height,
-                    //Stroke = Brushes.Black,
-                    Stroke = System.Windows.Media.Brushes.LightSteelBlue,
-                    StrokeThickness = 1,
-                    Opacity = 0.1
-                };
-                
-                canvas_rudder_curve.Children.Add(line2);
-
-            }
-        }
-
-
-
-        
-
         private void InitReadStructFromJson()
         {
 
@@ -444,6 +388,8 @@ namespace User.PluginSdkDemo
             dap_config_st[pedalIdx].payloadPedalConfig_.pedal_type = (byte)pedalIdx;
             //dap_config_st[pedalIdx].payloadPedalConfig_.OTA_flag = 0;
             dap_config_st[pedalIdx].payloadPedalConfig_.stepLossFunctionFlags_u8 = 0b11;
+            dap_config_st[pedalIdx].payloadPedalConfig_.kf_modelNoise_joystick = 1;
+            dap_config_st[pedalIdx].payloadPedalConfig_.kf_Joystick_u8 = 0;
         }
 
         public void DAP_config_set_default_rudder()
@@ -531,6 +477,8 @@ namespace User.PluginSdkDemo
             dap_config_st_rudder.payloadPedalConfig_.pedal_type = (byte)4;
             //dap_config_st[pedalIdx].payloadPedalConfig_.OTA_flag = 0;
             dap_config_st_rudder.payloadPedalConfig_.stepLossFunctionFlags_u8 = 0b11;
+            dap_config_st_rudder.payloadPedalConfig_.kf_modelNoise_joystick = 1;
+            dap_config_st_rudder.payloadPedalConfig_.kf_Joystick_u8 = 1;
         }
         System.Windows.Controls.CheckBox[,] Effect_status_profile=new System.Windows.Controls.CheckBox[3,8];
         unsafe public DIYFFBPedalControlUI()
@@ -660,11 +608,9 @@ namespace User.PluginSdkDemo
             RSSI_3.Fill = color_RSSI_3;
             RSSI_4.Fill = color_RSSI_4;
             //Plugin.simhub_theme_color=defaultcolor.ToString();            
-            // Call this method to generate gridlines on the Canvas
-            DrawGridLines();
+            // Call this method to generate gridlines on the Canvas            
             Label_RSSI.Visibility= Visibility.Hidden;
             TextBox_debug_count.Visibility= Visibility.Hidden;
-            text_rudder_log.Visibility=Visibility.Hidden;
         }
 
 
@@ -814,8 +760,8 @@ namespace User.PluginSdkDemo
             this.Plugin = plugin;
             plugin.testValue = 1;
             plugin.wpfHandle = this;
-            Plugin._calculaitons.defaultcolor = defaultcolor;
-            Plugin._calculaitons.lightcolor = lightcolor;
+            plugin._calculaitons.defaultcolor = defaultcolor;
+            plugin._calculaitons.lightcolor = lightcolor;
 
             UpdateSerialPortList_click();
             //closeSerialAndStopReadCallback(1);
@@ -1149,6 +1095,9 @@ namespace User.PluginSdkDemo
                 PedalForceTravel_Tab.dap_config_st = tmp_struct;
                 PedalKinematics_Tab.dap_config_st= tmp_struct;
                 PedalSettingsSection.dap_config_st = tmp_struct;
+                var tmp_rudder = dap_config_st_rudder;
+                CurveRudderForce_Tab.dap_config_st = tmp_rudder;
+
 
                 Misc_Tab.Settings = Plugin.Settings;
                 EffectsABS_Tab.Settings = Plugin.Settings;
@@ -1169,6 +1118,7 @@ namespace User.PluginSdkDemo
                 Misc_Tab.calculation = Plugin._calculaitons;
                 PedalForceTravel_Tab.calculation=Plugin._calculaitons;
                 PedalSettingsSection.calculation=Plugin._calculaitons;
+                CurveRudderForce_Tab.calculation=Plugin._calculaitons;
 
 
                 EffectsCustom1_tab.Plugin = Plugin;
@@ -1229,7 +1179,7 @@ namespace User.PluginSdkDemo
             }
 
 
-            Update_BrakeForceCurve();
+            
 
 
             
@@ -1299,14 +1249,7 @@ namespace User.PluginSdkDemo
             //Rudder UI initialized
             if (Plugin != null)
             {
-                Rangeslider_rudder_force_range.LowerValue = dap_config_st_rudder.payloadPedalConfig_.preloadForce;
-                Rangeslider_rudder_force_range.UpperValue = dap_config_st_rudder.payloadPedalConfig_.maxForce;
-                Rangeslider_rudder_travel_range.LowerValue= dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition;
-                Rangeslider_rudder_travel_range.UpperValue = dap_config_st_rudder.payloadPedalConfig_.pedalEndPosition;
-                Label_min_pos_rudder.Content = "MIN\n" + dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition + "%";
-                Label_max_pos_rudder.Content = "MAX\n" + dap_config_st_rudder.payloadPedalConfig_.pedalEndPosition + "%" ;
-                Label_max_force_rudder.Content = "Max force:\n" + dap_config_st_rudder.payloadPedalConfig_.maxForce + "kgf";
-                Label_min_force_rudder.Content = "Preload:\n" + dap_config_st_rudder.payloadPedalConfig_.preloadForce + "kgf";
+                
                 Rangeslider_RPM_freq_rudder.LowerValue = dap_config_st_rudder.payloadPedalConfig_.RPM_min_freq;
                 Rangeslider_RPM_freq_rudder.UpperValue = dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq;
                 label_RPM_freq_max_rudder.Content = "MAX:" + dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq + "Hz";
@@ -1314,28 +1257,7 @@ namespace User.PluginSdkDemo
                 Slider_RPM_AMP_rudder.SliderValue = (double)(dap_config_st_rudder.payloadPedalConfig_.RPM_AMP) / (double)100.0f;
 
 
-                // rect position
-                double control_rect_value_max = 100;
                 
-                double dyy_rudder = canvas_rudder_curve.Height / control_rect_value_max;
-                Canvas.SetTop(rect0_rudder, canvas_rudder_curve.Height - dyy_rudder * dap_config_st_rudder.payloadPedalConfig_.relativeForce_p000 - rect0_rudder.Height / 2);
-                Canvas.SetLeft(rect0_rudder, 0 * canvas_rudder_curve.Width / 5 - rect0_rudder.Width / 2);
-
-                Canvas.SetTop(rect1_rudder, canvas_rudder_curve.Height - dyy_rudder * dap_config_st_rudder.payloadPedalConfig_.relativeForce_p020 - rect1_rudder.Height / 2);
-                Canvas.SetLeft(rect1_rudder, 1 * canvas_rudder_curve.Width / 5 - rect1_rudder.Width / 2);
-
-                Canvas.SetTop(rect2_rudder, canvas_rudder_curve.Height - dyy_rudder * dap_config_st_rudder.payloadPedalConfig_.relativeForce_p040 - rect2_rudder.Height / 2);
-                Canvas.SetLeft(rect2_rudder, 2 * canvas_rudder_curve.Width / 5 - rect2_rudder.Width / 2);
-
-                Canvas.SetTop(rect3_rudder, canvas_rudder_curve.Height - dyy_rudder * dap_config_st_rudder.payloadPedalConfig_.relativeForce_p060 - rect3_rudder.Height / 2);
-                Canvas.SetLeft(rect3_rudder, 3 * canvas_rudder_curve.Width / 5 - rect3_rudder.Width / 2);
-
-                Canvas.SetTop(rect4_rudder, canvas_rudder_curve.Height - dyy_rudder * dap_config_st_rudder.payloadPedalConfig_.relativeForce_p080 - rect4_rudder.Height / 2);
-                Canvas.SetLeft(rect4_rudder, 4 * canvas_rudder_curve.Width / 5 - rect4_rudder.Width / 2);
-
-                Canvas.SetTop(rect5_rudder, canvas_rudder_curve.Height - dyy_rudder * dap_config_st_rudder.payloadPedalConfig_.relativeForce_p100 - rect5_rudder.Height / 2);
-                Canvas.SetLeft(rect5_rudder, 5 * canvas_rudder_curve.Width / 5 - rect5_rudder.Width / 2);
-                text_point_pos_rudder.Visibility = Visibility.Hidden;
                 if (Plugin.Rudder_status)
                 {
                     btn_rudder_initialize.Content = "Disable Rudder";
@@ -1478,72 +1400,6 @@ namespace User.PluginSdkDemo
                 textbox_SSID.Text = Plugin.Settings.SSID_string;
                 textbox_PASS.Password = Plugin.Settings.PASS_string;
             }
-
-        }
-
-
-
-
-        private void Update_BrakeForceCurve()
-        {
-
-            double[] x = new double[6];
-            double[] y = new double[6];
-            double x_quantity = 100;
-            double y_max = 100;
-            double dx = canvas_rudder_curve.Width / x_quantity;
-            double dy = canvas_rudder_curve.Height / y_max;
-            //draw pedal force-travel curve
-
-
-
-            //draw rudder curve
-            x[0] = 0;
-            x[1] = 20;
-            x[2] = 40;
-            x[3] = 60;
-            x[4] = 80;
-            x[5] = 100;
-
-            y[0] = dap_config_st_rudder.payloadPedalConfig_.relativeForce_p000;
-            y[1] = dap_config_st_rudder.payloadPedalConfig_.relativeForce_p020;
-            y[2] = dap_config_st_rudder.payloadPedalConfig_.relativeForce_p040;
-            y[3] = dap_config_st_rudder.payloadPedalConfig_.relativeForce_p060;
-            y[4] = dap_config_st_rudder.payloadPedalConfig_.relativeForce_p080;
-            y[5] = dap_config_st_rudder.payloadPedalConfig_.relativeForce_p100;
-
-            // Use cubic interpolation to smooth the original data
-            (double[] xs2_rudder, double[] ys2_rudder, double[] a_rudder, double[] b_rudder) = Cubic.Interpolate1D(x, y, 100);
-
-
-            dap_config_st_rudder.payloadPedalConfig_.cubic_spline_param_a_0 = (float)a_rudder[0];
-            dap_config_st_rudder.payloadPedalConfig_.cubic_spline_param_a_1 = (float)a_rudder[1];
-            dap_config_st_rudder.payloadPedalConfig_.cubic_spline_param_a_2 = (float)a_rudder[2];
-            dap_config_st_rudder.payloadPedalConfig_.cubic_spline_param_a_3 = (float)a_rudder[3];
-            dap_config_st_rudder.payloadPedalConfig_.cubic_spline_param_a_4 = (float)a_rudder[4];
-
-            dap_config_st_rudder.payloadPedalConfig_.cubic_spline_param_b_0 = (float)b_rudder[0];
-            dap_config_st_rudder.payloadPedalConfig_.cubic_spline_param_b_1 = (float)b_rudder[1];
-            dap_config_st_rudder.payloadPedalConfig_.cubic_spline_param_b_2 = (float)b_rudder[2];
-            dap_config_st_rudder.payloadPedalConfig_.cubic_spline_param_b_3 = (float)b_rudder[3];
-            dap_config_st_rudder.payloadPedalConfig_.cubic_spline_param_b_4 = (float)b_rudder[4];
-
-
-            System.Windows.Media.PointCollection myPointCollection3 = new System.Windows.Media.PointCollection();
-
-
-            for (int pointIdx = 0; pointIdx < 100; pointIdx++)
-            {
-                System.Windows.Point Pointlcl = new System.Windows.Point(dx * xs2_rudder[pointIdx], dy * ys2_rudder[pointIdx]);
-                myPointCollection3.Add(Pointlcl);
-                //Force_curve_Y[pointIdx] = dy * ys2_rudder[pointIdx];
-            }
-
-            this.Polyline_RudderForceCurve.Points = myPointCollection3;
-
-            
-
-
 
         }
 
@@ -3694,129 +3550,6 @@ namespace User.PluginSdkDemo
         {
             dumpPedalToResponseFile[indexOfSelectedPedal_u] = false;
         }
-
-
-
-        private void Rectangle_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            isDragging = true;
-            var rectangle = sender as Rectangle;
-            offset = e.GetPosition(rectangle);
-            rectangle.CaptureMouse();                      
-            if (rectangle.Name != "rect_SABS_Control" & rectangle.Name != "rect_BP_Control")
-            {
-                var dropShadowEffect = new DropShadowEffect
-                {
-                    ShadowDepth = 0,
-                    BlurRadius = 15,
-                    Color = Colors.White,
-                    Opacity = 1
-                };
-                rectangle.Fill = lightcolor;
-                rectangle.Effect = dropShadowEffect;
-            }
-
-        }
-
-        private void Rectangle_MouseMove_Rudder(object sender, MouseEventArgs e)
-        {
-            if (isDragging)
-            {
-                var rectangle = sender as Rectangle;
-                //double x = e.GetPosition(canvas).X - offset.X;
-                double y = e.GetPosition(canvas_rudder_curve).Y - offset.Y;
-
-                // Ensure the rectangle stays within the canvas
-                //x = Math.Max(0, Math.Min(x, canvas.ActualWidth - rectangle.ActualWidth));
-                y = Math.Max(-1 * rectangle.Height / 2, Math.Min(y, canvas_rudder_curve.Height - rectangle.Height / 2));
-
-                //Canvas.SetLeft(rectangle, x);
-                Canvas.SetTop(rectangle, y);
-                double y_max = 100;
-                double dx = canvas_rudder_curve.Height / y_max;
-                double y_actual = (canvas_rudder_curve.Height - y - rectangle.Height / 2) / dx;
-                
-                
-                //rudder
-                if (rectangle.Name == "rect0_rudder")
-                {
-                    dap_config_st_rudder.payloadPedalConfig_.relativeForce_p000 = Convert.ToByte(y_actual);
-                    text_point_pos_rudder.Text = "Travel:0%";
-                    text_point_pos_rudder.Text += "\nForce: " + (int)y_actual + "%";
-
-                }
-                if (rectangle.Name == "rect1_rudder")
-                {
-
-                    dap_config_st_rudder.payloadPedalConfig_.relativeForce_p020 = Convert.ToByte(y_actual);
-                    text_point_pos_rudder.Text = "Travel:20%";
-                    text_point_pos_rudder.Text += "\nForce: " + (int)y_actual + "%";
-                }
-                if (rectangle.Name == "rect2_rudder")
-                {
-                    dap_config_st_rudder.payloadPedalConfig_.relativeForce_p040 = Convert.ToByte(y_actual);
-                    text_point_pos_rudder.Text = "Travel:40%";
-                    text_point_pos_rudder.Text += "\nForce: " + (int)y_actual + "%";
-                }
-                if (rectangle.Name == "rect3_rudder")
-                {
-                    dap_config_st_rudder.payloadPedalConfig_.relativeForce_p060 = Convert.ToByte(y_actual);
-                    text_point_pos_rudder.Text = "Travel:60%";
-                    text_point_pos_rudder.Text += "\nForce: " + (int)y_actual + "%";
-                }
-                if (rectangle.Name == "rect4_rudder")
-                {
-                    dap_config_st_rudder.payloadPedalConfig_.relativeForce_p080 = Convert.ToByte(y_actual);
-                    text_point_pos_rudder.Text = "Travel:80%";
-                    text_point_pos_rudder.Text += "\nForce: " + (int)y_actual + "%";
-                }
-                if (rectangle.Name == "rect5_rudder")
-                {
-                    dap_config_st_rudder.payloadPedalConfig_.relativeForce_p100 = Convert.ToByte(y_actual);
-                    text_point_pos_rudder.Text = "Travel:100%";
-                    text_point_pos_rudder.Text += "\nForce: " + (int)y_actual + "%";
-                }
-                text_point_pos_rudder.Visibility = Visibility.Visible;
-
-                Update_BrakeForceCurve();
-
-
-
-                // Update the position in the dictionary
-                //rectanglePositions[rectangle.Name] = new Point(x, y);
-            }
-        }
-
-
-
-       
-        private void Rectangle_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            if (isDragging)
-            {
-                var rectangle = sender as Rectangle;
-                isDragging = false;
-                rectangle.ReleaseMouseCapture();
-                text_point_pos_rudder.Visibility = Visibility.Hidden;
-                //SolidColorBrush buttonBackground = btn_update.Background as SolidColorBrush;
-                //Color color = Color.FromArgb(150, buttonBackground.Color.R, buttonBackground.Color.G, buttonBackground.Color.B);
-                //rectangle.Fill = btn_update.Background;
-                if (rectangle.Name != "rect_SABS_Control" & rectangle.Name != "rect_BP_Control")
-                {
-                    var dropShadowEffect = new DropShadowEffect
-                    {
-                        ShadowDepth = 0,
-                        BlurRadius = 20,
-                        Color = Colors.White,
-                        Opacity = 0
-                    };
-                    rectangle.Fill = defaultcolor;
-                    rectangle.Effect = dropShadowEffect;
-                }
-
-                //rectangle.Fill = new SolidColorBrush(color);
-            }
-        }
         private void Debug_checkbox_Checked(object sender, RoutedEventArgs e)
         {
 
@@ -5143,89 +4876,6 @@ namespace User.PluginSdkDemo
             }
         }
 
-
-
-        private void Rangeslider_rudder_travel_range_LowerValueChanged(object sender, RangeParameterChangedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition= (byte)e.NewValue;
-                Label_min_pos_rudder.Content = "MIN\n" + dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition + "%";                
-            }
-        }
-
-        private void Rangeslider_rudder_force_range_LowerValueChanged(object sender, RangeParameterChangedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                dap_config_st_rudder.payloadPedalConfig_.preloadForce = (float)e.NewValue;
-                Label_min_force_rudder.Content = "Preload:\n" + dap_config_st_rudder.payloadPedalConfig_.preloadForce + "kg";
-            }      
-            
-        }
-
-        private void Rangeslider_rudder_force_range_UpperValueChanged(object sender, RangeParameterChangedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                dap_config_st_rudder.payloadPedalConfig_.maxForce = (float)e.NewValue;
-                Label_max_force_rudder.Content = "Max force:\n" + dap_config_st_rudder.payloadPedalConfig_.maxForce + "kg";
-            }
-        }
-
-        private void Rangeslider_rudder_travel_range_UpperValueChanged(object sender, RangeParameterChangedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                dap_config_st_rudder.payloadPedalConfig_.pedalEndPosition = (byte)e.NewValue;
-                Label_max_pos_rudder.Content = "MAX\n" + dap_config_st_rudder.payloadPedalConfig_.pedalEndPosition + "%";
-            }
-        }
-
-        private void btn_Scurve_rudder_Click(object sender, RoutedEventArgs e)
-        {
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p000 = 0;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p020 = 7;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p040 = 28;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p060 = 70;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p080 = 93;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p100 = 100;
-            Update_BrakeForceCurve();
-            updateTheGuiFromConfig();
-        }
-        private void btn_10xcurve_rudder_Click(object sender, RoutedEventArgs e)
-        {
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p000 = 0;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p020 = 43;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p040 = 69;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p060 = 85;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p080 = 95;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p100 = 100;
-            Update_BrakeForceCurve();
-            updateTheGuiFromConfig();
-        }
-        private void btn_logcurve_rudder_Click(object sender, RoutedEventArgs e)
-        {
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p000 = 0;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p020 = 6;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p040 = 17;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p060 = 33;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p080 = 59;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p100 = 100;
-            Update_BrakeForceCurve();
-            updateTheGuiFromConfig();
-        }
-        private void btn_linearcurve_rudder_Click(object sender, RoutedEventArgs e)
-        {
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p000 = 0;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p020 = 20;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p040 = 40;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p060 = 60;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p080 = 80;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce_p100 = 100;
-            Update_BrakeForceCurve();
-            updateTheGuiFromConfig();
-        }
         //Rudder initialize procee
         public void DelayCall(int msec, Action fn)
         {
@@ -5248,13 +4898,13 @@ namespace User.PluginSdkDemo
             DelayCall(400, () =>
             {
                 Reading_config_auto(Plugin.Rudder_Pedal_idx[0]);//read brk config from pedal
-                text_rudder_log.Text += "Read Config from" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[0]] +"\n";              
+                CurveRudderForce_Tab.text_rudder_log.Text += "Read Config from" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[0]] +"\n";              
             });
 
             DelayCall(600, () =>
             {
                 Reading_config_auto(Plugin.Rudder_Pedal_idx[1]);//read gas config from pedal
-                text_rudder_log.Text += "Read Config from"+ Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[1]] + "\n";               
+                CurveRudderForce_Tab.text_rudder_log.Text += "Read Config from"+ Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[1]] + "\n";               
             });
             /*
             text_rudder_log.Text += "Read Config from BRK Pedal\n";
@@ -5274,9 +4924,9 @@ namespace User.PluginSdkDemo
                     for (uint idx = 0; idx < 2; idx++)
                     {
                         uint i = Plugin.Rudder_Pedal_idx[idx];
-                        text_rudder_log.Visibility = Visibility.Visible;
+                        CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
                         //read pedal kinematic
-                        text_rudder_log.Text += "Create Rudder config for Pedal: " + i + "\n";
+                        CurveRudderForce_Tab.text_rudder_log.Text += "Create Rudder config for Pedal: " + i + "\n";
                         dap_config_st_rudder.payloadPedalConfig_.lengthPedal_a = dap_config_st[i].payloadPedalConfig_.lengthPedal_a;
                         dap_config_st_rudder.payloadPedalConfig_.lengthPedal_b = dap_config_st[i].payloadPedalConfig_.lengthPedal_b;
                         dap_config_st_rudder.payloadPedalConfig_.lengthPedal_c_horizontal = dap_config_st[i].payloadPedalConfig_.lengthPedal_c_horizontal;
@@ -5291,7 +4941,7 @@ namespace User.PluginSdkDemo
                         dap_config_st_rudder.payloadPedalConfig_.Simulate_ABS_value = dap_config_st[i].payloadPedalConfig_.Simulate_ABS_value;
                         Sendconfig_Rudder(i);
                         System.Threading.Thread.Sleep(200);
-                        text_rudder_log.Text += "Send Rudder config to Pedal: " + i + "\n";
+                        CurveRudderForce_Tab.text_rudder_log.Text += "Send Rudder config to Pedal: " + i + "\n";
                     }
                 });
 
@@ -5332,16 +4982,16 @@ namespace User.PluginSdkDemo
                     {
                         
 
-                        text_rudder_log.Clear();
-                        text_rudder_log.Visibility = Visibility.Visible;
+                        CurveRudderForce_Tab.text_rudder_log.Clear();
+                        CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
                         Plugin.Rudder_enable_flag = true;
                         //Plugin.Rudder_status = false;
-                        text_rudder_log.Text += "Disabling Rudder\n";
+                        CurveRudderForce_Tab.text_rudder_log.Text += "Disabling Rudder\n";
                         btn_rudder_initialize.Content = "Enable Rudder";
                                              
                         DelayCall(300, () =>
                         {
-                            text_rudder_log.Visibility = Visibility.Visible;
+                            CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
                             
                             DAP_config_st tmp = dap_config_st[Plugin.Rudder_Pedal_idx[0]];
                             tmp.payloadHeader_.storeToEeprom = 0;
@@ -5350,13 +5000,13 @@ namespace User.PluginSdkDemo
                             tmp.payloadFooter_.checkSum = Plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
                             Plugin.SendConfig(tmp, Plugin.Rudder_Pedal_idx[0]);
                             //Sendconfig(Plugin.Rudder_Pedal_idx[0]);
-                            
-                            text_rudder_log.Text += "Send Original config back to" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[0]] +"\n";
+
+                            CurveRudderForce_Tab.text_rudder_log.Text += "Send Original config back to" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[0]] +"\n";
                             
                         });
                         DelayCall(600, () =>
                         {
-                            text_rudder_log.Visibility = Visibility.Visible;
+                            CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
                             DAP_config_st tmp = dap_config_st[Plugin.Rudder_Pedal_idx[1]];
                             tmp.payloadHeader_.storeToEeprom = 0;
                             DAP_config_st* v = &tmp;
@@ -5364,13 +5014,13 @@ namespace User.PluginSdkDemo
                             tmp.payloadFooter_.checkSum = Plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
                             Plugin.SendConfig(tmp, Plugin.Rudder_Pedal_idx[1]);
                             //Sendconfig(Plugin.Rudder_Pedal_idx[1]);
-                            
-                            text_rudder_log.Text += "Send Original config back to"+ Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[1]] + "\n";
+
+                            CurveRudderForce_Tab.text_rudder_log.Text += "Send Original config back to"+ Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[1]] + "\n";
                             
                         });
                         DelayCall(1600, () =>
                         {
-                            text_rudder_log.Visibility = Visibility.Hidden;
+                            CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Hidden;
                         });
                         //resent config back
                         /*
@@ -5396,18 +5046,18 @@ namespace User.PluginSdkDemo
                             System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                         }
 
-                        text_rudder_log.Clear();
-                        text_rudder_log.Visibility = Visibility.Visible;
+                        CurveRudderForce_Tab.text_rudder_log.Clear();
+                        CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
                         DelayCall(100, () =>
                         {
-                            text_rudder_log.Visibility = Visibility.Visible;
-                            text_rudder_log.Text += "Initializing Rudder\n";
+                            CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
+                            CurveRudderForce_Tab.text_rudder_log.Text += "Initializing Rudder\n";
                         });
                         Rudder_Initialized();
                         DelayCall(1300, () =>
                         {
-                            text_rudder_log.Visibility = Visibility.Visible;
-                            text_rudder_log.Text += "Rudder initialized\n";
+                            CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
+                            CurveRudderForce_Tab.text_rudder_log.Text += "Rudder initialized\n";
                             Plugin.Rudder_enable_flag = true;
                             //Plugin.Rudder_status = true;
                             btn_rudder_initialize.Content = "Disable Rudder";
@@ -5968,8 +5618,8 @@ namespace User.PluginSdkDemo
                     }
                     Plugin.Rudder_status = false;
                     Plugin.Rudder_brake_status = false;
-                    text_rudder_log.Clear();
-                    text_rudder_log.Visibility = Visibility.Hidden;
+                    CurveRudderForce_Tab.text_rudder_log.Clear();
+                    CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Hidden;
                     btn_rudder_initialize.Content = "Enable Rudder";
 
 
@@ -6027,36 +5677,8 @@ namespace User.PluginSdkDemo
 
         }
 
-        private void Rangeslider_travel_range_LowerThumbDragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                if (Plugin.Settings.LivePreview[indexOfSelectedPedal_u] && Plugin.PedalConfigRead_b[indexOfSelectedPedal_u])
-                {
-                    Plugin.SendConfig(dap_config_st[indexOfSelectedPedal_u], (byte)indexOfSelectedPedal_u);
-                }
-            }
-        }
 
-        private void CheckBox_LivePreview_Checked(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                Plugin.Settings.LivePreview[indexOfSelectedPedal_u] = true;
-                btn_SendConfig.Content = "Save Config in Pedal";
-                btn_SendConfig.ToolTip = "Push Config into Pedal storage";
-            }
-        }
 
-        private void CheckBox_LivePreview_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                Plugin.Settings.LivePreview[indexOfSelectedPedal_u] = false;
-                btn_SendConfig.Content = "Send Config to Pedal";
-                btn_SendConfig.ToolTip = "Send Config to Pedal and save in storage";
-            }
-        }
         
 
         private void Tab_ConfigChanged(object sender, DAP_config_st e)
@@ -6084,6 +5706,19 @@ namespace User.PluginSdkDemo
         {
             Plugin._calculaitons = e;
             updateTheGuiFromConfig();
+        }
+
+        private void CurveRudderForce_Tab_ConfigChanged(object sender, DAP_config_st e)
+        {
+            if (Plugin != null)
+            {
+                dap_config_st_rudder = e;
+                if (Plugin._calculaitons.IsUIRefreshNeeded)
+                {
+                    updateTheGuiFromConfig();
+                    Plugin._calculaitons.IsUIRefreshNeeded = false;
+                }
+            }
         }
     }
     
