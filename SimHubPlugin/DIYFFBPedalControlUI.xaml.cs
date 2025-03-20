@@ -922,6 +922,8 @@ namespace User.PluginSdkDemo
                 PedalSettingsSection.dap_config_st = tmp_struct;
                 var tmp_rudder = dap_config_st_rudder;
                 CurveRudderForce_Tab.dap_config_st = tmp_rudder;
+                RudderSetting_Tab.dap_config_st = tmp_rudder;
+                EffectsRPMRudder_Tab.dap_config_st = tmp_rudder;
 
 
                 Misc_Tab.Settings = Plugin.Settings;
@@ -935,6 +937,8 @@ namespace User.PluginSdkDemo
                 PedalForceTravel_Tab.Settings=Plugin.Settings;
                 PedalKinematics_Tab.Settings = Plugin.Settings;
                 PedalSettingsSection.Settings=Plugin.Settings;
+                EffectsRPMRudder_Tab.Settings= Plugin.Settings;
+                EffectRudderACC_Tab.Settings= Plugin.Settings;
 
                 EffectsABS_Tab.calculation = Plugin._calculaitons;
                 EffectsBitePoint_Tab.calculation=Plugin._calculaitons;
@@ -1074,15 +1078,7 @@ namespace User.PluginSdkDemo
             //Rudder UI initialized
             if (Plugin != null)
             {
-                
-                Rangeslider_RPM_freq_rudder.LowerValue = dap_config_st_rudder.payloadPedalConfig_.RPM_min_freq;
-                Rangeslider_RPM_freq_rudder.UpperValue = dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq;
-                label_RPM_freq_max_rudder.Content = "MAX:" + dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq + "Hz";
-                label_RPM_freq_min_rudder.Content = "MIN:" + dap_config_st_rudder.payloadPedalConfig_.RPM_min_freq + "Hz";
-                Slider_RPM_AMP_rudder.SliderValue = (double)(dap_config_st_rudder.payloadPedalConfig_.RPM_AMP) / (double)100.0f;
-
-
-                
+  
                 if (Plugin.Rudder_status)
                 {
                     btn_rudder_initialize.Content = "Disable Rudder";
@@ -1137,46 +1133,6 @@ namespace User.PluginSdkDemo
                 {
                     info_rudder_label_2.Content += "Off";
                 }
-
-                if (Plugin.Settings.Rudder_RPM_effect_b)
-                {
-                    checkbox_enable_RPM_rudder.IsChecked = true;
-                }
-                else
-                {
-                    checkbox_enable_RPM_rudder.IsChecked = false;
-                }
-
-                if (Plugin.Settings.Rudder_ACC_effect_b)
-                {
-                    checkbox_Rudder_ACC_effect.IsChecked = true;
-                }
-                else
-                {
-                    checkbox_Rudder_ACC_effect.IsChecked = false;
-                }
-
-                if (Plugin.Settings.Rudder_ACC_WindForce)
-                {
-                    Checkbox_Rudder_ACC_WindForce.IsChecked = true;
-                }
-                else
-                {
-                    Checkbox_Rudder_ACC_WindForce.IsChecked = false;
-                }
-
-                Slider_MPC_0th_gain_rudder.SliderValue = dap_config_st_rudder.payloadPedalConfig_.MPC_0th_order_gain;
-                //Slider_MPC_1st_gain_rudder.SliderValue = dap_config_st_rudder.payloadPedalConfig_.MPC_1st_order_gain;
-
-
-                //Slider_MPC_1st_gain_rudder.Value = dap_config_st_rudder.payloadPedalConfig_.MPC_1st_order_gain;
-                //label_MPC_1st_gain_rudder.Content = "MPC Foot spring dampening: " + Math.Round(dap_config_st_rudder.payloadPedalConfig_.MPC_1st_order_gain, 2) + "kg*s/mm";
-
-                
-                Slider_damping_rudder.SliderValue =(double) dap_config_st_rudder.payloadPedalConfig_.dampingPress* (double)Slider_damping_rudder.TickFrequency;
-
-
-
             }
 
             //system UI
@@ -4691,23 +4647,6 @@ namespace User.PluginSdkDemo
             
         }
 
-        private void Slider_RPM_AMP_rudder_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st_rudder.payloadPedalConfig_.RPM_AMP = (Byte)(e.NewValue * 100);
-            
-        }
-
-        private void Rangeslider_RPM_freq_rudder_LowerValueChanged(object sender, RangeParameterChangedEventArgs e)
-        {
-            dap_config_st_rudder.payloadPedalConfig_.RPM_min_freq = (byte)e.NewValue;
-            label_RPM_freq_min_rudder.Content = "MIN:" + dap_config_st_rudder.payloadPedalConfig_.RPM_min_freq + "Hz";
-        }
-
-        private void Rangeslider_RPM_freq_rudder_UpperValueChanged(object sender, RangeParameterChangedEventArgs e)
-        {
-            dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq = (byte)e.NewValue;
-            label_RPM_freq_max_rudder.Content = "MAX:" + dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq + "Hz";
-        }
 
         private void SHButtonPrimary_Click(object sender, RoutedEventArgs e)
         {
@@ -4850,68 +4789,7 @@ namespace User.PluginSdkDemo
             }
         }
 
-        private void checkbox_enable_RPM_rudder_Checked(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                Plugin.Settings.Rudder_RPM_effect_b = true;
-            }
-        }
-
-        private void checkbox_enable_RPM_rudder_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                Plugin.Settings.Rudder_RPM_effect_b = false;
-            }
-        }
-
-        private void checkbox_Rudder_ACC_effect_Checked(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                Plugin.Settings.Rudder_ACC_effect_b = true;
-            }
-        }
-
-        private void checkbox_Rudder_ACC_effect_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                Plugin.Settings.Rudder_ACC_effect_b = false;
-            }
-        }
-
-        private void Slider_damping_rudder_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st_rudder.payloadPedalConfig_.dampingPress = (Byte)((double)e.NewValue/(double)Slider_damping_rudder.TickFrequency);
-            dap_config_st_rudder.payloadPedalConfig_.dampingPull = (Byte)((double)e.NewValue / (double)Slider_damping_rudder.TickFrequency);
-
-        }
-
-        private void Slider_MPC_0th_gain_rudder_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            dap_config_st_rudder.payloadPedalConfig_.MPC_0th_order_gain = (float)e.NewValue;
-            
-
-        }
-
-        private void Checkbox_Rudder_ACC_WindForce_Checked(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                Plugin.Settings.Rudder_ACC_WindForce = true;
-            }
-        }
-
-        private void Checkbox_Rudder_ACC_WindForce_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                Plugin.Settings.Rudder_ACC_WindForce = true;
-            }
-
-        }
+        
 
         private void btn_serial_clear_bridge_Click(object sender, RoutedEventArgs e)
         {
@@ -5314,7 +5192,7 @@ namespace User.PluginSdkDemo
             updateTheGuiFromConfig();
         }
 
-        private void CurveRudderForce_Tab_ConfigChanged(object sender, DAP_config_st e)
+        private void Rudder_ConfigChanged(object sender, DAP_config_st e)
         {
             if (Plugin != null)
             {

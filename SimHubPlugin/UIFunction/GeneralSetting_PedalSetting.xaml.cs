@@ -180,7 +180,7 @@ namespace User.PluginSdkDemo.UIFunction
         }
         private static void OnCalculationChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            var control = d as EffectsTab_ABS;
+            var control = d as GeneralSetting_PedalSetting;
             if (control != null && e.NewValue is CalculationVariables newData)
             {
                 try

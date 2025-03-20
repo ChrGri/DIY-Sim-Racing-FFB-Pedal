@@ -877,7 +877,7 @@
                                 </StackPanel>
                                 <StackPanel Width="540" Height="900" Margin="3,0,0,0">
                                     <StackPanel Width="540" Height="272" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="1,0,0,0">
-                                        <localFunction:CurveTab_Rudder x:Name="CurveRudderForce_Tab" ConfigChanged="CurveRudderForce_Tab_ConfigChanged" CalculationChanged="Tab_CalculationChanged"/>
+                                        <localFunction:CurveTab_Rudder x:Name="CurveRudderForce_Tab" ConfigChanged="Rudder_ConfigChanged" CalculationChanged="Tab_CalculationChanged"/>
                                     </StackPanel>
                                     <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="222" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,4,0,0">
                                         <TabControl.Resources>
@@ -921,16 +921,7 @@
                                                     <Label Content="General"  FontFamily="Arial Black" FontSize="10" Height="30" Width="90" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <Border Background="#7F4E4E4E" Height="190" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
-                                                <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540">
-                                                    <StackPanel Height="20" Width="540" Orientation="Horizontal">
-                                                        <Label Content="General Setting" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
-                                                    </StackPanel>
-                                                    <localUI:SliderWithLabel x:Name="Slider_damping_rudder" Width="400" Height="40" SliderLength="400" TickFrequency="0.00015" MaxValue="0.0375" SliderName="Damping factor" Unit="s" SliderValueChanged="Slider_damping_rudder_ValueChanged"/>
-                                                    <localUI:SliderWithLabel x:Name="Slider_MPC_0th_gain_rudder" Width="400" Height="40" SliderLength="400" TickFrequency="0.1" MaxValue="10" SliderName="Foot spring stiffness" Unit="kg/mm" SliderValueChanged="Slider_MPC_0th_gain_rudder_ValueChanged"/>
-                                                    
-                                                </StackPanel>
-                                            </Border>
+                                            <localFunction:GeneralSetting_RudderSetting x:Name="RudderSetting_Tab" ConfigChanged="Rudder_ConfigChanged"/>
                                         </TabItem>
                                         <TabItem Width="90" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
                                             <TabItem.Header>
@@ -938,25 +929,7 @@
                                                     <Label Content="RPM"  FontFamily="Arial Black" FontSize="10" Height="30" Width="90" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <Border Background="#7F4E4E4E" Height="190" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
-                                                <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540">
-                                                    <StackPanel Height="20" Width="540" Orientation="Horizontal">
-                                                        <styles:SHToggleButton x:Name="checkbox_enable_RPM_rudder" Content="" Checked="checkbox_enable_RPM_rudder_Checked" Unchecked="checkbox_enable_RPM_rudder_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="60,0,0,0" ToolTip="Enable for RPM/Spped rumble, the trigger was save in local, no need sned config to Pedal"/>
-                                                        <Label Content="Engine RPM Rumble Effect" Height="15" Width="300" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="4,0,0,0"/>
-                                                    </StackPanel>
-                                                    <localUI:SliderWithLabel x:Name="Slider_RPM_AMP_rudder" Width="400" Height="40" SliderLength="400" TickFrequency="0.01" MaxValue="2" SliderName="Effect Amplitude" Unit="kgf" SliderValueChanged="Slider_RPM_AMP_rudder_ValueChanged"/>
-                                                    <StackPanel Width="400" Height="50">
-                                                        <StackPanel Width="400" Height="12" Orientation="Horizontal">
-                                                            <Label x:Name="label_RPM_freq_rudder"  Width="250" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Effect Frequency:" Height="12" Padding="0,0,0,0"/>
-                                                        </StackPanel>
-                                                        <StackPanel Width="400" Height="12" Orientation="Horizontal">
-                                                            <Label x:Name="label_RPM_freq_min_rudder"  Width="50" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="MIN:" Height="12" Padding="0,0,0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-                                                            <Label x:Name="label_RPM_freq_max_rudder"  Width="50" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="MAX:" Height="12" Padding="0,0,0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="300,0,0,0"/>
-                                                        </StackPanel>
-                                                        <controls:RangeSlider x:Name="Rangeslider_RPM_freq_rudder" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="1" Grid.Column="2" Height="10" LowerValueChanged="Rangeslider_RPM_freq_rudder_LowerValueChanged" UpperValueChanged="Rangeslider_RPM_freq_rudder_UpperValueChanged" MinRange="1" SmallChange="1" Maximum="50" IsSnapToTickEnabled="True" LowerValue="10" UpperValue="45" Minimum="1"/>
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </Border>
+                                            <localFunction:EffectsTab_RPMRudder x:Name="EffectsRPMRudder_Tab" SettingsChanged="Tab_SettingsChanged" ConfigChanged="Rudder_ConfigChanged"/>
                                         </TabItem>
                                         <TabItem Width="90" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
                                             <TabItem.Header>
@@ -964,18 +937,7 @@
                                                     <Label Content="Acceleration"  FontFamily="Arial Black" FontSize="10" Height="30" Width="90" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <Border Background="#7F4E4E4E" Height="190" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
-                                                <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540">
-                                                    <StackPanel Height="20" Width="540" Orientation="Horizontal">
-                                                        <styles:SHToggleButton x:Name="checkbox_Rudder_ACC_effect" Content="" Checked="checkbox_Rudder_ACC_effect_Checked" Unchecked="checkbox_Rudder_ACC_effect_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="60,0,0,0" ToolTip="Enable for RPM/Spped rumble, the trigger was save in local, no need sned config to Pedal"/>
-                                                        <Label Content="Acceleration Effect" Height="15" Width="300" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="4,0,0,0"/>
-                                                    </StackPanel>
-                                                    <StackPanel Height="20" Width="200" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="70,5,0,0">
-                                                        <styles:SHToggleButton x:Name="Checkbox_Rudder_ACC_WindForce" Content="" Checked="Checkbox_Rudder_ACC_WindForce_Checked" Unchecked="Checkbox_Rudder_ACC_WindForce_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                                                        <Label Content="Wind Force Applied on Rudder" Height="20" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </Border>
+                                            <localFunction:EffectsTab_RudderACC x:Name="EffectRudderACC_Tab" SettingsChanged="Tab_SettingsChanged"/>
                                         </TabItem>
                                         <TabItem x:Name="ABS_tab"  Width="90" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
                                             <TabItem.Header>

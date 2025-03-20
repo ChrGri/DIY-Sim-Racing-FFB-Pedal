@@ -4,17 +4,17 @@
 library
 C#
 .cs
-X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\obj\Release\
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\
 User.PluginSdkDemo
 none
 false
 TRACE
 
-22696029674
+251312909675
 1-1358375093
-43-2109069768
-145-574512487
-OnlineProfile.xaml;SerialMonitor.xaml;DIYFFBPedalControlUI.xaml;UIElement\CheckboxWithLabel.xaml;UIElement\SliderWithLabel.xaml;UIFunction\CurveTab_PedalForceTravel.xaml;UIFunction\CurveTab_Rudder.xaml;UIFunction\EffectsTab_ABS.xaml;UIFunction\EffectsTab_BitePoint.xaml;UIFunction\EffectsTab_Custom1.xaml;UIFunction\EffectsTab_Custom2.xaml;UIFunction\EffectsTab_GForce.xaml;UIFunction\EffectsTab_RoadImpact.xaml;UIFunction\EffectsTab_RPM.xaml;UIFunction\EffectsTab_WheelSlip.xaml;UIFunction\GeneralSetting_ControlStrategy.xaml;UIFunction\GeneralSetting_KF.xaml;UIFunction\GeneralSetting_MPC.xaml;UIFunction\GeneralSetting_PedalSetting.xaml;UIFunction\GeneralSetting_PID.xaml;UIFunction\KinematicsTab_Pedal.xaml;UIFunction\SettingSection_Pedal.xaml;
+46-1651374133
+1451614606500
+OnlineProfile.xaml;SerialMonitor.xaml;DIYFFBPedalControlUI.xaml;UIElement\CheckboxWithLabel.xaml;UIElement\SliderWithLabel.xaml;UIFunction\CurveTab_PedalForceTravel.xaml;UIFunction\CurveTab_Rudder.xaml;UIFunction\EffectsTab_ABS.xaml;UIFunction\EffectsTab_BitePoint.xaml;UIFunction\EffectsTab_Custom1.xaml;UIFunction\EffectsTab_Custom2.xaml;UIFunction\EffectsTab_GForce.xaml;UIFunction\EffectsTab_RoadImpact.xaml;UIFunction\EffectsTab_RPM.xaml;UIFunction\EffectsTab_RPMRudder.xaml;UIFunction\EffectsTab_RudderACC.xaml;UIFunction\EffectsTab_WheelSlip.xaml;UIFunction\GeneralSetting_ControlStrategy.xaml;UIFunction\GeneralSetting_KF.xaml;UIFunction\GeneralSetting_MPC.xaml;UIFunction\GeneralSetting_PedalSetting.xaml;UIFunction\GeneralSetting_PID.xaml;UIFunction\GeneralSetting_RudderSetting.xaml;UIFunction\KinematicsTab_Pedal.xaml;UIFunction\SettingSection_Pedal.xaml;
 
 True
 

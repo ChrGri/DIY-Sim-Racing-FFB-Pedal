@@ -204,6 +204,12 @@
     <Compile Include="UIFunction\EffectsTab_RPM.xaml.cs">
       <DependentUpon>EffectsTab_RPM.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\EffectsTab_RPMRudder.xaml.cs">
+      <DependentUpon>EffectsTab_RPMRudder.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\EffectsTab_RudderACC.xaml.cs">
+      <DependentUpon>EffectsTab_RudderACC.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\EffectsTab_WheelSlip.xaml.cs">
       <DependentUpon>EffectsTab_WheelSlip.xaml</DependentUpon>
     </Compile>
@@ -221,6 +227,9 @@
     </Compile>
     <Compile Include="UIFunction\GeneralSetting_PID.xaml.cs">
       <DependentUpon>GeneralSetting_PID.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\GeneralSetting_RudderSetting.xaml.cs">
+      <DependentUpon>GeneralSetting_RudderSetting.xaml</DependentUpon>
     </Compile>
     <Compile Include="UIFunction\KinematicsTab_Pedal.xaml.cs">
       <DependentUpon>KinematicsTab_Pedal.xaml</DependentUpon>
@@ -306,6 +315,14 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="UIFunction\EffectsTab_RPMRudder.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\EffectsTab_RudderACC.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="UIFunction\EffectsTab_WheelSlip.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -327,6 +344,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\GeneralSetting_PID.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\GeneralSetting_RudderSetting.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

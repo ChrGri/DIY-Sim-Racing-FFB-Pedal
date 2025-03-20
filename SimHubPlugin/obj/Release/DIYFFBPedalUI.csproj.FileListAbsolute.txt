@@ -234,3 +234,9 @@ X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Rele
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\DIYFFBPe.469A4AA0.Up2Date
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\DiyActivePedal.dll
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\DiyActivePedal.pdb
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\UIFunction\GeneralSetting_RudderSetting.g.cs
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\UIFunction\GeneralSetting_RudderSetting.baml
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\UIFunction\EffectsTab_RPMRudder.g.cs
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\UIFunction\EffectsTab_RPMRudder.baml
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\UIFunction\EffectsTab_RudderACC.g.cs
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\UIFunction\EffectsTab_RudderACC.baml
