@@ -185,7 +185,10 @@ void isv57communication::sendTunedServoParameters(bool commandRotationDirection,
   
 
   // Pr3 register
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_3_00+12, 0); // time setup acceleration
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_3_00+13, 0); // time setup deceleration
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_3_00+24, 5000); // maximum rpm
+  
 
   // Pr5 register
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_5_00+13, 5000); // overspeed level
