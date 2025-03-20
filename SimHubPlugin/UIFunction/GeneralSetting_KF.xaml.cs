@@ -50,7 +50,7 @@ namespace User.PluginSdkDemo.UIFunction
                 try
                 {
                     if (dap_config_st.payloadPedalConfig_.kf_Joystick_u8 == 1) Checkbox_joystick_denoise.IsChecked = true;
-                    else Checkbox_joystick_denoise.IsChecked = false;
+                    else if(Checkbox_joystick_denoise!=null) Checkbox_joystick_denoise.IsChecked = false;
                 }
                 catch
                 { }
@@ -94,9 +94,9 @@ namespace User.PluginSdkDemo.UIFunction
                 {
                     try
                     {
-                        control.KF_filter_order.SelectedIndex = newData.payloadPedalConfig_.kf_modelOrder;
-                        control.Slider_KF.SliderValue = newData.payloadPedalConfig_.kf_modelNoise;
-                        control.Slider_KF_Joystick.SliderValue = newData.payloadPedalConfig_.kf_modelNoise_joystick;
+                        if(control. KF_filter_order!=null) control.KF_filter_order.SelectedIndex = newData.payloadPedalConfig_.kf_modelOrder;
+                        if (control.Slider_KF != null) control.Slider_KF.SliderValue = newData.payloadPedalConfig_.kf_modelNoise;
+                        if (control.Slider_KF_Joystick != null) control.Slider_KF_Joystick.SliderValue = newData.payloadPedalConfig_.kf_modelNoise_joystick;
                     }
                     catch
                     {

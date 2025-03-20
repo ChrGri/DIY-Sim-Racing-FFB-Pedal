@@ -88,11 +88,11 @@ namespace User.PluginSdkDemo.UIFunction
                 {
                     if (Settings.advanced_b)
                     {
-                        Slider_LC_rate.TickFrequency = 1;
+                        if(Slider_LC_rate!=null) Slider_LC_rate.TickFrequency = 1;
                     }
                     else
                     {
-                        Slider_LC_rate.TickFrequency = 10;
+                        if (Slider_LC_rate != null) Slider_LC_rate.TickFrequency = 10;
                     }
                 }
             }
@@ -112,9 +112,9 @@ namespace User.PluginSdkDemo.UIFunction
                 {
                     try
                     {
-                        control.Slider_damping.SliderValue = (double)(newData.payloadPedalConfig_.dampingPress * (double)control.Slider_damping.TickFrequency);
-                        control.Slider_LC_rate.SliderValue = newData.payloadPedalConfig_.loadcell_rating * 2;
-                        control.Slider_maxgame_output.SliderValue = newData.payloadPedalConfig_.maxGameOutput;
+                        if (control.Slider_damping != null) control.Slider_damping.SliderValue = (double)(newData.payloadPedalConfig_.dampingPress * (double)control.Slider_damping.TickFrequency);
+                        if (control.Slider_LC_rate != null) control.Slider_LC_rate.SliderValue = newData.payloadPedalConfig_.loadcell_rating * 2;
+                        if (control.Slider_maxgame_output != null) control.Slider_maxgame_output.SliderValue = newData.payloadPedalConfig_.maxGameOutput;
                     }
                     catch (Exception caughtEx)
                     {
@@ -123,14 +123,18 @@ namespace User.PluginSdkDemo.UIFunction
                     //combobox
                     try
                     {
-                        if (newData.payloadPedalConfig_.spindlePitch_mmPerRev_u8 == 0)
+                        if (control.ComboboxPitchSelection != null)
                         {
-                            control.ComboboxPitchSelection.SelectedIndex = 5;
+                            if (newData.payloadPedalConfig_.spindlePitch_mmPerRev_u8 == 0)
+                            {
+                                control.ComboboxPitchSelection.SelectedIndex = 5;
+                            }
+                            else
+                            {
+                                control.ComboboxPitchSelection.SelectedIndex = newData.payloadPedalConfig_.spindlePitch_mmPerRev_u8;
+                            }
                         }
-                        else
-                        {
-                            control.ComboboxPitchSelection.SelectedIndex = newData.payloadPedalConfig_.spindlePitch_mmPerRev_u8;
-                        }
+
                     }
                     catch (Exception caughtEx)
                     {
@@ -138,25 +142,33 @@ namespace User.PluginSdkDemo.UIFunction
                     try
                     {
                         //checkbox
-                        control.CheckBox_JoystickOutput.IsChecked = newData.payloadPedalConfig_.travelAsJoystickOutput_u8 == 1;
-                        control.CheckBox_InvertLoadcellReading.IsChecked = newData.payloadPedalConfig_.invertLoadcellReading_u8 == 1;
-                        control.CheckBox_InvertMotorDir.IsChecked = newData.payloadPedalConfig_.invertMotorDirection_u8 == 1;
-                        if (((newData.payloadPedalConfig_.stepLossFunctionFlags_u8 >> 0) & 1) == 1)
+                        if(control.CheckBox_JoystickOutput!=null) control.CheckBox_JoystickOutput.IsChecked = newData.payloadPedalConfig_.travelAsJoystickOutput_u8 == 1;
+                        if (control.CheckBox_InvertLoadcellReading != null) control.CheckBox_InvertLoadcellReading.IsChecked = newData.payloadPedalConfig_.invertLoadcellReading_u8 == 1;
+                        if (control.CheckBox_InvertMotorDir != null) control.CheckBox_InvertMotorDir.IsChecked = newData.payloadPedalConfig_.invertMotorDirection_u8 == 1;
+                        if (control.CheckBox_StepLossRecov != null)
                         {
-                            control.CheckBox_StepLossRecov.IsChecked = true;
+                            if (((newData.payloadPedalConfig_.stepLossFunctionFlags_u8 >> 0) & 1) == 1)
+                            {
+                                control.CheckBox_StepLossRecov.IsChecked = true;
+                            }
+                            else
+                            {
+                                control.CheckBox_StepLossRecov.IsChecked = false;
+                            }
                         }
-                        else
+                        if (control.CheckBox_CrashDetection != null)
                         {
-                            control.CheckBox_StepLossRecov.IsChecked = false;
+                            if (((newData.payloadPedalConfig_.stepLossFunctionFlags_u8 >> 1) & 1) == 1)
+                            {
+                                control.CheckBox_CrashDetection.IsChecked = true;
+                            }
+                            else
+                            {
+                                control.CheckBox_CrashDetection.IsChecked = false;
+                            }
                         }
-                        if (((newData.payloadPedalConfig_.stepLossFunctionFlags_u8 >> 1) & 1) == 1)
-                        {
-                            control.CheckBox_CrashDetection.IsChecked = true;
-                        }
-                        else
-                        {
-                            control.CheckBox_CrashDetection.IsChecked = false;
-                        }
+
+
                     }
                     catch (Exception caughtEx)
                     {                         

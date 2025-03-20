@@ -122,15 +122,15 @@ namespace User.PluginSdkDemo.UIFunction
                 try
                 {
 
-                    control.CanvasDraw();
-                    control.Rangeslider_rudder_force_range.LowerValue = control.dap_config_st.payloadPedalConfig_.preloadForce;
-                    control.Rangeslider_rudder_force_range.UpperValue = control.dap_config_st.payloadPedalConfig_.maxForce;
-                    control.Rangeslider_rudder_travel_range.LowerValue = control.dap_config_st.payloadPedalConfig_.pedalStartPosition;
-                    control.Rangeslider_rudder_travel_range.UpperValue = control.dap_config_st.payloadPedalConfig_.pedalEndPosition;
-                    control.Label_min_pos_rudder.Content = "MIN\n" + control.dap_config_st.payloadPedalConfig_.pedalStartPosition + "%";
-                    control.Label_max_pos_rudder.Content = "MAX\n" + control.dap_config_st.payloadPedalConfig_.pedalEndPosition + "%";
-                    control.Label_max_force_rudder.Content = "Max force:\n" + control.dap_config_st.payloadPedalConfig_.maxForce + "kgf";
-                    control.Label_min_force_rudder.Content = "Preload:\n" + control.dap_config_st.payloadPedalConfig_.preloadForce + "kgf";
+                    if(control.canvas_rudder_curve!=null) control.CanvasDraw();
+                    if (control.Rangeslider_rudder_force_range != null) control.Rangeslider_rudder_force_range.LowerValue = control.dap_config_st.payloadPedalConfig_.preloadForce;
+                    if (control.Rangeslider_rudder_force_range != null) control.Rangeslider_rudder_force_range.UpperValue = control.dap_config_st.payloadPedalConfig_.maxForce;
+                    if (control.Rangeslider_rudder_travel_range != null) control.Rangeslider_rudder_travel_range.LowerValue = control.dap_config_st.payloadPedalConfig_.pedalStartPosition;
+                    if (control.Rangeslider_rudder_travel_range != null) control.Rangeslider_rudder_travel_range.UpperValue = control.dap_config_st.payloadPedalConfig_.pedalEndPosition;
+                    if (control.Label_min_pos_rudder != null) control.Label_min_pos_rudder.Content = "MIN\n" + control.dap_config_st.payloadPedalConfig_.pedalStartPosition + "%";
+                    if (control.Label_max_pos_rudder != null) control.Label_max_pos_rudder.Content = "MAX\n" + control.dap_config_st.payloadPedalConfig_.pedalEndPosition + "%";
+                    if (control.Label_max_force_rudder != null) control.Label_max_force_rudder.Content = "Max force:\n" + control.dap_config_st.payloadPedalConfig_.maxForce + "kgf";
+                    if (control.Label_min_force_rudder != null) control.Label_min_force_rudder.Content = "Preload:\n" + control.dap_config_st.payloadPedalConfig_.preloadForce + "kgf";
                     
 
                 }
@@ -408,7 +408,7 @@ namespace User.PluginSdkDemo.UIFunction
             ConfigChangedEvent(dap_config_st);
             try
             {
-                Label_min_force_rudder.Content = "Preload:\n" + dap_config_st.payloadPedalConfig_.preloadForce + "kg";
+                if(Label_min_force_rudder!=null) Label_min_force_rudder.Content = "Preload:\n" + dap_config_st.payloadPedalConfig_.preloadForce + "kg";
             }
             catch { }
             
@@ -422,7 +422,7 @@ namespace User.PluginSdkDemo.UIFunction
             ConfigChangedEvent(dap_config_st);
             try
             {
-                Label_max_force_rudder.Content = "Max force:\n" + dap_config_st.payloadPedalConfig_.maxForce + "kg";
+                if (Label_max_force_rudder != null) Label_max_force_rudder.Content = "Max force:\n" + dap_config_st.payloadPedalConfig_.maxForce + "kg";
             }
             catch { }
             
@@ -436,7 +436,7 @@ namespace User.PluginSdkDemo.UIFunction
             ConfigChangedEvent(dap_config_st);
             try
             {
-                Label_min_pos_rudder.Content = "MIN\n" + dap_config_st.payloadPedalConfig_.pedalStartPosition + "%";
+                if (Label_min_pos_rudder != null) Label_min_pos_rudder.Content = "MIN\n" + dap_config_st.payloadPedalConfig_.pedalStartPosition + "%";
             }
             catch { }
             
@@ -450,7 +450,7 @@ namespace User.PluginSdkDemo.UIFunction
             ConfigChangedEvent(dap_config_st);
             try
             {
-                Label_max_pos_rudder.Content = "MAX\n" + dap_config_st.payloadPedalConfig_.pedalEndPosition + "%";
+                if (Label_max_pos_rudder != null) Label_max_pos_rudder.Content = "MAX\n" + dap_config_st.payloadPedalConfig_.pedalEndPosition + "%";
             }
             catch { }
             

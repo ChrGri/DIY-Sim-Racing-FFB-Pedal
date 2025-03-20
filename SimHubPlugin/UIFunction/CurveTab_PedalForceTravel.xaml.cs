@@ -87,11 +87,11 @@ namespace User.PluginSdkDemo.UIFunction
                 {
                     if (Settings.table_selected != 1)
                     {
-                        Rangeslider_force_range.Maximum = 50;
+                        if(Rangeslider_force_range!=null) Rangeslider_force_range.Maximum = 50;
                     }
                     else
                     {
-                        Rangeslider_force_range.Maximum = 200;
+                        if (Rangeslider_force_range != null) Rangeslider_force_range.Maximum = 200;
                     }
                 }
             }
@@ -121,11 +121,12 @@ namespace User.PluginSdkDemo.UIFunction
             {
                 try
                 {
-                    control.CanvasDraw();
-                    control.Label_min_force.Content = "Preload:\n" + (float)control.dap_config_st.payloadPedalConfig_.preloadForce + "kg";
-                    control.Label_max_force.Content = "Max force:\n" + (float)control.dap_config_st.payloadPedalConfig_.maxForce + "kg";
-                    control.Label_max_pos.Content = "MAX\n" + control.dap_config_st.payloadPedalConfig_.pedalEndPosition + "%\n" + Math.Round((float)(control.dap_config_st.payloadPedalConfig_.lengthPedal_travel * control.dap_config_st.payloadPedalConfig_.pedalEndPosition) / 100) + "mm";
-                    control.Label_min_pos.Content = "MIN\n" + control.dap_config_st.payloadPedalConfig_.pedalStartPosition + "%\n" + Math.Round((float)(control.dap_config_st.payloadPedalConfig_.lengthPedal_travel * control.dap_config_st.payloadPedalConfig_.pedalStartPosition) / 100) + "mm";
+
+                    if (control.canvas != null) control.CanvasDraw();
+                    if (control.Label_min_force != null) control.Label_min_force.Content = "Preload:\n" + (float)control.dap_config_st.payloadPedalConfig_.preloadForce + "kg";
+                    if (control.Label_max_force != null) control.Label_max_force.Content = "Max force:\n" + (float)control.dap_config_st.payloadPedalConfig_.maxForce + "kg";
+                    if (control.Label_max_pos != null) control.Label_max_pos.Content = "MAX\n" + control.dap_config_st.payloadPedalConfig_.pedalEndPosition + "%\n" + Math.Round((float)(control.dap_config_st.payloadPedalConfig_.lengthPedal_travel * control.dap_config_st.payloadPedalConfig_.pedalEndPosition) / 100) + "mm";
+                    if (control.Label_min_pos != null) control.Label_min_pos.Content = "MIN\n" + control.dap_config_st.payloadPedalConfig_.pedalStartPosition + "%\n" + Math.Round((float)(control.dap_config_st.payloadPedalConfig_.lengthPedal_travel * control.dap_config_st.payloadPedalConfig_.pedalStartPosition) / 100) + "mm";
                     if (control.dap_config_st.payloadPedalConfig_.pedalStartPosition < 5)
                     {
                         var tmp = control.dap_config_st;
@@ -138,10 +139,10 @@ namespace User.PluginSdkDemo.UIFunction
                         tmp.payloadPedalConfig_.pedalEndPosition = 95;
                         control.dap_config_st = tmp;
                     }
-                    control.Rangeslider_travel_range.LowerValue = control.dap_config_st.payloadPedalConfig_.pedalStartPosition;
-                    control.Rangeslider_travel_range.UpperValue = control.dap_config_st.payloadPedalConfig_.pedalEndPosition;
-                    control.Rangeslider_force_range.UpperValue = control.dap_config_st.payloadPedalConfig_.maxForce;
-                    control.Rangeslider_force_range.LowerValue = control.dap_config_st.payloadPedalConfig_.preloadForce;
+                    if (control.Rangeslider_travel_range != null) control.Rangeslider_travel_range.LowerValue = control.dap_config_st.payloadPedalConfig_.pedalStartPosition;
+                    if (control.Rangeslider_travel_range != null) control.Rangeslider_travel_range.UpperValue = control.dap_config_st.payloadPedalConfig_.pedalEndPosition;
+                    if (control.Rangeslider_force_range != null) control.Rangeslider_force_range.UpperValue = control.dap_config_st.payloadPedalConfig_.maxForce;
+                    if (control.Rangeslider_force_range != null) control.Rangeslider_force_range.LowerValue = control.dap_config_st.payloadPedalConfig_.preloadForce;
                     control.PedalServoForceCheck();
                 }
                 catch

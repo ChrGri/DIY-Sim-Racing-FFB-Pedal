@@ -1,25 +1,25 @@
-﻿C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\GeneratedInternalTypeHelper.g.cs
+﻿
 
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\OnlineProfile.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\SerialMonitor.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\DIYFFBPedalControlUI.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIElement\CheckboxWithLabel.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIElement\SliderWithLabel.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\CurveTab_PedalForceTravel.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\CurveTab_Rudder.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\EffectsTab_ABS.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\EffectsTab_BitePoint.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\EffectsTab_Custom1.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\EffectsTab_Custom2.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\EffectsTab_GForce.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\EffectsTab_RoadImpact.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\EffectsTab_RPM.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\EffectsTab_WheelSlip.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\GeneralSetting_ControlStrategy.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\GeneralSetting_KF.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\GeneralSetting_MPC.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\GeneralSetting_PedalSetting.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\GeneralSetting_PID.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\KinematicsTab_Pedal.xaml;;
-FC:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\UIFunction\SettingSection_Pedal.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\OnlineProfile.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\SerialMonitor.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\DIYFFBPedalControlUI.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIElement\CheckboxWithLabel.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIElement\SliderWithLabel.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\CurveTab_PedalForceTravel.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\CurveTab_Rudder.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\EffectsTab_ABS.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\EffectsTab_BitePoint.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\EffectsTab_Custom1.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\EffectsTab_Custom2.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\EffectsTab_GForce.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\EffectsTab_RoadImpact.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\EffectsTab_RPM.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\EffectsTab_WheelSlip.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\GeneralSetting_ControlStrategy.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\GeneralSetting_KF.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\GeneralSetting_MPC.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\GeneralSetting_PedalSetting.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\GeneralSetting_PID.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\KinematicsTab_Pedal.xaml;;
+FX:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\UIFunction\SettingSection_Pedal.xaml;;
 

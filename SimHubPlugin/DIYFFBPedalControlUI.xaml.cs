@@ -760,155 +760,8 @@ namespace User.PluginSdkDemo
             this.Plugin = plugin;
             plugin.testValue = 1;
             plugin.wpfHandle = this;
-            plugin._calculaitons.defaultcolor = defaultcolor;
-            plugin._calculaitons.lightcolor = lightcolor;
-
             UpdateSerialPortList_click();
-            //closeSerialAndStopReadCallback(1);
-
-             
-
-            // check if Json config files are present, otherwise create new ones
-            //for (int jsonIndex = 0; jsonIndex < ComboBox_JsonFileSelected.Items.Count; jsonIndex++)
-            //{
-
-            //    ComboBox_JsonFileSelected.SelectedIndex = jsonIndex;
-
-            //    // which config file is seleced
-            //    string currentDirectory = Directory.GetCurrentDirectory();
-            //    string dirName = currentDirectory + "\\PluginsData\\Common";
-            //    //string jsonFileName = ComboBox_JsonFileSelected(ComboBox_JsonFileSelected.Items[jsonIndex]).Text;
-            //    string jsonFileName = ((ComboBoxItem)ComboBox_JsonFileSelected.SelectedItem).Content.ToString();
-            //    string fileName = dirName + "\\" + jsonFileName + ".json";
-
-
-            //    // Check if file already exists, otherwise create    
-            //    if (!File.Exists(fileName))
-            //    {
-            //        // create default config
-            //        // https://stackoverflow.com/questions/3275863/does-net-4-have-a-built-in-json-serializer-deserializer
-            //        // https://learn.microsoft.com/en-us/dotnet/framework/wcf/feature-details/how-to-serialize-and-deserialize-json-data?redirectedfrom=MSDN
-            //        var stream1 = new MemoryStream();
-            //        var ser = new DataContractJsonSerializer(typeof(DAP_config_st));
-            //        ser.WriteObject(stream1, Plugin.dap_config_initial_st);
-
-            //        stream1.Position = 0;
-            //        StreamReader sr = new StreamReader(stream1);
-            //        string jsonString = sr.ReadToEnd();
-
-            //        System.IO.File.WriteAllText(fileName, jsonString);
-            //    }
-            //}
-
-            string currentDirectory = Directory.GetCurrentDirectory();
-            string dirName = currentDirectory + "\\PluginsData\\Common";
-            //string jsonFileName = ComboBox_JsonFileSelected(ComboBox_JsonFileSelected.Items[jsonIndex]).Text;
-            string jsonFileNameA = "DiyPedalConfig_Accelerator_Default";
-            string jsonFileNameB = "DiyPedalConfig_Brake_Default";
-            string jsonFileNameC = "DiyPedalConfig_Clutch_Default";
-            string fileNameA = dirName + "\\" + jsonFileNameA + ".json";
-            string fileNameB = dirName + "\\" + jsonFileNameB + ".json";
-            string fileNameC = dirName + "\\" + jsonFileNameC + ".json";
-            /*
-            if (!File.Exists(fileNameA))
-            {
-                // create default config
-                // https://stackoverflow.com/questions/3275863/does-net-4-have-a-built-in-json-serializer-deserializer
-                // https://learn.microsoft.com/en-us/dotnet/framework/wcf/feature-details/how-to-serialize-and-deserialize-json-data?redirectedfrom=MSDN
-                var stream1 = new MemoryStream();
-                var ser = new DataContractJsonSerializer(typeof(DAP_config_st));
-                ser.WriteObject(stream1, Plugin.dap_config_initial_st);
-
-                stream1.Position = 0;
-                StreamReader sr = new StreamReader(stream1);
-                string jsonString = sr.ReadToEnd();
-
-                System.IO.File.WriteAllText(fileNameA, jsonString);
-            }
-
-            if (!File.Exists(fileNameB))
-            {
-                // create default config
-                // https://stackoverflow.com/questions/3275863/does-net-4-have-a-built-in-json-serializer-deserializer
-                // https://learn.microsoft.com/en-us/dotnet/framework/wcf/feature-details/how-to-serialize-and-deserialize-json-data?redirectedfrom=MSDN
-                var stream1 = new MemoryStream();
-                var ser = new DataContractJsonSerializer(typeof(DAP_config_st));
-                ser.WriteObject(stream1, Plugin.dap_config_initial_st);
-
-                stream1.Position = 0;
-                StreamReader sr = new StreamReader(stream1);
-                string jsonString = sr.ReadToEnd();
-
-                System.IO.File.WriteAllText(fileNameB, jsonString);
-            }
-            if (!File.Exists(fileNameC))
-            {
-                // create default config
-                // https://stackoverflow.com/questions/3275863/does-net-4-have-a-built-in-json-serializer-deserializer
-                // https://learn.microsoft.com/en-us/dotnet/framework/wcf/feature-details/how-to-serialize-and-deserialize-json-data?redirectedfrom=MSDN
-                var stream1 = new MemoryStream();
-                var ser = new DataContractJsonSerializer(typeof(DAP_config_st));
-                ser.WriteObject(stream1, Plugin.dap_config_initial_st);
-
-                stream1.Position = 0;
-                StreamReader sr = new StreamReader(stream1);
-                string jsonString = sr.ReadToEnd();
-
-                System.IO.File.WriteAllText(fileNameC, jsonString);
-            }
-            */
-            //InitReadStructFromJson();
             
-            //for (uint pedalIndex = 0; pedalIndex < 3; pedalIndex++)
-            //{
-                //indexOfSelectedPedal_u = pedalIndex;
-                //ComboBox_JsonFileSelected.SelectedIndex = Plugin.Settings.selectedJsonFileNames[indexOfSelectedPedal_u];
-                //ComboBox_JsonFileSelected.SelectedIndex = Plugin.Settings.selectedJsonIndexLast[indexOfSelectedPedal_u];
-                //InitReadStructFromJson();
-                /*
-                if (plugin.Settings.connect_status[pedalIndex] == 1)
-                {
-                    if (plugin.Settings.reading_config == 1)
-                    {
-                        if (plugin._serialPort[pedalIndex].IsOpen)
-                        {
-                            Reading_config_auto(pedalIndex);
-                        }
-                        else
-                        {
-                            plugin.Settings.connect_status[pedalIndex] = 0;
-                        }
-                        
-                    }
-
-                }
-                */
-
-
-                /*
-                if (plugin.PortExists(plugin._serialPort[pedalIndex].PortName))
-                {
-                    if (plugin.Settings.connect_status[pedalIndex] == 1)
-                    {
-                        if (plugin.Settings.reading_config == 1)
-                        {
-                            Reading_config_auto(pedalIndex);
-                        }
-
-                    }
-                    
-                }
-                else
-                {
-                    plugin.Settings.connect_status[pedalIndex] = 0;
-                }
-                */
-
-
-                //updateTheGuiFromConfig();
-            //}
-        
-
             indexOfSelectedPedal_u = plugin.Settings.table_selected;
             MyTab.SelectedIndex = (int)indexOfSelectedPedal_u;
 
@@ -925,34 +778,6 @@ namespace User.PluginSdkDemo
             connect_timer.Interval = 5000; // in miliseconds try connect every 5s
             connect_timer.Start();
             System.Threading.Thread.Sleep(50);
-
-            /*
-            // autoconnect serial
-            for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
-            {
-                if (Plugin.connectSerialPort[pedalIdx] == true)
-                {
-                    if (Plugin.PortExists(Plugin._serialPort[pedalIdx].PortName))
-                    {
-                        if (Plugin._serialPort[pedalIdx].IsOpen == false)
-                        {
-                            if (Plugin.Settings.connect_status[pedalIdx] == 1)
-                            {
-                                openSerialAndAddReadCallback(pedalIdx);
-                                Reading_config_auto(pedalIdx);
-                            }
-
-                        }
-                    }
-                    else
-                    {
-                        Plugin.connectSerialPort[pedalIdx] = false;
-                        Plugin.Settings.connect_status[pedalIdx] = 0;
-                    }
-
-                }
-            }
-            */
 
         }
 
@@ -1481,136 +1306,15 @@ namespace User.PluginSdkDemo
 
         private void NumericTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-
-            //if ((e.NewValue >= 0) && (e.NewValue <= 255))
-            //{
-            //    dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.debug_flags_0 = (byte)e.NewValue;
-            //}
-
-            // Use a regular expression to allow only numeric input
             Regex regex = new Regex("^[.][0-9]+$|^[0-9]*[.]{0,4}[0-9]*$");
 
             System.Windows.Controls.TextBox textBox = (System.Windows.Controls.TextBox)sender;
 
             e.Handled = !regex.IsMatch(textBox.Text + e.Text);
 
-            ////if (!e.Handled)
-            ////{
-            ////    if (int.TryParse(textBox.Text + e.Text, out int result))
-            ////    {
-            ////        if ((result >= 0) && (result <= 255))
-            ////        {
-            ////            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.debug_flags_0 = (byte)result;
-            ////        }
-            ////    }
-            ////}
         }
 
 
-        /********************************************************************************************************************/
-        /*							Write/read config to/from Json file														*/
-        /********************************************************************************************************************/
-
-        //private void ComboBox_SelectionChanged(object sender, EventArgs e)
-        //{
-        //    try
-        //    {
-        //        // https://stackoverflow.com/questions/3721430/what-is-the-simplest-way-to-get-the-selected-text-of-a-combo-box-containing-only
-
-        //        string stringValue = ((ComboBoxItem)ComboBox_JsonFileSelected.SelectedItem).Content.ToString();
-
-
-        //        // string stringValue = ComboBox_JsonFileSelected.SelectedValue.ToString();
-
-        //        //TextBox_debugOutput.Text = stringValue;
-        //        Plugin.Settings.selectedJsonFileNames[indexOfSelectedPedal_u] = stringValue;
-
-        //        Plugin.Settings.selectedJsonIndexLast[indexOfSelectedPedal_u] = ComboBox_JsonFileSelected.SelectedIndex;
-
-
-
-        //        //ReadStructFromJson();
-        //    }
-        //    catch (Exception caughtEx)
-        //    {
-
-        //        string errorMessage = caughtEx.Message;
-        //        TextBox_debugOutput.Text = errorMessage;
-        //    }
-        //}
-
-
-
-
-        //public void SaveStructToJson_click(object sender, RoutedEventArgs e)
-        //{
-        //    // https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/how-to?pivots=dotnet-8-0
-
-        //    try
-        //    {
-        //        // which config file is seleced
-        //        string currentDirectory = Directory.GetCurrentDirectory();
-        //        string dirName = currentDirectory + "\\PluginsData\\Common";
-        //        string jsonFileName = ComboBox_JsonFileSelected.Text;
-        //        string fileName = dirName + "\\" + jsonFileName + ".json";
-
-        //        this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.version = (byte)pedalConfigPayload_version;
-
-        //        // https://stackoverflow.com/questions/3275863/does-net-4-have-a-built-in-json-serializer-deserializer
-        //        // https://learn.microsoft.com/en-us/dotnet/framework/wcf/feature-details/how-to-serialize-and-deserialize-json-data?redirectedfrom=MSDN
-        //        var stream1 = new MemoryStream();
-        //        var ser = new DataContractJsonSerializer(typeof(DAP_config_st));
-        //        ser.WriteObject(stream1, dap_config_st[indexOfSelectedPedal_u]);
-
-        //        stream1.Position = 0;
-        //        StreamReader sr = new StreamReader(stream1);
-        //        string jsonString = sr.ReadToEnd();
-
-        //        // Check if file already exists. If yes, delete it.     
-        //        if (File.Exists(fileName))
-        //        {
-        //            File.Delete(fileName);
-        //        }
-
-
-        //        System.IO.File.WriteAllText(fileName, jsonString);
-        //        TextBox_debugOutput.Text = "Config exported!";
-
-        //    }
-        //    catch (Exception caughtEx)
-        //    {
-
-        //        string errorMessage = caughtEx.Message;
-        //        TextBox_debugOutput.Text = errorMessage;
-        //    }
-
-        //}
-
-
-
-        //public void ReadStructFromJson_click(object sender, RoutedEventArgs e)
-        //{
-        //    ReadStructFromJson();
-        //}
-
-
-        /********************************************************************************************************************/
-        /*							Refind min endstop																		*/
-        /********************************************************************************************************************/
-       
-
-
-
-    
-
-
-
-
-
-
-        /********************************************************************************************************************/
-        /*							Send config to pedal																	*/
-        /********************************************************************************************************************/
         unsafe public void Sendconfig(uint pedalIdx)
         {
             // compute checksum
@@ -1701,37 +1405,7 @@ namespace User.PluginSdkDemo
             byte* p = (byte*)v;
             dap_config_st_rudder.payloadFooter_.checkSum = Plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
             Plugin.SendConfig(dap_config_st_rudder, (byte)pedalIdx);
-            /*
-            int length = sizeof(DAP_config_st);
-            //int val = this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.checkSum;
-            //string msg = "CRC value: " + val.ToString();
-            byte[] newBuffer = new byte[length];
-            newBuffer = getBytes(this.dap_config_st_rudder);
-
-
-            TextBox_debugOutput.Text = String.Empty;
-            if (Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalIdx])
-            {
-                if (Plugin.ESPsync_serialPort.IsOpen)
-                {
-                    try
-                    {
-                        TextBox2.Text = "Buffer sent size:" + length;
-                        Plugin.ESPsync_serialPort.DiscardInBuffer();
-                        Plugin.ESPsync_serialPort.DiscardOutBuffer();
-                        // send data
-                        Plugin.ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
-                        //Plugin._serialPort[indexOfSelectedPedal_u].Write("\n");
-                        System.Threading.Thread.Sleep(100);
-                    }
-                    catch (Exception caughtEx)
-                    {
-                        string errorMessage = caughtEx.Message;
-                        TextBox_debugOutput.Text = errorMessage;
-                    }
-                }
-            }
-            */
+            
 
         }
         unsafe public void Sendconfigtopedal_shortcut()
@@ -1827,9 +1501,6 @@ namespace User.PluginSdkDemo
             return false;
         }
 
-        /********************************************************************************************************************/
-        /*							Read config from pedal																	*/
-        /********************************************************************************************************************/
         unsafe public void ReadConfigFromPedal_click(object sender, RoutedEventArgs e)
         {
             Reading_config_auto(indexOfSelectedPedal_u);
@@ -3542,16 +3213,6 @@ namespace User.PluginSdkDemo
             }
         }
 
-        private void dump_pedal_response_to_file_checked(object sender, RoutedEventArgs e)
-        {
-            dumpPedalToResponseFile_clearFile[indexOfSelectedPedal_u] = true;
-            dumpPedalToResponseFile[indexOfSelectedPedal_u] = true;
-        }
-
-        private void dump_pedal_response_to_file_unchecked(object sender, RoutedEventArgs e)
-        {
-            dumpPedalToResponseFile[indexOfSelectedPedal_u] = false;
-        }
         private void Debug_checkbox_Checked(object sender, RoutedEventArgs e)
         {
 
@@ -4235,7 +3896,7 @@ namespace User.PluginSdkDemo
                                 {
                                     //if (indexOfSelectedPedal_u == pedalSelected)
                                     {
-                                        if (dumpPedalToResponseFile[indexOfSelectedPedal_u])
+                                        if (Plugin._calculaitons.dumpPedalToResponseFile[indexOfSelectedPedal_u])
                                         {
                                             // Specify the path to the file
                                             string currentDirectory = Directory.GetCurrentDirectory();
@@ -4579,7 +4240,8 @@ namespace User.PluginSdkDemo
                                         {
                                             _serial_monitor_window.TextBox_SerialMonitor.Text += temp + "\n";
                                         }
-                                     
+                                        TextBox_serialMonitor_bridge.ScrollToEnd();
+
                                         SimHub.Logging.Current.Info(temp);
                                     }
                                     if ( String.Equals(str_chk, "E ("))
@@ -4591,15 +4253,8 @@ namespace User.PluginSdkDemo
                                         {
                                             _serial_monitor_window.TextBox_SerialMonitor.Text += resultString + "\n";
                                         }
+                                        TextBox_serialMonitor_bridge.ScrollToEnd();
                                     }
-                                }
-
-                                //TextBox_serialMonitor.Text += resultString + "\n";
-                                TextBox_serialMonitor_bridge.ScrollToEnd();
-                                //TextBox_serialMonitor.ScrollToEnd();
-                                if (_serial_monitor_window != null)
-                                {
-                                    _serial_monitor_window.TextBox_SerialMonitor.ScrollToEnd();
                                 }
 
                             }
@@ -4676,21 +4331,7 @@ namespace User.PluginSdkDemo
             }
         }
 
-        private void Checkbox_auto_remove_serial_line_Checked(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                Plugin.Settings.Serial_auto_clean = true;
-            }
-        }
 
-        private void Checkbox_auto_remove_serial_line_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                Plugin.Settings.Serial_auto_clean = false;
-            }
-        }
 
         unsafe private void btn_OTA_enable_Click(object sender, RoutedEventArgs e)
         {
@@ -4908,18 +4549,6 @@ namespace User.PluginSdkDemo
                 Reading_config_auto(Plugin.Rudder_Pedal_idx[1]);//read gas config from pedal
                 CurveRudderForce_Tab.text_rudder_log.Text += "Read Config from"+ Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[1]] + "\n";               
             });
-            /*
-            text_rudder_log.Text += "Read Config from BRK Pedal\n";
-            Reading_config_auto(1);//read brk config from pedal
-            System.Threading.Thread.Sleep(500);
-            text_rudder_log.Text += "Read Config from GAS Pedal\n";
-            Reading_config_auto(2);//read gas config from pedal
-            System.Threading.Thread.Sleep(500);
-            */
-
-
-
-
                 //System.Threading.Thread.Sleep(200);
                 DelayCall((int)(900), () =>
                 {
@@ -4946,20 +4575,6 @@ namespace User.PluginSdkDemo
                         CurveRudderForce_Tab.text_rudder_log.Text += "Send Rudder config to Pedal: " + i + "\n";
                     }
                 });
-
-                /*
-                text_rudder_log.Text += "Send Rudder config to Pedal: "+i+"\n";
-                Sendconfig_Rudder(i);
-                System.Threading.Thread.Sleep(300);
-                */
-
-            
-
-
-
-
-
-
 
         }
 
@@ -5024,17 +4639,6 @@ namespace User.PluginSdkDemo
                         {
                             CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Hidden;
                         });
-                        //resent config back
-                        /*
-                        text_rudder_log.Text += "Send Original config back to Brk Pedal\n";
-                        System.Threading.Thread.Sleep(300);
-                        
-                        Sendconfig(1);
-                        text_rudder_log.Text += "Send Original config back to Gas Pedal\n";
-                        System.Threading.Thread.Sleep(300);
-                        
-                        Sendconfig(2);
-                        */
 
                     }
                     else
