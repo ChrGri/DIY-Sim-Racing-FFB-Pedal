@@ -2786,7 +2786,9 @@ namespace User.PluginSdkDemo
 
                                     if (indexOfSelectedPedal_u == pedalSelected)
                                     {
-                                        if (dumpPedalToResponseFile[indexOfSelectedPedal_u])
+                                        
+                                        if (Plugin._calculaitons.dumpPedalToResponseFile[indexOfSelectedPedal_u])
+                                        //if (dumpPedalToResponseFile[indexOfSelectedPedal_u])
                                         {
                                             // Specify the path to the file
                                             string currentDirectory = Directory.GetCurrentDirectory();
