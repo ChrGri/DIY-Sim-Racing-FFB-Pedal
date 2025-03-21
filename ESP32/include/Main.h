@@ -344,6 +344,7 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
 
   #define EMERGENCY_BUTTON
   #define ShutdownPin 6
+  #define BuzzerPin 6
   // level shifter is present on this PCB design
   #define SENSORLESS_HOMING true
   #define ISV57_TXPIN 10//27 //17
@@ -367,6 +368,54 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
   #define USING_BUZZER
 #endif
 
+#if PCB_VERSION == 9
+  // ADC defines
+  #define PIN_DRDY 15//--> DRDY
+  #define PIN_RST  6 //--> X
+  #define PIN_SCK 16//-->SCLK
+  #define PIN_MISO 18 //--> DOUT
+  #define PIN_MOSI 17 //--> DIN
+  #define PIN_CS 7//--> CS
+
+  // stepper pins
+  #define dirPinStepper    37//22
+  #define stepPinStepper   38//23
+
+  #define MCP_SDA 5
+  #define MCP_SCL 4
+
+  // Pedal assignment pin
+  #define PEDAL_HARDWARE_ASSIGNMENT
+  #define CFG1 1
+  #define CFG2 2
+
+  #define EMERGENCY_BUTTON
+  #define ShutdownPin 6
+  #define BuzzerPin 21
+  // level shifter is present on this PCB design
+  #define SENSORLESS_HOMING true
+  #define ISV57_TXPIN 10//27 //17
+  #define ISV57_RXPIN 9//26 // 16
+
+  //#define Using_analog_output_ESP32_S3
+  #define ESPNOW_Enable
+  #define ESPNow_S3
+  //#define BLUETOOTH_GAMEPAD
+  #define USB_JOYSTICK
+
+  #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 5
+  //#define ESPNow_Pairing_function
+  //#define Hardware_Pairing_button
+  #define Pairing_GPIO 33
+  //#define ESPNow_debug_rudder
+  #define CONTROLLER_SPECIFIC_VIDPID
+  #define USING_LED
+  #define LED_GPIO 12
+  #define OTA_update
+  #define USING_BUZZER
+  #define BRAKE_RESISTOR_PIN 4
+  #define SERVO_POWER_PIN 3
+#endif
 // Switch-!t PCB for Waveshare ESP32-S3-DEV-KIT-N8R8
 // More information at https://github.com/gaggi/ActivePedalPCB
 #if PCB_VERSION == 11

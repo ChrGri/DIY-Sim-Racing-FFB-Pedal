@@ -80,6 +80,13 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool
 	/************************************************************/
 	/* 					iSV57 initialization					*/
 	/************************************************************/
+	#ifdef SERVO_POWER_PIN
+        //turn on the servo's power
+        gpio_set_direction((gpio_num_t)SERVO_POWER_PIN, GPIO_MODE_OUTPUT);
+        gpio_set_level((gpio_num_t)SERVO_POWER_PIN, 1);
+        //wait for the servo to initialize
+        delay(500);
+    #endif
 	//delay(3000);
 	// find iSV57 servo ID
 	bool isv57slaveIdFound_b = isv57.findServosSlaveId();

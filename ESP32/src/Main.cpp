@@ -344,7 +344,7 @@ void setup()
   #endif
   
   #ifdef USING_BUZZER
-    Buzzer.initialized(ShutdownPin,1);
+    Buzzer.initialized(BuzzerPin,1);
     Buzzer.single_beep_tone(770,100);
   #endif
 
