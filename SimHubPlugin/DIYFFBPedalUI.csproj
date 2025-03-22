@@ -244,6 +244,9 @@
     <Compile Include="UIFunction\SettingSection_Pedal.xaml.cs">
       <DependentUpon>SettingSection_Pedal.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\SettingSection_System.xaml.cs">
+      <DependentUpon>SettingSection_System.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\SystemSetting_License.xaml.cs">
       <DependentUpon>SystemSetting_License.xaml</DependentUpon>
     </Compile>
@@ -372,6 +375,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\SettingSection_Pedal.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\SettingSection_System.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

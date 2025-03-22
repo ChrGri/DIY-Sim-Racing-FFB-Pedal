@@ -272,7 +272,7 @@ namespace User.PluginSdkDemo
                                         double control_rect_value_max = 65535;
 
 
-                                        if (debug_flag)
+                                        if (Plugin.Settings.advanced_b)
                                         {
                                             int round_x = (int)(100 * pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16 / control_rect_value_max) - 1;
                                             int x_showed = round_x + 1;
@@ -351,9 +351,9 @@ namespace User.PluginSdkDemo
 
 
                                             // delete file 
-                                            if (true == dumpPedalToResponseFile_clearFile[indexOfSelectedPedal_u])
+                                            if (true == Plugin._calculations.dumpPedalToResponseFile_clearFile[indexOfSelectedPedal_u])
                                             {
-                                                dumpPedalToResponseFile_clearFile[indexOfSelectedPedal_u] = false;
+                                                Plugin._calculations.dumpPedalToResponseFile_clearFile[indexOfSelectedPedal_u] = false;
                                                 File.Delete(filePath);
                                             }
 
@@ -555,7 +555,7 @@ namespace User.PluginSdkDemo
 
 
                             double avgTime = timeCollector[pedalSelected] / timeCntr[pedalSelected];
-                            if (debug_flag)
+                            if (Plugin.Settings.advanced_b)
                             {
                                 TextBox_debugOutput.Text = "Serial callback time in ms: " + avgTime.ToString();
                             }

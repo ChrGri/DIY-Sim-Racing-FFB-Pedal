@@ -168,6 +168,7 @@ namespace User.PluginSdkDemo
                 SystemProfile_Tab.Settings = Plugin.Settings;
                 SettingOTA_Tab.Settings = Plugin.Settings;
                 SystemLicense_Tab.Settings = Plugin.Settings;
+                SystemSetting_Section.Settings = Plugin.Settings;
 
                 EffectsABS_Tab.calculation = Plugin._calculations;
                 EffectsBitePoint_Tab.calculation = Plugin._calculations;
@@ -203,38 +204,6 @@ namespace User.PluginSdkDemo
                 {
                     btn_connect_espnow_port.Content = "Connect";
                 }
-
-
-                if (Plugin.Settings.Pedal_ESPNow_auto_connect_flag)
-                {
-                    CheckBox_Pedal_ESPNow_autoconnect.IsChecked = true;
-                }
-                else
-                {
-                    CheckBox_Pedal_ESPNow_autoconnect.IsChecked = false;
-                }
-
-                if (Plugin.Settings.Serial_auto_clean)
-                {
-                    //Checkbox_auto_remove_serial_line.IsChecked = true;
-                }
-                else
-                {
-                    //Checkbox_auto_remove_serial_line.IsChecked= false;
-                }
-
-                if (Plugin.Settings.Using_CDC_bridge)
-                {
-                    CheckBox_using_CDC_for_bridge.IsChecked = true;
-                }
-                else
-                {
-                    CheckBox_using_CDC_for_bridge.IsChecked = false;
-                }
-
-
-
-
             }
 
             //// Select serial port accordingly
@@ -327,16 +296,6 @@ namespace User.PluginSdkDemo
 
             if (Plugin != null)
             {
-                if (Plugin.Settings.advanced_b)
-                {
-                    Debug_check.IsChecked = true;
-                    debug_flag = Plugin.Settings.advanced_b;
-                }
-                else
-                {
-                    Debug_check.IsChecked = false;
-                    debug_flag = Plugin.Settings.advanced_b;
-                }
 
                 if (Plugin.Settings.Serial_auto_clean_bridge)
                 {

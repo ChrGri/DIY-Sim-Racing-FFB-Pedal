@@ -64,8 +64,8 @@ namespace User.PluginSdkDemo
 
         public void DAP_config_set_default(uint pedalIdx)
         {
-            dumpPedalToResponseFile[pedalIdx] = false;
-            dumpPedalToResponseFile_clearFile[pedalIdx] = false;
+            //dumpPedalToResponseFile[pedalIdx] = false;
+            //dumpPedalToResponseFile_clearFile[pedalIdx] = false;
             dap_config_st[pedalIdx].payloadHeader_.payloadType = (byte)Constants.pedalConfigPayload_type;
             dap_config_st[pedalIdx].payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             dap_config_st[pedalIdx].payloadPedalConfig_.pedalStartPosition = 35;

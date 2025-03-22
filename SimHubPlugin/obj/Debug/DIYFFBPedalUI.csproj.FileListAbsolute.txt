@@ -221,3 +221,5 @@ X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Debu
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Debug\UIFunction\SystemSetting_OTA.baml
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Debug\UIFunction\SystemSetting_License.g.cs
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Debug\UIFunction\SystemSetting_License.baml
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Debug\UIFunction\SettingSection_System.g.cs
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Debug\UIFunction\SettingSection_System.baml

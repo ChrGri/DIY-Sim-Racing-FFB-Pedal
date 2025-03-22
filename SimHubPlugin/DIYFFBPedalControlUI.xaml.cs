@@ -101,14 +101,14 @@ namespace User.PluginSdkDemo
         //int printCtr = 0;
 
         //public double[] Force_curve_Y = new double[100];
-        public bool debug_flag = false;
+        //public bool debug_flag = false;
 
         //public VirtualJoystick joystick;
         
 
 
-        public bool[] dumpPedalToResponseFile = new bool[3];
-        public bool[] dumpPedalToResponseFile_clearFile = new bool[3];
+        //public bool[] dumpPedalToResponseFile = new bool[3];
+        //public bool[] dumpPedalToResponseFile_clearFile = new bool[3];
 
         private SolidColorBrush defaultcolor;
         private SolidColorBrush lightcolor;
@@ -122,14 +122,14 @@ namespace User.PluginSdkDemo
         private string info_text_connection;
         private string system_info_text_connection;
         private int current_pedal_travel_state= 0;
-        private int gridline_kinematic_count_original = 0;
+        //private int gridline_kinematic_count_original = 0;
         private double[] Pedal_position_reading=new double[3];
         private bool[] Serial_connect_status = new bool[3] { false,false,false};
         public byte Bridge_RSSI = 0;
         public bool[] Pedal_wireless_connection_update_b = new bool[3] { false,false,false};
         public int Bridge_baudrate = 3000000;
         //public bool Fanatec_mode = false;
-        public bool Update_Profile_Checkbox_b = false;
+        //public bool Update_Profile_Checkbox_b = false;
         //public bool Update_CV_textbox = false;
         public bool[] Version_error_warning_b = new bool[3] { false, false, false };
         public bool[] Version_warning_first_show_b= new bool[3] { false, false, false };
@@ -143,8 +143,8 @@ namespace User.PluginSdkDemo
         DateTime PedalTabChange_last = DateTime.Now;
         public byte[,] PedalFirmwareVersion = new byte[3, 3] { { 0, 0, 0}, { 0, 0, 0 }, { 0, 0, 0 } };
         public bool PedalTabChange = false;
-        private bool isDragging = false;
-        private Point offset;
+
+
         public enum PedalAvailability        
         {
             NopedalConnect,
@@ -303,46 +303,6 @@ namespace User.PluginSdkDemo
             }
         }
 
-        
-
-        
-        
-
-        
-
-        private void Debug_checkbox_Checked(object sender, RoutedEventArgs e)
-        {
-
-
-            debug_flag = true;
-            if (Plugin != null)
-            {
-                Plugin.Settings.advanced_b = debug_flag;
-            }
-
-            updateTheGuiFromConfig();
-
-
-        }
-        private void Debug_checkbox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            debug_flag = false;
-            if (Plugin != null)
-            {
-                Plugin.Settings.advanced_b = debug_flag;
-            }
-            
-            updateTheGuiFromConfig();
-        }
-
-
-
-        // RPM effect select
-
-        
-
-
-
         public void ESPNow_SerialPortSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string tmp = (string)SerialPortSelection_ESPNow.SelectedValue;
@@ -379,49 +339,6 @@ namespace User.PluginSdkDemo
 
 
         }
-
-
-        private void CheckBox_Pedal_ESPNow_autoconnect_Checked(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            { 
-                Plugin.Settings.Pedal_ESPNow_auto_connect_flag = true;
-            }
-        }
-
-        private void CheckBox_Pedal_ESPNow_autoconnect_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                Plugin.Settings.Pedal_ESPNow_auto_connect_flag = false;
-            }
-        }
-
-
-
-        
-        private void CheckBox_using_CDC_for_bridge_Checked(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            { 
-                Plugin.Settings.Using_CDC_bridge = true;
-            }
-        }
-
-        private void CheckBox_using_CDC_for_bridge_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (Plugin != null)
-            {
-                Plugin.Settings.Using_CDC_bridge = false;
-            }
-        }
-
-        //Rudder initialize procee
-        
-
-
-
-        
 
         private void Checkbox_auto_remove_serial_line_bridge_Checked(object sender, RoutedEventArgs e)
         {

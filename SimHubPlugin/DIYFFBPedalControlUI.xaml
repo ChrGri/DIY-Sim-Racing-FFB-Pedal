@@ -1000,24 +1000,7 @@
                                             <styles:SHButtonPrimary x:Name="btn_Bridge_restart" Click="btn_Bridge_restart_Click" Width="160" Content="Bridge Restart" Height="25" Margin="0,2,0,0" HorizontalAlignment="Center" Padding="15,0,15,0" VerticalContentAlignment="Center" />
                                             <styles:SHButtonPrimary x:Name="btn_Bridge_boot_restart" Click="btn_Bridge_boot_restart_Click" Width="160" Content="Enable Download Mode" Height="25" Margin="0,2,0,0" HorizontalAlignment="Center" Padding="15,0,15,0" VerticalContentAlignment="Center" ToolTip="Click for enabling Bridge into firmware download mode" />
                                             <styles:SHButtonPrimary x:Name="btn_Bridge_OTA" Click="btn_Bridge_OTA_Click" Width="160" Content="Bridge FW OTA Update" Height="25" Margin="0,2,0,0" HorizontalAlignment="Center" Padding="15,0,15,0" VerticalContentAlignment="Center" />
-                                            <Border Background="#FF4E4E4E" Height="274" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="160" HorizontalAlignment="Left" Margin="0,3,0,0" >
-                                                <StackPanel HorizontalAlignment="Center" Height="274" VerticalAlignment="Top" Width="160">
-                                                    <Label Content="System Setting" Height="20" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" FontSize="10" Margin="2,0,0,0"/>
-
-                                                    <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
-                                                        <styles:SHToggleButton x:Name="CheckBox_Pedal_ESPNow_autoconnect" Content="" Checked="CheckBox_Pedal_ESPNow_autoconnect_Checked" Unchecked="CheckBox_Pedal_ESPNow_autoconnect_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                                                        <Label Content="Auto Connect to Bridge" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                                                    </StackPanel>
-                                                    <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
-                                                        <styles:SHToggleButton x:Name="CheckBox_using_CDC_for_bridge" Content="" Checked="CheckBox_using_CDC_for_bridge_Checked" Unchecked="CheckBox_using_CDC_for_bridge_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="This function is for performance testing, leave it off if you dont know what the function doing" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" IsEnabled="False" />
-                                                        <Label Content="CDC Serial for Bridge" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                                                    </StackPanel>
-                                                    <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
-                                                        <styles:SHToggleButton x:Name="Debug_check" Content="" Checked="Debug_checkbox_Checked" Unchecked="Debug_checkbox_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Some opttions were hidden..." RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                                                        <Label Content="Advanced Mode" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </Border>
+                                            <localFunction:SettingSection_System x:Name="SystemSetting_Section" SettingsChanged="Tab_SettingsChanged"/>
 
 
                                         </StackPanel>

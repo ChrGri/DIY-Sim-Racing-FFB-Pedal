@@ -221,7 +221,7 @@ namespace User.PluginSdkDemo
                                         PedalForceTravel_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16, pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
                                         double control_rect_value_max = 65535;
 
-                                        if (debug_flag)
+                                        if (Plugin.Settings.advanced_b)
                                         {
                                             int round_x = (int)(100 * pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16 / control_rect_value_max) - 1;
                                             int x_showed = round_x + 1;
@@ -284,9 +284,9 @@ namespace User.PluginSdkDemo
                                             string filePath = currentDirectory + "\\PluginsData\\Common" + "\\DiyFfbPedalStateLog_" + pedalSelected + ".txt";
 
                                             // delete file 
-                                            if (true == dumpPedalToResponseFile_clearFile[indexOfSelectedPedal_u])
+                                            if (true == Plugin._calculations.dumpPedalToResponseFile_clearFile[indexOfSelectedPedal_u])
                                             {
-                                                dumpPedalToResponseFile_clearFile[indexOfSelectedPedal_u] = false;
+                                                Plugin._calculations.dumpPedalToResponseFile_clearFile[indexOfSelectedPedal_u] = false;
                                                 File.Delete(filePath);
                                             }
 
@@ -421,7 +421,7 @@ namespace User.PluginSdkDemo
                                         RSSI_3.Visibility = Visibility.Visible;
                                         RSSI_4.Visibility = Visibility.Visible;
                                     }
-                                    if (debug_flag)
+                                    if (Plugin.Settings.advanced_b)
                                     {
                                         Label_RSSI.Visibility = Visibility.Visible;
                                     }
@@ -603,7 +603,7 @@ namespace User.PluginSdkDemo
                             }
                             // If non known array datatype was received, assume a text message was received and print it
                             // only print debug messages when debug mode is active as it degrades performance
-                            if (Debug_check.IsChecked == true || _serial_monitor_window != null)
+                            if (Plugin.Settings.advanced_b || _serial_monitor_window != null)
                             {
                                 byte[] destinationArray_sub = new byte[destBuffLength];
                                 Buffer.BlockCopy(destinationArray, 0, destinationArray_sub, 0, destBuffLength);
@@ -675,7 +675,7 @@ namespace User.PluginSdkDemo
 
 
                             double avgTime = timeCollector[3] / timeCntr[3];
-                            if (debug_flag)
+                            if (Plugin.Settings.advanced_b)
                             {
                                 TextBox_debugOutput.Text = "Serial callback time in ms: " + avgTime.ToString();
                             }
