@@ -33,7 +33,7 @@ namespace User.PluginSdkDemo
     [PluginName("DIY active pedal plugin")]
     public class DIY_FFB_Pedal : IPlugin, IDataPlugin, IWPFSettingsV2
     {
-        public CalculationVariables _calculaitons;
+        public CalculationVariables _calculations;
         public PluginManager pluginHandle;// = this;
 
         public bool sendAbsSignal = false;
@@ -52,8 +52,8 @@ namespace User.PluginSdkDemo
         public uint sendconfig_flag = 0;
         public DIYFFBPedalControlUI wpfHandle;
         public uint in_game_flag = 0; // check current game is off or pause
-        public string current_profile = "NA" ;
-        public uint profile_index = 0;
+        //public string current_profile = "NA" ;
+        //public uint profile_index = 0;
         //public uint Page_update_flag = 0;
         public bool binding_check=false;
         public bool pedal_select_update_flag = false;
@@ -925,7 +925,7 @@ namespace User.PluginSdkDemo
 
 
             // Send ABS test signal if requested
-            if (sendAbsSignal || _calculaitons.SendAbsSignal)
+            if (sendAbsSignal || _calculations.SendAbsSignal)
             {
                 sendAbsSignal_local_b = true;
                 sendTcSignal_local_b = true;
@@ -1310,8 +1310,8 @@ namespace User.PluginSdkDemo
                 clear_action = false;
             }
 
-
-            this.AttachDelegate("CurrentProfile", () => current_profile);
+            
+            this.AttachDelegate("CurrentProfile", () => _calculations.current_profile);
             pluginManager.SetPropertyValue("SelectedPedal", this.GetType(), current_pedal);
             pluginManager.SetPropertyValue("Action", this.GetType(), current_action);
             pluginManager.SetPropertyValue("ABS_effect_status", this.GetType(), Settings.ABS_enable_flag[Settings.table_selected]);
@@ -1321,7 +1321,7 @@ namespace User.PluginSdkDemo
             pluginManager.SetPropertyValue("RoadImpact_effect_status", this.GetType(), Settings.Road_impact_enable_flag[Settings.table_selected]);
             pluginManager.SetPropertyValue("Overlay_display", this.GetType(), overlay_display);
             pluginManager.SetPropertyValue("Theme_color", this.GetType(), simhub_theme_color);
-            pluginManager.SetPropertyValue("ProfileIndex", this.GetType(), profile_index);
+            pluginManager.SetPropertyValue("ProfileIndex", this.GetType(), _calculations.profile_index);
             pluginManager.SetPropertyValue("debugvalue", this.GetType(), debug_value);
             pluginManager.SetPropertyValue("rudder_status", this.GetType(), Rudder_status);
             pluginManager.SetPropertyValue("rudder_brake_status", this.GetType(), Rudder_brake_status);
@@ -1420,7 +1420,7 @@ namespace User.PluginSdkDemo
         {
 
             pluginHandle = pluginManager;
-            _calculaitons = new CalculationVariables();
+            _calculations = new CalculationVariables();
             SimHub.Logging.Current.Info("Starting DIY active pedal plugin");
 
             // Load settings
@@ -1428,7 +1428,7 @@ namespace User.PluginSdkDemo
             Simhub_version = (String)pluginManager.GetPropertyValue("DataCorePlugin.SimHubVersion");
             // Declare a property available in the property list, this gets evaluated "on demand" (when shown or used in formulas)
             //this.AttachDelegate("CurrentDateTime", () => DateTime.Now);
-            pluginManager.AddProperty("ProfileIndex", this.GetType(), profile_index);
+            pluginManager.AddProperty("ProfileIndex", this.GetType(), _calculations.profile_index);
             pluginManager.AddProperty("SelectedPedal", this.GetType(), current_pedal);
             pluginManager.AddProperty("Action", this.GetType(), current_action);
             pluginManager.AddProperty("ABS_effect_status", this.GetType(), Settings.ABS_enable_flag[Settings.table_selected]);
@@ -1480,54 +1480,54 @@ namespace User.PluginSdkDemo
             Version_Check_Simhub_MSFS = true;
             this.AddAction("ChangeSlotA", (a, b) =>
             {
-                profile_index = 0;
+                _calculations.profile_index = 0;
                 Page_update_flag = true;
                 SimHub.Logging.Current.Info("SlotA");
-                current_profile = "Slot A";
+                _calculations.current_profile = "Slot A";
                 current_action= "Slot A";
             });
 
             this.AddAction("ChangeSlotB", (a, b) =>
             {
-                
-                profile_index = 1;
+
+                _calculations.profile_index = 1;
                 Page_update_flag = true;
                 SimHub.Logging.Current.Info("SlotB");
-                current_profile = "Slot B";
+                _calculations.current_profile = "Slot B";
                 current_action = "Slot B";
             });
 
             this.AddAction("ChangeSlotC", (a, b) =>
             {
-                profile_index = 2;
+                _calculations.profile_index = 2;
                 Page_update_flag = true;
                 SimHub.Logging.Current.Info("SlotC");
-                current_profile = "Slot C";
+                _calculations.current_profile = "Slot C";
                 current_action = "Slot C";
             });
 
             this.AddAction("ChangeSlotD", (a, b) =>
             {
-                profile_index = 3;
+                _calculations.profile_index = 3;
                 Page_update_flag = true;
                 SimHub.Logging.Current.Info("SlotD");
-                current_profile = "Slot D";
+                _calculations.current_profile = "Slot D";
                 current_action = "Slot D";
             });
             this.AddAction("ChangeSlotE", (a, b) =>
             {
-                profile_index = 4;
+                _calculations.profile_index = 4;
                 Page_update_flag = true;
                 SimHub.Logging.Current.Info("SlotE");
-                current_profile = "Slot E";
+                _calculations.current_profile = "Slot E";
                 current_action = "Slot E";
             });
             this.AddAction("ChangeSlotF", (a, b) =>
             {
-                profile_index = 5;
+                _calculations.profile_index = 5;
                 Page_update_flag = true;
                 SimHub.Logging.Current.Info("SlotF");
-                current_profile = "Slot F";
+                _calculations.current_profile = "Slot F";
                 current_action = "Slot F";
             });
             this.AddAction("SendConfigToPedal", (a, b) =>
@@ -1539,13 +1539,13 @@ namespace User.PluginSdkDemo
 
             this.AddAction("PreviousProfile", (a, b) =>
             {
-                if (profile_index == 0)
+                if (_calculations.profile_index == 0)
                 {
-                    profile_index=5;
+                    _calculations.profile_index = 5;
                 }
                 else
                 {
-                    profile_index--;
+                    _calculations.profile_index--;
                 }
                 
 
@@ -1556,10 +1556,10 @@ namespace User.PluginSdkDemo
 
             this.AddAction("NextProfile", (a, b) =>
             {
-                profile_index++;
-                if (profile_index > 5)
+                _calculations.profile_index++;
+                if (_calculations.profile_index > 5)
                 {
-                    profile_index = 0;
+                    _calculations.profile_index = 0;
                 }
                 Page_update_flag = true;
                 SimHub.Logging.Current.Info("NextProfile");

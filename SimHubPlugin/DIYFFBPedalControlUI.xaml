@@ -1066,132 +1066,7 @@
                                                     <Label Content="Profiles"  FontFamily="Arial Black" FontSize="10" Height="30" Width="120" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <StackPanel HorizontalAlignment="Left" Height="218" VerticalAlignment="Top" Width="542" Grid.Column="1" Grid.Row="5" Orientation="Horizontal">
-                                                <TabControl x:Name="ProfileTab" Grid.Column="1" HorizontalAlignment="Left" Height="180" Grid.Row="5" VerticalAlignment="Top" Width="102" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" SelectionChanged="TabControl_file_path" TabStripPlacement="Left" HorizontalContentAlignment="Center" Margin="0,3,0,0">
-                                                    <TabControl.Resources>
-                                                        <Style TargetType="TabItem">
-                                                            <Setter Property="Template">
-                                                                <Setter.Value>
-                                                                    <ControlTemplate TargetType="TabItem">
-                                                                        <!--The four values of CornerRadius represent the four corners of the TabItem.-->
-                                                                        <Border Name="Border" BorderThickness="0,0,0,0" BorderBrush="Gainsboro" CornerRadius="5,5,5,5" Margin="0,0,2,2">
-                                                                            <ContentPresenter x:Name="ContentSite"  
-                                                                                VerticalAlignment="Center"  
-                                                                                HorizontalAlignment="Left"  
-                                                                                ContentSource="Header"  
-                                                                                Margin="0,0"/>
-                                                                        </Border>
-                                                                        <ControlTemplate.Triggers>
-                                                                            <Trigger Property="IsSelected" Value="True">
-                                                                                <Setter TargetName="Border" Property="Background" Value="#7F4E4E4E" />
-                                                                                <Setter Property="TextElement.Foreground" Value="#FFFFFFFF" />
-                                                                            </Trigger>
-                                                                            <Trigger Property="IsSelected" Value="False">
-                                                                                <Setter TargetName="Border" Property="Background" Value="#334E4E4E" />
-                                                                                <Setter Property="TextElement.Foreground" Value="#7FFFFFFF" />
-                                                                            </Trigger>
-                                                                            <MultiTrigger>
-                                                                                <MultiTrigger.Conditions>
-                                                                                    <Condition Property="IsMouseOver" SourceName="Border" Value="True"/>
-                                                                                    <Condition Property="IsSelected" Value="False"/>
-                                                                                </MultiTrigger.Conditions>
-                                                                                <Setter TargetName="Border" Property="Background" Value="#4C4E4E4E" />
-                                                                            </MultiTrigger>
-                                                                        </ControlTemplate.Triggers>
-                                                                    </ControlTemplate>
-                                                                </Setter.Value>
-                                                            </Setter>
-                                                        </Style>
-                                                    </TabControl.Resources>
-                                                    <TabItem Width="100" Height="30" Padding="0,0,0,0">
-                                                        <TabItem.Header>
-                                                            <Border  Width="100" Height="30" Margin="0,0,0,0" >
-                                                                <Label Content="Slot A"  FontFamily="Arial Black" FontSize="12" Height="30" Width="100" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
-                                                            </Border>
-                                                        </TabItem.Header>
-                                                    </TabItem>
-                                                    <TabItem Width="100" Height="30" Padding="0,0,0,0">
-                                                        <TabItem.Header>
-                                                            <Border  Width="100" Height="30" Margin="0,0,0,0" >
-                                                                <Label Content="Slot B"  FontFamily="Arial Black" FontSize="12" Height="30" Width="100" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
-                                                            </Border>
-                                                        </TabItem.Header>
-                                                    </TabItem>
-                                                    <TabItem Width="100" Height="30" Padding="0,0,0,0">
-                                                        <TabItem.Header>
-                                                            <Border  Width="100" Height="30" Margin="0,0,0,0" >
-                                                                <Label Content="Slot C"  FontFamily="Arial Black" FontSize="12" Height="30" Width="100" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
-                                                            </Border>
-                                                        </TabItem.Header>
-                                                    </TabItem>
-                                                    <TabItem Width="100" Height="30" Padding="0,0,0,0">
-                                                        <TabItem.Header>
-                                                            <Border  Width="100" Height="30" Margin="0,0,0,0" >
-                                                                <Label Content="Slot D"  FontFamily="Arial Black" FontSize="12" Height="30" Width="100" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
-                                                            </Border>
-                                                        </TabItem.Header>
-                                                    </TabItem>
-                                                    <TabItem Width="100" Height="30" Padding="0,0,0,0">
-                                                        <TabItem.Header>
-                                                            <Border  Width="100" Height="30" Margin="0,0,0,0" >
-                                                                <Label Content="Slot E"  FontFamily="Arial Black" FontSize="12" Height="30" Width="100" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
-                                                            </Border>
-                                                        </TabItem.Header>
-                                                    </TabItem>
-                                                    <TabItem Width="100" Height="30" Padding="0,0,0,0">
-                                                        <TabItem.Header>
-                                                            <Border  Width="100" Height="30" Margin="0,0,0,0" >
-                                                                <Label Content="Slot F"  FontFamily="Arial Black" FontSize="12" Height="30" Width="100" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
-                                                            </Border>
-                                                        </TabItem.Header>
-                                                    </TabItem>
-                                                </TabControl>
-                                                <StackPanel HorizontalAlignment="Left" Height="178" VerticalAlignment="Top" Width="438" Grid.Column="1" Grid.Row="5" Margin="0,5,0,0">
-                                                    <Border Background="#7F4E4E4E" CornerRadius="5,5,5,5" Height="178" BorderThickness="0,0,0,0" Width="438" HorizontalAlignment="Left" >
-                                                        <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="440" Grid.Column="1" Grid.Row="5">
-                                                            <StackPanel HorizontalAlignment="Left" Height="30" VerticalAlignment="Top" Width="440" Grid.Column="1" Grid.Row="5" Orientation="Horizontal">
-                                                                <Label Content="Profile Name:" Height="15" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="2,0,0,0"/>
-                                                                <TextBox x:Name="textbox_profile_name" Text="" Height="20" Width="150" Padding="0,0,0,0" TextChanged="textbox_profile_name_TextChanged" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="16" BorderThickness="0,0,0,0" FontStyle="Italic"/>
-                                                            </StackPanel>
-                                                            <StackPanel HorizontalAlignment="Left" Height="20" VerticalAlignment="Center" Width="440" Grid.Column="1" Grid.Row="5" Orientation="Horizontal">
-                                                                <CheckBox x:Name="Clutch_file_check" Width="20" Height="20" Checked="file_check_Checked" Unchecked="file_check_Unchecked" IsChecked="False" Content="" FontSize="8" Margin="2,0,0,0" IsEnabled="False"/>
-                                                                <Label Content="Clutch:" Height="15" Width="50" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                                                                <Label x:Name="Label_clutch_file" Content="" Height="20" Width="295" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="8" VerticalAlignment="Center"/>
-                                                                <styles:SHButtonPrimary x:Name="Reading_clutch" Click="Read_for_slot" Width="30" Content="Bind" Height="20" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
-                                                                <styles:SHButtonPrimary x:Name="Clear_clutch" Click="Clear_slot" Width="30" Content="Clear" Height="20" Margin="2,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
-                                                            </StackPanel>
-                                                            <StackPanel x:Name="StackPanel_Effects_Status_0" HorizontalAlignment="Left" Height="20" VerticalAlignment="Center" Width="440" Grid.Column="1" Grid.Row="5" Orientation="Horizontal">
-                                                            </StackPanel>
-                                                            <StackPanel HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" Width="439" Grid.Column="1" Grid.Row="5" Orientation="Horizontal">
-                                                                <CheckBox x:Name="Brake_file_check" Width="20" Height="20" Checked="file_check_Checked" Unchecked="file_check_Unchecked" IsChecked="False" Content="" FontSize="8" Margin="2,0,0,0" IsEnabled="False"/>
-                                                                <Label Content="Brake:" Height="15" Width="50" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left"/>
-                                                                <Label x:Name="Label_brake_file" Content="" Height="20" Width="295" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="8"/>
-                                                                <styles:SHButtonPrimary x:Name="Reading_brake" Click="Read_for_slot" Width="30" Content="Bind" Height="20" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
-                                                                <styles:SHButtonPrimary x:Name="Clear_brake" Click="Clear_slot" Width="30" Content="Clear" Height="20" Margin="2,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
-
-                                                            </StackPanel>
-                                                            <StackPanel x:Name="StackPanel_Effects_Status_1" HorizontalAlignment="Left" Height="20" VerticalAlignment="Center" Width="440" Grid.Column="1" Grid.Row="5" Orientation="Horizontal">
-
-                                                            </StackPanel>
-                                                            <StackPanel HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" Width="440" Grid.Column="1" Grid.Row="5" Orientation="Horizontal">
-                                                                <CheckBox x:Name="Gas_file_check" Checked="file_check_Checked" Unchecked="file_check_Unchecked" Width="20" Height="20" IsChecked="False" Content="" FontSize="8" Margin="2,0,0,0" IsEnabled="False"/>
-                                                                <Label Content="Gas:" Height="15" Width="50" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left"/>
-                                                                <Label x:Name="Label_gas_file" Content="" Height="20" Width="295" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="8"/>
-                                                                <styles:SHButtonPrimary x:Name="Reading_gas" Click="Read_for_slot" Width="30" Content="Bind" Height="20" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
-                                                                <styles:SHButtonPrimary x:Name="Clear_gas" Click="Clear_slot" Width="30" Content="Clear" Height="20" Margin="2,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
-
-                                                            </StackPanel>
-                                                            <StackPanel x:Name="StackPanel_Effects_Status_2" HorizontalAlignment="Left" Height="20" VerticalAlignment="Center" Width="440" Grid.Column="1" Grid.Row="5" Orientation="Horizontal">
-
-                                                            </StackPanel>
-                                                            <StackPanel HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" Width="440" Grid.Column="1" Grid.Row="5" Orientation="Horizontal" Margin="0,3,0,0">
-                                                                <styles:SHButtonPrimary x:Name="btn_apply_profile" Click="btn_apply_profile_Click" Width="62" Content="Apply Profile" Height="20" Margin="303,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
-                                                                <styles:SHButtonPrimary x:Name="btn_send_profile" Click="btn_send_profile_Click" Width="62" Content="Send Profile" Height="20" Margin="2,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
-                                                            </StackPanel>
-                                                        </StackPanel>
-                                                    </Border>
-                                                </StackPanel>
-                                            </StackPanel>
+                                            <localFunction:SystemSetting_Profiles x:Name="SystemProfile_Tab" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged" btn_apply_profile_Click_event="SystemProfile_Tab_btn_apply_profile_Click_event" btn_send_profile_Click_event="SystemProfile_Tab_btn_send_profile_Click_event"/>
 
                                         </TabItem>
                                         <TabItem Width="120" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
@@ -1200,31 +1075,7 @@
                                                     <Label Content="OTA Setting"  FontFamily="Arial Black" FontSize="10" Height="30" Width="120" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <Border Background="#7F4E4E4E" Height="177" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
-                                                <StackPanel Width="540" Height="177" HorizontalAlignment="Left" VerticalAlignment="Top">
-                                                    <Label Content="OTA Setting" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
-                                                    <StackPanel HorizontalAlignment="Left" Height="25" VerticalAlignment="Center" Width="540" Grid.Column="1" Grid.Row="5" Orientation="Horizontal">
-                                                        <Label Content="SSID:" Height="15" Width="40" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="72,0,0,0" FontSize="10"/>
-                                                        <TextBox x:Name="textbox_SSID" TextChanged="textbox_SSID_TextChanged" Height="20" Width="150" Padding="0,0,0,0" FontFamily="Arial" HorizontalAlignment="Left" BorderThickness="0,0,0,0" MaxLength="30" MinHeight="15" FontSize="10"/>
-                                                        <Label x:Name="Label_SSID" Content=""  Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="2,0,0,0"/>
-                                                    </StackPanel>
-                                                    <StackPanel HorizontalAlignment="Left" Height="25" VerticalAlignment="Top" Width="540" Grid.Column="1" Grid.Row="5" Orientation="Horizontal">
-                                                        <Label Content="PASS:" Height="15" Width="40" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="72,0,0,0" FontSize="10"/>
-                                                        <PasswordBox x:Name="textbox_PASS"   PasswordChanged="textbox_PASS_PasswordChanged" Height="20" Width="150" Padding="0,0,0,0" FontFamily="Arial" HorizontalAlignment="Left" BorderThickness="0,0,0,0" MaxLength="30" MinHeight="15" VerticalAlignment="Center"/>
-                                                        <Label x:Name="Label_PASS" Content="" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="2,0,0,0"/>
-                                                    </StackPanel>
-                                                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal" Width="540" Height="20">
-                                                        <Label Content="Update Channel:" Height="15" Width="80" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="72,0,0,0" FontSize="10"/>
-                                                        <RadioButton x:Name="OTAChannel_Sel_1" Content="Release-Latest" GroupName="OTAChannel_options"  Width="130" Height="20" BorderThickness="0,0,0,0" IsChecked="True" FontSize="10"/>
-                                                        <RadioButton x:Name="OTAChannel_Sel_2" Content="DevBuild-Latest" GroupName="OTAChannel_options"  Width="130" Height="20" Margin="5,0,0,0" BorderThickness="0,0,0,0" FontSize="10"/>
-
-                                                    </StackPanel>
-                                                    <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="70,0,0,0">
-                                                        <styles:SHToggleButton x:Name="Checkbox_Force_flash" Content="" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Dump pedal realtime status to file" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                                                        <Label Content="Force Flash Firmware" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </Border>
+                                            <localFunction:SystemSetting_OTA x:Name="SettingOTA_Tab" CalculationChanged="Tab_CalculationChanged"/>
                                         </TabItem>
                                         <TabItem Width="120" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
                                             <TabItem.Header>
@@ -1232,32 +1083,7 @@
                                                     <Label Content="License"  FontFamily="Arial Black" FontSize="10" Height="30" Width="120" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <Border Background="#7F4E4E4E" Height="177" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
-                                                <StackPanel Width="540" Height="177" HorizontalAlignment="Left" VerticalAlignment="Top">
-                                                    <StackPanel HorizontalAlignment="Left" Height="220" VerticalAlignment="Top" Width="540" Grid.RowSpan="2" Grid.ColumnSpan="3" Grid.Row="6" Grid.Column="1">
-                                                        <StackPanel HorizontalAlignment="Left" Height="25" VerticalAlignment="Top" Width="540" Grid.RowSpan="2" Grid.ColumnSpan="3" Grid.Row="6" Grid.Column="1" Orientation="Horizontal">
-
-                                                            <Label Content="LICENSE"  FontFamily="Arial Black" FontSize="20" Height="25" Width="150" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" RenderTransformOrigin="0,0" VerticalContentAlignment="Center" Margin="15,0,0,0"  />
-                                                            <styles:SHButtonPrimary x:Name="btn_test" Click="btn_toast_Click" Width="30" Content="TEST" Height="20" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="6" MinHeight="20" Background="{x:Null}" />
-                                                            
-                                                        </StackPanel>
-                                                        <TextBlock HorizontalAlignment="Center" Width="510" Height="10" FontFamily="Arial" FontSize="10" VerticalAlignment="Center" Foreground="White" Margin="0,10,0,0">           
-                                                                    This work is licensed under a
-                                                                            <Hyperlink NavigateUri="http://creativecommons.org/licenses/by-nc-sa/4.0/" RequestNavigate="Hyperlink_RequestNavigate" FontFamily="Arial" FontSize="10">
-                                                                        Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
-                                                                    </Hyperlink>
-                                                        </TextBlock>
-                                                        <TextBlock HorizontalAlignment="Center" Width="510" Height="10" FontFamily="Arial" FontSize="10" VerticalAlignment="Center" Foreground="White">           
-                                                                    Please check github repo for detail:
-                                                                    <Hyperlink NavigateUri="https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/" RequestNavigate="Hyperlink_RequestNavigate" FontFamily="Arial" FontSize="10">
-                                                                        https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/
-                                                                    </Hyperlink>
-                                                        </TextBlock>
-                                                        <TextBox x:Name="TextBox_debug_count" TextWrapping="Wrap" Width="540" AutomationProperties.Name="TextBox2" Height="120" FontSize="10" Background="#004E4E4E" BorderBrush="#00CCCCCC" IsHitTestVisible="False" AllowDrop="True" HorizontalAlignment="Center"/>
-                                                    </StackPanel>
-
-                                                </StackPanel>
-                                            </Border>
+                                            <localFunction:SystemSetting_License x:Name="SystemLicense_Tab" btn_test_Click_event="SystemLicense_Tab_btn_test_Click_event"/>
                                         </TabItem>
                                     </TabControl>
 

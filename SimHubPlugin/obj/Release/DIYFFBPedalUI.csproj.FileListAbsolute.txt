@@ -240,3 +240,7 @@ X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Rele
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\UIFunction\EffectsTab_RPMRudder.baml
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\UIFunction\EffectsTab_RudderACC.g.cs
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\UIFunction\EffectsTab_RudderACC.baml
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\UIFunction\SystemSetting_Profiles.g.cs
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\UIFunction\SystemSetting_Profiles.baml
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\UIFunction\SystemSetting_OTA.g.cs
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0320\SimHubPlugin\obj\Release\UIFunction\SystemSetting_OTA.baml

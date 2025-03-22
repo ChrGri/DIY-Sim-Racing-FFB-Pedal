@@ -156,58 +156,7 @@ namespace User.PluginSdkDemo
             TwoPedalConnectBrakeThrottle,
             ThreePedalConnect
         }
-        //public int Bridge_baudrate = 921600;
-        /*
-        private double kinematicDiagram_zeroPos_OX = 100;
-        private double kinematicDiagram_zeroPos_OY = 20;
-        private double kinematicDiagram_zeroPos_scale = 1;
-        */
-
-
-
-        // read config from JSON on startup
-        //ReadStructFromJson();
-
-
-        // read JSON config from JSON file
-        //private void ReadStructFromJson()
-        //{
-
-
-
-        //    try
-        //    {
-        //        // https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/how-to?pivots=dotnet-8-0
-        //        // https://www.educative.io/answers/how-to-read-a-json-file-in-c-sharp
-
-        //        string currentDirectory = Directory.GetCurrentDirectory();
-        //        string dirName = currentDirectory + "\\PluginsData\\Common";
-        //        //string jsonFileName = ComboBox_JsonFileSelected.Text;
-        //        string jsonFileName = ((ComboBoxItem)ComboBox_JsonFileSelected.SelectedItem).Content.ToString();
-        //        string fileName = dirName + "\\" + jsonFileName + ".json";
-
-        //        string text = System.IO.File.ReadAllText(fileName);
-
-        //        DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(DAP_config_st));
-        //        var ms = new MemoryStream(Encoding.UTF8.GetBytes(text));
-        //        dap_config_st[indexOfSelectedPedal_u] = (DAP_config_st)deserializer.ReadObject(ms);
-        //        //TextBox_debugOutput.Text = "Config loaded!";
-        //        //TextBox_debugOutput.Text += ComboBox_JsonFileSelected.Text;
-        //        //TextBox_debugOutput.Text += "    ";
-        //        //TextBox_debugOutput.Text += ComboBox_JsonFileSelected.SelectedIndex;
-
-        //        updateTheGuiFromConfig();
-
-        //    }
-        //    catch (Exception caughtEx)
-        //    {
-
-        //        string errorMessage = caughtEx.Message;
-        //        TextBox_debugOutput.Text = errorMessage;
-        //    }
-
-
-        //}
+        
         private void ToastNotification(string message1, string message2)
         {
             
@@ -223,59 +172,7 @@ namespace User.PluginSdkDemo
 
 
         }
-        private void InitReadStructFromJson()
-        {
-
-
-
-            try
-            {
-                // https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/how-to?pivots=dotnet-8-0
-                // https://www.educative.io/answers/how-to-read-a-json-file-in-c-sharp
-                string jsonFileName = "NA";
-
-                string currentDirectory = Directory.GetCurrentDirectory();
-                string dirName = currentDirectory + "\\PluginsData\\Common";
-                //string jsonFileName = ComboBox_JsonFileSelected.Text;
-                if (indexOfSelectedPedal_u == 0)
-                {
-                    jsonFileName = ("DiyPedalConfig_Clutch_Default");
-                }
-                else if (indexOfSelectedPedal_u == 1)
-                {
-                    jsonFileName = ("DiyPedalConfig_Brake_Default");
-                }
-                else if (indexOfSelectedPedal_u == 2)
-                {
-                    jsonFileName = ("DiyPedalConfig_Accelerator_Default");
-                }
-
-                string fileName = dirName + "\\" + jsonFileName + ".json";
-                string text = System.IO.File.ReadAllText(fileName);
-
-
-
-                DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(DAP_config_st));
-                var ms = new MemoryStream(Encoding.UTF8.GetBytes(text));
-                dap_config_st[indexOfSelectedPedal_u] = (DAP_config_st)deserializer.ReadObject(ms);
-                TextBox_debugOutput.Text = "Config loaded!" + jsonFileName;
-                //TextBox_debugOutput.Text += ComboBox_JsonFileSelected.Text;
-                //TextBox_debugOutput.Text += "    ";
-                //TextBox_debugOutput.Text += ComboBox_JsonFileSelected.SelectedIndex;
-
-                updateTheGuiFromConfig();
-
-            }
-            catch (Exception caughtEx)
-            {
-
-                string errorMessage = caughtEx.Message;
-                TextBox_debugOutput.Text = errorMessage;
-            }
-
-
-        }
-
+        
         private void UpdateSerialPortList_click()
         {
 
@@ -480,7 +377,7 @@ namespace User.PluginSdkDemo
             dap_config_st_rudder.payloadPedalConfig_.kf_modelNoise_joystick = 1;
             dap_config_st_rudder.payloadPedalConfig_.kf_Joystick_u8 = 1;
         }
-        System.Windows.Controls.CheckBox[,] Effect_status_profile=new System.Windows.Controls.CheckBox[3,8];
+        
         unsafe public DIYFFBPedalControlUI()
         {
             
@@ -496,93 +393,7 @@ namespace User.PluginSdkDemo
                 _basic_wifi_info.WIFI_SSID[i] = 0;
             }
             InitializeComponent();
-            //Misc_Tab.dap_config_st = new DAP_config_st();
-            //initialize profile effect status
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < 8; j++)
-                {
-                    Effect_status_profile[i, j] = new System.Windows.Controls.CheckBox();
-                    Effect_status_profile[i, j].Width = 45;
-                    Effect_status_profile[i, j].Height = 20;
-                    Effect_status_profile[i, j].FontSize = 8;
-                    switch (j)
-                    {
-                        case 0:
-                            
-                            Effect_status_profile[i, j].Margin = new Thickness(20, 0, 0, 0);
-                            if (i == 0 || i == 2)
-                            {
-                                Effect_status_profile[i, j].Content = "TC";
-                                
-                            }
-                            else
-                            {
-                                Effect_status_profile[i, j].Content = "ABS";
-                            }
-                            
-                            break;
-                        case 1:
-                            Effect_status_profile[i, j].Content = "RPM";
-                            break;
-                        case 2:
-                            Effect_status_profile[i, j].Content = "B.P";
-                            Effect_status_profile[i, j].Width = 40;
-                            break;
-                        case 3:
-                            Effect_status_profile[i, j].Content = "G-F";
-                            Effect_status_profile[i, j].Width = 40;
-                            if (i == 0 || i == 2)
-                            {
-                                Effect_status_profile[i, j].IsEnabled = false;
-                            }
-                            break;
-                        case 4:
-                            Effect_status_profile[i, j].Content = "W.S";
-                            Effect_status_profile[i, j].Width = 40;
-                            break;
-                        case 5:
-                            Effect_status_profile[i, j].Content = "IMAPCT";
-                            Effect_status_profile[i, j].Width = 60;
-                            break;
-                        case 6:
-                            Effect_status_profile[i, j].Content = "CUS-1";
-                            Effect_status_profile[i, j].Width = 50;
-                            break;
-                        case 7:
-                            Effect_status_profile[i, j].Content = "CUS-2";
-                            Effect_status_profile[i, j].Width = 50;
-                            break;
-                    }
-                    switch (i)
-                    {
-                        case 0:
-                            StackPanel_Effects_Status_0.Children.Add(Effect_status_profile[i, j]);
-                            break;
-                        case 1:
-                            StackPanel_Effects_Status_1.Children.Add(Effect_status_profile[i, j]);
-                            break;
-                        case 2:
-                            StackPanel_Effects_Status_2.Children.Add(Effect_status_profile[i, j]);
-                            break;
-                    }
-                }
-            }
-
-            // debug mode invisiable
-            //text_debug_flag.Visibility = Visibility.Hidden;
-            //text_serial.Visibility = Visibility.Hidden;
-            //TextBox_serialMonitor.Visibility = System.Windows.Visibility.Hidden;
-            //InvertLoadcellReading_check.Visibility = Visibility.Hidden;
-            //InvertMotorDir_check.Visibility = Visibility.Hidden;
-            //textBox_debug_Flag_0.Visibility = Visibility.Hidden;
-            //Border_serial_monitor.Visibility=Visibility.Hidden;
             
-           
-
-            //Label_reverse_LC.Visibility=Visibility.Hidden;
-            //Label_reverse_servo.Visibility=Visibility.Hidden;
-            btn_test.Visibility=Visibility.Hidden;
             //setting drawing color with Simhub theme workaround
             SolidColorBrush buttonBackground_ = btn_update.Background as SolidColorBrush;
 
@@ -610,7 +421,7 @@ namespace User.PluginSdkDemo
             //Plugin.simhub_theme_color=defaultcolor.ToString();            
             // Call this method to generate gridlines on the Canvas            
             Label_RSSI.Visibility= Visibility.Hidden;
-            TextBox_debug_count.Visibility= Visibility.Hidden;
+            
         }
 
 
@@ -650,21 +461,6 @@ namespace User.PluginSdkDemo
 
             return myBuffer;
         }
-
-
-        //public byte[] getBytes_Action(DAP_action_st aux)
-        //{
-        //    int length = Marshal.SizeOf(aux);
-        //    IntPtr ptr = Marshal.AllocHGlobal(length);
-        //    byte[] myBuffer = new byte[length];
-
-        //    Marshal.StructureToPtr(aux, ptr, true);
-        //    Marshal.Copy(ptr, myBuffer, 0, length);
-        //    Marshal.FreeHGlobal(ptr);
-
-        //    return myBuffer;
-        //}
-
 
         public DAP_config_st getConfigFromBytes(byte[] myBuffer)
         {
@@ -730,29 +526,6 @@ namespace User.PluginSdkDemo
             return aux;
         }
 
-
-        //unsafe private UInt16 checksumCalc(byte* data, int length)
-        //{
-
-        //    UInt16 curr_crc = 0x0000;
-        //    byte sum1 = (byte)curr_crc;
-        //    byte sum2 = (byte)(curr_crc >> 8);
-        //    int index;
-        //    for (index = 0; index < length; index = index + 1)
-        //    {
-        //        int v = (sum1 + (*data));
-        //        sum1 = (byte)v;
-        //        sum1 = (byte)(v % 255);
-
-        //        int w = (sum1 + sum2) % 255;
-        //        sum2 = (byte)w;
-
-        //        data++;// = data++;
-        //    }
-
-        //    int x = (sum2 << 8) | sum1;
-        //    return (UInt16)x;
-        //}
 
 
         public DIYFFBPedalControlUI(DIY_FFB_Pedal plugin) : this()
@@ -939,23 +712,27 @@ namespace User.PluginSdkDemo
                 PedalSettingsSection.Settings=Plugin.Settings;
                 EffectsRPMRudder_Tab.Settings= Plugin.Settings;
                 EffectRudderACC_Tab.Settings= Plugin.Settings;
+                SystemProfile_Tab.Settings= Plugin.Settings;
+                SettingOTA_Tab.Settings= Plugin.Settings;
+                SystemLicense_Tab.Settings= Plugin.Settings;
 
-                EffectsABS_Tab.calculation = Plugin._calculaitons;
-                EffectsBitePoint_Tab.calculation=Plugin._calculaitons;
-                EffectsCustom1_tab.calculation = Plugin._calculaitons;
-                EffectsCustom2_Tab.calculation = Plugin._calculaitons;
-                Misc_Tab.calculation = Plugin._calculaitons;
-                PedalForceTravel_Tab.calculation=Plugin._calculaitons;
-                PedalSettingsSection.calculation=Plugin._calculaitons;
-                CurveRudderForce_Tab.calculation=Plugin._calculaitons;
-
+                EffectsABS_Tab.calculation = Plugin._calculations;
+                EffectsBitePoint_Tab.calculation=Plugin._calculations;
+                EffectsCustom1_tab.calculation = Plugin._calculations;
+                EffectsCustom2_Tab.calculation = Plugin._calculations;
+                Misc_Tab.calculation = Plugin._calculations;
+                PedalForceTravel_Tab.calculation=Plugin._calculations;
+                PedalSettingsSection.calculation=Plugin._calculations;
+                CurveRudderForce_Tab.calculation=Plugin._calculations;
+                SystemProfile_Tab.calculation =Plugin._calculations;
+                SettingOTA_Tab.calculation= Plugin._calculations;
 
                 EffectsCustom1_tab.Plugin = Plugin;
                 EffectsCustom2_Tab.Plugin = Plugin;
 
 
-                btn_SendConfig.Content= Plugin._calculaitons.btn_SendConfig_Content;
-                btn_SendConfig.ToolTip = Plugin._calculaitons.btn_SendConfig_tooltip;
+                btn_SendConfig.Content= Plugin._calculations.btn_SendConfig_Content;
+                btn_SendConfig.ToolTip = Plugin._calculations.btn_SendConfig_tooltip;
             }
             
 
@@ -1007,11 +784,6 @@ namespace User.PluginSdkDemo
                 
             }
 
-
-            
-
-
-            
             //// Select serial port accordingly
             string tmp = (string)Plugin._serialPort[indexOfSelectedPedal_u].PortName;
             try
@@ -1036,43 +808,6 @@ namespace User.PluginSdkDemo
                 btn_pedal_connect.Content = "Connect To Pedal";
             }
 
-            if (Plugin.Settings.file_enable_check[profile_select, 0] == 1)
-            {
-                Label_clutch_file.Content = Plugin.Settings.Pedal_file_string[profile_select,0];
-                Clutch_file_check.IsChecked = true;
-            }
-            else 
-            {
-                Label_clutch_file.Content = "";
-                Clutch_file_check.IsChecked = false;
-            }
-            if (Plugin.Settings.file_enable_check[profile_select, 1] == 1)
-            {
-                Label_brake_file.Content = Plugin.Settings.Pedal_file_string[profile_select, 1];
-                Brake_file_check.IsChecked = true;
-            }
-            else
-            {
-                Label_brake_file.Content = "";
-                Brake_file_check.IsChecked = false;
-            }
-
-            if (Plugin.Settings.file_enable_check[profile_select,2] == 1)
-            {
-                Label_gas_file.Content = Plugin.Settings.Pedal_file_string[profile_select, 2];
-                Gas_file_check.IsChecked = true;
-            }
-            else
-            {
-                Label_gas_file.Content = "";
-                Gas_file_check.IsChecked = false;
-            }
-            
-
-            textbox_profile_name.Text = Plugin.Settings.Profile_name[profile_select];
-
-
-            //Canvas.SetRight(TextBlock_Warning, 0);
 
 
             //Rudder UI initialized
@@ -1158,28 +893,7 @@ namespace User.PluginSdkDemo
                 {
                     Checkbox_auto_remove_serial_line_bridge.IsChecked = false;
                 }
-                //effect profile reading
-                if (Update_Profile_Checkbox_b)
-                {
-                    for (int j = 0; j < 3; j++)
-                    {
-                        for (int k = 0; k < 8; k++)
-                        {
-                            if (Plugin.Settings.Effect_status_prolife[profile_select, j, k])
-                            {
-                                Effect_status_profile[j, k].IsChecked = true;
-                            }
-                            else
-                            {
-                                Effect_status_profile[j, k].IsChecked = false;
-                            }
-                        }
-                    }
-                    Update_Profile_Checkbox_b = false;
-                }
 
-                textbox_SSID.Text = Plugin.Settings.SSID_string;
-                textbox_PASS.Password = Plugin.Settings.PASS_string;
             }
 
         }
@@ -1251,8 +965,8 @@ namespace User.PluginSdkDemo
                 indexOfSelectedPedal_u = (uint)MyTab.SelectedIndex;
                 Plugin.Settings.table_selected = (uint)MyTab.SelectedIndex;
                 //Update_CV_textbox = true;
-                Plugin._calculaitons.Update_CV1_textbox = true;
-                Plugin._calculaitons.Update_CV2_textbox = true;
+                Plugin._calculations.Update_CV1_textbox = true;
+                Plugin._calculations.Update_CV2_textbox = true;
                 PedalTabChange =true;
                 PedalTabChange_last=DateTime.Now;
                 updateTheGuiFromConfig();
@@ -1462,185 +1176,6 @@ namespace User.PluginSdkDemo
             Reading_config_auto(indexOfSelectedPedal_u);
         }
 
-
-        public string[] _data = { "", "", "" };// = "";
-
-        //unsafe private void sp_DataReceived(object sender, object e)
-        unsafe private void sp_DataReceived(object sender, SerialDataReceivedEventArgs e)
-        {
-
-            SerialPort sp = (SerialPort)sender;
-            //string _type = (string)e;
-
-            //if (Plugin._serialPort[indexOfSelectedPedal_u].PortName = sp.PortName)
-
-            // identify which pedal has send the data
-            int pedalSelected = 255;
-            for (int pedalIdx_i = 0; pedalIdx_i < 3; pedalIdx_i++)
-            {
-                if ((Plugin._serialPort[pedalIdx_i].PortName == sp.PortName) && (Plugin._serialPort[pedalIdx_i].IsOpen))
-                {
-                    pedalSelected = pedalIdx_i;
-                }
-            }
-
-            // once the pedal has identified, go ahead
-            if (pedalSelected < 3)
-            //if (Plugin._serialPort[indexOfSelectedPedal_u].IsOpen)
-            {
-                // https://stackoverflow.com/questions/9732709/the-calling-thread-cannot-access-this-object-because-a-different-thread-owns-it
-
-
-                int length = sizeof(DAP_config_st);
-                byte[] newBuffer_config = new byte[length];
-
-                int receivedLength = sp.BytesToRead;
-
-
-                string incomingData = sp.ReadExisting();
-                //if the data doesn't end with a stop char this will signal to keep it in _data 
-                //for appending to the following read of data
-                bool endsWithStop = EndsWithStop(incomingData);
-
-                //each array object will be sent separately to the callback
-                string[] dataArray = incomingData.Split(STOPCHAR, StringSplitOptions.None);
-
-                for (int i = 0; i < dataArray.Length; i++)
-                {
-                    string newData = dataArray[i];
-
-                    //if you are at the last object in the array and this hasn't got a stopchar after
-                    //it will be saved in _data
-                    if (!endsWithStop && i == dataArray.Length - 1)
-                    {
-                        _data[pedalSelected] += newData;
-                    }
-                    else
-                    {
-                        string dataToSend = _data[pedalSelected] + newData;
-                        _data[pedalSelected] = "";
-
-
-                        // decode into config struct
-                        if (dataToSend.Length == length)
-                        {
-                            DAP_config_st tmp;
-
-                            // transform string into byte
-                            fixed (byte* p = Encoding.ASCII.GetBytes(dataToSend))
-                            {
-                                // create a fixed size buffer
-                                length = sizeof(DAP_config_st);
-                                byte[] newBuffer_config_2 = new byte[length];
-
-                                // copy the received bytes into byte array
-                                for (int j = 0; j < length; j++)
-                                {
-                                    newBuffer_config_2[j] = p[j];
-                                }
-
-                                // parse byte array as config struct
-                                DAP_config_st pedalConfig_read_st = getConfigFromBytes(newBuffer_config_2);
-
-                                // check whether receive struct is plausible
-                                DAP_config_st* v_config = &pedalConfig_read_st;
-                                byte* p_config = (byte*)v_config;
-
-                                // payload type check
-                                bool check_payload_config_b = false;
-                                if (pedalConfig_read_st.payloadHeader_.payloadType == Constants.pedalConfigPayload_type)
-                                {
-                                    check_payload_config_b = true;
-                                }
-
-                                // CRC check
-                                bool check_crc_config_b = false;
-                                if (Plugin.checksumCalc(p_config, sizeof(payloadHeader) + sizeof(payloadPedalConfig)) == pedalConfig_read_st.payloadFooter_.checkSum)
-                                {
-                                    check_crc_config_b = true;
-                                }
-
-
-                                // when all checks are passed, accept the config. Otherwise discard and trow error
-                                Dispatcher.Invoke(
-                                new Action<DAP_config_st>((t) => dap_config_st[pedalSelected] = t),
-                                pedalConfig_read_st);
-
-
-                                this.Dispatcher.Invoke(() =>
-                                {
-                                    // update pedal config
-                                    if (check_payload_config_b)
-                                    {
-                                        //this.dap_config_st[indexOfSelectedPedal_u] = pedalConfig_read_st;
-                                        updateTheGuiFromConfig();
-                                    }
-
-                                    TextBox_debugOutput.Text = "Payload config test 1: " + check_payload_config_b;
-                                    TextBox_debugOutput.Text += "Payload config test 2: " + check_crc_config_b;
-                                });
-
-                            }
-
-                        }
-                        else
-                        {
-                            this.Dispatcher.Invoke(() =>
-                            {
-                                //TextBox_serialMonitor.Text += "DataArrayLength: " + dataArray.Length + "\n";
-                                //TextBox_serialMonitor.Text += "DataLength: " + dataToSend.Length + "\n";
-                                if (_serial_monitor_window != null)
-                                {
-                                    _serial_monitor_window.TextBox_SerialMonitor.Text += dataToSend + "\n";
-                                    _serial_monitor_window.TextBox_SerialMonitor.ScrollToEnd();
-                                }
-                                //TextBox_serialMonitor.Text += dataToSend + "\n";
-                                //TextBox_serialMonitor.ScrollToEnd();
-                                //TextBox_serialMonitor.Text += receivedLength + "\n";
-                            });
-                        }
-
-
-                    }
-
-
-
-
-
-
-
-
-
-
-
-                    //limits the data stored to 1000 to avoid using up all the memory in case of 
-                    //failure to register callback or include stopchar
-
-                    if (_data[pedalSelected].Length > 1000)
-                    {
-                        _data[pedalSelected] = "";
-                    }
-
-
-                    //////this.Dispatcher.Invoke(() =>
-                    //////    {
-                    //////        TextBox_serialMonitor.Text += incomingData;
-
-                    //////        TextBox_serialMonitor.ScrollToEnd();
-                    //////        //TextBox_serialMonitor.Text += receivedLength + "\n";
-                    //////    });
-                }
-
-                // obtain data and check whether it is from known payload type or just debug info
-
-            }
-        }
-
-
-
-        /********************************************************************************************************************/
-        /*							read serial stream																		*/
-        /********************************************************************************************************************/
         public void openSerialAndAddReadCallback(uint pedalIdx)
         {
             try
@@ -2055,7 +1590,7 @@ namespace User.PluginSdkDemo
         {
             if (Plugin.Page_update_flag == true)
             {
-                Profile_change(Plugin.profile_index);
+                Profile_change(Plugin._calculations.profile_index);
                 Plugin.Page_update_flag = false;
                 MyTab.SelectedIndex = (int)Plugin.Settings.table_selected;
                 Plugin.pedal_select_update_flag = false;
@@ -2414,7 +1949,7 @@ namespace User.PluginSdkDemo
                                     if (indexOfSelectedPedal_u == pedalSelected)
                                     {
                                         
-                                        if (Plugin._calculaitons.dumpPedalToResponseFile[indexOfSelectedPedal_u])
+                                        if (Plugin._calculations.dumpPedalToResponseFile[indexOfSelectedPedal_u])
                                         //if (dumpPedalToResponseFile[indexOfSelectedPedal_u])
                                         {
                                             // Specify the path to the file
@@ -2790,115 +2325,7 @@ namespace User.PluginSdkDemo
             
         }
 
-        public void Read_for_slot(object sender, EventArgs e)
-        {
-            var Button = sender as SHButtonPrimary;
-            
-            using (System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog())
-            {
-                openFileDialog.Title = "Datei auswählen";
-                openFileDialog.Filter = "Configdateien (*.json)|*.json";
-                string currentDirectory = Directory.GetCurrentDirectory();
-                openFileDialog.InitialDirectory = currentDirectory + "\\PluginsData\\Common";
-
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    string content = (string)openFileDialog.FileName;
-
-
-                    string filePath = openFileDialog.FileName;
-                    //TextBox_debugOutput.Text =  Button.Name;
-                    //
-                    uint i = profile_select;
-                    uint j = 0;
-                    if (Button.Name == "Reading_clutch")
-                    {
-
-                        Plugin.Settings.Pedal_file_string[profile_select,0] = filePath;
-                        Label_clutch_file.Content = Plugin.Settings.Pedal_file_string[profile_select, 0];
-                        Plugin.Settings.file_enable_check[profile_select, 0] = 1;
-                        Clutch_file_check.IsChecked = true;                       
-                        j = 0;                        
-                    }
-                    if (Button.Name == "Reading_brake")
-                    {
-                        Plugin.Settings.Pedal_file_string[profile_select, 1] = filePath;
-                        Label_brake_file.Content = Plugin.Settings.Pedal_file_string[profile_select, 1];
-                        Plugin.Settings.file_enable_check[profile_select, 1] = 1;
-                        Brake_file_check.IsChecked = true;
-                        j = 1;
-                    }
-                    if (Button.Name == "Reading_gas")
-                    {
-                        Plugin.Settings.Pedal_file_string[profile_select, 2] = filePath;
-                        Label_gas_file.Content = Plugin.Settings.Pedal_file_string[profile_select, 2];
-                        Plugin.Settings.file_enable_check[profile_select, 2] = 1;
-                        Gas_file_check.IsChecked = true;
-                        j = 2;
-                    }
-
-                    //write to setting
-                    for (int k = 0; k < 8; k++)
-                    {
-                        if (Effect_status_profile[j, k].IsChecked == true)
-                        {
-                            Plugin.Settings.Effect_status_prolife[i, j, k] = true;
-                        }
-                        else
-                        {
-                            Plugin.Settings.Effect_status_prolife[i, j, k] = false;
-                        }
-
-                    }
-
-
-                }
-            }
-        }
-
-        public void Clear_slot(object sender, EventArgs e)
-        {
-            var Button = sender as SHButtonPrimary;
-            uint i = profile_select;
-            uint j = 0;
-            if (Button.Name == "Clear_clutch")
-            {
-
-                Plugin.Settings.Pedal_file_string[profile_select, 0] = "";
-                Label_clutch_file.Content = Plugin.Settings.Pedal_file_string[profile_select, 0];
-                Plugin.Settings.file_enable_check[profile_select, 0] = 0;
-                Clutch_file_check.IsChecked = false;
-                j = 0;
-
-            }
-            if (Button.Name == "Clear_brake")
-            {
-
-                Plugin.Settings.Pedal_file_string[profile_select, 1] = "";
-                Label_brake_file.Content = Plugin.Settings.Pedal_file_string[profile_select, 1];
-                Plugin.Settings.file_enable_check[profile_select, 1] = 0;
-                Brake_file_check.IsChecked = false;
-                j = 1;
-
-            }
-            if (Button.Name == "Clear_gas")
-            {
-
-                Plugin.Settings.Pedal_file_string[profile_select, 2] = "";
-                Label_gas_file.Content = Plugin.Settings.Pedal_file_string[profile_select, 2];
-                Plugin.Settings.file_enable_check[profile_select, 2] = 0;
-                Gas_file_check.IsChecked = false;
-                j = 2;
-
-            }
-            //write to setting
-            for (int k = 0; k < 8; k++)
-            {
-                Plugin.Settings.Effect_status_prolife[i, j, k] = false;
-                Effect_status_profile[j, k].IsChecked = false;
-            }
-            //updateTheGuiFromConfig();
-        }
+        
         void Parsefile(uint profile_index)
         {
             // https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/deserialization
@@ -3179,9 +2606,6 @@ namespace User.PluginSdkDemo
                 Plugin.Settings.advanced_b = debug_flag;
             }
 
-            btn_test.Visibility = Visibility.Visible;
-            
-            TextBox_debug_count.Visibility=Visibility.Visible;
             updateTheGuiFromConfig();
 
 
@@ -3193,25 +2617,9 @@ namespace User.PluginSdkDemo
             {
                 Plugin.Settings.advanced_b = debug_flag;
             }
-            btn_test.Visibility = Visibility.Hidden;
-            TextBox_debug_count.Visibility = Visibility.Hidden;
+            
             updateTheGuiFromConfig();
         }
-
-
-
-
-
-
-
- 
-
-
-
-        
-
-
-
 
         private void btn_reset_default_Click(object sender, RoutedEventArgs e)
         {
@@ -3221,61 +2629,10 @@ namespace User.PluginSdkDemo
 
         // RPM effect select
 
-
-        private void TabControl_file_path(object sender, SelectionChangedEventArgs e)
-        {
-            profile_select = (uint)ProfileTab.SelectedIndex;
-            Plugin.profile_index = profile_select;
-            //Profile_change(profile_select);
-            //Plugin.Settings.table_selected = (uint)MyTab.SelectedIndex;
-            // update the sliders & serial port selection accordingly
-            Update_Profile_Checkbox_b = true;
-            updateTheGuiFromConfig();
-            
-        }
-
-        private void file_check_Checked(object sender, RoutedEventArgs e)
-        {
-            var checkbox = sender as System.Windows.Controls.CheckBox;
-            if (checkbox.Name == "Clutch_file_check")
-            {
-                Plugin.Settings.file_enable_check[profile_select, 0] = 1;
-            }
-
-            if (checkbox.Name == "Brake_file_check")
-            {
-                Plugin.Settings.file_enable_check[profile_select, 1] = 1;
-            }
-
-            if (checkbox.Name == "Gas_file_check")
-            {
-                Plugin.Settings.file_enable_check[profile_select, 2] = 1;
-            }
-        }
-
-        private void file_check_Unchecked(object sender, RoutedEventArgs e)
-        {
-            var checkbox = sender as System.Windows.Controls.CheckBox;
-            if (checkbox.Name == "Clutch_file_check")
-            {
-                Plugin.Settings.file_enable_check[profile_select, 0] = 0;
-            }
-
-            if (checkbox.Name == "Brake_file_check")
-            {
-                Plugin.Settings.file_enable_check[profile_select, 1] = 0;
-            }
-
-            if (checkbox.Name == "Gas_file_check")
-            {
-                Plugin.Settings.file_enable_check[profile_select, 2] = 0;
-            }
-        }
-
         public void Profile_change(uint profile_index)
         {
             profile_select = profile_index;
-            ProfileTab.SelectedIndex = (int)profile_index;
+            //ProfileTab.SelectedIndex = (int)profile_index;
             //if (Plugin.Settings.file_enable_check[profile_select])
             Parsefile(profile_index);
             string tmp;
@@ -3303,7 +2660,7 @@ namespace User.PluginSdkDemo
                     tmp = "No Profile";
                     break;
             }
-            Plugin.current_profile = tmp;
+            Plugin._calculations.current_profile = tmp;
             for (int j = 0; j < 3; j++)
             {
                 for (int k = 0; k < 8; k++)
@@ -3374,54 +2731,6 @@ namespace User.PluginSdkDemo
             //effect profile change
 
         }
-
-
-
-        private void btn_apply_profile_Click(object sender, RoutedEventArgs e)
-        {
-            Profile_change((uint)ProfileTab.SelectedIndex);
-            Parsefile((uint)ProfileTab.SelectedIndex);
-        }
-
-        private void btn_send_profile_Click(object sender, RoutedEventArgs e)
-        {
-            Sendconfigtopedal_shortcut();
-        }
-
-        private void textbox_profile_name_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            var textbox = sender as System.Windows.Controls.TextBox;
-            Plugin.Settings.Profile_name[profile_select]= textbox.Text;
-        }
-
-        unsafe private void btn_toast_Click(object sender, RoutedEventArgs e)
-        {
-
-            ToastNotification("Debug","Print All parameter in Serial log");
-            //Plugin.Rudder_brake_enable_flag = true;
-            //TestSlider.SliderValue = TestSlider.SliderValue + 1;
-            //Check1.IsChecked = true;
-            PrintUnknownStructParameters(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_);
-
-
-        }
-        private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
-        {
-            // for .NET Core you need to add UseShellExecute = true
-            // see https://learn.microsoft.com/dotnet/api/system.diagnostics.processstartinfo.useshellexecute#property-value
-            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri));
-            e.Handled = true;
-        }
-        
-
-
-
-
-
-
-        
-
-        
 
         private void Tab_main_1_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -3852,7 +3161,7 @@ namespace User.PluginSdkDemo
                                 {
                                     //if (indexOfSelectedPedal_u == pedalSelected)
                                     {
-                                        if (Plugin._calculaitons.dumpPedalToResponseFile[indexOfSelectedPedal_u])
+                                        if (Plugin._calculations.dumpPedalToResponseFile[indexOfSelectedPedal_u])
                                         {
                                             // Specify the path to the file
                                             string currentDirectory = Directory.GetCurrentDirectory();
@@ -4265,7 +3574,7 @@ namespace User.PluginSdkDemo
             {
 
                 string errorMessage = caughtEx.Message;
-                TextBox_debug_count.Text += errorMessage;
+                
                 SimHub.Logging.Current.Error(errorMessage);
             }
       
@@ -4294,19 +3603,19 @@ namespace User.PluginSdkDemo
             
             Basic_WIfi_info tmp_2;
             int length;
-            string SSID = textbox_SSID.Text;
-            string PASS = textbox_PASS.Password;
+            string SSID = Plugin.Settings.SSID_string;
+            string PASS = Plugin.Settings.PASS_string;
             string MSG_tmp="";
             bool SSID_PASS_check = true;
-            if (Checkbox_Force_flash.IsChecked == true)
+            if (Plugin._calculations.ForceUpdate_b == true)
             {
                 tmp_2.wifi_action = 1;
             }
-            if (OTAChannel_Sel_1.IsChecked == true)
+            if (Plugin._calculations.UpdateChannel == 0)
             {
                 tmp_2.mode_select = 1;
             }
-            if (OTAChannel_Sel_2.IsChecked == true)
+            if (Plugin._calculations.UpdateChannel == 1)
             {
                 tmp_2.mode_select = 2;
             }
@@ -4853,18 +4162,19 @@ namespace User.PluginSdkDemo
         {
             Basic_WIfi_info tmp_2;
             int length;
-            string SSID = textbox_SSID.Text;
-            string PASS = textbox_PASS.Password;
+            string SSID = Plugin.Settings.SSID_string;
+            string PASS = Plugin.Settings.PASS_string;
             bool SSID_PASS_check = true;
-            if (Checkbox_Force_flash.IsChecked == true)
+
+            if (Plugin._calculations.ForceUpdate_b == true)
             {
                 tmp_2.wifi_action = 1;
             }
-            if (OTAChannel_Sel_1.IsChecked == true)
+            if (Plugin._calculations.UpdateChannel == 0)
             {
                 tmp_2.mode_select = 1;
             }
-            if (OTAChannel_Sel_2.IsChecked == true)
+            if (Plugin._calculations.UpdateChannel == 1)
             {
                 tmp_2.mode_select = 2;
             }
@@ -4925,44 +4235,17 @@ namespace User.PluginSdkDemo
             
         }
 
-        private void textbox_SSID_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (textbox_SSID.Text.Length > 30)
-            {
-                Label_SSID.Content = "Error! SSID length >30";
-            }
-            else
-            {
-                if (Plugin != null)
-                { 
-                    Plugin.Settings.SSID_string = textbox_SSID.Text;
-                }
-                Label_SSID.Content = "";
-            }
-        }
 
 
-        private void textbox_PASS_PasswordChanged(object sender, RoutedEventArgs e)
-        {
-            if (textbox_PASS.Password.Length > 30)
-            {
-                Label_PASS.Content = "Error! Password length >30";
-            }
-            else
-            {
-                if (Plugin != null)
-                {
-                    Plugin.Settings.PASS_string = textbox_PASS.Password;
-                }
-                Label_PASS.Content = "";
-            }
-        }
+
+
 
         private void Function_Tab_seleciton_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (Function_Tab_seleciton.SelectedIndex==2)
             {
                 Update_Profile_Checkbox_b = true;
+                Plugin._calculations.Update_Profile_Checkbox_b = true;
                 updateTheGuiFromConfig();
             }
         }
@@ -4973,8 +4256,8 @@ namespace User.PluginSdkDemo
             if (Plugin != null)
             {
                 //Update_CV_textbox = true;
-                Plugin._calculaitons.Update_CV1_textbox = true;
-                Plugin._calculaitons.Update_CV2_textbox = true;
+                Plugin._calculations.Update_CV1_textbox = true;
+                Plugin._calculations.Update_CV2_textbox = true;
                 updateTheGuiFromConfig();
             }
 
@@ -5170,10 +4453,10 @@ namespace User.PluginSdkDemo
             if (Plugin != null)
             {
                 dap_config_st[indexOfSelectedPedal_u] = e;
-                if (Plugin._calculaitons.IsUIRefreshNeeded)
+                if (Plugin._calculations.IsUIRefreshNeeded)
                 {
                     updateTheGuiFromConfig();
-                    Plugin._calculaitons.IsUIRefreshNeeded = false;
+                    Plugin._calculations.IsUIRefreshNeeded = false;
                 }
                 PedalParameterLiveUpdate();
             }
@@ -5188,7 +4471,7 @@ namespace User.PluginSdkDemo
 
         private void Tab_CalculationChanged(object sender, CalculationVariables e)
         {
-            Plugin._calculaitons = e;
+            Plugin._calculations = e;
             updateTheGuiFromConfig();
         }
 
@@ -5197,12 +4480,30 @@ namespace User.PluginSdkDemo
             if (Plugin != null)
             {
                 dap_config_st_rudder = e;
-                if (Plugin._calculaitons.IsUIRefreshNeeded)
+                if (Plugin._calculations.IsUIRefreshNeeded)
                 {
                     updateTheGuiFromConfig();
-                    Plugin._calculaitons.IsUIRefreshNeeded = false;
+                    Plugin._calculations.IsUIRefreshNeeded = false;
                 }
             }
+        }
+
+        private void SystemProfile_Tab_btn_send_profile_Click_event(object sender, EventArgs e)
+        {
+            Sendconfigtopedal_shortcut();
+            
+        }
+
+        private void SystemProfile_Tab_btn_apply_profile_Click_event(object sender, EventArgs e)
+        {
+            Profile_change((uint)Plugin._calculations.profile_index);
+            Parsefile((uint)Plugin._calculations.profile_index);
+        }
+
+        private void SystemLicense_Tab_btn_test_Click_event(object sender, EventArgs e)
+        {
+            ToastNotification("Debug", "Print All parameter in Serial log");
+            PrintUnknownStructParameters(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_);
         }
     }
     

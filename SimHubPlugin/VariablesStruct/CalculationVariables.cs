@@ -33,6 +33,11 @@ namespace User.PluginSdkDemo
         public string btn_SendConfig_tooltip;
         public bool[] dumpPedalToResponseFile_clearFile;
         public bool[] dumpPedalToResponseFile;
+        public bool Update_Profile_Checkbox_b;
+        public string current_profile = "NA";
+        public uint profile_index;
+        public bool ForceUpdate_b;
+        public uint UpdateChannel;
         public CalculationVariables()
         {
             PedalCurrentForce = 0;
@@ -53,7 +58,10 @@ namespace User.PluginSdkDemo
             btn_SendConfig_tooltip = "Send Config to Pedal and save in storage";
             dumpPedalToResponseFile_clearFile = new bool[3] { false, false, false };
             dumpPedalToResponseFile = new bool[3] { false, false, false };
-
+            Update_Profile_Checkbox_b = false;
+            profile_index = 0;
+            ForceUpdate_b = false;
+            UpdateChannel = 0;
         }
     }
 }

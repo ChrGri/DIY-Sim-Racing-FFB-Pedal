@@ -237,6 +237,15 @@
     <Compile Include="UIFunction\SettingSection_Pedal.xaml.cs">
       <DependentUpon>SettingSection_Pedal.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\SystemSetting_License.xaml.cs">
+      <DependentUpon>SystemSetting_License.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\SystemSetting_OTA.xaml.cs">
+      <DependentUpon>SystemSetting_OTA.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\SystemSetting_Profiles.xaml.cs">
+      <DependentUpon>SystemSetting_Profiles.xaml</DependentUpon>
+    </Compile>
     <Compile Include="VariablesStruct\Basic_WIfi_info.cs" />
     <Compile Include="VariablesStruct\CalculationVariables.cs" />
     <Compile Include="VariablesStruct\constants.cs" />
@@ -356,6 +365,18 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\SettingSection_Pedal.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\SystemSetting_License.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\SystemSetting_OTA.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\SystemSetting_Profiles.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
