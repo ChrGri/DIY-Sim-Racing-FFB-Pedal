@@ -397,7 +397,7 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
                       if(dap_config_st.payLoadPedalConfig_.pedal_type==2)
                       {
                         Recv_mac=Clu_mac;
-                        //ESPNow.add_peer(Recv_mac);
+                        ESPNow.add_peer(Recv_mac);
                       }
                     }
                     if(dap_calculationVariables_st.Rudder_status==false)
