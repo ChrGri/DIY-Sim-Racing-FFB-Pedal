@@ -295,7 +295,7 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
   #define CFG2 2
 
   #define EMERGENCY_BUTTON
-  #define ShutdownPin 6
+  #define BuzzerPin 6
   // level shifter is present on this PCB design
   #define SENSORLESS_HOMING true
   #define ISV57_TXPIN 10//27 //17
@@ -446,7 +446,7 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
   #define CFG2 1
 
   #define EMERGENCY_BUTTON
-  #define ShutdownPin 5
+  #define BuzzerPin 5
   // level shifter is present on this PCB design
   #define SENSORLESS_HOMING true
   #define ISV57_TXPIN 10//27 //17
