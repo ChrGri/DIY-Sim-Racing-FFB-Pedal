@@ -171,6 +171,13 @@
     <Compile Include="DIYFFBPedalControlUI.xaml.cs">
       <DependentUpon>DIYFFBPedalControlUI.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UICallback\AutoConnectTimer.cs" />
+    <Compile Include="UICallback\BridgeSerialTimer.cs" />
+    <Compile Include="UICallback\btnCallbacks.cs" />
+    <Compile Include="UICallback\others.cs" />
+    <Compile Include="UICallback\SerialTImer.cs" />
+    <Compile Include="UICallback\TableCallbacks.cs" />
+    <Compile Include="UICallback\updateUIfromConfig.cs" />
     <Compile Include="UIElement\CheckboxWithLabel.xaml.cs">
       <DependentUpon>CheckboxWithLabel.xaml</DependentUpon>
     </Compile>
