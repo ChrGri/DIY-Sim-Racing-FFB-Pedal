@@ -535,14 +535,7 @@
 
                                         <Border Background="#7F4E4E4E" Height="808" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="168" HorizontalAlignment="Center" >
                                             <StackPanel HorizontalAlignment="Center" Height="807" VerticalAlignment="Top" Width="160" Margin="0,5,0,0">
-                                                <StackPanel Height="15" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                                    <Label Content="Pedal Info"  FontFamily="Arial Black" FontSize="12" Height="15" Width="80" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center"  />
-
-                                                </StackPanel>
-                                                <StackPanel Height="55" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
-                                                    <Label x:Name="info_label" Content="" Height="55" Width="80" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="10"/>
-                                                    <Label x:Name="info_label_2" Content="Label" Height="55" Width="80" FontFamily="Arial" VerticalAlignment="Top" FontSize="10"/>
-                                                </StackPanel>
+                                                <localFunction:InfoSection_Pedal x:Name="PedalInfo" />
                                                 <TextBox x:Name="TextBox_debugOutput" HorizontalAlignment="Left" Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="160" Height="25" AutomationProperties.Name="TextBox2" BorderBrush="#00CCCCCC" Background="#00252525" FontSize="8" FontFamily="Arial" />
                                                 <StackPanel Height="30" Width="250" Orientation="Horizontal">
                                                     <ComboBox x:Name="SerialPortSelection" SelectionChanged="SerialPortSelectionChanged" Width="135" ItemsSource="{Binding}" DisplayMemberPath="Display" SelectedValuePath="Value" FontSize="10" Height="30"/>
@@ -858,20 +851,12 @@
 
                                     <Border Background="#7F4E4E4E" Height="498" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="168" HorizontalAlignment="Center" >
                                         <StackPanel HorizontalAlignment="Center" Height="498" VerticalAlignment="Top" Width="160" Margin="0,5,0,0">
-                                            <StackPanel Height="15" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                                <Label Content="Rudder Info"  FontFamily="Arial Black" FontSize="12" Height="15" Width="160" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center"  />
-
-                                            </StackPanel>
-                                            <StackPanel Height="70" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
-                                                <Label x:Name="info_rudder_label" Content="" Height="70" Width="80" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="10"/>
-                                                <Label x:Name="info_rudder_label_2" Content="Label" Height="70" Width="80" FontFamily="Arial" VerticalAlignment="Top" FontSize="10"/>
-                                            </StackPanel>
+                                            <localFunction:InfoSection_Rudder x:Name="RudderInfo" />
                                             <TextBox x:Name="TextBox_rudder_debug" HorizontalAlignment="Left" Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="160" Height="25" AutomationProperties.Name="TextBox2" BorderBrush="#00CCCCCC" Background="#00252525" FontSize="8" FontFamily="Arial" />
                                             <styles:SHButtonPrimary x:Name="btn_rudder_initialize" Click="btn_rudder_initialize_Click" Width="160" Height="25" Content="Rudder" Margin="0,2,0,0" HorizontalAlignment="Center" VerticalContentAlignment="Center" Padding="15,0,15,0" />
                                             <styles:SHButtonPrimary Click="SHButtonPrimary_Click" Width="160" Content="Load Config from Local" Height="25" Margin="0,2,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Padding="15,0,15,0" VerticalContentAlignment="Center" />
                                             <styles:SHButtonPrimary Click="SaveButton_Click" Width="160" Content="Export Config to Local" Height="25" Margin="0,2,0,0" HorizontalAlignment="Left" Padding="15,0,15,0" VerticalContentAlignment="Center" />
                                             <styles:SHButtonPrimary x:Name="btn_rudder_status_clear" Click="btn_rudder_status_clear_Click" Width="160" Content="Clear Rudder Status" Height="25" Margin="0,2,0,0" HorizontalAlignment="Left" Padding="15,0,15,0" VerticalContentAlignment="Center" />
-                                            
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
@@ -978,20 +963,7 @@
 
                                     <Border Background="#7F4E4E4E" Height="498" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="168" HorizontalAlignment="Center" >
                                         <StackPanel HorizontalAlignment="Center" Height="498" VerticalAlignment="Top" Width="160" Margin="0,5,0,0">
-                                            <StackPanel Height="15" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                                <Label Content="System Info"  FontFamily="Arial Black" FontSize="12" Height="15" Width="80" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center"  />
-                                                <Label x:Name="Label_RSSI" Content="-100dbm"  FontFamily="Arial" FontSize="8" Height="15" Width="35" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="29,0,0,0"  />
-                                                <Canvas x:Name="RSSI_canvas" Width="16" Height="15">
-                                                    <Rectangle x:Name="RSSI_1" Width="3" Height="3" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="0" Canvas.Top="12" />
-                                                    <Rectangle x:Name="RSSI_2" Width="3" Height="7" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="4" Canvas.Top="8" />
-                                                    <Rectangle x:Name="RSSI_3" Width="3" Height="11" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="8" Canvas.Top="4" />
-                                                    <Rectangle x:Name="RSSI_4" Width="3" Height="15" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="12" Canvas.Top="0" />
-                                                </Canvas>
-                                            </StackPanel>
-                                            <StackPanel Height="65" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
-                                                <Label x:Name="info_label_system" Content="" Height="65" Width="80" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="10"/>
-                                                <Label x:Name="info_label_2_system" Content="" Height="65" Width="80" FontFamily="Arial" VerticalAlignment="Top" FontSize="10"/>
-                                            </StackPanel>
+                                            <localFunction:InfoSection_System x:Name="SystemInfo" />
                                             <StackPanel HorizontalAlignment="Left" Height="22" Grid.Row="4" VerticalAlignment="Top" Width="168" Grid.RowSpan="3" Orientation="Horizontal" Margin="0,2,0,0">
                                                 <ComboBox x:Name="SerialPortSelection_ESPNow" SelectionChanged="ESPNow_SerialPortSelectionChanged" Width="100" ItemsSource="{Binding}" DisplayMemberPath="Display" SelectedValuePath="Value" FontSize="8" Height="20" HorizontalAlignment="Left" MinHeight="20"/>
                                                 <styles:SHButtonPrimary x:Name="btn_connect_espnow_port" Click="btn_connect_espnow_port_Click" Width="55" Content="Connect" Height="20" Margin="3,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />

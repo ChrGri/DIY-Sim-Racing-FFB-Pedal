@@ -238,6 +238,15 @@
     <Compile Include="UIFunction\GeneralSetting_RudderSetting.xaml.cs">
       <DependentUpon>GeneralSetting_RudderSetting.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\InfoSection_Pedal.xaml.cs">
+      <DependentUpon>InfoSection_Pedal.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\InfoSection_Rudder.xaml.cs">
+      <DependentUpon>InfoSection_Rudder.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\InfoSection_System.xaml.cs">
+      <DependentUpon>InfoSection_System.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\KinematicsTab_Pedal.xaml.cs">
       <DependentUpon>KinematicsTab_Pedal.xaml</DependentUpon>
     </Compile>
@@ -367,6 +376,18 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\GeneralSetting_RudderSetting.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\InfoSection_Pedal.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\InfoSection_Rudder.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\InfoSection_System.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

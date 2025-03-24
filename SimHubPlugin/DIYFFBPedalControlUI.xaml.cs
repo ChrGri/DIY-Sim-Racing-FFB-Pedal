@@ -195,14 +195,7 @@ namespace User.PluginSdkDemo
             color_RSSI_3 = new SolidColorBrush(Color.FromArgb(210, buttonBackground_.Color.R, buttonBackground_.Color.G, buttonBackground_.Color.B));
             color_RSSI_4 = new SolidColorBrush(Color.FromArgb(255, buttonBackground_.Color.R, buttonBackground_.Color.G, buttonBackground_.Color.B));
             Red_Warning = new SolidColorBrush(Color.FromArgb(255, 244, 67, 67));
-            White_Default = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
-            RSSI_2.Fill = color_RSSI_2;
-            RSSI_3.Fill = color_RSSI_3;
-            RSSI_4.Fill = color_RSSI_4;
-            //Plugin.simhub_theme_color=defaultcolor.ToString();            
-            // Call this method to generate gridlines on the Canvas            
-            Label_RSSI.Visibility= Visibility.Hidden;
-            
+            White_Default = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));           
         }
 
 

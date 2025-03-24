@@ -986,6 +986,14 @@ namespace User.PluginSdkDemo
                 {
                     Rudder_status = false;
                 }
+                if (_calculations.Rudder_status == false)
+                {
+                    _calculations.Rudder_status = true;
+                }
+                else
+                {
+                    _calculations.Rudder_status = false;
+                }
                 DAP_action_st tmp;
                 tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
                 tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;                    

@@ -34,6 +34,8 @@ namespace User.PluginSdkDemo
             }
             info_text_connection = tmp;
             system_info_text_connection = tmp;
+            Plugin._calculations.PedalConnetingString = tmp;
+            Plugin._calculations.BridgeConnetingString = tmp;
             for (uint pedal_idex = 0; pedal_idex < 3; pedal_idex++)
             {
                 if (Pedal_wireless_connection_update_b[pedal_idex])
@@ -182,6 +184,7 @@ namespace User.PluginSdkDemo
                                 Plugin.connectSerialPort[pedalIdx] = false;
                                 Plugin.Settings.connect_status[pedalIdx] = 0;
                                 Plugin.PedalConfigRead_b[pedalIdx] = false;
+                                Plugin._calculations.PedalSerialAvailability[pedalIdx] = false;
                                 updateTheGuiFromConfig();
                             }
 

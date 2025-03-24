@@ -292,6 +292,7 @@ namespace User.PluginSdkDemo
                                         for (int i = 0; i < 3; i++)
                                         {
                                             PedalFirmwareVersion[pedalSelected, i] = pedalState_read_st.payloadPedalBasicState_.pedalFirmwareVersion_u8[i];
+                                            Plugin._calculations.PedalFirmwareVersion[pedalSelected, i] = pedalState_read_st.payloadPedalBasicState_.pedalFirmwareVersion_u8[i];
                                         }
 
 

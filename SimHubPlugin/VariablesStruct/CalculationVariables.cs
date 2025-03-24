@@ -1,5 +1,7 @@
-﻿using System;
+﻿using log4net.Core;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,7 +10,7 @@ using System.Windows.Media;
 
 namespace User.PluginSdkDemo
 {
-    public class CalculationVariables
+    public class CalculationVariables : INotifyPropertyChanged
     {
         public int PedalCurrentTravel { get; set; }
         public int PedalCurrentForce { get; set; }
@@ -38,6 +40,56 @@ namespace User.PluginSdkDemo
         public uint profile_index;
         public bool ForceUpdate_b;
         public uint UpdateChannel;
+        public uint _rssi_value;
+        public byte[,] PedalFirmwareVersion;
+        public byte[] BridgeFirmwareVersion;
+        public bool[] PedalAvailability;//wireless
+        public bool[] PedalSerialAvailability;
+        public bool Rudder_status;
+        public bool BridgeSerialAvailability;
+        public uint RSSI_Value
+        {
+            get => _rssi_value;
+            set { _rssi_value = value; OnPropertyChanged(nameof(RSSI_Value)); }
+        }
+
+        private string _systemStatusString;
+        public string SystemStatusString
+        {
+            get => _systemStatusString;
+            set { _systemStatusString = value; OnPropertyChanged(nameof(SystemStatusString)); }
+        }
+        private string _pedalStatusString;
+        public string PedalStatusString
+        {
+            get => _pedalStatusString;
+            set { _pedalStatusString = value; OnPropertyChanged(nameof(PedalStatusString)); }
+        }
+        private string _rudderStatusString;
+        public string RudderStatusString
+        {
+            get => _rudderStatusString;
+            set { _rudderStatusString = value; OnPropertyChanged(nameof(RudderStatusString)); }
+        }
+        private bool _bridgeSerialConnecitonStatus;
+        public bool BridgeSerialConnectionStatus
+        {
+            get => _bridgeSerialConnecitonStatus;
+            set { _bridgeSerialConnecitonStatus = value; OnPropertyChanged(nameof(BridgeSerialConnectionStatus)); }
+        }
+        private string _bridgeConnectingString;
+        public string BridgeConnetingString
+        {
+            get => _bridgeConnectingString;
+            set { _bridgeConnectingString = value; OnPropertyChanged(nameof(BridgeConnetingString)); }
+        }
+        private string _pedalConnectingString;
+        public string PedalConnetingString
+        {
+            get => _pedalConnectingString;
+            set { _pedalConnectingString = value; OnPropertyChanged(nameof(PedalConnetingString)); }
+        }
+
         public CalculationVariables()
         {
             PedalCurrentForce = 0;
@@ -62,6 +114,24 @@ namespace User.PluginSdkDemo
             profile_index = 0;
             ForceUpdate_b = false;
             UpdateChannel = 0;
+            _rssi_value = 0;
+            _systemStatusString = "";
+            _bridgeSerialConnecitonStatus = false;
+            _pedalStatusString = "";
+            PedalFirmwareVersion = new byte[3, 3] { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
+            BridgeFirmwareVersion = new byte[3] { 0, 0, 0 };
+            PedalAvailability = new bool[3] { false, false, false };
+            PedalSerialAvailability = new bool[3] { false, false, false };
+            Rudder_status = false;
+            BridgeSerialAvailability = false;
+            _pedalConnectingString = "";
+            _bridgeConnectingString = "";
+            
+    }
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

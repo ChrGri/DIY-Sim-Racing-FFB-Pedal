@@ -242,6 +242,7 @@ namespace User.PluginSdkDemo
                                     for (int i = 0; i < 3; i++)
                                     {
                                         PedalFirmwareVersion[pedalSelected, i] = pedalState_read_st.payloadPedalBasicState_.pedalFirmwareVersion_u8[i];
+                                        Plugin._calculations.PedalFirmwareVersion[pedalSelected,i]= pedalState_read_st.payloadPedalBasicState_.pedalFirmwareVersion_u8[i];
                                     }
 
                                     continue;
@@ -386,53 +387,16 @@ namespace User.PluginSdkDemo
                                 if ((check_payload_state_b) && check_crc_state_b)
                                 {
                                     Bridge_RSSI = bridge_state.payloadBridgeState_.Pedal_RSSI;
-                                    Label_RSSI.Content = "" + (Bridge_RSSI - 100) + "dBm";
-                                    if (Bridge_RSSI < 25)
-                                    {
-                                        RSSI_1.Visibility = Visibility.Visible;
-                                        RSSI_1.Fill = redcolor;
-                                        RSSI_2.Visibility = Visibility.Hidden;
-                                        RSSI_3.Visibility = Visibility.Hidden;
-                                        RSSI_4.Visibility = Visibility.Hidden;
-                                    }
-                                    if (Bridge_RSSI > 25 && Bridge_RSSI < 30)
-                                    {
-                                        RSSI_1.Visibility = Visibility.Visible;
-                                        RSSI_1.Fill = color_RSSI_1;
-                                        RSSI_2.Visibility = Visibility.Visible;
-
-                                        RSSI_3.Visibility = Visibility.Hidden;
-                                        RSSI_4.Visibility = Visibility.Hidden;
-                                    }
-                                    if (Bridge_RSSI > 30 && Bridge_RSSI < 35)
-                                    {
-                                        RSSI_1.Visibility = Visibility.Visible;
-                                        RSSI_1.Fill = color_RSSI_1;
-                                        RSSI_2.Visibility = Visibility.Visible;
-
-                                        RSSI_3.Visibility = Visibility.Visible;
-                                        RSSI_4.Visibility = Visibility.Hidden;
-                                    }
-                                    if (Bridge_RSSI > 35)
-                                    {
-                                        RSSI_1.Visibility = Visibility.Visible;
-                                        RSSI_1.Fill = defaultcolor;
-                                        RSSI_2.Visibility = Visibility.Visible;
-                                        RSSI_3.Visibility = Visibility.Visible;
-                                        RSSI_4.Visibility = Visibility.Visible;
-                                    }
-                                    if (Plugin.Settings.advanced_b)
-                                    {
-                                        Label_RSSI.Visibility = Visibility.Visible;
-                                    }
-                                    else
-                                    {
-                                        Label_RSSI.Visibility = Visibility.Hidden;
-                                    }
+                                    Plugin._calculations.RSSI_Value = bridge_state.payloadBridgeState_.Pedal_RSSI;
 
                                     dap_bridge_state_st.payloadBridgeState_.Pedal_RSSI = bridge_state.payloadBridgeState_.Pedal_RSSI;
                                     string connection_tmp = "";
                                     bool wireless_connection_update = false;
+                                    //fill the status into _calculations
+                                    Plugin._calculations.PedalAvailability[0] = bridge_state.payloadBridgeState_.Pedal_availability_0 == 1;
+                                    Plugin._calculations.PedalAvailability[1] = bridge_state.payloadBridgeState_.Pedal_availability_1 == 1;
+                                    Plugin._calculations.PedalAvailability[2] = bridge_state.payloadBridgeState_.Pedal_availability_2 == 1;
+                                    //check wireless pedal connection, if status change make toast notification
                                     if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_0 != bridge_state.payloadBridgeState_.Pedal_availability_0)
                                     {
 
@@ -450,6 +414,7 @@ namespace User.PluginSdkDemo
                                             connection_tmp += "Clutch Disconnected";
                                             wireless_connection_update = true;
                                             Plugin.PedalConfigRead_b[0] = false;
+                                            Plugin._calculations.PedalAvailability[0] = false;
                                         }
                                         dap_bridge_state_st.payloadBridgeState_.Pedal_availability_0 = bridge_state.payloadBridgeState_.Pedal_availability_0;
                                         //updateTheGuiFromConfig();
@@ -474,8 +439,10 @@ namespace User.PluginSdkDemo
                                             connection_tmp += " Brake Disconnected";
                                             wireless_connection_update = true;
                                             Plugin.PedalConfigRead_b[1] = false;
+                                            Plugin._calculations.PedalAvailability[1] = false;
                                         }
                                         dap_bridge_state_st.payloadBridgeState_.Pedal_availability_1 = bridge_state.payloadBridgeState_.Pedal_availability_1;
+                                        
                                         //updateTheGuiFromConfig();
                                     }
 
@@ -496,6 +463,7 @@ namespace User.PluginSdkDemo
                                             connection_tmp += " Throttle Disconnected";
                                             wireless_connection_update = true;
                                             Plugin.PedalConfigRead_b[2] = false;
+                                            Plugin._calculations.PedalAvailability[2] = false;
                                         }
                                         dap_bridge_state_st.payloadBridgeState_.Pedal_availability_2 = bridge_state.payloadBridgeState_.Pedal_availability_2;
 
@@ -550,6 +518,7 @@ namespace User.PluginSdkDemo
                                     for (int i = 0; i < 3; i++)
                                     {
                                         dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[i] = bridge_state.payloadBridgeState_.Bridge_firmware_version_u8[i];
+                                        Plugin._calculations.BridgeFirmwareVersion[i]= bridge_state.payloadBridgeState_.Bridge_firmware_version_u8[i];
                                     }
 
 

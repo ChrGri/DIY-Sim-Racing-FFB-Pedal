@@ -666,6 +666,7 @@ namespace User.PluginSdkDemo
                         pedal_serial_read_timer[pedalIdx].Start();
                         System.Threading.Thread.Sleep(100);
                         Serial_connect_status[pedalIdx] = true;
+                        Plugin._calculations.PedalSerialAvailability[pedalIdx] = true;
                     }
                     catch (Exception ex)
                     {
@@ -680,7 +681,7 @@ namespace User.PluginSdkDemo
                     Plugin.Settings.connect_status[pedalIdx] = 0;
                     Plugin.connectSerialPort[pedalIdx] = false;
                     Serial_connect_status[pedalIdx] = false;
-
+                    Plugin._calculations.PedalSerialAvailability[pedalIdx] = false;
                 }
             }
             catch (Exception ex)

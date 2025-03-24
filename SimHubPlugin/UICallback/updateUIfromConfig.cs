@@ -12,120 +12,46 @@ namespace User.PluginSdkDemo
         //manually fresh the UI element
         unsafe public void updateTheGuiFromConfig()
         {
-
-            info_label.Content = "State:\nDAP Version:\nPlugin Version:\nPedal Version:";
-            info_label_system.Content = "Bridge:\nDAP Version:\nPlugin Version:\nBridge Verison:";
             //RSSI canvas
             if (Plugin != null)
             {
                 if (Plugin.ESPsync_serialPort.IsOpen)
                 {
-                    RSSI_canvas.Visibility = Visibility.Visible;
-                    //Label_RSSI.Visibility = Visibility.Visible;
+                    Plugin._calculations.BridgeSerialConnectionStatus = true;
                 }
                 else
                 {
-                    RSSI_canvas.Visibility = Visibility.Hidden;
-                    Label_RSSI.Visibility = Visibility.Hidden;
+                    Plugin._calculations.BridgeSerialConnectionStatus = false;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (Plugin.Settings.Pedal_ESPNow_Sync_flag[i])
+                        {
+                            Plugin._calculations.PedalAvailability[i] = false;
+                        }
+                    }
                 }
             }
 
-            //string plugin_version = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-
-            string plugin_version = Constants.pluginVersion;
-            string info_text;
-            string system_info_text;
-            info_text = "Waiting...";
-            system_info_text = "Waiting...";
             if (Plugin != null)
             {
 
                 if (Plugin._serialPort[indexOfSelectedPedal_u].IsOpen)
                 {
-                    info_text = "Connected";
+                    Plugin._calculations.PedalSerialAvailability[indexOfSelectedPedal_u] = true;
                 }
                 else
                 {
-                    if (Plugin.Settings.auto_connect_flag[indexOfSelectedPedal_u] == 1)
-                    {
-                        info_text = info_text_connection;
-                    }
+                    Plugin._calculations.PedalSerialAvailability[indexOfSelectedPedal_u] = false;
                 }
                 if (Plugin.ESPsync_serialPort.IsOpen)
                 {
-                    system_info_text = "Connected";
-                    if (Plugin.Settings.Pedal_ESPNow_Sync_flag[indexOfSelectedPedal_u])
-                    {
 
-                        if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_0 == 1 && indexOfSelectedPedal_u == 0)
-                        {
-                            info_text = "Wireless";
-                        }
-                        if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_1 == 1 && indexOfSelectedPedal_u == 1)
-                        {
-                            info_text = "Wireless";
-                        }
-                        if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_2 == 1 && indexOfSelectedPedal_u == 2)
-                        {
-                            info_text = "Wireless";
-                        }
-
-                    }
+                    Plugin._calculations.BridgeSerialAvailability = true;
                 }
                 else
                 {
-                    if (Plugin.Settings.Pedal_ESPNow_auto_connect_flag)
-                    {
-                        system_info_text = system_info_text_connection;
-                    }
-                    if (Plugin.Settings.Pedal_ESPNow_Sync_flag[indexOfSelectedPedal_u])
-                    {
-                        if (Plugin.Settings.Pedal_ESPNow_auto_connect_flag)
-                        {
-                            info_text = info_text_connection;
-                        }
-
-                    }
-
+                    Plugin._calculations.BridgeSerialAvailability=false;
                 }
-                info_text += "\n" + Constants.pedalConfigPayload_version + "\n" + plugin_version;
-                system_info_text += "\n" + Constants.pedalConfigPayload_version + "\n" + plugin_version;
-                if (PedalFirmwareVersion[indexOfSelectedPedal_u, 2] != 0)
-                {
-                    info_text += "\n" + PedalFirmwareVersion[indexOfSelectedPedal_u, 0] + "." + PedalFirmwareVersion[indexOfSelectedPedal_u, 1] + ".";
-                    if (PedalFirmwareVersion[indexOfSelectedPedal_u, 2] < 10)
-                    {
-                        info_text += "0" + PedalFirmwareVersion[indexOfSelectedPedal_u, 2];
-                    }
-                    else
-                    {
-                        info_text += PedalFirmwareVersion[indexOfSelectedPedal_u, 2];
-                    }
-                }
-                else
-                {
-                    info_text += "\n" + "No data";
-                }
-
-                if (dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[2] != 0)
-                {
-                    system_info_text += "\n" + dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[0] + "." + dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[1] + ".";
-                    if (dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[2] < 10)
-                    {
-                        system_info_text += "0" + dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[2];
-                    }
-                    else
-                    {
-                        system_info_text += dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[2];
-                    }
-                }
-                else
-                {
-                    system_info_text += "\n" + "No data";
-                }
-
-                info_label_2.Content = info_text;
-                info_label_2_system.Content = system_info_text;
             }
             if (Plugin != null)
             {
@@ -169,6 +95,8 @@ namespace User.PluginSdkDemo
                 SettingOTA_Tab.Settings = Plugin.Settings;
                 SystemLicense_Tab.Settings = Plugin.Settings;
                 SystemSetting_Section.Settings = Plugin.Settings;
+                SystemInfo.Settings = Plugin.Settings;
+                PedalInfo.Settings = Plugin.Settings;
 
                 EffectsABS_Tab.calculation = Plugin._calculations;
                 EffectsBitePoint_Tab.calculation = Plugin._calculations;
@@ -180,6 +108,9 @@ namespace User.PluginSdkDemo
                 CurveRudderForce_Tab.calculation = Plugin._calculations;
                 SystemProfile_Tab.calculation = Plugin._calculations;
                 SettingOTA_Tab.calculation = Plugin._calculations;
+                SystemInfo.calculation = Plugin._calculations;
+                PedalInfo.calculation = Plugin._calculations;
+                RudderInfo.calculation = Plugin._calculations;
 
                 EffectsCustom1_tab.Plugin = Plugin;
                 EffectsCustom2_Tab.Plugin = Plugin;
@@ -246,49 +177,15 @@ namespace User.PluginSdkDemo
                     btn_rudder_initialize.Content = "Enable Rudder";
                     //text_rudder_log.Visibility = Visibility.Hidden;
                 }
-
-
-                //Rudder text
-                info_rudder_label.Content = "Bridge State:\nClutch:\nBrake:\nThrottle:\nRudder:";
-                if (Plugin.ESPsync_serialPort.IsOpen)
+                if (Plugin._calculations.Rudder_status)
                 {
-                    info_rudder_label_2.Content = "Online\n";
+                    btn_rudder_initialize.Content = "Disable Rudder";
+                    //text_rudder_log.Visibility= Visibility.Visible;
                 }
                 else
                 {
-                    info_rudder_label_2.Content = "Offline\n";
-                }
-                if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_0 == 1)
-                {
-                    info_rudder_label_2.Content += "Online\n";
-                }
-                else
-                {
-                    info_rudder_label_2.Content += "Offline\n";
-                }
-                if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_1 == 1)
-                {
-                    info_rudder_label_2.Content += "Online\n";
-                }
-                else
-                {
-                    info_rudder_label_2.Content += "Offline\n";
-                }
-                if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_2 == 1)
-                {
-                    info_rudder_label_2.Content += "Online\n";
-                }
-                else
-                {
-                    info_rudder_label_2.Content += "Offline\n";
-                }
-                if (Plugin.Rudder_status)
-                {
-                    info_rudder_label_2.Content += "In action";
-                }
-                else
-                {
-                    info_rudder_label_2.Content += "Off";
+                    btn_rudder_initialize.Content = "Enable Rudder";
+                    //text_rudder_log.Visibility = Visibility.Hidden;
                 }
             }
 
