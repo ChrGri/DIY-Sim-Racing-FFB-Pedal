@@ -10,49 +10,44 @@ namespace User.PluginSdkDemo
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
         //manually fresh the UI element
-        unsafe public void updateTheGuiFromConfig()
+        public void CheckSerialAvailability()
         {
-            //RSSI canvas
+            //check the port availability
             if (Plugin != null)
             {
                 if (Plugin.ESPsync_serialPort.IsOpen)
                 {
                     Plugin._calculations.BridgeSerialConnectionStatus = true;
+                    Plugin._calculations.BridgeSerialAvailability = true;
                 }
                 else
                 {
                     Plugin._calculations.BridgeSerialConnectionStatus = false;
+                    Plugin._calculations.BridgeSerialAvailability = false;
+                    Plugin._calculations.RSSI_Value = 0;
                     for (int i = 0; i < 3; i++)
                     {
                         if (Plugin.Settings.Pedal_ESPNow_Sync_flag[i])
                         {
                             Plugin._calculations.PedalAvailability[i] = false;
+                            Plugin._calculations.PedalFirmwareVersion[i, 2] = 0;
                         }
                     }
+                    Plugin._calculations.BridgeFirmwareVersion[2] = 0;
+                }
+                for (int i = 0; i < 3; i++)
+                {
+                    Plugin._calculations.PedalSerialAvailability[i] = Plugin._serialPort[indexOfSelectedPedal_u].IsOpen;
                 }
             }
 
-            if (Plugin != null)
-            {
+        }
 
-                if (Plugin._serialPort[indexOfSelectedPedal_u].IsOpen)
-                {
-                    Plugin._calculations.PedalSerialAvailability[indexOfSelectedPedal_u] = true;
-                }
-                else
-                {
-                    Plugin._calculations.PedalSerialAvailability[indexOfSelectedPedal_u] = false;
-                }
-                if (Plugin.ESPsync_serialPort.IsOpen)
-                {
+        unsafe public void updateTheGuiFromConfig()
+        {
 
-                    Plugin._calculations.BridgeSerialAvailability = true;
-                }
-                else
-                {
-                    Plugin._calculations.BridgeSerialAvailability=false;
-                }
-            }
+            CheckSerialAvailability();
+
             if (Plugin != null)
             {
                 var tmp_struct = dap_config_st[indexOfSelectedPedal_u];
@@ -166,17 +161,6 @@ namespace User.PluginSdkDemo
             //Rudder UI initialized
             if (Plugin != null)
             {
-
-                if (Plugin.Rudder_status)
-                {
-                    btn_rudder_initialize.Content = "Disable Rudder";
-                    //text_rudder_log.Visibility= Visibility.Visible;
-                }
-                else
-                {
-                    btn_rudder_initialize.Content = "Enable Rudder";
-                    //text_rudder_log.Visibility = Visibility.Hidden;
-                }
                 if (Plugin._calculations.Rudder_status)
                 {
                     btn_rudder_initialize.Content = "Disable Rudder";

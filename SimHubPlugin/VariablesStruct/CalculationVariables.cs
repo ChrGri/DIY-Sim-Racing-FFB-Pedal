@@ -47,6 +47,7 @@ namespace User.PluginSdkDemo
         public bool[] PedalSerialAvailability;
         public bool Rudder_status;
         public bool BridgeSerialAvailability;
+        public bool OTASettingUpdate_b;
         public uint RSSI_Value
         {
             get => _rssi_value;
@@ -126,6 +127,7 @@ namespace User.PluginSdkDemo
             BridgeSerialAvailability = false;
             _pedalConnectingString = "";
             _bridgeConnectingString = "";
+            OTASettingUpdate_b = false;
             
     }
         public event PropertyChangedEventHandler PropertyChanged;

@@ -138,8 +138,14 @@ namespace User.PluginSdkDemo.UIFunction
                 //if (Label_RSSI != null) Label_RSSI.Visibility = Visibility.Hidden;
             }
             if (info_label_2_system != null) info_label_2_system.Content = calculation.SystemStatusString;
-            
-            if(Label_RSSI!=null && calculation.RSSI_Value!=0) Label_RSSI.Content = "" + ((int)calculation.RSSI_Value - 100) + "dBm";
+
+            if (Label_RSSI != null && calculation.RSSI_Value != 0)
+            {
+                Label_RSSI.Content = "" + ((int)calculation.RSSI_Value - 100) + "dBm";
+                Label_RSSI.Visibility = Visibility.Visible;
+            } 
+            else Label_RSSI.Visibility = Visibility.Hidden;
+
             if (RSSI_1 != null && RSSI_2 != null && RSSI_3 != null && RSSI_4 != null)
             {
                 if (calculation.RSSI_Value < 25)

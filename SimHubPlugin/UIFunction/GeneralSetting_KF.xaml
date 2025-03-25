@@ -328,7 +328,7 @@
 
                 </StackPanel>
                 <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="70,0,0,0">
-                    <styles:SHToggleButton x:Name="Checkbox_joystick_denoise" Content="" Checked="Checkbox_joystick_denoise_Checked" Unchecked="Checkbox_joystick_denoise_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Output the joystick value via vJoy" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
+                    <styles:SHToggleButton x:Name="Checkbox_joystick_denoise" Content="" Checked="Checkbox_joystick_denoise_Checked" Unchecked="Checkbox_joystick_denoise_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
                     <Label Content="Denoise for Joystick output" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                 </StackPanel>
                 <localUI:SliderWithLabel x:Name="Slider_KF_Joystick" SliderLength="400" SliderName="KF for Joystick Denoise" SliderValue="1" MinValue="1" MaxValue="255" SliderValueChanged="Slider_KF_Joystick_SliderValueChanged" Width="400" Height="40"/>

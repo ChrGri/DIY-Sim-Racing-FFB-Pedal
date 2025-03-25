@@ -16,10 +16,10 @@ namespace User.PluginSdkDemo
             if (Plugin != null)
             {
                 indexOfSelectedPedal_u = (uint)MyTab.SelectedIndex;
-                Plugin.Settings.table_selected = (uint)MyTab.SelectedIndex;
-                //Update_CV_textbox = true;
+                Plugin.Settings.table_selected = (uint)MyTab.SelectedIndex;                
                 Plugin._calculations.Update_CV1_textbox = true;
                 Plugin._calculations.Update_CV2_textbox = true;
+                Plugin._calculations.OTASettingUpdate_b = true;
                 PedalTabChange = true;
                 PedalTabChange_last = DateTime.Now;
                 updateTheGuiFromConfig();
@@ -49,6 +49,7 @@ namespace User.PluginSdkDemo
                 //Update_CV_textbox = true;
                 Plugin._calculations.Update_CV1_textbox = true;
                 Plugin._calculations.Update_CV2_textbox = true;
+                Plugin._calculations.OTASettingUpdate_b = true;
                 updateTheGuiFromConfig();
             }
 

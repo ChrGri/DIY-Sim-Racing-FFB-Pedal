@@ -68,8 +68,13 @@ namespace User.PluginSdkDemo.UIFunction
             {
                 if (Settings != null)
                 {
-                    if(textbox_SSID!=null) textbox_SSID.Text = Settings.SSID_string;
-                    if(textbox_PASS!=null) textbox_PASS.Password = Settings.PASS_string;
+                    if (calculation.OTASettingUpdate_b)
+                    {
+                        if (textbox_SSID != null) textbox_SSID.Text = Settings.SSID_string;
+                        if (textbox_PASS != null) textbox_PASS.Password = Settings.PASS_string;
+                        calculation.OTASettingUpdate_b = false;
+                    }
+
                 }
                 if (calculation != null)
                 {
