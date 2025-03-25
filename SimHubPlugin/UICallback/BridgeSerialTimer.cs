@@ -241,7 +241,7 @@ namespace User.PluginSdkDemo
                                     }
                                     for (int i = 0; i < 3; i++)
                                     {
-                                        PedalFirmwareVersion[pedalSelected, i] = pedalState_read_st.payloadPedalBasicState_.pedalFirmwareVersion_u8[i];
+                                        //PedalFirmwareVersion[pedalSelected, i] = pedalState_read_st.payloadPedalBasicState_.pedalFirmwareVersion_u8[i];
                                         Plugin._calculations.PedalFirmwareVersion[pedalSelected,i]= pedalState_read_st.payloadPedalBasicState_.pedalFirmwareVersion_u8[i];
                                     }
 
@@ -386,7 +386,7 @@ namespace User.PluginSdkDemo
 
                                 if ((check_payload_state_b) && check_crc_state_b)
                                 {
-                                    Bridge_RSSI = bridge_state.payloadBridgeState_.Pedal_RSSI;
+                                    //Bridge_RSSI = bridge_state.payloadBridgeState_.Pedal_RSSI;
                                     Plugin._calculations.RSSI_Value = bridge_state.payloadBridgeState_.Pedal_RSSI;
 
                                     dap_bridge_state_st.payloadBridgeState_.Pedal_RSSI = bridge_state.payloadBridgeState_.Pedal_RSSI;

@@ -90,26 +90,11 @@ namespace User.PluginSdkDemo
 
         public DAP_bridge_state_st dap_bridge_state_st;
         public Basic_WIfi_info _basic_wifi_info;
-        private string stringValue;
-
-
+        //private string stringValue;
         public bool[] waiting_for_pedal_config = new bool[3];
         public System.Windows.Forms.Timer[] pedal_serial_read_timer = new System.Windows.Forms.Timer[3];
         public System.Windows.Forms.Timer connect_timer;
         public System.Windows.Forms.Timer ESP_host_serial_timer;
-        //public System.Timers.Timer[] pedal_serial_read_timer = new System.Timers.Timer[3];
-        //int printCtr = 0;
-
-        //public double[] Force_curve_Y = new double[100];
-        //public bool debug_flag = false;
-
-        //public VirtualJoystick joystick;
-        
-
-
-        //public bool[] dumpPedalToResponseFile = new bool[3];
-        //public bool[] dumpPedalToResponseFile_clearFile = new bool[3];
-
         private SolidColorBrush defaultcolor;
         private SolidColorBrush lightcolor;
         private SolidColorBrush redcolor;
@@ -125,12 +110,9 @@ namespace User.PluginSdkDemo
         //private int gridline_kinematic_count_original = 0;
         private double[] Pedal_position_reading=new double[3];
         private bool[] Serial_connect_status = new bool[3] { false,false,false};
-        public byte Bridge_RSSI = 0;
+        //public byte Bridge_RSSI = 0;
         public bool[] Pedal_wireless_connection_update_b = new bool[3] { false,false,false};
         public int Bridge_baudrate = 3000000;
-        //public bool Fanatec_mode = false;
-        //public bool Update_Profile_Checkbox_b = false;
-        //public bool Update_CV_textbox = false;
         public bool[] Version_error_warning_b = new bool[3] { false, false, false };
         public bool[] Version_warning_first_show_b= new bool[3] { false, false, false };
         public bool Version_warning_first_show_b_bridge = false;
@@ -141,7 +123,7 @@ namespace User.PluginSdkDemo
         public byte Pedal_connect_status = 0;
         DateTime ConfigLiveSending_last = DateTime.Now;
         DateTime PedalTabChange_last = DateTime.Now;
-        public byte[,] PedalFirmwareVersion = new byte[3, 3] { { 0, 0, 0}, { 0, 0, 0 }, { 0, 0, 0 } };
+        //public byte[,] PedalFirmwareVersion = new byte[3, 3] { { 0, 0, 0}, { 0, 0, 0 }, { 0, 0, 0 } };
         public bool PedalTabChange = false;
 
 
@@ -407,6 +389,7 @@ namespace User.PluginSdkDemo
             ToastNotification("Debug", "Print All parameter in Serial log");
             PrintUnknownStructParameters(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_);
         }
+
     }
     
 }

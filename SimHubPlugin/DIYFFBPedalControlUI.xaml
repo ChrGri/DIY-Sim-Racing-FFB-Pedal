@@ -854,9 +854,9 @@
                                             <localFunction:InfoSection_Rudder x:Name="RudderInfo" />
                                             <TextBox x:Name="TextBox_rudder_debug" HorizontalAlignment="Left" Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="160" Height="25" AutomationProperties.Name="TextBox2" BorderBrush="#00CCCCCC" Background="#00252525" FontSize="8" FontFamily="Arial" />
                                             <styles:SHButtonPrimary x:Name="btn_rudder_initialize" Click="btn_rudder_initialize_Click" Width="160" Height="25" Content="Rudder" Margin="0,2,0,0" HorizontalAlignment="Center" VerticalContentAlignment="Center" Padding="15,0,15,0" />
-                                            <styles:SHButtonPrimary Click="SHButtonPrimary_Click" Width="160" Content="Load Config from Local" Height="25" Margin="0,2,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Padding="15,0,15,0" VerticalContentAlignment="Center" />
+                                            <styles:SHButtonPrimary x:Name="btn_Rudder_load_config" Click="btn_Rudder_load_config_Click" Width="160" Content="Load Config from Local" Height="25" Margin="0,2,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Padding="15,0,15,0" VerticalContentAlignment="Center" />
                                             <styles:SHButtonPrimary Click="SaveButton_Click" Width="160" Content="Export Config to Local" Height="25" Margin="0,2,0,0" HorizontalAlignment="Left" Padding="15,0,15,0" VerticalContentAlignment="Center" />
-                                            <styles:SHButtonPrimary x:Name="btn_rudder_status_clear" Click="btn_rudder_status_clear_Click" Width="160" Content="Clear Rudder Status" Height="25" Margin="0,2,0,0" HorizontalAlignment="Left" Padding="15,0,15,0" VerticalContentAlignment="Center" />
+                                            
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
@@ -923,14 +923,6 @@
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:EffectsTab_RudderACC x:Name="EffectRudderACC_Tab" SettingsChanged="Tab_SettingsChanged"/>
-                                        </TabItem>
-                                        <TabItem x:Name="ABS_tab"  Width="90" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
-                                            <TabItem.Header>
-                                                <Border  Width="90" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Test"  FontFamily="Arial Black" FontSize="10" Height="30" Width="90" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
-                                                </Border>
-                                            </TabItem.Header>
-                                            
                                         </TabItem>
                                     </TabControl>
                                     

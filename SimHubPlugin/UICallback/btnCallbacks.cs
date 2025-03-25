@@ -212,51 +212,6 @@ namespace User.PluginSdkDemo
             }
         }
 
-        unsafe private void btn_rudder_status_clear_Click(object sender, RoutedEventArgs e)
-        {
-            if (Plugin.ESPsync_serialPort.IsOpen)
-            {
-                System.Windows.MessageBox.Show("Clear Rudder status, please also send the config in.");
-                try
-                {
-                    // compute checksum
-                    DAP_action_st tmp;
-                    tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
-                    tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
-
-                    tmp.payloadPedalAction_.system_action_u8 = 0; //1=reset pedal position, 2 =restart esp.
-                    tmp.payloadPedalAction_.Rudder_action = 2;
-                    for (int i = 1; i < 3; i++)
-                    {
-                        tmp.payloadHeader_.PedalTag = (byte)i;
-                        DAP_action_st* v = &tmp;
-                        byte* p = (byte*)v;
-                        tmp.payloadFooter_.checkSum = Plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
-                        int length = sizeof(DAP_action_st);
-                        byte[] newBuffer = new byte[length];
-                        newBuffer = Plugin.getBytes_Action(tmp);
-                        // clear inbuffer 
-                        Plugin.ESPsync_serialPort.DiscardInBuffer();
-                        // send query command
-                        Plugin.ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
-                        System.Threading.Thread.Sleep(200);
-                        //SystemSounds.Beep.Play();
-                    }
-                    Plugin.Rudder_status = false;
-                    Plugin.Rudder_brake_status = false;
-                    CurveRudderForce_Tab.text_rudder_log.Clear();
-                    CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Hidden;
-                    btn_rudder_initialize.Content = "Enable Rudder";
-
-
-                }
-                catch (Exception caughtEx)
-                {
-                    string errorMessage = caughtEx.Message;
-                    TextBox_debugOutput.Text = errorMessage;
-                }
-            }
-        }
 
         unsafe private void btn_PedalBootMode_Click(object sender, RoutedEventArgs e)
         {
@@ -970,7 +925,7 @@ namespace User.PluginSdkDemo
         }
 
 
-        private void SHButtonPrimary_Click(object sender, RoutedEventArgs e)
+        private void btn_Rudder_load_config_Click(object sender, RoutedEventArgs e)
         {
             using (System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog())
             {
