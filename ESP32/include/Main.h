@@ -157,7 +157,7 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
   //#define Pairing_GPIO 13
   //#define ESPNow_debug_rudder
   #define OTA_update_ESP32
-  #define BRAKE_RESISTOR_PIN 13
+  //#define BRAKE_RESISTOR_PIN 13
   //#define OTA_update_ESP32
   
 #endif
@@ -262,7 +262,7 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
   #define ESPNow_S3
   #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 0
   //#define ESPNow_Pairing_function
-  #define Pairing_GPIO 0
+  //#define Pairing_GPIO 0
   #define OTA_update
   #define CONTROLLER_SPECIFIC_VIDPID
 #endif
