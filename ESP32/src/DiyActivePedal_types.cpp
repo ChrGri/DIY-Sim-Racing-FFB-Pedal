@@ -71,15 +71,15 @@ void DAP_config_st::initialiseDefaults() {
   payLoadPedalConfig_.cubic_spline_param_b_array[3] = 0;
   payLoadPedalConfig_.cubic_spline_param_b_array[4] = 0;
 
-  payLoadPedalConfig_.PID_p_gain = 0.3;
-  payLoadPedalConfig_.PID_i_gain = 50.0;
-  payLoadPedalConfig_.PID_d_gain = 0.0;
-  payLoadPedalConfig_.PID_velocity_feedforward_gain = 0.0;
+  payLoadPedalConfig_.PID_p_gain = 0.3f;
+  payLoadPedalConfig_.PID_i_gain = 50.0f;
+  payLoadPedalConfig_.PID_d_gain = 0.0f;
+  payLoadPedalConfig_.PID_velocity_feedforward_gain = 0.0f;
 
 
-  payLoadPedalConfig_.MPC_0th_order_gain = 1.0;
-  payLoadPedalConfig_.MPC_1st_order_gain = 0.0;
-  payLoadPedalConfig_.MPC_2nd_order_gain = 0.0;
+  payLoadPedalConfig_.MPC_0th_order_gain = 10.0f;
+  payLoadPedalConfig_.MPC_1st_order_gain = 0.0f;
+  payLoadPedalConfig_.MPC_2nd_order_gain = 0.0f;
 
   payLoadPedalConfig_.control_strategy_b = 0;
 
@@ -101,6 +101,8 @@ void DAP_config_st::initialiseDefaults() {
   //payLoadPedalConfig_.OTA_flag=0;
   payLoadPedalConfig_.stepLossFunctionFlags_u8=0b11;
   //payLoadPedalConfig_.Joystick_ESPsync_to_ESP=0;
+  payLoadPedalConfig_.kf_modelNoise_joystick=1;
+  payLoadPedalConfig_.kf_Joystick_u8=0;
 }
 
 

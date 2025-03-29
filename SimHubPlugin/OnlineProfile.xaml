@@ -1,0 +1,58 @@
+﻿<Window x:Class="User.PluginSdkDemo.OnlineProfile"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+        xmlns:local="clr-namespace:User.PluginSdkDemo"
+        xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
+        xmlns:ui="clr-namespace:SimHub.Plugins.UI;assembly=SimHub.Plugins" 
+        xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+        Title="Online Profile Selection" Height="330" Width="405" Background="{x:Null}" WindowStyle="ToolWindow" ResizeMode="NoResize">
+    <Grid Background="#CC252525">
+        <Border Background="#7F4E4E4E" Height="305" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" Width="390" VerticalAlignment="Top" HorizontalAlignment="Left" >
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Width="390">
+                <StackPanel Width="180" Height="305">
+                    <ListBox Name="ProfilesListBox" Width="160" Height="200" SelectionChanged="ProfilesListBox_SelectionChanged" VerticalAlignment="Top" Margin="10" HorizontalAlignment="Left" FontSize="10" FontFamily="Arial"/>
+                    <styles:SHButtonPrimary x:Name="Btn_Apply" Click="CloseAndReturn_Click" Width="160" Content="Apply" Height="25" Margin="10,0,0,0" HorizontalAlignment="Left" Padding="15,0,15,0" VerticalContentAlignment="Center" />
+                    <styles:SHButtonPrimary x:Name="Btn_Online_profile_leave"  Click="Btn_Online_profile_leave_Click" Width="160" Content="Leave without Change" Height="25" Margin="10,10,0,0" HorizontalAlignment="Left" Padding="15,0,15,0" VerticalContentAlignment="Center" />
+                </StackPanel>
+                <StackPanel Width="210" Height="305">
+                    <StackPanel Height="100" HorizontalAlignment="Center" Margin="0,5,0,0">
+                        <Canvas x:Name="canvas_Online_Config_curve" Height="100" Width="200" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top" >
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Top" Text="FORCE" Width="60" Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="-25" Canvas.Top="40" FontFamily="Arial Black" Height="13" FontSize="10" TextAlignment="Center">
+                                <TextBlock.RenderTransform>
+                                    <TransformGroup>
+                                        <ScaleTransform/>
+                                        <SkewTransform/>
+                                        <RotateTransform Angle="-90"/>
+                                        <TranslateTransform/>
+                                    </TransformGroup>
+                                </TextBlock.RenderTransform>
+                            </TextBlock>
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="TRAVEL" Width="60" Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="70" Canvas.Top="88" FontFamily="Arial Black" TextAlignment="Center" Height="12" FontSize="10"/>
+
+                            <Polyline x:Name="Polyline_Online_Config_ForceCurve" Stroke="{DynamicResource AccentColorBrush}" Height="200" Width="200" Opacity="0.7" Points="0,0 40,20 80,40 120,60 160,80 200,100" StrokeThickness="1" RenderTransformOrigin="1,0.5" Canvas.Top="-100" HorizontalAlignment="Left" VerticalAlignment="Center" >
+                                <Polyline.RenderTransform>
+                                    <TransformGroup>
+                                        <ScaleTransform ScaleX="1" ScaleY="-1"/>
+                                        <SkewTransform/>
+                                        <RotateTransform/>
+                                        <TranslateTransform X="0"/>
+                                    </TransformGroup>
+                                </Polyline.RenderTransform>
+                            </Polyline>
+                            <Rectangle x:Name="rect0_Online_Config" Width="6" Height="6" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="-3" Canvas.Top="97" Opacity="0.8" StrokeThickness="0"/>
+                            <Rectangle x:Name="rect1_Online_Config" Width="6" Height="6" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="37" Canvas.Top="77" Opacity="0.8"/>
+                            <Rectangle x:Name="rect2_Online_Config" Width="6" Height="6" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="77" Canvas.Top="57" Opacity="0.8"/>
+                            <Rectangle x:Name="rect3_Online_Config" Width="6" Height="6" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="117" Canvas.Top="37" Opacity="0.8"/>
+                            <Rectangle x:Name="rect4_Online_Config" Width="6" Height="6" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="157" Canvas.Top="17" Opacity="0.8"/>
+                            <Rectangle x:Name="rect5_Online_Config" Width="6" Height="6" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="197" Canvas.Top="-3" Opacity="0.8"/>
+                        </Canvas>
+                    </StackPanel>
+                    <TextBox x:Name="Textbox_Online_Profile_Description" Text="" Height="200" Width="210" FontFamily="Arial" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="10" Background="{x:Null}" BorderBrush="{x:Null}" ScrollViewer.CanContentScroll="True" CaretBrush="{x:Null}" BorderThickness="0,0,0,0" VerticalScrollBarVisibility="Auto"/>
+                    
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

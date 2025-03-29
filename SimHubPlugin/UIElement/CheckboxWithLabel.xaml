@@ -1,0 +1,21 @@
+﻿<UserControl x:Class="User.PluginSdkDemo.UIElement.CheckboxWithLabel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:User.PluginSdkDemo.UIElement"
+             xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins"
+             xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+             mc:Ignorable="d" d:DesignHeight="20" d:DesignWidth="150">
+    <Grid>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
+            <styles:SHToggleButton x:Name="CheckboxElement" Content="" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" VerticalAlignment="Center" 
+                                   IsChecked="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}" 
+                                   Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked" Margin="-10,0,0,0"/>
+            <Label x:Name="LabelElement" 
+                    Content="{Binding LabelText, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                    Width="{Binding LabelWidth, RelativeSource={RelativeSource AncestorType=UserControl}}" HorizontalAlignment="Left" Padding="0,0,0,0" Height="20" FontFamily="Arial" FontSize="10" Margin="4,0,0,0" VerticalContentAlignment="Center"/>
+             
+        </StackPanel>
+    </Grid>
+</UserControl>

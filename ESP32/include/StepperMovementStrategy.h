@@ -11,7 +11,7 @@
 float Setpoint, Input, Output;
 
 //Specify the links and initial tuning parameters
-double Kp=0.3, Ki=50.0, Kd=0.000;
+float Kp=0.3f, Ki=50.0f, Kd=0.000f;
 uint8_t control_strategy_u8 = 0;
 QuickPID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd,  /* OPTIONS */
                myPID.pMode::pOnError,                   /* pOnError, pOnMeas, pOnErrorMeas */
@@ -86,10 +86,10 @@ int32_t MoveByPidStrategy(float loadCellReadingKg, float stepperPosFraction, Ste
 
 
   // clamp the stepper position to prevent problems with the spline 
-  float stepperPosFraction_constrained = constrain(stepperPosFraction, 0, 1);
+  float stepperPosFraction_constrained = constrain(stepperPosFraction, 0.0f, 1.0f);
 
   // constrain the output to the correct positioning interval to prevent PID windup 
-  float neg_output_limit_fl32 = 1.0 - stepperPosFraction_constrained;
+  float neg_output_limit_fl32 = 1.0f - stepperPosFraction_constrained;
   float pos_output_limit_fl32 = stepperPosFraction_constrained;
   if (pos_output_limit_fl32 < PID_OUTPUT_LIMIT_FL32)
   {
@@ -126,12 +126,12 @@ int32_t MoveByPidStrategy(float loadCellReadingKg, float stepperPosFraction, Ste
     float gradient_fl32 = gradient_orig_fl32;
     float gradient_abs_fl32 = fabs(gradient_fl32);
 
-    float gain_modifier_fl32 = 10.0;
-    if (gradient_abs_fl32 > 1e-5)
+    float gain_modifier_fl32 = 10.0f;
+    if (gradient_abs_fl32 > 1e-5f)
     {
-       gain_modifier_fl32 = 1.0 / pow( gradient_abs_fl32 , 1);
+       gain_modifier_fl32 = 1.0f / pow( gradient_abs_fl32 , 1.0f);
     }
-    gain_modifier_fl32 = constrain( gain_modifier_fl32, 0.1, 10);
+    gain_modifier_fl32 = constrain( gain_modifier_fl32, 0.1f, 10.0f);
 
     myPID.SetTunings(gain_modifier_fl32 * Kp, gain_modifier_fl32 * Ki, gain_modifier_fl32 * Kd);
   }
@@ -154,13 +154,14 @@ int32_t MoveByPidStrategy(float loadCellReadingKg, float stepperPosFraction, Ste
   //	https://www.youtube.com/watch?v=XaD8Lngfkzk
   //	https://github.com/pronenewbits/Arduino_Constrained_MPC_Library
 
-  if (calc_st->Force_Range > 0.001)
+  if (calc_st->Force_Range > 0.001f)
   {
       Input = ( loadCellReadingKg_clip - calc_st->Force_Min) / calc_st->Force_Range;
       Setpoint = ( loadCellTargetKg_clip - calc_st->Force_Min) / calc_st->Force_Range; 
   }
   else
   {
+    Input = 0.0f;
     Input = 0;
     Setpoint= 0;
   }
@@ -194,9 +195,17 @@ int32_t MoveByPidStrategy(float loadCellReadingKg, float stepperPosFraction, Ste
   return posStepperNew;
 }
 
+unsigned long lastTime = 0;
+float output = 0.0f;       // PID-Ausgang
+float filteredOutput = 0.0f;
+bool expFilterHasBeenInitialized = false;
+// Filter-Variablen
+float RC = 1.0f / (2.0f * 3.14159f * 100.0f); // RC für 20 Hz Eckfrequenz
 
+int printStep = 0;
 
-
+float posArray[10] = {0.0f};
+uint8_t arrayIndex = 0;
 int32_t MoveByForceTargetingStrategy(float loadCellReadingKg, StepperWithLimits* stepper, ForceCurve_Interpolated* forceCurve, const DAP_calculationVariables_st* calc_st, DAP_config_st* config_st, float absForceOffset_fl32, float changeVelocity, float d_phi_d_x, float d_x_hor_d_phi) {
   // see https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/wiki/Movement-control-strategies#mpc
 
@@ -215,51 +224,134 @@ int32_t MoveByForceTargetingStrategy(float loadCellReadingKg, StepperWithLimits*
   f(x_n) = -k1 * x + b - forceCurve(x)
   f'(x_n) = -k1 - d(forceCurve(x)) / dx
   */
+
+  
   
   // get current stepper position
   float stepperPos = stepper->getCurrentPositionFromMin();
+  // float lagedPos;
 
-  // add velocity feedforward
-  //stepperPos += changeVelocity * config_st->payLoadPedalConfig_.PID_velocity_feedforward_gain;
+  // posArray[arrayIndex] = stepperPos;
+  // arrayIndex++;
+  // arrayIndex %= 10;
 
+  // lagedPos = 
+
+
+
+  // for (uint8_t aryIdx = 1; aryIdx <= 9; aryIdx++)
+  // {
+  //   posArray[aryIdx-1] = posArray[aryIdx];
+  // }
+  // posArray[9] = stepperPos;
+
+  // uint8_t lag = 9-2;
+  // stepperPos = posArray[lag];
+
+  
+  // stepperPos = posArray[lag];
+  
+
+  // // get iSVs position
+  // float stepperPos2 = stepper->getServosInternalPositionCorrected() - stepper->getMinPosition();
+  // stepperPos = stepperPos2;
+
+  // Serial.printf("ESP pos: %f,    iSV pos: %f\n", stepperPos, stepperPos2);
+  // delay(20);
+
+  if (false == expFilterHasBeenInitialized)
+  {
+    filteredOutput = stepperPos;
+    expFilterHasBeenInitialized = true;
+  }
+
+  // get current stepper velocity
+  int32_t currentSpeedInMilliHz = stepper->getCurrentSpeedInMilliHz();
+  uint32_t maxSpeedInMilliHz = stepper->getMaxSpeedInMilliHz();
+  float speedNormalized_fl32 = ( (float)currentSpeedInMilliHz ) / ((float)maxSpeedInMilliHz)  ; // 250000000 --> 250
+  float speedAbsNormalized_fl32 = constrain( fabsf(speedNormalized_fl32), 0.1f, 1.0f);
+  float oneMinusSpeedNormalized_fl32 = 1.0f - speedAbsNormalized_fl32;
+  
   // motion corrected loadcell reading
   float loadCellReadingKg_corrected = loadCellReadingKg;
 
+  
   // set initial guess
   float stepperPos_initial = stepperPos;
 
+  
   // foot spring stiffness
-  float d_f_d_phi = -config_st->payLoadPedalConfig_.MPC_0th_order_gain;
+  float d_f_d_x_hor = -config_st->payLoadPedalConfig_.MPC_0th_order_gain;
+
+  // velocity dependent foot spring stiffness 
+  float d_f_t_d_x_hor = -config_st->payLoadPedalConfig_.MPC_1st_order_gain;
+
+  // acceleration dependent foot spring stiffness 
+  float d_f_tt_d_x_hor = -config_st->payLoadPedalConfig_.MPC_2nd_order_gain;
+
+
+  // Serial.printf("MPC 0: %f,    1:%f,    2:%f\n", config_st->payLoadPedalConfig_.MPC_0th_order_gain, config_st->payLoadPedalConfig_.MPC_1st_order_gain, config_st->payLoadPedalConfig_.MPC_2nd_order_gain);
+  // delay(20);
 
   // how many mm movement to order if 1kg of error force is detected
   // this can be tuned for responsiveness vs oscillation
   float mm_per_motor_rev = config_st->payLoadPedalConfig_.spindlePitch_mmPerRev_u8;//TRAVEL_PER_ROTATION_IN_MM;
   float steps_per_motor_rev = (float)calc_st->stepsPerMotorRevolution; //(float)STEPS_PER_MOTOR_REVOLUTION;
 
-  float move_mm_per_kg = config_st->payLoadPedalConfig_.MPC_0th_order_gain;
-  float MOVE_STEPS_FOR_1KG = (move_mm_per_kg / mm_per_motor_rev) * steps_per_motor_rev;
-
-  float mmPerStep = 0;
-  if (steps_per_motor_rev > 0)
+  float mmPerStep = 0.0f;
+  if (steps_per_motor_rev > 0.0f)
   {
     mmPerStep = mm_per_motor_rev / steps_per_motor_rev ;
   }
 
+  // compute d(x_hor) / d(step) from chain rule
+  // d(x_hor) / d(step) = ( d(x_hor) / d(phi) ) * [ d(phi)/d(x) ] * { d(x)/d(step) }
+  float d_x_hor_d_step = (-d_x_hor_d_phi) * (-d_phi_d_x) * mmPerStep;
 
   // Serial.printf("PosFraction: %f,    pos:%f,    travelRange:%f,    posMin:%d,    posMax:%d\n", stepper->getCurrentPositionFractionFromExternalPos( stepperPos ), stepperPos, stepper->getCurrentTravelRange(),  calc_st->stepperPosMin, calc_st->stepperPosMax );
   // delay(20);
 
+  // Serial.printf("speed: %f,    maxSpeed:%f\n", (float)currentSpeedInMilliHz, (float)maxSpeedInMilliHz);
+  // delay(20);
+
+  // velocity dependent force in kg = (kg*s/step) * (step/s)
+  float forceInKgAndSecondPerStep_fl32 = d_f_t_d_x_hor * d_x_hor_d_step;
+  float velocityDependingForceInKg_fl32 = forceInKgAndSecondPerStep_fl32 * (currentSpeedInMilliHz / 1000.0f);
+
+  // acceleration dependent force in kg = (kg*s^2/step) * (step/(s^2))
+  float forceInKgAndSecondSquarePerStep_fl32 = d_f_tt_d_x_hor * d_x_hor_d_step;
+  // Todo: compute acceleration dependet force
   
 
+  // correct loadcell reading with velocity and acceleration readings
+  float expectedCycleTime = 0.001f;
+  // loadCellReadingKg_corrected -= velocityDependingForceInKg_fl32;
+
+  // [mmPerStep] = mm/step, e.g. 0.001563 = 10mm/rev / 6400steps/rev
+  // [d_phi_d_x] = deg/mm e.g. -0.305367
+  // [d_x_hor_d_phi] = mm/deg, e.g. -3.832119
+  // [d_x_hor_d_step] = mm/step, e.g. 0.001458
+  // if (printStep > 10)
+  // {
+  //   Serial.printf("Vel:%f,    mmPerStep:%f,    d_phi_d_x:%f,    d_x_hor_d_phi:%f,    d_x_hor_d_step:%f,    force:%f\n", speedNormalized_fl32, mmPerStep, d_phi_d_x, d_x_hor_d_phi, d_x_hor_d_step, velocityDependingForceInKg_fl32);
+  //   printStep = 0;
+  // }
+  // else{
+  //   printStep++;
+  // }
+  
+
+ 
   // Find the intersections of the force curve and the foot model via Newtons-method
   #define MAX_NUMBER_OF_NEWTON_STEPS 5
+  // int64_t stepUpdates[MAX_NUMBER_OF_NEWTON_STEPS];
   for (uint8_t iterationIdx = 0; iterationIdx < MAX_NUMBER_OF_NEWTON_STEPS; iterationIdx++)
   {
     //float stepperPosFraction = stepper->getCurrentPositionFraction();
     float stepperPosFraction = stepper->getCurrentPositionFractionFromExternalPos( stepperPos );
   
     // clamp the stepper position to prevent problems with the spline
-    float x_0 = constrain(stepperPosFraction, 0, 1);
+    float x_0 = constrain(stepperPosFraction, 0.0f, 1.0f);
     
     // get force and force gradient of force vs travel curve
     float loadCellTargetKg = forceCurve->EvalForceCubicSpline(config_st, calc_st, x_0);
@@ -284,45 +376,78 @@ int32_t MoveByForceTargetingStrategy(float loadCellReadingKg, StepperWithLimits*
     float gradient_normalized_force_curve_fl32 = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, x_0, true);
     gradient_normalized_force_curve_fl32 = constrain(gradient_normalized_force_curve_fl32, 0.05f, 1.0f);
 
-    // The foot is modeled to be of proportional resistance with respect to deflection. Since the deflection depends on the pedal kinematics, the kinematic must be respected here
-    // This is accomplished with the forceGain variable
-    /*float forceGain_abs = fabs( d_phi_d_x );
-    if (forceGain_abs > 0)
-    {
-      MOVE_STEPS_FOR_1KG *= fabs( forceGain );
-    }*/
+    // compute force error
+    float forceError_fl32 = loadCellReadingKg_corrected - loadCellTargetKg;
 
     // angular foot model
     // m1 = d_f_d_x dForce / dx
     //float m1 = d_f_d_phi * (-d_phi_d_x);
-
-    float forceError_fl32 = loadCellReadingKg_corrected - loadCellTargetKg;
-
+    
     // Translational foot model
     // given in kg/step
-    float m1 = d_f_d_phi * (-d_x_hor_d_phi) * (-d_phi_d_x) * mmPerStep;
+    float m1 = d_f_d_x_hor * d_x_hor_d_step;
 
-    // float m1 = d_f_d_phi * mmPerStep;
-
-    // smoothen gradient with force curve gradient since it had better results w/ clutch pedal characteristic
-    //m1 /= gradient_normalized_force_curve_fl32;
+    // m1 *= oneMinusSpeedNormalized_fl32;
     
     // gradient of the force curve
     // given in kg/step
     float m2 = gradient_force_curve_fl32; 
     
+    // Serial.printf("m1:%f,    m2:%f,    speed:%f\n", m1, m2, (float)currentSpeedInHz);
+    // delay(20);
+
     // Newton update
-    float denom = m1 - m2;
-    if ( fabs(denom) > 0 )
+    // float denom = m1 - m2 + d_f_t_d_x_hor * fabsf(m1) / speedAbsNormalized_fl32;
+    // float denom = (m1 - m2) * (1.0f - config_st->payLoadPedalConfig_.MPC_1st_order_gain * fabsf(m1) / speedAbsNormalized_fl32 );
+    float denom = m1 - m2;// - velocityDependingForceInKg_fl32;//config_st->payLoadPedalConfig_.MPC_1st_order_gain * oneMinusSpeedNormalized_fl32;
+    
+    if ( fabsf(denom) > 0.0f )
     {
-      float stepUpdate = forceError_fl32 / ( denom );
+      // https://en.wikipedia.org/wiki/Newton%27s_method
+      // Newton algorithm
+      // x(n+1) = x(n) + stepUpdate
+      // x(n+1) = x(n) - f(x_n) / f'(x_n)
+      float stepUpdate = - forceError_fl32 / ( denom );
+      // a positive stepUpdate means sled moves away from the pedal.
 
       // smoothen update with force curve gradient since it had better results w/ clutch pedal characteristic
-      stepUpdate *= gradient_normalized_force_curve_fl32;
+      // stepUpdate *= gradient_normalized_force_curve_fl32;
+      // stepUpdate *= speedAbsNormalized_fl32;
 
-      stepperPos -= stepUpdate;
+      // update expected force reading
+      // Todo: update expected force after step execution
+      loadCellReadingKg_corrected += m1 * stepUpdate;
+
+      // update position
+      stepperPos += stepUpdate;
+
+      // stop iteration
+      if (fabsf(stepUpdate) < 2.0f)
+      {
+        break;
+      }
+      // stepUpdates[iterationIdx] = stepUpdate;
     }
   }
+
+  // unsigned long now = micros();
+  // float deltaTime = ( (float)(now - lastTime) ) / 1000000.0f; // in Sekunden
+  // lastTime = now;
+
+  
+
+  // // Filter-Koeffizient berechnen
+  // float alpha = deltaTime / (deltaTime + RC);
+
+  // output = stepperPos;// - stepperPos_initial;
+
+  // // Tiefpassfilter anwenden
+  // filteredOutput = alpha * output + (1.0 - alpha) * filteredOutput;
+
+  // stepperPos = filteredOutput;
+
+  // Serial.printf("0:%i, 1:%i, 2:%i, 3:%i, 4:%i\n", stepUpdates[0], stepUpdates[1], stepUpdates[2], stepUpdates[3], stepUpdates[4]);
+  // delay(20);
   
   // read the min position
   stepperPos += stepper->getMinPosition();
@@ -332,6 +457,9 @@ int32_t MoveByForceTargetingStrategy(float loadCellReadingKg, StepperWithLimits*
 
   return posStepperNew;
 }
+
+
+
 
 
 // int32_t mpcBasedMove(float loadCellReadingKg, float stepperPosFraction, StepperWithLimits* stepper, ForceCurve_Interpolated* forceCurve, const DAP_calculationVariables_st* calc_st, DAP_config_st* config_st, float absForceOffset_fl32) 
@@ -436,8 +564,8 @@ void measureStepResponse(StepperWithLimits* stepper, const DAP_calculationVariab
 {
 
   int32_t currentPos = stepper->getCurrentPositionFromMin();
-  int32_t minPos = currentPos - dap_calculationVariables_st.stepperPosRange * 0.05;
-  int32_t maxPos = currentPos + dap_calculationVariables_st.stepperPosRange * 0.05;
+  int32_t minPos = currentPos - dap_calculationVariables_st.stepperPosRange * 0.05f;
+  int32_t maxPos = currentPos + dap_calculationVariables_st.stepperPosRange * 0.05f;
 
   stepper->moveTo(minPos, true);
 

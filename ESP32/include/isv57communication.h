@@ -62,6 +62,7 @@ class isv57communication {
     bool readAlarmHistory();
     bool readCurrentAlarm();
     void resetToFactoryParams();
+    bool setServoVoltage(uint16_t voltageInVolt_u16);
 	
 	void clearServoUnitPosition();
     void disableAxis();

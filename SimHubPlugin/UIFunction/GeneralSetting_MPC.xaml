@@ -1,0 +1,318 @@
+﻿<UserControl x:Class="User.PluginSdkDemo.UIFunction.GeneralSetting_MPC"
+         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+         xmlns:local="clr-namespace:User.PluginSdkDemo.UIFunction"
+         xmlns:localUI="clr-namespace:User.PluginSdkDemo.UIElement"
+         xmlns:localFunction="clr-namespace:User.PluginSdkDemo.UIFunction"
+         xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
+         xmlns:ui="clr-namespace:SimHub.Plugins.UI;assembly=SimHub.Plugins" 
+         xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+         d:DesignHeight="190" d:DesignWidth="540"
+         d:DataContext="{d:DesignInstance Type=localFunction:GeneralSetting_MPC}"
+             >
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <SolidColorBrush x:Key="TestBrush" Color="White"/>
+            <DropShadowEffect x:Key="mousedragging" Color="White" BlurRadius="15" Opacity="1" ShadowDepth="0"/>
+            <DropShadowEffect x:Key="mouseoutdragging" Color="White" BlurRadius="15" Opacity="0" ShadowDepth="0"/>
+            <Style x:Key="HorizontalSliderThumb" TargetType="{x:Type Thumb}">
+                <Setter Property="Background" Value="{DynamicResource AccentColorBrush}"/>
+                <Setter Property="Opacity" Value="0.9"/>
+                <Setter Property="BorderThickness" Value="0 0"/>
+                <Setter Property="IsTabStop" Value="false"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+                <Setter Property="Width" Value="10" />
+
+
+
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type Thumb}">
+                            <Grid SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                                <Rectangle Fill="{TemplateBinding Background}" Margin="{TemplateBinding BorderThickness}" RadiusX="0" RadiusY="0"/>
+                                <Rectangle x:Name="DisabledVisualElement" Fill="{DynamicResource DisabledWhiteBrush}" IsHitTestVisible="false" Opacity="0"/>
+
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsDragging" Value="True">
+                                    <Setter Property="Effect" Value="{DynamicResource mousedragging}"/>
+                                </Trigger>
+                                <Trigger Property="IsDragging" Value="False">
+                                    <Setter Property="Effect" Value="{DynamicResource mouseoutdragging}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="HorizontalTrackLargeDecrease" TargetType="{x:Type RepeatButton}">
+                <Setter Property="Focusable" Value="false"/>
+                <Setter Property="IsTabStop" Value="false"/>
+                <Setter Property="OverridesDefaultStyle" Value="true"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type RepeatButton}">
+                            <Grid x:Name="Root" Margin="0 -1 0 0">
+                                <Rectangle  Height="1" Margin="0 1 0 0" RadiusX="1" RadiusY="1">
+                                    <Rectangle.Fill>
+                                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0" Opacity="0.9">
+                                            <GradientStop Color="{TemplateBinding Background}" Offset="0.0"/>
+                                            <GradientStop Color="Gray" Offset="0.25"/>
+                                            <GradientStop Color="Gray" Offset="0.75"/>
+                                            <GradientStop Color="{TemplateBinding Background}" Offset="1.0"/>
+                                        </LinearGradientBrush>
+                                    </Rectangle.Fill>
+                                </Rectangle>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="HorizontalTrackValue" TargetType="{x:Type RepeatButton}">
+                <Setter Property="Focusable" Value="false"/>
+                <Setter Property="IsTabStop" Value="false"/>
+                <Setter Property="OverridesDefaultStyle" Value="true"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type RepeatButton}">
+                            <Grid x:Name="Root" Margin="0 -1 0 0">
+                                <Rectangle Height="4" Margin="0 1 0 0" RadiusX="1" RadiusY="1">
+                                    <Rectangle.Fill>
+                                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0" Opacity="0.9">
+                                            <GradientStop Color="{TemplateBinding Background}" Offset="0.0"/>
+                                            <GradientStop Color="{DynamicResource AccentColor}" Offset="0.25"/>
+                                            <GradientStop Color="{DynamicResource AccentColor}" Offset="0.75"/>
+                                            <GradientStop Color="{TemplateBinding Background}" Offset="1.0"/>
+                                        </LinearGradientBrush>
+                                    </Rectangle.Fill>
+                                </Rectangle>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <ControlTemplate x:Key="HorizontalSliderTemplate" TargetType="{x:Type Slider}">
+                <Grid x:Name="Root">
+                    <Grid x:Name="HorizontalTemplate" Background="{TemplateBinding Background}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto" MinHeight="{TemplateBinding MinHeight}"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TickBar x:Name="TopTick" Fill="{TemplateBinding Foreground}" Height="4" Placement="Top" Grid.Row="0" Visibility="Collapsed"/>
+                        <TickBar x:Name="BottomTick" Fill="{TemplateBinding Foreground}" Height="4" Placement="Bottom" Grid.Row="2" Visibility="Collapsed"/>
+                        <Track x:Name="PART_Track" Grid.Row="1">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Style="{StaticResource HorizontalTrackValue}"/>
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Style="{StaticResource HorizontalTrackLargeDecrease}"/>
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <controls:MetroThumb x:Name="HorizontalThumb" Height="10" IsTabStop="true" Style="{StaticResource HorizontalSliderThumb}" Width="{DynamicResource HorizontalThumbWidth}"/>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </Grid>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="TickPlacement" Value="TopLeft">
+                        <Setter Property="Visibility" TargetName="TopTick" Value="Visible"/>
+                    </Trigger>
+                    <Trigger Property="TickPlacement" Value="BottomRight">
+                        <Setter Property="Visibility" TargetName="BottomTick" Value="Visible"/>
+                    </Trigger>
+                    <Trigger Property="TickPlacement" Value="Both">
+                        <Setter Property="Visibility" TargetName="BottomTick" Value="Visible"/>
+                        <Setter Property="Visibility" TargetName="TopTick" Value="Visible"/>
+                    </Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+            <Style x:Key="VerticalSliderThumb" BasedOn="{StaticResource HorizontalSliderThumb}" TargetType="{x:Type Thumb}">
+                <Setter Property="BorderThickness" Value="0 0"/>
+            </Style>
+            <Style x:Key="VerticalTrackLargeDecrease" TargetType="{x:Type RepeatButton}">
+                <Setter Property="Focusable" Value="false"/>
+                <Setter Property="IsTabStop" Value="false"/>
+                <Setter Property="OverridesDefaultStyle" Value="true"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type RepeatButton}">
+                            <Grid x:Name="Root" Margin="-1 0 0 0">
+                                <Rectangle Fill="Gray" Margin="1 0 0 0" Width="1" Opacity="0.8"/>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="VerticalTrackValue" TargetType="{x:Type RepeatButton}">
+                <Setter Property="Focusable" Value="false"/>
+                <Setter Property="IsTabStop" Value="false"/>
+                <Setter Property="OverridesDefaultStyle" Value="true"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type RepeatButton}">
+                            <Grid x:Name="Root" Margin="-1 0 0 0">
+                                <Rectangle Margin="0 0 0 0" Width="10">
+                                    <Rectangle.Fill>
+                                        <LinearGradientBrush EndPoint="1,0.5" StartPoint="0,0.5" Opacity="0.9">
+                                            <GradientStop Color="{TemplateBinding Background}" Offset="0.0"/>
+                                            <GradientStop Color="{DynamicResource AccentColor}" Offset="0.25"/>
+                                            <GradientStop Color="{DynamicResource AccentColor}" Offset="0.75"/>
+                                            <GradientStop Color="{TemplateBinding Background}" Offset="1.0"/>
+                                        </LinearGradientBrush>
+                                    </Rectangle.Fill>
+                                </Rectangle>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <ControlTemplate x:Key="VerticalSliderTemplate" TargetType="{x:Type Slider}">
+                <Grid x:Name="Root">
+                    <Grid x:Name="HorizontalTemplate" Background="{TemplateBinding Background}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition MinWidth="{TemplateBinding MinWidth}" Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TickBar x:Name="TopTick" Grid.Column="0" Fill="{TemplateBinding Foreground}" Placement="Left" Visibility="Collapsed" Width="4"/>
+                        <TickBar x:Name="BottomTick" Grid.Column="2" Fill="{TemplateBinding Foreground}" Placement="Right" Visibility="Collapsed" Width="4"/>
+                        <Track x:Name="PART_Track" Grid.Column="1">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Style="{StaticResource VerticalTrackValue}"/>
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Style="{StaticResource VerticalTrackLargeDecrease}"/>
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <controls:MetroThumb x:Name="VerticalThumb" Height="{DynamicResource VerticalThumbHeight}" IsTabStop="true" Style="{StaticResource VerticalSliderThumb}" Width="{DynamicResource VerticalThumbWidth}"/>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </Grid>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="TickPlacement" Value="TopLeft">
+                        <Setter Property="Visibility" TargetName="TopTick" Value="Visible"/>
+                    </Trigger>
+                    <Trigger Property="TickPlacement" Value="BottomRight">
+                        <Setter Property="Visibility" TargetName="BottomTick" Value="Visible"/>
+                    </Trigger>
+                    <Trigger Property="TickPlacement" Value="Both">
+                        <Setter Property="Visibility" TargetName="BottomTick" Value="Visible"/>
+                        <Setter Property="Visibility" TargetName="TopTick" Value="Visible"/>
+                    </Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+            <Style x:Key="SliderStyle_single_H" TargetType="{x:Type Slider}">
+                <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                <Setter Property="IsTabStop" Value="false"/>
+                <Setter Property="Maximum" Value="100"/>
+                <Setter Property="Minimum" Value="0"/>
+                <Setter Property="Template" Value="{DynamicResource HorizontalSliderTemplate}"/>
+                <Setter Property="Value" Value="0"/>
+                <Style.Triggers>
+                    <Trigger Property="Orientation" Value="Vertical">
+                        <Setter Property="Template" Value="{DynamicResource VerticalSliderTemplate}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <ControlTemplate x:Key="RangeSliderHorizontal" TargetType="{x:Type controls:RangeSlider}">
+                <StackPanel x:Name="PART_Container" HorizontalAlignment="Stretch" Orientation="Vertical" VerticalAlignment="Center">
+                    <TickBar x:Name="PART_TopTick" Fill="{TemplateBinding Foreground}" Height="4" Margin="5 0 5 2" Maximum="{TemplateBinding Maximum}" Minimum="{TemplateBinding Minimum}" Placement="Top" TickFrequency="{TemplateBinding TickFrequency}" Visibility="Collapsed"/>
+                    <StackPanel x:Name="PART_RangeSliderContainer" Background="Transparent" HorizontalAlignment="Stretch" Orientation="Horizontal" VerticalAlignment="Center">
+                        <RepeatButton x:Name="PART_LeftEdge" Style="{DynamicResource HorizontalTrackLargeDecrease}"/>
+                        <Thumb x:Name="PART_LeftThumb" Cursor="Arrow" Height="10" Width="10" Style="{DynamicResource HorizontalSliderThumb}"/>
+                        <Thumb x:Name="PART_MiddleThumb" Cursor="Hand" MinWidth="{TemplateBinding MinRangeWidth}">
+                            <Thumb.Style>
+                                <Style TargetType="{x:Type Thumb}">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <Rectangle Fill="{DynamicResource AccentColorBrush}" Height="4" Margin="0 1 0 0" Opacity="0.8"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Thumb.Style>
+                        </Thumb>
+                        <Thumb x:Name="PART_RightThumb" Cursor="Arrow" Height="10" Style="{DynamicResource HorizontalSliderThumb}" Width="10"/>
+                        <RepeatButton x:Name="PART_RightEdge" Style="{DynamicResource HorizontalTrackLargeDecrease}"/>
+                    </StackPanel>
+                    <TickBar x:Name="PART_BottomTick" Fill="{TemplateBinding Foreground}" Height="4" Margin="5 2 5 0" Maximum="{TemplateBinding Maximum}" Minimum="{TemplateBinding Minimum}" Placement="Top" TickFrequency="{TemplateBinding TickFrequency}" Visibility="Collapsed"/>
+                </StackPanel>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="TickPlacement" Value="TopLeft">
+                        <Setter Property="Visibility" TargetName="PART_TopTick" Value="Visible"/>
+                    </Trigger>
+                    <Trigger Property="TickPlacement" Value="BottomRight">
+                        <Setter Property="Visibility" TargetName="PART_BottomTick" Value="Visible"/>
+                    </Trigger>
+                    <Trigger Property="TickPlacement" Value="Both">
+                        <Setter Property="Visibility" TargetName="PART_BottomTick" Value="Visible"/>
+                        <Setter Property="Visibility" TargetName="PART_TopTick" Value="Visible"/>
+                    </Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+            <ControlTemplate x:Key="RangeSliderVertical" TargetType="{x:Type controls:RangeSlider}">
+                <StackPanel x:Name="PART_Container" HorizontalAlignment="Center" Orientation="Horizontal" VerticalAlignment="Stretch">
+                    <TickBar x:Name="PART_TopTick" Fill="{TemplateBinding Foreground}" Margin="0 5 2 5" Maximum="{TemplateBinding Maximum}" Minimum="{TemplateBinding Minimum}" Placement="Left" TickFrequency="{TemplateBinding TickFrequency}" Visibility="Collapsed" Width="4"/>
+                    <StackPanel x:Name="PART_RangeSliderContainer" Background="Transparent" HorizontalAlignment="Center" Orientation="Vertical" VerticalAlignment="Stretch">
+                        <RepeatButton x:Name="PART_RightEdge" Style="{DynamicResource VerticalTrackLargeDecrease}" VerticalAlignment="Stretch"/>
+                        <Thumb x:Name="PART_RightThumb" Cursor="Arrow" Height="10" Style="{DynamicResource VerticalSliderThumb}" Width="10"/>
+                        <Thumb x:Name="PART_MiddleThumb" Cursor="Hand" MinHeight="{TemplateBinding MinRangeWidth}">
+                            <Thumb.Style>
+                                <Style TargetType="{x:Type Thumb}">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <Rectangle Fill="{DynamicResource AccentColorBrush}" Margin="0 0 0 0" Width="3" Opacity="0.7"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Thumb.Style>
+                        </Thumb>
+                        <Thumb x:Name="PART_LeftThumb" Cursor="Arrow" Height="10" Style="{DynamicResource VerticalSliderThumb}" Width="10"/>
+                        <RepeatButton x:Name="PART_LeftEdge" Style="{DynamicResource VerticalTrackLargeDecrease}" VerticalAlignment="Stretch"/>
+                    </StackPanel>
+                    <TickBar x:Name="PART_BottomTick" Fill="{TemplateBinding Foreground}" Margin="2 5 0 5" Maximum="{TemplateBinding Maximum}" Minimum="{TemplateBinding Minimum}" Placement="Right" TickFrequency="{TemplateBinding TickFrequency}" Visibility="Collapsed" Width="4"/>
+                </StackPanel>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="TickPlacement" Value="TopLeft">
+                        <Setter Property="Visibility" TargetName="PART_TopTick" Value="Visible"/>
+                    </Trigger>
+                    <Trigger Property="TickPlacement" Value="BottomRight">
+                        <Setter Property="Visibility" TargetName="PART_BottomTick" Value="Visible"/>
+                    </Trigger>
+                    <Trigger Property="TickPlacement" Value="Both">
+                        <Setter Property="Visibility" TargetName="PART_BottomTick" Value="Visible"/>
+                        <Setter Property="Visibility" TargetName="PART_TopTick" Value="Visible"/>
+                    </Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+            <Style x:Key="RangeSliderStyle" TargetType="{x:Type controls:RangeSlider}">
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="Template" Value="{StaticResource RangeSliderHorizontal}"/>
+                <Style.Triggers>
+                    <Trigger Property="Orientation" Value="Vertical">
+                        <Setter Property="Template" Value="{StaticResource RangeSliderVertical}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Border Background="#7F4E4E4E" Height="190" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
+            <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540">
+                <StackPanel Height="20" Width="540" Orientation="Horizontal">
+                    <Label Content="MPC gain tuning" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
+                </StackPanel>
+                <localUI:SliderWithLabel x:Name="Slider_MPC_0th_gain" Width="400" Height="40" SliderName="Foot spring stiffness" TickFrequency="0.1"  SliderLength="400" MaxValue="10" SliderValueChanged="MPCGainValueChanged" Unit="kg/mm" SliderValue="0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

@@ -4,9 +4,12 @@
 #include "Math.h"
 
 
-#define STEPPER_WITH_LIMITS_SENSORLESS_CURRENT_THRESHOLD_IN_PERCENT 50
+
+#define STEPPER_WITH_LIMITS_SENSORLESS_CURRENT_THRESHOLD_IN_PERCENT 30
 #define MIN_POS_MAX_ENDSTOP 10000 // servo has to drive minimum N steps before it allows the detection of the max endstop
 #define INCLUDE_vTaskDelete 1
+
+#define BRAKE_RESISTOR_DEACTIVATION_TIME_IN_MS 1000
 
 //uint32_t speed_in_hz = TICKS_PER_S / ticks;
 // TICKS_PER_S = 16000000L
@@ -33,7 +36,8 @@ static SemaphoreHandle_t semaphore_readServoValues = xSemaphoreCreateMutex();
 static SemaphoreHandle_t semaphore_getSetCorrectedServoPos = xSemaphoreCreateMutex();
 
 
-
+static float servoBusVoltageParameterized_fl32 = SERVO_MAX_VOLTAGE_IN_V_36V;
+static bool servoBusVoltageParameterized_b = true;
 
 FastAccelStepperEngine& stepperEngine() {
   static FastAccelStepperEngine myEngine = FastAccelStepperEngine();   // this is a factory and manager for all stepper instances
@@ -44,7 +48,7 @@ FastAccelStepperEngine& stepperEngine() {
      firstTime = false;
   }
   
-  myEngine.task_rate(2);
+  myEngine.task_rate(4);
   return myEngine;
 }
 
@@ -70,13 +74,19 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool
     _stepper->setSpeedInTicks( maxSpeedInTicks ); // ticks
     _stepper->setAcceleration(MAXIMUM_STEPPER_ACCELERATION);  // steps/s²
 	_stepper->setLinearAcceleration(0);
-    _stepper->setForwardPlanningTimeInMs(4);
-	//_stepper->setForwardPlanningTimeInMs(4);
+    _stepper->setForwardPlanningTimeInMs(8);
 
 	
 	/************************************************************/
 	/* 					iSV57 initialization					*/
 	/************************************************************/
+	#ifdef SERVO_POWER_PIN
+        //turn on the servo's power
+        gpio_set_direction((gpio_num_t)SERVO_POWER_PIN, GPIO_MODE_OUTPUT);
+        gpio_set_level((gpio_num_t)SERVO_POWER_PIN, 1);
+        //wait for the servo to initialize
+        delay(500);
+    #endif
 	//delay(3000);
 	// find iSV57 servo ID
 	bool isv57slaveIdFound_b = isv57.findServosSlaveId();
@@ -175,7 +185,8 @@ void StepperWithLimits::findMinMaxSensorless(DAP_config_st dap_config_st)
 		/* 					servo reading check 					*/
 		/************************************************************/
 		// check if servo readings are trustworthy, by checking if servos bus voltage is in reasonable range. Otherwise restart servo.
-		bool servoRadingsTrustworthy_b = false;
+		bool servoRadingsTrustworthy_36VRange_b = false;
+		bool servoRadingsTrustworthy_48VRange_b = false;
 		for (uint16_t waitTillServoCounterWasReset_Idx = 0; waitTillServoCounterWasReset_Idx < 10; waitTillServoCounterWasReset_Idx++)
 		{
 			delay(100);
@@ -183,20 +194,34 @@ void StepperWithLimits::findMinMaxSensorless(DAP_config_st dap_config_st)
 			// voltage return is given in 0.1V units --> 10V range --> threshold 100
 			// at beginning the values typically are initialized with -1
 			float servosBusVoltageInVolt_fl32 = ( (float)getServosVoltage() ) / 10.0f;
-			servoRadingsTrustworthy_b = ( servosBusVoltageInVolt_fl32 >= 16) && ( servosBusVoltageInVolt_fl32 < 39);
+			
+			servoRadingsTrustworthy_36VRange_b = ( servosBusVoltageInVolt_fl32 >= 16.0f) && ( servosBusVoltageInVolt_fl32 < SERVO_MAX_VOLTAGE_IN_V_36V);
+			servoRadingsTrustworthy_48VRange_b = ( servosBusVoltageInVolt_fl32 >= 16.0f) && ( servosBusVoltageInVolt_fl32 < SERVO_MAX_VOLTAGE_IN_V_48V);
 
-			if (true == servoRadingsTrustworthy_b)
+			if (true == servoRadingsTrustworthy_36VRange_b)
 			{
-				Serial.print("Servos bus voltage in expected range: ");
+				servoBusVoltageParameterized_fl32 = SERVO_MAX_VOLTAGE_IN_V_36V;
+				servoBusVoltageParameterized_b = false;
+				Serial.print("Servos bus voltage in expected range (36V range): ");
+				Serial.print( servosBusVoltageInVolt_fl32 );
+				Serial.println("V");
+				break;
+			}
+
+			if (true == servoRadingsTrustworthy_48VRange_b)
+			{
+				servoBusVoltageParameterized_fl32 = SERVO_MAX_VOLTAGE_IN_V_48V;
+				servoBusVoltageParameterized_b = false;
+				Serial.print("Servos bus voltage in expected range (48V range): ");
 				Serial.print( servosBusVoltageInVolt_fl32 );
 				Serial.println("V");
 				break;
 			}
 		}
 
-		if(false == servoRadingsTrustworthy_b)
+		if ( (false == servoRadingsTrustworthy_36VRange_b) && (false == servoRadingsTrustworthy_48VRange_b) )
 		{
-			Serial.print("Servo bus voltage not in expected range (16V-39V). Restarting ESP!");
+			Serial.print("Servo bus voltage not in expected range (16V-50V). Restarting ESP!");
 			ESP.restart();
 		}
 		
@@ -227,15 +252,15 @@ void StepperWithLimits::findMinMaxSensorless(DAP_config_st dap_config_st)
 		}
 			
 		// reduce speed and acceleration
-		_stepper->setSpeedInHz(MAXIMUM_STEPPER_SPEED / 10);
-		_stepper->setAcceleration(MAXIMUM_STEPPER_ACCELERATION / 10);
+		_stepper->setSpeedInHz(MAXIMUM_STEPPER_SPEED / 16);
+		_stepper->setAcceleration(MAXIMUM_STEPPER_ACCELERATION / 16);
 		
 		// run continously in one direction until endstop is hit
 		//_stepper->keepRunningBackward(MAXIMUM_STEPPER_SPEED / 10);
 		_stepper->move(INT32_MIN, false);
 		
 		while( (!endPosDetected) && (getLifelineSignal()) ){
-			delay(2);
+			delay(1);
 			endPosDetected = abs( getServosCurrent() ) > STEPPER_WITH_LIMITS_SENSORLESS_CURRENT_THRESHOLD_IN_PERCENT;
 		}
 		setPosition = - 5 * ENDSTOP_MOVEMENT_SENSORLESS;
@@ -440,6 +465,15 @@ bool StepperWithLimits::isAtMinPos()
   return isAtMinPos && isNotRunning;
 }
 
+int32_t StepperWithLimits::getCurrentSpeedInMilliHz()
+{
+	return _stepper->getCurrentSpeedInMilliHz();
+}
+
+uint32_t StepperWithLimits::getMaxSpeedInMilliHz()
+{
+	return _stepper->getMaxSpeedInMilliHz();
+}
 
 
 
@@ -634,6 +668,10 @@ int64_t timeNow_isv57SerialCommunicationTask_l = 0;
 int64_t timePrevious_isv57SerialCommunicationTask_l = 0;
 #define REPETITION_INTERVAL_ISV57_SERIALCOMMUNICATION_TASK (int64_t)10
 
+#ifdef BRAKE_RESISTOR_PIN
+int64_t time_brakeResistorLastPassive = 0;
+#endif
+
 void StepperWithLimits::servoCommunicationTask(void *pvParameters)
 {
   
@@ -658,11 +696,10 @@ void StepperWithLimits::servoCommunicationTask(void *pvParameters)
 		/* 					recheck lifeline						*/
 		/************************************************************/
 		// check if servo communication is still there every N milliseconds
-		unsigned long now = millis();
-		if ( (now - cycleTimeLastCall_lifelineCheck) > 500) 
+		if ( (timeNow_isv57SerialCommunicationTask_l - cycleTimeLastCall_lifelineCheck) > 500) 
 		{
 			// if target cycle time is reached, update last time
-			cycleTimeLastCall_lifelineCheck = now;
+			cycleTimeLastCall_lifelineCheck = timeNow_isv57SerialCommunicationTask_l;
 			stepper_cl->setLifelineSignal();
 		}
 
@@ -697,6 +734,17 @@ void StepperWithLimits::servoCommunicationTask(void *pvParameters)
 				delay(15);
 			}
 
+			if (false == servoBusVoltageParameterized_b)
+			{
+				Serial.print("Setting virtual brake resistor to: ");
+				Serial.print( servoBusVoltageParameterized_fl32 );
+				Serial.println("V");
+
+				// set iSV57 parameters for 36 or 48V range
+				stepper_cl->isv57.setServoVoltage(servoBusVoltageParameterized_fl32);
+				servoBusVoltageParameterized_b = true;
+			}
+
 
 			// when servo has been restarted, the read states need to be initialized first
 			if (false == previousIsv57LifeSignal_b)
@@ -713,6 +761,22 @@ void StepperWithLimits::servoCommunicationTask(void *pvParameters)
 			
 			// read servo states
 			stepper_cl->isv57.readServoStates();
+
+
+			// Activate brake resistor once a certain voltage level is exceeded, 
+			// but deactivate brake resistor once certain activation time is exceeded to prevent damage due to overheating
+			#ifdef BRAKE_RESISTOR_PIN
+				int64_t brakeResistorUpTime_i64 = timeNow_isv57SerialCommunicationTask_l - time_brakeResistorLastPassive;
+				if ( ( stepper_cl->getServosVoltage() > ((servoBusVoltageParameterized_fl32 + 4.0f)*10.0f) ) && (brakeResistorUpTime_i64 < BRAKE_RESISTOR_DEACTIVATION_TIME_IN_MS) )
+				{
+					digitalWrite(BRAKE_RESISTOR_PIN, HIGH);
+				}
+				else
+				{
+					digitalWrite(BRAKE_RESISTOR_PIN, LOW);
+					time_brakeResistorLastPassive = timeNow_isv57SerialCommunicationTask_l;
+				}
+			#endif
 
 
 			if(semaphore_readServoValues!=NULL)
@@ -958,11 +1022,19 @@ void StepperWithLimits::servoCommunicationTask(void *pvParameters)
 			Serial.println("Servo communication lost!");
 			delay(100);
 			previousIsv57LifeSignal_b = false;
+
+
+			// De-activate brake resistor once servo communication is lost to prevent resistor damage
+			#ifdef BRAKE_RESISTOR_PIN
+				digitalWrite(BRAKE_RESISTOR_PIN, LOW);
+			#endif
 		}
 
 
 	}
 }
+
+
 
 
 /*int32_t StepperWithLimits::getStepLossCompensation()

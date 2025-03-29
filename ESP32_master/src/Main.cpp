@@ -993,9 +993,11 @@ void Serial_Task( void * pvParameters)
       dap_bridge_state_st.payLoadHeader_.PedalTag=5; //5 means bridge
       dap_bridge_state_st.payLoadHeader_.payloadType=DAP_PAYLOAD_TYPE_BRIDGE_STATE;
       dap_bridge_state_st.payLoadHeader_.version=DAP_VERSION_CONFIG;
+      dap_bridge_state_st.payloadBridgeState_.Bridge_action=0;
+      parse_version(BRIDGE_FIRMWARE_VERSION,&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[0],&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[1],&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[2]);
+      //CRC check should be in the final
       crc = checksumCalculator((uint8_t*)(&(dap_bridge_state_st.payLoadHeader_)), sizeof(dap_bridge_state_st.payLoadHeader_) + sizeof(dap_bridge_state_st.payloadBridgeState_));
       dap_bridge_state_st.payloadFooter_.checkSum=crc;
-      dap_bridge_state_st.payloadBridgeState_.Bridge_action=0;
       DAP_bridge_state_st * dap_bridge_st_local_ptr;
       dap_bridge_st_local_ptr = &dap_bridge_state_st;
       Serial.write((char*)dap_bridge_st_local_ptr, sizeof(DAP_bridge_state_st));
@@ -1062,9 +1064,9 @@ void Joystick_Task( void * pvParameters )
         SetControllerOutputValueBrake(0);
         SetControllerOutputValueThrottle(0);
         //3% deadzone
-        if(pedal_brake_value<((int16_t)(0.47*JOYSTICK_RANGE))||pedal_brake_value>((int16_t)(0.53*JOYSTICK_RANGE)))
+        if(pedal_throttle_value<((int16_t)(0.47*JOYSTICK_RANGE))||pedal_throttle_value>((int16_t)(0.53*JOYSTICK_RANGE)))
         {
-          SetControllerOutputValueRudder(pedal_brake_value);
+          SetControllerOutputValueRudder(JOYSTICK_RANGE-pedal_throttle_value);
         }
         else
         {
@@ -1081,8 +1083,15 @@ void Joystick_Task( void * pvParameters )
         SetControllerOutputValueRudder((int16_t)(0.5*JOYSTICK_RANGE));
         //int16_t filter_brake=0;
         //int16_t filter_throttle=0;
+        if(dap_bridge_state_st.payloadBridgeState_.Pedal_availability[0]==1)
+        {
+          SetControllerOutputValueRudder_brake(pedal_cluth_value,pedal_throttle_value);
+        }
+        else
+        {
+          SetControllerOutputValueRudder_brake(pedal_brake_value,pedal_throttle_value);
+        }
         
-        SetControllerOutputValueRudder_brake(pedal_brake_value,pedal_throttle_value);
         
       }
       
@@ -1120,7 +1129,7 @@ void Joystick_Task( void * pvParameters )
       }
 
     #endif
-      delay(2);
+      delay(1);
   }
 }
 
@@ -1396,39 +1405,8 @@ void FanatecUpdate(void * pvParameters)
   }
 }
 
-/**********************************************************************************************/
-/*                                                                                            */
-/*                         pedal update task                                                  */
-/*                                                                                            */
-/**********************************************************************************************/
 
 
-//long lastCallTime = micros();
-unsigned long cycleTimeLastCall = micros();
-unsigned long minCyclesForFirToInit = 1000;
-unsigned long firCycleIncrementer = 0;
-
-float filteredReading_exp_filter = 0;
-unsigned long printCycleCounter = 0;
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-/**********************************************************************************************/
-/*                                                                                            */
-/*                         communication task                                                 */
-/*                                                                                            */
-/**********************************************************************************************/
 
 
 

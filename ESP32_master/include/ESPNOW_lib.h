@@ -70,42 +70,43 @@ typedef struct ESP_pairing_reg
   uint8_t Pair_mac[4][6];
 } ESP_pairing_reg;
 
-typedef struct struct_message {
+typedef struct DAP_Joystick_Message {
+  uint8_t payloadtype;
   uint64_t cycleCnt_u64;
   int64_t timeSinceBoot_i64;
 	int32_t controllerValue_i32;
   int8_t pedal_status; //0=default, 1=rudder, 2=rudder brake
-} struct_message;
+} DAP_Joystick_Message;
 
 // Create a struct_message called myData
-struct_message myData;
-struct_message broadcast_incoming;
+DAP_Joystick_Message Joystick_Data;
+DAP_Joystick_Message broadcast_incoming;
 ESPNow_Send_Struct _ESPNow_Recv;
 ESPNow_Send_Struct _ESPNow_Send;
 ESP_pairing_reg _ESP_pairing_reg;
 
 bool sendMessageToMaster(int32_t controllerValue)
 {
-
-  myData.cycleCnt_u64++;
-  myData.timeSinceBoot_i64 = esp_timer_get_time() / 1000;
-  myData.controllerValue_i32 = controllerValue;
+  Joystick_Data.payloadtype=DAP_PAYLOAD_TYPE_ESPNOW_JOYSTICK;
+  Joystick_Data.cycleCnt_u64++;
+  Joystick_Data.timeSinceBoot_i64 = esp_timer_get_time() / 1000;
+  Joystick_Data.controllerValue_i32 = controllerValue;
   if(dap_calculationVariables_st.Rudder_status)
   {
     if(dap_calculationVariables_st.rudder_brake_status)
     {
-      myData.pedal_status=2;
+      Joystick_Data.pedal_status=2;
     }
     else
     {
-      myData.pedal_status=1;
+      Joystick_Data.pedal_status=1;
     }
   }
   else
   {
-    myData.pedal_status=0;
+    Joystick_Data.pedal_status=0;
   }
-  esp_now_send(broadcast_mac, (uint8_t *) &myData, sizeof(myData));
+  esp_now_send(broadcast_mac, (uint8_t *) &Joystick_Data, sizeof(Joystick_Data));
   return true;
   
 }
@@ -144,33 +145,39 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
   //only recieve the package from registed mac address
   if(MacCheck((uint8_t*)mac_addr, Clu_mac)||MacCheck((uint8_t*)mac_addr, Brk_mac)||MacCheck((uint8_t*)mac_addr, Gas_mac))
   {
-    if(data_len==sizeof(myData))
+    if(data_len==sizeof(Joystick_Data))
     {
-      memcpy(&myData, data, sizeof(myData));
+
       
-      //#ifdef ACTIVATE_JOYSTICK_OUTPUT
-      // normalize controller output
-      int32_t joystickNormalizedToInt32 = NormalizeControllerOutputValue(myData.controllerValue_i32, 0, 10000, 100); 
-      //if(esp_now_info->src_addr[5]==Clu_mac[5])
-      if(mac_addr[5]==Clu_mac[5])
+      memcpy(&Joystick_Data, data, sizeof(DAP_Joystick_Message));
+      if(Joystick_Data.payloadtype==DAP_PAYLOAD_TYPE_ESPNOW_JOYSTICK)
       {
-        pedal_cluth_value=joystickNormalizedToInt32;
-        Joystick_value[0]=myData.controllerValue_i32;
-        //joystick_update=true;
+        //#ifdef ACTIVATE_JOYSTICK_OUTPUT
+        // normalize controller output
+        int32_t joystickNormalizedToInt32 = NormalizeControllerOutputValue(Joystick_Data.controllerValue_i32, 0, 10000, 100); 
+        //if(esp_now_info->src_addr[5]==Clu_mac[5])
+        if(mac_addr[5]==Clu_mac[5])
+        {
+          pedal_cluth_value=joystickNormalizedToInt32;
+          Joystick_value[0]=Joystick_Data.controllerValue_i32;
+          //joystick_update=true;
+        }
+        if(mac_addr[5]==Brk_mac[5])
+        {
+          pedal_brake_value=joystickNormalizedToInt32;
+          Joystick_value[1]=Joystick_Data.controllerValue_i32;
+          
+          //joystick_update=true;
+        }
+        if(mac_addr[5]==Gas_mac[5])
+        {
+          pedal_throttle_value=joystickNormalizedToInt32;
+          Joystick_value[2]=Joystick_Data.controllerValue_i32;
+          pedal_status=Joystick_Data.pedal_status;//control pedal status only by Throttle
+          //joystick_update=true;
+        }
       }
-      if(mac_addr[5]==Brk_mac[5])
-      {
-        pedal_brake_value=joystickNormalizedToInt32;
-        Joystick_value[1]=myData.controllerValue_i32;
-        pedal_status=myData.pedal_status;//control pedal status only by brake
-        //joystick_update=true;
-      }
-      if(mac_addr[5]==Gas_mac[5])
-      {
-        pedal_throttle_value=joystickNormalizedToInt32;
-        Joystick_value[2]=myData.controllerValue_i32;
-        //joystick_update=true;
-      }
+
       #ifdef ESPNow_debug
       Serial.print("Bytes received: ");
       Serial.println(len);

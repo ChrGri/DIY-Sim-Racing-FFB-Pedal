@@ -10,6 +10,16 @@ static const long WS_ACTIVE_TIME_PER_TRIGGER_MILLIS = 100;
 static const long CV_ACTIVE_TIME_PER_TRIGGER_MILLIS = 100;
 static int RPM_VALUE_LAST = 0;
 
+enum class TrackCondition
+{
+  Dry,
+  MostlyDry,
+  VeryLightWet,
+  LightWet,
+  ModeratelyWet,
+  VeryWet,
+  ExtremelyWet
+};
 class ABSOscillation {
 private:
   long _timeLastTriggerMillis;
@@ -31,7 +41,11 @@ public:
 
     long timeNowMillis = millis();
     float timeSinceTrigger = (timeNowMillis - _timeLastTriggerMillis);
-    float absForceOffset_local = 0;
+    float absForceOffset_local = 0.00f;
+    float absFreq=calcVars_st->absFrequency;
+    //frequency depend on road condition
+    absFreq=absFreq*(1+((float)calcVars_st->TrackCondition)/10.0f);
+    absFreq=constrain(absFreq,0,50.0f);
 
     if (timeSinceTrigger > ABS_ACTIVE_TIME_PER_TRIGGER_MILLIS)
     {
@@ -50,7 +64,7 @@ public:
           absAmp_fl32 = calcVars_st->absAmplitude; 
           break;
         case 1:
-          absAmp_fl32 = calcVars_st->stepperPosRange * calcVars_st->absAmplitude / 100.;
+          absAmp_fl32 = calcVars_st->stepperPosRange * calcVars_st->absAmplitude / 100.0f;
           break;
         default:
           break;
@@ -61,13 +75,13 @@ public:
       switch (absPattern) {
         case 0:
           // sine wave pattern
-          absForceOffset_local =  absAmp_fl32 * sin(2 * PI * calcVars_st->absFrequency * absTimeSeconds);
+          absForceOffset_local =  absAmp_fl32 * sin(2.0f * PI * absFreq * absTimeSeconds);
           break;
         case 1:
           // sawtooth pattern
-          if (calcVars_st->absFrequency > 0)
+          if (calcVars_st->absFrequency > 0.0f)
           {
-            absForceOffset_local = absAmp_fl32 * fmod(absTimeSeconds, 1.0 / (float)calcVars_st->absFrequency) * (float)calcVars_st->absFrequency;
+            absForceOffset_local = absAmp_fl32 * fmod(absTimeSeconds, 1.0f / (float)absFreq) * (float)absFreq;
             absForceOffset_local -= absAmp_fl32 * 0.5f; // make it symmetrical around 0
           }
           break;
@@ -78,10 +92,10 @@ public:
       switch (absForceOrTarvelBit) {
         case 0:
           *absForceOffset = absForceOffset_local;
-          *absPosOffset = 0;
+          *absPosOffset = 0.0f;
           break;
         case 1:
-          *absForceOffset = 0;
+          *absForceOffset = 0.0f;
           *absPosOffset = absForceOffset_local;
           break;
         default:
@@ -108,7 +122,7 @@ public:
   RPMOscillation()
     : _timeLastTriggerMillis(0)
   {}
-  float RPM_value =0;
+  float RPM_value =0.0f;
   int32_t RPM_position_offset = 0;
 public:
   void trigger() {
@@ -120,13 +134,13 @@ public:
 
     long timeNowMillis = millis();
     float timeSinceTrigger = (timeNowMillis - _timeLastTriggerMillis);
-    float RPMForceOffset = 0;
+    float RPMForceOffset = 0.0f;
     float RPM_max_freq = calcVars_st->RPM_max_freq;
     float RPM_min_freq = calcVars_st->RPM_min_freq;
     //float RPM_max =10;
     float RPM_amp_base = calcVars_st->RPM_AMP;
     float RPM_amp=0;
-    RPM_amp=RPM_amp_base*(1.0f+0.3*RPM_value/100.0f);
+    RPM_amp=RPM_amp_base*(1.0f+0.3f*RPM_value/100.0f);
     if(RPM_value==0)
     {
       RPM_min_freq=0;
@@ -188,7 +202,7 @@ public:
 
     long timeNowMillis = millis();
     float timeSinceTrigger = (timeNowMillis - _timeLastTriggerMillis);
-    float BitePointForceOffset = 0;
+    float BitePointForceOffset = 0.0f;
     float BP_freq = calcVars_st->BP_freq;
     //float BP_freq = 15;
     float BP_amp = calcVars_st->BP_amp;
@@ -205,7 +219,7 @@ public:
       float BPTimeSeconds = _BiteTimeMillis / 1000.0f;
 
       //RPMForceOffset = calcVars_st->absAmplitude * sin(calcVars_st->absFrequency * RPMTimeSeconds);
-      BitePointForceOffset = BP_amp * sin( 2*PI* BP_freq* BPTimeSeconds);
+      BitePointForceOffset = BP_amp * sin( 2.0f*PI* BP_freq* BPTimeSeconds);
     }
     BitePoint_Force_offset=BitePointForceOffset;
     _lastCallTimeMillis = timeNowMillis;
@@ -247,13 +261,13 @@ MovingAverageFilter::MovingAverageFilter(unsigned int newDataPointsCount)
 
   for (i = 0; i < dataPointsCount; i++)
   {
-    values[i] = 0; // fill the array with 0's
+    values[i] = 0.0f; // fill the array with 0's
   }
 }
 
 float MovingAverageFilter::process(float in)
 {
-  out = 0;
+  out = 0.0f;
 
   values[k] = in;
   k = (k + 1) % dataPointsCount;
@@ -263,7 +277,7 @@ float MovingAverageFilter::process(float in)
     out += values[i];
   }
 
-  float retValue= 0;
+  float retValue= 0.0f;
   if (dataPointsCount> 0)
   {
     retValue= out / dataPointsCount;
@@ -294,7 +308,7 @@ class G_force_effect
     }
     else
     {
-      G_force_raw=10*(G_value)*G_multiplier/9.8;
+      G_force_raw=10.0f*(G_value)*G_multiplier/9.8f;
       //G_force_raw=constrain(G_force_raw,-1*Force_Range*0.25,Force_Range*0.25);
     }
 
@@ -317,7 +331,7 @@ public:
     : _timeLastTriggerMillis(0)
   {}
   //float RPM_value =0;
-  float WS_Force_offset = 0;
+  float WS_Force_offset = 0.0f;
 public:
   void trigger() {
     _timeLastTriggerMillis = millis();
@@ -328,7 +342,7 @@ public:
 
     long timeNowMillis = millis();
     float timeSinceTrigger = (timeNowMillis - _timeLastTriggerMillis);
-    float WSForceOffset = 0;
+    float WSForceOffset = 0.0f;
     float WS_freq = calcVars_st->WS_freq;
     //float BP_freq = 15;
     float WS_amp = calcVars_st->WS_amp;
@@ -337,7 +351,7 @@ public:
     if (timeSinceTrigger > WS_ACTIVE_TIME_PER_TRIGGER_MILLIS)
     {
       _WSTimeMillis = 0;
-      WSForceOffset = 0;
+      WSForceOffset = 0.0f;
     }
     else
     {
@@ -345,7 +359,7 @@ public:
       float WSTimeSeconds = _WSTimeMillis / 1000.0f;
 
       //RPMForceOffset = calcVars_st->absAmplitude * sin(calcVars_st->absFrequency * RPMTimeSeconds);
-      WSForceOffset = WS_amp * sin( 2*PI* WS_freq* WSTimeSeconds);
+      WSForceOffset = WS_amp * sin( 2.0f*PI* WS_freq* WSTimeSeconds);
       /*if (WS_freq > 0)
       {
         //WSForceOffset = WS_amp * fmod(WSTimeSeconds, 1.0 / (float)WS_freq) * WS_freq;
@@ -376,10 +390,10 @@ class Road_impact_effect
   void forceOffset(DAP_calculationVariables_st* calcVars_st, uint8_t Road_impact_multi)
   {
     uint32_t Force_Range;
-    float Road_multiplier=((float)Road_impact_multi)/100;
+    float Road_multiplier=((float)Road_impact_multi)/100.0f;
     Force_Range=calcVars_st->Force_Range;
     //Road_multiplier=0.1;
-    Road_Impact_force_raw=0.3*Road_multiplier*((float)Force_Range)*((float)Road_Impact_value)/100;
+    Road_Impact_force_raw=0.3f*Road_multiplier*((float)Force_Range)*((float)Road_Impact_value)/100;
 
     //apply filter
     Road_Impact_force=movingAverageFilter_roadimpact.process(Road_Impact_force_raw);
@@ -400,7 +414,7 @@ public:
     : _timeLastTriggerMillis(0)
   {}
   //float RPM_value =0;
-  float CV_Force_offset = 0;
+  float CV_Force_offset = 0.0f;
 public:
   void trigger() {
     _timeLastTriggerMillis = millis();
@@ -411,20 +425,20 @@ public:
 
     long timeNowMillis = millis();
     float timeSinceTrigger = (timeNowMillis - _timeLastTriggerMillis);
-    float CVForceOffset = 0;
+    float CVForceOffset = 0.0f;
 
 
     if (timeSinceTrigger > CV_ACTIVE_TIME_PER_TRIGGER_MILLIS)
     {
       _CVTimeMillis = 0;
-      CVForceOffset = 0;
+      CVForceOffset = 0.0f;
     }
     else
     {
       _CVTimeMillis += timeNowMillis - _lastCallTimeMillis;
       float CVTimeSeconds = _CVTimeMillis / 1000.0f;
 
-      CVForceOffset = CV_amp/20.0f * sin( 2*PI* CV_freq* CVTimeSeconds);
+      CVForceOffset = CV_amp/20.0f * sin( 2.0f*PI* CV_freq* CVTimeSeconds);
 
             
           
@@ -464,13 +478,13 @@ class Rudder{
     endpos_travel=(float)calcVars_st->stepperPosRange;
     position_ratio_current=((float)(current_pedal_position-calcVars_st->stepperPosMin))/endpos_travel;    
     dead_zone=20;
-    Center_offset=calcVars_st->stepperPosMin+ calcVars_st->stepperPosRange/2;
-    float center_deadzone = 0.51;
+    Center_offset=calcVars_st->stepperPosMin+ calcVars_st->stepperPosRange/2.0f;
+    float center_deadzone = 0.51f;
     if(calcVars_st->Rudder_status)
     {
       if(position_ratio_sync>center_deadzone)
       {
-        offset_raw=(int32_t)(-1*(position_ratio_sync-0.50)*endpos_travel);
+        offset_raw=(int32_t)(-1*(position_ratio_sync-0.50f)*endpos_travel);
           
       }
       else
@@ -492,9 +506,9 @@ class Rudder{
   void force_offset_calculate(DAP_calculationVariables_st* calcVars_st)
   {
     dead_zone=20;
-    Center_offset=calcVars_st->stepperPosRange/2;
-    dead_zone_upper=Center_offset+dead_zone/2;
-    dead_zone_lower=Center_offset-dead_zone/2;
+    Center_offset=calcVars_st->stepperPosRange/2.0f;
+    dead_zone_upper=Center_offset+dead_zone/2.0f;
+    dead_zone_lower=Center_offset-dead_zone/2.0f;
     sync_pedal_position=calcVars_st->sync_pedal_position;
     current_pedal_position=calcVars_st->current_pedal_position;
     stepper_range=calcVars_st->stepperPosRange;
@@ -506,23 +520,23 @@ class Rudder{
     position_ratio_current=((float)(current_pedal_position-calcVars_st->stepperPosMin))/endpos_travel;
     
 
-    float center_deadzone = 0.51;
+    float center_deadzone = 0.51f;
     if(calcVars_st->Rudder_status)
     {
       
         
         if(position_ratio_sync>center_deadzone)
         {
-          force_offset_raw=(float)(-1*(position_ratio_sync-0.50)*force_range);
+          force_offset_raw=(float)(-1.0f*(position_ratio_sync-0.50f)*force_range);
           
         }
         else
         {
-          force_offset_raw=0;
+          force_offset_raw=0.0f;
         }
         if(calcVars_st->rudder_brake_status)
         {
-          force_offset_raw=0;
+          force_offset_raw=0.0f;
         }
      
       force_offset_filter=averagefilter_rudder_force.process(force_offset_raw+force_center_offset);

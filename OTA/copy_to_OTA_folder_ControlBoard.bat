@@ -89,5 +89,23 @@ set destination=..\OTA\ControlBoard\Speedcrafter\
 echo Copying %source% to %destination%...
 xcopy "%source%" "%destination%" /y
 
+set source=..\ESP32\.pio\build\esp32s3usbotg_pcbV5\firmware.bin
+set destination=..\OTA\ControlBoard\esp32S3_V5\
+
+echo Copying %source% to %destination%...
+xcopy "%source%" "%destination%" /y
+
+set source=..\ESP32\.pio\build\esp32s3usbotg_pcbV5\bootloader.bin
+set destination=..\OTA\ControlBoard\esp32S3_V5\
+
+echo Copying %source% to %destination%...
+xcopy "%source%" "%destination%" /y
+
+set source=..\ESP32\.pio\build\esp32s3usbotg_pcbV5\partitions.bin
+set destination=..\OTA\ControlBoard\esp32S3_V5\
+
+echo Copying %source% to %destination%...
+xcopy "%source%" "%destination%" /y
+
 echo File copied successfully.
 pause

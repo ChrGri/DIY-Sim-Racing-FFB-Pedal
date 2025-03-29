@@ -46,10 +46,10 @@ float pedalInclineAngleDeg(float sledPositionMM, DAP_config_st * config_st) {
 #endif
 
   float nom = b*b + c*c - a*a;
-  float den = 2 * b * c;
+  float den = 2.0f * b * c;
   
-  float alpha = 0;
-  if (abs(den) > 0.01) {
+  float alpha = 0.0f;
+  if (abs(den) > 0.01f) {
     alpha = acos( nom / den );
   }
 
@@ -58,7 +58,7 @@ float pedalInclineAngleDeg(float sledPositionMM, DAP_config_st * config_st) {
 #endif
 
   // add incline due to AB incline --> result is incline realtive to horizontal 
-  if (abs(c_hor)>0.01) {
+  if (abs(c_hor)>0.01f) {
     alpha += atan2f(c_ver, c_hor); // y, x
     //alpha += atan2Fast(c_ver, c_hor); // y, x
   }
@@ -90,12 +90,12 @@ float convertToPedalForce(float F_l, float sledPositionMM, DAP_config_st * confi
   // c: is sled line (connection AC)
   // d: is upper pedal plate  (connection AC)
 
-  float a = config_st->payLoadPedalConfig_.lengthPedal_a;
-  float b = config_st->payLoadPedalConfig_.lengthPedal_b;
-  float d = config_st->payLoadPedalConfig_.lengthPedal_d;
+  float a = (float)config_st->payLoadPedalConfig_.lengthPedal_a;
+  float b = (float)config_st->payLoadPedalConfig_.lengthPedal_b;
+  float d = (float)config_st->payLoadPedalConfig_.lengthPedal_d;
 
-  float c_ver = config_st->payLoadPedalConfig_.lengthPedal_c_vertical;
-  float c_hor = config_st->payLoadPedalConfig_.lengthPedal_c_horizontal + sledPositionMM;
+  float c_ver = (float)config_st->payLoadPedalConfig_.lengthPedal_c_vertical;
+  float c_hor = (float)config_st->payLoadPedalConfig_.lengthPedal_c_horizontal + sledPositionMM;
   float c = sqrtf(c_ver * c_ver + c_hor * c_hor);
 
 
@@ -109,22 +109,22 @@ float convertToPedalForce(float F_l, float sledPositionMM, DAP_config_st * confi
 
 
   // lower plus upper pedal plate length
-  float b_plus_d = fabs(b + d);
+  float b_plus_d = fabsf(b + d);
 
   // compute gamma angle, see https://de.wikipedia.org/wiki/Kosinussatz
   float nom = a*a + b*b - c*c;
   float den = 2 * a * b;
   
-  float arg = 0;
-  if (abs(den) > 0.01) {
+  float arg = 0.0f;
+  if (abs(den) > 0.01f) {
     arg = nom / den;
     arg *= arg;
   }
 
   // apply conversion factor to loadcell reading 
-  float one_minus_arg = 1 - arg;
+  float one_minus_arg = 1.0f - arg;
   float F_b  = F_l;
-  if ( (b_plus_d > 0) && (one_minus_arg > 0) )
+  if ( (b_plus_d > 0.0f) && (one_minus_arg > 0.0f) )
   {
      F_b *= b / (b_plus_d) * sqrt( one_minus_arg );
   }
@@ -160,7 +160,7 @@ float convertToPedalForceGain(float sledPositionMM, DAP_config_st * config_st) {
   float c = sqrtf(c_ver * c_ver + c_hor * c_hor);
 
 
-  float alpha = acos( (b*b + c*c - a*a) / (2*b*c) );
+  float alpha = acos( (b*b + c*c - a*a) / (2.0f*b*c) );
   float alphaPlus = atan2f(c_ver, c_hor); // y, x
   //float alphaPlus = atan2Fast(c_ver, c_hor); // y, x
 
@@ -201,12 +201,12 @@ float pedalInclineAngleAccel(float pedalInclineAngleDeg_global) {
   float delta_t_pow3 = delta_t_pow2 * delta_t;
   float delta_t_pow4 = delta_t_pow2 * delta_t_pow2;
 
-  K_pedal_geometry.F = {1.0,  delta_t, 0.5 * delta_t * delta_t,
-          0.0,  1.0, delta_t,
-          0.0, 0.0, 1.0};
+  K_pedal_geometry.F = {1.0f,  delta_t, 0.5f * delta_t * delta_t,
+          0.0,  1.0f, delta_t,
+          0.0, 0.0, 1.0f};
 
   // measurement matrix. Size is <Nobs,Nstate>
-  K_pedal_geometry.H = {1.0, 0.0, 0.0};
+  K_pedal_geometry.H = {1.0f, 0.0f, 0.0f};
 
   // model covariance matrix. Size is <Nstate,Nstate>
   /*K_pedal_geometry.Q = {1000, 0.0, 0.0,
@@ -214,7 +214,7 @@ float pedalInclineAngleAccel(float pedalInclineAngleDeg_global) {
           0.0, 0.0, 1000};*/
 
   // measurement covariance matrix. Size is <Nobs,Nobs>
-  K_pedal_geometry.R = { 0.0001 };
+  K_pedal_geometry.R = { 0.0001f };
 
   /*
   float K_Q_11 = KF_MODEL_NOISE_FORCE_ACCELERATION * 0.5f * delta_t_pow3;
@@ -230,13 +230,13 @@ float pedalInclineAngleAccel(float pedalInclineAngleDeg_global) {
   // 1 / 2 * delta_t * delta_t
   // delta_t
 
-  float Q11 = KF_MODEL_NOISE_FORCE_ACCELERATION * (1. / 6. * delta_t * delta_t * delta_t) * (1. / 6. * delta_t * delta_t * delta_t);
-  float Q12 = KF_MODEL_NOISE_FORCE_ACCELERATION * (1. / 6. * delta_t * delta_t * delta_t) * (1. / 2. * delta_t * delta_t);
-  float Q13 = KF_MODEL_NOISE_FORCE_ACCELERATION * (1. / 6. * delta_t * delta_t * delta_t) * (delta_t);
+  float Q11 = KF_MODEL_NOISE_FORCE_ACCELERATION * (1.0f / 6.0f * delta_t * delta_t * delta_t) * (1.0f / 6.0f * delta_t * delta_t * delta_t);
+  float Q12 = KF_MODEL_NOISE_FORCE_ACCELERATION * (1.0f / 6.0f * delta_t * delta_t * delta_t) * (1.0f / 2.0f * delta_t * delta_t);
+  float Q13 = KF_MODEL_NOISE_FORCE_ACCELERATION * (1.0f / 6.0f * delta_t * delta_t * delta_t) * (delta_t);
 
   float Q21 = Q12;
-  float Q22 = KF_MODEL_NOISE_FORCE_ACCELERATION * (1. / 2. * delta_t * delta_t) * (1. / 2. * delta_t * delta_t);
-  float Q23 = KF_MODEL_NOISE_FORCE_ACCELERATION * (1. / 2. * delta_t * delta_t) * (delta_t);
+  float Q22 = KF_MODEL_NOISE_FORCE_ACCELERATION * (1.0f / 2.0f * delta_t * delta_t) * (1.0f / 2.0f * delta_t * delta_t);
+  float Q23 = KF_MODEL_NOISE_FORCE_ACCELERATION * (1.0f / 2.0f * delta_t * delta_t) * (delta_t);
 
   float Q31 = Q13;
   float Q32 = Q23;

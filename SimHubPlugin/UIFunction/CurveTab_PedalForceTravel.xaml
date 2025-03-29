@@ -1,0 +1,424 @@
+﻿<UserControl x:Class="User.PluginSdkDemo.UIFunction.CurveTab_PedalForceTravel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:User.PluginSdkDemo.UIFunction"
+             xmlns:localUI="clr-namespace:User.PluginSdkDemo.UIElement"
+             xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
+             xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+             d:DesignHeight="272" d:DesignWidth="540">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <SolidColorBrush x:Key="TestBrush" Color="White"/>
+            <DropShadowEffect x:Key="mousedragging" Color="White" BlurRadius="15" Opacity="1" ShadowDepth="0"/>
+            <DropShadowEffect x:Key="mouseoutdragging" Color="White" BlurRadius="15" Opacity="0" ShadowDepth="0"/>
+            <Style x:Key="HorizontalSliderThumb" TargetType="{x:Type Thumb}">
+                <Setter Property="Background" Value="{DynamicResource AccentColorBrush}"/>
+                <Setter Property="Opacity" Value="0.9"/>
+                <Setter Property="BorderThickness" Value="0 0"/>
+                <Setter Property="IsTabStop" Value="false"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+                <Setter Property="Width" Value="10" />
+
+
+
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type Thumb}">
+                            <Grid SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                                <Rectangle Fill="{TemplateBinding Background}" Margin="{TemplateBinding BorderThickness}" RadiusX="0" RadiusY="0"/>
+                                <Rectangle x:Name="DisabledVisualElement" Fill="{DynamicResource DisabledWhiteBrush}" IsHitTestVisible="false" Opacity="0"/>
+
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsDragging" Value="True">
+                                    <Setter Property="Effect" Value="{DynamicResource mousedragging}"/>
+                                </Trigger>
+                                <Trigger Property="IsDragging" Value="False">
+                                    <Setter Property="Effect" Value="{DynamicResource mouseoutdragging}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="HorizontalTrackLargeDecrease" TargetType="{x:Type RepeatButton}">
+                <Setter Property="Focusable" Value="false"/>
+                <Setter Property="IsTabStop" Value="false"/>
+                <Setter Property="OverridesDefaultStyle" Value="true"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type RepeatButton}">
+                            <Grid x:Name="Root" Margin="0 -1 0 0">
+                                <Rectangle  Height="1" Margin="0 1 0 0" RadiusX="1" RadiusY="1">
+                                    <Rectangle.Fill>
+                                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0" Opacity="0.9">
+                                            <GradientStop Color="{TemplateBinding Background}" Offset="0.0"/>
+                                            <GradientStop Color="Gray" Offset="0.25"/>
+                                            <GradientStop Color="Gray" Offset="0.75"/>
+                                            <GradientStop Color="{TemplateBinding Background}" Offset="1.0"/>
+                                        </LinearGradientBrush>
+                                    </Rectangle.Fill>
+                                </Rectangle>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="HorizontalTrackValue" TargetType="{x:Type RepeatButton}">
+                <Setter Property="Focusable" Value="false"/>
+                <Setter Property="IsTabStop" Value="false"/>
+                <Setter Property="OverridesDefaultStyle" Value="true"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type RepeatButton}">
+                            <Grid x:Name="Root" Margin="0 -1 0 0">
+                                <Rectangle Height="4" Margin="0 1 0 0" RadiusX="1" RadiusY="1">
+                                    <Rectangle.Fill>
+                                        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0" Opacity="0.9">
+                                            <GradientStop Color="{TemplateBinding Background}" Offset="0.0"/>
+                                            <GradientStop Color="{DynamicResource AccentColor}" Offset="0.25"/>
+                                            <GradientStop Color="{DynamicResource AccentColor}" Offset="0.75"/>
+                                            <GradientStop Color="{TemplateBinding Background}" Offset="1.0"/>
+                                        </LinearGradientBrush>
+                                    </Rectangle.Fill>
+                                </Rectangle>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <ControlTemplate x:Key="HorizontalSliderTemplate" TargetType="{x:Type Slider}">
+                <Grid x:Name="Root">
+                    <Grid x:Name="HorizontalTemplate" Background="{TemplateBinding Background}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto" MinHeight="{TemplateBinding MinHeight}"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TickBar x:Name="TopTick" Fill="{TemplateBinding Foreground}" Height="4" Placement="Top" Grid.Row="0" Visibility="Collapsed"/>
+                        <TickBar x:Name="BottomTick" Fill="{TemplateBinding Foreground}" Height="4" Placement="Bottom" Grid.Row="2" Visibility="Collapsed"/>
+                        <Track x:Name="PART_Track" Grid.Row="1">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Style="{StaticResource HorizontalTrackValue}"/>
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Style="{StaticResource HorizontalTrackLargeDecrease}"/>
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <controls:MetroThumb x:Name="HorizontalThumb" Height="10" IsTabStop="true" Style="{StaticResource HorizontalSliderThumb}" Width="{DynamicResource HorizontalThumbWidth}"/>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </Grid>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="TickPlacement" Value="TopLeft">
+                        <Setter Property="Visibility" TargetName="TopTick" Value="Visible"/>
+                    </Trigger>
+                    <Trigger Property="TickPlacement" Value="BottomRight">
+                        <Setter Property="Visibility" TargetName="BottomTick" Value="Visible"/>
+                    </Trigger>
+                    <Trigger Property="TickPlacement" Value="Both">
+                        <Setter Property="Visibility" TargetName="BottomTick" Value="Visible"/>
+                        <Setter Property="Visibility" TargetName="TopTick" Value="Visible"/>
+                    </Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+            <Style x:Key="VerticalSliderThumb" BasedOn="{StaticResource HorizontalSliderThumb}" TargetType="{x:Type Thumb}">
+                <Setter Property="BorderThickness" Value="0 0"/>
+            </Style>
+            <Style x:Key="VerticalTrackLargeDecrease" TargetType="{x:Type RepeatButton}">
+                <Setter Property="Focusable" Value="false"/>
+                <Setter Property="IsTabStop" Value="false"/>
+                <Setter Property="OverridesDefaultStyle" Value="true"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type RepeatButton}">
+                            <Grid x:Name="Root" Margin="-1 0 0 0">
+                                <Rectangle Fill="Gray" Margin="1 0 0 0" Width="1" Opacity="0.8"/>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="VerticalTrackValue" TargetType="{x:Type RepeatButton}">
+                <Setter Property="Focusable" Value="false"/>
+                <Setter Property="IsTabStop" Value="false"/>
+                <Setter Property="OverridesDefaultStyle" Value="true"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type RepeatButton}">
+                            <Grid x:Name="Root" Margin="-1 0 0 0">
+                                <Rectangle Margin="0 0 0 0" Width="10">
+                                    <Rectangle.Fill>
+                                        <LinearGradientBrush EndPoint="1,0.5" StartPoint="0,0.5" Opacity="0.9">
+                                            <GradientStop Color="{TemplateBinding Background}" Offset="0.0"/>
+                                            <GradientStop Color="{DynamicResource AccentColor}" Offset="0.25"/>
+                                            <GradientStop Color="{DynamicResource AccentColor}" Offset="0.75"/>
+                                            <GradientStop Color="{TemplateBinding Background}" Offset="1.0"/>
+                                        </LinearGradientBrush>
+                                    </Rectangle.Fill>
+                                </Rectangle>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <ControlTemplate x:Key="VerticalSliderTemplate" TargetType="{x:Type Slider}">
+                <Grid x:Name="Root">
+                    <Grid x:Name="HorizontalTemplate" Background="{TemplateBinding Background}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition MinWidth="{TemplateBinding MinWidth}" Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TickBar x:Name="TopTick" Grid.Column="0" Fill="{TemplateBinding Foreground}" Placement="Left" Visibility="Collapsed" Width="4"/>
+                        <TickBar x:Name="BottomTick" Grid.Column="2" Fill="{TemplateBinding Foreground}" Placement="Right" Visibility="Collapsed" Width="4"/>
+                        <Track x:Name="PART_Track" Grid.Column="1">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Style="{StaticResource VerticalTrackValue}"/>
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Style="{StaticResource VerticalTrackLargeDecrease}"/>
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <controls:MetroThumb x:Name="VerticalThumb" Height="{DynamicResource VerticalThumbHeight}" IsTabStop="true" Style="{StaticResource VerticalSliderThumb}" Width="{DynamicResource VerticalThumbWidth}"/>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </Grid>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="TickPlacement" Value="TopLeft">
+                        <Setter Property="Visibility" TargetName="TopTick" Value="Visible"/>
+                    </Trigger>
+                    <Trigger Property="TickPlacement" Value="BottomRight">
+                        <Setter Property="Visibility" TargetName="BottomTick" Value="Visible"/>
+                    </Trigger>
+                    <Trigger Property="TickPlacement" Value="Both">
+                        <Setter Property="Visibility" TargetName="BottomTick" Value="Visible"/>
+                        <Setter Property="Visibility" TargetName="TopTick" Value="Visible"/>
+                    </Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+            <Style x:Key="SliderStyle_single_H" TargetType="{x:Type Slider}">
+                <Setter Property="BorderBrush" Value="{DynamicResource ControlBorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                <Setter Property="IsTabStop" Value="false"/>
+                <Setter Property="Maximum" Value="100"/>
+                <Setter Property="Minimum" Value="0"/>
+                <Setter Property="Template" Value="{DynamicResource HorizontalSliderTemplate}"/>
+                <Setter Property="Value" Value="0"/>
+                <Style.Triggers>
+                    <Trigger Property="Orientation" Value="Vertical">
+                        <Setter Property="Template" Value="{DynamicResource VerticalSliderTemplate}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <ControlTemplate x:Key="RangeSliderHorizontal" TargetType="{x:Type controls:RangeSlider}">
+                <StackPanel x:Name="PART_Container" HorizontalAlignment="Stretch" Orientation="Vertical" VerticalAlignment="Center">
+                    <TickBar x:Name="PART_TopTick" Fill="{TemplateBinding Foreground}" Height="4" Margin="5 0 5 2" Maximum="{TemplateBinding Maximum}" Minimum="{TemplateBinding Minimum}" Placement="Top" TickFrequency="{TemplateBinding TickFrequency}" Visibility="Collapsed"/>
+                    <StackPanel x:Name="PART_RangeSliderContainer" Background="Transparent" HorizontalAlignment="Stretch" Orientation="Horizontal" VerticalAlignment="Center">
+                        <RepeatButton x:Name="PART_LeftEdge" Style="{DynamicResource HorizontalTrackLargeDecrease}"/>
+                        <Thumb x:Name="PART_LeftThumb" Cursor="Arrow" Height="10" Width="10" Style="{DynamicResource HorizontalSliderThumb}"/>
+                        <Thumb x:Name="PART_MiddleThumb" Cursor="Hand" MinWidth="{TemplateBinding MinRangeWidth}">
+                            <Thumb.Style>
+                                <Style TargetType="{x:Type Thumb}">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <Rectangle Fill="{DynamicResource AccentColorBrush}" Height="4" Margin="0 1 0 0" Opacity="0.8"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Thumb.Style>
+                        </Thumb>
+                        <Thumb x:Name="PART_RightThumb" Cursor="Arrow" Height="10" Style="{DynamicResource HorizontalSliderThumb}" Width="10"/>
+                        <RepeatButton x:Name="PART_RightEdge" Style="{DynamicResource HorizontalTrackLargeDecrease}"/>
+                    </StackPanel>
+                    <TickBar x:Name="PART_BottomTick" Fill="{TemplateBinding Foreground}" Height="4" Margin="5 2 5 0" Maximum="{TemplateBinding Maximum}" Minimum="{TemplateBinding Minimum}" Placement="Top" TickFrequency="{TemplateBinding TickFrequency}" Visibility="Collapsed"/>
+                </StackPanel>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="TickPlacement" Value="TopLeft">
+                        <Setter Property="Visibility" TargetName="PART_TopTick" Value="Visible"/>
+                    </Trigger>
+                    <Trigger Property="TickPlacement" Value="BottomRight">
+                        <Setter Property="Visibility" TargetName="PART_BottomTick" Value="Visible"/>
+                    </Trigger>
+                    <Trigger Property="TickPlacement" Value="Both">
+                        <Setter Property="Visibility" TargetName="PART_BottomTick" Value="Visible"/>
+                        <Setter Property="Visibility" TargetName="PART_TopTick" Value="Visible"/>
+                    </Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+            <ControlTemplate x:Key="RangeSliderVertical" TargetType="{x:Type controls:RangeSlider}">
+                <StackPanel x:Name="PART_Container" HorizontalAlignment="Center" Orientation="Horizontal" VerticalAlignment="Stretch">
+                    <TickBar x:Name="PART_TopTick" Fill="{TemplateBinding Foreground}" Margin="0 5 2 5" Maximum="{TemplateBinding Maximum}" Minimum="{TemplateBinding Minimum}" Placement="Left" TickFrequency="{TemplateBinding TickFrequency}" Visibility="Collapsed" Width="4"/>
+                    <StackPanel x:Name="PART_RangeSliderContainer" Background="Transparent" HorizontalAlignment="Center" Orientation="Vertical" VerticalAlignment="Stretch">
+                        <RepeatButton x:Name="PART_RightEdge" Style="{DynamicResource VerticalTrackLargeDecrease}" VerticalAlignment="Stretch"/>
+                        <Thumb x:Name="PART_RightThumb" Cursor="Arrow" Height="10" Style="{DynamicResource VerticalSliderThumb}" Width="10"/>
+                        <Thumb x:Name="PART_MiddleThumb" Cursor="Hand" MinHeight="{TemplateBinding MinRangeWidth}">
+                            <Thumb.Style>
+                                <Style TargetType="{x:Type Thumb}">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <Rectangle Fill="{DynamicResource AccentColorBrush}" Margin="0 0 0 0" Width="3" Opacity="0.7"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Thumb.Style>
+                        </Thumb>
+                        <Thumb x:Name="PART_LeftThumb" Cursor="Arrow" Height="10" Style="{DynamicResource VerticalSliderThumb}" Width="10"/>
+                        <RepeatButton x:Name="PART_LeftEdge" Style="{DynamicResource VerticalTrackLargeDecrease}" VerticalAlignment="Stretch"/>
+                    </StackPanel>
+                    <TickBar x:Name="PART_BottomTick" Fill="{TemplateBinding Foreground}" Margin="2 5 0 5" Maximum="{TemplateBinding Maximum}" Minimum="{TemplateBinding Minimum}" Placement="Right" TickFrequency="{TemplateBinding TickFrequency}" Visibility="Collapsed" Width="4"/>
+                </StackPanel>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="TickPlacement" Value="TopLeft">
+                        <Setter Property="Visibility" TargetName="PART_TopTick" Value="Visible"/>
+                    </Trigger>
+                    <Trigger Property="TickPlacement" Value="BottomRight">
+                        <Setter Property="Visibility" TargetName="PART_BottomTick" Value="Visible"/>
+                    </Trigger>
+                    <Trigger Property="TickPlacement" Value="Both">
+                        <Setter Property="Visibility" TargetName="PART_BottomTick" Value="Visible"/>
+                        <Setter Property="Visibility" TargetName="PART_TopTick" Value="Visible"/>
+                    </Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate>
+            <Style x:Key="RangeSliderStyle" TargetType="{x:Type controls:RangeSlider}">
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="Template" Value="{StaticResource RangeSliderHorizontal}"/>
+                <Style.Triggers>
+                    <Trigger Property="Orientation" Value="Vertical">
+                        <Setter Property="Template" Value="{StaticResource RangeSliderVertical}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Border  HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="5,5,5,5"  Margin="0,3,0,0">
+            <StackPanel HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540">
+                
+                <StackPanel Height="20" Width="540" VerticalAlignment="Top" HorizontalAlignment="Left" Orientation="Horizontal">
+                    <Label Content="FORCE CURVE ADJUSTMENT" Width="200" Foreground="White" FontFamily="Arial Black" HorizontalAlignment="Center" Margin="70,0,0,0" Height="20" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
+                    <styles:SHButtonPrimary x:Name="btn_linearcurve" Click="btn_linearcurve_Click" Width="40" Content="Linear" Height="15" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" MinHeight="15" VerticalContentAlignment="Center" />
+                    <styles:SHButtonPrimary x:Name="btn_Scurve" Click="btn_Scurve_Click" Width="45" Content="S-Curve" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="15" />
+                    <styles:SHButtonPrimary x:Name="btn_10xcurve" Click="btn_10xcurve_Click" Width="50" Content="Exponent" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="15" />
+                    <styles:SHButtonPrimary x:Name="btn_logcurve" Click="btn_logcurve_Click" Width="50" Content="Logarithm" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" MinHeight="15" VerticalContentAlignment="Center" />
+                </StackPanel>
+                <StackPanel Height="220" Width="540" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,5,0,0">
+                    <Canvas x:Name="canvas" Height="200" Width="400" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="70,0,0,0" >
+                        <Canvas.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                <SkewTransform/>
+                                <RotateTransform/>
+                                <TranslateTransform/>
+                            </TransformGroup>
+
+                        </Canvas.RenderTransform>
+                        <TextBlock x:Name="TextBlock_Warning" Height="60" Width="300" FontFamily="Arial" FontSize="9" Margin="50,70,0,0" Foreground="#FFF44343" />
+
+
+                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Top" Text="FORCE" Width="60" Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="-25" Canvas.Top="85" FontFamily="Arial Black" Height="13">
+                            <TextBlock.RenderTransform>
+                                <TransformGroup>
+                                    <ScaleTransform/>
+                                    <SkewTransform/>
+                                    <RotateTransform Angle="-90"/>
+                                    <TranslateTransform/>
+                                </TransformGroup>
+                            </TextBlock.RenderTransform>
+                        </TextBlock>
+                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="TRAVEL" Width="60" Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="170" Canvas.Top="186" FontFamily="Arial Black" TextAlignment="Center" Height="14" />
+                        <TextBlock x:Name="text_point_pos" HorizontalAlignment="Left" VerticalAlignment="Top" Text="pos" Width="60" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Left="5" Canvas.Top="15" Height="30" FontSize="10" FontFamily="Arial">
+                            <TextBlock.RenderTransform>
+                                <TransformGroup>
+                                    <ScaleTransform/>
+                                    <SkewTransform/>
+                                    <RotateTransform Angle="0"/>
+                                    <TranslateTransform/>
+                                </TransformGroup>
+                            </TextBlock.RenderTransform>
+                        </TextBlock>
+                        <Polyline x:Name="Polyline_BrakeForceCurve" Stroke="{DynamicResource AccentColorBrush}" Height="300" Width="400" Opacity="0.7" Points="0,0 80,20 160,40 240,60 320,80 400,100" StrokeThickness="4" RenderTransformOrigin="1,0.5" Canvas.Top="-100" HorizontalAlignment="Left" VerticalAlignment="Center" >
+                            <Polyline.RenderTransform>
+                                <TransformGroup>
+                                    <ScaleTransform ScaleX="1" ScaleY="-1"/>
+                                    <SkewTransform/>
+                                    <RotateTransform/>
+                                    <TranslateTransform X="0"/>
+                                </TransformGroup>
+                            </Polyline.RenderTransform>
+                        </Polyline>
+
+                        <TextBlock x:Name="text_SABS" HorizontalAlignment="Left" VerticalAlignment="Top" Text="Simulated ABS" Width="120" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Left="320" Canvas.Top="80.2" FontSize="8" Height="10">
+                            <TextBlock.RenderTransform>
+                                <TransformGroup>
+                                    <ScaleTransform/>
+                                    <SkewTransform/>
+                                    <RotateTransform Angle="0"/>
+                                    <TranslateTransform/>
+                                </TransformGroup>
+                            </TextBlock.RenderTransform>
+                        </TextBlock>
+                        <Rectangle x:Name="rect_SABS" Width="400" Height="40" Fill="#4C8B0000" Canvas.Left="0" Canvas.Top="0" />
+                        <Rectangle x:Name="rect_SABS_Control" Width="400" Height="6" Fill="#998B0000" Canvas.Left="0" Canvas.Top="37" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="rect_SABS_Control_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp"/>
+                        <Rectangle x:Name="rect_BP_Control" Width="32" Height="200" Fill="#990954CE" Canvas.Left="200" Canvas.Top="0" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="rect_BP_Control_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp"/>
+                        <Ellipse x:Name="rect_State" Width="15" Height="15" Canvas.Left="25" Canvas.Top="76" Opacity="0.5" Fill="#CCEF0707" StrokeThickness="0" >
+                            <Ellipse.Effect>
+                                <BlurEffect KernelType="Gaussian" RenderingBias="Quality" Radius="7"/>
+                            </Ellipse.Effect>
+                        </Ellipse>
+                        <TextBlock x:Name="text_state" Width="20" Height="10" Foreground="#7FFFFFFF" Text="10%" FontSize="8" FontFamily="Arial"/>
+                        <Rectangle x:Name="rect0" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="-5" Canvas.Top="195" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8" StrokeThickness="0"/>
+                        <Rectangle x:Name="rect1" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="75" Canvas.Top="155" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8"/>
+                        <Rectangle x:Name="rect2" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="155" Canvas.Top="115" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8"/>
+                        <Rectangle x:Name="rect3" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="235" Canvas.Top="75" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8"/>
+                        <Rectangle x:Name="rect4" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="315" Canvas.Top="35" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8"/>
+                        <Rectangle x:Name="rect5" Width="10" Height="10" Fill="{DynamicResource AccentColorBrush}" Canvas.Left="395" Canvas.Top="-5" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="Rectangle_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp" Opacity="0.8"/>
+                        <TextBlock x:Name="text_BP" Text="BitePoint:" Width="120" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Left="235" Canvas.Top="187" FontSize="8" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top">
+                            <TextBlock.RenderTransform>
+                                <TransformGroup>
+                                    <ScaleTransform/>
+                                    <SkewTransform/>
+                                    <RotateTransform Angle="0"/>
+                                    <TranslateTransform/>
+                                </TransformGroup>
+                            </TextBlock.RenderTransform>
+                        </TextBlock>
+
+
+                    </Canvas>
+
+                    <StackPanel Width="50" Height="230" Margin="10,-10,0,0">
+                        <Label x:Name="Label_max_force" Width="50" Height="24" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" Margin="0,-15,0,0"/>
+                        <StackPanel Height="15" Width="32" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <Button x:Name="btn_plus_maxforce"  Click="btn_plus_maxforce_Click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Margin="-1,0,0,0"/>
+                            <Button x:Name="btn_minus_maxforce"  Click="btn_minus_maxforce_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10" Margin="2,0,0,0"/>
+                        </StackPanel>
+                        <controls:RangeSlider x:Name="Rangeslider_force_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="1" Grid.Column="2" Height="166" LowerValueChanged="Rangeslider_force_range_LowerValueChanged" UpperValueChanged="Rangeslider_force_range_UpperValueChanged" IsSnapToTickEnabled="True" UpperValue="50" Width="30" Orientation="Vertical" Maximum="200" HorizontalAlignment="Left" LargeChange="10" TickFrequency="0.1" MinRange="3"/>
+                        <StackPanel Height="15" Width="32" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <Button x:Name="btn_plus_preload"  Click="btn_plus_preload_Click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Margin="-1,0,0,0"/>
+                            <Button x:Name="btn_minus_preload"  Click="btn_minus_preload_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10" Margin="2,0,0,0"/>
+                        </StackPanel>
+                        <Label x:Name="Label_min_force" Width="50" Height="24" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+
+
+                <StackPanel Width="430" Height="40" Orientation="Horizontal" Margin="0,-10,0,0">
+                    <Label x:Name="Label_min_pos" Width="30" Height="40" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" HorizontalContentAlignment="Center"/>
+                    <controls:RangeSlider x:Name="Rangeslider_travel_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="1" Grid.Column="2" Height="20" LowerValueChanged="Rangeslider_travel_range_LowerValueChanged" UpperValueChanged="Rangeslider_travel_range_UpperValueChanged" MinRange="1" SmallChange="1" IsSnapToTickEnabled="True" UpperValue="80" Width="365" VerticalAlignment="Top" LowerValue="35" Minimum="5" Maximum="95"/>
+                    <Label x:Name="Label_max_pos" Width="30" Height="40" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" HorizontalContentAlignment="Center"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

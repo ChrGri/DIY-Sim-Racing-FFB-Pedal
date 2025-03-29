@@ -9,12 +9,12 @@ isv57communication::isv57communication()
 {
   
   //Serial1.begin(38400, SERIAL_8N2, ISV57_RXPIN, ISV57_TXPIN, true); // Modbus serial
-  #if PCB_VERSION == 10 || PCB_VERSION == 9
-  Serial1.begin(38400, SERIAL_8N1, ISV57_RXPIN, ISV57_TXPIN, false); // Modbus serial
+  #if PCB_VERSION == 10 || PCB_VERSION == 9 || PCB_VERSION == 12
+    Serial1.begin(38400, SERIAL_8N1, ISV57_RXPIN, ISV57_TXPIN, false); // Modbus serial
+  #else
+    Serial1.begin(38400, SERIAL_8N1, ISV57_RXPIN, ISV57_TXPIN, true); // Modbus serial
   #endif
-  #if PCB_VERSION != 10 && PCB_VERSION != 9
-  Serial1.begin(38400, SERIAL_8N1, ISV57_RXPIN, ISV57_TXPIN, true); // Modbus serial
-  #endif
+
 
   modbus.init(MODE);
 }
@@ -115,6 +115,11 @@ void  isv57communication::clearServoUnitPosition()
   delay(100);
 }
 
+bool isv57communication::setServoVoltage(uint16_t voltageInVolt_u16)
+{
+  return modbus.checkAndReplaceParameter(slaveId, pr_7_00+32, voltageInVolt_u16 + 2); // bleeder braking voltage. Voltage when braking is activated
+}
+
 // send tuned servo parameters
 void isv57communication::sendTunedServoParameters(bool commandRotationDirection, uint32_t stepsPerMotorRev_u32) {
   
@@ -132,10 +137,12 @@ void isv57communication::sendTunedServoParameters(bool commandRotationDirection,
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_0_00+10, 1); // & denominator
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_0_00+13, 500); // 1st torque limit
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_0_00+14, 500); // position deviation setup
-  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_0_00+16, 500); // regenerative braking resitor
-  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_0_00+17, 500);
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_0_00+16, 50); // regenerative braking resitor
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_0_00+17, 50);
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_0_00+18, 0); // vibration suppression
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_0_00+19, 0);
+
+  
 
   // Pr1 register
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+0, 600); // 1st position gain
@@ -151,14 +158,19 @@ void isv57communication::sendTunedServoParameters(bool commandRotationDirection,
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+33, 0); // speed given filter
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+35, 0); // position command filter
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+36, 0); // encoder feedback
-  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+37, 1052); // special function register
+  //retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+37, 1052); // special function register
+  //uint16_t special_function_flags = 0x4 | 0x8 | 0x10 | 0x40 | 0x400;
+  uint16_t special_function_flags = 0x4 | 0x8 | 0x10 | 0x400;
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+37, special_function_flags); // special function register
   // see https://www.oyostepper.com/images/upload/File/ISV57T-180.pdf
-  // 0x01 = 1: velocity feedforward disabled
-  // 0x02 = 2: torque feedforward disabled
-  // 0x04 = 4: motor overspeed alarm disabled
-  // 0x08 = 8: position following alarm disabled
-  // 0x10 = 16: overload alarm disabled
-  // 0x400 = 1024: undervoltage disabled
+  // 0x01: =0: Enablespeedfeed-forwardfiltering; =1:Disablespeed feed-forward filtering
+  // 0x02: =0: Enabletorquefeed-forwardfiltering; =2:disabletorque feed-forward filtering
+  // 0x04: =0: Enablemotor stall Er1A1alarm; =4:Blockmotor stall Er1A1 alarm
+  // 0x08: =0: Enable overshoot Er180 alarm; =8:Mask overshoot Er180alarm
+  // 0x10: =0: Enable overload Er100 alarm; =0x10: Mask overload Er100alarm
+  // 0x20: =0: dial input functionnot assignable; =0x20: dial input function assignable
+  // 0x40: =0: Mask drive disable Er260 alarm; =0x40: Enable drive disable Er260 alarm
+  // 0x400: =0: Mask undervoltage Er0D0 alarm; =0x400: Enable undervoltage Er0D0 alarm
 
   // Pr2 register
   // vibration suppression 
@@ -169,11 +181,14 @@ void isv57communication::sendTunedServoParameters(bool commandRotationDirection,
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_2_00+5, 20);
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_2_00+6, 99);
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_2_00+22, 0);
-  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_2_00+23, 80);// FIR based command smoothing time. Since the stpper task runs every 4ms, this time is selected to be larger than that. Unit is 0.1ms 
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_2_00+23, 0);// FIR based command smoothing time. Since the stpper task runs every 4ms, this time is selected to be larger than that. Unit is 0.1ms 
   
 
   // Pr3 register
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_3_00+12, 0); // time setup acceleration
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_3_00+13, 0); // time setup deceleration
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_3_00+24, 5000); // maximum rpm
+  
 
   // Pr5 register
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_5_00+13, 5000); // overspeed level
@@ -187,15 +202,17 @@ void isv57communication::sendTunedServoParameters(bool commandRotationDirection,
   // See https://en.wikipedia.org/wiki/Bleeder_resistor
   // Info from iSV2 manual: The external resistance is activated when the actual bus voltage is higher than Pr7.32 plus Pr7.33 and is deactivated when the actual bus voltage is lower than Pr7.32 minus Pr7.33
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_7_00+31, 0); // bleeder control mode; 0: is default and seems to enable braking mode, contrary to manual
-  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_7_00+32, 40); // bleeder braking voltage. Voltage when braking is activated
+  //retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_7_00+32, 42); // bleeder braking voltage. Voltage when braking is activated
+  retValue_b |= setServoVoltage(SERVO_MAX_VOLTAGE_IN_V_36V);
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_7_00+33, 1); // bleeder hysteresis voltage; Contrary to the manual this seems to be an offset voltage, thus Braking disabling voltage = Pr7.32 + Pr.33
+  
   
 
   // retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_7_00+28, 1000);
   // retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_7_00+29, 100);
   
-  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_7_00+28, 1000);
-  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_7_00+29, 10);
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_7_00+28, 30);
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_7_00+29, 0);
 
 
   //retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_5_00+33, 0); // pulse regenerative output limit setup [0,1]
@@ -276,6 +293,8 @@ bool isv57communication::findServosSlaveId()
           Serial.print("\r\n");
           break;
         }
+
+        delay(5);
     }
   }
   

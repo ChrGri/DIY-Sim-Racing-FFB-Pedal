@@ -2,6 +2,7 @@
 #include <esp_wifi.h>
 #include <Arduino.h>
 #include "ESPNowW.h"
+#include "DiyActivePedal_types.h"
 //#define ESPNow_debug
 uint8_t esp_master[] = {0x36, 0x33, 0x33, 0x33, 0x33, 0x31};
 //uint8_t esp_master[] = {0xdc, 0xda, 0x0c, 0x22, 0x8f, 0xd8}; // S3
@@ -18,7 +19,7 @@ uint16_t ESPNow_recieve=0;
 //bool MAC_get=false;
 bool ESPNOW_status =false;
 bool ESPNow_initial_status=false;
-bool ESPNow_update= false;
+bool ESPNow_Rudder_Update= false;
 bool ESPNow_no_device=false;
 bool ESPNow_config_request=false;
 bool ESPNow_restart=false;
@@ -31,18 +32,27 @@ bool software_pairing_action_b = false;
 bool hardware_pairing_action_b = false;
 bool OTA_update_action_b=false;
 bool Config_update_b=false;
+bool Rudder_initializing = false;
+bool Rudder_deinitializing = false;
+bool ESPNOW_BootIntoDownloadMode = false;
+bool Get_Rudder_action_b=false;
+DAP_Rudder_st dap_rudder_receiving;
+DAP_Rudder_st dap_rudder_sending;
+/*
 struct ESPNow_Send_Struct
 { 
   uint16_t pedal_position;
   float pedal_position_ratio;
 };
+*/
 
-typedef struct struct_message {
+typedef struct DAP_Joystick_Message {
+  uint8_t payloadtype;
   uint64_t cycleCnt_u64;
   int64_t timeSinceBoot_i64;
 	int32_t controllerValue_i32;
   int8_t pedal_status; //0=default, 1=rudder, 2=rudder brake
-} struct_message;
+} DAP_Joystick_Message;
 
 typedef struct ESP_pairing_reg
 {
@@ -50,10 +60,10 @@ typedef struct ESP_pairing_reg
   uint8_t Pair_mac[4][6];
 } ESP_pairing_reg;
 // Create a struct_message called myData
-struct_message myData;
+DAP_Joystick_Message _dap_joystick_message;
 
-ESPNow_Send_Struct _ESPNow_Recv;
-ESPNow_Send_Struct _ESPNow_Send;
+//ESPNow_Send_Struct _ESPNow_Recv;
+//ESPNow_Send_Struct _ESPNow_Send;
 ESP_pairing_reg _ESP_pairing_reg;
 
 bool MacCheck(uint8_t* Mac_A, uint8_t*  Mac_B)
@@ -77,28 +87,28 @@ bool MacCheck(uint8_t* Mac_A, uint8_t*  Mac_B)
 }
 
 
-void sendMessageToMaster(int32_t controllerValue)
+void ESPNow_Joystick_Broadcast(int32_t controllerValue)
 {
-
-  myData.cycleCnt_u64++;
-  myData.timeSinceBoot_i64 = esp_timer_get_time() / 1000;
-  myData.controllerValue_i32 = controllerValue;
+  _dap_joystick_message.payloadtype=DAP_PAYLOAD_TYPE_ESPNOW_JOYSTICK;
+  _dap_joystick_message.cycleCnt_u64++;
+  _dap_joystick_message.timeSinceBoot_i64 = esp_timer_get_time() / 1000;
+  _dap_joystick_message.controllerValue_i32 = controllerValue;
   if(dap_calculationVariables_st.Rudder_status)
   {
     if(dap_calculationVariables_st.rudder_brake_status)
     {
-      myData.pedal_status=2;
+      _dap_joystick_message.pedal_status=2;
     }
     else
     {
-      myData.pedal_status=1;
+      _dap_joystick_message.pedal_status=1;
     }
   }
   else
   {
-    myData.pedal_status=0;
+    _dap_joystick_message.pedal_status=0;
   }
-  esp_now_send(broadcast_mac, (uint8_t *) &myData, sizeof(myData));
+  esp_now_send(broadcast_mac, (uint8_t *) &_dap_joystick_message, sizeof(_dap_joystick_message));
 
   
   
@@ -162,12 +172,38 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
   }
   if(ESPNOW_status)
   {
+    //rudder message
     if(MacCheck(Recv_mac,(uint8_t *)mac_addr))
     {
-      if(data_len==sizeof(_ESPNow_Recv))
+      if(data_len==sizeof(DAP_Rudder_st))
       {
-        memcpy(&_ESPNow_Recv, data, sizeof(_ESPNow_Recv));
-        ESPNow_update=true;
+
+        bool structChecker = true;
+        uint16_t crc;
+        DAP_Rudder_st dap_rudder_st_local;
+        memcpy(&dap_rudder_st_local, data, sizeof(DAP_Rudder_st));
+        // check if data is plausible  
+        if ( dap_rudder_st_local.payLoadHeader_.payloadType != DAP_PAYLOAD_TYPE_ESPNOW_RUDDER )
+        {
+          structChecker = false;
+        }  
+        if ( dap_rudder_st_local.payLoadHeader_.version != DAP_VERSION_CONFIG )
+        {
+          structChecker = false;
+        }
+        // checksum validation
+        crc = checksumCalculator((uint8_t*)(&(dap_rudder_st_local.payLoadHeader_)), sizeof(dap_rudder_st_local.payLoadHeader_) + sizeof(dap_rudder_st_local.payloadRudderState_));
+        if (crc != dap_rudder_st_local.payloadFooter_.checkSum)
+        {
+          structChecker = false;
+        }
+        // if checks are successfull, overwrite global configuration struct
+        if (structChecker == true)
+        {
+          memcpy(&dap_rudder_receiving, data, sizeof(DAP_Rudder_st));
+          ESPNow_Rudder_Update=true;
+        }
+
       }
     }
     if(MacCheck(esp_Host,(uint8_t *)mac_addr))
@@ -202,15 +238,21 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
               if ( dap_config_st_local.payLoadHeader_.version != DAP_VERSION_CONFIG )
               { 
                 structChecker = false;
-                ESPNow_error_code=102;
-
+                if(ESPNow_error_code==0)
+                {
+                  ESPNow_error_code=102;
+                }
+                
               }
                       // checksum validation
               crc = checksumCalculator((uint8_t*)(&(dap_config_st_local.payLoadHeader_)), sizeof(dap_config_st_local.payLoadHeader_) + sizeof(dap_config_st_local.payLoadPedalConfig_));
               if (crc != dap_config_st_local.payloadFooter_.checkSum)
               { 
                 structChecker = false;
-                ESPNow_error_code=103;
+                if(ESPNow_error_code==0)
+                {
+                  ESPNow_error_code=103;
+                }
 
               }
 
@@ -242,18 +284,27 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
                 if ( dap_actions_st.payLoadHeader_.payloadType != DAP_PAYLOAD_TYPE_ACTION )
                 { 
                   structChecker = false;
-                  ESPNow_error_code=111;
+                  if(ESPNow_error_code==0)
+                  {
+                    ESPNow_error_code=111;
+                  }
 
                 }
                 if ( dap_actions_st.payLoadHeader_.version != DAP_VERSION_CONFIG ){ 
                   structChecker = false;
-                  ESPNow_error_code=112;
+                  if(ESPNow_error_code==0)
+                  {
+                    ESPNow_error_code=112;
+                  }
 
                 }
                 crc = checksumCalculator((uint8_t*)(&(dap_actions_st.payLoadHeader_)), sizeof(dap_actions_st.payLoadHeader_) + sizeof(dap_actions_st.payloadPedalAction_));
                 if (crc != dap_actions_st.payloadFooter_.checkSum){ 
                   structChecker = false;
-                  ESPNow_error_code=113;
+                  if(ESPNow_error_code==0)
+                  {
+                    ESPNow_error_code=113;
+                  }
 
                 }
 
@@ -263,19 +314,33 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
 
                   
                   //2= restart pedal
-                  if (dap_actions_st.payloadPedalAction_.system_action_u8==2)
+                  if (dap_actions_st.payloadPedalAction_.system_action_u8==(uint8_t)PedalSystemAction::PEDAL_RESTART)
                   {
                     ESPNow_restart = true;
                   }
                   //3= Wifi OTA
-                  if (dap_actions_st.payloadPedalAction_.system_action_u8==3)
+                  if (dap_actions_st.payloadPedalAction_.system_action_u8==(uint8_t)PedalSystemAction::ENABLE_OTA)
                   {
                     ESPNow_OTA_enable = true;
                   }
+                  //5= Boot into download mode
+                  if (dap_actions_st.payloadPedalAction_.system_action_u8==(uint8_t)PedalSystemAction::ESP_BOOT_INTO_DOWNLOAD_MODE)
+                  {
+                    ESPNOW_BootIntoDownloadMode = true;
+                  }
                   // trigger ABS effect
-                  if (dap_actions_st.payloadPedalAction_.triggerAbs_u8)
+                  if (dap_actions_st.payloadPedalAction_.triggerAbs_u8>0)
                   {
                     absOscillation.trigger();
+                    if(dap_actions_st.payloadPedalAction_.triggerAbs_u8>1)
+                    {
+                      dap_calculationVariables_st.TrackCondition=dap_actions_st.payloadPedalAction_.triggerAbs_u8-1;
+                    }
+                    else
+                    {
+                      dap_calculationVariables_st.TrackCondition=dap_actions_st.payloadPedalAction_.triggerAbs_u8=0;
+                    }
+                    
                   }
                   //RPM effect
                   _RPMOscillation.RPM_value=dap_actions_st.payloadPedalAction_.RPM_u8;
@@ -324,11 +389,21 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
                     Serial.print("\r\n");
                     */
                   }
-                  if(dap_actions_st.payloadPedalAction_.Rudder_action==1)
+                  if(dap_actions_st.payloadPedalAction_.Rudder_action==1 || dap_actions_st.payloadPedalAction_.Rudder_action==3)
                   {
+                    Get_Rudder_action_b=true;
+                    if(dap_actions_st.payloadPedalAction_.Rudder_action==3)
+                    {
+                      if(dap_config_st.payLoadPedalConfig_.pedal_type==2)
+                      {
+                        Recv_mac=Clu_mac;
+                        //ESPNow.add_peer(Recv_mac);
+                      }
+                    }
                     if(dap_calculationVariables_st.Rudder_status==false)
                     {
                       dap_calculationVariables_st.Rudder_status=true;
+                      Rudder_initializing=true;
                       //Serial.println("Rudder on");
                       moveSlowlyToPosition_b=true;
                       //Serial.print("status:");
@@ -338,6 +413,7 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
                     {
                       dap_calculationVariables_st.Rudder_status=false;
                       //Serial.println("Rudder off");
+                      Rudder_deinitializing=true;
                       moveSlowlyToPosition_b=true;
                       //Serial.print("status:");
                       //Serial.println(dap_calculationVariables_st.Rudder_status);
@@ -345,6 +421,7 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
                   }
                   if(dap_actions_st.payloadPedalAction_.Rudder_brake_action==1)
                   {
+                    Get_Rudder_action_b=true;
                     if(dap_calculationVariables_st.rudder_brake_status==false&&dap_calculationVariables_st.Rudder_status==true)
                     {
                       dap_calculationVariables_st.rudder_brake_status=true;
@@ -359,6 +436,15 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
                       //Serial.print("status:");
                       //Serial.println(dap_calculationVariables_st.Rudder_status);
                     }
+                  }
+                  //clear rudder status
+                  if(dap_actions_st.payloadPedalAction_.Rudder_action==2)
+                  {
+                    dap_calculationVariables_st.Rudder_status=false;
+                    dap_calculationVariables_st.rudder_brake_status=false;
+                    //Serial.println("Rudder Status Clear");
+                    Rudder_deinitializing=true;
+                    moveSlowlyToPosition_b=true;
                   }
                 }
               }
@@ -476,11 +562,12 @@ void ESPNow_initialize()
     if(dap_config_st.payLoadPedalConfig_.pedal_type==2)
     {
       Recv_mac=Brk_mac;
-      ESPNow.add_peer(Recv_mac);
+      ESPNow.add_peer(Brk_mac);
+      ESPNow.add_peer(Clu_mac);
     }
     if(dap_config_st.payLoadPedalConfig_.pedal_type==0)
     {
-      Recv_mac=Brk_mac;
+      Recv_mac=Gas_mac;
       ESPNow.add_peer(Recv_mac);
     }
     

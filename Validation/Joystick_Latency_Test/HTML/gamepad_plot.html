@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Gamepad Axis Plotter (Time-Based with History)</title>
+<style>
+canvas {
+  border: 1px solid black;
+}
+</style>
+</head>
+<body>
+
+<canvas id="myCanvas" width="1500" height="600"></canvas>
+<div id="timeValueDisplay0">Time: </div>
+<div id="timeValueDisplay1">Time: </div>
+<div id="axisValueDisplay1">FFB_Pedal_Brake Axis 0: </div>
+<div id="axisValueDisplay2">DIY_FFB_PEDAL_JOYSTICK Axis 3: </div>
+
+<button id="pauseButton">Pause</button>
+<button id="zoomInButton">Zoom In</button>
+<button id="zoomOutButton">Zoom Out</button>
+
+<script>
+const canvas = document.getElementById('myCanvas');
+const ctx = canvas.getContext('2d');
+const axisValueDisplay1 = document.getElementById('axisValueDisplay1');
+const axisValueDisplay2 = document.getElementById('axisValueDisplay2');
+const timeValueDisplay1 = document.getElementById('timeValueDisplay1');
+const pauseButton = document.getElementById('pauseButton');
+const zoomInButton = document.getElementById('zoomInButton');
+const zoomOutButton = document.getElementById('zoomOutButton');
+
+let gamepadIndex1, gamepadIndex2;
+let startTime = Date.now();
+// Arrays to store the history of axis values
+// Number of points to keep in history
+let history1 = [];
+let history2 = [];
+
+let frameTimes = []; // Array to store timestamps of frames
+const maxFrameTimes = 100; // Max number of timestamps to keep
+
+
+let lastClearTime = Date.now();
+// Keep track of the last clear time
+
+let paused = false; // Flag to track pause state
+let scale = 1; // Initial scale
+
+const maxTimeToShowInSeconds = 5;
+
+window.addEventListener("gamepadconnected", (e) => {
+  const gamepad = e.gamepad;
+  console.log("Gamepad connected at index %d: %s. %d buttons, %d axes.",
+    e.gamepad.index, e.gamepad.id,
+    e.gamepad.buttons.length, e.gamepad.axes.length);
+  if (gamepad.id.includes("FFB_Pedal_Brake")) {
+    console.log("FFB_Pedal_Brake connected at index %d", gamepad.index);
+    gamepadIndex1 = gamepad.index;
+  } else if (gamepad.id.includes("DIY_FFB_PEDAL_JOYSTICK")) {
+    console.log("DIY_FFB_PEDAL_JOYSTICK connected at index %d", gamepad.index);
+    gamepadIndex2 = gamepad.index;
+  }
+});
+
+window.addEventListener("gamepaddisconnected", (e) => {
+  console.log("Gamepad disconnected from index %d: %s", e.gamepad.index, e.gamepad.id);
+  if (e.gamepad.index === gamepadIndex1) {
+    gamepadIndex1 = undefined;
+  } else if (e.gamepad.index === gamepadIndex2) {
+    gamepadIndex2 = undefined;
+  }
+});
+
+function update() {
+  requestAnimationFrame(update);
+
+  if (paused) {
+    return; // Stop updating when paused
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Apply scaling to the canvas
+  ctx.save();
+  //ctx.scale(scale, 1);
+
+  const currentTime = Date.now();
+  const elapsedTime = (currentTime - startTime) / 1000;
+  
+  // Add the current timestamp to the frameTimes array
+  frameTimes.push(currentTime);
+  
+  // Limit the size of the frameTimes array
+  if (frameTimes.length > maxFrameTimes) {
+    frameTimes.shift();
+  }
+
+  // Calculate refresh rate if there are at least two timestamps
+  if (frameTimes.length > 1) {
+    const intervals = frameTimes.slice(1).map((time, i) => time - frameTimes[i]);
+    const averageInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+    const refreshRate = 1000 / averageInterval;
+    timeValueDisplay1.textContent = 
+      "Estimated Refresh Rate: " + refreshRate.toFixed(1) + " Hz";
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  timeValueDisplay0.textContent = "Time: " + elapsedTime.toFixed(2) + "s";
+
+  if (gamepadIndex1 !== undefined) {
+    const gamepad1 = navigator.getGamepads()[gamepadIndex1];
+    const axisValue1 = gamepad1.axes[0];
+    const x1 = elapsedTime;
+    const y1 = canvas.height / 2 - axisValue1 * (canvas.height / 2 - 10);
+    history1.push({ x: x1, y: y1 }); // Store the current value in history1
+	
+	// Remove elements older than 5 seconds
+    history1 = history1.filter(point => point.x >= elapsedTime - maxTimeToShowInSeconds); 
+  
+  
+    drawHistory(history1, 'red', 1, scale, 1); // Draw the history of gamepad1
+    axisValueDisplay1.textContent = "FFB_Pedal_Brake Axis 0: " + axisValue1.toFixed(2);
+  }
+
+  if (gamepadIndex2 !== undefined) {
+    const gamepad2 = navigator.getGamepads()[gamepadIndex2];
+    const axisValue2 = gamepad2.axes[3];
+    const x2 = elapsedTime;
+    const y2 = canvas.height / 2 - axisValue2 * (canvas.height / 2 - 10);
+    history2.push({ x: x2, y: y2 }); // Store the current value in history2
+
+	// Remove elements older than 5 seconds
+    history2 = history2.filter(point => point.x >= elapsedTime - maxTimeToShowInSeconds); 
+	
+    drawHistory(history2, 'blue', 1, scale, 0.5); // Draw the history of gamepad2
+    axisValueDisplay2.textContent = "DIY_FFB_PEDAL_JOYSTICK Axis 3: " + axisValue2.toFixed(2);
+  }
+  
+  // Draw vertical grid lines
+  drawGridLines(elapsedTime, scale);
+  
+  // Draw axis ticks
+  //drawTicks(scale);
+  
+  // Draw legend
+  drawLegend();
+  
+  // Restore the canvas context
+  ctx.restore();
+}
+
+
+function drawLegend() {
+  ctx.font = '14px Arial'; // Adjust font size as needed
+
+  // First plot legend
+  ctx.fillStyle = 'red';
+  ctx.fillRect(10, 10, 15, 15); // Draw a small red rectangle
+  ctx.fillText('FFB_Pedal_Brake Axis 0', 35, 25);
+
+  // Second plot legend
+  ctx.fillStyle = 'blue';
+  ctx.fillRect(10, 35, 15, 15); // Draw a small blue rectangle
+  ctx.fillText('DIY_FFB_PEDAL_JOYSTICK Axis 3', 35, 50);
+}
+
+function drawHistory(history, color, size, scale, alpha) {
+  ctx.strokeStyle = color;
+  
+  ctx.globalAlpha = 0.5;
+  
+  ctx.lineWidth = size;
+  ctx.beginPath();
+  
+  const currentTime = history[history.length-1].x
+  
+  for (let i = history.length - 2; i >= 0 ; i--) {
+  
+	const startPos = i / history.length * canvas.width;
+	const endPos = (i+1) / history.length * canvas.width;
+    const start = history[i];
+    const end = history[i + 1];
+	
+	if ( startPos < 0 ){continue;}
+	
+	const startDataPointTime = (start.x - currentTime);
+	const endDataPointTime = (end.x - currentTime);
+	
+	const tmp2 = canvas.width  + endDataPointTime / maxTimeToShowInSeconds * scale * canvas.width; 
+	const tmp1 = canvas.width + startDataPointTime / maxTimeToShowInSeconds * scale * canvas.width;
+    ctx.moveTo(tmp1, start.y);
+    ctx.lineTo(tmp2, end.y);
+  }
+  ctx.stroke();
+  
+}
+
+
+function drawGridLines(elapsedTime, scale) {
+  ctx.strokeStyle = 'lightgray'; // Color of the grid lines
+  ctx.lineWidth = 1;
+
+  // Calculate the starting x-coordinate for the grid lines (aligned with the plot)
+  const startX = (elapsedTime * 100) % (100 * scale); // 100 is the speed of the plot
+  
+  const tmp = maxTimeToShowInSeconds * scale;//Math.ceil( scale / 5 * canvas.width );
+  
+  for (let x = 0; x < tmp; x++) { // Adjust spacing as needed
+  
+	  const x_inSeconds = x / scale;
+	  const x_px = canvas.width - x_inSeconds * scale / maxTimeToShowInSeconds * canvas.width;
+	  
+	  if ( x_px < 0 ){continue;}
+	
+	  ctx.beginPath();
+	  ctx.moveTo(x_px, 0);
+	  ctx.lineTo(x_px, canvas.height);
+	  ctx.stroke();
+	  
+	  // Add tick labels
+	  const tickValue = (x_inSeconds).toFixed(2) + "s"; // Calculate tick value based on y position
+	  ctx.fillText(tickValue, x_px, canvas.height-20); // Adjust text position as needed
+  }
+  
+}
+
+function drawTicks(scale) {
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 1;
+      ctx.font = '12px Arial'; // Adjust font size as needed
+
+      // Draw vertical axis ticks
+      const numTicksY = 10; // Adjust the number of ticks as needed
+      const tickSpacingY = canvas.width / numTicksY;
+      for (let i = 1; i < numTicksY; i++) {
+        const y = i * tickSpacingY;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(5, y); // Adjust tick length as needed
+        ctx.stroke();
+
+        // Add tick labels
+        const tickValue = (1 - (y / canvas.height) * 2).toFixed(1); // Calculate tick value based on y position
+        ctx.fillText(tickValue, 10, y + 5); // Adjust text position as needed
+      }
+    }
+
+function drawCircle(x, y, color, size) {
+  ctx.beginPath();
+  ctx.arc(x, y, 10, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+pauseButton.addEventListener('click', () => {
+  paused = !paused;
+  pauseButton.textContent = paused ? 'Resume' : 'Pause';
+});
+
+zoomInButton.addEventListener('click', () => {
+  scale *= 1.1; // Increase scale by 10%
+});
+
+zoomOutButton.addEventListener('click', () => {
+
+  if (scale > 1)
+  {
+	scale /= 1.1; // Decrease scale by 10%
+  }
+  
+});
+
+update();
+</script>
+
+</body>
+</html>

@@ -28,7 +28,7 @@ public static class Cubic
 
     public static (double[], double[], double[]) Interpolate(double[] xOrig, double[] yOrig, double[] xInterp)
     {
-        (double[] a, double[] b) = FitMatrix(xOrig, yOrig);
+        (double[] a, double[] b) = FitMatrix(xOrig, yOrig); 
 
         double[] yInterp = new double[xInterp.Length];
         for (int i = 0; i < yInterp.Length; i++)

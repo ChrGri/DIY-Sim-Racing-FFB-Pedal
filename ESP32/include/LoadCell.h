@@ -12,6 +12,7 @@ private:
 public:
   LoadCell_ADS1256(uint8_t channel0=0, uint8_t channel1=1);
   float getReadingKg() const;
+  // float getAngleMeasurement() const;
   void setLoadcellRating(uint8_t loadcellRating_u8) const;
   
 public:
