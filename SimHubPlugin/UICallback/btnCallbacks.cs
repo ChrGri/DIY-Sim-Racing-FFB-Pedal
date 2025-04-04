@@ -303,11 +303,6 @@ namespace User.PluginSdkDemo
 
         unsafe private void RestartPedal_click(object sender, RoutedEventArgs e)
         {
-            Plugin._serialPort[indexOfSelectedPedal_u].DtrEnable = true;
-            Plugin._serialPort[indexOfSelectedPedal_u].RtsEnable = true;
-            System.Threading.Thread.Sleep(100);
-            Plugin._serialPort[indexOfSelectedPedal_u].DtrEnable = false;
-            Plugin._serialPort[indexOfSelectedPedal_u].RtsEnable = false;
             if (Plugin.Settings.Pedal_ESPNow_Sync_flag[indexOfSelectedPedal_u])
             {
                 if (Plugin.ESPsync_serialPort.IsOpen)
@@ -338,6 +333,30 @@ namespace User.PluginSdkDemo
                         string errorMessage = caughtEx.Message;
                         TextBox_debugOutput.Text = errorMessage;
                     }
+                }
+            }
+            else
+            {
+                if (Plugin.Settings.USING_ESP32S3[Plugin.Settings.table_selected])
+                {
+                    DAP_action_st tmp;
+                    tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
+                    tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
+                    tmp.payloadHeader_.PedalTag = (byte)indexOfSelectedPedal_u;
+                    tmp.payloadPedalAction_.system_action_u8 = 2; //1=reset pedal position, 2 =restart esp.
+
+                    DAP_action_st* v = &tmp;
+                    byte* p = (byte*)v;
+                    tmp.payloadFooter_.checkSum = Plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
+                    Plugin.SendPedalAction(tmp , (byte)Plugin.Settings.table_selected);
+                }
+                else
+                {
+                    Plugin._serialPort[indexOfSelectedPedal_u].DtrEnable = true;
+                    Plugin._serialPort[indexOfSelectedPedal_u].RtsEnable = true;
+                    System.Threading.Thread.Sleep(100);
+                    Plugin._serialPort[indexOfSelectedPedal_u].DtrEnable = false;
+                    Plugin._serialPort[indexOfSelectedPedal_u].RtsEnable = false;
                 }
             }
 
