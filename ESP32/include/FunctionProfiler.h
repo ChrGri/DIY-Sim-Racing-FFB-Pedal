@@ -2,31 +2,30 @@
 #include <Arduino.h>
 #include <limits>
 #include <string>
-
-// Example usage
-// 1) create a profiler instance
-// #include "FunctionProfiler.h"
-// FunctionProfiler profiler_pedalUpdateTask;
-// 2) activate the profiler
-// profiler_pedalUpdateTask.activate( true );
-// 3) start the timer for ID 0
-// profiler_pedalUpdateTask.start(0);
-// 4) end the timer for ID 0
-// profiler_pedalUpdateTask.end(0);
-// 5) print the report
-// profiler_pedalUpdateTask.report();
-
-
+#include "esp_cpu.h"
+#include "esp_clk.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 
 class FunctionProfiler {
 public:
     static const int MAX_TIMERS = 16;
-    string taskName = "default";
-    uint32_t nmbCalls_u32 = 3000;
+    std::string taskName;
+    TaskHandle_t taskHandle;
+    bool activeFlag_b = false;
 
-    void setName(string name)
-    {
+    uint32_t nmbCalls_u32 = 1000;   // report after N calls (default)
+    uint32_t globalCount = 0;       // counts across all sections   
+
+    FunctionProfiler(TaskHandle_t task = nullptr, const char* name = "default") {
+        taskHandle = task ? task : xTaskGetCurrentTaskHandle();
+        taskName = name;
+        cpu_freq_mhz = esp_clk_cpu_freq() / 1000000;
+        reset();
+    }
+
+    void setName(const char* name) {
         taskName = name;
     }
 
@@ -40,57 +39,61 @@ public:
         activeFlag_b = activeFlagArg_b;
     }
 
+    // Start section
     void start(uint8_t id) {
-        if (activeFlag_b)
-        {
-            if (id >= MAX_TIMERS) return;
-            startTimes[id] = micros();
-            active[id] = true;
-        }
-        
+        if (id >= MAX_TIMERS) return;
+        active[id] = true;
+        startCycles[id] = esp_cpu_get_ccount();
     }
 
+    // Stop section
     void end(uint8_t id) {
-        if (activeFlag_b)
-        {
-            if (id >= MAX_TIMERS || !active[id]) return;
-            unsigned long dur = micros() - startTimes[id];
-            durations[id] += dur;
-            counts[id]++;
-            last[id] = dur;
-            if (dur < mins[id]) mins[id] = dur;
-            if (dur > maxs[id]) maxs[id] = dur;
-            active[id] = false;
+        if (id >= MAX_TIMERS || !active[id]) return;
+        uint64_t dur = esp_cpu_get_ccount() - startCycles[id];
+        accumulate(id, dur);
+        counts[id]++;
+        active[id] = false;
+    }
+
+    // Called automatically when task is switched out
+    void pauseAll(uint64_t now) {
+        for (int i = 0; i < MAX_TIMERS; i++) {
+            if (active[i]) {
+                uint64_t dur = now - startCycles[i];
+                accumulate(i, dur);
+                taskSwitch[i]++;
+            }
         }
     }
 
-    void reset() {
-        for (int i = 0; i < MAX_TIMERS; ++i) {
-            durations[i] = 0;
-            counts[i] = 0;
-            mins[i] = std::numeric_limits<unsigned long>::max();
-            maxs[i] = 0;
-            last[i] = 0;
-            active[i] = false;
+    // Called automatically when task resumes
+    void resumeAll(uint64_t now) {
+        for (int i = 0; i < MAX_TIMERS; i++) {
+            if (active[i]) {
+                startCycles[i] = now; // reset base point
+            }
         }
     }
 
     void report() {
         if (activeFlag_b)
-            {
+        {
             if (counts[0] >= nmbCalls_u32)
-            {
-                // Serial.println(F("\n------ FunctionProfiler Report (by ID) for task: %s------"));
-                Serial.printf("\n------ FunctionProfiler Report (by ID) for task: %s ------\n", taskName.c_str());
-                // Serial.printf("%s\n", taskName.c_str());
-                for (int i = 0; i < MAX_TIMERS; ++i) {
-                    if (counts[i] > 0) {
-                        unsigned long avg = durations[i] / counts[i];
-                        Serial.printf("ID %2d: calls=%lu | avg=%lu us | min=%lu us | max=%lu us | last=%lu us\n",
-                            i, counts[i], avg, mins[i], maxs[i], last[i]);
+                {
+                Serial.printf("\n--- Profiler report for task %s ---\n", taskName.c_str());
+                for (int i = 0; i < MAX_TIMERS; i++) {
+                    if (counts[i] >= nmbCalls_u32) {
+                        uint64_t avg = totalCycles[i] / counts[i];
+                        Serial.printf("ID %2d: calls=%-6u | avg=%-5lu us | min=%-5lu us | max=%-5lu us | last=%-5lu us | task_switches=%d\n",
+                            i, counts[i],
+                            (unsigned long)(avg / cpu_freq_mhz),
+                            (unsigned long)(min_cycles[i] / cpu_freq_mhz),
+                            (unsigned long)(max_cycles[i] / cpu_freq_mhz),
+                            (unsigned long)(last_cycles[i] / cpu_freq_mhz),
+                            taskSwitch[i]);
                     }
                 }
-                Serial.println(F("---------------------------------------------"));
+                Serial.println(F("-----------------------------------"));
 
                 // reset the values
                 reset();
@@ -99,22 +102,44 @@ public:
         
     }
 
-    
+    void reset() {
+        for (int i = 0; i < MAX_TIMERS; i++) {
+            totalCycles[i] = 0;
+            counts[i] = 0;
+            taskSwitch[i] = 0;
+            min_cycles[i] = std::numeric_limits<uint64_t>::max();
+            max_cycles[i] = 0;
+            last_cycles[i] = 0;
+            active[i] = false;
+            startCycles[i] = 0;
+        }
+        globalCount = 0;
+    }
 
 private:
-    unsigned long startTimes[MAX_TIMERS] = {0};
-    unsigned long durations[MAX_TIMERS] = {0};
-    unsigned long last[MAX_TIMERS] = {0};
-    unsigned long mins[MAX_TIMERS];
-    unsigned long maxs[MAX_TIMERS] = {0};
-    uint32_t counts[MAX_TIMERS] = {0};
-    bool active[MAX_TIMERS] = {false};
-    bool activeFlag_b = false;
+    uint32_t cpu_freq_mhz;
+    uint64_t startCycles[MAX_TIMERS];
+    uint64_t totalCycles[MAX_TIMERS];
+    uint64_t last_cycles[MAX_TIMERS];
+    uint64_t min_cycles[MAX_TIMERS];
+    uint64_t max_cycles[MAX_TIMERS];
+    uint32_t counts[MAX_TIMERS];
+    uint32_t taskSwitch[MAX_TIMERS];
+    
+    bool active[MAX_TIMERS];
 
-public:
-    FunctionProfiler() {
-        for (int i = 0; i < MAX_TIMERS; ++i) {
-            mins[i] = std::numeric_limits<unsigned long>::max();
-        }
-    }
+    void accumulate(uint8_t id, uint64_t dur) {
+    totalCycles[id] += dur;
+    // counts[id]++;
+    last_cycles[id] = dur;
+    if (dur < min_cycles[id]) min_cycles[id] = dur;
+    if (dur > max_cycles[id]) max_cycles[id] = dur;
+
+    // globalCount++;
+    // if (globalCount >= nmbCalls_u32) {
+    //     report();
+    //     reset();
+    //     globalCount = 0;
+    // }
+}
 };

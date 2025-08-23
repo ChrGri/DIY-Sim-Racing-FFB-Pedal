@@ -295,9 +295,11 @@ char* APhost;
 /*                         profiler setup                                                     */
 /*                                                                                            */
 /**********************************************************************************************/
-#include "FunctionProfiler.h"
+// #include "FunctionProfiler.h"
+#include "ProfilerHooks.h"
+#include "RuntimeStats.h"
 
-
+TaskRuntimeProfiler profiler;
 
 
 
@@ -1112,7 +1114,10 @@ void updatePedalCalcParameters()
 /*                                                                                            */
 /**********************************************************************************************/
 void loop() {
-  vTaskDelete(NULL);  // Kill the Arduino loop task
+  //vTaskDelete(NULL);  // Kill the Arduino loop task
+
+  delay(5000);   // wait some time
+  profiler.report();  // print CPU usage per task
 }
 
 
@@ -1127,7 +1132,8 @@ void IRAM_ATTR pedalUpdateTask( void * pvParameters )
 {
 
   static DRAM_ATTR DAP_state_extended_st dap_state_extended_st_lcl_pedalUpdateTask;
-  FunctionProfiler profiler_pedalUpdateTask;
+  FunctionProfiler profiler_pedalUpdateTask(nullptr, "pedalUpdateTask");
+  registerProfiler(&profiler_pedalUpdateTask);   // hook profiler into task
   profiler_pedalUpdateTask.setName("PedalUpdate");
   float loadcellReading = 0.0f;
   float filteredReading_exp_filter = 0;
@@ -1965,7 +1971,8 @@ void IRAM_ATTR joystickOutputTask( void * pvParameters )
 { 
   int32_t joystickNormalizedToInt32_local = 0;
 
-  FunctionProfiler profiler_joystickOutputTask;
+  FunctionProfiler profiler_joystickOutputTask(nullptr, "joystickOutputTask");
+  registerProfiler(&profiler_joystickOutputTask);   // hook profiler into task
   profiler_joystickOutputTask.setName("JoystickOutput");
   profiler_joystickOutputTask.setNumberOfCalls(500);
 
@@ -2054,7 +2061,8 @@ uint32_t communicationTask_stackSizeIdx_u32 = 0;
 void IRAM_ATTR serialCommunicationTask( void * pvParameters )
 { 
   int32_t joystickNormalizedToInt32_local = 0;
-  FunctionProfiler profiler_serialCommunicationTask;
+  FunctionProfiler profiler_serialCommunicationTask(nullptr, "serialCommunicationTask");
+  registerProfiler(&profiler_serialCommunicationTask);   // hook profiler into task
   profiler_serialCommunicationTask.setName("SerialCommunication");
   profiler_serialCommunicationTask.setNumberOfCalls(500);
 
@@ -2729,7 +2737,8 @@ void OTATask( void * pvParameters )
 
 void IRAM_ATTR ESPNOW_SyncTask( void * pvParameters )
 {
-  FunctionProfiler profiler_espNow;
+  FunctionProfiler profiler_espNow(nullptr, "ESPNOW_SyncTask");
+  registerProfiler(&profiler_espNow);   // hook profiler into task
   profiler_espNow.setName("EspNow");
 
   uint Pairing_timeout=20000;
