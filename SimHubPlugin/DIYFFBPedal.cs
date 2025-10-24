@@ -84,7 +84,7 @@ namespace User.PluginSdkDemo
         public byte[] Rudder_Pedal_idx = new byte[2] { 1, 2 };
         public string Current_Game = "";
         public byte TrackSurfaceCondition = 0;
-        public bool[] PedalConfigRead_b = new bool[3] { false, false, false };
+        //public bool[] PedalConfigRead_b = new bool[3] { false, false, false };
         public bool[] isCdcSerial = new bool[3] { false, false, false };
         public List<VidPidResult> comportList = new List<VidPidResult>();
         private const float actionIntervalTolerance = 0.5f;

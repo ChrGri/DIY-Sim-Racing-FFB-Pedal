@@ -62,7 +62,7 @@ namespace User.PluginSdkDemo.UIFunction
                 item.Id = _unassignedPedalId[i];
                 _unassignedPedalList.Add(item);
             }
-            if (_plugin._calculations.PedalAvailability[_plugin.Settings.table_selected])
+            if (_plugin._calculations.pedalWirelessStatus[Plugin.Settings.table_selected]==WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY)
             {
                 Btn_Assign.IsEnabled = false;
                 Btn_Beep.IsEnabled = false;

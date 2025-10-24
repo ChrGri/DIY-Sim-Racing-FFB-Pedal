@@ -390,13 +390,6 @@ namespace User.PluginSdkDemo
                 btn_pedal_connect.Content = "Connect";
 
             }
-
-            ////reading config from pedal
-
-            if (Plugin.Settings.reading_config == 1)
-            {
-                Reading_config_auto(indexOfSelectedPedal_u);
-            }
             updateTheGuiFromConfig();
         }
 

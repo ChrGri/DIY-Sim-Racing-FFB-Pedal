@@ -661,7 +661,6 @@ namespace User.PluginSdkDemo
                                         //Plugin._calculations.pedalSerialConnetionlastTime[pedalSelected] = DateTime.Now;
                                         waiting_for_pedal_config[pedalSelected] = false;
                                         dap_config_st[pedalSelected] = pedalConfig_read_st;
-                                        Plugin.PedalConfigRead_b[pedalSelected] = true;
                                         updateTheGuiFromConfig();
 
                                         continue;

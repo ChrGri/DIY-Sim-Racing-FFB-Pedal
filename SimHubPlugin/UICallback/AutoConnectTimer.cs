@@ -164,8 +164,6 @@ namespace User.PluginSdkDemo
                             {
                                 Plugin.connectSerialPort[pedalIdx] = false;
                                 Plugin.Settings.connect_status[pedalIdx] = 0;
-                                Plugin.PedalConfigRead_b[pedalIdx] = false;
-                                Plugin._calculations.PedalSerialAvailability[pedalIdx] = false;
                                 Plugin._calculations.ServoStatus[pedalIdx] = 0;
                                 updateTheGuiFromConfig();
                             }

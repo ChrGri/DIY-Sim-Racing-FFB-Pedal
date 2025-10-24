@@ -111,32 +111,6 @@ namespace User.PluginSdkDemo.UIFunction
                 {
                     Label_Pedal_interval_trigger.Content = "Effects Update Rate:" + Settings.Pedal_action_fps[Settings.table_selected]+"Hz";
                     Slider_Pedal_interval_trigger.Value = Settings.Pedal_action_fps[Settings.table_selected];
-                    if (Settings.reading_config == 1)
-                    {
-                        checkbox_pedal_read.IsChecked = true;
-                        CheckBox_LivePreview.IsEnabled = true;
-                        if (Settings.LivePreview[Settings.table_selected])
-                        {
-                            CheckBox_LivePreview.IsChecked = true;
-                        }
-                        else
-                        {
-                            CheckBox_LivePreview.IsChecked = false;
-                        }
-
-
-
-                    }
-                    else
-                    {
-                        checkbox_pedal_read.IsChecked = false;
-                        for (int i = 0; i < 3; i++)
-                        {
-                            Settings.LivePreview[i] = false;
-                        }
-                        CheckBox_LivePreview.IsChecked = false;
-                        CheckBox_LivePreview.IsEnabled = false;
-                    }
 
                     if (Settings.Pedal_ESPNow_Sync_flag[Settings.table_selected])
                     {
@@ -286,51 +260,7 @@ namespace User.PluginSdkDemo.UIFunction
             SettingsChangedEvent(Settings);
         }
 
-        private void checkbox_pedal_read_Checked(object sender, RoutedEventArgs e)
-        {
-            Settings.reading_config = 1;
-            CheckBox_LivePreview.IsEnabled = true;
-            SettingsChangedEvent(Settings);
-        }
-
-        private void checkbox_pedal_read_Unchecked(object sender, RoutedEventArgs e)
-        {
-            Settings.reading_config = 0;
-            for (int i = 0; i < 3; i++)
-            {
-                Settings.LivePreview[i] = false;
-            }
-            CheckBox_LivePreview.IsChecked = false;
-            CheckBox_LivePreview.IsEnabled = false;
-            SettingsChangedEvent(Settings);
-        }
-
-        private void CheckBox_LivePreview_Checked(object sender, RoutedEventArgs e)
-        {
-            Settings.LivePreview[Settings.table_selected] = true;
-            /*
-            btn_SendConfig.Content = "Save Config in Pedal";
-            btn_SendConfig.ToolTip = "Push Config into Pedal storage";
-            */
-            calculation.btn_SendConfig_Content= "Save Config in Pedal";
-            calculation.btn_SendConfig_tooltip= "Push Config into Pedal storage";
-            CalculationChangedEvent(calculation);
-            SettingsChangedEvent(Settings);
-        }
-
-        private void CheckBox_LivePreview_Unchecked(object sender, RoutedEventArgs e)
-        {
-            Settings.LivePreview[Settings.table_selected] = false;
-            /*
-            btn_SendConfig.Content = "Save Config in Pedal";
-            btn_SendConfig.ToolTip = "Push Config into Pedal storage";
-            */
-            calculation.btn_SendConfig_Content = "Send Config to Pedal";
-            calculation.btn_SendConfig_tooltip = "Send Config to Pedal and save in storage";
-            //calculation.IsUIRefreshNeeded = true;
-            CalculationChangedEvent(calculation);
-            SettingsChangedEvent(Settings);
-        }
+        
 
         private void CheckBox_Pedal_ESPNow_SyncFlag_Checked(object sender, RoutedEventArgs e)
         {

@@ -62,10 +62,21 @@ namespace User.PluginSdkDemo
                     return;
                 }
             }
+            RefreshConfigList();
+            
+        }
+
+        public void RefreshConfigList()
+        {
+            string currentDirectory = Directory.GetCurrentDirectory();
+            string simhubCommonFolder = currentDirectory + "\\PluginsData\\Common";
+            string baseFolderPath = Path.Combine(simhubCommonFolder, baseFolderName);
+            string configFolderPath = Path.Combine(baseFolderPath, configFolderName);
+            string profileFolderPath = Path.Combine(baseFolderPath, profileFolderName);
             try
             {
 
-                if(ConfigList==null) ConfigList = new ObservableCollection<ConfigListItem> { };
+                if (ConfigList == null) ConfigList = new ObservableCollection<ConfigListItem> { };
                 if (ConfigList.Count > 0) { ConfigList.Clear(); }
 
 
@@ -76,10 +87,10 @@ namespace User.PluginSdkDemo
 
                 try
                 {
-                    
+
                     string[] fullPaths = Directory.GetFiles(configFolderPath, "*.json");
 
-                    
+
                     foreach (var path in fullPaths)
                     {
                         ConfigListItem item = new ConfigListItem();
@@ -88,13 +99,13 @@ namespace User.PluginSdkDemo
                         item.FullPath = Path.GetFullPath(path);
                         item.IsDefault = false;
                         item.IsCurrent = false;
-                        
+
                         ConfigList.Add(item);
                     }
                 }
                 catch (Exception ex)
                 {
-                    
+
                 }
 
             }

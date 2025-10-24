@@ -462,9 +462,9 @@ namespace User.PluginSdkDemo
                                     string connection_tmp = "";
                                     bool wireless_connection_update = false;
                                     //fill the status into _calculations
-                                    Plugin._calculations.PedalAvailability[0] = bridge_state.payloadBridgeState_.Pedal_availability_0 == 1;
-                                    Plugin._calculations.PedalAvailability[1] = bridge_state.payloadBridgeState_.Pedal_availability_1 == 1;
-                                    Plugin._calculations.PedalAvailability[2] = bridge_state.payloadBridgeState_.Pedal_availability_2 == 1;
+                                    //Plugin._calculations.PedalAvailability[0] = bridge_state.payloadBridgeState_.Pedal_availability_0 == 1;
+                                    //Plugin._calculations.PedalAvailability[1] = bridge_state.payloadBridgeState_.Pedal_availability_1 == 1;
+                                    //Plugin._calculations.PedalAvailability[2] = bridge_state.payloadBridgeState_.Pedal_availability_2 == 1;
                                     //check wireless pedal connection, if status change make toast notification
                                     if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_0 != bridge_state.payloadBridgeState_.Pedal_availability_0)
                                     {
@@ -482,8 +482,7 @@ namespace User.PluginSdkDemo
                                             ///ToastNotification("Wireless Clutch", "Disconnected");
                                             connection_tmp += "Clutch Disconnected";
                                             wireless_connection_update = true;
-                                            Plugin.PedalConfigRead_b[0] = false;
-                                            Plugin._calculations.PedalAvailability[0] = false;
+                                            //Plugin._calculations.PedalAvailability[0] = false;
                                         }
                                         dap_bridge_state_st.payloadBridgeState_.Pedal_availability_0 = bridge_state.payloadBridgeState_.Pedal_availability_0;
                                         //updateTheGuiFromConfig();
@@ -507,8 +506,7 @@ namespace User.PluginSdkDemo
                                             //ToastNotification("Wireless Brake", "Disconnected");
                                             connection_tmp += " Brake Disconnected";
                                             wireless_connection_update = true;
-                                            Plugin.PedalConfigRead_b[1] = false;
-                                            Plugin._calculations.PedalAvailability[1] = false;
+                                            //Plugin._calculations.PedalAvailability[1] = false;
                                         }
                                         dap_bridge_state_st.payloadBridgeState_.Pedal_availability_1 = bridge_state.payloadBridgeState_.Pedal_availability_1;
 
@@ -531,8 +529,7 @@ namespace User.PluginSdkDemo
                                             //ToastNotification("Wireless Throttle", "Disconnected");
                                             connection_tmp += " Throttle Disconnected";
                                             wireless_connection_update = true;
-                                            Plugin.PedalConfigRead_b[2] = false;
-                                            Plugin._calculations.PedalAvailability[2] = false;
+
                                         }
                                         dap_bridge_state_st.payloadBridgeState_.Pedal_availability_2 = bridge_state.payloadBridgeState_.Pedal_availability_2;
 
@@ -634,7 +631,6 @@ namespace User.PluginSdkDemo
                                     waiting_for_pedal_config[pedalSelected] = false;
                                     dap_config_st[pedalSelected] = pedalConfig_read_st;
                                     updateTheGuiFromConfig();
-                                    Plugin.PedalConfigRead_b[pedalSelected] = true;
                                     continue;
                                 }
                                 else

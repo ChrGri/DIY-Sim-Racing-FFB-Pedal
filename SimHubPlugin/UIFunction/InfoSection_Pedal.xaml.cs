@@ -124,7 +124,7 @@ namespace User.PluginSdkDemo.UIFunction
 
 
             if(rssibar!=null) rssibar.updateRSSI(calculation.rssi[Settings.table_selected]);
-            if (Label_RSSI != null && calculation.rssi[Settings.table_selected] < -20 && calculation.rssi[Settings.table_selected] > -100 && calculation.PedalAvailability[Settings.table_selected])
+            if (Label_RSSI != null && calculation.rssi[Settings.table_selected] < -20 && calculation.rssi[Settings.table_selected] > -100 && calculation.pedalWirelessStatus[Settings.table_selected]==WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY)
             {
                 if (calculation.BridgeSerialAvailability)
                 {

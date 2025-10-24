@@ -32,14 +32,6 @@
                     <Label Content="Auto Connect" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                 </StackPanel>
                 <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
-                    <styles:SHToggleButton x:Name="checkbox_pedal_read" Content="" Checked="checkbox_pedal_read_Checked" Unchecked="checkbox_pedal_read_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Auto Read Config from Pedal when connected" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                    <Label Content="Auto Read Config" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                </StackPanel>
-                <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
-                    <styles:SHToggleButton x:Name="CheckBox_LivePreview" Content="" Checked="CheckBox_LivePreview_Checked" Unchecked="CheckBox_LivePreview_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="The preview is not save to pedal storage, please save config after you feel comfortable. The preview interval is binding with action interval" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" IsEnabled="False" />
-                    <Label Content="Config Live Preview" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                </StackPanel>
-                <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
                     <styles:SHToggleButton x:Name="CheckBox_Pedal_ESPNow_SyncFlag" Content="" Checked="CheckBox_Pedal_ESPNow_SyncFlag_Checked" Unchecked="CheckBox_Pedal_ESPNow_SyncFlag_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
                     <Label Content="Wireless Comunication" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                 </StackPanel>

@@ -43,8 +43,8 @@ namespace User.PluginSdkDemo
         public uint _rssi_value;
         public byte[,] PedalFirmwareVersion;
         public byte[] BridgeFirmwareVersion;
-        public bool[] PedalAvailability;//wireless
-        public bool[] PedalSerialAvailability;
+        //public bool[] PedalAvailability;//wireless
+        //public bool[] PedalSerialAvailability;
         public bool Rudder_status;
         public bool BridgeSerialAvailability;
         public bool OTASettingUpdate_b;
@@ -141,8 +141,8 @@ namespace User.PluginSdkDemo
             _pedalStatusString = "";
             PedalFirmwareVersion = new byte[3, 3] { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
             BridgeFirmwareVersion = new byte[3] { 0, 0, 0 };
-            PedalAvailability = new bool[3] { false, false, false };
-            PedalSerialAvailability = new bool[3] { false, false, false };
+            //PedalAvailability = new bool[3] { false, false, false };
+            //PedalSerialAvailability = new bool[3] { false, false, false };
             Rudder_status = false;
             BridgeSerialAvailability = false;
             _pedalConnectingString = "";

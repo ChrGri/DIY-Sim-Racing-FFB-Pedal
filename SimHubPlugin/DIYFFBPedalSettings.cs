@@ -15,7 +15,6 @@ namespace User.PluginSdkDemo
         public string[] selectedComPortNames = { "COM1", "COM1", "COM1" };
         public string[] autoconnectComPortNames = { "NA", "NA", "NA" };
         public string[] selectedJsonFileNames = { "1", "2", "3" };
-        public int reading_config = 0;
         public int[] connect_status = new int[3] { 0, 0, 0 };
         public uint[] connect_flag = new uint[3] { 0, 0, 0 };
         public uint RPM_effect_type = 0;
@@ -59,7 +58,6 @@ namespace User.PluginSdkDemo
         public bool[,,] Effect_status_prolife = new bool[6, 3, 8] { { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } } };
         public string SSID_string = "";
         public string PASS_string = "";
-        public bool[] LivePreview = new bool[3] { false, false, false };
         public float rudderMaxForce = 10;
         public float rudderMinForce = 1;
         public byte rudderMaxTravel = 95;

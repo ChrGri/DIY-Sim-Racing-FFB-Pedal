@@ -428,41 +428,41 @@ namespace User.PluginSdkDemo
         {
             if (Plugin != null)
             {
-                if (Plugin.Settings.LivePreview[indexOfSelectedPedal_u] && Plugin.PedalConfigRead_b[indexOfSelectedPedal_u])
+                DateTime ConfigLiveSending_now = DateTime.Now;
+                TimeSpan diff = ConfigLiveSending_now - ConfigLiveSending_last;
+                int millisceonds = (int)diff.TotalMilliseconds;
+                bool live_preview_b = true;
+
+                if (PedalTabChange)
                 {
-                    DateTime ConfigLiveSending_now = DateTime.Now;
-                    TimeSpan diff = ConfigLiveSending_now - ConfigLiveSending_last;
-                    int millisceonds = (int)diff.TotalMilliseconds;
-                    bool live_preview_b = true;
-
-                    if (PedalTabChange)
+                    diff = ConfigLiveSending_now - PedalTabChange_last;
+                    int millseconds_pedaltabchange = (int)diff.TotalMilliseconds;
+                    if (millseconds_pedaltabchange > 100)
                     {
-                        diff = ConfigLiveSending_now - PedalTabChange_last;
-                        int millseconds_pedaltabchange = (int)diff.TotalMilliseconds;
-                        if (millseconds_pedaltabchange > 100)
-                        {
-                            PedalTabChange = false;
-                            PedalTabChange_last = DateTime.Now;
+                        PedalTabChange = false;
+                        PedalTabChange_last = DateTime.Now;
 
-                        }
-                        else
-                        {
-                            live_preview_b = false;
-                        }
                     }
-                    float time_interval = 1000.0f / Plugin.Settings.Pedal_action_fps[indexOfSelectedPedal_u];
-
-                    if (millisceonds > time_interval && live_preview_b)
+                    else
                     {
-                        //live_preview_b = true;
-                        Plugin.SendConfigWithoutSaveToEEPROM(dap_config_st[indexOfSelectedPedal_u], (byte)indexOfSelectedPedal_u);
-                        ConfigLiveSending_last = DateTime.Now;
+                        live_preview_b = false;
                     }
+                }
+                if (Plugin._calculations.pedalWirelessStatus[Plugin.Settings.table_selected] == WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY || Plugin._calculations.pedalSerialStatus[Plugin.Settings.table_selected] == ConnectStateEnum.PEDAL_IS_READY)
+                {
 
+                }
+                else
+                {
+                    live_preview_b = false;
+                }
+                float time_interval = 1000.0f / Plugin.Settings.Pedal_action_fps[indexOfSelectedPedal_u];
 
-
-
-
+                if (millisceonds > time_interval && live_preview_b)
+                {
+                    //live_preview_b = true;
+                    Plugin.SendConfigWithoutSaveToEEPROM(dap_config_st[indexOfSelectedPedal_u], (byte)indexOfSelectedPedal_u);
+                    ConfigLiveSending_last = DateTime.Now;
                 }
             }
 
@@ -812,7 +812,6 @@ namespace User.PluginSdkDemo
                         pedal_serial_read_timer[pedalIdx].Start();
                         System.Threading.Thread.Sleep(100);
                         Serial_connect_status[pedalIdx] = true;
-                        Plugin._calculations.PedalSerialAvailability[pedalIdx] = true;
                         Plugin._calculations.pedalSerialStatus[pedalIdx] = ConnectStateEnum.PEDAL_ENTRY_CONNECT;
                     }
                     catch (Exception ex)
@@ -828,7 +827,6 @@ namespace User.PluginSdkDemo
                     Plugin.Settings.connect_status[pedalIdx] = 0;
                     Plugin.connectSerialPort[pedalIdx] = false;
                     Serial_connect_status[pedalIdx] = false;
-                    Plugin._calculations.PedalSerialAvailability[pedalIdx] = false;
                 }
             }
             catch (Exception ex)

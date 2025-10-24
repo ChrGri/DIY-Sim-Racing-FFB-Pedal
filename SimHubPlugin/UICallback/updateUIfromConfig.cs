@@ -32,7 +32,7 @@ namespace User.PluginSdkDemo
                     {
                         if (Plugin.Settings.Pedal_ESPNow_Sync_flag[i])
                         {
-                            Plugin._calculations.PedalAvailability[i] = false;
+                            //Plugin._calculations.PedalAvailability[i] = false;
                             Plugin._calculations.PedalFirmwareVersion[i, 2] = 0;
                             Plugin._calculations.ServoStatus[i] = 0;
                         }
@@ -41,12 +41,12 @@ namespace User.PluginSdkDemo
                 }
                 for (int i = 0; i < 3; i++)
                 {
-                    Plugin._calculations.PedalSerialAvailability[i] = Plugin._serialPort[indexOfSelectedPedal_u].IsOpen;
                     if (!Plugin.Settings.Pedal_ESPNow_Sync_flag[i])
                     {
                         if (!Plugin._serialPort[indexOfSelectedPedal_u].IsOpen)
                         {
                             Plugin._calculations.ServoStatus[i] = 0;
+                            Plugin._calculations.PedalFirmwareVersion[i, 2] = 0;
                         }
                     }
                 }
