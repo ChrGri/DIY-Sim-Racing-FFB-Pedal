@@ -152,7 +152,7 @@ namespace User.PluginSdkDemo
                     btn_Assignment.IsEnabled = false;
                 }
 
-                if (Plugin.Sync_esp_connection_flag)
+                if (Plugin._calculations.bridgeConnectionStatus!=BridgeConnectStateEnum.BRIDGE_DISCONNECT)
                 {
                     btn_connect_espnow_port.Content = "Disconnect";
                 }

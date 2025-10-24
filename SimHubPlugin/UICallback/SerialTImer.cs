@@ -508,7 +508,11 @@ namespace User.PluginSdkDemo
 
                                         bufferByteAssignedToStruct.AsSpan(srcBufferOffset_0, sizeof(DAP_state_basic_st)).Fill(true);
                                         lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + sizeof(DAP_state_basic_st));
-
+                                        if (Plugin._calculations.pedalSerialStatus[pedalSelected] == ConnectStateEnum.PEDAL_ENTRY_CONNECT)
+                                        {
+                                            Plugin._calculations.pedalSerialStatus[pedalSelected] = ConnectStateEnum.PEDAL_GET_BASIC_PACKETS;
+                                        }
+                                        Plugin._calculations.pedalSerialConnetionlastTime[pedalSelected]=DateTime.Now;
                                         // write vJoy data
                                         Pedal_position_reading[pedalSelected] = pedalState_read_st.payloadPedalBasicState_.joystickOutput_u16;
                                         //if (Plugin.Rudder_enable_flag == false)
@@ -621,7 +625,7 @@ namespace User.PluginSdkDemo
                                 int destBuffLength = srcBufferOffset_1 - srcBufferOffset_0;
 
                                 // decode into config struct
-                                if ((waiting_for_pedal_config[pedalSelected]) && (destBuffLength == sizeof(DAP_config_st)))
+                                if (destBuffLength == sizeof(DAP_config_st))
                                 {
 
                                     // parse byte array as config struct
@@ -650,7 +654,11 @@ namespace User.PluginSdkDemo
 
                                         bufferByteAssignedToStruct.AsSpan(srcBufferOffset_0, sizeof(DAP_config_st)).Fill(true);
                                         lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + sizeof(DAP_config_st));
-
+                                        if (Plugin._calculations.pedalSerialStatus[pedalSelected] == ConnectStateEnum.PEDAL_GET_BASIC_PACKETS)
+                                        {
+                                            Plugin._calculations.pedalSerialStatus[pedalSelected] = ConnectStateEnum.PEDAL_IS_READY;
+                                        }
+                                        //Plugin._calculations.pedalSerialConnetionlastTime[pedalSelected] = DateTime.Now;
                                         waiting_for_pedal_config[pedalSelected] = false;
                                         dap_config_st[pedalSelected] = pedalConfig_read_st;
                                         Plugin.PedalConfigRead_b[pedalSelected] = true;
@@ -801,6 +809,22 @@ namespace User.PluginSdkDemo
                         sp.DiscardInBuffer();
                     }
 
+                }
+            }
+            if (Plugin._calculations.pedalSerialStatus[pedalSelected] == ConnectStateEnum.PEDAL_IS_READY)
+            {
+                TimeSpan diff = DateTime.Now - Plugin._calculations.pedalSerialConnetionlastTime[pedalSelected];
+                if (diff.TotalMilliseconds > 1000)
+                {
+                    if (Plugin.PortExists(Plugin._serialPort[pedalSelected].PortName))
+                    {
+                        Plugin._calculations.pedalSerialStatus[pedalSelected] = ConnectStateEnum.PEDAL_ENTRY_CONNECT;
+                    }
+                    else
+                    {
+                        Plugin._calculations.pedalSerialStatus[pedalSelected] = ConnectStateEnum.PEDAL_DISCONNECT;
+                    }
+                        
                 }
             }
         }

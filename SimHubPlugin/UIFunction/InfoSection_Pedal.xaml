@@ -23,8 +23,8 @@
                 <localUI:RSSIBar x:Name="rssibar" />
             </StackPanel>
             <StackPanel Height="70" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
-                <Label x:Name="info_label" Content="" Height="70" Width="80" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="10"/>
-                <Label x:Name="info_label_2" Content="Label" Height="70" Width="80" FontFamily="Arial" VerticalAlignment="Top" FontSize="10"/>
+                <Label x:Name="info_label" Content="" Height="70" Width="70" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="10" Padding="0,5,0,0"/>
+                <Label x:Name="info_label_2" Content="Label" Height="70" Width="90" FontFamily="Arial" VerticalAlignment="Top" FontSize="10" Padding="0,5,0,5"/>
             </StackPanel>
         </StackPanel>
     </Grid>

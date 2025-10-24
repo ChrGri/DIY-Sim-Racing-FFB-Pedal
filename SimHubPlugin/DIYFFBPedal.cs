@@ -70,7 +70,7 @@ namespace User.PluginSdkDemo
         public bool Rudder_brake_enable_flag = false;
         public bool Rudder_brake_status = false;
         public byte pedal_state_in_ratio = 0;
-        public bool Sync_esp_connection_flag=false;
+        //public bool Sync_esp_connection_flag=false;
         public byte PedalErrorCode = 0;
         public byte PedalErrorIndex = 0;
         public byte[] random_pedal_action_interval=new byte[3] { 50,51,53};
@@ -91,10 +91,11 @@ namespace User.PluginSdkDemo
         bool flightRpmEffectsStatus_last = false;
         bool flightGforceEffects_last = false;
         //public vJoyInterfaceWrap.vJoy joystick;
+        
         //effect trigger timer
         DateTime[] Action_currentTime = new DateTime[3];
         DateTime[] Action_lastTime = new DateTime[3];
-        
+
 
         // ABS trigger timer
         DateTime absTrigger_currentTime = DateTime.Now;

@@ -721,23 +721,30 @@ namespace User.PluginSdkDemo
 
         private void btn_connect_espnow_port_Click(object sender, RoutedEventArgs e)
         {
-            if (Plugin.Sync_esp_connection_flag)
+            
+            /*if (Plugin.Sync_esp_connection_flag)
             {
-                if (Plugin.ESPsync_serialPort.IsOpen)
+                
+            }
+            */
+            if (Plugin.ESPsync_serialPort.IsOpen)
+            {
+                if (ESP_host_serial_timer != null)
                 {
-                    if (ESP_host_serial_timer != null)
-                    {
-                        ESP_host_serial_timer.Stop();
-                        ESP_host_serial_timer.Dispose();
-                    }
-                    Plugin.ESPsync_serialPort.DiscardInBuffer();
-                    Plugin.ESPsync_serialPort.DiscardOutBuffer();
-                    Plugin.ESPsync_serialPort.Close();
-                    Plugin.Sync_esp_connection_flag = false;
-                    btn_connect_espnow_port.Content = "Connect";
-                    SystemSounds.Beep.Play();
-                    Plugin.Settings.Pedal_ESPNow_auto_connect_flag = false;
+                    ESP_host_serial_timer.Stop();
+                    ESP_host_serial_timer.Dispose();
+                }
+                Plugin.ESPsync_serialPort.DiscardInBuffer();
+                Plugin.ESPsync_serialPort.DiscardOutBuffer();
+                Plugin.ESPsync_serialPort.Close();
+                //Plugin.Sync_esp_connection_flag = false;
+                btn_connect_espnow_port.Content = "Connect";
+                SystemSounds.Beep.Play();
+                Plugin.Settings.Pedal_ESPNow_auto_connect_flag = false;
+                if (Plugin._calculations.bridgeConnectionStatus != BridgeConnectStateEnum.BRIDGE_DISCONNECT)
+                {
                     updateTheGuiFromConfig();
+                    Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_DISCONNECT;
                 }
             }
             else
@@ -763,29 +770,12 @@ namespace User.PluginSdkDemo
                         {
                             Plugin.ESPsync_serialPort.Open();
                             System.Threading.Thread.Sleep(200);
-                            // ESP32 S3
-                            /*
-                            if (Plugin.Settings.Using_CDC_bridge)
-                            {
-                                Plugin.ESPsync_serialPort.RtsEnable = false;
-                                Plugin.ESPsync_serialPort.DtrEnable = true;
-                            }
-                            */
                             Plugin.ESPsync_serialPort.RtsEnable = false;
                             Plugin.ESPsync_serialPort.DtrEnable = false;
 
                             SystemSounds.Beep.Play();
-                            Plugin.Sync_esp_connection_flag = true;
+                            //Plugin.Sync_esp_connection_flag = true;
                             btn_connect_espnow_port.Content = "Disconnect";
-                            //Plugin.Settings.connect_status[3] = 1;
-                            // read callback
-                            /*
-                            if (pedal_serial_read_timer[3] != null)
-                            {
-                                pedal_serial_read_timer[3].Stop();
-                                pedal_serial_read_timer[3].Dispose();
-                            }
-                            */
                             ESP_host_serial_timer = new System.Windows.Forms.Timer();
                             ESP_host_serial_timer.Tick += new EventHandler(timerCallback_serial_esphost_orig);
                             ESP_host_serial_timer.Tag = 3;
@@ -796,7 +786,11 @@ namespace User.PluginSdkDemo
                             {
                                 Plugin.Settings.ESPNow_port = Plugin.ESPsync_serialPort.PortName;
                             }
-                            updateTheGuiFromConfig();
+                            if (Plugin._calculations.bridgeConnectionStatus == BridgeConnectStateEnum.BRIDGE_DISCONNECT)
+                            {
+                                Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT;
+                                updateTheGuiFromConfig();
+                            }
 
 
                         }

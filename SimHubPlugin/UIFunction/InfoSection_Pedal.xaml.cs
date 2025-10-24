@@ -89,48 +89,16 @@ namespace User.PluginSdkDemo.UIFunction
         {
             if (calculation != null)
             {
-                calculation.PedalStatusString = "Waiting...";
-                if (calculation.PedalSerialAvailability[Settings.table_selected])
+
+                if (Settings.Pedal_ESPNow_Sync_flag[Settings.table_selected])
                 {
-                    calculation.PedalStatusString = "Usb Connected";
+                    calculation.PedalStatusString = PedalConstStrings.WirelessConnectState[(int)calculation.pedalWirelessStatus[Settings.table_selected]];
                 }
                 else
                 {
-                    if (Settings.auto_connect_flag[Settings.table_selected] == 1)
-                    {
-                        calculation.PedalStatusString = calculation.PedalConnetingString;
-                    }
+                    calculation.PedalStatusString = PedalConstStrings.ConnectState[(int)calculation.pedalSerialStatus[Settings.table_selected]];
                 }
-                if (Settings.Pedal_ESPNow_Sync_flag[Settings.table_selected])
-                {
-                    for (int pedalIDX = 0; pedalIDX < 3; pedalIDX++)
-                    {
-                        if (calculation.PedalAvailability[pedalIDX] && Settings.table_selected == pedalIDX)
-                        {
-                            calculation.PedalStatusString = "Wireless";
-                            
-                        }
-                    }
-
-                }
-                switch (calculation.ServoStatus[Settings.table_selected])
-                {
-                    case (byte)enumServoStatus.Off:
-                        calculation.PedalStatusString += "\nOff";
-                        break;
-                    case (byte)enumServoStatus.On:
-                        calculation.PedalStatusString += "\nOn";
-                        break;
-                    case (byte)enumServoStatus.Idle:
-                        calculation.PedalStatusString += "\nIdle";
-                        break;
-                    case (byte)enumServoStatus.ForceStop:
-                        calculation.PedalStatusString += "\nForceStop";
-                        break;
-                    default:
-                        calculation.PedalStatusString += "\n";
-                        break;
-                }
+                calculation.PedalStatusString += "\n" + PedalConstStrings.ServoStatus[(int)calculation.ServoStatus[Settings.table_selected]];
                 calculation.PedalStatusString += "\n" + Constants.pedalConfigPayload_version + "\n" + Constants.pluginVersion;
                 if (calculation.PedalFirmwareVersion[Settings.table_selected, 2] != 0)
                 {

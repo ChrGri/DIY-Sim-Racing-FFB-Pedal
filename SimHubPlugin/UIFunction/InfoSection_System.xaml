@@ -21,8 +21,8 @@
                 <Label Content="System Info"  FontFamily="Arial Black" FontSize="12" Height="15" Width="80" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center"  />
             </StackPanel>
             <StackPanel Height="65" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
-                <Label x:Name="info_label_system" Content="" Height="65" Width="80" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="10"/>
-                <Label x:Name="info_label_2_system" Content="" Height="65" Width="80" FontFamily="Arial" VerticalAlignment="Top" FontSize="10"/>
+                <Label x:Name="info_label_system" Content="" Height="65" Width="70" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="10" Padding="0,5,0,0"/>
+                <Label x:Name="info_label_2_system" Content="" Height="65" Width="90" FontFamily="Arial" VerticalAlignment="Top" FontSize="10" Padding="0,5,0,0"/>
             </StackPanel>
         </StackPanel>
     </Grid>

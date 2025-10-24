@@ -176,6 +176,11 @@ namespace User.PluginSdkDemo
 
                                     // write vJoy data
                                     Pedal_position_reading[pedalSelected] = pedalState_read_st.payloadPedalBasicState_.joystickOutput_u16;
+                                    if (Plugin._calculations.pedalWirelessStatus[pedalSelected] == WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT)
+                                    {
+                                        Plugin._calculations.pedalWirelessStatus[pedalSelected] = WirelessConnectStateEnum.PEDAL_GET_BASIC_PACKETS_OVER_ESPNOW;
+                                    }
+                                    Plugin._calculations.pedalWirelessConnetionlastTime[pedalSelected] = DateTime.Now;
                                     //if (Plugin.Rudder_enable_flag == false)
                                     //{
                                     if (Plugin.Settings.vjoy_output_flag == 1)
@@ -431,6 +436,11 @@ namespace User.PluginSdkDemo
                                 if ((check_payload_state_b) && check_crc_state_b)
                                 {
                                     //Bridge_RSSI = bridge_state.payloadBridgeState_.Pedal_RSSI;
+                                    if (Plugin._calculations.bridgeConnectionStatus == BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT)
+                                    {
+                                        Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_IS_READY;
+                                    }
+                                    Plugin._calculations.bridgeConnetionlastTime= DateTime.Now;
                                     
                                     if (bridge_state.payloadBridgeState_.unassignedPedalCount > 0 && Plugin._calculations.unassignedPedalCount != bridge_state.payloadBridgeState_.unassignedPedalCount)
                                     {
@@ -566,13 +576,14 @@ namespace User.PluginSdkDemo
                                             Pedal_connect_status = (byte)PedalAvailability.SinglePedalThrottle;
                                         }
                                     }
-
+                                    
                                     if (wireless_connection_update)
                                     {
-                                        ToastNotification("Wireless Connection", connection_tmp);
+                                       // ToastNotification("Wireless Connection", connection_tmp);
                                         updateTheGuiFromConfig();
                                         wireless_connection_update = false;
                                     }
+
                                     //fill the version info
                                     for (int i = 0; i < 3; i++)
                                     {
@@ -612,22 +623,28 @@ namespace User.PluginSdkDemo
                                     check_crc_config_b = true;
                                 }
                                 UInt16 pedalSelected = pedalConfig_read_st.payloadHeader_.PedalTag;
-                                if (waiting_for_pedal_config[pedalSelected])
+
+
+                                if ((check_payload_config_b) && check_crc_config_b)
                                 {
-                                    if ((check_payload_config_b) && check_crc_config_b)
+                                    if (Plugin._calculations.pedalWirelessStatus[pedalSelected] == WirelessConnectStateEnum.PEDAL_GET_BASIC_PACKETS_OVER_ESPNOW)
                                     {
-                                        waiting_for_pedal_config[pedalSelected] = false;
-                                        dap_config_st[pedalSelected] = pedalConfig_read_st;
-                                        updateTheGuiFromConfig();
-                                        Plugin.PedalConfigRead_b[pedalSelected] = true;
-                                        continue;
+                                        Plugin._calculations.pedalWirelessStatus[pedalSelected] = WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY;
                                     }
-                                    else
-                                    {
-                                        TextBox2.Text = "Payload config test 1: " + check_payload_config_b;
-                                        TextBox2.Text += "Payload config test 2: " + check_crc_config_b;
-                                    }
+                                    waiting_for_pedal_config[pedalSelected] = false;
+                                    dap_config_st[pedalSelected] = pedalConfig_read_st;
+                                    updateTheGuiFromConfig();
+                                    Plugin.PedalConfigRead_b[pedalSelected] = true;
+                                    continue;
                                 }
+                                else
+                                {
+                                    TextBox2.Text = "Payload config test 1: " + check_payload_config_b;
+                                    TextBox2.Text += "Payload config test 2: " + check_crc_config_b;
+                                }
+
+
+
                             }
                             // If non known array datatype was received, assume a text message was received and print it
                             // only print debug messages when debug mode is active as it degrades performance
@@ -722,6 +739,49 @@ namespace User.PluginSdkDemo
                 string errorMessage = caughtEx.Message;
 
                 SimHub.Logging.Current.Error(errorMessage);
+            }
+
+            TimeSpan diff_bridge= DateTime.Now - Plugin._calculations.bridgeConnetionlastTime;
+            if (diff_bridge.TotalMilliseconds > 1000 && Plugin._calculations.bridgeConnectionStatus==BridgeConnectStateEnum.BRIDGE_IS_READY)
+            {
+                Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_DISCONNECT;
+
+                ToastNotification("Wireless Connection", "Bridge disconnected");
+                for (int i = 0; i < 3; i++)
+                {
+                    Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                }
+                updateTheGuiFromConfig();
+            }
+            bool toastPedalStatusChange = false;
+            string tmpStringPedalStatusChange = "";
+            for (int i = 0; i < 3; i++)
+            {
+                
+                if (Plugin._calculations.pedalWirelessStatus[i] == WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY)
+                {
+                    TimeSpan diff = DateTime.Now-Plugin._calculations.pedalWirelessConnetionlastTime[i];
+                    if (diff.TotalMilliseconds > 1000 )
+                    {
+                        if (Plugin._calculations.bridgeConnectionStatus == BridgeConnectStateEnum.BRIDGE_IS_READY)
+                        {
+                            Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
+                        }
+                        else
+                        {
+                            Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                        }
+                        toastPedalStatusChange = true;
+                        tmpStringPedalStatusChange += PedalConstStrings.PedalID[i] + " ";
+                        
+                    }
+                } 
+            }
+            if (toastPedalStatusChange)
+            {
+                updateTheGuiFromConfig();
+                tmpStringPedalStatusChange += "disconnected";
+                ToastNotification("Wireless Connection", tmpStringPedalStatusChange);
             }
 
         }

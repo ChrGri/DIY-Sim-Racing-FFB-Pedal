@@ -93,17 +93,7 @@ namespace User.PluginSdkDemo.UIFunction
             if (calculation != null)
             {
                 calculation.SystemStatusString = "Waiting...";
-                if (calculation.BridgeSerialAvailability)
-                {
-                    calculation.SystemStatusString = "Connected";
-                }
-                else
-                {
-                    if (Settings.Pedal_ESPNow_auto_connect_flag)
-                    {
-                        calculation.SystemStatusString = calculation.BridgeConnetingString;
-                    }
-                }
+                calculation.SystemStatusString = PedalConstStrings.BridgeConnectState[(int)calculation.bridgeConnectionStatus];
                 calculation.SystemStatusString += "\n" + Constants.pedalConfigPayload_version + "\n" + Constants.pluginVersion;
                 if (calculation.BridgeFirmwareVersion[2] != 0)
                 {

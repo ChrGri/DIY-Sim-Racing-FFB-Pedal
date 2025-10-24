@@ -62,6 +62,12 @@ namespace User.PluginSdkDemo
         public bool IsTestBuild = false;
         public bool IsOtaUploadFromPlatformIO = false;
         public byte[][] unassignedPedalMacaddress;
+        public BridgeConnectStateEnum bridgeConnectionStatus= BridgeConnectStateEnum.BRIDGE_DISCONNECT;
+        public WirelessConnectStateEnum[] pedalWirelessStatus = new WirelessConnectStateEnum[3] { WirelessConnectStateEnum.PEDAL_DISCONNECT, WirelessConnectStateEnum.PEDAL_DISCONNECT, WirelessConnectStateEnum.PEDAL_DISCONNECT};
+        public ConnectStateEnum[] pedalSerialStatus = new ConnectStateEnum[3] { ConnectStateEnum.PEDAL_DISCONNECT, ConnectStateEnum.PEDAL_DISCONNECT, ConnectStateEnum.PEDAL_DISCONNECT };
+        public DateTime[] pedalWirelessConnetionlastTime = new DateTime[3];
+        public DateTime[] pedalSerialConnetionlastTime = new DateTime[3];
+        public DateTime bridgeConnetionlastTime = DateTime.Now;
         public uint RSSI_Value
         {
             get => _rssi_value;
@@ -155,6 +161,7 @@ namespace User.PluginSdkDemo
             {
                 unassignedPedalMacaddress[i]=new byte[6] { 0, 0, 0, 0, 0, 0};
             }
+            
 
         }
         public event PropertyChangedEventHandler PropertyChanged;

@@ -748,15 +748,6 @@ namespace User.PluginSdkDemo
 
                 // https://stackoverflow.com/questions/7178655/serialport-encoding-how-do-i-get-8-bit-ascii
                 Plugin._serialPort[pedalIdx].Encoding = System.Text.Encoding.GetEncoding(28591);
-
-                // regular ESP
-                //Plugin._serialPort[pedalIdx].DtrEnable = false;
-
-                // ESP32 S3
-                //Plugin._serialPort[pedalIdx].RtsEnable = false;
-                //Plugin._serialPort[pedalIdx].DtrEnable = true;
-
-
                 Plugin._serialPort[pedalIdx].NewLine = "\r\n";
                 Plugin._serialPort[pedalIdx].ReadBufferSize = 10000;
                 if (Plugin.Settings.auto_connect_flag[pedalIdx] == 1 & Plugin.Settings.connect_flag[pedalIdx] == 1)
@@ -822,6 +813,7 @@ namespace User.PluginSdkDemo
                         System.Threading.Thread.Sleep(100);
                         Serial_connect_status[pedalIdx] = true;
                         Plugin._calculations.PedalSerialAvailability[pedalIdx] = true;
+                        Plugin._calculations.pedalSerialStatus[pedalIdx] = ConnectStateEnum.PEDAL_ENTRY_CONNECT;
                     }
                     catch (Exception ex)
                     {
@@ -887,7 +879,7 @@ namespace User.PluginSdkDemo
                 Plugin.ESPsync_serialPort.DiscardInBuffer();
                 Plugin.ESPsync_serialPort.DiscardOutBuffer();
                 Plugin.ESPsync_serialPort.Close();
-                Plugin.Sync_esp_connection_flag = false;
+                //Plugin.Sync_esp_connection_flag = false;
             }
         }
         static List<int> FindAllOccurrences(byte[] source, byte[] sequence, int maxLength)
@@ -1362,6 +1354,46 @@ namespace User.PluginSdkDemo
             Plugin.Settings.rudderRPMMaxFrequency = dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq;
             Plugin.Settings.rudderRPMMinFrequency = dap_config_st_rudder.payloadPedalConfig_.RPM_min_freq;
             Plugin.Settings.rudderRPMAmp = dap_config_st_rudder.payloadPedalConfig_.RPM_AMP;
+        }
+
+        public bool OpenBridgeSerialConnection()
+        {
+            bool status = false;
+            if (Plugin.ESPsync_serialPort.IsOpen == false)
+            {
+                Plugin.ESPsync_serialPort.PortName = Plugin.Settings.ESPNow_port;
+                try
+                {
+                    // serial port settings
+                    Plugin.ESPsync_serialPort.Handshake = Handshake.None;
+                    Plugin.ESPsync_serialPort.Parity = Parity.None;
+                    //_serialPort[pedalIdx].StopBits = StopBits.None;
+                    Plugin.ESPsync_serialPort.ReadTimeout = 2000;
+                    Plugin.ESPsync_serialPort.WriteTimeout = 500;
+                    Plugin.ESPsync_serialPort.BaudRate = Bridge_baudrate;
+                    // https://stackoverflow.com/questions/7178655/serialport-encoding-how-do-i-get-8-bit-ascii
+                    Plugin.ESPsync_serialPort.Encoding = System.Text.Encoding.GetEncoding(28591);
+                    Plugin.ESPsync_serialPort.NewLine = "\r\n";
+                    Plugin.ESPsync_serialPort.ReadBufferSize = 40960;
+                    Plugin.ESPsync_serialPort.Open();
+                    System.Threading.Thread.Sleep(200);
+                    //Plugin.Sync_esp_connection_flag = true;
+                    // add timer
+                    ESP_host_serial_timer = new System.Windows.Forms.Timer();
+                    ESP_host_serial_timer.Tick += new EventHandler(timerCallback_serial_esphost_orig);
+                    ESP_host_serial_timer.Tag = 3;
+                    ESP_host_serial_timer.Interval = 8; // in miliseconds
+                    ESP_host_serial_timer.Start();
+                    status = true;
+                    System.Threading.Thread.Sleep(100);
+                }
+                catch (Exception ex)
+                {
+                    TextBox2.Text = ex.Message;
+                }
+            }
+            
+            return status;
         }
     }
 }
