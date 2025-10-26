@@ -17,29 +17,7 @@ namespace User.PluginSdkDemo
         {
             //simhub action for debug
             Simhub_action_update();
-            /*
-            string tmp = "Connecting";
-            int count_connection = ((int)count_timmer_count) % 4;
-
-            switch (count_connection)
-            {
-                case 0:
-                    break;
-                case 1:
-                    tmp = tmp + ".";
-                    break;
-                case 2:
-                    tmp = tmp + "..";
-                    break;
-                case 3:
-                    tmp = tmp + "...";
-                    break;
-            }
-            info_text_connection = tmp;
-            system_info_text_connection = tmp;
-            Plugin._calculations.PedalConnetingString = tmp;
-            Plugin._calculations.BridgeConnetingString = tmp;
-            */
+           
 
             for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
             {
@@ -69,20 +47,18 @@ namespace User.PluginSdkDemo
                     {
                         if (OpenBridgeSerialConnection())
                         {
-                            if (Plugin._calculations.bridgeConnectionStatus == BridgeConnectStateEnum.BRIDGE_DISCONNECT)
+                            Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT;
+                            for (uint i = 0; i < 3; i++)
                             {
-                                Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT;
-                                for (uint i = 0; i < 3; i++)
+                                if (Plugin._calculations.pedalWirelessStatus[(uint)i] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
                                 {
-                                    if (Plugin._calculations.pedalWirelessStatus[(uint)i] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
-                                    {
-                                        Plugin._calculations.pedalWirelessStatus[(uint)i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
-                                    }
-
+                                    Plugin._calculations.pedalWirelessStatus[(uint)i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
                                 }
-                                ToastNotification("Pedal Wireless Bridge", "Connection initialized");
-                                updateTheGuiFromConfig();
+
                             }
+                            ToastNotification("Pedal Wireless Bridge", "Connection initialized");
+                            updateTheGuiFromConfig();
+
                             btn_connect_espnow_port.Content = "Disconnect";
 
                         }

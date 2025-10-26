@@ -354,7 +354,10 @@ void ESPNow_initialize()
     #ifdef Using_Board_ESP32S3
     //esp_wifi_config_espnow_rate(WIFI_IF_STA, WIFI_PHY_RATE_54M);
     //esp_wifi_config_espnow_rate(WIFI_IF_STA, 	WIFI_PHY_RATE_11M_L);
-    //esp_wifi_set_max_tx_power(WIFI_POWER_8_5dBm);
+      #ifdef LOW_TX_POWER
+      esp_wifi_set_max_tx_power(WIFI_POWER_8_5dBm);
+      ActiveSerial->println("[L]Setting Wifi strength to 8.5dbm ");
+      #endif
     #endif
     //reading from eeprom
     #ifdef ESPNow_Pairing_function

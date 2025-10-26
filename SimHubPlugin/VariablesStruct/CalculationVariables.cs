@@ -68,6 +68,8 @@ namespace User.PluginSdkDemo
         public DateTime[] pedalWirelessConnetionlastTime = new DateTime[3];
         public DateTime[] pedalSerialConnetionlastTime = new DateTime[3];
         public DateTime bridgeConnetionlastTime = DateTime.Now;
+        public bool[] configPreviewLock = new bool[3] { false, false, false};
+        public DateTime[] configPreviewLockLast = new DateTime[3];
         public uint RSSI_Value
         {
             get => _rssi_value;

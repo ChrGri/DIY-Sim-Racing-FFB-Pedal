@@ -125,6 +125,7 @@ namespace User.PluginSdkDemo
         DateTime PedalTabChange_last = DateTime.Now;
         //public byte[,] PedalFirmwareVersion = new byte[3, 3] { { 0, 0, 0}, { 0, 0, 0 }, { 0, 0, 0 } };
         public bool PedalTabChange = false;
+        private bool firstAssignPlugin = true;
 
 
         public enum PedalAvailability        
@@ -145,11 +146,7 @@ namespace User.PluginSdkDemo
         {
             
             DAP_config_set_default_rudder();
-            for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
-            {
-                DAP_config_set_default(pedalIdx);
-                
-            }
+
             for (uint i = 0; i < 30; i++)
             {
                 _basic_wifi_info.WIFI_PASS[i] = 0;
@@ -159,7 +156,7 @@ namespace User.PluginSdkDemo
             
             //setting drawing color with Simhub theme workaround
             //SolidColorBrush buttonBackground_ = btn_update.Background as SolidColorBrush;
-            SolidColorBrush buttonBackground_ = btn_SendConfig.Background as SolidColorBrush;
+            SolidColorBrush buttonBackground_ = btn_Assignment.Background as SolidColorBrush;
             
 
             Color color = Color.FromArgb(150, buttonBackground_.Color.R, buttonBackground_.Color.G, buttonBackground_.Color.B);
@@ -198,7 +195,11 @@ namespace User.PluginSdkDemo
             
             indexOfSelectedPedal_u = plugin.Settings.table_selected;
             MyTab.SelectedIndex = (int)indexOfSelectedPedal_u;
+            for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
+            {
+                DAP_config_set_default(pedalIdx);
 
+            }
 
             //auto connection with timmer
             if (connect_timer != null)
@@ -212,7 +213,7 @@ namespace User.PluginSdkDemo
             connect_timer.Interval = 5000; // in miliseconds try connect every 5s
             connect_timer.Start();
             System.Threading.Thread.Sleep(50);
-
+            updateTheGuiFromConfig();
         }
 
 

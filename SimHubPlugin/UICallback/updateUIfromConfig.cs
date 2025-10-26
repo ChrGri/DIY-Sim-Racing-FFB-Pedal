@@ -126,12 +126,17 @@ namespace User.PluginSdkDemo
                 PedalInfo.calculation = Plugin._calculations;
                 RudderInfo.calculation = Plugin._calculations;
                 RudderSettingSection.calculation = Plugin._calculations;
-                EffectsCustom1_tab.Plugin = Plugin;
-                EffectsCustom2_Tab.Plugin = Plugin;
+                if (firstAssignPlugin)
+                {
+                    EffectsCustom1_tab.Plugin = Plugin;
+                    EffectsCustom2_Tab.Plugin = Plugin;
+                    Listbox_PedalConfig.Plugin = Plugin;
+                    firstAssignPlugin= false;
+                }
 
 
-                btn_SendConfig.Content = Plugin._calculations.btn_SendConfig_Content;
-                btn_SendConfig.ToolTip = Plugin._calculations.btn_SendConfig_tooltip;
+                //btn_SendConfig.Content = Plugin._calculations.btn_SendConfig_Content;
+                //btn_SendConfig.ToolTip = Plugin._calculations.btn_SendConfig_tooltip;
                 if (!SystemSetting_Section.isVjoyAsigned)
                 {
                     SystemSetting_Section.asignVjoyJoystickPtr(Plugin._calculations._joystick);

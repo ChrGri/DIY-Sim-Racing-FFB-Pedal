@@ -123,6 +123,7 @@ namespace User.PluginSdkDemo
             // Parse all of the JSON.
             //JsonNode forecastNode = JsonNode.Parse(jsonString);
             dynamic data = JsonConvert.DeserializeObject(jsonString);
+
             int version = 0;
             byte[] compatibleForce = new byte[6];
             bool compatibleMode = false;
@@ -145,58 +146,38 @@ namespace User.PluginSdkDemo
             {
 
             }
-
-
-            payloadPedalConfig payloadPedalConfig_fromJson_st = config.payloadPedalConfig_;
-            //var s = default(payloadPedalConfig);
-            Object obj = payloadPedalConfig_fromJson_st;// s;
-
-
-
-            FieldInfo[] fi = payloadPedalConfig_fromJson_st.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
-
-            // Iterate over each field and print its name and value
-            foreach (var field in fi)
+            config = JsonConvert.DeserializeObject<DAP_config_st>(jsonString);
+            if (compatibleMode)
             {
+                config.payloadPedalConfig_.quantityOfControl = 6;
+                config.payloadPedalConfig_.relativeForce00 = compatibleForce[0];
+                config.payloadPedalConfig_.relativeForce01 = compatibleForce[1];
+                config.payloadPedalConfig_.relativeForce02 = compatibleForce[2];
+                config.payloadPedalConfig_.relativeForce03 = compatibleForce[3];
+                config.payloadPedalConfig_.relativeForce04 = compatibleForce[4];
+                config.payloadPedalConfig_.relativeForce05 = compatibleForce[5];
+                config.payloadPedalConfig_.relativeTravel00 = 0;
+                config.payloadPedalConfig_.relativeTravel01 = 20;
+                config.payloadPedalConfig_.relativeTravel02 = 40;
+                config.payloadPedalConfig_.relativeTravel03 = 60;
+                config.payloadPedalConfig_.relativeTravel04 = 80;
+                config.payloadPedalConfig_.relativeTravel05 = 100;
+                config.payloadPedalConfig_.numOfJoystickMapControl = 6;
+                config.payloadPedalConfig_.joystickMapMapped00 = 0;
+                config.payloadPedalConfig_.joystickMapMapped01 = 20;
+                config.payloadPedalConfig_.joystickMapMapped02 = 40;
+                config.payloadPedalConfig_.joystickMapMapped03 = 60;
+                config.payloadPedalConfig_.joystickMapMapped04 = 80;
+                config.payloadPedalConfig_.joystickMapMapped05 = 100;
+                config.payloadPedalConfig_.joystickMapOrig00 = 0;
+                config.payloadPedalConfig_.joystickMapOrig01 = 20;
+                config.payloadPedalConfig_.joystickMapOrig02 = 40;
+                config.payloadPedalConfig_.joystickMapOrig03 = 60;
+                config.payloadPedalConfig_.joystickMapOrig04 = 80;
+                config.payloadPedalConfig_.joystickMapOrig05 = 100;
 
-                if (data["payloadPedalConfig_"][field.Name] != null)
-                //if (forecastNode["payloadPedalConfig_"][field.Name] != null)
-                {
-                    try
-                    {
-                        if (field.FieldType == typeof(float))
-                        {
-                            //float value = forecastNode["payloadPedalConfig_"][field.Name].GetValue<float>();
-                            float value = (float)data["payloadPedalConfig_"][field.Name];
-                            field.SetValue(obj, value);
-                        }
-
-                        if (field.FieldType == typeof(byte))
-                        {
-                            //byte value = forecastNode["payloadPedalConfig_"][field.Name].GetValue<byte>();
-                            byte value = (byte)data["payloadPedalConfig_"][field.Name];
-                            field.SetValue(obj, value);
-                        }
-
-                        if (field.FieldType == typeof(Int16))
-                        {
-                            //byte value = forecastNode["payloadPedalConfig_"][field.Name].GetValue<byte>();
-                            Int16 value = (Int16)data["payloadPedalConfig_"][field.Name];
-                            field.SetValue(obj, value);
-                        }
-
-
-                    }
-                    catch (Exception)
-                    {
-
-                    }
-
-                }
             }
-
-            // set values in global structure
-            config.payloadPedalConfig_ = (payloadPedalConfig)obj;// payloadPedalConfig_fromJson_st;
+           
             if (config.payloadPedalConfig_.spindlePitch_mmPerRev_u8 == 0)
             {
                 config.payloadPedalConfig_.spindlePitch_mmPerRev_u8 = 5;
@@ -243,33 +224,6 @@ namespace User.PluginSdkDemo
                 config.payloadPedalConfig_.pedalEndPosition = 95;
             }
 
-            if (compatibleMode)
-            {
-                //get old verison file, auto convert to new config
-                compatibleMode = false;
-                config.payloadPedalConfig_.quantityOfControl = 6;
-                /*
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce00 = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce_p000;
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce01 = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce_p020;
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce02 = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce_p040;
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce03 = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce_p060;
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce04 = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce_p080;
-                dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce05 = dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce_p100;
-                */
-                config.payloadPedalConfig_.relativeForce00 = compatibleForce[0];
-                config.payloadPedalConfig_.relativeForce01 = compatibleForce[1];
-                config.payloadPedalConfig_.relativeForce02 = compatibleForce[2];
-                config.payloadPedalConfig_.relativeForce03 = compatibleForce[3];
-                config.payloadPedalConfig_.relativeForce04 = compatibleForce[4];
-                config.payloadPedalConfig_.relativeForce05 = compatibleForce[5];
-                config.payloadPedalConfig_.relativeTravel00 = 0;
-                config.payloadPedalConfig_.relativeTravel01 = 20;
-                config.payloadPedalConfig_.relativeTravel02 = 40;
-                config.payloadPedalConfig_.relativeTravel03 = 60;
-                config.payloadPedalConfig_.relativeTravel04 = 80;
-                config.payloadPedalConfig_.relativeTravel05 = 100;
-            }
-        
             return config;
         }
     }

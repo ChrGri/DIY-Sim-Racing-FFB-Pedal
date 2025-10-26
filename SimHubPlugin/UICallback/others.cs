@@ -22,7 +22,7 @@ namespace User.PluginSdkDemo
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
-        private void ToastNotification(string message1, string message2)
+        public void ToastNotification(string message1, string message2)
         {
 
             var xml = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText02);
@@ -83,122 +83,14 @@ namespace User.PluginSdkDemo
 
         public void DAP_config_set_default(uint pedalIdx)
         {
-            //dumpPedalToResponseFile[pedalIdx] = false;
-            //dumpPedalToResponseFile_clearFile[pedalIdx] = false;
-            dap_config_st[pedalIdx].payloadHeader_.payloadType = (byte)Constants.pedalConfigPayload_type;
-            dap_config_st[pedalIdx].payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
-            dap_config_st[pedalIdx].payloadPedalConfig_.pedalStartPosition = 35;
-            dap_config_st[pedalIdx].payloadPedalConfig_.pedalEndPosition = 80;
-            dap_config_st[pedalIdx].payloadPedalConfig_.maxForce = 50;
-            dap_config_st[pedalIdx].payloadPedalConfig_.preloadForce = 0;
-            /*
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce_p000 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce_p020 = 20;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce_p040 = 40;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce_p060 = 60;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce_p080 = 80;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce_p100 = 100;
-            */
-            dap_config_st[pedalIdx].payloadPedalConfig_.quantityOfControl = 6;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce00 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce01 = 20;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce02 = 40;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce03 = 60;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce04 = 80;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce05 = 100;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce06 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce07 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce08 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce09 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce10 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel00 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel01 = 20;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel02 = 40;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel03 = 60;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel04 = 80;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel05 = 100;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel06 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel07 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel08 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel09 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel10 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.numOfJoystickMapControl = 6;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped00 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped01 = 20;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped02 = 40;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped03 = 60;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped04 = 80;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped05 = 100;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped06 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped07 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped08 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped09 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped10 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig00 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig01 = 20;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig02 = 40;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig03 = 60;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig04 = 80;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig05 = 100;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig06 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig07 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig08 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig09 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig10 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.dampingPress = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.dampingPull = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.absFrequency = 5;
-            dap_config_st[pedalIdx].payloadPedalConfig_.absAmplitude = 20;
-            dap_config_st[pedalIdx].payloadPedalConfig_.absPattern = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.absForceOrTarvelBit = 0;
-
-            dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_a = 205;
-            dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_b = 220;
-            dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_d = 60;
-            dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_c_horizontal = 215;
-            dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_c_vertical = 60;
-            dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_travel = 100;
-
-            dap_config_st[pedalIdx].payloadPedalConfig_.Simulate_ABS_trigger = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.Simulate_ABS_value = 80;
-            dap_config_st[pedalIdx].payloadPedalConfig_.RPM_max_freq = 40;
-            dap_config_st[pedalIdx].payloadPedalConfig_.RPM_min_freq = 10;
-            dap_config_st[pedalIdx].payloadPedalConfig_.RPM_AMP = 30;
-            dap_config_st[pedalIdx].payloadPedalConfig_.BP_trigger_value = 50;
-            dap_config_st[pedalIdx].payloadPedalConfig_.BP_amp = 1;
-            dap_config_st[pedalIdx].payloadPedalConfig_.BP_freq = 15;
-            dap_config_st[pedalIdx].payloadPedalConfig_.BP_trigger = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.G_multi = 50;
-            dap_config_st[pedalIdx].payloadPedalConfig_.G_window = 10;
-            dap_config_st[pedalIdx].payloadPedalConfig_.WS_amp = 1;
-            dap_config_st[pedalIdx].payloadPedalConfig_.WS_freq = 15;
-            dap_config_st[pedalIdx].payloadPedalConfig_.Impact_multi = 50;
-            dap_config_st[pedalIdx].payloadPedalConfig_.Impact_window = 60;
-            dap_config_st[pedalIdx].payloadPedalConfig_.CV_amp_1 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.CV_freq_1 = 10;
-            dap_config_st[pedalIdx].payloadPedalConfig_.CV_amp_2 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.CV_freq_2 = 10;
-            dap_config_st[pedalIdx].payloadPedalConfig_.maxGameOutput = 100;
-            dap_config_st[pedalIdx].payloadPedalConfig_.kf_modelNoise = 90;
-            dap_config_st[pedalIdx].payloadPedalConfig_.kf_modelOrder = 0;
+            if ((Plugin!=null))
+            {
+                dap_config_st[pedalIdx] = Plugin.DefaultConfig;
+                dap_config_st[pedalIdx].payloadPedalConfig_.pedal_type = (byte)pedalIdx;
+                dap_config_st[pedalIdx].payloadHeader_.PedalTag = (byte)pedalIdx;
+            }
 
 
-            dap_config_st[pedalIdx].payloadPedalConfig_.loadcell_rating = 150;
-
-            dap_config_st[pedalIdx].payloadPedalConfig_.travelAsJoystickOutput_u8 = 0;
-
-            dap_config_st[pedalIdx].payloadPedalConfig_.invertLoadcellReading_u8 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.invertMotorDirection_u8 = 0;
-
-            dap_config_st[pedalIdx].payloadPedalConfig_.spindlePitch_mmPerRev_u8 = 5;
-            dap_config_st[pedalIdx].payloadPedalConfig_.pedal_type = (byte)pedalIdx;
-            //dap_config_st[pedalIdx].payloadPedalConfig_.OTA_flag = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.stepLossFunctionFlags_u8 = 0b11;
-            dap_config_st[pedalIdx].payloadPedalConfig_.kf_modelNoise_joystick = 1;
-            dap_config_st[pedalIdx].payloadPedalConfig_.kf_Joystick_u8 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.positionSmoothingFactor_u8 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.minForceForEffects = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.servoRatioOfInertia_u8 = 1;
         }
 
         public void DAP_config_set_default_rudder()
@@ -458,7 +350,7 @@ namespace User.PluginSdkDemo
                 }
                 float time_interval = 1000.0f / Plugin.Settings.Pedal_action_fps[indexOfSelectedPedal_u];
 
-                if (millisceonds > time_interval && live_preview_b)
+                if (millisceonds > time_interval && live_preview_b && !Plugin._calculations.configPreviewLock[indexOfSelectedPedal_u])
                 {
                     //live_preview_b = true;
                     Plugin.SendConfigWithoutSaveToEEPROM(dap_config_st[indexOfSelectedPedal_u], (byte)indexOfSelectedPedal_u);

@@ -630,6 +630,8 @@ namespace User.PluginSdkDemo
                                     }
                                     waiting_for_pedal_config[pedalSelected] = false;
                                     dap_config_st[pedalSelected] = pedalConfig_read_st;
+                                    Plugin._calculations.configPreviewLock[pedalSelected] = true;
+                                    Plugin._calculations.configPreviewLockLast[pedalSelected]=DateTime.Now;
                                     updateTheGuiFromConfig();
                                     continue;
                                 }
@@ -737,17 +739,32 @@ namespace User.PluginSdkDemo
                 SimHub.Logging.Current.Error(errorMessage);
             }
 
+
+
             TimeSpan diff_bridge= DateTime.Now - Plugin._calculations.bridgeConnetionlastTime;
             if (diff_bridge.TotalMilliseconds > 1000 && Plugin._calculations.bridgeConnectionStatus==BridgeConnectStateEnum.BRIDGE_IS_READY)
             {
-                Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_DISCONNECT;
-
-                ToastNotification("Wireless Connection", "Bridge disconnected");
-                for (int i = 0; i < 3; i++)
+                if (Plugin.PortExists(Plugin.ESPsync_serialPort.PortName))
                 {
-                    Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                    Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
+                    }
+                }
+                else
+                {
+                    Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_DISCONNECT;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                    }
+                    
                 }
                 updateTheGuiFromConfig();
+
+                ToastNotification("Wireless Connection", "Bridge disconnected");
+
             }
             bool toastPedalStatusChange = false;
             string tmpStringPedalStatusChange = "";
@@ -773,6 +790,17 @@ namespace User.PluginSdkDemo
                     }
                 } 
             }
+            //prevent config read be sent back to pedal
+            for (int i = 0; i < 3; i++)
+            {
+                TimeSpan diff_configPreviewLock = DateTime.Now-Plugin._calculations.configPreviewLockLast[i];
+                if (diff_configPreviewLock.TotalMilliseconds > 500 && Plugin._calculations.configPreviewLock[i])
+                {
+                    Plugin._calculations.configPreviewLock[i] = false;
+                }
+            }
+            
+
             if (toastPedalStatusChange)
             {
                 updateTheGuiFromConfig();

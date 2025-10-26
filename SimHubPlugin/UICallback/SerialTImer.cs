@@ -658,6 +658,8 @@ namespace User.PluginSdkDemo
                                         {
                                             Plugin._calculations.pedalSerialStatus[pedalSelected] = ConnectStateEnum.PEDAL_IS_READY;
                                         }
+                                        Plugin._calculations.configPreviewLock[pedalSelected] = true;
+                                        Plugin._calculations.configPreviewLockLast[pedalSelected] = DateTime.Now;
                                         //Plugin._calculations.pedalSerialConnetionlastTime[pedalSelected] = DateTime.Now;
                                         waiting_for_pedal_config[pedalSelected] = false;
                                         dap_config_st[pedalSelected] = pedalConfig_read_st;
@@ -825,6 +827,12 @@ namespace User.PluginSdkDemo
                     }
                         
                 }
+            }
+            //prevent config read be sent back to pedal
+            TimeSpan diff_configPreviewLock = DateTime.Now - Plugin._calculations.configPreviewLockLast[pedalSelected];
+            if (diff_configPreviewLock.TotalMilliseconds > 500 && Plugin._calculations.configPreviewLock[pedalSelected])
+            {
+                Plugin._calculations.configPreviewLock[pedalSelected] = false;
             }
         }
     }

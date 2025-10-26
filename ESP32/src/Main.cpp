@@ -95,8 +95,6 @@ inline uint16_t checksumCalculator(uint8_t * data, uint16_t length)
 
 
 bool systemIdentificationMode_b = false;
-bool previewConfigGet_b=false;
-bool firstReadConfig=true;
 unsigned long saveToEEPRomDuration=0;
 
 
@@ -1520,11 +1518,6 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         ActiveSerial->println("Updating the calc params");
         //ActiveSerial->print("save to eeprom tag:");
         //ActiveSerial->println(dap_config_pedalUpdateTask_st.payLoadHeader_.storeToEeprom);
-        if(!firstReadConfig)
-        {
-
-        }
-        previewConfigGet_b = true;
         saveToEEPRomDuration = millis();
         
         if (true == dap_config_pedalUpdateTask_st.payLoadHeader_.storeToEeprom)
@@ -1535,7 +1528,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           global_dap_config_class.setConfig(dap_config_pedalUpdateTask_st);
           ActiveSerial->println("Saving into EEPROM");
           global_dap_config_class.storeConfigToEprom();
-          previewConfigGet_b = false;
+          
           saveToEEPRomDuration = 0;
         }
         
@@ -3482,7 +3475,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
           if (Get_Rudder_action_b && !noAssignmentStatus)
           {
             Get_Rudder_action_b=false;
-            previewConfigGet_b=false;
+            
             #ifdef USING_BUZZER
             Buzzer.single_beep_tone(700,100);
             #endif
@@ -3490,7 +3483,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
           if (Get_HeliRudder_action_b && !noAssignmentStatus)
           {
             Get_HeliRudder_action_b=false;
-            previewConfigGet_b=false;
+            
             #ifdef USING_BUZZER
             Buzzer.single_beep_tone(700,100);
             #endif
@@ -3593,7 +3586,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
 }
 #endif
 
-#define CONFIG_PREVIEW_DURATION 180000// wait 3 mins then save config into eeprom
+
 void miscTask( void * pvParameters )
 {
   static DAP_config_st misc_dap_config_st;
@@ -3601,42 +3594,7 @@ void miscTask( void * pvParameters )
   for(;;)
   {
     global_dap_config_class.getConfig(&misc_dap_config_st, 500);
-    if(previewConfigGet_b && ((millis()-saveToEEPRomDuration)>CONFIG_PREVIEW_DURATION))
-    {
-      //ActiveSerial->println("30s reached");
-      if(firstReadConfig)
-      {
-        ActiveSerial->println("Auto save: not save in first read config");
-        firstReadConfig=false;
-        saveToEEPRomDuration=millis();
-        previewConfigGet_b=false;
-        //return;
-      }
-      else
-      {
-        ActiveSerial->println("Auto save: save config in pedal");
-        #ifdef ESPNOW_Enable
-          sendESPNOWLog("Pedal:%d Auto save config in pedal", misc_dap_config_st.payLoadPedalConfig_.pedal_type);
-        #endif
-        global_dap_config_class.storeConfigToEprom();
-        previewConfigGet_b=false;
-        #ifdef USING_BUZZER
-          Buzzer.single_beep_tone(700,50);
-          delay(50);
-          Buzzer.single_beep_tone(700,50);
-        #endif 
-      }
-
-      /*
-      ActiveSerial->print(millis());
-      ActiveSerial->print(" Duration:");
-      ActiveSerial->print(saveToEEPRomDuration);
-      ActiveSerial->print(" flag:");
-      ActiveSerial->println(previewConfigGet_b);
-      */
-      //saveToEEPRomDuration=0;
-
-    }
+    
     #ifdef ESPNOW_Enable
       //software assignment
       if(assignmentUpdate_b)

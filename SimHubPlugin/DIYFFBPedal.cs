@@ -374,12 +374,33 @@ namespace User.PluginSdkDemo
 
         unsafe public void SendConfig(DAP_config_st tmp, byte PedalIDX)
         {
+            tmp.payloadHeader_.PedalTag = PedalIDX;
+            tmp.payloadHeader_.payloadType = (byte)Constants.pedalConfigPayload_type;
+            tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
+            tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
+            tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
+            tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
+            tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
+            tmp.payloadPedalConfig_.pedal_type = PedalIDX;
+            DAP_config_st* v = &tmp;
+            byte* p = (byte*)v;
+            tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
             int length = sizeof(DAP_config_st);
             //int val = this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.checkSum;
             //string msg = "CRC value: " + val.ToString();
             byte[] newBuffer = new byte[length];
             newBuffer = getBytesConfig(tmp);
-            if (Settings.Pedal_ESPNow_Sync_flag[PedalIDX])
+            bool wirelessUpdate = false;
+            bool serialUpdate = false;
+            if (_calculations.pedalWirelessStatus[PedalIDX] == WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY)
+            {
+                wirelessUpdate = true;
+            }
+            if (!wirelessUpdate && _calculations.pedalSerialStatus[PedalIDX] == ConnectStateEnum.PEDAL_IS_READY)
+            {
+                serialUpdate = true;
+            }
+            if (Settings.Pedal_ESPNow_Sync_flag[PedalIDX] && wirelessUpdate)
             {
                 if (ESPsync_serialPort.IsOpen)
                 {
@@ -401,7 +422,7 @@ namespace User.PluginSdkDemo
             }
             else
             {
-                if (_serialPort[PedalIDX].IsOpen)
+                if (_serialPort[PedalIDX].IsOpen && serialUpdate)
                 {
 
                     // clear inbuffer 
@@ -417,10 +438,13 @@ namespace User.PluginSdkDemo
         {
             tmp.payloadHeader_.storeToEeprom = 0;
             tmp.payloadHeader_.PedalTag=PedalIDX;
+            tmp.payloadHeader_.payloadType = (byte)Constants.pedalConfigPayload_type;
+            tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
             tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
             tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
             tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
+            tmp.payloadPedalConfig_.pedal_type = PedalIDX;
             DAP_config_st* v = &tmp;
             byte* p = (byte*)v;
             tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
@@ -1423,6 +1447,7 @@ namespace User.PluginSdkDemo
             pluginManager.AddProperty("FlightRudder_G", this.GetType(), Rudder_G_last_value);
             pluginManager.AddProperty("FlightRudder_Wind_Force", this.GetType(), Rudder_Wind_Force_last_value);
             EnsureFolderExistsAndProcess();
+            DefaultConfigInitializing();
             for (uint pedali=0; pedali < 3; pedali++)
             {
                 Action_currentTime[pedali] = new DateTime();

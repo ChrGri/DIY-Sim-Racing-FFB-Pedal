@@ -155,6 +155,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CubicSpline.cs" />
+    <Compile Include="DefaultConfig.cs" />
     <Compile Include="DIYFFBPedal.cs" />
     <Compile Include="DIYFFBPedalSettings.cs" />
     <Compile Include="FileIoHelper.cs" />
@@ -185,6 +186,12 @@
     <Compile Include="UICallback\updateUIfromConfig.cs" />
     <Compile Include="UIElement\CheckboxWithLabel.xaml.cs">
       <DependentUpon>CheckboxWithLabel.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIElement\ConfigPreviewWindow.xaml.cs">
+      <DependentUpon>ConfigPreviewWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIElement\NameInputWindow.xaml.cs">
+      <DependentUpon>NameInputWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="UIElement\RSSIBar.xaml.cs">
       <DependentUpon>RSSIBar.xaml</DependentUpon>
@@ -267,6 +274,9 @@
     <Compile Include="UIFunction\KinematicsTab_Pedal.xaml.cs">
       <DependentUpon>KinematicsTab_Pedal.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\Listbox_PedalConfig.xaml.cs">
+      <DependentUpon>Listbox_PedalConfig.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\SettingSection_Pedal.xaml.cs">
       <DependentUpon>SettingSection_Pedal.xaml</DependentUpon>
     </Compile>
@@ -325,6 +335,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIElement\CheckboxWithLabel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIElement\ConfigPreviewWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIElement\NameInputWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -433,6 +451,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\KinematicsTab_Pedal.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\Listbox_PedalConfig.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
