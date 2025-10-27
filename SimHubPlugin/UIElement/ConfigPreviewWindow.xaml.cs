@@ -49,30 +49,31 @@ namespace User.PluginSdkDemo
             }
             tmp_config = _plugin.ReadConfig(filePath);
             Update_ForceCurve();
-            Textbox_Online_Profile_Description.Text += "\nPreview:\n";
-            Textbox_Online_Profile_Description.Text += "DAP Version: " + tmp_config.payloadHeader_.version + "\n";
-            Textbox_Online_Profile_Description.Text += "Max force: " + tmp_config.payloadPedalConfig_.maxForce + "\n";
-            Textbox_Online_Profile_Description.Text += "Preload: " + tmp_config.payloadPedalConfig_.preloadForce + "\n";
+            Textbox_Online_Profile_Description.Content = item.ListName;
+            Textbox_Online_Profile_Description.Content += " Preview:\n";
+            Textbox_Online_Profile_Description.Content += "DAP Version: " + tmp_config.payloadHeader_.version + "\n";
+            Textbox_Online_Profile_Description.Content += "Max force: " + tmp_config.payloadPedalConfig_.maxForce + "\n";
+            Textbox_Online_Profile_Description.Content += "Preload: " + tmp_config.payloadPedalConfig_.preloadForce + "\n";
             //Textbox_Online_Profile_Description.Text += "Max force: " + tmp_config.payloadPedalConfig_.maxForce + "\n";
-            Textbox_Online_Profile_Description.Text += "Travel: " + ((float)(tmp_config.payloadPedalConfig_.pedalEndPosition - tmp_config.payloadPedalConfig_.pedalStartPosition) / 100.0f * tmp_config.payloadPedalConfig_.lengthPedal_travel) + "\n";
-            Textbox_Online_Profile_Description.Text += "Damping: " + tmp_config.payloadPedalConfig_.dampingPress + "\n";
+            Textbox_Online_Profile_Description.Content += "Travel: " + ((float)(tmp_config.payloadPedalConfig_.pedalEndPosition - tmp_config.payloadPedalConfig_.pedalStartPosition) / 100.0f * tmp_config.payloadPedalConfig_.lengthPedal_travel) + "\n";
+            Textbox_Online_Profile_Description.Content += "Damping: " + tmp_config.payloadPedalConfig_.dampingPress + "\n";
             switch (tmp_config.payloadPedalConfig_.kf_modelOrder)
             {
                 case 0:
-                    Textbox_Online_Profile_Description.Text += "KF Model: Const. Vel\n";
+                    Textbox_Online_Profile_Description.Content += "KF Model: Const. Vel\n";
                     break;
                 case 1:
-                    Textbox_Online_Profile_Description.Text += "KF Model: Const. Acc\n";
+                    Textbox_Online_Profile_Description.Content += "KF Model: Const. Acc\n";
                     break;
                 case 2:
-                    Textbox_Online_Profile_Description.Text += "KF Model: EXP.\n";
+                    Textbox_Online_Profile_Description.Content += "KF Model: EXP.\n";
                     break;
                 case 4:
-                    Textbox_Online_Profile_Description.Text += "KF Model: None\n";
+                    Textbox_Online_Profile_Description.Content += "KF Model: None\n";
                     break;
             }
-            Textbox_Online_Profile_Description.Text += "KF :" + tmp_config.payloadPedalConfig_.kf_modelNoise + "\n";
-            Textbox_Online_Profile_Description.Text += "Serrvo smoothing :" + tmp_config.payloadPedalConfig_.positionSmoothingFactor_u8 + "\n";
+            Textbox_Online_Profile_Description.Content += "KF :" + tmp_config.payloadPedalConfig_.kf_modelNoise + "\n";
+            Textbox_Online_Profile_Description.Content += "Serrvo smoothing :" + tmp_config.payloadPedalConfig_.positionSmoothingFactor_u8 + "\n";
 
         }
         private void Update_ForceCurve()
@@ -229,6 +230,20 @@ namespace User.PluginSdkDemo
             }
 
             //Title = "rectCount: " + rectCount + " | X: [" + string.Join(", ", rectPositionX) + "]";
+        }
+
+        private void Btn_Leave_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+           
+            if (e.ClickCount == 1)
+            {
+                
+                this.DragMove();
+            }
         }
     }
 }

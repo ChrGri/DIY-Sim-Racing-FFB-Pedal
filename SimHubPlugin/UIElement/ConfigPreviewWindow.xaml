@@ -7,10 +7,10 @@
         xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
         xmlns:ui="clr-namespace:SimHub.Plugins.UI;assembly=SimHub.Plugins" 
         xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-        Title="Config Preview" Height="330" Width="225" Background="{x:Null}" WindowStyle="ToolWindow" ResizeMode="NoResize">
+        Title="Config Preview" Height="340" Width="225" Background="{x:Null}" WindowStyle="None" ResizeMode="NoResize" MouseLeftButtonDown="Window_MouseLeftButtonDown" Foreground="#00000000">
     <Grid>
         <Border Background="#7F4E4E4E"  CornerRadius="5,5,5,5" BorderThickness="0,2,0,0">
-            <StackPanel Width="210" Height="305">
+            <StackPanel >
                 <StackPanel Height="100" HorizontalAlignment="Center" Margin="0,5,0,0">
                     <Canvas x:Name="canvas_Online_Config_curve" Height="100" Width="200" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top" >
                         <TextBlock HorizontalAlignment="Center" VerticalAlignment="Top" Text="FORCE" Width="60" Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="-25" Canvas.Top="40" FontFamily="Arial Black" Height="13" FontSize="10" TextAlignment="Center">
@@ -37,8 +37,8 @@
                         </Polyline>
                     </Canvas>
                 </StackPanel>
-                <TextBox x:Name="Textbox_Online_Profile_Description" Text="" Height="200" Width="210" FontFamily="Arial" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="10" Background="{x:Null}" BorderBrush="{x:Null}" ScrollViewer.CanContentScroll="True" CaretBrush="{x:Null}" BorderThickness="0,0,0,0" VerticalScrollBarVisibility="Auto"/>
-
+                <Label x:Name="Textbox_Online_Profile_Description" Content="" Height="200" Width="210" FontFamily="Arial" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="10" Background="{x:Null}" BorderBrush="{x:Null}" ScrollViewer.CanContentScroll="True"  BorderThickness="0,0,0,0" />
+                <styles:SHButtonPrimary x:Name="Btn_Leave"  Click="Btn_Leave_Click" Width="160" Content="Leave" Height="25" Margin="0,0,0,0" Padding="15,0,15,0" VerticalContentAlignment="Center" />
             </StackPanel>
         </Border>
     </Grid>

@@ -57,7 +57,7 @@ namespace User.PluginSdkDemo
                     
                     //SerialPortSelectionArray.Add(new SerialPortChoice(portName, portName));
                     //int index = Plugin.comportList.FindIndex(item => item.ComPortName == portName);
-                    var parseResult= ComPortHelper.GetVidPidFromComPort(portName);
+                    var parseResult= ComPortHelper.GetVidPidFromComPort_orig(portName);
                     Plugin.comportList.Add(parseResult);
                     var portDeviceName = portName+" "+parseResult.DeviceName;
                     //SerialPortList.Add((string)Plugin.comportList[index].DeviceName);

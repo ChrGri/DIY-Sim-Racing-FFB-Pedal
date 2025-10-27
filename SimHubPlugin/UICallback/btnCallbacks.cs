@@ -1436,7 +1436,19 @@ namespace User.PluginSdkDemo
         }
         unsafe private void btn_Printlog_Click(object sender, RoutedEventArgs e)
         {
-            System.Windows.MessageBox.Show("Please check Serial monitor for pedal info");
+
+            if (_serial_monitor_window == null || !_serial_monitor_window.IsVisible)
+            {
+
+                _serial_monitor_window = new SerialMonitor_Window(this); // Create a new side window
+                double screenWidth = SystemParameters.PrimaryScreenWidth;
+                double screenHeight = SystemParameters.PrimaryScreenHeight;
+                _serial_monitor_window.Left = screenWidth / 2 - _serial_monitor_window.Width / 2;
+                _serial_monitor_window.Top = screenHeight / 2 - _serial_monitor_window.Height / 2;
+                _serial_monitor_window.Show(); // Show the side window
+
+            }
+
             DAP_action_st tmp;
             tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
@@ -1579,15 +1591,6 @@ namespace User.PluginSdkDemo
                     TextBox2.Text = "Save " + saveFileDialog.FileName;
                 }
             }
-        }
-        private void btn_Assignment_Configuration_Click(object sender, RoutedEventArgs e)
-        {
-            AssignmentConfigurationWindow sideWindow = new AssignmentConfigurationWindow(Plugin);
-            double screenWidth = SystemParameters.PrimaryScreenWidth;
-            double screenHeight = SystemParameters.PrimaryScreenHeight;
-            sideWindow.Left = screenWidth / 2 - sideWindow.Width / 2;
-            sideWindow.Top = screenHeight / 2 - sideWindow.Height / 2;
-            sideWindow.Show();
         }
         private void btn_Assignment_Click(object sender, RoutedEventArgs e)
         {

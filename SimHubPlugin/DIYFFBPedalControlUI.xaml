@@ -545,7 +545,7 @@
                                                 </StackPanel>
                                                 <localFunction:Listbox_PedalConfig x:Name="Listbox_PedalConfig"/>
                                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <styles:SHButtonPrimary x:Name="btn_Printlog" Click="btn_Printlog_Click" Width="160" Height="25" Content="Print Pedal Info" HorizontalAlignment="Left" Margin="0,2,0,0" VerticalContentAlignment="Center" VerticalAlignment="Center" Padding="15,0,15,0" />
+                                                    <styles:SHButtonPrimary x:Name="btn_Printlog" Click="btn_Printlog_Click" Width="160" Height="25" Content="Pedal Detail Info" HorizontalAlignment="Left" Margin="0,2,0,0" VerticalContentAlignment="Center" VerticalAlignment="Center" Padding="15,0,15,0" />
                                                     <styles:SHButtonPrimary x:Name="btn_Assignment" Click="btn_Assignment_Click" Width="160" Height="25" Content="Wireless Assignment" HorizontalAlignment="Left" Margin="0,2,0,0" VerticalContentAlignment="Center" VerticalAlignment="Center" Padding="15,0,15,0" />
                                                     <styles:SHButtonPrimary x:Name="btn_OnlineProfile" Click="btn_OnlineProfile_Click" Width="160" Content="Community Config" Height="25" Margin="0,2,0,0" HorizontalAlignment="Center" Padding="15,0,15,0" VerticalContentAlignment="Center" />
                                                 </StackPanel>

@@ -202,9 +202,6 @@
     <Compile Include="UIFunction\AssignmentConfigurationWindow.xaml.cs">
       <DependentUpon>AssignmentConfigurationWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UIFunction\ConfigUpdateWIndow.xaml.cs">
-      <DependentUpon>ConfigUpdateWIndow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="UIFunction\CurveTab_JoystickMapping.xaml.cs">
       <DependentUpon>CurveTab_JoystickMapping.xaml</DependentUpon>
     </Compile>
@@ -355,10 +352,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\AssignmentConfigurationWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UIFunction\ConfigUpdateWIndow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

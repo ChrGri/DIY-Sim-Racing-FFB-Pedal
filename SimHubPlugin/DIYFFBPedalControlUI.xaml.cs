@@ -254,7 +254,8 @@ namespace User.PluginSdkDemo
             // 2. Your logic to get the updated list of items.
             //    For example, querying for available serial ports.
             var updatedPortList = GetAvailableSerialPorts(); // This is your custom method.
-
+            //Plugin.comportList.Clear();
+            //Plugin.comportList = updatedPortList;
             //UpdateSerialPortList_click();
 
             // 3. Assign the new list to the ComboBox's ItemsSource.
@@ -491,6 +492,7 @@ namespace User.PluginSdkDemo
             if (_serial_monitor_window != null)
             {
                 PrintUnknownStructParameters(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_);
+                UpdateSerialPortList_click();
                 _serial_monitor_window.TextBox_SerialMonitor.Text += "\nCom port count: " + Plugin.comportList.Count;
                 foreach (var items in Plugin.comportList)
                 {              
