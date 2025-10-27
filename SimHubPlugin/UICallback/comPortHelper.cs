@@ -35,7 +35,8 @@ namespace User.PluginSdkDemo
             {
                 // 1. You could add a filter here to exclude Bluetooth devices entirely,
                 // but filtering the resulting collection in the loop is often simpler.
-                var searcher = new ManagementObjectSearcher("SELECT Name, DeviceID FROM Win32_PnPEntity WHERE Name LIKE '%(COM%)'");
+                //var searcher = new ManagementObjectSearcher("SELECT Name, DeviceID FROM Win32_PnPEntity WHERE Name LIKE '%(COM%)'");
+                var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_PnPEntity WHERE Name LIKE '%(COM%'");
                 foreach (var device in searcher.Get())
                 {
                     string name = device["Name"]?.ToString() ?? "";

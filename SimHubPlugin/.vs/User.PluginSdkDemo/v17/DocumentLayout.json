@@ -1,45 +1,49 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\",
+  "WorkspaceRootPath": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1022\\simhubplugin\\diyffbpedalcontrolui.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:diyffbpedalcontrolui.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1022\\simhubplugin\\uicallback\\others.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\uicallback\\others.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uicallback\\others.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1022\\simhubplugin\\uicallback\\updateuifromconfig.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|c:\\users\\tcfshcrw\\documents\\github\\diy-sim-racing-ffb-pedal\\simhubplugin\\uicallback\\comporthelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uicallback\\comporthelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|c:\\users\\tcfshcrw\\documents\\github\\diy-sim-racing-ffb-pedal\\simhubplugin\\diyffbpedalcontrolui.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:diyffbpedalcontrolui.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\uicallback\\updateuifromconfig.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uicallback\\updateuifromconfig.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1022\\simhubplugin\\diyffbpedalcontrolui.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\diyffbpedalcontrolui.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:diyffbpedalcontrolui.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1022\\simhubplugin\\uifunction\\settingsection_pedal.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\uifunction\\settingsection_pedal.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\settingsection_pedal.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1022\\simhubplugin\\uifunction\\listbox_pedalconfig.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\uifunction\\listbox_pedalconfig.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\listbox_pedalconfig.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1022\\simhubplugin\\uielement\\configpreviewwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\uielement\\configpreviewwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uielement\\configpreviewwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1022\\simhubplugin\\uifunction\\listbox_pedalconfig.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\uifunction\\listbox_pedalconfig.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\listbox_pedalconfig.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1022\\simhubplugin\\uielement\\configpreviewwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\uielement\\configpreviewwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uielement\\configpreviewwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1022\\simhubplugin\\onlineprofile.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\onlineprofile.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:onlineprofile.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
@@ -50,41 +54,53 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "comPortHelper.cs",
+              "DocumentMoniker": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\UICallback\\comPortHelper.cs",
+              "RelativeDocumentMoniker": "UICallback\\comPortHelper.cs",
+              "ToolTip": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\UICallback\\comPortHelper.cs",
+              "RelativeToolTip": "UICallback\\comPortHelper.cs",
+              "ViewState": "AgIAAE8AAAAAAAAAAAAwwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-27T11:17:46.082Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
               "Title": "others.cs",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\UICallback\\others.cs",
+              "DocumentMoniker": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\UICallback\\others.cs",
               "RelativeDocumentMoniker": "UICallback\\others.cs",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\UICallback\\others.cs",
+              "ToolTip": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\UICallback\\others.cs",
               "RelativeToolTip": "UICallback\\others.cs",
-              "ViewState": "AgIAAAkAAAAAAAAAAAAAAFsAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAFICAAAAAAAAAAAawGMCAAARAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-10-26T00:31:16.42Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "updateUIfromConfig.cs",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\UICallback\\updateUIfromConfig.cs",
+              "DocumentMoniker": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\UICallback\\updateUIfromConfig.cs",
               "RelativeDocumentMoniker": "UICallback\\updateUIfromConfig.cs",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\UICallback\\updateUIfromConfig.cs",
+              "ToolTip": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\UICallback\\updateUIfromConfig.cs",
               "RelativeToolTip": "UICallback\\updateUIfromConfig.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAIoAAAASAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-26T00:30:42.365Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-26T00:30:42.365Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "DIYFFBPedalControlUI.xaml.cs",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\DIYFFBPedalControlUI.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\DIYFFBPedalControlUI.xaml.cs",
               "RelativeDocumentMoniker": "DIYFFBPedalControlUI.xaml.cs",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\DIYFFBPedalControlUI.xaml.cs",
+              "ToolTip": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\DIYFFBPedalControlUI.xaml.cs",
               "RelativeToolTip": "DIYFFBPedalControlUI.xaml.cs",
               "ViewState": "AgIAAMMAAAAAAAAAAAAAANcAAAAlAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -93,90 +109,83 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "SettingSection_Pedal.xaml",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\UIFunction\\SettingSection_Pedal.xaml",
+              "DocumentMoniker": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\UIFunction\\SettingSection_Pedal.xaml",
               "RelativeDocumentMoniker": "UIFunction\\SettingSection_Pedal.xaml",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\UIFunction\\SettingSection_Pedal.xaml",
+              "ToolTip": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\UIFunction\\SettingSection_Pedal.xaml",
               "RelativeToolTip": "UIFunction\\SettingSection_Pedal.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-10-26T00:27:47.89Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-26T00:27:47.89Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "DIYFFBPedalControlUI.xaml",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\DIYFFBPedalControlUI.xaml",
+              "DocumentMoniker": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\DIYFFBPedalControlUI.xaml",
               "RelativeDocumentMoniker": "DIYFFBPedalControlUI.xaml",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\DIYFFBPedalControlUI.xaml",
+              "ToolTip": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\DIYFFBPedalControlUI.xaml",
               "RelativeToolTip": "DIYFFBPedalControlUI.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-10-26T00:26:22.142Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "ConfigPreviewWindow.xaml",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\UIElement\\ConfigPreviewWindow.xaml",
-              "RelativeDocumentMoniker": "UIElement\\ConfigPreviewWindow.xaml",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\UIElement\\ConfigPreviewWindow.xaml",
-              "RelativeToolTip": "UIElement\\ConfigPreviewWindow.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-10-26T00:20:53.024Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "OnlineProfile.xaml.cs",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\OnlineProfile.xaml.cs",
-              "RelativeDocumentMoniker": "OnlineProfile.xaml.cs",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\OnlineProfile.xaml.cs",
-              "RelativeToolTip": "OnlineProfile.xaml.cs",
-              "ViewState": "AgIAAEkAAAAAAAAAAAAkwHQAAAAVAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-26T00:19:56.702Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-26T00:26:22.142Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 7,
-              "Title": "Listbox_PedalConfig.xaml.cs",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\UIFunction\\Listbox_PedalConfig.xaml.cs",
-              "RelativeDocumentMoniker": "UIFunction\\Listbox_PedalConfig.xaml.cs",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\UIFunction\\Listbox_PedalConfig.xaml.cs",
-              "RelativeToolTip": "UIFunction\\Listbox_PedalConfig.xaml.cs",
-              "ViewState": "AgIAAAIBAAAAAAAAAAA8wBABAAANAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-26T00:09:28.298Z",
-              "EditorCaption": ""
+              "Title": "ConfigPreviewWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\UIElement\\ConfigPreviewWindow.xaml",
+              "RelativeDocumentMoniker": "UIElement\\ConfigPreviewWindow.xaml",
+              "ToolTip": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\UIElement\\ConfigPreviewWindow.xaml",
+              "RelativeToolTip": "UIElement\\ConfigPreviewWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-10-26T00:20:53.024Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "Listbox_PedalConfig.xaml",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\UIFunction\\Listbox_PedalConfig.xaml",
-              "RelativeDocumentMoniker": "UIFunction\\Listbox_PedalConfig.xaml",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\UIFunction\\Listbox_PedalConfig.xaml",
-              "RelativeToolTip": "UIFunction\\Listbox_PedalConfig.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-10-26T00:08:59.012Z",
-              "EditorCaption": ""
+              "DocumentIndex": 10,
+              "Title": "OnlineProfile.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\OnlineProfile.xaml.cs",
+              "RelativeDocumentMoniker": "OnlineProfile.xaml.cs",
+              "ToolTip": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\OnlineProfile.xaml.cs",
+              "RelativeToolTip": "OnlineProfile.xaml.cs",
+              "ViewState": "AgIAAEkAAAAAAAAAAAAkwHQAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-26T00:19:56.702Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 8,
+              "Title": "Listbox_PedalConfig.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\UIFunction\\Listbox_PedalConfig.xaml.cs",
+              "RelativeDocumentMoniker": "UIFunction\\Listbox_PedalConfig.xaml.cs",
+              "ToolTip": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\UIFunction\\Listbox_PedalConfig.xaml.cs",
+              "RelativeToolTip": "UIFunction\\Listbox_PedalConfig.xaml.cs",
+              "ViewState": "AgIAAAIBAAAAAAAAAAA8wBABAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-26T00:09:28.298Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Listbox_PedalConfig.xaml",
+              "DocumentMoniker": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\UIFunction\\Listbox_PedalConfig.xaml",
+              "RelativeDocumentMoniker": "UIFunction\\Listbox_PedalConfig.xaml",
+              "ToolTip": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\UIFunction\\Listbox_PedalConfig.xaml",
+              "RelativeToolTip": "UIFunction\\Listbox_PedalConfig.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-10-26T00:08:59.012Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
               "Title": "ConfigPreviewWindow.xaml.cs",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\UIElement\\ConfigPreviewWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\UIElement\\ConfigPreviewWindow.xaml.cs",
               "RelativeDocumentMoniker": "UIElement\\ConfigPreviewWindow.xaml.cs",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1022\\SimHubPlugin\\UIElement\\ConfigPreviewWindow.xaml.cs",
+              "ToolTip": "C:\\Users\\tcfshcrw\\Documents\\GitHub\\DIY-Sim-Racing-FFB-Pedal\\SimHubPlugin\\UIElement\\ConfigPreviewWindow.xaml.cs",
               "RelativeToolTip": "UIElement\\ConfigPreviewWindow.xaml.cs",
               "ViewState": "AgIAABcAAAAAAAAAAAAAwCUAAAA9AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-26T00:01:04.419Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-26T00:01:04.419Z"
             }
           ]
         }
