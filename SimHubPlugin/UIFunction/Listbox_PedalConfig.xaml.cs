@@ -245,14 +245,18 @@ namespace User.PluginSdkDemo.UIFunction
         {
             if (_plugin != null)
             {
-                DAP_config_st tmp = _plugin.wpfHandle.dap_config_st[_plugin.Settings.table_selected];
-                tmp.payloadHeader_.PedalTag = (byte)_plugin.Settings.table_selected;
-                tmp.payloadPedalConfig_.pedal_type = (byte)_plugin.Settings.table_selected;
-                tmp.payloadHeader_.storeToEeprom = (byte)1;
-                DAP_config_st* v = &tmp;
-                byte* p = (byte*)v;
-                tmp.payloadFooter_.checkSum = _plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
-                _plugin.SendConfig(tmp, (byte)_plugin.Settings.table_selected);
+                if (parameter is ConfigListItem item)
+                {
+                    DAP_config_st tmp = _plugin.ReadConfig(item.FullPath);
+                    tmp.payloadHeader_.PedalTag = (byte)_plugin.Settings.table_selected;
+                    tmp.payloadPedalConfig_.pedal_type = (byte)_plugin.Settings.table_selected;
+                    tmp.payloadHeader_.storeToEeprom = (byte)1;
+                    DAP_config_st* v = &tmp;
+                    byte* p = (byte*)v;
+                    tmp.payloadFooter_.checkSum = _plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
+                    _plugin.SendConfig(tmp, (byte)_plugin.Settings.table_selected);
+                }
+
             }
         }
 

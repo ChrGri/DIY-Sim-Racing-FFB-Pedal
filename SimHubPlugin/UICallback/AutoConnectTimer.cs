@@ -26,7 +26,7 @@ namespace User.PluginSdkDemo
                     Reading_config_auto(pedalIdx);
                     
                 }
-                if (Plugin._calculations.pedalSerialStatus[pedalIdx] == ConnectStateEnum.PEDAL_GET_BASIC_PACKETS)
+                if (Plugin._calculations.pedalSerialStatus[pedalIdx] == ConnectStateEnum.PEDAL_GET_BASIC_PACKETS && !Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalIdx])
                 {
                     Reading_config_auto(pedalIdx);
                     
