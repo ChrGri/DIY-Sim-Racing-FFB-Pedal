@@ -19,10 +19,10 @@ namespace User.PluginSdkDemo
         public float forceVel_est_fl32;
 
         // register values from servo
-        public Int16 servoPosition_i16;
-        public Int16 servoPositionTarget_i16;
+        public Int32 servoPosition_i32;
+        public Int32 servoPositionTarget_i32;
         public Int16 servoPositionEstimated_i16;
-        public Int16 targetPosition_i16;
+        public Int32 targetPosition_i32;
         public Int32 currentSpeedInMilliHz_i32;
         //public Int16 servoPositionEstimated_stepperPos_i16;
         public Int16 servo_position_error_i16;

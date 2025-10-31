@@ -4,7 +4,7 @@
 #include "Arduino.h"
 #include "CubicInterpolatorFloat.h"
 // define the payload revision
-#define DAP_VERSION_CONFIG 161
+#define DAP_VERSION_CONFIG 162
 
 // define the payload types
 #define DAP_PAYLOAD_TYPE_CONFIG 100
@@ -136,10 +136,10 @@ struct payloadPedalState_Extended {
   float forceVel_est_fl32;
 
   // register values from servo
-  int16_t servoPosition_i16;
-  int16_t servoPositionTarget_i16;
+  int32_t servoPosition_i32;
+  int32_t servoPositionTarget_i32;
   int16_t servoPositionEstimated_i16;
-  int16_t targetPosition_i16;
+  int32_t targetPosition_i32;
   int32_t currentSpeedInMilliHz_i32;
   //int16_t servoPositionEstimated_stepperPos_i16;
   int16_t servo_position_error_i16;
