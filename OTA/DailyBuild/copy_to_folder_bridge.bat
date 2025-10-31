@@ -71,5 +71,23 @@ set destination=..\DailyBuild\Bridge\dev_kit_with_external_joystick\
 echo Copying %source% to %destination%...
 xcopy "%source%" "%destination%" /y
 
+set source=..\..\ESP32_master\.pio\build\esp32s3usbotg_lowTxPower\firmware.bin
+set destination=..\DailyBuild\Bridge\dev_kit_with_lower_power\
+
+echo Copying %source% to %destination%...
+xcopy "%source%" "%destination%" /y
+
+set source=..\..\ESP32_master\.pio\build\esp32s3usbotg_lowTxPower\bootloader.bin
+set destination=..\DailyBuild\Bridge\dev_kit_with_lower_power\
+
+echo Copying %source% to %destination%...
+xcopy "%source%" "%destination%" /y
+
+set source=..\..\ESP32_master\.pio\build\esp32s3usbotg_lowTxPower\partitions.bin
+set destination=..\DailyBuild\Bridge\dev_kit_with_lower_power\
+
+echo Copying %source% to %destination%...
+xcopy "%source%" "%destination%" /y
+
 echo File copied successfully.
 pause
