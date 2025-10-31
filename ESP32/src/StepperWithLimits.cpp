@@ -926,15 +926,25 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 						bool posCorrectedInLoop_b = false;
 						if ( ( espPos_i32 - servoPosCorrected_i32 ) > INT16_MAX )
 						{
-							// 4294967296 = 2^16
-							servoPosCorrected_i32 += 4294967296;
+							// example positive int16 overflow:
+							// esp pos = 2^15-1 = 32767
+							// servo pos = -2^15 = -32768
+							// servo pos + 2^16 = -32768 + 65536 = 32768
+							
+							// 65536 = 2^16
+							servoPosCorrected_i32 += 65536;
 							posCorrectedInLoop_b = true;
 						}
 
 						if ( ( espPos_i32 - servoPosCorrected_i32 ) < INT16_MIN )
 						{
-							// 4294967296 = 2^16
-							servoPosCorrected_i32 -= 4294967296;
+							// example, negative int16 overflow:
+							// esp pos = -2^15 = -32768
+							// servo pos = 2^15-1 = 32767
+							// servo pos - 2^16 = 32767 - 65536 = -32769
+							
+							// 65536 = 2^16
+							servoPosCorrected_i32 -= 65536;
 							posCorrectedInLoop_b = true;
 						}
 
