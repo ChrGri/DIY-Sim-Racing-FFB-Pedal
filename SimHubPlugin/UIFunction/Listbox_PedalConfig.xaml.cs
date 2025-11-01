@@ -87,7 +87,7 @@ namespace User.PluginSdkDemo.UIFunction
             {
                 string nameGet = sideWindow.input;
                 Plugin._calculations.ConfigEditing[Plugin.Settings.table_selected] = nameGet+".json";
-                Plugin.UpdateConfigDefaultAndEditing();
+                Plugin.UpdateConfigLabelDefaultAndEditing();
                 //ItemList.Add(new ConfigListItem { ListName = nameGet });
                 //_plugin.wpfHandle.ToastNotification("Test", "New Config:" + nameGet);
                 DAP_config_st tmp = _plugin.DefaultConfig;
@@ -139,7 +139,7 @@ namespace User.PluginSdkDemo.UIFunction
 
                 tmp_config = _plugin.ReadConfig(item.FullPath);
                 Plugin._calculations.ConfigEditing[Plugin.Settings.table_selected] = item.FileName;
-                Plugin.UpdateConfigDefaultAndEditing();
+                Plugin.UpdateConfigLabelDefaultAndEditing();
                 tmp_config.payloadPedalConfig_.pedal_type = (byte)_plugin.Settings.table_selected;
                 _plugin.wpfHandle.dap_config_st[_plugin.Settings.table_selected] = tmp_config;
                 //_plugin.SendConfigWithoutSaveToEEPROM(_plugin.wpfHandle.dap_config_st[_plugin.Settings.table_selected], (byte)_plugin.Settings.table_selected);
@@ -164,7 +164,7 @@ namespace User.PluginSdkDemo.UIFunction
             {
                 string fileName = item.FullPath;
                 Plugin._calculations.ConfigEditing[Plugin.Settings.table_selected] = item.FileName;
-                Plugin.UpdateConfigDefaultAndEditing();
+                Plugin.UpdateConfigLabelDefaultAndEditing();
                 DAP_config_st tmp = _plugin.wpfHandle.dap_config_st[_plugin.Settings.table_selected];
                 tmp.payloadFooter_.enfOfFrame0_u8 = _plugin.wpfHandle.ENDOFFRAMCHAR[0];
                 tmp.payloadFooter_.enfOfFrame1_u8 = _plugin.wpfHandle.ENDOFFRAMCHAR[1];
@@ -210,7 +210,7 @@ namespace User.PluginSdkDemo.UIFunction
                 //ItemList.Add(new ConfigListItem { ListName = nameGet });
                 //_plugin.wpfHandle.ToastNotification("Test", "New Config:" + nameGet);
                 Plugin._calculations.ConfigEditing[Plugin.Settings.table_selected] = nameGet+".json";
-                Plugin.UpdateConfigDefaultAndEditing();
+                Plugin.UpdateConfigLabelDefaultAndEditing();
                 DAP_config_st tmp = _plugin.wpfHandle.dap_config_st[_plugin.Settings.table_selected];
 
                 tmp.payloadFooter_.enfOfFrame0_u8 = _plugin.wpfHandle.ENDOFFRAMCHAR[0];
@@ -257,7 +257,7 @@ namespace User.PluginSdkDemo.UIFunction
                 if (parameter is ConfigListItem item)
                 {
                     Plugin.Settings.DefaultConfig[Plugin.Settings.table_selected] = item.FileName;
-                    Plugin.UpdateConfigDefaultAndEditing();
+                    Plugin.UpdateConfigLabelDefaultAndEditing();
                     DAP_config_st tmp = _plugin.ReadConfig(item.FullPath);
                     tmp.payloadHeader_.PedalTag = (byte)_plugin.Settings.table_selected;
                     tmp.payloadPedalConfig_.pedal_type = (byte)_plugin.Settings.table_selected;
@@ -280,7 +280,7 @@ namespace User.PluginSdkDemo.UIFunction
                 _plugin.wpfHandle.dap_config_st[_plugin.Settings.table_selected].payloadPedalConfig_.pedal_type= (byte)_plugin.Settings.table_selected;
                 _plugin.wpfHandle.updateTheGuiFromConfig();
                 Plugin._calculations.ConfigEditing[Plugin.Settings.table_selected] = string.Empty;
-                Plugin.UpdateConfigDefaultAndEditing();
+                Plugin.UpdateConfigLabelDefaultAndEditing();
             }
         }
 

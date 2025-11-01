@@ -66,14 +66,19 @@ namespace User.PluginSdkDemo
             
         }
 
-        public void UpdateConfigDefaultAndEditing()
+        public void UpdateConfigLabelDefaultAndEditing()
         {
             if (ConfigList.Count>0)
-            { 
+            {
+                //reset all config listname
+                foreach (ConfigListItem item in ConfigList)
+                {
+                    item.ListName = item.ListNameOrig;
+                }
                 var foundItem= ConfigList.FirstOrDefault(item => item.FileName == Settings.DefaultConfig[Settings.table_selected]);
-                foundItem.ListName = foundItem.ListNameOrig+ "(default)";
+                if(foundItem!=null) foundItem.ListName = foundItem.ListNameOrig+ "(default)";
                 foundItem = ConfigList.FirstOrDefault(item => item.FileName == _calculations.ConfigEditing[Settings.table_selected]);
-                foundItem.ListName += "*";
+                if (foundItem != null) foundItem.ListName += "*";
             }
 
         }
@@ -114,7 +119,7 @@ namespace User.PluginSdkDemo
 
                         ConfigList.Add(item);
                     }
-                    UpdateConfigDefaultAndEditing();
+                    UpdateConfigLabelDefaultAndEditing();
                 }
                 catch (Exception ex)
                 {
