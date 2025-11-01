@@ -23,6 +23,7 @@ namespace User.PluginSdkDemo
                 PedalTabChange = true;
                 PedalTabChange_last = DateTime.Now;
                 updateTheGuiFromConfig();
+                Plugin.RefreshConfigList();
             }
         }
 

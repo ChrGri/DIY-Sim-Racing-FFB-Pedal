@@ -71,6 +71,7 @@ namespace User.PluginSdkDemo
         public byte rudderRPMMinFrequency = 15;
         public uint rudderMode = 0;
         public int updateChannel = 0;
+        public string[] DefaultConfig = new string[3] { string.Empty, string.Empty, string.Empty };
 
     }
         

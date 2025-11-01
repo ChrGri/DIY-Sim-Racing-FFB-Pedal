@@ -66,6 +66,17 @@ namespace User.PluginSdkDemo
             
         }
 
+        public void UpdateConfigDefaultAndEditing()
+        {
+            if (ConfigList.Count>0)
+            { 
+                var foundItem= ConfigList.FirstOrDefault(item => item.FileName == Settings.DefaultConfig[Settings.table_selected]);
+                foundItem.ListName = foundItem.ListNameOrig+ "(default)";
+                foundItem = ConfigList.FirstOrDefault(item => item.FileName == _calculations.ConfigEditing[Settings.table_selected]);
+                foundItem.ListName += "*";
+            }
+
+        }
         public void RefreshConfigList()
         {
             string currentDirectory = Directory.GetCurrentDirectory();
@@ -96,12 +107,14 @@ namespace User.PluginSdkDemo
                         ConfigListItem item = new ConfigListItem();
                         item.FileName = Path.GetFileName(path);
                         item.ListName = Path.GetFileNameWithoutExtension(path);
+                        item.ListNameOrig = item.ListName;
                         item.FullPath = Path.GetFullPath(path);
                         item.IsDefault = false;
                         item.IsCurrent = false;
 
                         ConfigList.Add(item);
                     }
+                    UpdateConfigDefaultAndEditing();
                 }
                 catch (Exception ex)
                 {

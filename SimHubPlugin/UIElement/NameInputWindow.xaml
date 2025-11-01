@@ -11,7 +11,7 @@
     <Grid>
         <Border Background="#7F4E4E4E"  CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
             <StackPanel Orientation="Horizontal">
-                <TextBox x:Name="Textbox_Input" Width="150" BorderThickness="0,0,0,0" Height="20" Margin="5,0,0,0"/>
+                <TextBox x:Name="Textbox_Input" Width="150" BorderThickness="1,1,1,1" Height="20" Margin="5,0,0,0" BorderBrush="{DynamicResource AccentBaseColorBrush}"/>
                 <styles:SHButtonPrimary x:Name="Btn_OK" Click="Btn_OK_Click" Width="50" Content="OK" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                 <styles:SHButtonPrimary x:Name="Btn_Leave" Click="Btn_Leave_Click" Width="50" Content="Leave" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
             </StackPanel>

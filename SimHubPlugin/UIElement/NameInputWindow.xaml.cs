@@ -28,8 +28,16 @@ namespace User.PluginSdkDemo
         
         private void Btn_OK_Click(object sender, RoutedEventArgs e)
         {
-            input = Textbox_Input.Text;
-            DialogResult = true;
+            if (Textbox_Input.Text != string.Empty)
+            {
+                input = Textbox_Input.Text;
+                DialogResult = true;
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("Please input the file name inside textbox.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+
         }
 
         private void Btn_Leave_Click(object sender, RoutedEventArgs e)

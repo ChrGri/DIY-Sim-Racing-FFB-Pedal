@@ -384,7 +384,7 @@ namespace User.PluginSdkDemo
             dap_config_st[pedalIdx].payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             dap_config_st[pedalIdx].payloadHeader_.payloadType = (byte)Constants.pedalConfigPayload_type;
             dap_config_st[pedalIdx].payloadHeader_.PedalTag = (byte)pedalIdx;
-            dap_config_st[pedalIdx].payloadHeader_.storeToEeprom = 1;
+            dap_config_st[pedalIdx].payloadHeader_.storeToEeprom = 0;
             dap_config_st[pedalIdx].payloadPedalConfig_.pedal_type = (byte)pedalIdx;
             dap_config_st[pedalIdx].payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
             dap_config_st[pedalIdx].payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
