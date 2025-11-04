@@ -12,6 +12,7 @@ namespace User.PluginSdkDemo
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
+        static Int32 BridgeDIsconnectTimeOut = 1000;
         unsafe public void timerCallback_serial_esphost_orig(object sender, EventArgs e)
         {
 
@@ -742,7 +743,7 @@ namespace User.PluginSdkDemo
 
 
             TimeSpan diff_bridge= DateTime.Now - Plugin._calculations.bridgeConnetionlastTime;
-            if (diff_bridge.TotalMilliseconds > 1000 && Plugin._calculations.bridgeConnectionStatus==BridgeConnectStateEnum.BRIDGE_IS_READY)
+            if (diff_bridge.TotalMilliseconds > BridgeDIsconnectTimeOut && Plugin._calculations.bridgeConnectionStatus==BridgeConnectStateEnum.BRIDGE_IS_READY)
             {
                 if (Plugin.PortExists(Plugin.ESPsync_serialPort.PortName))
                 {

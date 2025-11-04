@@ -1656,8 +1656,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       _G_force_effect.forceOffset(&dap_calculationVariables_st, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.G_multi);
       _WSOscillation.forceOffset(&dap_calculationVariables_st);
       _Road_impact_effect.forceOffset(&dap_calculationVariables_st, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.Road_multi);
-      CV1.forceOffset(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_freq_1,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_amp_1,dap_calculationVariables_st.Force_Range);
-      CV2.forceOffset(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_freq_2,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_amp_2,dap_calculationVariables_st.Force_Range);
+      CV1.forceOffset(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_freq_1,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_amp_1,dap_calculationVariables_st.stepperPosRange_default);
+      CV2.forceOffset(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_freq_2,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_amp_2,dap_calculationVariables_st.stepperPosRange_default);
       
       if(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.BP_trigger==1)
       {
@@ -1892,13 +1892,13 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       if(effectsCalculated_b)
       {
         effect_force_fl32 += absOscillation.absOscillation_Force_offset;
-        effect_force_fl32 += _BitePointOscillation.BitePoint_Force_offset;
-        effect_force_fl32 += _WSOscillation.WS_Force_offset;
-        effect_force_fl32 += CV1.CV_Force_offset;
-        effect_force_fl32 += CV2.CV_Force_offset;
-
-          // accumulate position offsets
+        // accumulate position offsets
         effect_pos_fl32 += absOscillation.absOscillation_Position_offset;
+        effect_pos_fl32 += _WSOscillation.WheelSlipOffset;
+        effect_pos_fl32 += _BitePointOscillation.BitePointOffset; 
+        effect_pos_fl32 += CV1.CustomVibrationOffset;
+        effect_pos_fl32 += CV2.CustomVibrationOffset;
+        effect_pos_fl32 += _RPMOscillation.RPM_position_offset;
       }
 
       // add dampening
@@ -1911,7 +1911,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // Due to closed loop frequiency response, the servo might travel less than the input amplitude. 
       // To compensate the attenuation, the input amplitude is scaled by a constant factor, which was identified for 15Hz input frequency and roughly resulted in plausible amplitude range. 
       effect_force_fl32 *= EFFECT_SCALING_FACTOR_FL32;
-      effect_pos_fl32 *= EFFECT_SCALING_FACTOR_FL32;
+      //effect_pos_fl32 *= EFFECT_SCALING_FACTOR_FL32;
 
       // compute next position with PID strategy
       // MPC control strategy for rudder
@@ -1927,8 +1927,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       else 
       {
         // Pedal control
-        Position_Next = MoveByPidStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, effect_force_fl32, effect_pos_fl32);
-        if(effectsCalculated_b) Position_Next -= _RPMOscillation.RPM_position_offset;
+        Position_Next = MoveByPidStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, effect_force_fl32, 0);
+        if(effectsCalculated_b) Position_Next -= effect_pos_fl32;
         
       }
       // end profiler 4, movement strategy

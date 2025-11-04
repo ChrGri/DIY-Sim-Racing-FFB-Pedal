@@ -194,7 +194,7 @@ public:
     : _timeLastTriggerMillis(0)
   {}
   //float RPM_value =0;
-  float BitePoint_Force_offset = 0.0f;
+  float BitePointOffset = 0.0f;
 public:
   void IRAM_ATTR_FLAG  trigger() {
     _timeLastTriggerMillis = millis();
@@ -204,13 +204,13 @@ public:
 
     long timeNowMillis = millis();
     float timeSinceTrigger = (timeNowMillis - _timeLastTriggerMillis);
-    float BitePointForceOffset = 0.0f;
+    float bitePointOffset = 0.0f;
     
 
     if (timeSinceTrigger > BP_ACTIVE_TIME_PER_TRIGGER_MILLIS)
     {
       _BiteTimeMillis = 0;
-      BitePointForceOffset = 0.0f;
+      bitePointOffset = 0.0f;
     }
     else
     {
@@ -221,10 +221,10 @@ public:
       float BPTimeSeconds = _BiteTimeMillis * 0.001f;
 
       //RPMForceOffset = calcVars_st->absAmplitude * sin(calcVars_st->absFrequency * RPMTimeSeconds);
-      BitePointForceOffset = BP_amp * isin( 360.0f * BP_freq * BPTimeSeconds);
+      bitePointOffset = BP_amp * isin( 360.0f * BP_freq * BPTimeSeconds);
     }
 
-    BitePoint_Force_offset = BitePointForceOffset;
+    BitePointOffset = bitePointOffset;
     _lastCallTimeMillis = timeNowMillis;
 
   }
@@ -274,7 +274,7 @@ public:
     : _timeLastTriggerMillis(0)
   {}
   //float RPM_value =0;
-  float WS_Force_offset = 0.0f;
+  float WheelSlipOffset = 0.0f;
 public:
   void IRAM_ATTR_FLAG trigger() {
     _timeLastTriggerMillis = millis();
@@ -285,7 +285,7 @@ public:
 
     long timeNowMillis = millis();
     float timeSinceTrigger = (timeNowMillis - _timeLastTriggerMillis);
-    float WSForceOffset = 0.0f;
+    float wsOffset = 0.0f;
     
     float WS_amp = calcVars_st->WS_amp;
 
@@ -298,10 +298,10 @@ public:
       float WS_freq = calcVars_st->WS_freq;
       _WSTimeMillis += timeNowMillis - _lastCallTimeMillis;
       float WSTimeSeconds = _WSTimeMillis * 0.001f;
-      WSForceOffset = WS_amp * isin( 360.0f * WS_freq* WSTimeSeconds );   
+      wsOffset = WS_amp * isin( 360.0f * WS_freq* WSTimeSeconds );   
     }
 
-    WS_Force_offset = WSForceOffset;
+    WheelSlipOffset = wsOffset;
     _lastCallTimeMillis = timeNowMillis;
 
   }
@@ -341,32 +341,32 @@ public:
     : _timeLastTriggerMillis(0)
   {}
   //float RPM_value =0;
-  float CV_Force_offset = 0.0f;
+  float CustomVibrationOffset = 0.0f;
 public:
   void IRAM_ATTR_FLAG trigger() {
     _timeLastTriggerMillis = millis();
   }
   
-  void forceOffset(float CV_freq, float CV_amp_in_percent, float force_range) 
+  void forceOffset(float CV_freq, float CV_amp_in_percent, float travelRange) 
   {
     long timeNowMillis = millis();
     float timeSinceTrigger = (timeNowMillis - _timeLastTriggerMillis);
-    float CVForceOffset = 0.0f;
-    CV_amp = CV_amp_in_percent * 0.001f *force_range;
+    float customVibrationOffset = 0.0f;
+    CV_amp = CV_amp_in_percent * 0.001f *travelRange;
 
     if (timeSinceTrigger > CV_ACTIVE_TIME_PER_TRIGGER_MILLIS)
     {
       _CVTimeMillis = 0;
-      CVForceOffset = 0.0f;
+      customVibrationOffset = 0.0f;
     }
     else
     {
       _CVTimeMillis += timeNowMillis - _lastCallTimeMillis;
       float CVTimeSeconds = _CVTimeMillis * 0.001f;
-      CVForceOffset = CV_amp * isin( 360.0f * CV_freq* CVTimeSeconds );  
+      customVibrationOffset = CV_amp * isin( 360.0f * CV_freq* CVTimeSeconds );  
     }
 
-    CV_Force_offset = CVForceOffset;
+    CustomVibrationOffset = customVibrationOffset;
     _lastCallTimeMillis = timeNowMillis;
   }
 };

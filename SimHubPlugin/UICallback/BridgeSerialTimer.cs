@@ -7,11 +7,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Runtime.CompilerServices;
 
 namespace User.PluginSdkDemo
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
+        
         unsafe public void timerCallback_serial_esphost(object sender, EventArgs e)
         {
 

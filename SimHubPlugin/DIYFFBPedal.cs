@@ -95,7 +95,7 @@ namespace User.PluginSdkDemo
         //effect trigger timer
         DateTime[] Action_currentTime = new DateTime[3];
         DateTime[] Action_lastTime = new DateTime[3];
-
+        
 
         // ABS trigger timer
         DateTime absTrigger_currentTime = DateTime.Now;
@@ -953,6 +953,7 @@ namespace User.PluginSdkDemo
             {
                 sendAbsSignal_local_b = true;
                 sendTcSignal_local_b = true;
+                
                 DAP_action_st tmp;
                 tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
                 tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
@@ -968,16 +969,30 @@ namespace User.PluginSdkDemo
 
                 for (uint PIDX = 1; PIDX < 3; PIDX++)
                 {
-                    tmp.payloadHeader_.PedalTag = (byte)PIDX;
-                    tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
-                    tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
-                    tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
-                    tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
+                    bool update_b = false;
+                    TimeSpan diff_action =  DateTime.Now - Action_lastTime[PIDX];
+                    int millisceonds_action = (int)diff_action.TotalMilliseconds;
+                    float time_interval = (1000.0f / Settings.Pedal_action_fps[PIDX]) - actionIntervalTolerance;
+                    if ( millisceonds_action> 100)
+                    {
+                        Action_lastTime[PIDX] = DateTime.Now;
+                        update_b = true;
+                    }
 
-                    DAP_action_st* v = &tmp;
-                    byte* p = (byte*)v;
-                    tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
-                    SendPedalAction(tmp, (byte)PIDX);
+                    if (update_b)
+                    {
+                        tmp.payloadHeader_.PedalTag = (byte)PIDX;
+                        tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
+                        tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
+                        tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
+                        tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
+
+                        DAP_action_st* v = &tmp;
+                        byte* p = (byte*)v;
+                        tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
+                        SendPedalAction(tmp, (byte)PIDX);
+                    }
+
                 }
                     
 

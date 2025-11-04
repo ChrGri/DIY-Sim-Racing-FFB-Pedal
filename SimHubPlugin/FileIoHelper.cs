@@ -78,7 +78,7 @@ namespace User.PluginSdkDemo
                 var foundItem= ConfigList.FirstOrDefault(item => item.FileName == Settings.DefaultConfig[Settings.table_selected]);
                 if(foundItem!=null) foundItem.ListName = foundItem.ListNameOrig+ "(default)";
                 foundItem = ConfigList.FirstOrDefault(item => item.FileName == _calculations.ConfigEditing[Settings.table_selected]);
-                if (foundItem != null) foundItem.ListName += "*";
+                if (foundItem != null) foundItem.ListName += "(editing)";
             }
 
         }
