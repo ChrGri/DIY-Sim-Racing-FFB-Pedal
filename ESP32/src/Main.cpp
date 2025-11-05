@@ -280,6 +280,7 @@ StepperWithLimits* stepper = NULL;
 
 #include "StepperMovementStrategy.h"
 #include "StepperMovementStrategy_MPC.h"
+#include "EffectsPID.h"
 bool moveSlowlyToPosition_b = true;
 /**********************************************************************************************/
 /*                                                                                            */
@@ -1921,7 +1922,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         // Rudder only
         Position_Next = MoveByForceTargetingStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, 0.0f/*effect_force*/, changeVelocity, d_phi_d_x, d_x_hor_d_phi);
         positionWithoutEffect=Position_Next;//send the value without rpm effect
-        if(effectsCalculated_b) Position_Next -= effect_pos_fl32;
+        if(effectsCalculated_b) Position_Next -= EffectOffsetPID_.computeEffectOffset(effect_pos_fl32, &dap_calculationVariables_st);
         //if(effectsCalculated_b) Position_Next -= _RPMOscillation.RPM_position_offset;
       }
       else 

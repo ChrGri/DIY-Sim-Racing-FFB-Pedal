@@ -14,10 +14,10 @@ float Setpoint, Input, Output;
 float Kp=0.02f, Ki=0.5f, Kd=0.000f;
 uint8_t control_strategy_u8 = 0;
 QuickPID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd,  /* OPTIONS */
-               myPID.pMode::pOnError,                   /* pOnError, pOnMeas, pOnErrorMeas */
-               myPID.dMode::dOnMeas,                    /* dOnError, dOnMeas */
-               myPID.iAwMode::iAwClamp,             /* iAwCondition, iAwClamp, iAwOff */
-               myPID.Action::direct);                   /* direct, reverse */
+               QuickPID::pMode::pOnError,                   /* pOnError, pOnMeas, pOnErrorMeas */
+               QuickPID::dMode::dOnMeas,                    /* dOnError, dOnMeas */
+               QuickPID::iAwMode::iAwClamp,             /* iAwCondition, iAwClamp, iAwOff */
+               QuickPID::Action::direct);                   /* direct, reverse */
 bool pidWasInitialized = false;
 
 #define PID_OUTPUT_LIMIT_FL32 0.5f
@@ -29,9 +29,9 @@ int32_t IRAM_ATTR_FLAG MoveByPidStrategy(float loadCellReadingKg, StepperWithLim
   {
     //turn the PID on
     // myPID.SetTunings(Kp, Ki, Kd);
-    myPID.SetMode(myPID.Control::automatic);
+    myPID.SetMode(QuickPID::Control::automatic);
     //myPID.SetAntiWindupMode(myPID.iAwMode::iAwCondition);
-    myPID.SetAntiWindupMode(myPID.iAwMode::iAwClamp);
+    myPID.SetAntiWindupMode(QuickPID::iAwMode::iAwClamp);
     //myPID.SetAntiWindupMode(myPID.iAwMode::iAwOff);
 
     pidWasInitialized = true;
