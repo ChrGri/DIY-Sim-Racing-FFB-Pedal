@@ -298,13 +298,13 @@ void DAP_calculationVariables_st::updateFromConfig(DAP_config_st& config_st)
   dampingPress = ((float)config_st.payLoadPedalConfig_.dampingPress) * 0.00015f;
   RPM_max_freq = ((float)config_st.payLoadPedalConfig_.RPM_max_freq);
   RPM_min_freq = ((float)config_st.payLoadPedalConfig_.RPM_min_freq);
-  RPM_AMP = ((float)config_st.payLoadPedalConfig_.RPM_AMP) *  stepperPosRange_default * 0.0002f;//in kg, max 4% of force range
+  RPM_AMP = ((float)config_st.payLoadPedalConfig_.RPM_AMP)  * 0.0002f;//in kg, max 4% of force range
   // Bite point effect;
 
   BP_trigger_value = (float)config_st.payLoadPedalConfig_.BP_trigger_value;
-  BP_amp = ((float)config_st.payLoadPedalConfig_.BP_amp)  * stepperPosRange_default *0.001f;//in kg, max 20% of force range
+  BP_amp = ((float)config_st.payLoadPedalConfig_.BP_amp)   *0.001f;//in kg, max 20% of force range
   BP_freq = (float)config_st.payLoadPedalConfig_.BP_freq;
-  WS_amp = ((float)config_st.payLoadPedalConfig_.WS_amp) * stepperPosRange_default *0.001f;//in kg, max 20% of force range
+  WS_amp = ((float)config_st.payLoadPedalConfig_.WS_amp)  *0.001f;//in kg, max 20% of force range
   WS_freq = (float)config_st.payLoadPedalConfig_.WS_freq;
   // update force variables
   Force_Min = ((float)config_st.payLoadPedalConfig_.preloadForce);

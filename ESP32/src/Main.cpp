@@ -1656,8 +1656,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       _G_force_effect.forceOffset(&dap_calculationVariables_st, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.G_multi);
       _WSOscillation.forceOffset(&dap_calculationVariables_st);
       _Road_impact_effect.forceOffset(&dap_calculationVariables_st, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.Road_multi);
-      CV1.forceOffset(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_freq_1,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_amp_1,dap_calculationVariables_st.stepperPosRange_default);
-      CV2.forceOffset(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_freq_2,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_amp_2,dap_calculationVariables_st.stepperPosRange_default);
+      CV1.forceOffset(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_freq_1,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_amp_1,dap_calculationVariables_st.stepperPosRange);
+      CV2.forceOffset(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_freq_2,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_amp_2,dap_calculationVariables_st.stepperPosRange);
       
       if(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.BP_trigger==1)
       {
@@ -1922,7 +1922,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         Position_Next = MoveByForceTargetingStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, 0.0f/*effect_force*/, changeVelocity, d_phi_d_x, d_x_hor_d_phi);
         positionWithoutEffect=Position_Next;//send the value without rpm effect
         if(effectsCalculated_b) Position_Next -= effect_pos_fl32;
-        if(effectsCalculated_b) Position_Next -= _RPMOscillation.RPM_position_offset;
+        //if(effectsCalculated_b) Position_Next -= _RPMOscillation.RPM_position_offset;
       }
       else 
       {

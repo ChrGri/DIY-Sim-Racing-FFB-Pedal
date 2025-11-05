@@ -154,6 +154,7 @@ public:
       float RPM_max_freq = calcVars_st->RPM_max_freq;
       float RPM_min_freq = calcVars_st->RPM_min_freq;
       float RPM_amp_base = calcVars_st->RPM_AMP;
+      float stepperPosRange = calcVars_st->stepperPosRange;
       float RPM_amp = 0.0f; 
 
       if(RPM_value == 0.0f)
@@ -168,7 +169,7 @@ public:
         float RPM_freq = constrain(RPM_value*(RPM_max_freq-RPM_min_freq)* 0.01f, RPM_min_freq, RPM_max_freq);
         _RPMTimeMillis += timeNowMillis - _lastCallTimeMillis;
         float RPMTimeSeconds = _RPMTimeMillis * 0.001f;
-        RPMForceOffset = RPM_amp * isin( 360.0f * RPM_freq* RPMTimeSeconds ); 
+        RPMForceOffset = stepperPosRange* RPM_amp * isin( 360.0f * RPM_freq* RPMTimeSeconds ); 
       }
       
     }
@@ -177,7 +178,7 @@ public:
     RPM_VALUE_LAST = RPMForceOffset;
     if (calcVars_st->Force_Range > 0.0f)
     {
-        RPM_position_offset = calcVars_st->stepperPosRange* ( RPMForceOffset / calcVars_st->Force_Range );
+        RPM_position_offset = RPMForceOffset;
     }
   }
 };
@@ -216,12 +217,12 @@ public:
     {
       float BP_freq = calcVars_st->BP_freq;
       float BP_amp = calcVars_st->BP_amp;
-
+      float stepperPosRange= calcVars_st->stepperPosRange;
       _BiteTimeMillis += timeNowMillis - _lastCallTimeMillis;
       float BPTimeSeconds = _BiteTimeMillis * 0.001f;
 
       //RPMForceOffset = calcVars_st->absAmplitude * sin(calcVars_st->absFrequency * RPMTimeSeconds);
-      bitePointOffset = BP_amp * isin( 360.0f * BP_freq * BPTimeSeconds);
+      bitePointOffset = stepperPosRange*BP_amp * isin( 360.0f * BP_freq * BPTimeSeconds);
     }
 
     BitePointOffset = bitePointOffset;
@@ -295,10 +296,11 @@ public:
     }
     else
     {
+      float stepperPosRange= calcVars_st->stepperPosRange;
       float WS_freq = calcVars_st->WS_freq;
       _WSTimeMillis += timeNowMillis - _lastCallTimeMillis;
       float WSTimeSeconds = _WSTimeMillis * 0.001f;
-      wsOffset = WS_amp * isin( 360.0f * WS_freq* WSTimeSeconds );   
+      wsOffset = stepperPosRange* WS_amp * isin( 360.0f * WS_freq* WSTimeSeconds );   
     }
 
     WheelSlipOffset = wsOffset;
