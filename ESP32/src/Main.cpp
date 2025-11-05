@@ -1922,15 +1922,28 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         // Rudder only
         Position_Next = MoveByForceTargetingStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, 0.0f/*effect_force*/, changeVelocity, d_phi_d_x, d_x_hor_d_phi);
         positionWithoutEffect=Position_Next;//send the value without rpm effect
-        if(effectsCalculated_b) Position_Next -= EffectOffsetPID_.computeEffectOffset(effect_pos_fl32, &dap_calculationVariables_st);
+        if(effectsCalculated_b)
+        {
+          float effectsOffsetFiltered= effectOffsetPID.computeEffectOffset(effect_pos_fl32, &dap_calculationVariables_st);
+          Position_Next -= effectsOffsetFiltered;
+        } 
         //if(effectsCalculated_b) Position_Next -= _RPMOscillation.RPM_position_offset;
       }
       else 
       {
         // Pedal control
         Position_Next = MoveByPidStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, effect_force_fl32, 0);
-        if(effectsCalculated_b) Position_Next -= effect_pos_fl32;
-        
+        if(effectsCalculated_b)
+        {
+          float effectsOffsetFiltered= effectOffsetPID.computeEffectOffset(effect_pos_fl32, &dap_calculationVariables_st);
+          Position_Next -= effectsOffsetFiltered;
+          ActiveSerial->print("Filtered offset:");
+          ActiveSerial->print(effectsOffsetFiltered);
+          ActiveSerial->print(" ,ABS offset");
+          ActiveSerial->print(absOscillation.absOscillation_Position_offset);
+          ActiveSerial->print(" ,Total Travel:");
+          ActiveSerial->println(dap_calculationVariables_st.stepperPosRange);
+        } 
       }
       // end profiler 4, movement strategy
       profiler_pedalUpdateTask.end(5);

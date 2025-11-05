@@ -45,7 +45,8 @@ public:
         
         targetOffsetNorm= (float)effectPositionOffset/calc_st->stepperPosRange;
         targetOffsetNorm = constrain(targetOffsetNorm, OUTPUT_MIN, OUTPUT_MAX);
-        currentInputNorm = outputOffsetNormLast; 
+        //currentInputNorm = outputOffsetNormLast; 
+        currentInputNorm = 0.0f; 
         effectsPID.Compute();
         outputOffsetNorm= constrain(outputOffsetNorm, OUTPUT_MIN, OUTPUT_MAX);
         outputOffsetNormLast=outputOffsetNorm;
@@ -54,4 +55,4 @@ public:
     }
 };
 
-EffectOffsetPID EffectOffsetPID_;
+EffectOffsetPID effectOffsetPID;
