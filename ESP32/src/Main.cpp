@@ -1924,8 +1924,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         positionWithoutEffect=Position_Next;//send the value without rpm effect
         if(effectsCalculated_b)
         {
-          float effectsOffsetFiltered= effectOffsetPID.computeEffectOffset(effect_pos_fl32, &dap_calculationVariables_st);
-          Position_Next -= effectsOffsetFiltered;
+          //float effectsOffsetFiltered= effectOffsetPID.computeEffectOffset(effect_pos_fl32, &dap_calculationVariables_st);
+          //Position_Next -= effectsOffsetFiltered;
+          Position_Next -= effect_pos_fl32;
         } 
         //if(effectsCalculated_b) Position_Next -= _RPMOscillation.RPM_position_offset;
       }
@@ -1935,14 +1936,16 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         Position_Next = MoveByPidStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, effect_force_fl32, 0);
         if(effectsCalculated_b)
         {
-          float effectsOffsetFiltered= effectOffsetPID.computeEffectOffset(effect_pos_fl32, &dap_calculationVariables_st);
-          Position_Next -= effectsOffsetFiltered;
+          //float effectsOffsetFiltered= effectOffsetPID.computeEffectOffset(effect_pos_fl32, &dap_calculationVariables_st);
+          //Position_Next -= effectsOffsetFiltered;
+          Position_Next -= effect_pos_fl32;
+          /*
           ActiveSerial->print("Filtered offset:");
           ActiveSerial->print(effectsOffsetFiltered);
           ActiveSerial->print(" ,ABS offset");
           ActiveSerial->print(absOscillation.absOscillation_Position_offset);
           ActiveSerial->print(" ,Total Travel:");
-          ActiveSerial->println(dap_calculationVariables_st.stepperPosRange);
+          ActiveSerial->println(dap_calculationVariables_st.stepperPosRange);*/
         } 
       }
       // end profiler 4, movement strategy
