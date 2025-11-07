@@ -280,7 +280,7 @@ StepperWithLimits* stepper = NULL;
 
 #include "StepperMovementStrategy.h"
 #include "StepperMovementStrategy_MPC.h"
-#include "EffectsPID.h"
+#include "ChatterReduction.h"
 bool moveSlowlyToPosition_b = true;
 /**********************************************************************************************/
 /*                                                                                            */
@@ -1640,6 +1640,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       #endif
 
 
+
       // start profiler 1, effects
       profiler_pedalUpdateTask.start(1);
 
@@ -1909,11 +1910,23 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         effect_pos_fl32 -= dap_calculationVariables_st.dampingPress * changeVelocity * dap_calculationVariables_st.springStiffnesssInv;
       }
 
+
+
       // Due to closed loop frequiency response, the servo might travel less than the input amplitude. 
       // To compensate the attenuation, the input amplitude is scaled by a constant factor, which was identified for 15Hz input frequency and roughly resulted in plausible amplitude range. 
       effect_force_fl32 *= EFFECT_SCALING_FACTOR_FL32;
       //effect_pos_fl32 *= EFFECT_SCALING_FACTOR_FL32;
 
+
+      //check if chatter happened
+      bool isChatter=chatterReduction.checkForChatter(stepperPosCurrent_i32, esp_timer_get_time());
+      // chatter reduction gain, reduce the gain when chatter happened
+      if (isChatter && (abs(effect_pos_fl32)> abs(_RPMOscillation.RPM_position_offset)))
+      {
+        effect_pos_fl32 *= chatterReduction.DynamicEffectGain();
+      }
+
+      
       // compute next position with PID strategy
       // MPC control strategy for rudder
       int32_t positionWithoutEffect=0;
@@ -1936,16 +1949,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         Position_Next = MoveByPidStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, effect_force_fl32, 0);
         if(effectsCalculated_b)
         {
-          //float effectsOffsetFiltered= effectOffsetPID.computeEffectOffset(effect_pos_fl32, &dap_calculationVariables_st);
-          //Position_Next -= effectsOffsetFiltered;
           Position_Next -= effect_pos_fl32;
-          /*
-          ActiveSerial->print("Filtered offset:");
-          ActiveSerial->print(effectsOffsetFiltered);
-          ActiveSerial->print(" ,ABS offset");
-          ActiveSerial->print(absOscillation.absOscillation_Position_offset);
-          ActiveSerial->print(" ,Total Travel:");
-          ActiveSerial->println(dap_calculationVariables_st.stepperPosRange);*/
         } 
       }
       // end profiler 4, movement strategy
