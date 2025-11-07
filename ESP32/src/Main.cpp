@@ -1918,10 +1918,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       //effect_pos_fl32 *= EFFECT_SCALING_FACTOR_FL32;
 
 
-      //check if chatter happened
-      bool isChatter=chatterReduction.checkForChatter(stepperPosCurrent_i32, esp_timer_get_time());
+
       // chatter reduction gain, reduce the gain when chatter happened
-      if (isChatter && (abs(effect_pos_fl32)> abs(_RPMOscillation.RPM_position_offset)))
+      if (chatterReduction.checkForChatter(stepperPosCurrent_i32, esp_timer_get_time()))
       {
         effect_pos_fl32 *= chatterReduction.DynamicEffectGain();
       }
