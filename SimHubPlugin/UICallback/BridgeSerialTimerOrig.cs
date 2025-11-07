@@ -337,7 +337,8 @@ namespace User.PluginSdkDemo
                                         {
                                             // Specify the path to the file
                                             string currentDirectory = Directory.GetCurrentDirectory();
-                                            string filePath = currentDirectory + "\\PluginsData\\Common" + "\\DiyFfbPedalStateLog_" + pedalSelected + ".txt";
+                                            string filePath = Plugin.logFolderPath+"\\DiyFfbPedalStateLog_" + PedalConstStrings.PedalID[pedalSelected] + "_Wireless"+Plugin._calculations.logDateTime +".txt";
+                                            
 
                                             // delete file 
                                             if (true == Plugin._calculations.dumpPedalToResponseFile_clearFile[indexOfSelectedPedal_u])

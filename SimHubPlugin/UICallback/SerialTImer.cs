@@ -403,43 +403,41 @@ namespace User.PluginSdkDemo
                                             {
                                                 // Specify the path to the file
                                                 string currentDirectory = Directory.GetCurrentDirectory();
-                                                string filePath = currentDirectory + "\\PluginsData\\Common" + "\\DiyFfbPedalStateLog_" + indexOfSelectedPedal_u.ToString() + ".txt";
-
+                                                //string filePath = currentDirectory + "\\PluginsData\\Common" + "\\DiyFfbPedalStateLog_" + indexOfSelectedPedal_u.ToString() + ".txt";
+                                                string filePath = Plugin.logFolderPath + "\\DiyFfbPedalStateLog_" + PedalConstStrings.PedalID[pedalSelected] + "_Wired" + Plugin._calculations.logDateTime + ".txt";
 
                                                 // delete file 
                                                 if (true == Plugin._calculations.dumpPedalToResponseFile_clearFile[indexOfSelectedPedal_u])
                                                 {
                                                     Plugin._calculations.dumpPedalToResponseFile_clearFile[indexOfSelectedPedal_u] = false;
-                                                    File.Delete(filePath);
-
-                                                    // write header
-                                                    if (!File.Exists(filePath))
+                                                    File.Delete(filePath);  
+                                                }
+                                                // write header
+                                                if (!File.Exists(filePath))
+                                                {
+                                                    using (StreamWriter writer = new StreamWriter(filePath, true))
                                                     {
-                                                        using (StreamWriter writer = new StreamWriter(filePath, true))
-                                                        {
-                                                            // Write the content to the file
-                                                            writer.Write("cycleCtr");
-                                                            writer.Write(", time_InUs");
-                                                            writer.Write(", cycleCount_u32");
-                                                            writer.Write(", forceRaw_InKg");
-                                                            writer.Write(", forceFiltered_InKg");
-                                                            writer.Write(", forceVelocity_InKgPerSec");
-                                                            writer.Write(", servoPos_InSteps");
-                                                            writer.Write(", servoPosEsp_InSteps");
-                                                            writer.Write(", servoPosError_InSteps");
-                                                            writer.Write(", servoCurrent_InPercent");
-                                                            writer.Write(", servoVoltage_InV");
-                                                            writer.Write(", angleSensorOutput");
-                                                            writer.Write(", brakeResistorState_b");
-                                                            writer.Write(", servoPosEstimated_InSteps");
-                                                            writer.Write(", targetPosition_InSteps");
-                                                            writer.Write(", currentSpeedInMilliHz_i32");
-                                                            //writer.Write(", servoPositionEstimated_stepperPos_i16");
-                                                            writer.Write("\n");
-                                                        }
+                                                        // Write the content to the file
+                                                        writer.Write("cycleCtr");
+                                                        writer.Write(", time_InUs");
+                                                        writer.Write(", cycleCount_u32");
+                                                        writer.Write(", forceRaw_InKg");
+                                                        writer.Write(", forceFiltered_InKg");
+                                                        writer.Write(", forceVelocity_InKgPerSec");
+                                                        writer.Write(", servoPos_InSteps");
+                                                        writer.Write(", servoPosEsp_InSteps");
+                                                        writer.Write(", servoPosError_InSteps");
+                                                        writer.Write(", servoCurrent_InPercent");
+                                                        writer.Write(", servoVoltage_InV");
+                                                        writer.Write(", angleSensorOutput");
+                                                        writer.Write(", brakeResistorState_b");
+                                                        writer.Write(", servoPosEstimated_InSteps");
+                                                        writer.Write(", targetPosition_InSteps");
+                                                        writer.Write(", currentSpeedInMilliHz_i32");
+                                                        //writer.Write(", servoPositionEstimated_stepperPos_i16");
+                                                        writer.Write("\n");
                                                     }
                                                 }
-
 
                                                 using (StreamWriter writer = new StreamWriter(filePath, true))
                                                 {

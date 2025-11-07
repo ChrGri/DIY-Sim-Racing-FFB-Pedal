@@ -279,6 +279,7 @@ namespace User.PluginSdkDemo.UIFunction
         {
             calculation.dumpPedalToResponseFile_clearFile[Settings.table_selected] = true;
             calculation.dumpPedalToResponseFile[Settings.table_selected] = true;
+            calculation.logDateTime = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             CalculationChangedEvent(calculation);
         }
 

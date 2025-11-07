@@ -17,18 +17,22 @@ namespace User.PluginSdkDemo
         public ObservableCollection<ConfigListItem> ConfigList { get; set; }
         private const string configFolderName = "configs";
         private const string profileFolderName = "profiles";
+        private const string logFolderName = "log";
         private const string baseFolderName = "DiyFfbPedal";
         private const string simhubPluginDataFolderName = "PluginData";
         private const string simhubPluginDataCommonFolderName = "Common";
+        public string configFolderPath = string.Empty;
+        public string profileFolderPath = string.Empty;
+        public string logFolderPath = string.Empty;
         public void EnsureFolderExistsAndProcess()
         {
             
             string currentDirectory = Directory.GetCurrentDirectory();
             string simhubCommonFolder = currentDirectory + "\\PluginsData\\Common";
             string baseFolderPath = Path.Combine(simhubCommonFolder, baseFolderName);
-            string configFolderPath= Path.Combine(baseFolderPath, configFolderName);
-            string profileFolderPath = Path.Combine(baseFolderPath, profileFolderName);
-            
+            configFolderPath= Path.Combine(baseFolderPath, configFolderName);
+            profileFolderPath = Path.Combine(baseFolderPath, profileFolderName);
+            logFolderPath = Path.Combine(baseFolderPath, logFolderName);
             if (!Directory.Exists(baseFolderPath))
             {
                 try
@@ -56,6 +60,17 @@ namespace User.PluginSdkDemo
                 try
                 {
                     Directory.CreateDirectory(profileFolderPath);
+                }
+                catch (Exception ex)
+                {
+                    return;
+                }
+            }
+            if (!Directory.Exists(logFolderPath))
+            {
+                try
+                {
+                    Directory.CreateDirectory(logFolderPath);
                 }
                 catch (Exception ex)
                 {
