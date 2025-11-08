@@ -1920,10 +1920,10 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
 
       // chatter reduction gain, reduce the gain when chatter happened
-      if (chatterReduction.checkForChatter(stepperPosCurrent_i32, esp_timer_get_time()))
+      /*if (chatterReduction.checkForChatter(stepperPosCurrent_i32, esp_timer_get_time()))
       {
         effect_pos_fl32 *= chatterReduction.DynamicEffectGain();
-      }
+      }*/
 
       
       // compute next position with PID strategy
