@@ -1067,9 +1067,10 @@ void serialCommunicationTxTask( void * pvParameters)
           dap_config_st_local_ptr= &dap_config_st_local;
           
           //uint16_t crc = checksumCalculator((uint8_t*)(&(dap_config_st.payLoadHeader_)), sizeof(dap_config_st.payLoadHeader_) + sizeof(dap_config_st.payLoadPedalConfig_));
-          crc = checksumCalculator((uint8_t*)(&(dap_config_st_local.payLoadHeader_)), sizeof(dap_config_st_local.payLoadHeader_) + sizeof(dap_config_st_local.payLoadPedalConfig_));
-          //dap_config_st_local_ptr->payloadFooter_.checkSum = crc;
+
           dap_config_st_local_ptr->payLoadHeader_.PedalTag=dap_config_st_local_ptr->payLoadPedalConfig_.pedal_type;
+          crc = checksumCalculator((uint8_t*)(&(dap_config_st_local.payLoadHeader_)), sizeof(dap_config_st_local.payLoadHeader_) + sizeof(dap_config_st_local.payLoadPedalConfig_));
+          dap_config_st_local_ptr->payloadFooter_.checkSum = crc;
           ActiveSerial->write((char*)dap_config_st_local_ptr, sizeof(DAP_config_st));
           ActiveSerial->print("\r\n");
           ESPNow_request_config_b[pedal_config_IDX]=false;

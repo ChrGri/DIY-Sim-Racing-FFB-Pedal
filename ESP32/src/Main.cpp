@@ -21,7 +21,7 @@
 
 
 #define EFFECT_SCALING_FACTOR_FL32 4.0f;
-
+#define EFFECT_POSITION_SCALING_FACTOR_FL32 0.1f;
 
 #define BAUD3M 3000000
 #define DEFAULTBAUD 921600
@@ -1915,15 +1915,17 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // Due to closed loop frequiency response, the servo might travel less than the input amplitude. 
       // To compensate the attenuation, the input amplitude is scaled by a constant factor, which was identified for 15Hz input frequency and roughly resulted in plausible amplitude range. 
       effect_force_fl32 *= EFFECT_SCALING_FACTOR_FL32;
-      //effect_pos_fl32 *= EFFECT_SCALING_FACTOR_FL32;
-
+      effect_pos_fl32 *= EFFECT_POSITION_SCALING_FACTOR_FL32;
+      
 
 
       // chatter reduction gain, reduce the gain when chatter happened
-      /*if (chatterReduction.checkForChatter(stepperPosCurrent_i32, esp_timer_get_time()))
+      /*
+      if (chatterReduction.checkForChatter(stepperPosCurrent_i32, esp_timer_get_time(), false))
       {
         effect_pos_fl32 *= chatterReduction.DynamicEffectGain();
-      }*/
+      }
+      */
 
       
       // compute next position with PID strategy
@@ -3426,6 +3428,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
             dap_config_st_local_ptr->payLoadHeader_.startOfFrame1_u8 = SOF_BYTE_1;
             dap_config_st_local_ptr->payloadFooter_.enfOfFrame0_u8 = EOF_BYTE_0;
             dap_config_st_local_ptr->payloadFooter_.enfOfFrame1_u8 = EOF_BYTE_1;
+            dap_config_st_local_ptr->payLoadHeader_.PedalTag = dap_config_st_local_ptr->payLoadPedalConfig_.pedal_type;
             uint16_t crc=0;
             crc = checksumCalculator((uint8_t*)(&(espnow_dap_config_st.payLoadHeader_)), sizeof(espnow_dap_config_st.payLoadHeader_) + sizeof(espnow_dap_config_st.payLoadPedalConfig_));
             dap_config_st_local_ptr->payloadFooter_.checkSum = crc;
