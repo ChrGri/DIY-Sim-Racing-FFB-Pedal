@@ -280,7 +280,7 @@ StepperWithLimits* stepper = NULL;
 
 #include "StepperMovementStrategy.h"
 #include "StepperMovementStrategy_MPC.h"
-#include "ChatterReduction.h"
+#include "MovementDirectionCheck.h"
 bool moveSlowlyToPosition_b = true;
 /**********************************************************************************************/
 /*                                                                                            */
@@ -1904,10 +1904,20 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       }
 
       // add dampening
-      if (dap_calculationVariables_st.dampingPress  > 0.0001f)
+      if (movementDireciton.velocityCheck(stepperPosCurrent_i32) > 0.0f)
       {
-        // dampening is proportional to velocity --> D-gain for stability
-        effect_pos_fl32 -= dap_calculationVariables_st.dampingPress * changeVelocity * dap_calculationVariables_st.springStiffnesssInv;
+        if (dap_calculationVariables_st.dampingPress > 0.0001f)
+        {
+          // dampening is proportional to velocity --> D-gain for stability
+          effect_pos_fl32 -= dap_calculationVariables_st.dampingPress * changeVelocity * dap_calculationVariables_st.springStiffnesssInv;
+        }
+      }
+      else
+      {
+        if (dap_calculationVariables_st.dampingPull > 0.0001f)
+        {
+          effect_pos_fl32 -= dap_calculationVariables_st.dampingPull * changeVelocity * dap_calculationVariables_st.springStiffnesssInv;
+        }
       }
 
 

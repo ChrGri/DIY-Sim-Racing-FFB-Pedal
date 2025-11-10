@@ -296,6 +296,7 @@ void DAP_calculationVariables_st::updateFromConfig(DAP_config_st& config_st)
   absAmplitude = ((float)config_st.payLoadPedalConfig_.absAmplitude)  *0.001f;//in percent, max 20% of force range
 
   dampingPress = ((float)config_st.payLoadPedalConfig_.dampingPress) * 0.00015f;
+  dampingPull = ((float)config_st.payLoadPedalConfig_.dampingPull) * 0.00015f;
   RPM_max_freq = ((float)config_st.payLoadPedalConfig_.RPM_max_freq);
   RPM_min_freq = ((float)config_st.payLoadPedalConfig_.RPM_min_freq);
   RPM_AMP = ((float)config_st.payLoadPedalConfig_.RPM_AMP)  * 0.0002f;//in kg, max 4% of force range
