@@ -433,7 +433,6 @@ struct DAP_calculationVariables_st
   float BP_amp;
   float BP_freq;
   float dampingPress;
-  float dampingPull;
   float Force_Max_default;
   float WS_amp;
   float WS_freq;
