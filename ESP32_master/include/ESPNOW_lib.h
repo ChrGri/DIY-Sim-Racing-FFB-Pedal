@@ -34,16 +34,16 @@ bool update_basic_state[3]={false,false,false};
 bool update_extend_state[3]={false,false,false};
 bool sendAssignment_b[3] = {false, false, false};
 bool pedal_OTA_action_b=false;
-uint16_t Joystick_value[]={0,0,0};
-uint16_t Joystick_throttle_value_from_pedal=0;
-uint16_t Joystick_value_original[]={0,0,0};
+int16_t Joystick_value[]={0,0,0};
+int16_t Joystick_throttle_value_from_pedal=0;
+int16_t Joystick_value_original[]={0,0,0};
 bool ESPNow_request_config_b[3]={false,false,false};
 bool ESPNow_error_b[3]={false,false,false};
-uint16_t pedal_throttle_value=0;
-uint16_t pedal_brake_value=0;
-uint16_t pedal_cluth_value=0;
-uint16_t pedal_brake_rudder_value=0;
-uint16_t pedal_throttle_rudder_value=0;
+int16_t pedal_throttle_value=0;
+int16_t pedal_brake_value=0;
+int16_t pedal_cluth_value=0;
+int16_t pedal_brake_rudder_value=0;
+int16_t pedal_throttle_rudder_value=0;
 uint8_t pedal_status=0;
 bool ESPNow_Pairing_status = false;
 bool UpdatePairingToEeprom = false;
@@ -52,7 +52,12 @@ bool software_pairing_action_b = false;
 bool newUnassignedPedalDetected[3]={false,false,false};
 QueueHandle_t messageQueueHandle;
 
-
+int16_t Uint16Toint49OCnvertor(uint16_t unsignedValue)
+{
+  const uint16_t OFFSET = 0x8000;
+  int16_t tmp = int16_t(unsignedValue-OFFSET);
+  return tmp;
+}
 
 bool MacCheck(uint8_t* Mac_A, uint8_t*  Mac_B)
 {
@@ -215,11 +220,11 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
         update_basic_state[pedalTag]=true;
         if(dap_state_basic_st_lcl.payloadPedalState_Basic_.error_code_u8!=0) ESPNow_error_b[pedalTag]=true;
         float joystickData_u32= dap_state_basic_st[pedalTag].payloadPedalState_Basic_.joystickOutput_u16/32767.0f*10000.0f;
-        uint16_t joystickNormalizedToInt16 = dap_state_basic_st[pedalTag].payloadPedalState_Basic_.joystickOutput_u16; 
+        int16_t joystickNormalizedToInt16 = Uint16Toint49OCnvertor(dap_state_basic_st[pedalTag].payloadPedalState_Basic_.joystickOutput_u16); 
         switch (pedalTag)
         {
           case PEDAL_ID_CLUTCH:
-            pedal_cluth_value=joystickNormalizedToInt16;
+            pedal_cluth_value=(int16_t)(joystickNormalizedToInt16-32767);
             Joystick_value[0]=joystickData_u32;
             Joystick_value_original[0]=joystickNormalizedToInt16;
           break;

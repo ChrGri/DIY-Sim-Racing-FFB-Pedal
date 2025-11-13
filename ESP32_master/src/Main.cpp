@@ -1222,7 +1222,7 @@ void joystickUpdateTask( void * pvParameters )
 {
   unsigned long last_serial_joy_out = millis();
   unsigned long now;
-  uint16_t pedalJoystick_last[3] = {0, 0, 0};
+  int16_t pedalJoystick_last[3] = {0, 0, 0};
   bool pedalJoystickUpdate_b = false;
   unsigned joystick_test_time = millis();
   bool print_value_b=false;
@@ -1256,14 +1256,14 @@ void joystickUpdateTask( void * pvParameters )
             SetControllerOutputValueAccelerator(pedal_cluth_value);
             SetControllerOutputValueBrake(pedal_brake_value);
             SetControllerOutputValueThrottle(pedal_throttle_value);
-            SetControllerOutputValueRudder(0);
-            SetControllerOutputValueRudder_brake(0, 0);
+            SetControllerOutputValueRudder(JOYSTICK_MIN_VALUE);
+            SetControllerOutputValueRudder_brake(JOYSTICK_MIN_VALUE, JOYSTICK_MIN_VALUE);
           }
           if (pedal_status == 1)
           {
-            SetControllerOutputValueAccelerator(0);
-            SetControllerOutputValueBrake(0);
-            SetControllerOutputValueThrottle(0);
+            SetControllerOutputValueAccelerator(JOYSTICK_MIN_VALUE);
+            SetControllerOutputValueBrake(JOYSTICK_MIN_VALUE);
+            SetControllerOutputValueThrottle(JOYSTICK_MIN_VALUE);
             // 3% deadzone
             if (pedal_throttle_value < ((int16_t)(0.47 * JOYSTICK_RANGE)) || pedal_throttle_value > ((int16_t)(0.53 * JOYSTICK_RANGE)))
             {
@@ -1271,16 +1271,16 @@ void joystickUpdateTask( void * pvParameters )
             }
             else
             {
-              SetControllerOutputValueRudder((int16_t)(0.5 * JOYSTICK_RANGE));
+              SetControllerOutputValueRudder((int16_t)(0.5 * JOYSTICK_RANGE+JOYSTICK_MIN_VALUE));
             }
-            SetControllerOutputValueRudder_brake(0, 0);
+            SetControllerOutputValueRudder_brake(JOYSTICK_MIN_VALUE, JOYSTICK_MIN_VALUE);
           }
           if (pedal_status == 2)
           {
-            SetControllerOutputValueAccelerator(0);
-            SetControllerOutputValueBrake(0);
-            SetControllerOutputValueThrottle(0);
-            SetControllerOutputValueRudder((int16_t)(0.5 * JOYSTICK_RANGE));
+            SetControllerOutputValueAccelerator(JOYSTICK_MIN_VALUE);
+            SetControllerOutputValueBrake(JOYSTICK_MIN_VALUE);
+            SetControllerOutputValueThrottle(JOYSTICK_MIN_VALUE);
+            SetControllerOutputValueRudder((int16_t)(0.5 * JOYSTICK_RANGE+JOYSTICK_MIN_VALUE));
             // int16_t filter_brake=0;
             // int16_t filter_throttle=0;
             if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability[0] == 1)

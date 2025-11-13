@@ -51,82 +51,34 @@ void TinyusbJoystick::Begin()
 
 void TinyusbJoystick::SetRx(int16_t value)
 {
-    uint16_t tmp = value;
-    if (tmp < 0x7FFF)
-    {
-        tmp += 0x7FFF + 1;
-    }
-    else
-    {
-        tmp -= 0x7FFF + 1;
-    }
+    int16_t tmp = value;
     hid_report.rx = tmp;
 }
 
 void TinyusbJoystick::SetRy(int16_t value)
 {
-    uint16_t tmp = value;
-    if (tmp < 0x7FFF)
-    {
-        tmp += 0x7FFF + 1;
-    }
-    else
-    {
-        tmp -= 0x7FFF + 1;
-    }
+    int16_t tmp = value;
     hid_report.ry = tmp;
 }
 void TinyusbJoystick::SetRz(int16_t value)
 {
-    uint16_t tmp = value;
-    if (tmp < 0x7FFF)
-    {
-        tmp += 0x7FFF + 1;
-    }
-    else
-    {
-        tmp -= 0x7FFF + 1;
-    }
+    int16_t tmp = value;
     hid_report.rz = tmp;
 }
 
 void TinyusbJoystick::SetXAxis(int16_t value)
 {
-    uint16_t tmp = value;
-    if (tmp < 0x7FFF)
-    {
-        tmp += 0x7FFF + 1;
-    }
-    else
-    {
-        tmp -= 0x7FFF + 1;
-    }
+    int16_t tmp = value;
     hid_report.x = tmp;
 }
 void TinyusbJoystick::SetYAxis(int16_t value)
 {
-    uint16_t tmp = value;
-    if (tmp < 0x7FFF)
-    {
-        tmp += 0x7FFF + 1;
-    }
-    else
-    {
-        tmp -= 0x7FFF + 1;
-    }
+    int16_t tmp = value;
     hid_report.y = tmp;
 }
 void TinyusbJoystick::SetZAxis(int16_t value)
 {
-    uint16_t tmp = value;
-    if (tmp < 0x7FFF)
-    {
-        tmp += 0x7FFF + 1;
-    }
-    else
-    {
-        tmp -= 0x7FFF + 1;
-    }
+    int16_t tmp = value;
     hid_report.z = tmp;
 }
 
