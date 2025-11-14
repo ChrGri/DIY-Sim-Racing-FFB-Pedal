@@ -17,6 +17,7 @@ using System.Runtime;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Windows.UI.Notifications;
@@ -390,17 +391,7 @@ namespace User.PluginSdkDemo
             //string msg = "CRC value: " + val.ToString();
             byte[] newBuffer = new byte[length];
             newBuffer = getBytesConfig(tmp);
-            bool wirelessUpdate = false;
-            bool serialUpdate = false;
-            if (_calculations.pedalWirelessStatus[PedalIDX] == WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY)
-            {
-                wirelessUpdate = true;
-            }
-            if (!wirelessUpdate && _calculations.pedalSerialStatus[PedalIDX] == ConnectStateEnum.PEDAL_IS_READY)
-            {
-                serialUpdate = true;
-            }
-            if (Settings.Pedal_ESPNow_Sync_flag[PedalIDX] && wirelessUpdate)
+            if (Settings.Pedal_ESPNow_Sync_flag[PedalIDX])
             {
                 if (ESPsync_serialPort.IsOpen)
                 {
@@ -412,6 +403,7 @@ namespace User.PluginSdkDemo
                         ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
                         //Plugin._serialPort[indexOfSelectedPedal_u].Write("\n");
                         System.Threading.Thread.Sleep(100);
+
                     }
                     catch (Exception caughtEx)
                     {
@@ -422,7 +414,7 @@ namespace User.PluginSdkDemo
             }
             else
             {
-                if (_serialPort[PedalIDX].IsOpen && serialUpdate)
+                if (_serialPort[PedalIDX].IsOpen)
                 {
 
                     // clear inbuffer 
@@ -448,7 +440,17 @@ namespace User.PluginSdkDemo
             DAP_config_st* v = &tmp;
             byte* p = (byte*)v;
             tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
-            SendConfig(tmp, PedalIDX);
+            bool wirelessUpdate = false;
+            bool serialUpdate = false;
+            if (_calculations.pedalWirelessStatus[PedalIDX] == WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY)
+            {
+                wirelessUpdate = true;
+            }
+            if (!wirelessUpdate && _calculations.pedalSerialStatus[PedalIDX] == ConnectStateEnum.PEDAL_IS_READY)
+            {
+                serialUpdate = true;
+            }
+            if(serialUpdate || wirelessUpdate) SendConfig(tmp, PedalIDX);
         }
         unsafe public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
