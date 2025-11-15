@@ -15,7 +15,7 @@ void joystickSendState();
 #endif
 static const int16_t JOYSTICK_MIN_VALUE = INT16_MIN;
 static const int16_t JOYSTICK_MAX_VALUE = INT16_MAX;
-static const int16_t JOYSTICK_RANGE = JOYSTICK_MAX_VALUE - JOYSTICK_MIN_VALUE;
+static const int32_t JOYSTICK_RANGE = JOYSTICK_MAX_VALUE - JOYSTICK_MIN_VALUE;
 uint16_t NormalizeControllerOutputValue(float value, float minVal, float maxVal, float maxGameOutput);
 
 //bool GetJoystickStatus();
