@@ -34,16 +34,16 @@ bool update_basic_state[3]={false,false,false};
 bool update_extend_state[3]={false,false,false};
 bool sendAssignment_b[3] = {false, false, false};
 bool pedal_OTA_action_b=false;
-int16_t Joystick_value[]={0,0,0};
-int16_t Joystick_throttle_value_from_pedal=0;
+uint16_t Joystick_value[]={0,0,0};
+uint16_t Joystick_throttle_value_from_pedal=0;
 uint16_t Joystick_value_original[]={0,0,0};
 bool ESPNow_request_config_b[3]={false,false,false};
 bool ESPNow_error_b[3]={false,false,false};
-int16_t pedal_throttle_value=INT16_MIN;
-int16_t pedal_brake_value=INT16_MIN;
-int16_t pedal_cluth_value=INT16_MIN;
-int16_t pedal_brake_rudder_value=INT16_MIN;
-int16_t pedal_throttle_rudder_value=INT16_MIN;
+uint16_t pedal_throttle_value=0;
+uint16_t pedal_brake_value=0;
+uint16_t pedal_cluth_value=0;
+uint16_t pedal_brake_rudder_value=0;
+uint16_t pedal_throttle_rudder_value=0;
 uint8_t pedal_status=0;
 bool ESPNow_Pairing_status = false;
 bool UpdatePairingToEeprom = false;
@@ -220,7 +220,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
         update_basic_state[pedalTag]=true;
         if(dap_state_basic_st_lcl.payloadPedalState_Basic_.error_code_u8!=0) ESPNow_error_b[pedalTag]=true;
         float joystickData_u32= dap_state_basic_st[pedalTag].payloadPedalState_Basic_.joystickOutput_u16/32767.0f*10000.0f;
-        int16_t joystickNormalizedToInt16 = Uint16ToInt16Cnvertor(dap_state_basic_st[pedalTag].payloadPedalState_Basic_.joystickOutput_u16); 
+        uint16_t joystickNormalizedToInt16 = dap_state_basic_st[pedalTag].payloadPedalState_Basic_.joystickOutput_u16; 
         switch (pedalTag)
         {
           case PEDAL_ID_CLUTCH:

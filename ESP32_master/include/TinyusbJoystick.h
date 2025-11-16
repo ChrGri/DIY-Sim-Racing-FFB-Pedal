@@ -48,12 +48,12 @@ private:
 public:
   TinyusbJoystick();
   bool IsReady();
-  void Begin();
-  void SetXAxis(int16_t value);
-  void SetYAxis(int16_t value);
-  void SetZAxis(int16_t value);
-  void SetRx(int16_t value);
-  void SetRy(int16_t value);
-  void SetRz(int16_t value);
-  void SendState();
+  void begin();
+  void setXAxis(int16_t value);
+  void setYAxis(int16_t value);
+  void setZAxis(int16_t value);
+  void setRxAxis(int16_t value);
+  void setRyAxis(int16_t value);
+  void setRzAxis(int16_t value);
+  void sendState();
 };

@@ -22,43 +22,18 @@ uint16_t IRAM_ATTR_FLAG NormalizeControllerOutputValue(float value, float minVal
 #ifdef USB_JOYSTICK
 
 #include <string>
-#include "Adafruit_TinyUSB.h"
-
+//#include "Adafruit_TinyUSB.h"
+#include "Joystick_ESP32S2.h"
 
 #define JOYSTICK_AXIS_MINIMUM 0
 #define JOYSTICK_AXIS_MAXIMUM 65535
 
-
-// HID Report Descriptor for Racing Pedal (Brake only)
-const uint8_t desc_hid_report[] = {
-    0x05, 0x01,        // Usage Page (Generic Desktop Controls)
-    0x09, 0x05,        // Usage (0x04: Joystick, 0x05: Gamepad)
-    0xA1, 0x01,        // Collection (Application)
-
-    0x05, 0x02,        //   Usage Page (Simulation Controls)
-    0x09, 0xC5,        //   Usage (Brake)  <-- special "pedal" usage
-    0x15, 0x00,        //   Logical Minimum (0)
-    0x27, 0xFF, 0xFF, 0x00, 0x00,  //   0x25: 1byte logical max; 0x26: 2byte logical max; 0x27: 4byte logical max;  Logical Maximum (65535)
-    0x75, 0x10,        //   Report Size (16 bits)
-    0x95, 0x01,        //   Report Count (1)
-    0x81, 0x02,        //   Input (Data,Var,Abs)  <-- absolute, not relative
-
-    0xC0               // End Collection
-};
-
-
-// USB HID object
-Adafruit_USBD_HID usb_hid;
-
-// Report payload for the two axes
-typedef struct {
-  uint8_t brake_lowerByte;
-  uint8_t brake_higherByte;
-} hid_report_t;
-
-hid_report_t hid_report = {0,0};
-
-
+Joystick_ joystick_(JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_JOYSTICK,
+                    0, 0,                 // Button Count, Hat Switch Count
+                    false, false, false,  // no X and no Y, no Z Axis
+                    true, false, false,  //  Rx, no Ry, no Rz
+                    false, false,         // No rudder or throttle
+                    false, false, false);  // No accelerator, brake, or steering;
 
 void SetupController_USB(uint8_t pedal_ID) 
 {
@@ -84,66 +59,24 @@ void SetupController_USB(uint8_t pedal_ID)
       break;
 
   }
-
-    // Set VID and PID
-  TinyUSBDevice.setID(0x3035, PID);
-  TinyUSBDevice.setProductDescriptor(APname);
-  TinyUSBDevice.setManufacturerDescriptor("OpenSource");
-
-  // Manual begin() is required on core without built-in support e.g. mbed rp2040
-  if (!TinyUSBDevice.isInitialized()) {
-    TinyUSBDevice.begin(0);
-  }
-
-  // Setup HID
-  usb_hid.setPollInterval(10); // time in ms
-  usb_hid.setReportDescriptor(desc_hid_report, sizeof(desc_hid_report));
-  usb_hid.begin();
-
-  // If already enumerated, additional class driverr begin() e.g msc, hid, midi won't take effect until re-enumeration
-  if (TinyUSBDevice.mounted()) {
-    TinyUSBDevice.detach();
-    delay(10);
-    TinyUSBDevice.attach();
-  }
+  int VID= 0x35;
+  joystick_.setVidPidProductVendorDescriptor(VID,PID, APname, "OpenSource");
+  joystick_.setRxAxisRange(JOYSTICK_AXIS_MINIMUM, JOYSTICK_AXIS_MAXIMUM);
+  joystick_.begin();
 }
 
 void SetupController() 
 {
-
-  // Manual begin() is required on core without built-in support e.g. mbed rp2040
-  if (!TinyUSBDevice.isInitialized()) {
-    TinyUSBDevice.begin(0);
-  }
-
-  // Setup HID
-  usb_hid.setPollInterval(10); // time in ms
-  usb_hid.setReportDescriptor(desc_hid_report, sizeof(desc_hid_report));
-  usb_hid.begin();
-
-  // If already enumerated, additional class driverr begin() e.g msc, hid, midi won't take effect until re-enumeration
-  if (TinyUSBDevice.mounted()) {
-    TinyUSBDevice.detach();
-    delay(10);
-    TinyUSBDevice.attach();
-  }
+  joystick_.setRxAxisRange(JOYSTICK_AXIS_MINIMUM, JOYSTICK_AXIS_MAXIMUM);
+  joystick_.begin();
 }
 
 bool IsControllerReady() { 
-  bool returnValue_b = true;
-  if (!TinyUSBDevice.mounted()) {
-    returnValue_b = false;
-  }
-  if (!usb_hid.ready())
-  {
-    returnValue_b = false;
-  }
-
-  return returnValue_b;
+  return joystick_.IsReady();
 }
 
 void SetControllerOutputValue(uint16_t value) {
-  
+  /*  
   uint8_t highByte = (uint8_t)(value >> 8);
 	uint8_t lowByte = (uint8_t)(value & 0x00FF);
 
@@ -151,6 +84,9 @@ void SetControllerOutputValue(uint16_t value) {
   hid_report.brake_higherByte = highByte;
 
   usb_hid.sendReport(0, &hid_report, sizeof(hid_report));
+  */
+ joystick_.setRxAxis(value);
+ joystick_.sendState();
 }
 
 

@@ -19,7 +19,7 @@ bool TinyusbJoystick::IsReady()
     return returnValue_b;
 }
 
-void TinyusbJoystick::Begin()
+void TinyusbJoystick::begin()
 {
     // Set VID and PID
     int PID = 0x8213;
@@ -49,40 +49,40 @@ void TinyusbJoystick::Begin()
     }
 }
 
-void TinyusbJoystick::SetRx(int16_t value)
+void TinyusbJoystick::setRxAxis(int16_t value)
 {
     int16_t tmp = value;
     hid_report.rx = tmp;
 }
 
-void TinyusbJoystick::SetRy(int16_t value)
+void TinyusbJoystick::setRyAxis(int16_t value)
 {
     int16_t tmp = value;
     hid_report.ry = tmp;
 }
-void TinyusbJoystick::SetRz(int16_t value)
+void TinyusbJoystick::setRzAxis(int16_t value)
 {
     int16_t tmp = value;
     hid_report.rz = tmp;
 }
 
-void TinyusbJoystick::SetXAxis(int16_t value)
+void TinyusbJoystick::setXAxis(int16_t value)
 {
     int16_t tmp = value;
     hid_report.x = tmp;
 }
-void TinyusbJoystick::SetYAxis(int16_t value)
+void TinyusbJoystick::setYAxis(int16_t value)
 {
     int16_t tmp = value;
     hid_report.y = tmp;
 }
-void TinyusbJoystick::SetZAxis(int16_t value)
+void TinyusbJoystick::setZAxis(int16_t value)
 {
     int16_t tmp = value;
     hid_report.z = tmp;
 }
 
-void TinyusbJoystick::SendState()
+void TinyusbJoystick::sendState()
 {
     usb_hid.sendReport(0, &hid_report, sizeof(hid_report));
 }

@@ -16,11 +16,28 @@ uint16_t NormalizeControllerOutputValue(float value, float minVal, float maxVal,
 
 
 #ifdef USB_JOYSTICK
-TinyusbJoystick tinyusbJoystick_;
+//TinyusbJoystick tinyusbJoystick_;
+
+Joystick_ tinyusbJoystick_(JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_JOYSTICK,
+                    0, 0,                 // Button Count, Hat Switch Count
+                    true, true, true,  // X and Y, but no Z Axis
+                    true, true, true,  // No Rx, Ry, or Rz
+                    false, false,         // No rudder or throttle
+                    false, false, false);  // No accelerator, brake, or steering;
+
 void SetupController()
 {
     
-    tinyusbJoystick_.Begin();
+    int PID = 0x8213;
+    int VID = 0x3035;
+    tinyusbJoystick_.setVidPidProductVendorDescriptor(VID,PID,"DIY_FFB_PEDAL_JOYSTICK","OpenSource");    
+    tinyusbJoystick_.setRxAxisRange(JOYSTICK_MIN_VALUE, JOYSTICK_MAX_VALUE);
+    tinyusbJoystick_.setRyAxisRange(JOYSTICK_MIN_VALUE, JOYSTICK_MAX_VALUE);
+    tinyusbJoystick_.setRzAxisRange(JOYSTICK_MIN_VALUE, JOYSTICK_MAX_VALUE);
+    tinyusbJoystick_.setXAxisRange(JOYSTICK_MIN_VALUE, JOYSTICK_MAX_VALUE);//rudder
+    tinyusbJoystick_.setYAxisRange(JOYSTICK_MIN_VALUE, JOYSTICK_MAX_VALUE);//rudder brake brake
+    tinyusbJoystick_.setZAxisRange(JOYSTICK_MIN_VALUE, JOYSTICK_MAX_VALUE);//rudder brake throttle
+    tinyusbJoystick_.begin();
     
 }
 
@@ -30,37 +47,35 @@ bool IsControllerReady()
     return returnValue_b;
 }
 
-void SetControllerOutputValueBrake(int16_t value)
+void SetControllerOutputValueBrake(uint16_t value)
 {
-    tinyusbJoystick_.SetRx(value);
+    tinyusbJoystick_.setRxAxis(value);
 }
 
-void SetControllerOutputValueAccelerator(int16_t value)
+void SetControllerOutputValueAccelerator(uint16_t value)
 {
-    tinyusbJoystick_.SetRy(value);
+    tinyusbJoystick_.setRyAxis(value);
 }
 
-void SetControllerOutputValueThrottle(int16_t value)
+void SetControllerOutputValueThrottle(uint16_t value)
 {
-    tinyusbJoystick_.SetRz(value);
+    tinyusbJoystick_.setRzAxis(value);
 }
 
-void SetControllerOutputValueRudder(int16_t value)
+void SetControllerOutputValueRudder(uint16_t value)
 {
-    tinyusbJoystick_.SetXAxis(value);
+    tinyusbJoystick_.setXAxis(value);
 }
-void SetControllerOutputValueRudder_brake(int16_t value, int16_t value2)
+void SetControllerOutputValueRudder_brake(uint16_t value, uint16_t value2)
 {
 
-    uint16_t tmp = value;
-    uint16_t tmp2 = value;
-    tinyusbJoystick_.SetYAxis(value);
-    tinyusbJoystick_.SetZAxis(value2);
+    tinyusbJoystick_.setYAxis(value);
+    tinyusbJoystick_.setZAxis(value2);
 }
 
 void joystickSendState()
 {
-    tinyusbJoystick_.SendState();
+    tinyusbJoystick_.sendState();
 }
 #endif
 

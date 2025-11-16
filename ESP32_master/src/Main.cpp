@@ -1240,7 +1240,7 @@ void joystickUpdateTask( void * pvParameters )
         }
       }
       #ifdef USB_JOYSTICK
-        if (IsControllerReady() && pedalJoystickUpdate_b)
+        if (IsControllerReady() /*&& pedalJoystickUpdate_b*/)
         {
           if(isBridgeInDebugMode_b)
           {
@@ -1267,23 +1267,8 @@ void joystickUpdateTask( void * pvParameters )
             // 3% deadzone
             if (pedal_throttle_value < ((int16_t)(0.47f * JOYSTICK_RANGE + JOYSTICK_MIN_VALUE)) || pedal_throttle_value > ((int16_t)(0.53f * JOYSTICK_RANGE + JOYSTICK_MIN_VALUE)))
             {
-              int32_t rudderBaseValue = constrain(pedal_throttle_value, (int32_t)(INT16_MIN+1), (int32_t)(INT16_MAX-1));
-              int32_t rudderValue = (int32_t)JOYSTICK_MAX_VALUE - (int32_t)rudderBaseValue + (int32_t)JOYSTICK_MIN_VALUE;
-              //rudderValue = constrain(rudderValue, (int32_t)-32768, (int32_t)(32767));
-              int16_t rudderValueInt16=0;
-              if (rudderBaseValue > INT16_MAX) 
-              {
-                rudderValueInt16 = INT16_MAX; 
-              } 
-              else if (rudderBaseValue < INT16_MIN) 
-              {
-                rudderValueInt16 = INT16_MIN; 
-              } 
-              else 
-              {
-                rudderValueInt16 = (int16_t)rudderBaseValue; 
-              }
-              SetControllerOutputValueRudder(rudderValueInt16);
+              uint16_t rudderValue = pedal_throttle_value;
+              SetControllerOutputValueRudder(rudderValue);
             }
             else
             {
@@ -1308,7 +1293,7 @@ void joystickUpdateTask( void * pvParameters )
               SetControllerOutputValueRudder_brake(pedal_brake_value, pedal_throttle_value);
             }
           }
-          
+          joystickSendState();
           if (pedalJoystickUpdate_b)
           {
             joystickSendState();
