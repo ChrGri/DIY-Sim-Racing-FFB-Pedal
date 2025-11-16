@@ -12,7 +12,7 @@ namespace User.PluginSdkDemo
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
-        static Int32 BridgeDIsconnectTimeOut = 1000;
+        static Int32 BridgeDisconnectTimeOutInMs = 3000;
         unsafe public void timerCallback_serial_esphost_orig(object sender, EventArgs e)
         {
 
@@ -177,7 +177,8 @@ namespace User.PluginSdkDemo
 
                                     // write vJoy data
                                     Pedal_position_reading[pedalSelected] = pedalState_read_st.payloadPedalBasicState_.joystickOutput_u16;
-                                    if (Plugin._calculations.pedalWirelessStatus[pedalSelected] == WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT)
+                                    if (Plugin._calculations.pedalWirelessStatus[pedalSelected] == WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT
+                                        || Plugin._calculations.pedalWirelessStatus[pedalSelected] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
                                     {
                                         Plugin._calculations.pedalWirelessStatus[pedalSelected] = WirelessConnectStateEnum.PEDAL_GET_BASIC_PACKETS_OVER_ESPNOW;
                                     }
@@ -748,7 +749,7 @@ namespace User.PluginSdkDemo
 
 
             TimeSpan diff_bridge= DateTime.Now - Plugin._calculations.bridgeConnetionlastTime;
-            if (diff_bridge.TotalMilliseconds > BridgeDIsconnectTimeOut && Plugin._calculations.bridgeConnectionStatus==BridgeConnectStateEnum.BRIDGE_IS_READY)
+            if (diff_bridge.TotalMilliseconds > BridgeDisconnectTimeOutInMs && Plugin._calculations.bridgeConnectionStatus==BridgeConnectStateEnum.BRIDGE_IS_READY)
             {
                 if (Plugin.PortExists(Plugin.ESPsync_serialPort.PortName))
                 {
@@ -782,7 +783,7 @@ namespace User.PluginSdkDemo
                     TimeSpan diff = DateTime.Now-Plugin._calculations.pedalWirelessConnetionlastTime[i];
                     if (diff.TotalMilliseconds > 1000 )
                     {
-                        if (Plugin._calculations.bridgeConnectionStatus == BridgeConnectStateEnum.BRIDGE_IS_READY)
+                        if (Plugin._calculations.bridgeConnectionStatus == BridgeConnectStateEnum.BRIDGE_IS_READY || Plugin.PortExists(Plugin.ESPsync_serialPort.PortName))
                         {
                             Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
                         }

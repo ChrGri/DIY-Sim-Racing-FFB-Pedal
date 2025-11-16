@@ -19,7 +19,7 @@ namespace User.PluginSdkDemo
         public const uint pedalStateExtendedPayload_type = 130;
         public const uint bridgeStatePayloadType = 210;
         public const uint OtaPayloadType = 220;
-        public const string pluginVersion = "0.90.24";
+        public const string pluginVersion = "0.90.25";
         public const string version_control_url = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/version_control.json";
         public const int DEFAULTBAUD = 921600;
         public const int BAUD3M = 3000000;
@@ -126,7 +126,7 @@ namespace User.PluginSdkDemo
     {
         public static readonly string[] ConnectState = new string[] { "Disconnected", "Connecting", "Read Pedal Config", "Connected" };
         public static readonly string[] WirelessConnectState = new string[] { "Disconnected", "Connecting", "Read Pedal Config", "Wireless" };
-        public static readonly string[] BridgeConnectState = new string[] { "Disconnected", "Connecting", "Connneted"};
+        public static readonly string[] BridgeConnectState = new string[] { "Disconnected", "Connecting", "Connected"};
         public static readonly string[] PedalID = new string[] { "Clutch", "Brake", "Throttle", "None", "Bridge" };
         public static readonly string[] ServoStatus = new string[] { "Off", "On", "Idle", "Force Stop" };
     }

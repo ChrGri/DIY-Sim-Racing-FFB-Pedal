@@ -506,7 +506,8 @@ namespace User.PluginSdkDemo
 
                                         bufferByteAssignedToStruct.AsSpan(srcBufferOffset_0, sizeof(DAP_state_basic_st)).Fill(true);
                                         lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + sizeof(DAP_state_basic_st));
-                                        if (Plugin._calculations.pedalSerialStatus[pedalSelected] == ConnectStateEnum.PEDAL_ENTRY_CONNECT)
+                                        if (Plugin._calculations.pedalSerialStatus[pedalSelected] == ConnectStateEnum.PEDAL_ENTRY_CONNECT
+                                            || Plugin._calculations.pedalSerialStatus[pedalSelected] == ConnectStateEnum.PEDAL_DISCONNECT)
                                         {
                                             Plugin._calculations.pedalSerialStatus[pedalSelected] = ConnectStateEnum.PEDAL_GET_BASIC_PACKETS;
                                         }
