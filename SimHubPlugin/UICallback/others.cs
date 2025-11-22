@@ -483,19 +483,6 @@ namespace User.PluginSdkDemo
 
 
         }
-        unsafe public void Sendconfigtopedal_shortcut()
-        {
-
-            for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
-            {
-                if (Plugin.Settings.file_enable_check[profile_select, pedalIdx] == 1)
-                {
-                    Sendconfig(pedalIdx);
-                    //TextBox_debugOutput.Text = "config was sent to pedal";
-                }
-            }
-
-        }
         unsafe public void Reading_config_auto(uint i)
         {
             // compute checksum
@@ -830,7 +817,6 @@ namespace User.PluginSdkDemo
         {
             if (Plugin.Page_update_flag == true)
             {
-                Profile_change(Plugin._calculations.profile_index);
                 Plugin.Page_update_flag = false;
                 MyTab.SelectedIndex = (int)Plugin.Settings.table_selected;
                 Plugin.pedal_select_update_flag = false;
@@ -850,192 +836,10 @@ namespace User.PluginSdkDemo
                 updateTheGuiFromConfig();
             }
 
-            if (Plugin.sendconfig_flag == 1)
-            {
-                Sendconfigtopedal_shortcut();
-                Plugin.sendconfig_flag = 0;
-            }
         }
 
-        void Parsefile(uint profile_index)
-        {
-            // https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/deserialization
-
-
-            // c# code to iterate over all fields of struct and set values from json file
-            for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
-            {
-                if (Plugin.Settings.file_enable_check[profile_select, pedalIdx] == 1)
-                {
-                    payloadPedalConfig payloadPedalConfig_fromJson_st = dap_config_st[pedalIdx].payloadPedalConfig_;
-                    // Read the entire JSON file
-                    string jsonString = File.ReadAllText(Plugin.Settings.Pedal_file_string[profile_index, pedalIdx]);
-                    // Parse all of the JSON.
-                    //JsonNode forecastNode = JsonNode.Parse(jsonString);
-                    dynamic data = JsonConvert.DeserializeObject(jsonString);
-                    //var s = default(payloadPedalConfig);
-                    Object obj = payloadPedalConfig_fromJson_st;// s;
-                    FieldInfo[] fi = payloadPedalConfig_fromJson_st.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
-                    // Iterate over each field and print its name and value
-                    foreach (var field in fi)
-                    {
-
-                        if (data["payloadPedalConfig_"][field.Name] != null)
-                        //if (forecastNode["payloadPedalConfig_"][field.Name] != null)
-                        {
-                            try
-                            {
-                                if (field.FieldType == typeof(float))
-                                {
-                                    //float value = forecastNode["payloadPedalConfig_"][field.Name].GetValue<float>();
-                                    float value = (float)data["payloadPedalConfig_"][field.Name];
-                                    field.SetValue(obj, value);
-                                }
-
-                                if (field.FieldType == typeof(byte))
-                                {
-                                    //byte value = forecastNode["payloadPedalConfig_"][field.Name].GetValue<byte>();
-                                    byte value = (byte)data["payloadPedalConfig_"][field.Name];
-                                    field.SetValue(obj, value);
-                                }
-                                if (field.FieldType == typeof(Int16))
-                                {
-                                    //byte value = forecastNode["payloadPedalConfig_"][field.Name].GetValue<byte>();
-                                    Int16 value = (Int16)data["payloadPedalConfig_"][field.Name];
-                                    field.SetValue(obj, value);
-                                }
-
-                            }
-                            catch (Exception)
-                            {
-
-                            }
-
-                        }
-                    }
-
-                    // set values in global structure
-                    dap_config_st[pedalIdx].payloadPedalConfig_ = (payloadPedalConfig)obj;// payloadPedalConfig_fromJson_st;
-                    if (dap_config_st[pedalIdx].payloadPedalConfig_.spindlePitch_mmPerRev_u8 == 0)
-                    {
-                        dap_config_st[pedalIdx].payloadPedalConfig_.spindlePitch_mmPerRev_u8 = 5;
-                    }
-                    if (dap_config_st[pedalIdx].payloadPedalConfig_.kf_modelNoise == 0)
-                    {
-                        dap_config_st[pedalIdx].payloadPedalConfig_.kf_modelNoise = 5;
-                    }
-                    dap_config_st[pedalIdx].payloadPedalConfig_.pedal_type = (byte)pedalIdx;
-
-                }
-
-            }
-
-
-
-            updateTheGuiFromConfig();
-        }
-        public void Profile_change(uint profile_index)
-        {
-            profile_select = profile_index;
-            //ProfileTab.SelectedIndex = (int)profile_index;
-            //if (Plugin.Settings.file_enable_check[profile_select])
-            Parsefile(profile_index);
-            string tmp;
-            switch (profile_index)
-            {
-                case 0:
-                    tmp = "A:" + Plugin.Settings.Profile_name[profile_index];
-                    break;
-                case 1:
-                    tmp = "B:" + Plugin.Settings.Profile_name[profile_index];
-                    break;
-                case 2:
-                    tmp = "C:" + Plugin.Settings.Profile_name[profile_index];
-                    break;
-                case 3:
-                    tmp = "D:" + Plugin.Settings.Profile_name[profile_index];
-                    break;
-                case 4:
-                    tmp = "E:" + Plugin.Settings.Profile_name[profile_index];
-                    break;
-                case 5:
-                    tmp = "F:" + Plugin.Settings.Profile_name[profile_index];
-                    break;
-                default:
-                    tmp = "No Profile";
-                    break;
-            }
-            Plugin._calculations.current_profile = tmp;
-            for (int j = 0; j < 3; j++)
-            {
-                for (int k = 0; k < 8; k++)
-                {
-                    if (Plugin.Settings.Effect_status_prolife[profile_select, j, k])
-                    {
-                        switch (k)
-                        {
-                            case 0:
-                                Plugin.Settings.ABS_enable_flag[j] = 1;
-                                break;
-                            case 1:
-                                Plugin.Settings.RPM_enable_flag[j] = 1;
-                                break;
-                            case 2:
-                                //Plugin.Settings. = 1;
-                                break;
-                            case 3:
-                                Plugin.Settings.G_force_enable_flag[j] = 1;
-                                break;
-                            case 4:
-                                Plugin.Settings.WS_enable_flag[j] = 1;
-                                break;
-                            case 5:
-                                Plugin.Settings.Road_impact_enable_flag[j] = 1;
-                                break;
-                            case 6:
-                                Plugin.Settings.CV1_enable_flag[j] = true;
-                                break;
-                            case 7:
-                                Plugin.Settings.CV2_enable_flag[j] = true;
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        switch (k)
-                        {
-                            case 0:
-                                Plugin.Settings.ABS_enable_flag[j] = 0;
-                                break;
-                            case 1:
-                                Plugin.Settings.RPM_enable_flag[j] = 0;
-                                break;
-                            case 2:
-                                //Plugin.Settings. = 1;
-                                break;
-                            case 3:
-                                Plugin.Settings.G_force_enable_flag[j] = 0;
-                                break;
-                            case 4:
-                                Plugin.Settings.WS_enable_flag[j] = 0;
-                                break;
-                            case 5:
-                                Plugin.Settings.Road_impact_enable_flag[j] = 0;
-                                break;
-                            case 6:
-                                Plugin.Settings.CV1_enable_flag[j] = false;
-                                break;
-                            case 7:
-                                Plugin.Settings.CV2_enable_flag[j] = false;
-                                break;
-                        }
-                    }
-
-                }
-            }
-            //effect profile change
-
-        }
+        
+        
 
         public void DelayCall(int msec, Action fn)
         {

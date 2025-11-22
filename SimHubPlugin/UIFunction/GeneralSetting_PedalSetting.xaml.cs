@@ -36,11 +36,20 @@ namespace User.PluginSdkDemo.UIFunction
 
         public DAP_config_st dap_config_st
         {
-            
-            get => (DAP_config_st)GetValue(DAP_Config_Property);
+
+            get
+            {
+                return (DAP_config_st)GetValue(DAP_Config_Property);
+            }
             set
             {
-                SetValue(DAP_Config_Property, value);
+                try
+                {
+                    SetValue(DAP_Config_Property, value);
+                }
+                catch
+                { }
+                
             }
         }
 

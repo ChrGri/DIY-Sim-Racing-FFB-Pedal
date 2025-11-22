@@ -609,7 +609,7 @@
                                                 </Setter>
                                             </Style>
                                         </TabControl.Resources>
-                                        <TabItem Width="180" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
+                                        <TabItem Width="180" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
                                                 <Border  Width="180" Height="30" Margin="0,0,0,0" >
                                                     <Label Content="FORCE-TRAVEL CURVE"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="180"  />
@@ -617,7 +617,7 @@
                                             </TabItem.Header>
                                             <localFunction:CurveTab_PedalForceTravel_Modified x:Name="PedalForceTravel_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
                                         </TabItem>
-                                        <TabItem x:Name="pedalKinematicTab" Width="180" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
+                                        <TabItem x:Name="pedalKinematicTab" Width="180" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
                                                 <Border  Width="180" Height="30" Margin="0,0,0,0" >
                                                     <Label Content="PEDAL KINEMATIC"  FontFamily="Arial Black" FontSize="10" Height="30" Width="270" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
@@ -625,7 +625,7 @@
                                             </TabItem.Header>
                                             <localFunction:KinematicsTab_Pedal x:Name="PedalKinematics_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
                                         </TabItem>
-                                        <TabItem x:Name="pedalJoystickTab" Width="180" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
+                                        <TabItem x:Name="pedalJoystickTab" Width="180" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
                                                 <Border  Width="180" Height="30" Margin="0,0,0,0" >
                                                     <Label Content="JOYSTICK MAPPING"  FontFamily="Arial Black" FontSize="10" Height="30" Width="180" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
@@ -671,7 +671,7 @@
                                                 </Setter>
                                             </Style>
                                         </TabControl.Resources>
-                                        <TabItem Width="108" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
+                                        <TabItem Width="108" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
                                                 <Border  Width="108
                                                          " Height="30" Margin="0,0,0,0" >
@@ -894,7 +894,7 @@
                                                 </Setter>
                                             </Style>
                                         </TabControl.Resources>
-                                        <TabItem Width="90" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
+                                        <TabItem Width="90" Height="30" Padding="0,0,0,0" >
                                             <TabItem.Header>
                                                 <Border  Width="90" Height="30" Margin="0,0,0,0" >
                                                     <Label Content="General"  FontFamily="Arial Black" FontSize="10" Height="30" Width="90" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
@@ -902,7 +902,7 @@
                                             </TabItem.Header>
                                             <localFunction:GeneralSetting_RudderSetting x:Name="RudderSetting_Tab" ConfigChanged="Rudder_ConfigChanged"/>
                                         </TabItem>
-                                        <TabItem Width="90" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
+                                        <TabItem Width="90" Height="30" Padding="0,0,0,0" >
                                             <TabItem.Header>
                                                 <Border  Width="90" Height="30" Margin="0,0,0,0" >
                                                     <Label Content="RPM"  FontFamily="Arial Black" FontSize="10" Height="30" Width="90" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
@@ -910,7 +910,7 @@
                                             </TabItem.Header>
                                             <localFunction:EffectsTab_RPMRudder x:Name="EffectsRPMRudder_Tab" SettingsChanged="Tab_SettingsChanged" ConfigChanged="Rudder_ConfigChanged"/>
                                         </TabItem>
-                                        <TabItem Width="90" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
+                                        <TabItem Width="90" Height="30" Padding="0,0,0,0" >
                                             <TabItem.Header>
                                                 <Border  Width="90" Height="30" Margin="0,0,0,0" >
                                                     <Label Content="Acceleration"  FontFamily="Arial Black" FontSize="10" Height="30" Width="90" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
@@ -1005,16 +1005,15 @@
                                                 </Setter>
                                             </Style>
                                         </TabControl.Resources>
-                                        <TabItem Width="120" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
+                                        <TabItem Width="120" Height="30" Padding="0,0,0,0" >
                                             <TabItem.Header>
                                                 <Border  Width="120" Height="30" Margin="0,0,0,0" >
                                                     <Label Content="Profiles"  FontFamily="Arial Black" FontSize="10" Height="30" Width="120" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <localFunction:SystemSetting_Profiles x:Name="SystemProfile_Tab" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged" btn_apply_profile_Click_event="SystemProfile_Tab_btn_apply_profile_Click_event" btn_send_profile_Click_event="SystemProfile_Tab_btn_send_profile_Click_event"/>
-
+                                            <localFunction:SystemSetting_ProfilesNew x:Name="SystemProfile_TabNew" />
                                         </TabItem>
-                                        <TabItem Width="120" Height="30" Padding="0,0,0,0" ToolTip="General setting for Pedal, will save to pedal">
+                                        <TabItem Width="120" Height="30" Padding="0,0,0,0" >
                                             <TabItem.Header>
                                                 <Border  Width="120" Height="30" Margin="0,0,0,0" >
                                                     <Label Content="License"  FontFamily="Arial Black" FontSize="10" Height="30" Width="120" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
@@ -1022,6 +1021,7 @@
                                             </TabItem.Header>
                                             <localFunction:SystemSetting_License x:Name="SystemLicense_Tab" btn_test_Click_event="SystemLicense_Tab_btn_test_Click_event"/>
                                         </TabItem>
+
                                     </TabControl>
 
 

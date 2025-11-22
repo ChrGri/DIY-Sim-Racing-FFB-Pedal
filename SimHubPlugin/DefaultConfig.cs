@@ -10,6 +10,7 @@ namespace User.PluginSdkDemo
     public partial class DIY_FFB_Pedal : IPlugin, IDataPlugin, IWPFSettingsV2
     {
         public DAP_config_st DefaultConfig;
+        public DAP_system_profile_cls DefaultProfile;
         unsafe public void DefaultConfigInitializing()
         {
             DefaultConfig.payloadHeader_.storeToEeprom = 0;
@@ -124,5 +125,6 @@ namespace User.PluginSdkDemo
             DefaultConfig.payloadPedalConfig_.minForceForEffects = 0;
             DefaultConfig.payloadPedalConfig_.servoRatioOfInertia_u8 = 1;
         }
+
     }
 }

@@ -179,6 +179,7 @@
     <Compile Include="UICallback\BridgeSerialTimerOrig.cs" />
     <Compile Include="UICallback\btnCallbacks.cs" />
     <Compile Include="UICallback\comPortHelper.cs" />
+    <Compile Include="UICallback\profileListHelper.cs" />
     <Compile Include="UICallback\configListHelper.cs" />
     <Compile Include="UICallback\others.cs" />
     <Compile Include="UICallback\SerialTImer.cs" />
@@ -289,8 +290,8 @@
     <Compile Include="UIFunction\SystemSetting_OTA.xaml.cs">
       <DependentUpon>SystemSetting_OTA.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UIFunction\SystemSetting_Profiles.xaml.cs">
-      <DependentUpon>SystemSetting_Profiles.xaml</DependentUpon>
+    <Compile Include="UIFunction\SystemSetting_ProfilesNew.xaml.cs">
+      <DependentUpon>SystemSetting_ProfilesNew.xaml</DependentUpon>
     </Compile>
     <Compile Include="UIFunction\UpdateSettingWindow.xaml.cs">
       <DependentUpon>UpdateSettingWindow.xaml</DependentUpon>
@@ -304,6 +305,7 @@
     <Compile Include="VariablesStruct\DAP_config_st.cs" />
     <Compile Include="VariablesStruct\DAP_state_basic_st.cs" />
     <Compile Include="VariablesStruct\DAP_state_extended_st.cs" />
+    <Compile Include="VariablesStruct\DAP_system_profile_cls.cs" />
     <Compile Include="VariablesStruct\payloadOtaInfo.cs" />
     <Compile Include="VariablesStruct\payloadBridgeState.cs" />
     <Compile Include="VariablesStruct\payloadFooter.cs" />
@@ -471,7 +473,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="UIFunction\SystemSetting_Profiles.xaml">
+    <Page Include="UIFunction\SystemSetting_ProfilesNew.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

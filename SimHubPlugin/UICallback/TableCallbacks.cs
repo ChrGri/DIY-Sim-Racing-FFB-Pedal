@@ -34,12 +34,6 @@ namespace User.PluginSdkDemo
 
         private void Function_Tab_seleciton_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (Function_Tab_seleciton.SelectedIndex == 2)
-            {
-                //Update_Profile_Checkbox_b = true;
-                Plugin._calculations.Update_Profile_Checkbox_b = true;
-                updateTheGuiFromConfig();
-            }
         }
 
 

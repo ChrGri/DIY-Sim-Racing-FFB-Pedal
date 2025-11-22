@@ -65,47 +65,50 @@
         
     </UserControl.Resources>
     <Grid>
-        <ListBox Name="ConfigListBox" Height="130" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="10" FontFamily="Arial" Width="160" ItemsSource="{Binding ItemList}">
-            <ListBox.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Add new Config" Command="{Binding AddNewConfigCommand}" FontFamily="Arial" FontSize="10"/>
-                </ContextMenu>
-            </ListBox.ContextMenu>
+        <StackPanel>
+            <Label Content="Config list" Height="15" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left"/>
+            <ListBox Name="ConfigListBox" Height="115" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="10" FontFamily="Arial" Width="160" ItemsSource="{Binding ItemList}">
+                <ListBox.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Add new Config" Command="{Binding AddNewConfigCommand}" FontFamily="Arial" FontSize="10"/>
+                    </ContextMenu>
+                </ListBox.ContextMenu>
 
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="{x:Type ListBoxItem}">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="{x:Type ListBoxItem}">
 
-                    <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListBox}}, Path=DataContext}"/>
+                        <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListBox}}, Path=DataContext}"/>
 
-                    <Setter Property="ContextMenu">
-                        <Setter.Value>
-                            <ContextMenu>
-                                <MenuItem Header="Preview" Command="{Binding PlacementTarget.Tag.PreviewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                <MenuItem Header="Apply" Command="{Binding PlacementTarget.Tag.ApplyConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                <MenuItem Header="Set Default" Command="{Binding PlacementTarget.Tag.SetDefaultConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
-                                <MenuItem Header="Refresh List" Command="{Binding PlacementTarget.Tag.RefreshListCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                <MenuItem Header="Overwrite" Command="{Binding PlacementTarget.Tag.OverwriteConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                <MenuItem Header="Save as New Config" Command="{Binding PlacementTarget.Tag.SaveAsNewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                <MenuItem Header="Add new Config" Command="{Binding PlacementTarget.Tag.AddNewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
-                                <MenuItem Header="Reset Editing Config" Command="{Binding PlacementTarget.Tag.ResetEditingConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                            </ContextMenu>
-                        </Setter.Value>
-                    </Setter>
+                        <Setter Property="ContextMenu">
+                            <Setter.Value>
+                                <ContextMenu>
+                                    <MenuItem Header="Preview" Command="{Binding PlacementTarget.Tag.PreviewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="Apply" Command="{Binding PlacementTarget.Tag.ApplyConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="Set Default" Command="{Binding PlacementTarget.Tag.SetDefaultConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
+                                    <MenuItem Header="Refresh List" Command="{Binding PlacementTarget.Tag.RefreshListCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="Overwrite" Command="{Binding PlacementTarget.Tag.OverwriteConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="Save as New Config" Command="{Binding PlacementTarget.Tag.SaveAsNewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="Add new Config" Command="{Binding PlacementTarget.Tag.AddNewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
+                                    <MenuItem Header="Reset Editing Config" Command="{Binding PlacementTarget.Tag.ResetEditingConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                </ContextMenu>
+                            </Setter.Value>
+                        </Setter>
 
-                </Style>
-            </ListBox.ItemContainerStyle>
+                    </Style>
+                </ListBox.ItemContainerStyle>
 
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock>
-                        <TextBlock.Text>
-                            <Binding Path="ListName"/>
-                        </TextBlock.Text>
-                    </TextBlock>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock>
+                            <TextBlock.Text>
+                                <Binding Path="ListName"/>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
     </Grid>
 </UserControl>

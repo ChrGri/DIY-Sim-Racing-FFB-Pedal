@@ -12,6 +12,7 @@ using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
 using System;
 using System.Collections.Generic;
 using System.IO.Ports;
+using System.Linq;
 using System.Media;
 using System.Runtime;
 using System.Runtime.CompilerServices;
@@ -1335,7 +1336,7 @@ namespace User.PluginSdkDemo
             }
 
             
-            this.AttachDelegate("CurrentProfile", () => _calculations.current_profile);
+            this.AttachDelegate("CurrentProfile", () => _calculations.ProfileSelected);
             pluginManager.SetPropertyValue("SelectedPedal", this.GetType(), current_pedal);
             pluginManager.SetPropertyValue("Action", this.GetType(), current_action);
             pluginManager.SetPropertyValue("ABS_effect_status", this.GetType(), Settings.ABS_enable_flag[Settings.table_selected]);
@@ -1345,7 +1346,7 @@ namespace User.PluginSdkDemo
             pluginManager.SetPropertyValue("RoadImpact_effect_status", this.GetType(), Settings.Road_impact_enable_flag[Settings.table_selected]);
             pluginManager.SetPropertyValue("Overlay_display", this.GetType(), overlay_display);
             pluginManager.SetPropertyValue("Theme_color", this.GetType(), simhub_theme_color);
-            pluginManager.SetPropertyValue("ProfileIndex", this.GetType(), _calculations.profile_index);
+            pluginManager.SetPropertyValue("ProfileIndex", this.GetType(), _calculations.ProfileIndex);
             pluginManager.SetPropertyValue("debugvalue", this.GetType(), debug_value);
             pluginManager.SetPropertyValue("rudder_status", this.GetType(), Rudder_status);
             pluginManager.SetPropertyValue("rudder_brake_status", this.GetType(), Rudder_brake_status);
@@ -1445,7 +1446,7 @@ namespace User.PluginSdkDemo
             Simhub_version = (String)pluginManager.GetPropertyValue("DataCorePlugin.SimHubVersion");
             // Declare a property available in the property list, this gets evaluated "on demand" (when shown or used in formulas)
             //this.AttachDelegate("CurrentDateTime", () => DateTime.Now);
-            pluginManager.AddProperty("ProfileIndex", this.GetType(), _calculations.profile_index);
+            pluginManager.AddProperty("ProfileIndex", this.GetType(), _calculations.ProfileIndex);
             pluginManager.AddProperty("SelectedPedal", this.GetType(), current_pedal);
             pluginManager.AddProperty("Action", this.GetType(), current_action);
             pluginManager.AddProperty("ABS_effect_status", this.GetType(), Settings.ABS_enable_flag[Settings.table_selected]);
@@ -1465,6 +1466,7 @@ namespace User.PluginSdkDemo
             pluginManager.AddProperty("FlightRudder_Wind_Force", this.GetType(), Rudder_Wind_Force_last_value);
             EnsureFolderExistsAndProcess();
             DefaultConfigInitializing();
+            DefaultProfile= new DAP_system_profile_cls();
             for (uint pedali=0; pedali < 3; pedali++)
             {
                 Action_currentTime[pedali] = new DateTime();
@@ -1497,90 +1499,81 @@ namespace User.PluginSdkDemo
 
             
             Version_Check_Simhub_MSFS = true;
-            this.AddAction("ChangeSlotA", (a, b) =>
+            
+            this.AddAction("ApplyProfile", (a, b) =>
             {
-                _calculations.profile_index = 0;
-                Page_update_flag = true;
-                SimHub.Logging.Current.Info("SlotA");
-                _calculations.current_profile = "Slot A";
-                current_action= "Slot A";
-            });
-
-            this.AddAction("ChangeSlotB", (a, b) =>
-            {
-
-                _calculations.profile_index = 1;
-                Page_update_flag = true;
-                SimHub.Logging.Current.Info("SlotB");
-                _calculations.current_profile = "Slot B";
-                current_action = "Slot B";
-            });
-
-            this.AddAction("ChangeSlotC", (a, b) =>
-            {
-                _calculations.profile_index = 2;
-                Page_update_flag = true;
-                SimHub.Logging.Current.Info("SlotC");
-                _calculations.current_profile = "Slot C";
-                current_action = "Slot C";
-            });
-
-            this.AddAction("ChangeSlotD", (a, b) =>
-            {
-                _calculations.profile_index = 3;
-                Page_update_flag = true;
-                SimHub.Logging.Current.Info("SlotD");
-                _calculations.current_profile = "Slot D";
-                current_action = "Slot D";
-            });
-            this.AddAction("ChangeSlotE", (a, b) =>
-            {
-                _calculations.profile_index = 4;
-                Page_update_flag = true;
-                SimHub.Logging.Current.Info("SlotE");
-                _calculations.current_profile = "Slot E";
-                current_action = "Slot E";
-            });
-            this.AddAction("ChangeSlotF", (a, b) =>
-            {
-                _calculations.profile_index = 5;
-                Page_update_flag = true;
-                SimHub.Logging.Current.Info("SlotF");
-                _calculations.current_profile = "Slot F";
-                current_action = "Slot F";
-            });
-            this.AddAction("SendConfigToPedal", (a, b) =>
-            {
-                sendconfig_flag =1;
-                SimHub.Logging.Current.Info("SendConfig");
-                current_action = "Send Config to Pedal";
+                var foundItem = this.ProfileList.FirstOrDefault(item => item.FileName == _calculations.ProfileSelected);
+                if (foundItem != null) ApplyProfile(foundItem.FullPath);
+                _calculations.ProfileEditing = _calculations.ProfileSelected;
+                wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
+                SimHub.Logging.Current.Info("Apply Profile");
+                current_action = "Apply Profile";
             });
 
             this.AddAction("PreviousProfile", (a, b) =>
             {
-                if (_calculations.profile_index == 0)
+                if(ProfileList.Count() > 0)
                 {
-                    _calculations.profile_index = 5;
-                }
-                else
-                {
-                    _calculations.profile_index--;
-                }
-                
+                    if (_calculations.ProfileIndex == -1)
+                    {
+                        if (_calculations.ProfileEditing != string.Empty)
+                        {
+                            var foundItem = this.ProfileList.FirstOrDefault(item => item.FileName == _calculations.ProfileEditing);
+                            _calculations.ProfileIndex = this.ProfileList.IndexOf(foundItem);
 
-                Page_update_flag = true;
+                        }
+                        else
+                        {
+                            _calculations.ProfileIndex = 0;
+
+                        }
+                    }
+                    else
+                    {
+                        if (_calculations.ProfileIndex == 0)
+                        {
+                            _calculations.ProfileIndex = ProfileList.Count()-1;
+                        }
+                        else
+                        {
+                            _calculations.ProfileIndex--;
+                        }
+                    }
+                    //ApplyProfile(ProfileList[_calculations.ProfileIndex].FullPath);
+                    _calculations.ProfileEditing = ProfileList[_calculations.ProfileIndex].FileName;
+                    _calculations.ProfileSelected = _calculations.ProfileEditing;
+                }
                 SimHub.Logging.Current.Info("PreviousProfile");
                 current_action = "Previous Profile";
             });
 
             this.AddAction("NextProfile", (a, b) =>
             {
-                _calculations.profile_index++;
-                if (_calculations.profile_index > 5)
+                if (ProfileList.Count() > 0)
                 {
-                    _calculations.profile_index = 0;
+                    if (_calculations.ProfileIndex == -1)
+                    {
+                        if (_calculations.ProfileEditing != string.Empty)
+                        {
+                            var foundItem = this.ProfileList.FirstOrDefault(item => item.FileName == _calculations.ProfileEditing);
+                            _calculations.ProfileIndex = this.ProfileList.IndexOf(foundItem);
+
+                        }
+                        else
+                        {
+                            _calculations.ProfileIndex = 0;
+
+                        }
+                    }
+                    else
+                    {
+                        _calculations.ProfileIndex++;
+                        if (_calculations.ProfileIndex > ProfileList.Count - 1) _calculations.ProfileIndex = 0;
+                    }
+                    //ApplyProfile(ProfileList[_calculations.ProfileIndex].FullPath);
+                    _calculations.ProfileEditing = ProfileList[_calculations.ProfileIndex].FileName;
+                    _calculations.ProfileSelected = _calculations.ProfileEditing;
                 }
-                Page_update_flag = true;
                 SimHub.Logging.Current.Info("NextProfile");
                 current_action = "Next Profile";
             });

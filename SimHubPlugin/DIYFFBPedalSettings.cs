@@ -28,8 +28,6 @@ namespace User.PluginSdkDemo
         public int[] Road_impact_enable_flag = new int[3] { 0, 0, 0 };
         public int vjoy_output_flag = 0;
         public uint vjoy_order = 1;
-        public string[,] Pedal_file_string = new string[6, 3] { { "NA", "NA", "NA" }, { "NA", "NA", "NA" }, { "NA", "NA", "NA" }, { "NA", "NA", "NA" }, { "NA", "NA", "NA" }, { "NA", "NA", "NA" } };
-        public int[,] file_enable_check = new int[6, 3] { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
         public string WSeffect_bind = "";
         public string Road_impact_bind = "";
         public int WS_trigger = 30;
@@ -55,7 +53,6 @@ namespace User.PluginSdkDemo
         public bool Rudder_ACC_effect_b = false;
         public bool Rudder_ACC_WindForce = false;
         public bool advanced_b = false;
-        public bool[,,] Effect_status_prolife = new bool[6, 3, 8] { { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } } };
         public string SSID_string = "";
         public string PASS_string = "";
         public float rudderMaxForce = 10;

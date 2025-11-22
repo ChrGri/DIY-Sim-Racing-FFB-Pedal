@@ -52,7 +52,7 @@
                 </StackPanel>
                 
                 <StackPanel Height="40" Width="540" HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal">
-                    <localUI:SliderWithLabel x:Name="Slider_LC_rate" Width="200" SliderLength="190" SliderName="Loadcell Rate" MaxValue="500" Height="40" Unit="kg" TickFrequency="10" SliderValue="300" SliderValueChanged="Slider_LC_rate_SliderValueChanged" Margin="70,0,0,0"/>
+                    <localUI:SliderWithLabel x:Name="Slider_LC_rate" Width="200" SliderLength="190" SliderName="Loadcell Rate" MaxValue="500" Height="40" Unit="kg" TickFrequency="10" SliderValue="300" SliderValueChanged="Slider_LC_rate_SliderValueChanged" Margin="70,0,0,0" ToolTip="The effects only applied after you set config as default and restart pedal"/>
                     <localUI:SliderWithLabel x:Name="Slider_maxgame_output" SliderName="Max Game Output" SliderLength="190" SliderValue="100" Width="190" Height="40" Margin="10,0,0,0" Unit="%" SliderValueChanged="Slider_maxgame_output_SliderValueChanged"/>
                 </StackPanel>
                 <StackPanel Height="40" Width="540" Orientation="Horizontal" HorizontalAlignment="Left">
@@ -61,11 +61,11 @@
                         <Label Content="Joystick output from travel" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                     </StackPanel>
                     <StackPanel Height="20" Width="120" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                        <styles:SHToggleButton x:Name="CheckBox_InvertLoadcellReading" Content="" Checked="CheckBox_InvertLoadcellReading_Checked" Unchecked="CheckBox_InvertLoadcellReading_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="-10,0,0,0" />
+                        <styles:SHToggleButton x:Name="CheckBox_InvertLoadcellReading" Content="" Checked="CheckBox_InvertLoadcellReading_Checked" Unchecked="CheckBox_InvertLoadcellReading_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="-10,0,0,0" ToolTip="The effects only applied after you set config as default and restart pedal" />
                         <Label x:Name="Label_reverse_LC" Content="Reverse LC reading" Height="20" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                     </StackPanel>
                     <StackPanel Height="20" Width="140" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="2,0,0,0">
-                        <styles:SHToggleButton x:Name="CheckBox_InvertMotorDir" Content="" Checked="CheckBox_InvertMotorDir_Checked" Unchecked="CheckBox_InvertMotorDir_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="-10,0,0,0" />
+                        <styles:SHToggleButton x:Name="CheckBox_InvertMotorDir" Content="" Checked="CheckBox_InvertMotorDir_Checked" Unchecked="CheckBox_InvertMotorDir_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="-10,0,0,0" ToolTip="The effects only applied after you set config as default and restart pedal" />
                         <Label x:Name="Label_reverse_servo" Content="Reverse Servo Direction" Height="20" Width="120" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                     </StackPanel>
 
