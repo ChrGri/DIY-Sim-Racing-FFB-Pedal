@@ -66,7 +66,7 @@
     </UserControl.Resources>
     <Grid>
         <StackPanel>
-            <Label Content="Config list" Height="15" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left"/>
+            <Label Content="Config List" Height="15" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left"/>
             <ListBox Name="ConfigListBox" Height="115" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="10" FontFamily="Arial" Width="160" ItemsSource="{Binding ItemList}">
                 <ListBox.ContextMenu>
                     <ContextMenu>

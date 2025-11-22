@@ -496,6 +496,7 @@ namespace User.PluginSdkDemo
             // Send ABS signal when triggered by the game
             if (data.GameRunning)
             {
+                
                 Current_Game=(string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame");
                 //load surface condition
                 TrackSurfaceCondition = 0;
@@ -1709,20 +1710,20 @@ namespace User.PluginSdkDemo
                 SimHub.Logging.Current.Info("Rudder Brake");
 
             });
-            
-            /*
-            this.AddAction("Rudder", (a, b) =>
+            this.AddAction("Log Pedal State", (a, b) =>
             {
-
-                Rudder_enable_flag=true;
-                SimHub.Logging.Current.Info("Rudder action");
+                if (!_calculations.dumpPedalToResponseFile[Settings.table_selected])
+                {
+                    _calculations.dumpPedalToResponseFile[Settings.table_selected] = true;
+                }
+                else
+                {
+                    _calculations.dumpPedalToResponseFile[Settings.table_selected] = false;
+                }
+                wpfHandle.ToastNotification("Log Pedal State:"+ _calculations.dumpPedalToResponseFile[Settings.table_selected], "Pedal:" + Settings.table_selected);
+                SimHub.Logging.Current.Info("Log pedal state for pedal: " + Settings.table_selected);
 
             });
-            */
-
-            //Settings.selectedJsonIndexLast[0]
-            //SimHub.Logging.Current.Info("Diy active pedas plugin - Test 1");
-            //SimHub.Logging.Current.Info("Diy active pedas plugin - COM port: " + Settings.selectedComPortNames[0]);
 
 
 

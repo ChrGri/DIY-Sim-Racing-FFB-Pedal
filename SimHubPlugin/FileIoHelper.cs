@@ -210,10 +210,11 @@ namespace User.PluginSdkDemo
         }
 
         public DAP_config_st ReadConfig(string filePath)
-        { 
+        {
             
             DAP_config_st config = new DAP_config_st();
             config = DefaultConfig;
+            if (!File.Exists(filePath)) return config;
             // Read the entire JSON file
             try
             {
@@ -381,11 +382,12 @@ namespace User.PluginSdkDemo
             DAP_system_profile_cls tmpProfile= LoadProfileFromJsonFile(profilePath);
             for (int i = 0; i < 3; i++)
             {
-                if (tmpProfile.ConfigPath[i] != "")
+                if (tmpProfile.ConfigPath[i] != "" && File.Exists(tmpProfile.ConfigPath[i]))
                 {
                     DAP_config_st tmpConfig = ReadConfig(tmpProfile.ConfigPath[i]);
                     wpfHandle.dap_config_st[i]=tmpConfig;
                     SendConfigWithoutSaveToEEPROM(tmpConfig,(byte)i);
+                    _calculations.ConfigEditing[i]= ConfigList.FirstOrDefault(item => item.FullPath == tmpProfile.ConfigPath[i]).FileName;
                     //write the effect setting
                     if (tmpProfile.Effects[i][0])
                     {
@@ -433,8 +435,10 @@ namespace User.PluginSdkDemo
                     }
                     Settings.CV1_enable_flag[i] = tmpProfile.Effects[i][6];
                     Settings.CV2_enable_flag[i] = tmpProfile.Effects[i][7];
+                    System.Threading.Thread.Sleep(100);
                 }
             }
+            UpdateConfigLabelDefaultAndEditing();
             //wpfHandle.updateTheGuiFromConfig();
         }
     }

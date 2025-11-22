@@ -97,7 +97,7 @@ namespace User.PluginSdkDemo.UIFunction
             set
             {
                 SetValue(Cauculation_Property, value);
-                //updateUI();
+                updateUI();
             }
         }
 
@@ -130,6 +130,17 @@ namespace User.PluginSdkDemo.UIFunction
                         checkbox_auto_connect.IsChecked = false;
                     }
                     //Label_vjoy_order.Content = Settings.vjoy_order;
+                }
+                if (calculation != null)
+                {
+                    if (calculation.dumpPedalToResponseFile[Settings.table_selected]) 
+                    {
+                        dump_pedal_response_to_file.IsChecked = true;
+                    }
+                    else
+                    {
+                        dump_pedal_response_to_file.IsChecked = false;
+                    }
                 }
 
             }
