@@ -19,10 +19,11 @@ namespace User.PluginSdkDemo
     /// </summary>
     public partial class NameInputWindow : Window
     {
-        public string input { get; private set; }
+        public string input { get; set; }
         public NameInputWindow()
         {
             InitializeComponent();
+            this.DataContext = this;
         }
 
         

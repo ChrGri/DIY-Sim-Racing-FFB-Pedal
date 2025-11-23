@@ -27,7 +27,7 @@
                 </StackPanel>
                 <StackPanel Width="400" Height="50" Margin="0,0,0,0">
                     <Label  Width="400" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Servo position smoothing factor  (Pr2.22)" Height="10" Padding="0,0,0,0"/>
-                    <localUI:SliderWithLabel x:Name="Slider_PositionFilter" SliderLength="400" SliderName="value" SliderValue="0" MinValue="0" MaxValue="50" SliderValueChanged="PosFilterValueChanged"/>
+                    <localUI:SliderWithLabel x:Name="Slider_PositionFilter" SliderLength="400" SliderName="value" SliderValue="0" MinValue="0" MaxValue="50" SliderValueChanged="PosFilterValueChanged" ToolTip="Adjust the value to enable servo smoothness filter, the filter may cause pedal oscillation. set 0 as default."/>
                 </StackPanel>
                 <StackPanel Width="400" Height="50">
                     <localUI:SliderWithLabel x:Name="Slider_ServoRatioOfInertia" SliderLength="400" SliderName="Ratio of Inertia (Pr0.04)" SliderValue="1" MinValue="1" MaxValue="200" SliderValueChanged="Slider_ServoRatioOfInertia_SliderValueChanged" TickFrequency="1" Unit="%" ToolTip="Increase the value for stiffer pedal. Will increase likelihood of pedal oscillation."/>

@@ -48,7 +48,7 @@ namespace User.PluginSdkDemo.UIFunction
                 if (_tmpProfile != value)
                 {
                     _tmpProfile = value;
-                    OnPropertyChanged(); 
+                    OnPropertyChanged();
                 }
             }
         }
@@ -78,6 +78,7 @@ namespace User.PluginSdkDemo.UIFunction
         public ICommand OverwriteProfileCommand { get; }
         public ICommand SaveAsNewProfileCommand { get; }
         public ICommand DeleteProfileCommand { get; }
+        public ICommand RenameProfileCommand { get; }
         private string _currentProfileName = string.Empty;
         public string CurrentProfileName
         {
@@ -110,7 +111,7 @@ namespace User.PluginSdkDemo.UIFunction
             {
                 ItemList = _plugin.ProfileList;
                 ConfigList = _plugin.ConfigList;
-            } 
+            }
             AddNewProfileCommand = new RelayCommand(AddNewProfile);
             ReadProfileCommand = new RelayCommand(ReadProfile);
             ApplyProfileCommand = new RelayCommand(ApplyProfile);
@@ -118,6 +119,7 @@ namespace User.PluginSdkDemo.UIFunction
             OverwriteProfileCommand = new RelayCommand(OverwriteProfile);
             SaveAsNewProfileCommand = new RelayCommand(SaveAsNewProfile);
             DeleteProfileCommand = new RelayCommand(DeleteProfile);
+            RenameProfileCommand = new RelayCommand(RenameProfile);
             this.DataContext = this;
         }
         private void ReadProfile(object parameter)
@@ -254,7 +256,7 @@ namespace User.PluginSdkDemo.UIFunction
 
         }
         public void ApplyProfileOnUiWithPath(string profilePath)
-        { 
+        {
             if (profilePath != null) this.tmpProfile = _plugin.LoadProfileFromJsonFile(profilePath);
             _plugin.UpdateProfileLabelDefaultAndEditing();
             var foundItem = _plugin.ProfileList.FirstOrDefault(item => item.FullPath == profilePath);
@@ -320,7 +322,7 @@ namespace User.PluginSdkDemo.UIFunction
                 try
                 {
                     string fullPathToDelete = item.FullPath;
-                    string MSG_tmp = "Please confirm whether you want to proceed with the profile delete:"+item.FileName+".";
+                    string MSG_tmp = "Please confirm whether you want to proceed with the profile delete:" + item.FileName + ".";
                     var result = System.Windows.MessageBox.Show(MSG_tmp, "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);
                     if (result == MessageBoxResult.OK)
                     {
@@ -333,15 +335,66 @@ namespace User.PluginSdkDemo.UIFunction
                         else
                         {
                             System.Windows.MessageBox.Show("Error, couldn't find profile json file", "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);
-                            return; 
+                            return;
                         }
-                        
+
                     }
                 }
                 catch (Exception ex)
                 {
                     SimHub.Logging.Current.Error($"Profile delete error: {ex.Message}");
                     throw;
+                }
+            }
+        }
+
+        private void RenameProfile(object parameter)
+        {
+            if (parameter is ProfileListItem item)
+            {
+                NameInputWindow sideWindow = new NameInputWindow();
+                double screenWidth = SystemParameters.PrimaryScreenWidth;
+                double screenHeight = SystemParameters.PrimaryScreenHeight;
+                sideWindow.Left = screenWidth / 2 - sideWindow.Width / 2;
+                sideWindow.Top = screenHeight / 2 - sideWindow.Height / 2;
+
+                sideWindow.input = item.ListNameOrig;
+
+                if (sideWindow.ShowDialog() == true)
+                {
+                    string newName = sideWindow.input;
+
+                    if (string.IsNullOrEmpty(newName) || newName.Equals(item.ListNameOrig, StringComparison.Ordinal))
+                    {
+                        return;
+                    }
+
+                    string oldFileName = item.FileName;
+                    string newFileName = newName + ".json";
+                    string oldPath = System.IO.Path.Combine(_plugin.profileFolderPath, oldFileName);
+                    string newPath = System.IO.Path.Combine(_plugin.profileFolderPath, newFileName);
+
+                    try
+                    {
+                        if (File.Exists(newPath))
+                        {
+                            System.Windows.MessageBox.Show("The file is already exist.", "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+                            return;
+                        }
+                        File.Move(oldPath, newPath);
+                        if (_plugin._calculations.ProfileEditing.Equals(item.FileName, StringComparison.Ordinal))
+                        {
+                            _plugin._calculations.ProfileEditing = newFileName;
+                        }
+                        //_plugin._calculations.ProfileEditing = newFileName;
+                        _plugin.RefreshProfileList();
+                        _plugin.UpdateProfileLabelDefaultAndEditing();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        
+                    }
                 }
             }
         }

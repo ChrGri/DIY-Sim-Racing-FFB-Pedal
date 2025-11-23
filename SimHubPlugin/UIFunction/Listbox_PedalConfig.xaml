@@ -92,6 +92,7 @@
                                     <MenuItem Header="Add new Config" Command="{Binding PlacementTarget.Tag.AddNewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                     <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
                                     <MenuItem Header="Reset Editing Config" Command="{Binding PlacementTarget.Tag.ResetEditingConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="Rename" Command="{Binding PlacementTarget.Tag.RenameConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                     <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
                                     <MenuItem Header="Delete" Command="{Binding PlacementTarget.Tag.DeleteConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                 </ContextMenu>

@@ -41,6 +41,7 @@ namespace User.PluginSdkDemo.UIFunction
         public ICommand ResetEditingConfigCommand { get; }
         public ICommand PreviewConfigCommand { get; }
         public ICommand DeleteConfigCommand { get; }
+        public ICommand RenameConfigCommand { get; }
         public Listbox_PedalConfig()
         {
             InitializeComponent();
@@ -55,6 +56,7 @@ namespace User.PluginSdkDemo.UIFunction
             ResetEditingConfigCommand = new RelayCommand(ResetConfig);
             PreviewConfigCommand = new RelayCommand(PreviewConfig);
             DeleteConfigCommand = new RelayCommand(DeleteConfig);
+            RenameConfigCommand = new RelayCommand(RenameConfig);
             this.DataContext = this;
         }
         public DIY_FFB_Pedal Plugin
@@ -329,6 +331,66 @@ namespace User.PluginSdkDemo.UIFunction
                 {
                     SimHub.Logging.Current.Error($"Config delete error: {ex.Message}");
                     throw;
+                }
+            }
+        }
+        private void RenameConfig(object parameter)
+        {
+            if (parameter is ConfigListItem item)
+            {
+                NameInputWindow sideWindow = new NameInputWindow();
+                double screenWidth = SystemParameters.PrimaryScreenWidth;
+                double screenHeight = SystemParameters.PrimaryScreenHeight;
+                sideWindow.Left = screenWidth / 2 - sideWindow.Width / 2;
+                sideWindow.Top = screenHeight / 2 - sideWindow.Height / 2;
+
+                sideWindow.input = item.ListNameOrig;
+
+                if (sideWindow.ShowDialog() == true)
+                {
+                    string newName = sideWindow.input;
+
+                    if (string.IsNullOrEmpty(newName) || newName.Equals(item.ListNameOrig, StringComparison.Ordinal))
+                    {
+                        return;
+                    }
+
+                    string oldFileName = item.FileName;
+                    string newFileName = newName + ".json";
+                    string oldPath = System.IO.Path.Combine(_plugin.configFolderPath, oldFileName);
+                    string newPath = System.IO.Path.Combine(_plugin.configFolderPath, newFileName);
+
+                    try
+                    {
+                        if (File.Exists(newPath))
+                        {
+                            System.Windows.MessageBox.Show("The file is already exist.", "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+                            return;
+                        }
+                        File.Move(oldPath, newPath);
+
+                        for (int i = 0; i < 3; i++)
+                        {
+                            if (_plugin._calculations.ConfigEditing[i].Equals(item.FileName, StringComparison.Ordinal))
+                            {
+                                _plugin._calculations.ConfigEditing[i] = newFileName;
+                            }
+                            if (_plugin.Settings.DefaultConfig[i].Equals(item.FileName, StringComparison.Ordinal))
+                            {
+                                _plugin.Settings.DefaultConfig[i] = newFileName;
+                            }
+                        }
+
+                        //_plugin._calculations.ProfileEditing = newFileName;
+                        _plugin.RefreshConfigList();
+                        _plugin.UpdateConfigLabelDefaultAndEditing();
+                        System.Windows.MessageBox.Show("If the config is already set in porfile, please also rebind the config into profile", "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
                 }
             }
         }
