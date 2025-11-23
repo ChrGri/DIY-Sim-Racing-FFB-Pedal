@@ -40,6 +40,7 @@ namespace User.PluginSdkDemo.UIFunction
         public ICommand SaveAsNewConfigCommand { get; }
         public ICommand ResetEditingConfigCommand { get; }
         public ICommand PreviewConfigCommand { get; }
+        public ICommand DeleteConfigCommand { get; }
         public Listbox_PedalConfig()
         {
             InitializeComponent();
@@ -53,6 +54,7 @@ namespace User.PluginSdkDemo.UIFunction
             SaveAsNewConfigCommand = new RelayCommand(SaveAsNewConfig);
             ResetEditingConfigCommand = new RelayCommand(ResetConfig);
             PreviewConfigCommand = new RelayCommand(PreviewConfig);
+            DeleteConfigCommand = new RelayCommand(DeleteConfig);
             this.DataContext = this;
         }
         public DIY_FFB_Pedal Plugin
@@ -298,11 +300,36 @@ namespace User.PluginSdkDemo.UIFunction
             }
 
         }
-        private void RemoveItem(object parameter)
+        private void DeleteConfig(object parameter)
         {
             if (parameter is ConfigListItem item)
             {
-                ItemList.Remove(item);
+                try
+                {
+                    string fullPathToDelete = item.FullPath;
+                    string MSG_tmp = "Please confirm whether you want to proceed with the config delete:" + item.FileName + ".";
+                    var result = System.Windows.MessageBox.Show(MSG_tmp, "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+                    if (result == MessageBoxResult.OK)
+                    {
+                        if (File.Exists(fullPathToDelete))
+                        {
+                            File.Delete(fullPathToDelete);
+                            _plugin.RefreshConfigList();
+
+                        }
+                        else
+                        {
+                            System.Windows.MessageBox.Show("Error, couldn't find config json file", "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+                            return;
+                        }
+
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SimHub.Logging.Current.Error($"Config delete error: {ex.Message}");
+                    throw;
+                }
             }
         }
     }

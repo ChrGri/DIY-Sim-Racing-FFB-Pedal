@@ -77,6 +77,7 @@ namespace User.PluginSdkDemo.UIFunction
         public ICommand RefreshListCommand { get; }
         public ICommand OverwriteProfileCommand { get; }
         public ICommand SaveAsNewProfileCommand { get; }
+        public ICommand DeleteProfileCommand { get; }
         private string _currentProfileName = string.Empty;
         public string CurrentProfileName
         {
@@ -116,6 +117,7 @@ namespace User.PluginSdkDemo.UIFunction
             RefreshListCommand = new RelayCommand(RefreshProfileList);
             OverwriteProfileCommand = new RelayCommand(OverwriteProfile);
             SaveAsNewProfileCommand = new RelayCommand(SaveAsNewProfile);
+            DeleteProfileCommand = new RelayCommand(DeleteProfile);
             this.DataContext = this;
         }
         private void ReadProfile(object parameter)
@@ -310,6 +312,38 @@ namespace User.PluginSdkDemo.UIFunction
             }
             this.tmpProfile = tmp;
             OnPropertyChanged(nameof(tmpProfile));
+        }
+        private void DeleteProfile(object parameter)
+        {
+            if (parameter is ProfileListItem item)
+            {
+                try
+                {
+                    string fullPathToDelete = item.FullPath;
+                    string MSG_tmp = "Please confirm whether you want to proceed with the profile delete:"+item.FileName+".";
+                    var result = System.Windows.MessageBox.Show(MSG_tmp, "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+                    if (result == MessageBoxResult.OK)
+                    {
+                        if (File.Exists(fullPathToDelete))
+                        {
+                            File.Delete(fullPathToDelete);
+                            _plugin.RefreshProfileList();
+
+                        }
+                        else
+                        {
+                            System.Windows.MessageBox.Show("Error, couldn't find profile json file", "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+                            return; 
+                        }
+                        
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SimHub.Logging.Current.Error($"Profile delete error: {ex.Message}");
+                    throw;
+                }
+            }
         }
     }
 }

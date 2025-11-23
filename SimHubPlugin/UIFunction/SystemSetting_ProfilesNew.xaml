@@ -91,6 +91,8 @@
                                             <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
                                             <MenuItem Header="Add new Profile" Command="{Binding PlacementTarget.Tag.AddNewProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                             <MenuItem Header="Refresh List" Command="{Binding PlacementTarget.Tag.RefreshListCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                            <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
+                                            <MenuItem Header="Delete" Command="{Binding PlacementTarget.Tag.DeleteProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                         </ContextMenu>
                                     </Setter.Value>
                                 </Setter>
