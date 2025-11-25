@@ -93,6 +93,7 @@ namespace User.PluginSdkDemo
         bool flightRpmEffectsStatus_last = false;
         bool flightGforceEffects_last = false;
         public ProfileService ProfileServicePlugin;
+        public ConfigListService ConfigService;
         //public vJoyInterfaceWrap.vJoy joystick;
         
         //effect trigger timer
@@ -1471,6 +1472,7 @@ namespace User.PluginSdkDemo
             pluginManager.AddProperty("FlightRudder_G", this.GetType(), Rudder_G_last_value);
             pluginManager.AddProperty("FlightRudder_Wind_Force", this.GetType(), Rudder_Wind_Force_last_value);
             ProfileServicePlugin = new ProfileService(this);
+            ConfigService = new ConfigListService(this);
             EnsureFolderExistsAndProcess();
             DefaultConfigInitializing();
             DefaultProfile= new DAP_system_profile_cls();

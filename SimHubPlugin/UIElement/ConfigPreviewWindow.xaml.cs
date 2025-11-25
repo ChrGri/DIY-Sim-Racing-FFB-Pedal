@@ -47,7 +47,7 @@ namespace User.PluginSdkDemo
                 force[i] = 0;
                 travel[i] = 0;
             }
-            tmp_config = _plugin.ReadConfig(filePath);
+            tmp_config = _plugin.ConfigService.ReadConfig(filePath);
             Update_ForceCurve();
             Textbox_Online_Profile_Description.Content = item.ListName;
             Textbox_Online_Profile_Description.Content += " Preview:\n";

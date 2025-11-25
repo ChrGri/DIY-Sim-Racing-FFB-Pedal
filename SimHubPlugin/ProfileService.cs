@@ -138,10 +138,10 @@ namespace User.PluginSdkDemo
                 {
                     if (tmpProfile.ConfigPath[i] != "" && File.Exists(tmpProfile.ConfigPath[i]))
                     {
-                        DAP_config_st tmpConfig = _plugin.ReadConfig(tmpProfile.ConfigPath[i]);
+                        DAP_config_st tmpConfig = _plugin.ConfigService.ReadConfig(tmpProfile.ConfigPath[i]);
                         _plugin.wpfHandle.dap_config_st[i] = tmpConfig;
                         _plugin.SendConfigWithoutSaveToEEPROM(tmpConfig, (byte)i);
-                        _plugin._calculations.ConfigEditing[i] = _plugin.ConfigList.FirstOrDefault(item => item.FullPath == tmpProfile.ConfigPath[i]).FileName;
+                        _plugin._calculations.ConfigEditing[i] = _plugin.ConfigService.ConfigList.FirstOrDefault(item => item.FullPath == tmpProfile.ConfigPath[i]).FileName;
                         //write the effect setting
                         if (tmpProfile.Effects[i][0])
                         {
@@ -192,7 +192,7 @@ namespace User.PluginSdkDemo
                         //System.Threading.Thread.Sleep(100);
                     }
                 }
-                _plugin.UpdateConfigLabelDefaultAndEditing();
+                _plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                 //wpfHandle.updateTheGuiFromConfig();
             }
             public void RefreshProfileList()

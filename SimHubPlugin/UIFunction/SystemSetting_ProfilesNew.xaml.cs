@@ -100,7 +100,7 @@ namespace User.PluginSdkDemo.UIFunction
 
                 //this.DataContext = data;
                 ItemList = data.ProfileServicePlugin.ProfileList;
-                ConfigList = data.ConfigList;
+                ConfigList = data.ConfigService.ConfigList;
             }
         }
         public SystemSetting_ProfilesNew()
@@ -110,7 +110,7 @@ namespace User.PluginSdkDemo.UIFunction
             if (_plugin != null)
             {
                 ItemList = _plugin.ProfileServicePlugin.ProfileList;
-                ConfigList = _plugin.ConfigList;
+                ConfigList = _plugin.ConfigService.ConfigList;
             }
             AddNewProfileCommand = new RelayCommand(AddNewProfile);
             ReadProfileCommand = new RelayCommand(ReadProfile);

@@ -84,6 +84,8 @@ namespace User.PluginSdkDemo
                         {
                             updateTheGuiFromConfig();
                             Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_DISCONNECT;
+                            for (int i = 0; i < 3; i++) Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                            
                         }
                     }
 

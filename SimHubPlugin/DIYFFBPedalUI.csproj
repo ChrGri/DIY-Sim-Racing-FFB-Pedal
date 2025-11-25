@@ -154,6 +154,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConfigListService.cs" />
     <Compile Include="CubicSpline.cs" />
     <Compile Include="DefaultConfig.cs" />
     <Compile Include="DIYFFBPedal.cs" />
