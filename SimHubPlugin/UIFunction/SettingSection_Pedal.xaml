@@ -29,11 +29,11 @@
                 </StackPanel>
                 <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
                     <styles:SHToggleButton x:Name="checkbox_auto_connect" Content="" Checked="checkbox_auto_connect_Checked" Unchecked="checkbox_auto_connect_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Auto connect with scan the port every 5s, and connect back the pedal you have connect until you press disconnect" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                    <Label Content="Auto Connect" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
+                    <Label Content="Automatic Pedal Connect" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                 </StackPanel>
                 <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
                     <styles:SHToggleButton x:Name="CheckBox_Pedal_ESPNow_SyncFlag" Content="" Checked="CheckBox_Pedal_ESPNow_SyncFlag_Checked" Unchecked="CheckBox_Pedal_ESPNow_SyncFlag_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                    <Label Content="Wireless Comunication" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
+                    <Label Content="Wireless Communication" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                 </StackPanel>
                 <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
                     <styles:SHToggleButton x:Name="dump_pedal_response_to_file" Content="" Checked="dump_pedal_response_to_file_Checked" Unchecked="dump_pedal_response_to_file_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Dump pedal realtime status to file, it should be off when not in use" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />

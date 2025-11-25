@@ -3,6 +3,7 @@ using SimHub.Plugins;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -15,7 +16,7 @@ namespace User.PluginSdkDemo
     public partial class DIY_FFB_Pedal : IPlugin, IDataPlugin, IWPFSettingsV2
     {
         public ObservableCollection<ConfigListItem> ConfigList { get; set; }
-        public ObservableCollection<ProfileListItem> ProfileList { get; set; }
+        //public ObservableCollection<ProfileListItem> ProfileList { get; set; }
         private const string configFolderName = "configs";
         private const string profileFolderName = "profiles";
         private const string logFolderName = "log";
@@ -79,7 +80,7 @@ namespace User.PluginSdkDemo
                 }
             }
             RefreshConfigList();
-            RefreshProfileList();
+            ProfileServicePlugin.RefreshProfileList();
             
         }
 
@@ -95,20 +96,6 @@ namespace User.PluginSdkDemo
                 var foundItem= ConfigList.FirstOrDefault(item => item.FileName == Settings.DefaultConfig[Settings.table_selected]);
                 if(foundItem!=null) foundItem.ListName = foundItem.ListNameOrig+ "(default)";
                 foundItem = ConfigList.FirstOrDefault(item => item.FileName == _calculations.ConfigEditing[Settings.table_selected]);
-                if (foundItem != null) foundItem.ListName += "(editing)";
-            }
-
-        }
-        public void UpdateProfileLabelDefaultAndEditing()
-        {
-            if (ProfileList.Count > 0)
-            {
-                //reset all config listname
-                foreach (ProfileListItem item in this.ProfileList)
-                {
-                    item.ListName = item.ListNameOrig;
-                }
-                var foundItem= this.ProfileList.FirstOrDefault(item => item.FileName == _calculations.ProfileEditing);
                 if (foundItem != null) foundItem.ListName += "(editing)";
             }
 
@@ -151,52 +138,6 @@ namespace User.PluginSdkDemo
                         ConfigList.Add(item);
                     }
                     UpdateConfigLabelDefaultAndEditing();
-                }
-                catch (Exception ex)
-                {
-
-                }
-
-            }
-            catch (Exception ex)
-            {
-            }
-        }
-
-        public void RefreshProfileList()
-        {
-
-            try
-            {
-
-                if (ProfileList == null) ProfileList = new ObservableCollection<ProfileListItem> { };
-                if (ProfileList.Count > 0) { ProfileList.Clear(); }
-
-
-                if (string.IsNullOrEmpty(profileFolderPath) || !Directory.Exists(profileFolderPath))
-                {
-                    return;
-                }
-
-                try
-                {
-
-                    string[] fullPaths = Directory.GetFiles(profileFolderPath, "*.json");
-
-
-                    foreach (var path in fullPaths)
-                    {
-                        ProfileListItem item = new ProfileListItem();
-                        item.FileName = Path.GetFileName(path);
-                        item.ListName = Path.GetFileNameWithoutExtension(path);
-                        item.ListNameOrig = item.ListName;
-                        item.FullPath = Path.GetFullPath(path);
-                        item.IsDefault = false;
-                        item.IsCurrent = false;
-
-                        ProfileList.Add(item);
-                    }
-                    UpdateProfileLabelDefaultAndEditing();
                 }
                 catch (Exception ex)
                 {
@@ -333,113 +274,6 @@ namespace User.PluginSdkDemo
             }
             return config;
 
-        }
-
-        public DAP_system_profile_cls LoadProfileFromJsonFile(string filePath)
-        {
-            if (!File.Exists(filePath))
-            {
-                //return new Profile();
-            }
-
-            try
-            {
-                string jsonString = File.ReadAllText(filePath, Encoding.UTF8);
-                DAP_system_profile_cls data = (DAP_system_profile_cls)JsonConvert.DeserializeObject(jsonString, typeof(DAP_system_profile_cls));
-                return data != null ? data : new DAP_system_profile_cls();
-
-            }
-            catch (Exception ex)
-            {
-                SimHub.Logging.Current.Error($"json read error, return new Profile: {ex.Message}");
-                return new DAP_system_profile_cls();
-            }
-        }
-        public static void SaveProfileToJsonFile(DAP_system_profile_cls profileData, string filePath)
-        {
-            if (profileData == null)
-            {
-                SimHub.Logging.Current.Error("Profile is null, cancel action");
-                return;
-            }
-
-            try
-            {
-                string jsonString = JsonConvert.SerializeObject(profileData, Formatting.Indented);
-                File.WriteAllText(filePath, jsonString, Encoding.UTF8);
-
-                SimHub.Logging.Current.Info($"Profile svaed: {filePath}");
-            }
-            catch (Exception ex)
-            {
-                SimHub.Logging.Current.Error($"Profile save error: {ex.Message}");
-                throw;
-            }
-        }
-
-        public void ApplyProfile(string profilePath)
-        { 
-            DAP_system_profile_cls tmpProfile= LoadProfileFromJsonFile(profilePath);
-            for (int i = 0; i < 3; i++)
-            {
-                if (tmpProfile.ConfigPath[i] != "" && File.Exists(tmpProfile.ConfigPath[i]))
-                {
-                    DAP_config_st tmpConfig = ReadConfig(tmpProfile.ConfigPath[i]);
-                    wpfHandle.dap_config_st[i]=tmpConfig;
-                    SendConfigWithoutSaveToEEPROM(tmpConfig,(byte)i);
-                    _calculations.ConfigEditing[i]= ConfigList.FirstOrDefault(item => item.FullPath == tmpProfile.ConfigPath[i]).FileName;
-                    //write the effect setting
-                    if (tmpProfile.Effects[i][0])
-                    {
-                        Settings.ABS_enable_flag[i] = 1;
-                    }
-                    else
-                    {
-                        Settings.ABS_enable_flag[i] = 0;
-                    }
-
-                    if (tmpProfile.Effects[i][1])
-                    {
-                        Settings.RPM_enable_flag[i] = 1;
-                    }
-                    else
-                    {
-                        Settings.RPM_enable_flag[i] = 0;
-                    }
-
-                    if (tmpProfile.Effects[i][3])
-                    {
-                        Settings.G_force_enable_flag[i] = 1;
-                    }
-                    else
-                    {
-                        Settings.G_force_enable_flag[i] = 0;
-                    }
-
-                    if (tmpProfile.Effects[i][4])
-                    {
-                        Settings.WS_enable_flag[i] = 1;
-                    }
-                    else
-                    {
-                        Settings.WS_enable_flag[i] = 0;
-                    }
-
-                    if (tmpProfile.Effects[i][5])
-                    {
-                        Settings.Road_impact_enable_flag[i] = 1;
-                    }
-                    else
-                    {
-                        Settings.Road_impact_enable_flag[i] = 0;
-                    }
-                    Settings.CV1_enable_flag[i] = tmpProfile.Effects[i][6];
-                    Settings.CV2_enable_flag[i] = tmpProfile.Effects[i][7];
-                    System.Threading.Thread.Sleep(100);
-                }
-            }
-            UpdateConfigLabelDefaultAndEditing();
-            //wpfHandle.updateTheGuiFromConfig();
         }
     }
 }

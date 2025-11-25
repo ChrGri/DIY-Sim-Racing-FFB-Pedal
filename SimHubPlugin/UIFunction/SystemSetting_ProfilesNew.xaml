@@ -67,7 +67,7 @@
         <Border Background="#7F4E4E4E" Height="177" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
             <StackPanel Orientation="Horizontal">
                 <StackPanel>
-                    <Label Content="Profile List" Height="15" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="5,0,0,0"/>
+                    <Label Content="Profile List" Height="20" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="5,0,0,0"/>
                     <ListBox Name="ProfileListBox" Height="150" VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="10" FontFamily="Arial" Width="150" ItemsSource="{Binding ItemList}" Margin="5,0,5,0" BorderBrush="{DynamicResource DisabledMenuItemGlyphPanel}">
                         <ListBox.ContextMenu>
                             <ContextMenu>
@@ -113,10 +113,16 @@
                     </ListBox>
                 </StackPanel>
                 <StackPanel Orientation="Vertical">
-                    <Label Content="{Binding CurrentProfileName}" Height="20" Width="100" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="2,0,0,0" FontSize="14"/>
+
+                    <Label Content="{Binding CurrentProfileName}" Height="20" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" FontSize="14"/>
+                    <StackPanel Orientation="Horizontal" ToolTip="Please populate the string value for CarModel. You can retrieve this string value from the following properties: DataCorePlugin.GameData.CarModel." >
+                        <Label Content="Car Model:" Height="25" Width="70" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="0,5,0,5"/>
+                        <TextBox Text="{Binding tmpProfile.BindGameOrCar, Mode=TwoWay}" Height="20" MinHeight="20" Width="200" FontFamily="Arial" FontSize="10" VerticalContentAlignment="Center" BorderThickness="0,0,0,0" Margin="5,0,0,0" />
+                        <styles:SHButtonPrimary x:Name="Btn_ClearCarName" Click="Btn_ClearCarName_Click" Width="30" Content="Clear" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                    </StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <StackPanel Orientation="Horizontal">
-                            <Label Content="Clutch:" Height="25" Width="70" HorizontalAlignment="Left" FontFamily="Arial Black"/>
+                            <Label Content="Clutch:" Height="20" Width="70" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
                             <ComboBox ItemsSource="{Binding ConfigList}"
                                   DisplayMemberPath="ListNameOrig"  
                                   SelectedValuePath="FullPath"    
@@ -127,8 +133,8 @@
 
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal">
-                        <CheckBox Content="TC  " IsChecked="{Binding tmpProfile.Effects[0][0]}" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                        <CheckBox Content="TC  " IsChecked="{Binding tmpProfile.Effects[0][0]}" Padding="1,0,0,0" FontSize="9" FontFamily="Arial" Height="18"/>
                         <CheckBox Content="RPM" IsChecked="{Binding tmpProfile.Effects[0][1]}" Margin="4,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
                         <CheckBox Content="B.P" IsChecked="{Binding tmpProfile.Effects[0][2]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial" IsEnabled="False"/>
                         <CheckBox Content="G-F" IsChecked="{Binding tmpProfile.Effects[0][3]}" Margin="3,0,0,0" Padding="1,0,0,0" IsEnabled="False" FontSize="9" FontFamily="Arial"/>
@@ -138,8 +144,8 @@
                         <CheckBox Content="CUS-2" IsChecked="{Binding tmpProfile.Effects[0][7]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <StackPanel Orientation="Horizontal">
-                            <Label Content="Brake:" Height="25" Width="70" HorizontalAlignment="Left" FontFamily="Arial Black"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                            <Label Content="Brake:" Height="20" Width="70" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" Padding="0,5,0,5"/>
                             <ComboBox ItemsSource="{Binding ConfigList}"
                                   DisplayMemberPath="ListNameOrig"  
                                   SelectedValuePath="FullPath"    
@@ -150,7 +156,7 @@
 
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                         <CheckBox Content="ABS" IsChecked="{Binding tmpProfile.Effects[1][0]}" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
                         <CheckBox Content="RPM" IsChecked="{Binding tmpProfile.Effects[1][1]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
                         <CheckBox Content="B.P" IsChecked="{Binding tmpProfile.Effects[1][2]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial" IsEnabled="False"/>
@@ -160,9 +166,9 @@
                         <CheckBox Content="CUS-1" IsChecked="{Binding tmpProfile.Effects[1][6]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
                         <CheckBox Content="CUS-2" IsChecked="{Binding tmpProfile.Effects[1][7]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                         <StackPanel Orientation="Horizontal">
-                            <Label Content="Throttle:" Height="25" Width="70" HorizontalAlignment="Left" FontFamily="Arial Black"/>
+                            <Label Content="Throttle:" Height="20" Width="70" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" VerticalContentAlignment="Center" Padding="0,5,0,5"/>
                             <ComboBox ItemsSource="{Binding ConfigList}"
                                   DisplayMemberPath="ListNameOrig"  
                                   SelectedValuePath="FullPath"    
@@ -173,7 +179,7 @@
 
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                         <CheckBox Content="TC  " IsChecked="{Binding tmpProfile.Effects[2][0]}" Padding="1,0,0,0" FontSize="10"/>
                         <CheckBox Content="RPM" IsChecked="{Binding tmpProfile.Effects[2][1]}" Margin="4,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
                         <CheckBox Content="B.P" IsChecked="{Binding tmpProfile.Effects[2][2]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial" IsEnabled="False"/>

@@ -105,7 +105,8 @@ namespace User.PluginSdkDemo.UIFunction
                     if (CheckBox_Pedal_ESPNow_autoconnect != null) CheckBox_Pedal_ESPNow_autoconnect.IsChecked = (Settings.Pedal_ESPNow_auto_connect_flag);
                     //if (CheckBox_using_CDC_for_bridge!=null) CheckBox_using_CDC_for_bridge.IsChecked = Settings.Using_CDC_bridge;
                     if (Debug_check != null) Debug_check.IsChecked = Settings.advanced_b;
-                    if(Label_vjoy_order!=null) Label_vjoy_order.Content = Settings.vjoy_order;
+                    if (CheckBox_ProfileAutoChange != null) CheckBox_ProfileAutoChange.IsChecked = Settings.profileAutoChange;
+                    if (Label_vjoy_order!=null) Label_vjoy_order.Content = Settings.vjoy_order;
                 }
 
             }
@@ -382,6 +383,18 @@ namespace User.PluginSdkDemo.UIFunction
         { 
             _joystick = _vJoy;
             isVjoyAsigned = true;
+        }
+
+        private void CheckBox_ProfileAutoChange_Checked(object sender, RoutedEventArgs e)
+        {
+            Settings.profileAutoChange = true;
+            SettingsChangedEvent(Settings);
+        }
+
+        private void CheckBox_ProfileAutoChange_Unchecked(object sender, RoutedEventArgs e)
+        {
+            Settings.profileAutoChange = false;
+            SettingsChangedEvent(Settings);
         }
     }
 }

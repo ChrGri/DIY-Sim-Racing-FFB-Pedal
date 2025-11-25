@@ -92,6 +92,7 @@ namespace User.PluginSdkDemo
         private const float actionIntervalTolerance = 0.5f;
         bool flightRpmEffectsStatus_last = false;
         bool flightGforceEffects_last = false;
+        public ProfileService ProfileServicePlugin;
         //public vJoyInterfaceWrap.vJoy joystick;
         
         //effect trigger timer
@@ -496,7 +497,10 @@ namespace User.PluginSdkDemo
             // Send ABS signal when triggered by the game
             if (data.GameRunning)
             {
-                
+                if (Settings.profileAutoChange)
+                {
+                    ProfileServicePlugin.ApplyProfileAuto(data.NewData.CarModel);
+                }
                 Current_Game=(string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame");
                 //load surface condition
                 TrackSurfaceCondition = 0;
@@ -946,7 +950,8 @@ namespace User.PluginSdkDemo
                 if (game_running_index == 1)
                 {
                     game_running_index = 0;
-                    clear_action = true;   
+                    clear_action = true;
+                    ProfileServicePlugin.ClearAutoSwitchStatus();//clear auto profile switch status
                 }
             }
 
@@ -1465,9 +1470,11 @@ namespace User.PluginSdkDemo
             pluginManager.AddProperty("PedalErrorCode", this.GetType(), PedalErrorCode);
             pluginManager.AddProperty("FlightRudder_G", this.GetType(), Rudder_G_last_value);
             pluginManager.AddProperty("FlightRudder_Wind_Force", this.GetType(), Rudder_Wind_Force_last_value);
+            ProfileServicePlugin = new ProfileService(this);
             EnsureFolderExistsAndProcess();
             DefaultConfigInitializing();
             DefaultProfile= new DAP_system_profile_cls();
+
             for (uint pedali=0; pedali < 3; pedali++)
             {
                 Action_currentTime[pedali] = new DateTime();
@@ -1503,8 +1510,8 @@ namespace User.PluginSdkDemo
             
             this.AddAction("ApplyProfile", (a, b) =>
             {
-                var foundItem = this.ProfileList.FirstOrDefault(item => item.FileName == _calculations.ProfileSelected);
-                if (foundItem != null) ApplyProfile(foundItem.FullPath);
+                var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == _calculations.ProfileSelected);
+                if (foundItem != null) ProfileServicePlugin.ApplyProfile(foundItem.FullPath);
                 _calculations.ProfileEditing = _calculations.ProfileSelected;
                 wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
                 SimHub.Logging.Current.Info("Apply Profile");
@@ -1513,14 +1520,14 @@ namespace User.PluginSdkDemo
 
             this.AddAction("PreviousProfile", (a, b) =>
             {
-                if(ProfileList.Count() > 0)
+                if(ProfileServicePlugin.ProfileList.Count() > 0)
                 {
                     if (_calculations.ProfileIndex == -1)
                     {
                         if (_calculations.ProfileEditing != string.Empty)
                         {
-                            var foundItem = this.ProfileList.FirstOrDefault(item => item.FileName == _calculations.ProfileEditing);
-                            _calculations.ProfileIndex = this.ProfileList.IndexOf(foundItem);
+                            var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == _calculations.ProfileEditing);
+                            _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
 
                         }
                         else
@@ -1533,7 +1540,7 @@ namespace User.PluginSdkDemo
                     {
                         if (_calculations.ProfileIndex == 0)
                         {
-                            _calculations.ProfileIndex = ProfileList.Count()-1;
+                            _calculations.ProfileIndex = ProfileServicePlugin.ProfileList.Count()-1;
                         }
                         else
                         {
@@ -1541,7 +1548,7 @@ namespace User.PluginSdkDemo
                         }
                     }
                     //ApplyProfile(ProfileList[_calculations.ProfileIndex].FullPath);
-                    _calculations.ProfileEditing = ProfileList[_calculations.ProfileIndex].FileName;
+                    _calculations.ProfileEditing = ProfileServicePlugin.ProfileList[_calculations.ProfileIndex].FileName;
                     _calculations.ProfileSelected = _calculations.ProfileEditing;
                 }
                 SimHub.Logging.Current.Info("PreviousProfile");
@@ -1550,14 +1557,14 @@ namespace User.PluginSdkDemo
 
             this.AddAction("NextProfile", (a, b) =>
             {
-                if (ProfileList.Count() > 0)
+                if (ProfileServicePlugin.ProfileList.Count() > 0)
                 {
                     if (_calculations.ProfileIndex == -1)
                     {
                         if (_calculations.ProfileEditing != string.Empty)
                         {
-                            var foundItem = this.ProfileList.FirstOrDefault(item => item.FileName == _calculations.ProfileEditing);
-                            _calculations.ProfileIndex = this.ProfileList.IndexOf(foundItem);
+                            var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == _calculations.ProfileEditing);
+                            _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
 
                         }
                         else
@@ -1569,10 +1576,10 @@ namespace User.PluginSdkDemo
                     else
                     {
                         _calculations.ProfileIndex++;
-                        if (_calculations.ProfileIndex > ProfileList.Count - 1) _calculations.ProfileIndex = 0;
+                        if (_calculations.ProfileIndex > ProfileServicePlugin.ProfileList.Count - 1) _calculations.ProfileIndex = 0;
                     }
                     //ApplyProfile(ProfileList[_calculations.ProfileIndex].FullPath);
-                    _calculations.ProfileEditing = ProfileList[_calculations.ProfileIndex].FileName;
+                    _calculations.ProfileEditing = ProfileServicePlugin.ProfileList[_calculations.ProfileIndex].FileName;
                     _calculations.ProfileSelected = _calculations.ProfileEditing;
                 }
                 SimHub.Logging.Current.Info("NextProfile");

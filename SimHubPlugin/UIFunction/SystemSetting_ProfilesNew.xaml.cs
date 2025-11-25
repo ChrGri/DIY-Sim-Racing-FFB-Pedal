@@ -99,7 +99,7 @@ namespace User.PluginSdkDemo.UIFunction
             {
 
                 //this.DataContext = data;
-                ItemList = data.ProfileList;
+                ItemList = data.ProfileServicePlugin.ProfileList;
                 ConfigList = data.ConfigList;
             }
         }
@@ -109,7 +109,7 @@ namespace User.PluginSdkDemo.UIFunction
             tmpProfile = new DAP_system_profile_cls();
             if (_plugin != null)
             {
-                ItemList = _plugin.ProfileList;
+                ItemList = _plugin.ProfileServicePlugin.ProfileList;
                 ConfigList = _plugin.ConfigList;
             }
             AddNewProfileCommand = new RelayCommand(AddNewProfile);
@@ -129,8 +129,8 @@ namespace User.PluginSdkDemo.UIFunction
                 string fileName = item.FullPath;
                 CurrentProfileName = item.ListNameOrig;
                 _plugin._calculations.ProfileEditing = item.FileName;
-                _plugin.UpdateProfileLabelDefaultAndEditing();
-                DAP_system_profile_cls _newTmp = _plugin.LoadProfileFromJsonFile(fileName);
+                _plugin.ProfileServicePlugin.UpdateProfileLabelDefaultAndEditing();
+                DAP_system_profile_cls _newTmp = _plugin.ProfileServicePlugin.LoadProfileFromJsonFile(fileName);
                 if (_newTmp != null)
                 {
                     this.tmpProfile = _newTmp;
@@ -143,7 +143,7 @@ namespace User.PluginSdkDemo.UIFunction
 
         private void RefreshProfileList(object parameter)
         {
-            if (_plugin != null) _plugin.RefreshProfileList();
+            if (_plugin != null) _plugin.ProfileServicePlugin.RefreshProfileList();
         }
 
         unsafe private void OverwriteProfile(object parameter)
@@ -154,7 +154,7 @@ namespace User.PluginSdkDemo.UIFunction
             {
                 string fileName = item.FullPath;
                 _plugin._calculations.ProfileEditing = item.FileName;
-                _plugin.UpdateProfileLabelDefaultAndEditing();
+                _plugin.ProfileServicePlugin.UpdateProfileLabelDefaultAndEditing();
                 CurrentProfileName = item.ListNameOrig;
                 var stream1 = new MemoryStream();
                 var writer = JsonReaderWriterFactory.CreateJsonWriter(stream1, Encoding.UTF8, true, true, "  ");
@@ -172,7 +172,7 @@ namespace User.PluginSdkDemo.UIFunction
                     File.Delete(fileName);
                 }
                 System.IO.File.WriteAllText(fileName, jsonString);
-                _plugin.RefreshProfileList();
+                _plugin.ProfileServicePlugin.RefreshProfileList();
 
             }
         }
@@ -209,9 +209,9 @@ namespace User.PluginSdkDemo.UIFunction
                     File.Delete(fileName);
                 }
                 System.IO.File.WriteAllText(fileName, jsonString);
-                _plugin.RefreshProfileList();
-                _plugin.UpdateProfileLabelDefaultAndEditing();
-                var foundItem = _plugin.ProfileList.FirstOrDefault(item => item.FileName == _plugin._calculations.ProfileEditing);
+                _plugin.ProfileServicePlugin.RefreshProfileList();
+                _plugin.ProfileServicePlugin.UpdateProfileLabelDefaultAndEditing();
+                var foundItem = _plugin.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == _plugin._calculations.ProfileEditing);
                 CurrentProfileName = foundItem.ListNameOrig;
             }
         }
@@ -247,9 +247,9 @@ namespace User.PluginSdkDemo.UIFunction
                     File.Delete(fileName);
                 }
                 System.IO.File.WriteAllText(fileName, jsonString);
-                _plugin.RefreshProfileList();
-                _plugin.UpdateProfileLabelDefaultAndEditing();
-                var foundItem = _plugin.ProfileList.FirstOrDefault(item => item.FileName == _plugin._calculations.ProfileEditing);
+                _plugin.ProfileServicePlugin.RefreshProfileList();
+                _plugin.ProfileServicePlugin.UpdateProfileLabelDefaultAndEditing();
+                var foundItem = _plugin.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == _plugin._calculations.ProfileEditing);
                 CurrentProfileName = foundItem.ListNameOrig;
             }
 
@@ -257,9 +257,9 @@ namespace User.PluginSdkDemo.UIFunction
         }
         public void ApplyProfileOnUiWithPath(string profilePath)
         {
-            if (profilePath != null) this.tmpProfile = _plugin.LoadProfileFromJsonFile(profilePath);
-            _plugin.UpdateProfileLabelDefaultAndEditing();
-            var foundItem = _plugin.ProfileList.FirstOrDefault(item => item.FullPath == profilePath);
+            if (profilePath != null) this.tmpProfile = _plugin.ProfileServicePlugin.LoadProfileFromJsonFile(profilePath);
+            _plugin.ProfileServicePlugin.UpdateProfileLabelDefaultAndEditing();
+            var foundItem = _plugin.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FullPath == profilePath);
             _plugin._calculations.ProfileEditing = foundItem.FileName;
             CurrentProfileName = foundItem.ListNameOrig;
         }
@@ -271,14 +271,14 @@ namespace User.PluginSdkDemo.UIFunction
                 string fileName = item.FullPath;
                 CurrentProfileName = item.ListNameOrig;
                 _plugin._calculations.ProfileEditing = item.FileName;
-                _plugin.UpdateProfileLabelDefaultAndEditing();
-                DAP_system_profile_cls _newTmp = _plugin.LoadProfileFromJsonFile(fileName);
+                _plugin.ProfileServicePlugin.UpdateProfileLabelDefaultAndEditing();
+                DAP_system_profile_cls _newTmp = _plugin.ProfileServicePlugin.LoadProfileFromJsonFile(fileName);
                 if (_newTmp != null)
                 {
                     this.tmpProfile = _newTmp;
                 }
                 //write to system
-                _plugin.ApplyProfile(item.FullPath);
+                _plugin.ProfileServicePlugin.ApplyProfile(item.FullPath);
             }
         }
 
@@ -329,7 +329,7 @@ namespace User.PluginSdkDemo.UIFunction
                         if (File.Exists(fullPathToDelete))
                         {
                             File.Delete(fullPathToDelete);
-                            _plugin.RefreshProfileList();
+                            _plugin.ProfileServicePlugin.RefreshProfileList();
 
                         }
                         else
@@ -387,8 +387,8 @@ namespace User.PluginSdkDemo.UIFunction
                             _plugin._calculations.ProfileEditing = newFileName;
                         }
                         //_plugin._calculations.ProfileEditing = newFileName;
-                        _plugin.RefreshProfileList();
-                        _plugin.UpdateProfileLabelDefaultAndEditing();
+                        _plugin.ProfileServicePlugin.RefreshProfileList();
+                        _plugin.ProfileServicePlugin.UpdateProfileLabelDefaultAndEditing();
 
                     }
                     catch (Exception ex)
@@ -397,6 +397,12 @@ namespace User.PluginSdkDemo.UIFunction
                     }
                 }
             }
+        }
+
+        private void Btn_ClearCarName_Click(object sender, RoutedEventArgs e)
+        {
+            tmpProfile.BindGameOrCar = string.Empty;
+            OnPropertyChanged(nameof(tmpProfile));
         }
     }
 }
