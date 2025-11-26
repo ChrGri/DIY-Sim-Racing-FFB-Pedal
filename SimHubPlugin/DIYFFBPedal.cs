@@ -500,7 +500,7 @@ namespace User.PluginSdkDemo
             {
                 if (Settings.profileAutoChange)
                 {
-                    ProfileServicePlugin.ApplyProfileAuto(data.NewData.CarModel);
+                    ProfileServicePlugin.ApplyProfileAuto(data.NewData.CarId);
                 }
                 Current_Game=(string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame");
                 //load surface condition
