@@ -4,7 +4,7 @@
 
 // Constructor
 FanatecInterface::FanatecInterface(int rxPin, int txPin, int plugPin)
-    : _rxPin(rxPin), _txPin(txPin), _plugPin(plugPin), _serial(&Serial2),
+    : _rxPin(rxPin), _txPin(txPin), _plugPin(plugPin), _serial(&Serial1),
       _throttle(0), _brake(0), _clutch(0), _handbrake(0),
       _connected(false), _connectedCallback(nullptr), _initialized(false) {
 }

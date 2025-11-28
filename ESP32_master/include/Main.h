@@ -142,7 +142,7 @@
   //#define Using_analog_output_ESP32_S3
 
   //#define BLUETOOTH_GAMEPAD
-  #define USB_JOYSTICK
+  //#define USB_JOYSTICK
   #define USING_LED
   #define LED_ENABLE_WAVESHARE
   #define LED_GPIO 38
@@ -351,5 +351,6 @@
 #define STACK_SIZE_FANATEC_UPDATE_TASK (int64_t) 3000
 #define STACK_SIZE_LED_UPDATE_TASK (int64_t) 3000
 #define STACK_SIZE_MISC_TASK (int64_t)5000
+
 
 extern Stream *ActiveSerial;
