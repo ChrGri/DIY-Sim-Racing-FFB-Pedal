@@ -131,6 +131,7 @@ namespace User.PluginSdkDemo
                     EffectsCustom2_Tab.Plugin = Plugin;
                     Listbox_PedalConfig.Plugin = Plugin;
                     SystemProfile_TabNew.Plugin = Plugin;
+                    SystemShortcut_Tab.Plugin = Plugin;
                     firstAssignPlugin = false;
                 }
 

@@ -3,28 +3,36 @@
   "WorkspaceRootPath": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1122\\simhubplugin\\fileiohelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:fileiohelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\uifunction\\systemsetting_shortcut.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\systemsetting_shortcut.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1122\\simhubplugin\\diyffbpedal.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\diyffbpedalcontrolui.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:diyffbpedalcontrolui.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1122\\simhubplugin\\uifunction\\systemsetting_license.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\systemsetting_license.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1122\\simhubplugin\\uifunction\\systemsetting_shortcut.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\systemsetting_shortcut.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\diyffbpedal.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:diyffbpedal.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1122\\simhubplugin\\uifunction\\generalsetting_pedalsetting.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\generalsetting_pedalsetting.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\profileservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:profileservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1122\\simhubplugin\\uifunction\\generalsetting_servo.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\generalsetting_servo.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\diyffbpedalsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:diyffbpedalsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1122\\simhubplugin\\uifunction\\generalsetting_servo.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\generalsetting_servo.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-1122\\simhubplugin\\uicallback\\autoconnecttimer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uicallback\\autoconnecttimer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\uicallback\\updateuifromconfig.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uicallback\\updateuifromconfig.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -34,84 +42,104 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "FileIoHelper.cs",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\FileIoHelper.cs",
-              "RelativeDocumentMoniker": "FileIoHelper.cs",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\FileIoHelper.cs",
-              "RelativeToolTip": "FileIoHelper.cs",
-              "ViewState": "AgIAAK0BAAAAAAAAAAAAALUBAAAOAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-22T11:32:57.151Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "AutoConnectTimer.cs",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\UICallback\\AutoConnectTimer.cs",
-              "RelativeDocumentMoniker": "UICallback\\AutoConnectTimer.cs",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\UICallback\\AutoConnectTimer.cs",
-              "RelativeToolTip": "UICallback\\AutoConnectTimer.cs",
-              "ViewState": "AgIAAIgAAAAAAAAAAAAQwBEAAAAlAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-22T11:32:26.179Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "GeneralSetting_Servo.xaml.cs",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\UIFunction\\GeneralSetting_Servo.xaml.cs",
-              "RelativeDocumentMoniker": "UIFunction\\GeneralSetting_Servo.xaml.cs",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\UIFunction\\GeneralSetting_Servo.xaml.cs",
-              "RelativeToolTip": "UIFunction\\GeneralSetting_Servo.xaml.cs",
-              "ViewState": "AgIAACQAAAAAAAAAAAAYwDEAAAAQAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-22T11:21:34.351Z",
+              "DocumentIndex": 2,
+              "Title": "SystemSetting_License.xaml",
+              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\UIFunction\\SystemSetting_License.xaml",
+              "RelativeDocumentMoniker": "UIFunction\\SystemSetting_License.xaml",
+              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\UIFunction\\SystemSetting_License.xaml",
+              "RelativeToolTip": "UIFunction\\SystemSetting_License.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-12-03T09:34:46.997Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 3,
-              "Title": "GeneralSetting_Servo.xaml",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\UIFunction\\GeneralSetting_Servo.xaml",
-              "RelativeDocumentMoniker": "UIFunction\\GeneralSetting_Servo.xaml",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\UIFunction\\GeneralSetting_Servo.xaml",
-              "RelativeToolTip": "UIFunction\\GeneralSetting_Servo.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2025-11-22T11:21:30.506Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "GeneralSetting_PedalSetting.xaml.cs",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\UIFunction\\GeneralSetting_PedalSetting.xaml.cs",
-              "RelativeDocumentMoniker": "UIFunction\\GeneralSetting_PedalSetting.xaml.cs",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\UIFunction\\GeneralSetting_PedalSetting.xaml.cs",
-              "RelativeToolTip": "UIFunction\\GeneralSetting_PedalSetting.xaml.cs",
-              "ViewState": "AgIAACQAAAAAAAAAAAA1wC8AAAA5AAAAAAAAAA==",
+              "Title": "SystemSetting_Shortcut.xaml.cs",
+              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\UIFunction\\SystemSetting_Shortcut.xaml.cs",
+              "RelativeDocumentMoniker": "UIFunction\\SystemSetting_Shortcut.xaml.cs",
+              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\UIFunction\\SystemSetting_Shortcut.xaml.cs",
+              "RelativeToolTip": "UIFunction\\SystemSetting_Shortcut.xaml.cs",
+              "ViewState": "AgIAAJoAAAAAAAAAAAAgwLIAAAAVAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-22T11:16:19.056Z",
+              "WhenOpened": "2025-12-03T09:14:25.94Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "DIYFFBPedalControlUI.xaml",
+              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\DIYFFBPedalControlUI.xaml",
+              "RelativeDocumentMoniker": "DIYFFBPedalControlUI.xaml",
+              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\DIYFFBPedalControlUI.xaml",
+              "RelativeToolTip": "DIYFFBPedalControlUI.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-12-02T20:29:42.871Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "DIYFFBPedalSettings.cs",
+              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\DIYFFBPedalSettings.cs",
+              "RelativeDocumentMoniker": "DIYFFBPedalSettings.cs",
+              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\DIYFFBPedalSettings.cs",
+              "RelativeToolTip": "DIYFFBPedalSettings.cs",
+              "ViewState": "AgIAADsAAAAAAAAAAAAAAEsAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-02T20:22:07.556Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "SystemSetting_Shortcut.xaml",
+              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\UIFunction\\SystemSetting_Shortcut.xaml",
+              "RelativeDocumentMoniker": "UIFunction\\SystemSetting_Shortcut.xaml",
+              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\UIFunction\\SystemSetting_Shortcut.xaml",
+              "RelativeToolTip": "UIFunction\\SystemSetting_Shortcut.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-12-02T20:14:39.936Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
               "Title": "DIYFFBPedal.cs",
               "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\DIYFFBPedal.cs",
               "RelativeDocumentMoniker": "DIYFFBPedal.cs",
               "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\DIYFFBPedal.cs",
               "RelativeToolTip": "DIYFFBPedal.cs",
-              "ViewState": "AgIAANMFAAAAAAAAAAAYwOIFAAAQAAAAAAAAAA==",
+              "ViewState": "AgIAAP8FAAAAAAAAAAAwwEQGAAAxAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-22T11:15:34.433Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-01T22:05:44.253Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "ProfileService.cs",
+              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\ProfileService.cs",
+              "RelativeDocumentMoniker": "ProfileService.cs",
+              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\ProfileService.cs",
+              "RelativeToolTip": "ProfileService.cs",
+              "ViewState": "AgIAAHgAAAAAAAAAAAAYwIUAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-01T22:04:28.324Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "updateUIfromConfig.cs",
+              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\UICallback\\updateUIfromConfig.cs",
+              "RelativeDocumentMoniker": "UICallback\\updateUIfromConfig.cs",
+              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-1122\\SimHubPlugin\\UICallback\\updateUIfromConfig.cs",
+              "RelativeToolTip": "UICallback\\updateUIfromConfig.cs",
+              "ViewState": "AgIAAHUAAAAAAAAAAAAYwIUAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-02T20:30:36.797Z"
             }
           ]
         }

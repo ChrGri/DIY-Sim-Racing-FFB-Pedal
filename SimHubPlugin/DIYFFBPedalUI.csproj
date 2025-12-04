@@ -295,6 +295,9 @@
     <Compile Include="UIFunction\SystemSetting_ProfilesNew.xaml.cs">
       <DependentUpon>SystemSetting_ProfilesNew.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\SystemSetting_Shortcut.xaml.cs">
+      <DependentUpon>SystemSetting_Shortcut.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\UpdateSettingWindow.xaml.cs">
       <DependentUpon>UpdateSettingWindow.xaml</DependentUpon>
     </Compile>
@@ -476,6 +479,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\SystemSetting_ProfilesNew.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\SystemSetting_Shortcut.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -144,27 +144,6 @@ namespace User.PluginSdkDemo
                                     check_payload_state_b = true;
                                 }
                                 Pedal_version[pedalSelected] = pedalState_read_st.payloadHeader_.version;
-                                /*
-                                if (Pedal_version[pedalSelected] != Constants.pedalConfigPayload_version && pedalState_read_st.payloadHeader_.payloadType == Constants.pedalStateBasicPayload_type)
-                                {
-                                    if (!Version_warning_first_show_b[pedalSelected])
-                                    {
-                                        Version_warning_first_show_b[pedalSelected] = true;
-                                        if (Pedal_version[pedalSelected] > Constants.pedalConfigPayload_version)
-                                        {
-                                            String MSG_tmp;
-                                            MSG_tmp = "Pedal: " + pedalState_read_st.payloadHeader_.PedalTag + " Pedal Dap version: " + Pedal_version[pedalSelected] + ", Plugin DAP version: " + Constants.pedalConfigPayload_version + ". Please update Simhub Plugin.";
-                                            System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                                        }
-                                        else
-                                        {
-                                            String MSG_tmp;
-                                            MSG_tmp = "Pedal: " + pedalState_read_st.payloadHeader_.PedalTag + " Pedal Dap version: " + Pedal_version[pedalSelected] + ", Plugin DAP version: " + Constants.pedalConfigPayload_version + ". Please update Pedal Firmware.";
-                                            System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                                        }
-                                    }
-                                }
-                                */
                                 // CRC check
                                 bool check_crc_state_b = false;
                                 if (Plugin.checksumCalc(p_state, sizeof(payloadHeader) + sizeof(payloadPedalState_Basic)) == pedalState_read_st.payloadFooter_.checkSum)
