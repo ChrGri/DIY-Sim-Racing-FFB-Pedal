@@ -1528,6 +1528,7 @@ namespace User.PluginSdkDemo
                     _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
                     ProfileServicePlugin.ApplyProfile(foundItem.FullPath);
                     _calculations.ProfileEditing = foundItem.FileName;
+                    _calculations.ProfileSelected = _calculations.ProfileEditing;
                     wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
                 } 
 
@@ -1542,6 +1543,7 @@ namespace User.PluginSdkDemo
                     _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
                     ProfileServicePlugin.ApplyProfile(foundItem.FullPath);
                     _calculations.ProfileEditing = foundItem.FileName;
+                    _calculations.ProfileSelected = _calculations.ProfileEditing;
                     wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
                 }
 
@@ -1556,6 +1558,7 @@ namespace User.PluginSdkDemo
                     _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
                     ProfileServicePlugin.ApplyProfile(foundItem.FullPath);
                     _calculations.ProfileEditing = foundItem.FileName;
+                    _calculations.ProfileSelected = _calculations.ProfileEditing;
                     wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
                 }
 
@@ -1570,6 +1573,7 @@ namespace User.PluginSdkDemo
                     _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
                     ProfileServicePlugin.ApplyProfile(foundItem.FullPath);
                     _calculations.ProfileEditing = foundItem.FileName;
+                    _calculations.ProfileSelected = _calculations.ProfileEditing;
                     wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
                 }
 
@@ -1584,20 +1588,22 @@ namespace User.PluginSdkDemo
                     _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
                     ProfileServicePlugin.ApplyProfile(foundItem.FullPath);
                     _calculations.ProfileEditing = foundItem.FileName;
+                    _calculations.ProfileSelected = _calculations.ProfileEditing;
                     wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
                 }
 
                 SimHub.Logging.Current.Info("Apply Profile 4");
                 current_action = "Apply Profile 4";
             });
-            this.AddAction("ProfileShortcut05", (a, b) =>
+            this.AddAction("ProfileShortcut5", (a, b) =>
             {
                 var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == Settings.ProfileShortcut[5]);
                 if (foundItem != null)
                 {
                     _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
-                    ProfileServicePlugin.ApplyProfile(foundItem.FullPath);
+                    ProfileServicePlugin.ApplyProfile(foundItem.FullPath); 
                     _calculations.ProfileEditing = foundItem.FileName;
+                    _calculations.ProfileSelected = _calculations.ProfileEditing;
                     wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
                 }
 
@@ -1733,7 +1739,7 @@ namespace User.PluginSdkDemo
                 }
                 Page_update_flag = true;
             });
-            this.AddAction("Gforce_toggle", (a, b) =>
+            this.AddAction("GforceToggle", (a, b) =>
             {
                 if (Settings.table_selected == 1)
                 {

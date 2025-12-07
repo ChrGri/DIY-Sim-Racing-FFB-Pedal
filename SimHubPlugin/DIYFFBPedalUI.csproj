@@ -154,24 +154,19 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ConfigListService.cs" />
     <Compile Include="CubicSpline.cs" />
-    <Compile Include="DefaultConfig.cs" />
     <Compile Include="DIYFFBPedal.cs" />
     <Compile Include="DIYFFBPedalSettings.cs" />
-    <Compile Include="FileIoHelper.cs" />
-    <Compile Include="OnlineProfile.xaml.cs">
-      <DependentUpon>OnlineProfile.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="ProfileService.cs" />
+    <Compile Include="PluginCallback\ConfigListService.cs" />
+    <Compile Include="PluginCallback\DefaultConfig.cs" />
+    <Compile Include="PluginCallback\FileIoHelper.cs" />
+    <Compile Include="PluginCallback\PluginMiscHelper.cs" />
+    <Compile Include="PluginCallback\ProfileService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-    <Compile Include="SerialMonitor.xaml.cs">
-      <DependentUpon>SerialMonitor.xaml</DependentUpon>
     </Compile>
     <Compile Include="DIYFFBPedalControlUI.xaml.cs">
       <DependentUpon>DIYFFBPedalControlUI.xaml</DependentUpon>
@@ -277,6 +272,12 @@
     <Compile Include="UIFunction\Listbox_PedalConfig.xaml.cs">
       <DependentUpon>Listbox_PedalConfig.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\OnlineProfile.xaml.cs">
+      <DependentUpon>OnlineProfile.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\SerialMonitor.xaml.cs">
+      <DependentUpon>SerialMonitor.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\SettingSection_Pedal.xaml.cs">
       <DependentUpon>SettingSection_Pedal.xaml</DependentUpon>
     </Compile>
@@ -321,18 +322,10 @@
     <Compile Include="VariablesStruct\payloadPedalState_Extended.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="OnlineProfile.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="Properties\DesignTimeResources.xaml" Condition="'$(DesignTime)'=='true' OR ('$(SolutionPath)'!='' AND Exists('$(SolutionPath)') AND '$(BuildingInsideVisualStudio)'!='true' AND '$(BuildingInsideExpressionBlend)'!='true')">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <ContainsDesignTimeResources>true</ContainsDesignTimeResources>
-    </Page>
-    <Page Include="SerialMonitor.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="DIYFFBPedalControlUI.xaml">
       <SubType>Designer</SubType>
@@ -455,6 +448,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\Listbox_PedalConfig.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\OnlineProfile.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\SerialMonitor.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
