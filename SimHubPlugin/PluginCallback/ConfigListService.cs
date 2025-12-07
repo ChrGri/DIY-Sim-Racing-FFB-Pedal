@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using SimHub.Plugins;
+using SimHub.Plugins.ProfilesCommon;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -30,9 +31,9 @@ namespace User.PluginSdkDemo
                         item.ListName = item.ListNameOrig;
                     }
                     var foundItem = ConfigList.FirstOrDefault(item => item.FileName == _plugin.Settings.DefaultConfig[_plugin.Settings.table_selected]);
-                    if (foundItem != null) foundItem.ListName = foundItem.ListNameOrig + "(default)";
+                    if (foundItem != null) foundItem.ListName = foundItem.ListNameOrig + "(Default)";
                     foundItem = ConfigList.FirstOrDefault(item => item.FileName == _plugin._calculations.ConfigEditing[_plugin.Settings.table_selected]);
-                    if (foundItem != null) foundItem.ListName += "(editing)";
+                    if (foundItem != null) foundItem.ListName += "(Loaded)";
                 }
 
             }
@@ -47,7 +48,7 @@ namespace User.PluginSdkDemo
                 {
 
                     if (ConfigList == null) ConfigList = new ObservableCollection<ConfigListItem> { };
-                    if (ConfigList.Count > 0) { ConfigList.Clear(); }
+                    //if (ConfigList.Count > 0) { ConfigList.Clear(); }
 
 
                     if (string.IsNullOrEmpty(configFolderPath) || !Directory.Exists(configFolderPath))
@@ -59,19 +60,31 @@ namespace User.PluginSdkDemo
                     {
 
                         string[] fullPaths = Directory.GetFiles(configFolderPath, "*.json");
+                        var itemsToRemove = ConfigList
+                        .Where(item => !fullPaths.Any(path => Path.GetFileName(path) == item.FileName))
+                        .ToList();
 
+                        foreach (var item in itemsToRemove)
+                        {
+                            ConfigList.Remove(item);
+                        }
 
                         foreach (var path in fullPaths)
                         {
-                            ConfigListItem item = new ConfigListItem();
-                            item.FileName = Path.GetFileName(path);
-                            item.ListName = Path.GetFileNameWithoutExtension(path);
-                            item.ListNameOrig = item.ListName;
-                            item.FullPath = Path.GetFullPath(path);
-                            item.IsDefault = false;
-                            item.IsCurrent = false;
+                            string fileName = Path.GetFileName(path);
+                            if (!ConfigList.Any(item => item.FileName == fileName))
+                            {
+                                ConfigListItem item = new ConfigListItem();
+                                item.FileName = Path.GetFileName(path);
+                                item.ListName = Path.GetFileNameWithoutExtension(path);
+                                item.ListNameOrig = item.ListName;
+                                item.FullPath = Path.GetFullPath(path);
+                                item.IsDefault = false;
+                                item.IsCurrent = false;
 
-                            ConfigList.Add(item);
+                                ConfigList.Add(item);
+                            }
+
                         }
                         UpdateConfigLabelDefaultAndEditing();
                     }

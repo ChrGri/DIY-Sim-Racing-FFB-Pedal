@@ -617,6 +617,8 @@ namespace User.PluginSdkDemo
                                     updateTheGuiFromConfig();
                                     TextBox_serialMonitor_bridge.Text += "Pedal:"+ pedalSelected + " Payload config payload check: " + check_payload_config_b+"\n";
                                     TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config crc check: " + check_crc_config_b + "\n";
+                                    Plugin._calculations.ConfigEditing[pedalSelected] = "";
+                                    Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                                     continue;
                                 }
                                 else
