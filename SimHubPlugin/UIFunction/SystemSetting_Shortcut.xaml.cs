@@ -146,37 +146,49 @@ namespace User.PluginSdkDemo.UIFunction
         }
         private void Btn_Shortcut_0_Click(object sender, RoutedEventArgs e)
         {
-            ShortcutProfile0 = null;
+            ShortcutProfile0 = null;            
             ComboBox0.SelectedValue=null;
+            Textbox_ShortcutName0.Text = "";
+            _settings.ProfileShortcut[0] = "";
         }
 
         private void Btn_Shortcut_1_Click(object sender, RoutedEventArgs e)
         {
             ShortcutProfile1 = null;
             ComboBox1.SelectedValue = null;
+            Textbox_ShortcutName1.Text = "";
+            _settings.ProfileShortcut[1] = "";
         }
 
         private void Btn_Shortcut_2_Click(object sender, RoutedEventArgs e)
         {
             ShortcutProfile2 = null;
             ComboBox2.SelectedValue = null;
+            Textbox_ShortcutName2.Text = "";
+            _settings.ProfileShortcut[2] = "";
         }
 
         private void Btn_Shortcut_3_Click(object sender, RoutedEventArgs e)
         {
             ShortcutProfile3 = null;
             ComboBox3.SelectedValue = null;
+            Textbox_ShortcutName3.Text = "";
+            _settings.ProfileShortcut[3] = "";
         }
 
         private void Btn_Shortcut_4_Click(object sender, RoutedEventArgs e)
         {
             ShortcutProfile4 = null;
             ComboBox4.SelectedValue = null;
+            Textbox_ShortcutName4.Text = "";
+            _settings.ProfileShortcut[4] = "";
         }
         private void Btn_Shortcut_5_Click(object sender, RoutedEventArgs e)
         {
             ShortcutProfile5 = null;
             ComboBox5.SelectedValue = null;
+            Textbox_ShortcutName5.Text = "";
+            _settings.ProfileShortcut[5] = "";
 
         }
     }

@@ -108,7 +108,6 @@ namespace User.PluginSdkDemo
                 SystemSetting_Section.Settings = Plugin.Settings;
                 SystemInfo.Settings = Plugin.Settings;
                 PedalInfo.Settings = Plugin.Settings;
-                RudderSettingSection.Settings = Plugin.Settings;
 
 
                 EffectsABS_Tab.calculation = Plugin._calculations;
@@ -124,7 +123,6 @@ namespace User.PluginSdkDemo
                 SystemInfo.calculation = Plugin._calculations;
                 PedalInfo.calculation = Plugin._calculations;
                 RudderInfo.calculation = Plugin._calculations;
-                RudderSettingSection.calculation = Plugin._calculations;
                 if (firstAssignPlugin)
                 {
                     EffectsCustom1_tab.Plugin = Plugin;
@@ -200,12 +198,12 @@ namespace User.PluginSdkDemo
             {
                 if (Plugin._calculations.Rudder_status)
                 {
-                    btn_rudder_initialize.Content = "Disable Rudder";
+                    btn_rudder_initialize.Content = "Disable";
                     //text_rudder_log.Visibility= Visibility.Visible;
                 }
                 else
                 {
-                    btn_rudder_initialize.Content = "Enable Rudder";
+                    btn_rudder_initialize.Content = "Enable";
                     //text_rudder_log.Visibility = Visibility.Hidden;
                 }
             }

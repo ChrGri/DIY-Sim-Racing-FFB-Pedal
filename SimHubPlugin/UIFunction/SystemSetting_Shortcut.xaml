@@ -66,78 +66,97 @@
     <Grid>
         <Border Background="#7F4E4E4E" Height="177" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
             <StackPanel>
-                <Label Content="Profile Shortcut"  FontFamily="Arial Black" FontSize="20" Height="25" Width="200" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" RenderTransformOrigin="0,0" VerticalContentAlignment="Center" Margin="15,0,0,0"  />
-                <StackPanel Orientation="Horizontal" Margin="15,2,0,0">
+                <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Label Content="Profile 0:" Height="20" Width="50" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
-                        <ComboBox x:Name="ComboBox0"
+                        <Label Content="Profile Shortcut"  FontFamily="Arial Black" FontSize="20" Height="25" Width="200" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" RenderTransformOrigin="0,0" VerticalContentAlignment="Center" Margin="15,0,0,0"  />
+                        <Label Content="*The change of Custom Action Name will be applied after a simhub restart." Height="25" HorizontalAlignment="Right" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="8" Width="300" Margin="60,0,0,0"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="15,0,0,0" Height="15">
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="#" Height="15" Width="50" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,0,0,0" HorizontalContentAlignment="Center"/>
+                            <Label Content="Custom Action Name" Height="15" Width="150" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,0,0,0" Margin="5,0,0,0"/>
+                            <Label Content="Profile Binding" Height="15" Width="200" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,0,0,0" Margin="5,0,0,0"/>
+                        </StackPanel>
+                        
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="15,0,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="Profile 0:" Height="20" Width="50" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
+                            <TextBox x:Name="Textbox_ShortcutName0" Text="{Binding Plugin.Settings.ProfileShortcutName[0], Mode=TwoWay}" Width="150" MinHeight="20" Height="20" BorderThickness="0,0,0,0" Margin="5,0,0,0" VerticalContentAlignment="Center" FontSize="10" FontFamily="Arial"/>
+                            <ComboBox x:Name="ComboBox0"
                                   ItemsSource="{Binding ProfileList}"
                                   DisplayMemberPath="ListNameOrig"  
                                   SelectedValuePath="FileName"    
                                   SelectedValue="{Binding ShortcutProfile0, Mode=TwoWay}"
                                   Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0"/>
+                        </StackPanel>
+                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_0" Click="Btn_Shortcut_0_Click" Width="30" Content="Clear" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                     </StackPanel>
-                    <styles:SHButtonPrimary x:Name="Btn_Shortcut_0" Click="Btn_Shortcut_0_Click" Width="30" Content="Clear" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="15,2,0,0">
-                    <StackPanel Orientation="Horizontal">
-                        <Label Content="Profile 1:" Height="20" Width="50" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
-                        <ComboBox x:Name="ComboBox1"
+                    <StackPanel Orientation="Horizontal" Margin="15,2,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="Profile 1:" Height="20" Width="50" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
+                            <TextBox x:Name="Textbox_ShortcutName1" Text="{Binding Plugin.Settings.ProfileShortcutName[1], Mode=TwoWay}" Width="150" MinHeight="20" Height="20" BorderThickness="0,0,0,0" Margin="5,0,0,0" VerticalContentAlignment="Center" FontSize="10" FontFamily="Arial"/>
+                            <ComboBox x:Name="ComboBox1"
                                   ItemsSource="{Binding ProfileList}"
                                   DisplayMemberPath="ListNameOrig"  
                                   SelectedValuePath="FileName"    
                                   SelectedValue="{Binding ShortcutProfile1, Mode=TwoWay}"
                                   Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0"/>
+                        </StackPanel>
+                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_1" Click="Btn_Shortcut_1_Click" Width="30" Content="Clear" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                     </StackPanel>
-                    <styles:SHButtonPrimary x:Name="Btn_Shortcut_1" Click="Btn_Shortcut_1_Click" Width="30" Content="Clear" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="15,2,0,0">
-                    <StackPanel Orientation="Horizontal">
-                        <Label Content="Profile 2:" Height="20" Width="50" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
-                        <ComboBox x:Name="ComboBox2"
+                    <StackPanel Orientation="Horizontal" Margin="15,2,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="Profile 2:" Height="20" Width="50" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
+                            <TextBox x:Name="Textbox_ShortcutName2" Text="{Binding Plugin.Settings.ProfileShortcutName[2], Mode=TwoWay}" Width="150" MinHeight="20" Height="20" BorderThickness="0,0,0,0" Margin="5,0,0,0" VerticalContentAlignment="Center" FontSize="10" FontFamily="Arial"/>
+                            <ComboBox x:Name="ComboBox2"
                                   ItemsSource="{Binding ProfileList}"
                                   DisplayMemberPath="ListNameOrig"  
                                   SelectedValuePath="FileName"    
                                   SelectedValue="{Binding ShortcutProfile2, Mode=TwoWay}"
                                   Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0"/>
+                        </StackPanel>
+                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_2" Click="Btn_Shortcut_2_Click" Width="30" Content="Clear" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                     </StackPanel>
-                    <styles:SHButtonPrimary x:Name="Btn_Shortcut_2" Click="Btn_Shortcut_2_Click" Width="30" Content="Clear" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="15,2,0,0">
-                    <StackPanel Orientation="Horizontal">
-                        <Label Content="Profile 3:" Height="20" Width="50" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
-                        <ComboBox x:Name="ComboBox3"
+                    <StackPanel Orientation="Horizontal" Margin="15,2,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="Profile 3:" Height="20" Width="50" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
+                            <TextBox x:Name="Textbox_ShortcutName3" Text="{Binding Plugin.Settings.ProfileShortcutName[3], Mode=TwoWay}" Width="150" MinHeight="20" Height="20" BorderThickness="0,0,0,0" Margin="5,0,0,0" VerticalContentAlignment="Center" FontSize="10" FontFamily="Arial"/>
+                            <ComboBox x:Name="ComboBox3"
                                   ItemsSource="{Binding ProfileList}"
                                   DisplayMemberPath="ListNameOrig"  
                                   SelectedValuePath="FileName"    
                                   SelectedValue="{Binding ShortcutProfile3, Mode=TwoWay}"
                                   Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0"/>
+                        </StackPanel>
+                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_3" Click="Btn_Shortcut_3_Click" Width="30" Content="Clear" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                     </StackPanel>
-                    <styles:SHButtonPrimary x:Name="Btn_Shortcut_3" Click="Btn_Shortcut_3_Click" Width="30" Content="Clear" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="15,2,0,0">
-                    <StackPanel Orientation="Horizontal">
-                        <Label Content="Profile 4:" Height="20" Width="50" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
-                        <ComboBox x:Name="ComboBox4"
+                    <StackPanel Orientation="Horizontal" Margin="15,2,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="Profile 4:" Height="20" Width="50" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
+                            <TextBox x:Name="Textbox_ShortcutName4" Text="{Binding Plugin.Settings.ProfileShortcutName[4], Mode=TwoWay}" Width="150" MinHeight="20" Height="20" BorderThickness="0,0,0,0" Margin="5,0,0,0" VerticalContentAlignment="Center" FontSize="10" FontFamily="Arial"/>
+                            <ComboBox x:Name="ComboBox4"
                                   ItemsSource="{Binding ProfileList}"
                                   DisplayMemberPath="ListNameOrig"  
                                   SelectedValuePath="FileName"    
                                   SelectedValue="{Binding ShortcutProfile4, Mode=TwoWay}"
                                   Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0"/>
+                        </StackPanel>
+                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_4" Click="Btn_Shortcut_4_Click" Width="30" Content="Clear" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                     </StackPanel>
-                    <styles:SHButtonPrimary x:Name="Btn_Shortcut_4" Click="Btn_Shortcut_4_Click" Width="30" Content="Clear" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="15,2,0,0">
-                    <StackPanel Orientation="Horizontal">
-                        <Label Content="Profile 5:" Height="20" Width="50" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
-                        <ComboBox x:Name="ComboBox5"
+                    <StackPanel Orientation="Horizontal" Margin="15,2,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="Profile 5:" Height="20" Width="50" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
+                            <TextBox x:Name="Textbox_ShortcutName5" Text="{Binding Plugin.Settings.ProfileShortcutName[5], Mode=TwoWay}" Width="150" MinHeight="20" Height="20" BorderThickness="0,0,0,0" Margin="5,0,0,0" VerticalContentAlignment="Center" FontSize="10" FontFamily="Arial"/>
+                            <ComboBox x:Name="ComboBox5"
                                   ItemsSource="{Binding ProfileList}"
                                   DisplayMemberPath="ListNameOrig"  
                                   SelectedValuePath="FileName"    
                                   SelectedValue="{Binding ShortcutProfile5, Mode=TwoWay}"
                                   Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0"/>
+                        </StackPanel>
+                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_5" Click="Btn_Shortcut_5_Click" Width="30" Content="Clear" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                     </StackPanel>
-                    <styles:SHButtonPrimary x:Name="Btn_Shortcut_5" Click="Btn_Shortcut_5_Click" Width="30" Content="Clear" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                 </StackPanel>
             </StackPanel>
         </Border>

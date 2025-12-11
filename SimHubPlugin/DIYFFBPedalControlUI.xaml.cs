@@ -156,7 +156,7 @@ namespace User.PluginSdkDemo
             
             //setting drawing color with Simhub theme workaround
             //SolidColorBrush buttonBackground_ = btn_update.Background as SolidColorBrush;
-            SolidColorBrush buttonBackground_ = btn_Assignment.Background as SolidColorBrush;
+            SolidColorBrush buttonBackground_ = btn_pedal_connect.Background as SolidColorBrush;
             
 
             Color color = Color.FromArgb(150, buttonBackground_.Color.R, buttonBackground_.Color.G, buttonBackground_.Color.B);
@@ -177,6 +177,7 @@ namespace User.PluginSdkDemo
             color_RSSI_4 = new SolidColorBrush(Color.FromArgb(255, buttonBackground_.Color.R, buttonBackground_.Color.G, buttonBackground_.Color.B));
             Red_Warning = new SolidColorBrush(Color.FromArgb(255, 244, 67, 67));
             White_Default = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+            this.DataContext = this;
             CheckForUpdateAsync();
         }
 

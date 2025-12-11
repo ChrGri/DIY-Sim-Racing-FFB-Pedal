@@ -1476,12 +1476,12 @@ namespace User.PluginSdkDemo
             ConfigService = new ConfigListService(this);
             EnsureFolderExistsAndProcess();
             DefaultConfigInitializing();
-            DefaultProfile= new DAP_system_profile_cls();
+            DefaultProfile = new DAP_system_profile_cls();
 
-            for (uint pedali=0; pedali < 3; pedali++)
+            for (uint pedali = 0; pedali < 3; pedali++)
             {
                 Action_currentTime[pedali] = new DateTime();
-                Action_currentTime[pedali]=DateTime.Now;
+                Action_currentTime[pedali] = DateTime.Now;
                 Action_lastTime[pedali] = new DateTime();
                 Action_lastTime[pedali] = DateTime.Now;
             }
@@ -1489,7 +1489,7 @@ namespace User.PluginSdkDemo
             //get version length
             int Version_text_length = Simhub_version.Length;
             //if (Simhub_version[Version_text_length - 2] == 'b')
-            if(Simhub_version.Contains("b"))
+            if (Simhub_version.Contains("b"))
             {
                 Version_Check_Simhub_MSFS = false;
             }
@@ -1508,9 +1508,9 @@ namespace User.PluginSdkDemo
                 }
             }
 
-            
+
             Version_Check_Simhub_MSFS = true;
-            
+
             this.AddAction("ApplyProfile", (a, b) =>
             {
                 var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == _calculations.ProfileSelected);
@@ -1520,96 +1520,31 @@ namespace User.PluginSdkDemo
                 SimHub.Logging.Current.Info("Apply Profile");
                 current_action = "Apply Profile";
             });
-            this.AddAction("ProfileShortcut0", (a, b) =>
+            for (int i = 0; i < 6; i++)
             {
-                var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == Settings.ProfileShortcut[0]);
-                if (foundItem != null)
+                int index = i;
+                if (Settings.ProfileShortcutName[index] != string.Empty)
                 {
-                    _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
-                    ProfileServicePlugin.ApplyProfile(foundItem.FullPath);
-                    _calculations.ProfileEditing = foundItem.FileName;
-                    _calculations.ProfileSelected = _calculations.ProfileEditing;
-                    wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
-                } 
+                    this.AddAction(Settings.ProfileShortcutName[index], (a, b) =>
+                    {
+                        var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == Settings.ProfileShortcut[index]);
+                        if (foundItem != null)
+                        {
+                            _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
+                            ProfileServicePlugin.ApplyProfile(foundItem.FullPath);
+                            _calculations.ProfileEditing = foundItem.FileName;
+                            _calculations.ProfileSelected = _calculations.ProfileEditing;
+                            wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
+                            wpfHandle.ToastNotification("Profile:"+ foundItem.FileName,"Applied");
+                        }
 
-                SimHub.Logging.Current.Info("Apply Profile 0");
-                current_action = "Apply Profile 0";
-            });
-            this.AddAction("ProfileShortcut1", (a, b) =>
-            {
-                var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == Settings.ProfileShortcut[1]);
-                if (foundItem != null)
-                {
-                    _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
-                    ProfileServicePlugin.ApplyProfile(foundItem.FullPath);
-                    _calculations.ProfileEditing = foundItem.FileName;
-                    _calculations.ProfileSelected = _calculations.ProfileEditing;
-                    wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
+                        SimHub.Logging.Current.Info("Apply" + Settings.ProfileShortcutName[index]);
+                        current_action = "Apply" + Settings.ProfileShortcutName[index];
+                    });
                 }
+            }
 
-                SimHub.Logging.Current.Info("Apply Profile 1");
-                current_action = "Apply Profile 1";
-            });
-            this.AddAction("ProfileShortcut2", (a, b) =>
-            {
-                var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == Settings.ProfileShortcut[2]);
-                if (foundItem != null)
-                {
-                    _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
-                    ProfileServicePlugin.ApplyProfile(foundItem.FullPath);
-                    _calculations.ProfileEditing = foundItem.FileName;
-                    _calculations.ProfileSelected = _calculations.ProfileEditing;
-                    wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
-                }
 
-                SimHub.Logging.Current.Info("Apply Profile 2");
-                current_action = "Apply Profile 2";
-            });
-            this.AddAction("ProfileShortcut3", (a, b) =>
-            {
-                var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == Settings.ProfileShortcut[3]);
-                if (foundItem != null)
-                {
-                    _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
-                    ProfileServicePlugin.ApplyProfile(foundItem.FullPath);
-                    _calculations.ProfileEditing = foundItem.FileName;
-                    _calculations.ProfileSelected = _calculations.ProfileEditing;
-                    wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
-                }
-
-                SimHub.Logging.Current.Info("Apply Profile 3");
-                current_action = "Apply Profile 3";
-            });
-            this.AddAction("ProfileShortcut4", (a, b) =>
-            {
-                var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == Settings.ProfileShortcut[4]);
-                if (foundItem != null)
-                {
-                    _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
-                    ProfileServicePlugin.ApplyProfile(foundItem.FullPath);
-                    _calculations.ProfileEditing = foundItem.FileName;
-                    _calculations.ProfileSelected = _calculations.ProfileEditing;
-                    wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
-                }
-
-                SimHub.Logging.Current.Info("Apply Profile 4");
-                current_action = "Apply Profile 4";
-            });
-            this.AddAction("ProfileShortcut5", (a, b) =>
-            {
-                var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == Settings.ProfileShortcut[5]);
-                if (foundItem != null)
-                {
-                    _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
-                    ProfileServicePlugin.ApplyProfile(foundItem.FullPath); 
-                    _calculations.ProfileEditing = foundItem.FileName;
-                    _calculations.ProfileSelected = _calculations.ProfileEditing;
-                    wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
-                }
-
-                SimHub.Logging.Current.Info("Apply Profile 5");
-                current_action = "Apply Profile 5";
-            });
             this.AddAction("PreviousProfile", (a, b) =>
             {
                 if(ProfileServicePlugin.ProfileList.Count() > 0)

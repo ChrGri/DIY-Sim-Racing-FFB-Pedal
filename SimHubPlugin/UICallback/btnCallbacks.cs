@@ -1024,7 +1024,7 @@ namespace User.PluginSdkDemo
                         Plugin.Rudder_enable_flag = true;
                         //Plugin.Rudder_status = false;
                         CurveRudderForce_Tab.text_rudder_log.Text += "Disabling Rudder\n";
-                        btn_rudder_initialize.Content = "Enable Rudder";
+                        btn_rudder_initialize.Content = "Enable";
 
                         DelayCall(300, () =>
                         {
@@ -1094,7 +1094,7 @@ namespace User.PluginSdkDemo
                             CurveRudderForce_Tab.text_rudder_log.Text += "Rudder initialized\n";
                             Plugin.Rudder_enable_flag = true;
                             //Plugin.Rudder_status = true;
-                            btn_rudder_initialize.Content = "Disable Rudder";
+                            btn_rudder_initialize.Content = "Disable";
                         });
 
 
