@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Documents;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace User.PluginSdkDemo
 {
@@ -26,6 +27,8 @@ namespace User.PluginSdkDemo
         public string configFolderPath = string.Empty;
         public string profileFolderPath = string.Empty;
         public string logFolderPath = string.Empty;
+
+
         public void EnsureFolderExistsAndProcess()
         {
 
@@ -79,11 +82,11 @@ namespace User.PluginSdkDemo
                     return;
                 }
             }
+
             ConfigService.RefreshConfigList();
             ProfileServicePlugin.RefreshProfileList();
 
         }
-
-
     }
+        
 }

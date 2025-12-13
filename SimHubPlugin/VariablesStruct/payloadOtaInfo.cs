@@ -15,7 +15,7 @@ namespace User.PluginSdkDemo
         public byte mode_select;
         public byte SSID_Length;
         public byte PASS_Length;
-        public fixed byte WIFI_SSID[30];
-        public fixed byte WIFI_PASS[30];
+        public fixed byte WIFI_SSID[64];
+        public fixed byte WIFI_PASS[64];
     }
 }

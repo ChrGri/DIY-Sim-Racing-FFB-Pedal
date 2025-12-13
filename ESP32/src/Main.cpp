@@ -3434,7 +3434,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
             dap_config_st_local_ptr->payloadFooter_.checkSum = crc;
             ESPNow.send_message(broadcast_mac,(uint8_t *) & espnow_dap_config_st, sizeof(espnow_dap_config_st));
             ESPNow_config_request=false;
-            sendESPNOWLog("Pedal:%d Config returned by user request", espnow_dap_config_st.payLoadPedalConfig_.pedal_type);
+            sendESPNOWLog("Pedal:%d Config returned by user request, CRC:%d", espnow_dap_config_st.payLoadPedalConfig_.pedal_type, crc);
             delay(2);
           }
 

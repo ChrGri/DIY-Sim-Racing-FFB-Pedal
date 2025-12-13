@@ -124,6 +124,7 @@ namespace User.PluginSdkDemo
             DefaultConfig.payloadPedalConfig_.positionSmoothingFactor_u8 = 0;
             DefaultConfig.payloadPedalConfig_.minForceForEffects = 0;
             DefaultConfig.payloadPedalConfig_.servoRatioOfInertia_u8 = 1;
+            DefaultConfig.payloadPedalConfig_.configHash_u32 = 0;
         }
 
     }

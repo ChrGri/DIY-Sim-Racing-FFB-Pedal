@@ -94,11 +94,11 @@ namespace User.PluginSdkDemo
                 {
                     tmp_2.payloadOtaInfo_.mode_select = 2;
                 }
-                if (SSID.Length > 30 || PASS.Length > 30)
+                if (SSID.Length > 64 || PASS.Length > 64)
                 {
                     SSID_PASS_check = false;
                     String MSG_tmp;
-                    MSG_tmp = "ERROR! SSID or Password length larger than 30 bytes";
+                    MSG_tmp = "ERROR! SSID or Password length larger than 64 bytes";
                     System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
 
@@ -850,7 +850,7 @@ namespace User.PluginSdkDemo
                 {
                     tmp_2.payloadOtaInfo_.mode_select = 3;
                 }
-                if (SSID.Length > 30 || PASS.Length > 30)
+                if (SSID.Length > 64 || PASS.Length > 64)
                 {
                     SSID_PASS_check = false;
 
@@ -1478,12 +1478,12 @@ namespace User.PluginSdkDemo
                 switch (Plugin.Settings.updateChannel)
                 {
                     case 0:
-                        downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/Plugin/DiyActivePedal.dll";
-                        MSG_tmp += "Mainline release channel. ";
+                        downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyActivePedal.dll";
+                        MSG_tmp += "Stable release channel. ";
                         break;
                     case 1:
-                        downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/DailyBuild/plugin/DiyActivePedal.dll";
-                        MSG_tmp += "Nightly-Build channel. ";
+                        downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/DevBuild/plugin/DiyActivePedal.dll";
+                        MSG_tmp += "Dev-Build channel. ";
                         break;
                     default:
                         downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/main/OTA/Plugin/DiyActivePedal.dll";

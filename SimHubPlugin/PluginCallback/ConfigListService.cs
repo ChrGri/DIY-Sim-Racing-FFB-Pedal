@@ -13,8 +13,81 @@ namespace User.PluginSdkDemo
 {
     public partial class DIY_FFB_Pedal : IPlugin, IDataPlugin, IWPFSettingsV2
     {
+        public class ConfigFileHashMap
+        {
+            private Dictionary<string, uint> _nameToHash = new Dictionary<string, uint>(StringComparer.OrdinalIgnoreCase);
+            private Dictionary<uint, string> _hashToName = new Dictionary<uint, string>();
+            public void Add(string fileName)
+            {
+                uint hash = Fnv1aHash(fileName);
+                if (_hashToName.ContainsKey(hash))
+                {
+                    string existingFile = _hashToName[hash];
+                    if (!existingFile.Equals(fileName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException($"Same Hash founded! '{fileName}' and '{existingFile}'  Hash was the same: {hash}");
+                    }
+                    return;
+                }
+                if (_nameToHash.ContainsKey(fileName))
+                {
+                    uint oldHash = _nameToHash[fileName];
+                    _hashToName.Remove(oldHash);
+                }
+                _nameToHash[fileName] = hash;
+                _hashToName[hash] = fileName;
+            }
+            public uint Fnv1aHash(string text)
+            {
+                const uint FnvPrime = 16777619;
+                const uint OffsetBasis = 2166136261;
+
+                uint hash = OffsetBasis;
+                byte[] bytes = System.Text.Encoding.UTF8.GetBytes(text);
+
+                foreach (byte b in bytes)
+                {
+                    hash ^= b;
+                    hash *= FnvPrime;
+                }
+
+                return hash;
+            }
+            public uint? GetHash(string fileName)
+            {
+                if (_nameToHash.TryGetValue(fileName, out uint hash))
+                {
+                    return hash;
+                }
+                return null;
+            }
+
+            public string GetFileName(uint hash)
+            {
+                if (_hashToName.TryGetValue(hash, out string name))
+                {
+                    return name;
+                }
+                return string.Empty;
+            }
+            public void Clear()
+            {
+                _nameToHash.Clear();
+                _hashToName.Clear();
+            }
+            public int Count()
+            {
+                return _nameToHash.Count;
+            }
+
+        }
+
+
+
+
         public class ConfigListService
         {
+            public ConfigFileHashMap ConfigHashMap = new ConfigFileHashMap();
             public ObservableCollection<ConfigListItem> ConfigList { get; set; }
             private DIY_FFB_Pedal _plugin;
             public ConfigListService(DIY_FFB_Pedal Plugin)
@@ -48,8 +121,7 @@ namespace User.PluginSdkDemo
                 {
 
                     if (ConfigList == null) ConfigList = new ObservableCollection<ConfigListItem> { };
-                    //if (ConfigList.Count > 0) { ConfigList.Clear(); }
-
+                    if (ConfigHashMap.Count()>0) ConfigHashMap.Clear();
 
                     if (string.IsNullOrEmpty(configFolderPath) || !Directory.Exists(configFolderPath))
                     {
@@ -83,8 +155,11 @@ namespace User.PluginSdkDemo
                                 item.IsCurrent = false;
 
                                 ConfigList.Add(item);
+                                
+                                //string fileName = Path.GetFileName(path);
+                                
                             }
-
+                            ConfigHashMap.Add(fileName);
                         }
                         UpdateConfigLabelDefaultAndEditing();
                     }
@@ -107,13 +182,14 @@ namespace User.PluginSdkDemo
                 if (!File.Exists(filePath)) return config;
                 // Read the entire JSON file
                 try
-                {
+                {   
+                    string filename = Path.GetFileName(filePath);
                     string jsonString = File.ReadAllText(filePath);
 
                     // Parse all of the JSON.
                     //JsonNode forecastNode = JsonNode.Parse(jsonString);
                     dynamic data = JsonConvert.DeserializeObject(jsonString);
-
+                    uint hash = ConfigHashMap.Fnv1aHash(filename);
                     int version = 0;
                     byte[] compatibleForce = new byte[6];
                     bool compatibleMode = false;
@@ -213,7 +289,7 @@ namespace User.PluginSdkDemo
                     {
                         config.payloadPedalConfig_.pedalEndPosition = 95;
                     }
-
+                    config.payloadPedalConfig_.configHash_u32 = hash;
 
                 }
                 catch (Exception ex)
@@ -221,6 +297,7 @@ namespace User.PluginSdkDemo
                     SimHub.Logging.Current.Error($"Profile save error: {ex.Message}");
                     throw;
                 }
+                
                 return config;
 
             }

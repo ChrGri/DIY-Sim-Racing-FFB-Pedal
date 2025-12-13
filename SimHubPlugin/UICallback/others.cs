@@ -216,6 +216,7 @@ namespace User.PluginSdkDemo
             dap_config_st_rudder.payloadPedalConfig_.servoIdleTimeout = 0;
             dap_config_st_rudder.payloadPedalConfig_.debug_flags_0 = 0;
             dap_config_st_rudder.payloadPedalConfig_.minForceForEffects = 0;
+            dap_config_st_rudder.payloadPedalConfig_.configHash_u32 = 393938365;
         }
         public byte[] getBytesPayload(payloadPedalConfig aux)
         {

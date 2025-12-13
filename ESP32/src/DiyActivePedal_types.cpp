@@ -137,6 +137,7 @@ void DAP_config_st::initialiseDefaults() {
   payLoadPedalConfig_.servoIdleTimeout=0;
   payLoadPedalConfig_.minForceForEffects_u8=0;
   payLoadPedalConfig_.servoRatioOfInertia_u8=1;
+  payLoadPedalConfig_.configHash = (uint32_t)175245064 ;
 }
 
 

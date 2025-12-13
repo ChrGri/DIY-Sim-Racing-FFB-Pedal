@@ -662,7 +662,19 @@ namespace User.PluginSdkDemo
                                         //Plugin._calculations.pedalSerialConnetionlastTime[pedalSelected] = DateTime.Now;
                                         waiting_for_pedal_config[pedalSelected] = false;
                                         dap_config_st[pedalSelected] = pedalConfig_read_st;
-                                        Plugin._calculations.ConfigEditing[pedalSelected] = "";
+                                        if (pedalConfig_read_st.payloadPedalConfig_.configHash_u32 == (uint)175245064)
+                                        {
+                                            // if pedal return DefaultConfig, clear the default setting and ask re send a default config in
+                                            Plugin.Settings.DefaultConfig[pedalSelected] = "";
+                                            Plugin._calculations.ConfigEditing[pedalSelected] = "";
+                                            ToastNotification($"No Default Config found in {PedalConstStrings.PedalID[pedalSelected]}", $"{PedalConstStrings.PedalID[pedalSelected]}: Please Set a Config as Default");
+
+                                        }
+                                        else
+                                        {
+                                            Plugin._calculations.ConfigEditing[pedalSelected] = Plugin.ConfigService.ConfigHashMap.GetFileName(pedalConfig_read_st.payloadPedalConfig_.configHash_u32);
+                                        }
+                                            
                                         Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                                         updateTheGuiFromConfig();
 

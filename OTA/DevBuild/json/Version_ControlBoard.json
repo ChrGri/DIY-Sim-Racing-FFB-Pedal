@@ -1,0 +1,68 @@
+{
+  "Configurations": [
+    {
+      "Board": "V3_ESP32",
+      "Version": "0.90.07",
+      "GHRelease": "Develop_Package_v20241102.083116",
+      "URL": "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/refs/heads/develop/OTA/DailyBuild/ControlBoard/esp32/firmware.bin",
+      "Chip": "ESP32-D0WD",
+      "Description": "V3 PCB"
+    },
+    {
+      "Board": "V4_ESP32S3",
+      "Version": "0.90.07",
+      "GHRelease": "Develop_Package_v20241102.083116",
+      "URL": "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/refs/heads/develop/OTA/DailyBuild/ControlBoard/esp32S3/firmware.bin",
+      "Chip": "ESP32-S3",
+      "Description": "V4 PCB"
+    },
+    {
+      "Board": "V5_ESP32S3_Without_Wireless",
+      "Version": "0.90.07",
+      "GHRelease": "Develop_Package_v20241102.083116",
+      "URL": "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/refs/heads/develop/OTA/DailyBuild/ControlBoard/esp32S3_V5_without_wireless/firmware.bin",
+      "Chip": "ESP32-S3",
+      "Description": "V5 PCB WITHOUT WIRELESS"
+    },
+    {
+      "Board": "V5_ESP32S3",
+      "Version": "0.90.07",
+      "GHRelease": "Develop_Package_v20241102.083116",
+      "URL": "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/refs/heads/develop/OTA/DailyBuild/ControlBoard/esp32S3_V5/firmware.bin",
+      "Chip": "ESP32-S3",
+      "Description": "V5 PCB WITH WIRELESS SUPPORT"
+    },
+    {
+      "Board": "Speedcrafter",
+      "Version": "0.90.07",
+      "GHRelease": "Develop_Package_v20241102.083116",
+      "URL": "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/refs/heads/develop/OTA/DailyBuild/ControlBoard/Speedcrafter/firmware.bin",
+      "Chip": "ESP32-D0WD",
+      "Description": "Speedcrafter"
+    },
+    {
+      "Board": "Gilphilbert_PCBAv1",
+      "Version": "0.90.07",
+      "GHRelease": "Develop_Package_v20241102.083116",
+      "URL": "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/refs/heads/develop/OTA/DailyBuild/ControlBoard/Gilphilbert_1_2/firmware.bin",
+      "Chip": "ESP32-S3",
+      "Description": "PCBA v1.x"
+    },
+	{
+      "Board": "Gilphilbert_PCBAv2",
+      "Version": "0.90.07",
+      "GHRelease": "Develop_Package_v20241102.083116",
+      "URL": "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/refs/heads/develop/OTA/DailyBuild/ControlBoard/Gilphilbert_2_0/firmware.bin",
+      "Chip": "ESP32-S3",
+      "Description": "PCBA v2.x(RC)"
+    },
+	{
+      "Board": "Gilphilbert_PCBAv2_Without_Wireless",
+      "Version": "0.90.07",
+      "GHRelease": "Develop_Package_v20241102.083116",
+      "URL": "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/refs/heads/develop/OTA/DailyBuild/ControlBoard/Gilphilbert_2_0_without_wireless/firmware.bin",
+      "Chip": "ESP32-S3",
+      "Description": "PCBA v2.x(RC) WITHOUT WIRELESS SUPPORT"
+    }
+  ]
+}

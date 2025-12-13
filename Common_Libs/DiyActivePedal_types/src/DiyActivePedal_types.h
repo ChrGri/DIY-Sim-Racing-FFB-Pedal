@@ -4,7 +4,7 @@
 #include "Arduino.h"
 #include "CubicInterpolatorFloat.h"
 // define the payload revision
-#define DAP_VERSION_CONFIG 162
+#define DAP_VERSION_CONFIG 163
 
 // define the payload types
 #define DAP_PAYLOAD_TYPE_CONFIG 100
@@ -304,6 +304,7 @@ struct payloadPedalConfig {
   uint8_t positionSmoothingFactor_u8;
   uint8_t minForceForEffects_u8;
   uint8_t servoRatioOfInertia_u8;
+  uint32_t configHash;
 
 };
 
@@ -320,8 +321,8 @@ struct payloadOtaInfo{
     uint8_t mode_select;
     uint8_t SSID_Length;
     uint8_t PASS_Length;
-    uint8_t WIFI_SSID[30];
-    uint8_t WIFI_PASS[30];
+    uint8_t WIFI_SSID[64];
+    uint8_t WIFI_PASS[64];
 };
 
 struct payloadAssignmentRequest{

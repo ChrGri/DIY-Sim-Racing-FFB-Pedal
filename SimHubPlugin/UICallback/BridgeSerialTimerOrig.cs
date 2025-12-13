@@ -587,7 +587,7 @@ namespace User.PluginSdkDemo
                                 // check whether receive struct is plausible
                                 DAP_config_st* v_config = &pedalConfig_read_st;
                                 byte* p_config = (byte*)v_config;
-
+                                UInt16 pedalSelected = pedalConfig_read_st.payloadHeader_.PedalTag;
                                 // payload type check
                                 bool check_payload_config_b = false;
                                 if (pedalConfig_read_st.payloadHeader_.payloadType == Constants.pedalConfigPayload_type)
@@ -601,7 +601,7 @@ namespace User.PluginSdkDemo
                                 {
                                     check_crc_config_b = true;
                                 }
-                                UInt16 pedalSelected = pedalConfig_read_st.payloadHeader_.PedalTag;
+                                
 
 
                                 if ((check_payload_config_b) && check_crc_config_b)
@@ -617,7 +617,19 @@ namespace User.PluginSdkDemo
                                     updateTheGuiFromConfig();
                                     TextBox_serialMonitor_bridge.Text += "Pedal:"+ pedalSelected + " Payload config payload check: " + check_payload_config_b+"\n";
                                     TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config crc check: " + check_crc_config_b + "\n";
-                                    Plugin._calculations.ConfigEditing[pedalSelected] = "";
+                                    if (pedalConfig_read_st.payloadPedalConfig_.configHash_u32 == (uint)175245064)
+                                    {
+                                        // if pedal return DefaultConfig, clear the default setting and ask re send a default config in
+                                        Plugin.Settings.DefaultConfig[pedalSelected] = "";
+                                        Plugin._calculations.ConfigEditing[pedalSelected] = "";
+                                        ToastNotification($"No Default Config found in Pedal{PedalConstStrings.PedalID[pedalSelected]}", $"{PedalConstStrings.PedalID[pedalSelected]}: Please Set a Config as Default");
+                                    }
+                                    else
+                                    {
+                                        Plugin._calculations.ConfigEditing[pedalSelected] = Plugin.ConfigService.ConfigHashMap.GetFileName(pedalConfig_read_st.payloadPedalConfig_.configHash_u32);
+                                    }
+                                    
+
                                     Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                                     continue;
                                 }

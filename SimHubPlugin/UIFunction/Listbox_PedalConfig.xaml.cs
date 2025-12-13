@@ -103,6 +103,7 @@ namespace User.PluginSdkDemo.UIFunction
                 tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
                 tmp.payloadHeader_.PedalTag = (byte)_plugin.Settings.table_selected;
                 tmp.payloadPedalConfig_.pedal_type = (byte)_plugin.Settings.table_selected;
+                tmp.payloadPedalConfig_.configHash_u32 = Plugin.ConfigService.ConfigHashMap.Fnv1aHash(nameGet+".json");
                 DAP_config_st* v = &tmp;
                 byte* p = (byte*)v;
                 tmp.payloadFooter_.checkSum = _plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
@@ -142,6 +143,7 @@ namespace User.PluginSdkDemo.UIFunction
 
 
                 tmp_config = _plugin.ConfigService.ReadConfig(item.FullPath);
+                tmp_config.payloadPedalConfig_.configHash_u32 = Plugin.ConfigService.ConfigHashMap.Fnv1aHash(item.FileName);
                 Plugin._calculations.ConfigEditing[Plugin.Settings.table_selected] = item.FileName;
                 Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                 tmp_config.payloadPedalConfig_.pedal_type = (byte)_plugin.Settings.table_selected;
@@ -178,6 +180,7 @@ namespace User.PluginSdkDemo.UIFunction
                 tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
                 tmp.payloadHeader_.PedalTag = (byte)_plugin.Settings.table_selected;
                 tmp.payloadPedalConfig_.pedal_type = (byte)_plugin.Settings.table_selected;
+                tmp.payloadPedalConfig_.configHash_u32 = Plugin.ConfigService.ConfigHashMap.Fnv1aHash(item.FileName);
                 DAP_config_st* v = &tmp;
                 byte* p = (byte*)v;
                 tmp.payloadFooter_.checkSum = _plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
@@ -213,7 +216,8 @@ namespace User.PluginSdkDemo.UIFunction
                 string nameGet = sideWindow.input;
                 //ItemList.Add(new ConfigListItem { ListName = nameGet });
                 //_plugin.wpfHandle.ToastNotification("Test", "New Config:" + nameGet);
-                Plugin._calculations.ConfigEditing[Plugin.Settings.table_selected] = nameGet+".json";
+                Plugin._calculations.ConfigEditing[Plugin.Settings.table_selected] = nameGet + ".json";
+
                 Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                 DAP_config_st tmp = _plugin.wpfHandle.dap_config_st[_plugin.Settings.table_selected];
 
@@ -225,6 +229,7 @@ namespace User.PluginSdkDemo.UIFunction
                 tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
                 tmp.payloadHeader_.PedalTag = (byte)_plugin.Settings.table_selected;
                 tmp.payloadPedalConfig_.pedal_type = (byte)_plugin.Settings.table_selected;
+                tmp.payloadPedalConfig_.configHash_u32 = Plugin.ConfigService.ConfigHashMap.Fnv1aHash(nameGet + ".json");
                 DAP_config_st* v = &tmp;
                 byte* p = (byte*)v;
                 tmp.payloadFooter_.checkSum = _plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
@@ -264,6 +269,7 @@ namespace User.PluginSdkDemo.UIFunction
                     Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                     DAP_config_st tmp = _plugin.ConfigService.ReadConfig(item.FullPath);
                     tmp.payloadHeader_.PedalTag = (byte)_plugin.Settings.table_selected;
+                    tmp.payloadPedalConfig_.configHash_u32 = Plugin.ConfigService.ConfigHashMap.Fnv1aHash(item.FileName);
                     tmp.payloadPedalConfig_.pedal_type = (byte)_plugin.Settings.table_selected;
                     tmp.payloadHeader_.storeToEeprom = (byte)1;
                     DAP_config_st* v = &tmp;

@@ -10,21 +10,6 @@ bool OTA_enable_b =false;
 bool OTA_status =false;
 bool beepForOtaProgress = false;
 bool OTA_enable_start=false;
-/*
-struct DAP_otaWifiInfo_st
-{ 
-    uint8_t payloadType;
-    uint8_t device_ID;
-    uint8_t wifi_action;
-    uint8_t mode_select;
-    uint8_t SSID_Length;
-    uint8_t PASS_Length;
-    uint8_t WIFI_SSID[30];
-    uint8_t WIFI_PASS[30];
-};
-*/
-
-//DAP_otaWifiInfo_st _dap_OtaWifiInfo_st;
 char* SSID;
 char* PASS;
 

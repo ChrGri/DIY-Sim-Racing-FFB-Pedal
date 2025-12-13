@@ -164,6 +164,7 @@ namespace User.PluginSdkDemo
         public byte minForceForEffects;
 
         public byte servoRatioOfInertia_u8;
+        public UInt32 configHash_u32;
 
     }
 }
