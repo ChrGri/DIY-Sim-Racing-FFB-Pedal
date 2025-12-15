@@ -335,11 +335,10 @@ char* APhost;
   */
 #endif
 
-#ifdef USING_BUZZER
-  #include "Buzzer.h"
-  bool buzzerBeepAction_b = false;
-  
-#endif
+
+#include "Buzzer.h"
+Simple_Buzzer Buzzer;
+bool buzzerBeepAction_b = false;
 #include <cstring>
 
 
@@ -789,11 +788,10 @@ void setup()
     pixels.setPixelColor(0,0xff,0xff,0xff);
     pixels.show(); 
   #endif
-  
-  #ifdef USING_BUZZER
-    Buzzer.initialized(BuzzerPin,1);
-    Buzzer.single_beep_tone(770,100);
-  #endif
+
+  Buzzer.initialized(BuzzerPin, 1);
+  Buzzer.single_beep_tone(770, 100);
+
 
   parse_version(DAP_FIRMWARE_VERSION, &versionMajor, &versionMinor, &versionPatch);
   ActiveSerial->println(" ");
@@ -1259,32 +1257,8 @@ xTaskCreatePinnedToCore(
       pixels.show(); 
       //delay(3000);
   #endif
-
-  #ifdef USING_BUZZER
-    if(dap_config_st_local.payLoadPedalConfig_.pedal_type==PEDAL_ID_CLUTCH)
-    {
-      delay(500);
-      Buzzer.single_beep_ledc_fade(NOTE_D4,3072,1);
-      //Buzzer.single_beep_ledc_fade(NOTE_A4,1536,0.5);
-    }
-    if(dap_config_st_local.payLoadPedalConfig_.pedal_type==PEDAL_ID_BRAKE)
-    {
-      Buzzer.single_beep_ledc_fade(NOTE_A4,3072,1);
-    }    
-    if(dap_config_st_local.payLoadPedalConfig_.pedal_type==PEDAL_ID_THROTTLE)
-    {
-      delay(500);
-      //Buzzer.single_beep_ledc_fade(NOTE_A4,1536,0.5);
-      Buzzer.single_beep_ledc_fade(NOTE_D4,3072,1);
-    }
-    if(dap_config_st_local.payLoadPedalConfig_.pedal_type==PEDAL_ID_UNKNOWN)    
-    {
-      Buzzer.single_beep_tone(770, 100);
-    }
-    //Buzzer.single_beep_tone(440,1500);
-  #endif
-
-    // stepper->pauseTask();
+  
+  Buzzer.InitializedSound((int)dap_config_st_local.payLoadPedalConfig_.pedal_type);
 
 }
 
@@ -1813,11 +1787,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // wakeup process
       if ((filteredReading > STEPPER_WAKEUP_FORCE) && (stepper->servoStatus == SERVO_IDLE_NOT_CONNECTED))
       {
-        #ifdef USING_BUZZER
-          Buzzer.single_beep_tone(770, 100);
-          delay(300);
-          Buzzer.single_beep_tone(770, 100);
-        #endif
+        Buzzer.single_beep_tone(770, 100);
+        delay(300);
+        Buzzer.single_beep_tone(770, 100);
         ActiveSerial->println("Wake up servo, restart esp.");
         delay(1000);
         ESP.restart();
@@ -1829,17 +1801,13 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       {
         stepper->servoIdleAction();
         stepper->servoStatus = SERVO_IDLE_NOT_CONNECTED;
-        #ifdef USING_BUZZER
-          Buzzer.single_beep_tone(770, 100);
-        #endif
+        Buzzer.single_beep_tone(770, 100);
         delay(300);
         #ifdef USING_LED
           pixels.setPixelColor(0, 0xff, 0x00, 0x00); // show red
           pixels.show();
         #endif
-        #ifdef USING_BUZZER
-          Buzzer.single_beep_tone(770, 100);
-        #endif
+        Buzzer.single_beep_tone(770, 100);
         ActiveSerial->println("Servo idle timeout reached. To restart pedal, please apply pressure.");
       }
       //emergency button
@@ -1849,17 +1817,13 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         {
           stepper->servoIdleAction();
           stepper->servoStatus = SERVO_FORCE_STOP;
-          #ifdef USING_BUZZER
-            Buzzer.single_beep_tone(770, 100);
-          #endif
+          Buzzer.single_beep_tone(770, 100);
           delay(300);
           #ifdef USING_LED
             pixels.setPixelColor(0, 0xff, 0x00, 0x00); // show red
             pixels.show();
           #endif
-          #ifdef USING_BUZZER
-            Buzzer.single_beep_tone(770, 100);
-          #endif
+          Buzzer.single_beep_tone(770, 100);
           ActiveSerial->println("Servo force Stoped.");
         }
       #endif
@@ -1999,9 +1963,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
                 ActiveSerial->println("Rudder initialized");
                 dap_calculationVariables_st.isRudderInitialized=true;
                 Rudder_initialized_time=0;
-                #ifdef USING_BUZZER
-                  Buzzer.play_melody_tone(melody_Airship_theme, sizeof(melody_Airship_theme)/sizeof(melody_Airship_theme[0]),melody_Airship_theme_duration);
-                #endif
+                Buzzer.play_melody_tone(melody_Airship_theme, sizeof(melody_Airship_theme)/sizeof(melody_Airship_theme[0]),melody_Airship_theme_duration);
               }
             }
             
@@ -2047,9 +2009,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
                 ActiveSerial->println("HeliRudder initialized");
                 dap_calculationVariables_st.isHelicopterRudderInitialized=true;
                 Rudder_initialized_time=0;
-                #ifdef USING_BUZZER
-                  Buzzer.play_melody_tone(melodyAirwolfTheme, sizeof(melodyAirwolfTheme)/sizeof(melodyAirwolfTheme[0]),melodyAirwolfThemeDuration);
-                #endif
+                Buzzer.play_melody_tone(melodyAirwolfTheme, sizeof(melodyAirwolfTheme)/sizeof(melodyAirwolfTheme[0]),melodyAirwolfThemeDuration);
               }
             }
           }
@@ -2572,9 +2532,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                         xQueueSend(configUpdateAvailableQueue, &configPackage_st, portMAX_DELAY);
                         
                         if (received_config.payLoadHeader_.storeToEeprom == 1) {
-                              #ifdef USING_BUZZER
-                            Buzzer.single_beep_tone(700, 100);
-                            #endif
+                          Buzzer.single_beep_tone(700, 100);
                         }
                       }
                       break;
@@ -2774,9 +2732,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                   case DAP_PAYLOAD_TYPE_ACTION_OTA:{
                     memcpy(&dap_action_ota_st, packet_start, sizeof(DAP_action_ota_st));
                     ActiveSerial->println("Get OTA command");
-                    #ifdef USING_BUZZER
-                      buzzerBeepAction_b=true;
-                    #endif
+                    buzzerBeepAction_b=true;
 
                     //ActiveSerial->readBytes((char*)&dap_action_ota_st, sizeof(DAP_action_ota_st));
                     #ifdef OTA_update
@@ -2967,9 +2923,7 @@ void otaUpdateTask( void * pvParameters )
           #ifdef OTA_update
             if(OTA_update_status==0)
             {
-              #ifdef USING_BUZZER
-                Buzzer.play_melody_tone(melody_victory_theme, sizeof(melody_victory_theme)/sizeof(melody_victory_theme[0]),melody_durations_Victory_theme);              
-              #endif
+              Buzzer.play_melody_tone(melody_victory_theme, sizeof(melody_victory_theme)/sizeof(melody_victory_theme[0]),melody_durations_Victory_theme);              
               ESP.restart();
             }
             else
@@ -2988,9 +2942,7 @@ void otaUpdateTask( void * pvParameters )
               else
               {
                 //show ota error
-                #ifdef USING_BUZZER
-                  Buzzer.single_beep_tone(770,100);
-                #endif
+                Buzzer.single_beep_tone(770,100);
                 #ifdef USING_LED
                   pixels.setPixelColor(0,0xff,0x00,0x00);//red
                   pixels.show(); 
@@ -3027,9 +2979,7 @@ void otaUpdateTask( void * pvParameters )
           if(result==ESP_OK)
           {
             OTA_status=true;
-            #ifdef USING_BUZZER
-              Buzzer.single_beep_tone(700,100);
-            #endif 
+            Buzzer.single_beep_tone(700,100); 
             delay(1000);
             #ifdef OTA_update_ESP32
             ota_wifi_initialize(APhost);
@@ -3256,9 +3206,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
                 ActiveSerial->print("Pedal: ");
                 ActiveSerial->print(espnow_dap_config_st.payLoadPedalConfig_.pedal_type);
                 ActiveSerial->println(" timeout.");
-                #ifdef USING_BUZZER
-                  Buzzer.single_beep_tone(700,100);
-                #endif 
+                Buzzer.single_beep_tone(700,100);
                 if(UpdatePairingToEeprom)
                 {
                   EEPROM.put(EEPROM_offset,_ESP_pairing_reg);
@@ -3450,9 +3398,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
           if (OTA_update_action_b && !noAssignmentStatus)
           {
             ActiveSerial->println("Starting Pedal OTA");
-            #ifdef USING_BUZZER
-              buzzerBeepAction_b=true;
-            #endif
+            buzzerBeepAction_b=true;
             OTA_enable_b=true;
             OTA_enable_start=true;
             ESPNow_OTA_enable=false;
@@ -3482,9 +3428,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
           if (printPedalInfo_b && !noAssignmentStatus)
           {
             printPedalInfo_b=false;
-            #ifdef USING_BUZZER
-              buzzerBeepAction_b=true;
-            #endif
+            buzzerBeepAction_b=true;
             delay(100);
             pedalInfoBuilder.BuildInfoString(espnow_dap_config_st.payLoadPedalConfig_.pedal_type, CONTROL_BOARD, loadcell->getShiftingEstimate(), loadcell->getSTDEstimate(), ((float)stepper->getServosVoltage()/10.0f),dap_calculationVariables_st.stepperPosMaxEndstop,dap_calculationVariables_st.current_pedal_position);
             sendESPNOWLog(pedalInfoBuilder.logString);
@@ -3498,18 +3442,12 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
           if (Get_Rudder_action_b && !noAssignmentStatus)
           {
             Get_Rudder_action_b=false;
-            
-            #ifdef USING_BUZZER
             Buzzer.single_beep_tone(700,100);
-            #endif
           }
           if (Get_HeliRudder_action_b && !noAssignmentStatus)
           {
             Get_HeliRudder_action_b=false;
-            
-            #ifdef USING_BUZZER
             Buzzer.single_beep_tone(700,100);
-            #endif
           }
           if (ESPNOW_BootIntoDownloadMode && !noAssignmentStatus)
           {
@@ -3637,21 +3575,19 @@ void miscTask( void * pvParameters )
         ESP.restart();
       }
 #endif
-    #ifdef USING_BUZZER
     // make buzzer sound actions here
-      #ifdef ESPNOW_Enable
-        if (Config_update_Buzzer_b)
-        {
-          Buzzer.single_beep_tone(700, 50);
-          Config_update_Buzzer_b = false;
-        }
-        if (assignmentUpdateBuzzer_b)
-        {
-          ActiveSerial->println("Beep");
-          Buzzer.single_beep_tone(700, 50);
-          assignmentUpdateBuzzer_b = false;
-        }
-      #endif
+    #ifdef ESPNOW_Enable
+      if (Config_update_Buzzer_b)
+      {
+        Buzzer.single_beep_tone(700, 50);
+        Config_update_Buzzer_b = false;
+      }
+      if (assignmentUpdateBuzzer_b)
+      {
+        ActiveSerial->println("Beep");
+        Buzzer.single_beep_tone(700, 50);
+        assignmentUpdateBuzzer_b = false;
+      }
       if(buzzerBeepAction_b)
       {
         Buzzer.single_beep_tone(700,50);
