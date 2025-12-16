@@ -116,13 +116,13 @@
 
                     <Label Content="{Binding CurrentProfileName}" Height="20" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" FontSize="14"/>
                     <StackPanel Orientation="Horizontal" ToolTip="Please populate the string value for Car ID. You can retrieve this string value from the following properties: DataCorePlugin.GameData.CarId." >
-                        <Label Content="Car ID:" Height="25" Width="70" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="0,5,0,5"/>
+                        <Label Content="Game or Car ID:" Height="25" Width="90" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="0,5,0,5"/>
                         <TextBox Text="{Binding tmpProfile.BindGameOrCar, Mode=TwoWay}" Height="20" MinHeight="20" Width="200" FontFamily="Arial" FontSize="10" VerticalContentAlignment="Center" BorderThickness="0,0,0,0" Margin="5,0,0,0" />
                         <styles:SHButtonPrimary x:Name="Btn_ClearCarName" Click="Btn_ClearCarName_Click" Width="30" Content="Clear" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <StackPanel Orientation="Horizontal">
-                            <Label Content="Clutch:" Height="20" Width="70" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
+                            <Label Content="Clutch:" Height="20" Width="90" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
                             <ComboBox ItemsSource="{Binding ConfigList}"
                                   DisplayMemberPath="ListNameOrig"  
                                   SelectedValuePath="FullPath"    
@@ -145,7 +145,7 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                            <Label Content="Brake:" Height="20" Width="70" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" Padding="0,5,0,5"/>
+                            <Label Content="Brake:" Height="20" Width="90" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" Padding="0,5,0,5"/>
                             <ComboBox ItemsSource="{Binding ConfigList}"
                                   DisplayMemberPath="ListNameOrig"  
                                   SelectedValuePath="FullPath"    
@@ -168,7 +168,7 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                         <StackPanel Orientation="Horizontal">
-                            <Label Content="Throttle:" Height="20" Width="70" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" VerticalContentAlignment="Center" Padding="0,5,0,5"/>
+                            <Label Content="Throttle:" Height="20" Width="90" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" VerticalContentAlignment="Center" Padding="0,5,0,5"/>
                             <ComboBox ItemsSource="{Binding ConfigList}"
                                   DisplayMemberPath="ListNameOrig"  
                                   SelectedValuePath="FullPath"    

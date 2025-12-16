@@ -91,10 +91,12 @@ namespace User.PluginSdkDemo
         public bool[] isCdcSerial = new bool[3] { false, false, false };
         public List<VidPidResult> comportList = new List<VidPidResult>();
         private const float actionIntervalTolerance = 0.5f;
-        bool flightRpmEffectsStatus_last = false;
-        bool flightGforceEffects_last = false;
+        public bool flightRpmEffectsStatus_last = false;
+        public bool flightGforceEffects_last = false;
+        public bool IsGameChanged = true;
         public ProfileService ProfileServicePlugin;
         public ConfigListService ConfigService;
+        public string currentGame= null;
         //public vJoyInterfaceWrap.vJoy joystick;
         
         //effect trigger timer
@@ -499,11 +501,21 @@ namespace User.PluginSdkDemo
             // Send ABS signal when triggered by the game
             if (data.GameRunning)
             {
+                Current_Game = data.GameName;//(string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame");
+                currentGame = data.GameName;
                 if (Settings.profileAutoChange)
                 {
-                    ProfileServicePlugin.ApplyProfileAuto(data.NewData.CarId);
+                    if (PedalConstStrings.AutoProfileSwitchGameList.Contains(Current_Game) && IsGameChanged)
+                    {
+                        //set default game profile first;
+                        ProfileServicePlugin.ApplyProfileAutoForGame(data.GameName);
+                        IsGameChanged = false;
+                    }
+                    //overwrite with car profile
+                    ProfileServicePlugin.ApplyProfileAutoForCar(data.NewData.CarId);
+
                 }
-                Current_Game=(string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame");
+                
                 //load surface condition
                 TrackSurfaceCondition = 0;
                 if (Current_Game == "IRacing")

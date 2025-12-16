@@ -129,5 +129,24 @@ namespace User.PluginSdkDemo
         public static readonly string[] BridgeConnectState = new string[] { "Disconnected", "Connecting", "Connected"};
         public static readonly string[] PedalID = new string[] { "Clutch", "Brake", "Throttle", "None", "Bridge" };
         public static readonly string[] ServoStatus = new string[] { "Off", "On", "Idle", "Force Stop" };
+        public static readonly List<string> AutoProfileSwitchGameList = new List<string>()
+        {
+            "AssettoCorsaEVO",
+            "AssettoCorsa",
+            "AssettoCorsaCompetizione",
+            "AssettoCorsaRally",
+            "IRacing",
+            "LMU",
+            "EAWRC23",
+            "ProjectMotorRacing",
+            "CodemastersDirtRally2",
+            "FM8",
+            "FH4",
+            "FH5",
+            "BeamNgDrive",
+            "GranTurismo7",
+            "RBR"
+
+        };
     }
 }

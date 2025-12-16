@@ -157,6 +157,29 @@ namespace User.PluginSdkDemo
             {
                 count_timmer_count = 2;
             }
+            // game config auto switch
+            bool gameProfileChanged = false;
+            for (int i = 0; i < 3; i++)
+            {
+                if (Plugin.ProfileServicePlugin.GamePofileConfigChange_b[i]
+                    && (Plugin._calculations.pedalWirelessStatus[i] == WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY ||
+                    Plugin._calculations.pedalSerialStatus[i] == ConnectStateEnum.PEDAL_IS_READY))
+                {
+                    Plugin.SendConfigWithoutSaveToEEPROM(Plugin.ProfileServicePlugin.ConfigBuffer[i], (byte)i);
+                    Plugin._calculations.ConfigEditing[i] = Plugin.ConfigService.ConfigList.FirstOrDefault(item => item.FullPath == Plugin.ProfileServicePlugin.GameConfigPathBuffer[i]).FileName;
+                    Plugin.ProfileServicePlugin.GamePofileConfigChange_b[i] = false;
+                    if (!Plugin.ProfileServicePlugin.GamePofileConfigChange_b[0] && !Plugin.ProfileServicePlugin.GamePofileConfigChange_b[1] && !Plugin.ProfileServicePlugin.GamePofileConfigChange_b[2])
+                    {
+                        gameProfileChanged = true;
+                    }
+                }
+            }
+            if(gameProfileChanged)
+            {
+                ToastNotification("Pedal Profile Switch", $"Profile switched to: {Plugin.ProfileServicePlugin.CurrentGameProfile} according to the game: {Plugin.currentGame}");
+            }
+
+
             updateTheGuiFromConfig();
             string tmpPedalStatusChange = "";
             bool pedalConnectedToast = false;
