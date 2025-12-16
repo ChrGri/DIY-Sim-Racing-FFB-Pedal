@@ -104,6 +104,7 @@ namespace User.PluginSdkDemo.UIFunction
         {
             try
             {
+                /*
                 if (Settings != null)
                 {
                     if (Settings.table_selected != 1)
@@ -114,7 +115,7 @@ namespace User.PluginSdkDemo.UIFunction
                     {
                         if (Rangeslider_force_range != null) Rangeslider_force_range.Maximum = 200;
                     }
-                }
+                }*/
             }
             catch
             {
