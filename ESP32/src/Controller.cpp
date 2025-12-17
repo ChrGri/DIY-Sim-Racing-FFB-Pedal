@@ -42,24 +42,24 @@ void SetupController_USB(uint8_t pedal_ID)
   switch(pedal_ID)
   {
     case 0:
-      PID=0x8214;
+      PID=0x8332;
       APname="FFB_Pedal_Clutch";
       break;
     case 1:
-      PID=0x8215;
+      PID=0x8333;
       APname="FFB_Pedal_Brake";
       break;
     case 2:
-      PID=0x8216;
+      PID=0x8334;
       APname="FFB_Pedal_Throttle";
       break;
     default:
-      PID=0x8217;
+      PID=0x8332;
       APname="FFB_Pedal_NOASSIGNMENT";
       break;
 
   }
-  int VID= 0x35;
+  int VID= 0x303A;
   joystick_.setVidPidProductVendorDescriptor(VID,PID, APname, "OpenSource");
   joystick_.setRxAxisRange(JOYSTICK_AXIS_MINIMUM, JOYSTICK_AXIS_MAXIMUM);
   joystick_.begin();

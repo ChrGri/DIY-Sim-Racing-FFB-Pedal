@@ -28,8 +28,8 @@ Joystick_ tinyusbJoystick_(JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_JOYSTICK,
 void SetupController()
 {
     
-    int PID = 0x8213;
-    int VID = 0x3035;
+    int PID = 0x8331;
+    int VID = 0x303A;
     tinyusbJoystick_.setVidPidProductVendorDescriptor(VID,PID,"DIY_FFB_PEDAL_JOYSTICK","OpenSource");    
     tinyusbJoystick_.setRxAxisRange(JOYSTICK_MIN_VALUE, JOYSTICK_MAX_VALUE);
     tinyusbJoystick_.setRyAxisRange(JOYSTICK_MIN_VALUE, JOYSTICK_MAX_VALUE);
