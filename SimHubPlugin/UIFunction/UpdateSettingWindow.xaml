@@ -13,12 +13,12 @@
                 <Label Content="Update Setting" Height="15" Width="200" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left"/>
                 <StackPanel HorizontalAlignment="Left" Height="25" VerticalAlignment="Center" Width="400" Grid.Column="1" Grid.Row="5" Orientation="Horizontal">
                     <Label x:Name="Label_SsidName" Content="SSID:" Height="15" Width="40" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="2,0,0,0" FontSize="10"/>
-                    <TextBox x:Name="textbox_SSID" TextChanged="textbox_SSID_TextChanged" Height="20" Width="150" Padding="0,0,0,0" FontFamily="Arial" HorizontalAlignment="Left" BorderThickness="0,0,0,0" MaxLength="30" MinHeight="15" FontSize="10"/>
+                    <TextBox x:Name="textbox_SSID" TextChanged="textbox_SSID_TextChanged" Height="20" Width="150" Padding="0,0,0,0" FontFamily="Arial" HorizontalAlignment="Left" BorderThickness="0,0,0,0" MaxLength="64" MinHeight="15" FontSize="10"/>
                     <Label x:Name="Label_SSID" Content=""  Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="2,0,0,0"/>
                 </StackPanel>
                 <StackPanel HorizontalAlignment="Left" Height="25" VerticalAlignment="Top" Width="400" Grid.Column="1" Grid.Row="5" Orientation="Horizontal">
                     <Label x:Name="Label_PassName" Content="PASS:" Height="15" Width="40" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="2,0,0,0" FontSize="10"/>
-                    <PasswordBox x:Name="textbox_PASS"   PasswordChanged="textbox_PASS_PasswordChanged" Height="20" Width="150" Padding="0,0,0,0" FontFamily="Arial" HorizontalAlignment="Left" BorderThickness="0,0,0,0" MaxLength="30" MinHeight="15" VerticalAlignment="Center"/>
+                    <PasswordBox x:Name="textbox_PASS"   PasswordChanged="textbox_PASS_PasswordChanged" Height="20" Width="150" Padding="0,0,0,0" FontFamily="Arial" HorizontalAlignment="Left" BorderThickness="0,0,0,0" MaxLength="64" MinHeight="15" VerticalAlignment="Center"/>
                     <Label x:Name="Label_PASS" Content="" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="2,0,0,0"/>
                 </StackPanel>
                 <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal" Width="400" Height="20">
