@@ -1,14 +1,7 @@
 #include "JoystickController.h"
 uint8_t* hidDescriptorBufferForCheck = nullptr; 
 uint16_t reportSize=0;
-Joystick_ tinyusbJoystick_(
-    JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_JOYSTICK,
-    0, 0,                // Button Count, Hat Switch Count
-    true, true, true,    // X, Y, Z Axis
-    true, true, true,    // Rx, Ry, Rz
-    false, false,        // No rudder or throttle
-    false, false, false  // No accelerator, brake, or steering
-);
+
 //#include "Main.h"
 uint16_t NormalizeControllerOutputValue(float value, float minVal, float maxVal, float maxGameOutput)
 {
@@ -26,7 +19,14 @@ uint16_t NormalizeControllerOutputValue(float value, float minVal, float maxVal,
 
 #ifdef USB_JOYSTICK
 //TinyusbJoystick tinyusbJoystick_;
-
+Joystick_ tinyusbJoystick_(
+    JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_JOYSTICK,
+    0, 0,                // Button Count, Hat Switch Count
+    true, true, true,    // X, Y, Z Axis
+    true, true, true,    // Rx, Ry, Rz
+    false, false,        // No rudder or throttle
+    false, false, false  // No accelerator, brake, or steering
+);
 
 void SetupController()
 {

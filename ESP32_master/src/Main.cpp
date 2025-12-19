@@ -200,6 +200,7 @@ void setup()
   #ifdef USB_JOYSTICK
     ActiveSerial->println("[L]Setup controller");
     SetupController();
+    /*
     ActiveSerial->print("[L]HID descriptor Size:");
     ActiveSerial->println(reportSize);
     ActiveSerial->print("[L]HID descriptor:");
@@ -211,7 +212,8 @@ void setup()
       ActiveSerial->print("-");
 
     }
-    ActiveSerial->print("");
+    ActiveSerial->println("");
+    */
   #endif
   //create message queue
   messageQueueHandle = xQueueCreate(10, sizeof(ESPNOW_Message));

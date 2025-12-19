@@ -1469,6 +1469,12 @@ namespace User.PluginSdkDemo
             UpdateSettingWindow sideWindow = new UpdateSettingWindow(Plugin.Settings, Plugin._calculations);
             double screenWidth = SystemParameters.PrimaryScreenWidth;
             double screenHeight = SystemParameters.PrimaryScreenHeight;
+            sideWindow.Label_PassName.Visibility= Visibility.Hidden;
+            sideWindow.textbox_PASS.Visibility= Visibility.Hidden;
+            sideWindow.Label_PASS.Visibility= Visibility.Hidden;
+            sideWindow.Label_SsidName.Visibility= Visibility.Hidden;
+            sideWindow.textbox_SSID.Visibility= Visibility.Hidden;
+            sideWindow.Label_SSID.Visibility= Visibility.Hidden;
             sideWindow.Left = screenWidth / 2 - sideWindow.Width / 2;
             sideWindow.Top = screenHeight / 2 - sideWindow.Height / 2;
             if (sideWindow.ShowDialog() == true)
@@ -1486,7 +1492,7 @@ namespace User.PluginSdkDemo
                         MSG_tmp += "Dev-Build channel. ";
                         break;
                     default:
-                        downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/main/OTA/Plugin/DiyActivePedal.dll";
+                        downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyActivePedal.dll";
                         MSG_tmp += "Mainline release channel. ";
                         break;
                 }
