@@ -19,6 +19,7 @@ using System.Runtime;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -96,6 +97,7 @@ namespace User.PluginSdkDemo
         public bool IsGameChanged = true;
         public ProfileService ProfileServicePlugin;
         public ConfigListService ConfigService;
+        public HidDeviceController BridgeHidService;
         public string currentGame= null;
         //public vJoyInterfaceWrap.vJoy joystick;
         
@@ -258,6 +260,19 @@ namespace User.PluginSdkDemo
             return myBuffer;
         }
 
+        public byte[] getBytes_HidMessage(Dap_hidmessage_st aux)
+        {
+            int length = Marshal.SizeOf(aux);
+            IntPtr ptr = Marshal.AllocHGlobal(length);
+            byte[] myBuffer = new byte[length];
+
+            Marshal.StructureToPtr(aux, ptr, true);
+            Marshal.Copy(ptr, myBuffer, 0, length);
+            Marshal.FreeHGlobal(ptr);
+
+            return myBuffer;
+        }
+
         public byte[] getBytes_Action_Ota(DAP_action_ota_st aux)
         {
             int length = Marshal.SizeOf(aux);
@@ -299,165 +314,7 @@ namespace User.PluginSdkDemo
             return value;
         }
 
-        unsafe public void SendPedalAction(DAP_action_st action_tmp, Byte PedalID)
-        {
-            
-            action_tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
-            action_tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
-            action_tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
-            action_tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
-            action_tmp.payloadHeader_.PedalTag = PedalID;
-            DAP_action_st* v = &action_tmp;
-            byte* p = (byte*)v;
-            action_tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
-            int length = sizeof(DAP_action_st);
-            byte[] newBuffer = new byte[length];
-            newBuffer = getBytes_Action(action_tmp);
-            try
-            {
-                if (Settings.Pedal_ESPNow_Sync_flag[PedalID])
-                {
-                    if (ESPsync_serialPort.IsOpen)
-                    {
-                        ESPsync_serialPort.DiscardInBuffer();
-                        ESPsync_serialPort.DiscardOutBuffer();
-                        // send query command
-                        ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
-                    }
-                }
-                else
-                {
-                    
-                    if (_serialPort[PedalID].IsOpen)
-                    {
-                        
-                        // clear inbuffer 
-                        _serialPort[PedalID].DiscardInBuffer();
-                        _serialPort[PedalID].DiscardOutBuffer();
-                        // send data
-                        _serialPort[PedalID].Write(newBuffer, 0, newBuffer.Length);
-                    }
-                }
-            }
-            catch (Exception caughtEx)
-            {
-                string errorMessage = caughtEx.Message;
-                SimHub.Logging.Current.Error("FFB_Pedal_Action_Sending_error:"+errorMessage);
-            }
-
-        }
-        unsafe public void SendPedalActionWireless(DAP_action_st action_tmp, Byte PedalID)
-        {
-
-            action_tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
-            action_tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
-            action_tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
-            action_tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
-            action_tmp.payloadHeader_.PedalTag = PedalID;
-            action_tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
-            action_tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
-            DAP_action_st* v = &action_tmp;
-            byte* p = (byte*)v;
-            action_tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
-            int length = sizeof(DAP_action_st);
-            byte[] newBuffer = new byte[length];
-            newBuffer = getBytes_Action(action_tmp);
-            try
-            {
-                if (ESPsync_serialPort.IsOpen)
-                {
-                    ESPsync_serialPort.DiscardInBuffer();
-                    ESPsync_serialPort.DiscardOutBuffer();
-                    ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
-                }
-            }
-            catch (Exception caughtEx)
-            {
-                string errorMessage = caughtEx.Message;
-                SimHub.Logging.Current.Error("FFB_Pedal_Action_Sending_Wireless_error:" + errorMessage);
-            }
-
-        }
-
-        unsafe public void SendConfig(DAP_config_st tmp, byte PedalIDX)
-        {
-            tmp.payloadHeader_.PedalTag = PedalIDX;
-            tmp.payloadHeader_.payloadType = (byte)Constants.pedalConfigPayload_type;
-            tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
-            tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
-            tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
-            tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
-            tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
-            tmp.payloadPedalConfig_.pedal_type = PedalIDX;
-            DAP_config_st* v = &tmp;
-            byte* p = (byte*)v;
-            tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
-            int length = sizeof(DAP_config_st);
-            //int val = this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.checkSum;
-            //string msg = "CRC value: " + val.ToString();
-            byte[] newBuffer = new byte[length];
-            newBuffer = getBytesConfig(tmp);
-            if (Settings.Pedal_ESPNow_Sync_flag[PedalIDX])
-            {
-                if (ESPsync_serialPort.IsOpen)
-                {
-                    try
-                    {
-                        ESPsync_serialPort.DiscardInBuffer();
-                        ESPsync_serialPort.DiscardOutBuffer();
-                        // send data
-                        ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
-                        //Plugin._serialPort[indexOfSelectedPedal_u].Write("\n");
-                        System.Threading.Thread.Sleep(100);
-
-                    }
-                    catch (Exception caughtEx)
-                    {
-                        string errorMessage = caughtEx.Message;
-                        SimHub.Logging.Current.Error("FFB_Pedal_Config_Sending_error:" + errorMessage);
-                    }
-                }
-            }
-            else
-            {
-                if (_serialPort[PedalIDX].IsOpen)
-                {
-
-                    // clear inbuffer 
-                    _serialPort[PedalIDX].DiscardInBuffer();
-                    _serialPort[PedalIDX].DiscardOutBuffer();
-                    // send data
-                    _serialPort[PedalIDX].Write(newBuffer, 0, newBuffer.Length);
-                }
-            }
-        }
-
-        unsafe public void SendConfigWithoutSaveToEEPROM(DAP_config_st tmp, byte PedalIDX)
-        {
-            tmp.payloadHeader_.storeToEeprom = 0;
-            tmp.payloadHeader_.PedalTag=PedalIDX;
-            tmp.payloadHeader_.payloadType = (byte)Constants.pedalConfigPayload_type;
-            tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
-            tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
-            tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
-            tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
-            tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
-            tmp.payloadPedalConfig_.pedal_type = PedalIDX;
-            DAP_config_st* v = &tmp;
-            byte* p = (byte*)v;
-            tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
-            bool wirelessUpdate = false;
-            bool serialUpdate = false;
-            if (_calculations.pedalWirelessStatus[PedalIDX] == WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY)
-            {
-                wirelessUpdate = true;
-            }
-            if (!wirelessUpdate && _calculations.pedalSerialStatus[PedalIDX] == ConnectStateEnum.PEDAL_IS_READY)
-            {
-                serialUpdate = true;
-            }
-            if(serialUpdate || wirelessUpdate) SendConfig(tmp, PedalIDX);
-        }
+        
         unsafe public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
 			
@@ -996,7 +853,7 @@ namespace User.PluginSdkDemo
                     TimeSpan diff_action =  DateTime.Now - Action_lastTime[PIDX];
                     int millisceonds_action = (int)diff_action.TotalMilliseconds;
                     float time_interval = (1000.0f / Settings.Pedal_action_fps[PIDX]) - actionIntervalTolerance;
-                    if ( millisceonds_action> 100)
+                    if ( millisceonds_action> 30)
                     {
                         Action_lastTime[PIDX] = DateTime.Now;
                         update_b = true;
@@ -1014,6 +871,7 @@ namespace User.PluginSdkDemo
                         byte* p = (byte*)v;
                         tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
                         SendPedalAction(tmp, (byte)PIDX);
+                        Task.Delay(2);
                     }
 
                 }
@@ -1402,7 +1260,7 @@ namespace User.PluginSdkDemo
         {           
             // Save settings
             this.SaveCommonSettings("GeneralSettings", Settings);
-
+            BridgeHidService.Dispose();
             // close serial communication
             if (wpfHandle != null)
             {
@@ -1486,6 +1344,7 @@ namespace User.PluginSdkDemo
             pluginManager.AddProperty("FlightRudder_Wind_Force", this.GetType(), Rudder_Wind_Force_last_value);
             ProfileServicePlugin = new ProfileService(this);
             ConfigService = new ConfigListService(this);
+            BridgeHidService = new HidDeviceController(Constants.VendorId, Constants.BridgePid, Constants.TargetUsagePage);
             EnsureFolderExistsAndProcess();
             DefaultConfigInitializing();
             DefaultProfile = new DAP_system_profile_cls();

@@ -9,7 +9,7 @@ using System.Windows.Data;
 namespace User.PluginSdkDemo
 {
     //[StructLayout(LayoutKind.Sequential, Pack = 1)]
-    
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     unsafe public struct payloadPedalConfig
     {
         // configure pedal start and endpoint

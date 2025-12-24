@@ -58,6 +58,10 @@
       <HintPath>..\..\..\SimHub\GameReaderCommon.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="HidSharp, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files (x86)\SimHub\HidSharp.dll</HintPath>
+    </Reference>
     <Reference Include="InputManagerCS, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\InputManagerCS.dll</HintPath>
@@ -160,6 +164,8 @@
     <Compile Include="PluginCallback\ConfigListService.cs" />
     <Compile Include="PluginCallback\DefaultConfig.cs" />
     <Compile Include="PluginCallback\FileIoHelper.cs" />
+    <Compile Include="PluginCallback\HidService.cs" />
+    <Compile Include="PluginCallback\PedalIoCallback.cs" />
     <Compile Include="PluginCallback\PluginMiscHelper.cs" />
     <Compile Include="PluginCallback\ProfileService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -176,6 +182,7 @@
     <Compile Include="UICallback\BridgeSerialTimerOrig.cs" />
     <Compile Include="UICallback\btnCallbacks.cs" />
     <Compile Include="UICallback\comPortHelper.cs" />
+    <Compile Include="UICallback\HidRecieveCallback.cs" />
     <Compile Include="UICallback\profileListHelper.cs" />
     <Compile Include="UICallback\configListHelper.cs" />
     <Compile Include="UICallback\others.cs" />
@@ -309,6 +316,7 @@
     <Compile Include="VariablesStruct\DAP_action_st.cs" />
     <Compile Include="VariablesStruct\DAP_bridge_state_st.cs" />
     <Compile Include="VariablesStruct\DAP_config_st.cs" />
+    <Compile Include="VariablesStruct\DAP_HidMessage_st.cs" />
     <Compile Include="VariablesStruct\DAP_state_basic_st.cs" />
     <Compile Include="VariablesStruct\DAP_state_extended_st.cs" />
     <Compile Include="VariablesStruct\DAP_system_profile_cls.cs" />

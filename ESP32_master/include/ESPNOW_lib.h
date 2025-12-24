@@ -1,3 +1,4 @@
+#pragma once
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include <Arduino.h>
@@ -184,13 +185,19 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
     if(data[0]==DAP_PAYLOAD_TYPE_ESPNOW_LOG && data[1]==ESPNOW_LOG_MAGIC_KEY && data[2]==ESPNOW_LOG_MAGIC_KEY_2)
     {
 
-      ESPNOW_Message receivedMsg;
+      Dap_hidmessage_st receivedMsg;
       //getESPNOWLog_b = true;
       int copyLen = data[3];
+      if (copyLen> sizeof(receivedMsg.text)) copyLen = sizeof(receivedMsg.text);
       if (copyLen > 0)
       {
+
         memset(receivedMsg.text, 0, sizeof(receivedMsg.text));
-        memcpy(receivedMsg.text, &data[4], data[3]);
+        receivedMsg.payloadType=DAP_PAYLOAD_TYPE_ESPNOW_LOG;
+        receivedMsg.magicKey1 = ESPNOW_LOG_MAGIC_KEY;
+        receivedMsg.magicKey2=ESPNOW_LOG_MAGIC_KEY_2;
+        receivedMsg.length= copyLen;
+        memcpy(receivedMsg.text, &data[4], copyLen);
         receivedMsg.text[copyLen] = '\0';
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
         xQueueSendFromISR(messageQueueHandle, &receivedMsg, &xHigherPriorityTaskWoken);

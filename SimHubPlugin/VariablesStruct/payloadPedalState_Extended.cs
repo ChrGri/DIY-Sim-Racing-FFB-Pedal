@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace User.PluginSdkDemo
 {
-
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct payloadPedalState_Extended
     {
         //public UInt32 timeInMs_u32;

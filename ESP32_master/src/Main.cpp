@@ -152,6 +152,8 @@ void serialCommunicationTxTask( void * pvParameters);
 void ledUpdateDongleTask( void * pvParameters);
 void fanatecUpdateTask(void *pvParameters);
 void miscTask(void *pvParameters);
+void hidCommunicaitonRxTask(void *pvParameters);
+void hidCommunicaitonTxTask(void *pvParameters);
 void setup()
 {
   #ifdef USB_JOYSTICK
@@ -200,6 +202,8 @@ void setup()
   #ifdef USB_JOYSTICK
     ActiveSerial->println("[L]Setup controller");
     SetupController();
+    taskScheduler.addScheduledTask(hidCommunicaitonRxTask, "Hid Rx", 2000, 1, 1, 3000);
+    taskScheduler.addScheduledTask(hidCommunicaitonTxTask, "Hid Tx", 2000, 1, 1, 3000);
     /*
     ActiveSerial->print("[L]HID descriptor Size:");
     ActiveSerial->println(reportSize);
@@ -216,7 +220,7 @@ void setup()
     */
   #endif
   //create message queue
-  messageQueueHandle = xQueueCreate(10, sizeof(ESPNOW_Message));
+  messageQueueHandle = xQueueCreate(10, sizeof(Dap_hidmessage_st));
   if (messageQueueHandle == NULL)
   {
     ActiveSerial->println("[L]Error during xqueue creation.");
@@ -347,15 +351,18 @@ void setup()
   }
   //task scheduler adding task
   ActiveSerial->println("[L]Initializing task scheduler...");
+  
   taskScheduler.addScheduledTask(serialCommunicationRxTask, "Seria RX", REPETITION_INTERVAL_SERIAL_RX_TASK, TASK_PRIORITY_SERIAL_RX_TASK, CORE_ID_SERIAL_RX_TASK, STACK_SIZE_SERIAL_RX_TASK);
   taskScheduler.addScheduledTask(serialCommunicationTxTask, "Seria TX", REPETITION_INTERVAL_SERIAL_TX_TASK, TASK_PRIORITY_SERIAL_TX_TASK, CORE_ID_SERIAL_TX_TASK, STACK_SIZE_SERIAL_TX_TASK);
   taskScheduler.addScheduledTask(espNowCommunicationTxTask, "Espnow tx", REPETITION_INTERVAL_ESPNOW_TX_TASK, TASK_PRIORITY_ESPNOW_TX_TASK, CORE_ID_ESPNOW_TX_TASK, STACK_SIZE_ESPNOW_TX_TASK);
   taskScheduler.addScheduledTask(joystickUpdateTask, "Joystick Update", REPETITION_INTERVAL_JOYSTICK_UPDATE_TASK, TASK_PRIORITY_JOYSTICK_UPDATE_TASK, CORE_ID_JOYSTICK_UPDATE_TASK, STACK_SIZE_JOYSTICK_UPDATE_TASK);
   taskScheduler.addScheduledTask(miscTask, "MISC", REPETITION_INTERVAL_MISC_TASK, TASK_PRIORITY_MISC_TASK, CORE_ID_MISC_TASK, STACK_SIZE_MISC_TASK);
+  
   delay(100);
   taskScheduler.begin();
 
   ActiveSerial->println("[L]Setup end");
+  tinyusbJoystick_.printf("Setup end.");
   
   
 }
@@ -699,270 +706,278 @@ void serialCommunicationRxTask( void * pvParameters)
           //case config
           case DAP_PAYLOAD_TYPE_CONFIG:
           {
-            bool structChecker = true;
-            DAP_config_st dap_config_st_local;
-            memcpy(&dap_config_st_local, packet_start, sizeof(DAP_config_st));
-            //ActiveSerial->readBytes((char *)&dap_config_st_local, sizeof(DAP_config_st));
-            if (dap_config_st_local.payLoadHeader_.payloadType != DAP_PAYLOAD_TYPE_CONFIG)
-            {
-              structChecker = false;
-              structIsValid=false;
-              ActiveSerial->print("[L]Payload type expected: ");
-              ActiveSerial->print(DAP_PAYLOAD_TYPE_CONFIG);
-              ActiveSerial->print(",   Payload type received: ");
-              ActiveSerial->println(dap_config_st_local.payLoadHeader_.payloadType);
-            }
-            if (dap_config_st_local.payLoadHeader_.version != DAP_VERSION_CONFIG)
-            {
-              structChecker = false;
-              structIsValid = false;
-              ActiveSerial->print("[L]Config version expected: ");
-              ActiveSerial->print(DAP_VERSION_CONFIG);
-              ActiveSerial->print(",   Config version received: ");
-              ActiveSerial->println(dap_config_st_local.payLoadHeader_.version);
-            }
-            // checksum validation
-            uint16_t crc = checksumCalculator((uint8_t *)(&(dap_config_st_local.payLoadHeader_)), sizeof(dap_config_st_local.payLoadHeader_) + sizeof(dap_config_st_local.payLoadPedalConfig_));
-            if (crc != dap_config_st_local.payloadFooter_.checkSum)
-            {
-              structChecker = false;
-              structIsValid = false;
-              ActiveSerial->print("[L]CRC expected: ");
-              ActiveSerial->print(crc);
-              ActiveSerial->print(",   CRC received: ");
-              ActiveSerial->println(dap_config_st_local.payloadFooter_.checkSum);
-            }
-            // if checks are successfull, overwrite global configuration struct
-            if (structChecker == true)
-            {
-              int pedalIdx = dap_config_st_local.payLoadHeader_.PedalTag;
-              // ActiveSerial->println("[L]Updating pedal config");
-              memcpy(&dap_config_st[pedalIdx], &dap_config_st_local, sizeof(DAP_config_st));
-              configUpdateAvailable[pedalIdx] = true;
-            }
+            #ifndef USB_JOYSTICK
+              bool structChecker = true;
+              DAP_config_st dap_config_st_local;
+              memcpy(&dap_config_st_local, packet_start, sizeof(DAP_config_st));
+              //ActiveSerial->readBytes((char *)&dap_config_st_local, sizeof(DAP_config_st));
+              if (dap_config_st_local.payLoadHeader_.payloadType != DAP_PAYLOAD_TYPE_CONFIG)
+              {
+                structChecker = false;
+                structIsValid=false;
+                ActiveSerial->print("[L]Payload type expected: ");
+                ActiveSerial->print(DAP_PAYLOAD_TYPE_CONFIG);
+                ActiveSerial->print(",   Payload type received: ");
+                ActiveSerial->println(dap_config_st_local.payLoadHeader_.payloadType);
+              }
+              if (dap_config_st_local.payLoadHeader_.version != DAP_VERSION_CONFIG)
+              {
+                structChecker = false;
+                structIsValid = false;
+                ActiveSerial->print("[L]Config version expected: ");
+                ActiveSerial->print(DAP_VERSION_CONFIG);
+                ActiveSerial->print(",   Config version received: ");
+                ActiveSerial->println(dap_config_st_local.payLoadHeader_.version);
+              }
+              // checksum validation
+              uint16_t crc = checksumCalculator((uint8_t *)(&(dap_config_st_local.payLoadHeader_)), sizeof(dap_config_st_local.payLoadHeader_) + sizeof(dap_config_st_local.payLoadPedalConfig_));
+              if (crc != dap_config_st_local.payloadFooter_.checkSum)
+              {
+                structChecker = false;
+                structIsValid = false;
+                ActiveSerial->print("[L]CRC expected: ");
+                ActiveSerial->print(crc);
+                ActiveSerial->print(",   CRC received: ");
+                ActiveSerial->println(dap_config_st_local.payloadFooter_.checkSum);
+              }
+              // if checks are successfull, overwrite global configuration struct
+              if (structChecker == true)
+              {
+                int pedalIdx = dap_config_st_local.payLoadHeader_.PedalTag;
+                // ActiveSerial->println("[L]Updating pedal config");
+                memcpy(&dap_config_st[pedalIdx], &dap_config_st_local, sizeof(DAP_config_st));
+                configUpdateAvailable[pedalIdx] = true;
+              }
+            #endif
             break;
           }
           //case action to pedal
           case DAP_PAYLOAD_TYPE_ACTION:
           {
-            bool structChecker = true;
-            DAP_actions_st dap_actions_st_local;
-            memcpy(&dap_actions_st_local, packet_start, sizeof(DAP_actions_st));
-            //memcpy(&dap_actions_st_local, packet_start, sizeof(DAP_config_st));
-            //ActiveSerial->readBytes((char *)&dap_actions_st_local, sizeof(DAP_actions_st));
-            if (dap_actions_st_local.payLoadHeader_.payloadType != DAP_PAYLOAD_TYPE_ACTION)
-            {
-              structChecker = false;
-              structIsValid = false;
-              ActiveSerial->print("[L]Payload type expected: ");
-              ActiveSerial->print(DAP_PAYLOAD_TYPE_ACTION);
-              ActiveSerial->print(",   Payload type received: ");
-              ActiveSerial->println(dap_actions_st_local.payLoadHeader_.payloadType);
-            }
-            if (dap_actions_st_local.payLoadHeader_.version != DAP_VERSION_CONFIG)
-            {
-              structChecker = false;
-              structIsValid = false;
-              ActiveSerial->print("[L]Config version expected: ");
-              ActiveSerial->print(DAP_VERSION_CONFIG);
-              ActiveSerial->print(",   Config version received: ");
-              ActiveSerial->println(dap_actions_st_local.payLoadHeader_.version);
-            }
+            #ifndef USB_JOYSTICK
+              bool structChecker = true;
+              DAP_actions_st dap_actions_st_local;
+              memcpy(&dap_actions_st_local, packet_start, sizeof(DAP_actions_st));
+              //memcpy(&dap_actions_st_local, packet_start, sizeof(DAP_config_st));
+              //ActiveSerial->readBytes((char *)&dap_actions_st_local, sizeof(DAP_actions_st));
+              if (dap_actions_st_local.payLoadHeader_.payloadType != DAP_PAYLOAD_TYPE_ACTION)
+              {
+                structChecker = false;
+                structIsValid = false;
+                ActiveSerial->print("[L]Payload type expected: ");
+                ActiveSerial->print(DAP_PAYLOAD_TYPE_ACTION);
+                ActiveSerial->print(",   Payload type received: ");
+                ActiveSerial->println(dap_actions_st_local.payLoadHeader_.payloadType);
+              }
+              if (dap_actions_st_local.payLoadHeader_.version != DAP_VERSION_CONFIG)
+              {
+                structChecker = false;
+                structIsValid = false;
+                ActiveSerial->print("[L]Config version expected: ");
+                ActiveSerial->print(DAP_VERSION_CONFIG);
+                ActiveSerial->print(",   Config version received: ");
+                ActiveSerial->println(dap_actions_st_local.payLoadHeader_.version);
+              }
 
-            uint16_t crc = checksumCalculator((uint8_t *)(&(dap_actions_st_local.payLoadHeader_)), sizeof(dap_actions_st_local.payLoadHeader_) + sizeof(dap_actions_st_local.payloadPedalAction_));
-            if (crc != dap_actions_st_local.payloadFooter_.checkSum)
-            {
-              structChecker = false;
-              structIsValid = false;
-              ActiveSerial->print("[L]CRC expected: ");
-              ActiveSerial->print(crc);
-              ActiveSerial->print(",   CRC received: ");
-              ActiveSerial->println(dap_actions_st_local.payloadFooter_.checkSum);
-            }
-            if (structChecker == true)
-            {
-              
-              int pedalIdx = dap_actions_st_local.payLoadHeader_.PedalTag;
-              if(pedalIdx == PEDAL_ID_CLUTCH || pedalIdx == PEDAL_ID_BRAKE || pedalIdx == PEDAL_ID_THROTTLE)
+              uint16_t crc = checksumCalculator((uint8_t *)(&(dap_actions_st_local.payLoadHeader_)), sizeof(dap_actions_st_local.payLoadHeader_) + sizeof(dap_actions_st_local.payloadPedalAction_));
+              if (crc != dap_actions_st_local.payloadFooter_.checkSum)
               {
-                //forward to pedal
-                memcpy(&dap_actions_st[pedalIdx], &dap_actions_st_local, sizeof(DAP_actions_st));
-                dap_action_update[pedalIdx] = true;
+                structChecker = false;
+                structIsValid = false;
+                ActiveSerial->print("[L]CRC expected: ");
+                ActiveSerial->print(crc);
+                ActiveSerial->print(",   CRC received: ");
+                ActiveSerial->println(dap_actions_st_local.payloadFooter_.checkSum);
               }
-              if (pedalIdx == PEDAL_ID_TEMP_1 || pedalIdx == PEDAL_ID_TEMP_2 || pedalIdx == PEDAL_ID_TEMP_3)
+              if (structChecker == true)
               {
-                //make those assignement action to pedal with specific mac address
-                int tempIdx = pedalIdx - PEDAL_ID_TEMP_1;
-                memcpy(&dap_actionassignment_st[tempIdx], &dap_actions_st_local, sizeof(DAP_actions_st));
-                sendAssignment_b[tempIdx] = true;
-                //dap_action_update[pedalIdx] = true;
+                
+                int pedalIdx = dap_actions_st_local.payLoadHeader_.PedalTag;
+                if(pedalIdx == PEDAL_ID_CLUTCH || pedalIdx == PEDAL_ID_BRAKE || pedalIdx == PEDAL_ID_THROTTLE)
+                {
+                  //forward to pedal
+                  memcpy(&dap_actions_st[pedalIdx], &dap_actions_st_local, sizeof(DAP_actions_st));
+                  dap_action_update[pedalIdx] = true;
+                }
+                if (pedalIdx == PEDAL_ID_TEMP_1 || pedalIdx == PEDAL_ID_TEMP_2 || pedalIdx == PEDAL_ID_TEMP_3)
+                {
+                  //make those assignement action to pedal with specific mac address
+                  int tempIdx = pedalIdx - PEDAL_ID_TEMP_1;
+                  memcpy(&dap_actionassignment_st[tempIdx], &dap_actions_st_local, sizeof(DAP_actions_st));
+                  sendAssignment_b[tempIdx] = true;
+                  //dap_action_update[pedalIdx] = true;
+                }
               }
-            }
+            #endif
             break;
           }
 
           //case action for ota
           case DAP_PAYLOAD_TYPE_ACTION_OTA:
           {
-            ActiveSerial->println("[L]get OTA command and its info");
-            memcpy(&dap_action_ota_st, packet_start, sizeof(DAP_action_ota_st));
-            //ActiveSerial->readBytes((char *)&dap_action_ota_st, sizeof(DAP_action_ota_st));
-            #ifdef OTA_Update
-              bool structChecker_b = true;
-              if (dap_action_ota_st.payLoadHeader_.payloadType != DAP_PAYLOAD_TYPE_ACTION_OTA)
-              {
-                structChecker_b = false;
-                structIsValid = false;
-              }
-              if (structChecker_b)
-              {
-                SSID = new char[dap_action_ota_st.payloadOtaInfo_.SSID_Length + 1];
-                PASS = new char[dap_action_ota_st.payloadOtaInfo_.PASS_Length + 1];
-                memcpy(SSID, dap_action_ota_st.payloadOtaInfo_.WIFI_SSID, dap_action_ota_st.payloadOtaInfo_.SSID_Length);
-                memcpy(PASS, dap_action_ota_st.payloadOtaInfo_.WIFI_PASS, dap_action_ota_st.payloadOtaInfo_.PASS_Length);
-                SSID[dap_action_ota_st.payloadOtaInfo_.SSID_Length] = 0;
-                PASS[dap_action_ota_st.payloadOtaInfo_.PASS_Length] = 0;
-                /*
-                ActiveSerial->printf("[L]Device ID:%d\n",dap_action_ota_st.payloadOtaInfo_.device_ID);
-                ActiveSerial->print("[L]SSID(uint)=");
-                for(uint i=0; i<dap_action_ota_st.payloadOtaInfo_.SSID_Length;i++)
+            #ifndef USB_JOYSTICK
+              ActiveSerial->println("[L]get OTA command and its info");
+              memcpy(&dap_action_ota_st, packet_start, sizeof(DAP_action_ota_st));
+              //ActiveSerial->readBytes((char *)&dap_action_ota_st, sizeof(DAP_action_ota_st));
+              #ifdef OTA_Update
+                bool structChecker_b = true;
+                if (dap_action_ota_st.payLoadHeader_.payloadType != DAP_PAYLOAD_TYPE_ACTION_OTA)
                 {
-                  ActiveSerial->print(dap_action_ota_st.payloadOtaInfo_.WIFI_SSID[i]);
-                  ActiveSerial->print(",");
+                  structChecker_b = false;
+                  structIsValid = false;
                 }
-                ActiveSerial->println(" ");
-                ActiveSerial->print("[L]PASS(uint)=");
-                for(uint i=0; i<dap_action_ota_st.payloadOtaInfo_.PASS_Length;i++)
+                if (structChecker_b)
                 {
-                  ActiveSerial->print(dap_action_ota_st.payloadOtaInfo_.WIFI_PASS[i]);
-                  ActiveSerial->print(",");
+                  SSID = new char[dap_action_ota_st.payloadOtaInfo_.SSID_Length + 1];
+                  PASS = new char[dap_action_ota_st.payloadOtaInfo_.PASS_Length + 1];
+                  memcpy(SSID, dap_action_ota_st.payloadOtaInfo_.WIFI_SSID, dap_action_ota_st.payloadOtaInfo_.SSID_Length);
+                  memcpy(PASS, dap_action_ota_st.payloadOtaInfo_.WIFI_PASS, dap_action_ota_st.payloadOtaInfo_.PASS_Length);
+                  SSID[dap_action_ota_st.payloadOtaInfo_.SSID_Length] = 0;
+                  PASS[dap_action_ota_st.payloadOtaInfo_.PASS_Length] = 0;
+                  /*
+                  ActiveSerial->printf("[L]Device ID:%d\n",dap_action_ota_st.payloadOtaInfo_.device_ID);
+                  ActiveSerial->print("[L]SSID(uint)=");
+                  for(uint i=0; i<dap_action_ota_st.payloadOtaInfo_.SSID_Length;i++)
+                  {
+                    ActiveSerial->print(dap_action_ota_st.payloadOtaInfo_.WIFI_SSID[i]);
+                    ActiveSerial->print(",");
+                  }
+                  ActiveSerial->println(" ");
+                  ActiveSerial->print("[L]PASS(uint)=");
+                  for(uint i=0; i<dap_action_ota_st.payloadOtaInfo_.PASS_Length;i++)
+                  {
+                    ActiveSerial->print(dap_action_ota_st.payloadOtaInfo_.WIFI_PASS[i]);
+                    ActiveSerial->print(",");
+                  }
+                  ActiveSerial->println(" ");
+
+                  ActiveSerial->print("[L]SSID=");
+                  ActiveSerial->println(SSID);
+                  ActiveSerial->print("[L]PASS=");
+                  ActiveSerial->println(PASS);
+                  */
                 }
-                ActiveSerial->println(" ");
 
-                ActiveSerial->print("[L]SSID=");
-                ActiveSerial->println(SSID);
-                ActiveSerial->print("[L]PASS=");
-                ActiveSerial->println(PASS);
-                */
-              }
-
-              if (dap_action_ota_st.payloadOtaInfo_.device_ID == DEVICE_ID && structChecker_b == true)
-              {
-                OTA_enable_b = true;
-                ActiveSerial->println("[L] Bridge OTA begin.");
-              }
-              else if (structChecker_b)
-              {
-                pedal_OTA_action_b = true;
-              }
+                if (dap_action_ota_st.payloadOtaInfo_.device_ID == DEVICE_ID && structChecker_b == true)
+                {
+                  OTA_enable_b = true;
+                  ActiveSerial->println("[L] Bridge OTA begin.");
+                }
+                else if (structChecker_b)
+                {
+                  pedal_OTA_action_b = true;
+                }
+              #endif
             #endif
             break;
           }
           case DAP_PAYLOAD_TYPE_BRIDGE_STATE:
           {
-            bool structChecker = true;
-            DAP_bridge_state_st dap_bridge_state_local;
-            //dap_bridge_state_local_ptr = &dap_bridge_state_lcl;
-            memcpy(&dap_bridge_state_local, packet_start, sizeof(DAP_bridge_state_st));
-            //ActiveSerial->readBytes((char *)dap_bridge_state_local_ptr, sizeof(DAP_bridge_state_st));
-            // check if data is plausible
-            if (dap_bridge_state_local.payLoadHeader_.payloadType != DAP_PAYLOAD_TYPE_BRIDGE_STATE)
-            {
-              structChecker = false;
-              structIsValid = false;
-              ActiveSerial->print("[L]Payload type expected: ");
-              ActiveSerial->print(DAP_PAYLOAD_TYPE_BRIDGE_STATE);
-              ActiveSerial->print(",   Payload type received: ");
-              ActiveSerial->println(dap_bridge_state_local.payLoadHeader_.payloadType);
-            }
-            if (dap_bridge_state_local.payLoadHeader_.version != DAP_VERSION_CONFIG)
-            {
-              structChecker = false;
-              structIsValid = false;
-              ActiveSerial->print("[L]Config version expected: ");
-              ActiveSerial->print(DAP_VERSION_CONFIG);
-              ActiveSerial->print(",   Config version received: ");
-              ActiveSerial->println(dap_bridge_state_lcl.payLoadHeader_.version);
-            }
-            // checksum validation
-            uint16_t crc = checksumCalculator((uint8_t *)(&(dap_bridge_state_local.payLoadHeader_)), sizeof(dap_bridge_state_local.payLoadHeader_) + sizeof(dap_bridge_state_local.payloadBridgeState_));
-            if (crc != dap_bridge_state_local.payloadFooter_.checkSum)
-            {
-              structChecker = false;
-              structIsValid = false;
-              ActiveSerial->print("[L]CRC expected: ");
-              ActiveSerial->print(crc);
-              ActiveSerial->print(",   CRC received: ");
-              ActiveSerial->println(dap_bridge_state_local.payloadFooter_.checkSum);
-            }
-            // if checks are successfull, overwrite global configuration struct
-            if (structChecker == true)
-            {
-              memcpy(&dap_bridge_state_lcl, &dap_bridge_state_local, sizeof(DAP_bridge_state_st));
-              if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_ENABLE_PAIRING)
+            #ifndef USB_JOYSTICK
+              bool structChecker = true;
+              DAP_bridge_state_st dap_bridge_state_local;
+              //dap_bridge_state_local_ptr = &dap_bridge_state_lcl;
+              memcpy(&dap_bridge_state_local, packet_start, sizeof(DAP_bridge_state_st));
+              //ActiveSerial->readBytes((char *)dap_bridge_state_local_ptr, sizeof(DAP_bridge_state_st));
+              // check if data is plausible
+              if (dap_bridge_state_local.payLoadHeader_.payloadType != DAP_PAYLOAD_TYPE_BRIDGE_STATE)
               {
-                #ifdef ESPNow_Pairing_function
-                  ActiveSerial->println("[L]Bridge Pairing...");
-                  software_pairing_action_b = true;
-                #endif
-                #ifndef ESPNow_Pairing_function
-                  ActiveSerial->println("[L]Pairing command didn't supported");
-                #endif
+                structChecker = false;
+                structIsValid = false;
+                ActiveSerial->print("[L]Payload type expected: ");
+                ActiveSerial->print(DAP_PAYLOAD_TYPE_BRIDGE_STATE);
+                ActiveSerial->print(",   Payload type received: ");
+                ActiveSerial->println(dap_bridge_state_local.payLoadHeader_.payloadType);
               }
-              // action=2, restart
-              if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_RESTART)
+              if (dap_bridge_state_local.payLoadHeader_.version != DAP_VERSION_CONFIG)
               {
-                ActiveSerial->println("[L]Bridge Restart");
-                delay(1000);
-                ESP.restart();
+                structChecker = false;
+                structIsValid = false;
+                ActiveSerial->print("[L]Config version expected: ");
+                ActiveSerial->print(DAP_VERSION_CONFIG);
+                ActiveSerial->print(",   Config version received: ");
+                ActiveSerial->println(dap_bridge_state_lcl.payLoadHeader_.version);
               }
-              if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_DOWNLOAD_MODE)
+              // checksum validation
+              uint16_t crc = checksumCalculator((uint8_t *)(&(dap_bridge_state_local.payLoadHeader_)), sizeof(dap_bridge_state_local.payLoadHeader_) + sizeof(dap_bridge_state_local.payloadBridgeState_));
+              if (crc != dap_bridge_state_local.payloadFooter_.checkSum)
               {
-                // aciton=3 restart into boot mode
-                #ifdef CONFIG_IDF_TARGET_ESP32S3
-                  ActiveSerial->println("[L]Bridge Restart into Download mode");
+                structChecker = false;
+                structIsValid = false;
+                ActiveSerial->print("[L]CRC expected: ");
+                ActiveSerial->print(crc);
+                ActiveSerial->print(",   CRC received: ");
+                ActiveSerial->println(dap_bridge_state_local.payloadFooter_.checkSum);
+              }
+              // if checks are successfull, overwrite global configuration struct
+              if (structChecker == true)
+              {
+                memcpy(&dap_bridge_state_lcl, &dap_bridge_state_local, sizeof(DAP_bridge_state_st));
+                if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_ENABLE_PAIRING)
+                {
+                  #ifdef ESPNow_Pairing_function
+                    ActiveSerial->println("[L]Bridge Pairing...");
+                    software_pairing_action_b = true;
+                  #endif
+                  #ifndef ESPNow_Pairing_function
+                    ActiveSerial->println("[L]Pairing command didn't supported");
+                  #endif
+                }
+                // action=2, restart
+                if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_RESTART)
+                {
+                  ActiveSerial->println("[L]Bridge Restart");
                   delay(1000);
-                  REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
                   ESP.restart();
-                #else
-                  ActiveSerial->println("[L]Command not supported ");
-                  delay(1000);
-                #endif
-              }
-              if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_DEBUG)
-              {
-                if (isBridgeInDebugMode_b)
-                {
-                  // aciton=4 print pedal update interval
-                  ActiveSerial->println("[L]Bridge debug mode off.");
-                  isBridgeInDebugMode_b = false;
                 }
-                else
+                if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_DOWNLOAD_MODE)
                 {
-                  // aciton=4 print pedal update interval
-                  ActiveSerial->println("[L]Bridge debug mode on.");
-                  isBridgeInDebugMode_b = true;
+                  // aciton=3 restart into boot mode
+                  #ifdef CONFIG_IDF_TARGET_ESP32S3
+                    ActiveSerial->println("[L]Bridge Restart into Download mode");
+                    delay(1000);
+                    REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+                    ESP.restart();
+                  #else
+                    ActiveSerial->println("[L]Command not supported ");
+                    delay(1000);
+                  #endif
+                }
+                if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_DEBUG)
+                {
+                  if (isBridgeInDebugMode_b)
+                  {
+                    // aciton=4 print pedal update interval
+                    ActiveSerial->println("[L]Bridge debug mode off.");
+                    isBridgeInDebugMode_b = false;
+                  }
+                  else
+                  {
+                    // aciton=4 print pedal update interval
+                    ActiveSerial->println("[L]Bridge debug mode on.");
+                    isBridgeInDebugMode_b = true;
+                  }
+                }
+                if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_JOYSTICK_FLASHING_MODE)
+                {
+                  #ifdef External_RP2040
+                    ActiveSerial->println("[L]JOYSTICK restart into flashing mode");
+                    dap_joystickUART_state_lcl._payloadjoystick.JoystickAction = JOYSTICKACTION_RESET_INTO_BOOTLOADER;
+                  #else
+                    ActiveSerial->println("[L]The command is not supported");
+                  #endif
+                }
+                if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_JOYSTICK_DEBUG)
+                {
+                  #ifdef External_RP2040
+                    ActiveSerial->println("[L]JOYSTICK debug mode on");
+                    dap_joystickUART_state_lcl._payloadjoystick.JoystickAction = JOYSTICKACTION_DEBUG_MODE;
+                  #else
+                    ActiveSerial->println("[L]The command is not supported");
+                  #endif
                 }
               }
-              if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_JOYSTICK_FLASHING_MODE)
-              {
-                #ifdef External_RP2040
-                  ActiveSerial->println("[L]JOYSTICK restart into flashing mode");
-                  dap_joystickUART_state_lcl._payloadjoystick.JoystickAction = JOYSTICKACTION_RESET_INTO_BOOTLOADER;
-                #else
-                  ActiveSerial->println("[L]The command is not supported");
-                #endif
-              }
-              if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_JOYSTICK_DEBUG)
-              {
-                #ifdef External_RP2040
-                  ActiveSerial->println("[L]JOYSTICK debug mode on");
-                  dap_joystickUART_state_lcl._payloadjoystick.JoystickAction = JOYSTICKACTION_DEBUG_MODE;
-                #else
-                  ActiveSerial->println("[L]The command is not supported");
-                #endif
-              }
-            }
+            #endif
             break;
           }
           default:
@@ -1007,144 +1022,148 @@ void serialCommunicationTxTask( void * pvParameters)
       //ActiveSerial->println("tx kick");
       uint16_t crc;
       unsigned long current_time=millis();
-      if(current_time-bridge_state_last_update>200)
-      {
-        basic_rssi_update=true;
-        bridge_state_last_update=millis();
-      }
-      if(current_time-PedalUpdateLast>500)
-      {
-        PedalUpdateIntervalPrint_b=true;
-        PedalUpdateLast=current_time;
-      }
+      #ifndef USB_JOYSTICK
+        if(current_time-bridge_state_last_update>200)
+        {
+          basic_rssi_update=true;
+          bridge_state_last_update=millis();
+        }
+      
+        if(current_time-PedalUpdateLast>500)
+        {
+          PedalUpdateIntervalPrint_b=true;
+          PedalUpdateLast=current_time;
+        }
+      #endif
       if(current_time-UARTJoystickUpdateLast>7)
       {
         UARTJoystickUpdate_b=true;
         UARTJoystickUpdateLast=current_time;
       }
       bool structChecker = true;
-
-      for(int i =0; i<3; i++)
-      {
-        if(update_basic_state[i])
+      #ifndef USB_JOYSTICK
+        for(int i =0; i<3; i++)
         {
-          update_basic_state[i]=false;
-          ActiveSerial->write((char*)&dap_state_basic_st[i], sizeof(DAP_state_basic_st));
-          ActiveSerial->print("\r\n");
-          if(dap_bridge_state_st.payloadBridgeState_.Pedal_availability[dap_state_basic_st[i].payLoadHeader_.PedalTag]==0)
+          if(update_basic_state[i])
           {
-            ActiveSerial->print("[L]Found Pedal:");
-            ActiveSerial->println(dap_state_basic_st[i].payLoadHeader_.PedalTag);
+            update_basic_state[i]=false;
+            ActiveSerial->write((char*)&dap_state_basic_st[i], sizeof(DAP_state_basic_st));
+            ActiveSerial->print("\r\n");
+            if(dap_bridge_state_st.payloadBridgeState_.Pedal_availability[dap_state_basic_st[i].payLoadHeader_.PedalTag]==0)
+            {
+              ActiveSerial->print("[L]Found Pedal:");
+              ActiveSerial->println(dap_state_basic_st[i].payLoadHeader_.PedalTag);
+            }
+            dap_bridge_state_st.payloadBridgeState_.Pedal_availability[dap_state_basic_st[i].payLoadHeader_.PedalTag]=1;
+            pedal_last_update[dap_state_basic_st[i].payLoadHeader_.PedalTag]=millis();
+            if(ESPNow_error_b[i])
+            {
+              ActiveSerial->print("[L]Pedal:");
+              ActiveSerial->print(dap_state_basic_st[i].payLoadHeader_.PedalTag);
+              ActiveSerial->print(" E:");
+              ActiveSerial->println(dap_state_basic_st[i].payloadPedalState_Basic_.error_code_u8);
+              ESPNow_error_b[i]=false;    
+            }
           }
-          dap_bridge_state_st.payloadBridgeState_.Pedal_availability[dap_state_basic_st[i].payLoadHeader_.PedalTag]=1;
-          pedal_last_update[dap_state_basic_st[i].payLoadHeader_.PedalTag]=millis();
-          if(ESPNow_error_b[i])
+          if(update_extend_state[i])
           {
+            update_extend_state[i]=false;
+            ActiveSerial->write((char*)&dap_state_extended_st[i], sizeof(DAP_state_extended_st));
+            ActiveSerial->print("\r\n");
+
+          }
+        }
+      
+        int pedal_config_IDX=0;
+        for(pedal_config_IDX=0;pedal_config_IDX<3;pedal_config_IDX++)
+        {
+          if(ESPNow_request_config_b[pedal_config_IDX])
+          {
+            DAP_config_st * dap_config_st_local_ptr;
+            DAP_config_st dap_config_st_local;
+            if(pedal_config_IDX==0)
+            {
+              memcpy(&dap_config_st_local, &dap_config_st_Clu, sizeof(DAP_config_st));
+              //dap_config_st_local_ptr = &dap_config_st_Clu;
+            }
+            if(pedal_config_IDX==1)
+            {
+              memcpy(&dap_config_st_local, &dap_config_st_Brk, sizeof(DAP_config_st));
+              //dap_config_st_local_ptr = &dap_config_st_Brk;
+            }
+            if(pedal_config_IDX==2)
+            {
+              memcpy(&dap_config_st_local, &dap_config_st_Gas, sizeof(DAP_config_st));
+              //dap_config_st_local_ptr = &dap_config_st_Gas;
+            }
+            dap_config_st_local_ptr= &dap_config_st_local;
+            
+            //uint16_t crc = checksumCalculator((uint8_t*)(&(dap_config_st.payLoadHeader_)), sizeof(dap_config_st.payLoadHeader_) + sizeof(dap_config_st.payLoadPedalConfig_));
+
+            dap_config_st_local_ptr->payLoadHeader_.PedalTag=dap_config_st_local_ptr->payLoadPedalConfig_.pedal_type;
+            crc = checksumCalculator((uint8_t*)(&(dap_config_st_local.payLoadHeader_)), sizeof(dap_config_st_local.payLoadHeader_) + sizeof(dap_config_st_local.payLoadPedalConfig_));
+            dap_config_st_local_ptr->payloadFooter_.checkSum = crc;
+            ActiveSerial->write((char*)dap_config_st_local_ptr, sizeof(DAP_config_st));
+            ActiveSerial->print("\r\n");
+            ESPNow_request_config_b[pedal_config_IDX]=false;
             ActiveSerial->print("[L]Pedal:");
-            ActiveSerial->print(dap_state_basic_st[i].payLoadHeader_.PedalTag);
-            ActiveSerial->print(" E:");
-            ActiveSerial->println(dap_state_basic_st[i].payloadPedalState_Basic_.error_code_u8);
-            ESPNow_error_b[i]=false;    
+            ActiveSerial->print(pedal_config_IDX);
+            ActiveSerial->println(" config returned");
+            delay(3);
           }
         }
-        if(update_extend_state[i])
+      
+
+        if(basic_rssi_update)//Bridge action
         {
-          update_extend_state[i]=false;
-          ActiveSerial->write((char*)&dap_state_extended_st[i], sizeof(DAP_state_extended_st));
+          //fill header and footer
+          dap_bridge_state_st.payLoadHeader_.startOfFrame0_u8 = SOF_BYTE_0;
+          dap_bridge_state_st.payLoadHeader_.startOfFrame1_u8 = SOF_BYTE_1;
+          dap_bridge_state_st.payloadFooter_.enfOfFrame0_u8 = EOF_BYTE_0;
+          dap_bridge_state_st.payloadFooter_.enfOfFrame1_u8 = EOF_BYTE_1;
+          int rssi_filter_value=constrain(rssi_filter.process(rssi_display),-100,0) ;
+          dap_bridge_state_st.payloadBridgeState_.unassignedPedalCount=(byte)unassignedPeersList.size();
+          dap_bridge_state_st.payLoadHeader_.PedalTag=5; //5 means bridge
+          dap_bridge_state_st.payLoadHeader_.payloadType=DAP_PAYLOAD_TYPE_BRIDGE_STATE;
+          dap_bridge_state_st.payLoadHeader_.version=DAP_VERSION_CONFIG;
+          dap_bridge_state_st.payloadBridgeState_.Bridge_action=0;
+          memcpy(dap_bridge_state_st.payloadBridgeState_.Pedal_RSSI_Realtime,rssi,sizeof(int32_t)*3);
+          //parse_version(BRIDGE_FIRMWARE_VERSION,&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[0],&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[1],&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[2]);
+          dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[0]=versionMajor;
+          dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[1]=versionMinor;
+          dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[2]=versionPatch;
+          int indexMac = 0;
+          for (UnassignedPeer &item : unassignedPeersList) 
+          {
+            memcpy(&dap_bridge_state_st.payloadBridgeState_.macAddressDetected[indexMac], item.mac,6);
+            indexMac=indexMac+6;
+          }
+          //CRC check should be in the final
+          crc = checksumCalculator((uint8_t*)(&(dap_bridge_state_st.payLoadHeader_)), sizeof(dap_bridge_state_st.payLoadHeader_) + sizeof(dap_bridge_state_st.payloadBridgeState_));
+          dap_bridge_state_st.payloadFooter_.checkSum=crc;
+          DAP_bridge_state_st * dap_bridge_st_local_ptr;
+          dap_bridge_st_local_ptr = &dap_bridge_state_st;
+          ActiveSerial->write((char*)dap_bridge_st_local_ptr, sizeof(DAP_bridge_state_st));
           ActiveSerial->print("\r\n");
-
-        }
-      }
-
-      int pedal_config_IDX=0;
-      for(pedal_config_IDX=0;pedal_config_IDX<3;pedal_config_IDX++)
-      {
-        if(ESPNow_request_config_b[pedal_config_IDX])
-        {
-          DAP_config_st * dap_config_st_local_ptr;
-          DAP_config_st dap_config_st_local;
-          if(pedal_config_IDX==0)
+          basic_rssi_update=false;
+          /*
+          if(rssi_filter_value<-88)
           {
-            memcpy(&dap_config_st_local, &dap_config_st_Clu, sizeof(DAP_config_st));
-            //dap_config_st_local_ptr = &dap_config_st_Clu;
-          }
-          if(pedal_config_IDX==1)
-          {
-            memcpy(&dap_config_st_local, &dap_config_st_Brk, sizeof(DAP_config_st));
-            //dap_config_st_local_ptr = &dap_config_st_Brk;
-          }
-          if(pedal_config_IDX==2)
-          {
-            memcpy(&dap_config_st_local, &dap_config_st_Gas, sizeof(DAP_config_st));
-            //dap_config_st_local_ptr = &dap_config_st_Gas;
-          }
-          dap_config_st_local_ptr= &dap_config_st_local;
-          
-          //uint16_t crc = checksumCalculator((uint8_t*)(&(dap_config_st.payLoadHeader_)), sizeof(dap_config_st.payLoadHeader_) + sizeof(dap_config_st.payLoadPedalConfig_));
-
-          dap_config_st_local_ptr->payLoadHeader_.PedalTag=dap_config_st_local_ptr->payLoadPedalConfig_.pedal_type;
-          crc = checksumCalculator((uint8_t*)(&(dap_config_st_local.payLoadHeader_)), sizeof(dap_config_st_local.payLoadHeader_) + sizeof(dap_config_st_local.payLoadPedalConfig_));
-          dap_config_st_local_ptr->payloadFooter_.checkSum = crc;
-          ActiveSerial->write((char*)dap_config_st_local_ptr, sizeof(DAP_config_st));
-          ActiveSerial->print("\r\n");
-          ESPNow_request_config_b[pedal_config_IDX]=false;
-          ActiveSerial->print("[L]Pedal:");
-          ActiveSerial->print(pedal_config_IDX);
-          ActiveSerial->println(" config returned");
-          delay(3);
-        }
-      }
-
-
-      if(basic_rssi_update)//Bridge action
-      {
-        //fill header and footer
-        dap_bridge_state_st.payLoadHeader_.startOfFrame0_u8 = SOF_BYTE_0;
-        dap_bridge_state_st.payLoadHeader_.startOfFrame1_u8 = SOF_BYTE_1;
-        dap_bridge_state_st.payloadFooter_.enfOfFrame0_u8 = EOF_BYTE_0;
-        dap_bridge_state_st.payloadFooter_.enfOfFrame1_u8 = EOF_BYTE_1;
-        int rssi_filter_value=constrain(rssi_filter.process(rssi_display),-100,0) ;
-        dap_bridge_state_st.payloadBridgeState_.unassignedPedalCount=(byte)unassignedPeersList.size();
-        dap_bridge_state_st.payLoadHeader_.PedalTag=5; //5 means bridge
-        dap_bridge_state_st.payLoadHeader_.payloadType=DAP_PAYLOAD_TYPE_BRIDGE_STATE;
-        dap_bridge_state_st.payLoadHeader_.version=DAP_VERSION_CONFIG;
-        dap_bridge_state_st.payloadBridgeState_.Bridge_action=0;
-        memcpy(dap_bridge_state_st.payloadBridgeState_.Pedal_RSSI_Realtime,rssi,sizeof(int32_t)*3);
-        //parse_version(BRIDGE_FIRMWARE_VERSION,&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[0],&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[1],&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[2]);
-        dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[0]=versionMajor;
-        dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[1]=versionMinor;
-        dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[2]=versionPatch;
-        int indexMac = 0;
-        for (UnassignedPeer &item : unassignedPeersList) 
-        {
-          memcpy(&dap_bridge_state_st.payloadBridgeState_.macAddressDetected[indexMac], item.mac,6);
-          indexMac=indexMac+6;
-        }
-        //CRC check should be in the final
-        crc = checksumCalculator((uint8_t*)(&(dap_bridge_state_st.payLoadHeader_)), sizeof(dap_bridge_state_st.payLoadHeader_) + sizeof(dap_bridge_state_st.payloadBridgeState_));
-        dap_bridge_state_st.payloadFooter_.checkSum=crc;
-        DAP_bridge_state_st * dap_bridge_st_local_ptr;
-        dap_bridge_st_local_ptr = &dap_bridge_state_st;
-        ActiveSerial->write((char*)dap_bridge_st_local_ptr, sizeof(DAP_bridge_state_st));
-        ActiveSerial->print("\r\n");
-        basic_rssi_update=false;
-        /*
-        if(rssi_filter_value<-88)
-        {
-          ActiveSerial->println("Warning: BAD WIRELESS CONNECTION");
-          //ActiveSerial->print("Pedal:");
-          //ActiveSerial->print(dap_state_basic_st.payLoadHeader_.PedalTag);
-          ActiveSerial->print(" RSSI:");
-          ActiveSerial->println(rssi_filter_value);  
-        }
-        */
-        #ifdef ESPNow_debug
-            ActiveSerial->print("Pedal:");
-            ActiveSerial->print(dap_state_basic_st.payLoadHeader_.PedalTag);
+            ActiveSerial->println("Warning: BAD WIRELESS CONNECTION");
+            //ActiveSerial->print("Pedal:");
+            //ActiveSerial->print(dap_state_basic_st.payLoadHeader_.PedalTag);
             ActiveSerial->print(" RSSI:");
-            ActiveSerial->println(rssi_filter_value);
-        #endif
-      }
+            ActiveSerial->println(rssi_filter_value);  
+          }
+          */
+          #ifdef ESPNow_debug
+              ActiveSerial->print("Pedal:");
+              ActiveSerial->print(dap_state_basic_st.payLoadHeader_.PedalTag);
+              ActiveSerial->print(" RSSI:");
+              ActiveSerial->println(rssi_filter_value);
+          #endif
+        }
+      #endif
         #ifdef External_RP2040
         if(UARTJoystickUpdate_b)
         {
@@ -1186,13 +1205,15 @@ void serialCommunicationTxTask( void * pvParameters)
         }  
       }
       //print log from espnow
-      ESPNOW_Message receivedMsg;
-      if (xQueueReceive(messageQueueHandle, &receivedMsg, (TickType_t)0) == pdTRUE)
-      {
-        ActiveSerial->print("[L]");
-        ActiveSerial->println(receivedMsg.text);
-        ActiveSerial->println("");
-      }
+      #ifndef USB_JOYSTICK
+        Dap_hidmessage_st receivedMsg;
+        if (xQueueReceive(messageQueueHandle, &receivedMsg, (TickType_t)0) == pdTRUE)
+        {
+          ActiveSerial->print("[L]");
+          ActiveSerial->println(receivedMsg.text);
+          ActiveSerial->println("");
+        }
+      #endif
       /*
       if(getESPNOWLog_b)
       {
@@ -1203,28 +1224,30 @@ void serialCommunicationTxTask( void * pvParameters)
       */
 
       //debug message print
-      if(PedalUpdateIntervalPrint_b)
-      {
-        if(isBridgeInDebugMode_b)
+      #ifndef USB_JOYSTICK
+        if(PedalUpdateIntervalPrint_b)
         {
-          for(pedalIDX=0;pedalIDX<3;pedalIDX++)
+          if(isBridgeInDebugMode_b)
           {
-            if(dap_bridge_state_st.payloadBridgeState_.Pedal_availability[pedalIDX]==1)
+            for(pedalIDX=0;pedalIDX<3;pedalIDX++)
             {
-              ActiveSerial->print("[L]Pedal ");
-              ActiveSerial->print(pedalIDX);
-              ActiveSerial->print(" Update interval: ");
-              ActiveSerial->print(current_time-pedal_last_update[pedalIDX]);
-              ActiveSerial->print(" RSSI: ");
-              ActiveSerial->println(rssi[pedalIDX]);
+              if(dap_bridge_state_st.payloadBridgeState_.Pedal_availability[pedalIDX]==1)
+              {
+                ActiveSerial->print("[L]Pedal ");
+                ActiveSerial->print(pedalIDX);
+                ActiveSerial->print(" Update interval: ");
+                ActiveSerial->print(current_time-pedal_last_update[pedalIDX]);
+                ActiveSerial->print(" RSSI: ");
+                ActiveSerial->println(rssi[pedalIDX]);
+              }
+              
             }
-            
+            ActiveSerial->print("[L]sending:");
+            print_struct_hex(&dap_bridge_state_st);
           }
-          ActiveSerial->print("[L]sending:");
-          print_struct_hex(&dap_bridge_state_st);
+          PedalUpdateIntervalPrint_b=false;
         }
-        PedalUpdateIntervalPrint_b=false;
-      }
+      #endif
     }
     
     
@@ -1717,3 +1740,348 @@ void miscTask(void *pvParameters)
     }
   }
 }
+
+void hidCommunicaitonRxTask(void *pvParameters)
+{
+  unsigned long scan_Last=0;
+  unsigned long action_Last=0;
+  for(;;)
+  {
+    if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
+    {
+      #ifdef USB_JOYSTICK
+        if(tinyusbJoystick_.isGetData)
+        {
+          tinyusbJoystick_.isGetData= false;
+          ActiveSerial->println("");
+          ActiveSerial->print("[L]Raw Length:");
+          ActiveSerial->println(tinyusbJoystick_.rawLength);
+          ActiveSerial->print("[L]isGetData:");
+          ActiveSerial->print(tinyusbJoystick_.isGetData);
+          ActiveSerial->print(", buff size:");
+          ActiveSerial->print(tinyusbJoystick_.buffSizeDis);
+          ActiveSerial->print(", report type:");
+          ActiveSerial->print(tinyusbJoystick_.reportType);
+          ActiveSerial->print(", report ID:");
+          ActiveSerial->println(tinyusbJoystick_.reportID);
+          ActiveSerial->print("[L]Report: ");
+          for(int i =0; i<tinyusbJoystick_.buffSizeDis; i++)
+          {
+              ActiveSerial->print("0x");  
+              if (tinyusbJoystick_.buffDis[i] < 16) ActiveSerial->print('0');
+              ActiveSerial->print(tinyusbJoystick_.buffDis[i], HEX);
+              ActiveSerial->print("-");
+          }
+          ActiveSerial->println("");
+        }
+        if(millis()- scan_Last>1000)
+        {
+          //tinyusbJoystick_.isGetData = false;
+          
+          scan_Last = millis();
+        }
+        for(int i=0; i<3;i++)
+        {
+          if(tinyusbJoystick_.isConfigGet[i])
+          {
+            //ActiveSerial->println("");
+            //ActiveSerial->printf("[L]Get config for pedal: %d\n", i);
+            int pedalIdx = tinyusbJoystick_.tmpConfig[i].payLoadHeader_.PedalTag;
+            memcpy(&dap_config_st[pedalIdx], &tinyusbJoystick_.tmpConfig[i], sizeof(DAP_config_st));
+            configUpdateAvailable[pedalIdx] = true;
+            tinyusbJoystick_.isConfigGet[i]=false;
+          }
+        }
+        for(int i =0; i<8; i++)
+        {
+          if(tinyusbJoystick_.isActionGet[i])
+          {
+            //ActiveSerial->println("");
+            //ActiveSerial->printf("[L]Get action for pedal: %d time: %lu\n", i, millis()-action_Last);
+            //action_Last=millis();
+            int pedalIdx = tinyusbJoystick_.tmpAction[i].payLoadHeader_.PedalTag;
+            if(pedalIdx == PEDAL_ID_CLUTCH || pedalIdx == PEDAL_ID_BRAKE || pedalIdx == PEDAL_ID_THROTTLE)
+            {
+            //forward to pedal
+              memcpy(&dap_actions_st[pedalIdx], &tinyusbJoystick_.tmpAction[i], sizeof(DAP_actions_st));
+              dap_action_update[pedalIdx] = true;
+            }
+            if (pedalIdx == PEDAL_ID_TEMP_1 || pedalIdx == PEDAL_ID_TEMP_2 || pedalIdx == PEDAL_ID_TEMP_3)
+            {
+              //make those assignement action to pedal with specific mac address
+              int tempIdx = pedalIdx - PEDAL_ID_TEMP_1;
+              memcpy(&dap_actionassignment_st[tempIdx], &tinyusbJoystick_.tmpAction[i], sizeof(DAP_actions_st));
+              sendAssignment_b[tempIdx] = true;
+              //dap_action_update[pedalIdx] = true;
+            }
+            tinyusbJoystick_.isActionGet[i]=false;
+          }
+        }
+        if(tinyusbJoystick_.isBridgeActionGet)
+        {
+          //ActiveSerial->println("");
+          //ActiveSerial->printf("[L]Get Bridge action\n");
+          memcpy(&dap_bridge_state_lcl, &tinyusbJoystick_.tmpBridgeAction, sizeof(DAP_bridge_state_st));
+          if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_ENABLE_PAIRING)
+          {
+            #ifdef ESPNow_Pairing_function
+              ActiveSerial->println("[L]Bridge Pairing...");
+              software_pairing_action_b = true;
+            #endif
+            #ifndef ESPNow_Pairing_function
+              ActiveSerial->println("[L]Pairing command didn't supported");
+            #endif
+          }
+          // action=2, restart
+          if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_RESTART)
+          {
+            ActiveSerial->println("[L]Bridge Restart");
+            delay(1000);
+            ESP.restart();
+          }
+          if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_DOWNLOAD_MODE)
+          {
+            // aciton=3 restart into boot mode
+            #ifdef CONFIG_IDF_TARGET_ESP32S3
+              ActiveSerial->println("[L]Bridge Restart into Download mode");
+              delay(1000);
+              REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+              ESP.restart();
+            #else
+              ActiveSerial->println("[L]Command not supported ");
+              delay(1000);
+            #endif
+          }
+          if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_DEBUG)
+          {
+            if (isBridgeInDebugMode_b)
+            {
+            // aciton=4 print pedal update interval
+              ActiveSerial->println("[L]Bridge debug mode off.");
+              isBridgeInDebugMode_b = false;
+            }
+            else
+            {
+              // aciton=4 print pedal update interval
+              ActiveSerial->println("[L]Bridge debug mode on.");
+              isBridgeInDebugMode_b = true;
+            }
+          }
+          if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_JOYSTICK_FLASHING_MODE)
+          {
+            #ifdef External_RP2040
+              ActiveSerial->println("[L]JOYSTICK restart into flashing mode");
+              dap_joystickUART_state_lcl._payloadjoystick.JoystickAction = JOYSTICKACTION_RESET_INTO_BOOTLOADER;
+            #else
+              ActiveSerial->println("[L]The command is not supported");
+            #endif
+          }
+          if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_JOYSTICK_DEBUG)
+          {
+            #ifdef External_RP2040
+              ActiveSerial->println("[L]JOYSTICK debug mode on");
+              dap_joystickUART_state_lcl._payloadjoystick.JoystickAction = JOYSTICKACTION_DEBUG_MODE;
+            #else
+              ActiveSerial->println("[L]The command is not supported");
+            #endif
+          }
+          tinyusbJoystick_.isBridgeActionGet=false;
+        }
+        if(tinyusbJoystick_.isOtaActionGet)
+        {
+          ActiveSerial->println("[L]get OTA command and its info");
+          memcpy(&dap_action_ota_st, &tinyusbJoystick_.tmpOtaAction, sizeof(DAP_action_ota_st));
+          #ifdef OTA_Update
+          bool structChecker_b = true;
+          if (dap_action_ota_st.payLoadHeader_.payloadType != DAP_PAYLOAD_TYPE_ACTION_OTA)
+          {
+            structChecker_b = false;
+            //structIsValid = false;
+          }
+          if (structChecker_b)
+          {
+            SSID = new char[dap_action_ota_st.payloadOtaInfo_.SSID_Length + 1];
+            PASS = new char[dap_action_ota_st.payloadOtaInfo_.PASS_Length + 1];
+            memcpy(SSID, dap_action_ota_st.payloadOtaInfo_.WIFI_SSID, dap_action_ota_st.payloadOtaInfo_.SSID_Length);
+            memcpy(PASS, dap_action_ota_st.payloadOtaInfo_.WIFI_PASS, dap_action_ota_st.payloadOtaInfo_.PASS_Length);
+            SSID[dap_action_ota_st.payloadOtaInfo_.SSID_Length] = 0;
+            PASS[dap_action_ota_st.payloadOtaInfo_.PASS_Length] = 0;
+          }
+          if (dap_action_ota_st.payloadOtaInfo_.device_ID == DEVICE_ID && structChecker_b == true)
+          {
+            OTA_enable_b = true;
+            ActiveSerial->println("[L] Bridge OTA begin.");
+          }
+          else if (structChecker_b)
+          {
+            pedal_OTA_action_b = true;
+          }
+          #endif
+          tinyusbJoystick_.isOtaActionGet = false;    
+        }
+      #endif
+    }
+  }
+}
+
+void hidCommunicaitonTxTask(void *pvParameters)
+{
+  for(;;)
+  {
+    if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) 
+    {
+      #ifdef USB_JOYSTICK
+        uint16_t crc;
+        unsigned long current_time=millis();
+        
+        if(current_time-bridge_state_last_update>200)
+        {
+          basic_rssi_update=true;
+          bridge_state_last_update=millis();
+        }
+        
+        if(current_time-PedalUpdateLast>500)
+        {
+          PedalUpdateIntervalPrint_b=true;
+          PedalUpdateLast=current_time;
+        }
+        /*
+        if(current_time-UARTJoystickUpdateLast>7)
+        {
+          UARTJoystickUpdate_b=true;
+          UARTJoystickUpdateLast=current_time;
+        }
+        */
+        bool structChecker = true;
+        
+        for(int i =0; i<3; i++)
+        {
+          if(update_basic_state[i])
+          {
+            update_basic_state[i]=false;
+            tinyusbJoystick_.sendData((uint8_t*)&dap_state_basic_st[i], sizeof(DAP_state_basic_st));
+            if(dap_bridge_state_st.payloadBridgeState_.Pedal_availability[dap_state_basic_st[i].payLoadHeader_.PedalTag]==0)
+            {
+              ActiveSerial->print("[L]Found Pedal:");
+              ActiveSerial->println(dap_state_basic_st[i].payLoadHeader_.PedalTag);
+            }
+            dap_bridge_state_st.payloadBridgeState_.Pedal_availability[dap_state_basic_st[i].payLoadHeader_.PedalTag]=1;
+            pedal_last_update[dap_state_basic_st[i].payLoadHeader_.PedalTag]=millis();
+            if(ESPNow_error_b[i])
+            {
+              ActiveSerial->print("[L]Pedal:");
+              ActiveSerial->print(dap_state_basic_st[i].payLoadHeader_.PedalTag);
+              ActiveSerial->print(" E:");
+              ActiveSerial->println(dap_state_basic_st[i].payloadPedalState_Basic_.error_code_u8);
+              ESPNow_error_b[i]=false;    
+            }
+          }
+          if(update_extend_state[i])
+          {
+            update_extend_state[i]=false;
+            tinyusbJoystick_.sendData((uint8_t*)&dap_state_extended_st[i], sizeof(DAP_state_extended_st));
+            
+
+          }
+        }
+        
+
+        int pedal_config_IDX=0;
+        for(pedal_config_IDX=0;pedal_config_IDX<3;pedal_config_IDX++)
+        {
+          if(ESPNow_request_config_b[pedal_config_IDX])
+          {
+            DAP_config_st * dap_config_st_local_ptr;
+            DAP_config_st dap_config_st_local;
+            if(pedal_config_IDX==0)
+            {
+              memcpy(&dap_config_st_local, &dap_config_st_Clu, sizeof(DAP_config_st));
+              //dap_config_st_local_ptr = &dap_config_st_Clu;
+            }
+            if(pedal_config_IDX==1)
+            {
+              memcpy(&dap_config_st_local, &dap_config_st_Brk, sizeof(DAP_config_st));
+              //dap_config_st_local_ptr = &dap_config_st_Brk;
+            }
+            if(pedal_config_IDX==2)
+            {
+              memcpy(&dap_config_st_local, &dap_config_st_Gas, sizeof(DAP_config_st));
+              //dap_config_st_local_ptr = &dap_config_st_Gas;
+            }
+            dap_config_st_local_ptr= &dap_config_st_local;
+            
+            //uint16_t crc = checksumCalculator((uint8_t*)(&(dap_config_st.payLoadHeader_)), sizeof(dap_config_st.payLoadHeader_) + sizeof(dap_config_st.payLoadPedalConfig_));
+
+            dap_config_st_local_ptr->payLoadHeader_.PedalTag=dap_config_st_local_ptr->payLoadPedalConfig_.pedal_type;
+            crc = checksumCalculator((uint8_t*)(&(dap_config_st_local.payLoadHeader_)), sizeof(dap_config_st_local.payLoadHeader_) + sizeof(dap_config_st_local.payLoadPedalConfig_));
+            dap_config_st_local_ptr->payloadFooter_.checkSum = crc;
+            tinyusbJoystick_.sendData((uint8_t*)&dap_config_st_local.payLoadHeader_, sizeof(DAP_config_st));
+            ESPNow_request_config_b[pedal_config_IDX]=false;
+            ActiveSerial->print("[L]Pedal:");
+            ActiveSerial->print(pedal_config_IDX);
+            ActiveSerial->println(" config returned");
+            delay(3);
+          }
+        }
+
+        
+        if(basic_rssi_update)//Bridge action
+        {
+          //fill header and footer
+          dap_bridge_state_st.payLoadHeader_.startOfFrame0_u8 = SOF_BYTE_0;
+          dap_bridge_state_st.payLoadHeader_.startOfFrame1_u8 = SOF_BYTE_1;
+          dap_bridge_state_st.payloadFooter_.enfOfFrame0_u8 = EOF_BYTE_0;
+          dap_bridge_state_st.payloadFooter_.enfOfFrame1_u8 = EOF_BYTE_1;
+          int rssi_filter_value=constrain(rssi_filter.process(rssi_display),-100,0) ;
+          dap_bridge_state_st.payloadBridgeState_.unassignedPedalCount=(byte)unassignedPeersList.size();
+          dap_bridge_state_st.payLoadHeader_.PedalTag=5; //5 means bridge
+          dap_bridge_state_st.payLoadHeader_.payloadType=DAP_PAYLOAD_TYPE_BRIDGE_STATE;
+          dap_bridge_state_st.payLoadHeader_.version=DAP_VERSION_CONFIG;
+          dap_bridge_state_st.payloadBridgeState_.Bridge_action=0;
+          memcpy(dap_bridge_state_st.payloadBridgeState_.Pedal_RSSI_Realtime,rssi,sizeof(int32_t)*3);
+          //parse_version(BRIDGE_FIRMWARE_VERSION,&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[0],&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[1],&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[2]);
+          dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[0]=versionMajor;
+          dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[1]=versionMinor;
+          dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[2]=versionPatch;
+          int indexMac = 0;
+          for (UnassignedPeer &item : unassignedPeersList) 
+          {
+            memcpy(&dap_bridge_state_st.payloadBridgeState_.macAddressDetected[indexMac], item.mac,6);
+            indexMac=indexMac+6;
+          }
+          //CRC check should be in the final
+          crc = checksumCalculator((uint8_t*)(&(dap_bridge_state_st.payLoadHeader_)), sizeof(dap_bridge_state_st.payLoadHeader_) + sizeof(dap_bridge_state_st.payloadBridgeState_));
+          dap_bridge_state_st.payloadFooter_.checkSum=crc;
+          DAP_bridge_state_st * dap_bridge_st_local_ptr;
+          dap_bridge_st_local_ptr = &dap_bridge_state_st;
+          tinyusbJoystick_.sendData((uint8_t*)&dap_bridge_state_st, sizeof(DAP_bridge_state_st));
+          basic_rssi_update=false;
+        }
+        Dap_hidmessage_st receivedMsg;
+        if (xQueueReceive(messageQueueHandle, &receivedMsg, (TickType_t)0) == pdTRUE)
+        {
+          tinyusbJoystick_.sendData((uint8_t*)&receivedMsg, sizeof(Dap_hidmessage_st));
+          delay(1);
+        }
+        //
+        if(PedalUpdateIntervalPrint_b)
+        {
+          if(isBridgeInDebugMode_b)
+          {
+            for(int pedalIDX=0;pedalIDX<3;pedalIDX++)
+            {
+              if(dap_bridge_state_st.payloadBridgeState_.Pedal_availability[pedalIDX]==1)
+              {
+                tinyusbJoystick_.printf("Pedal %d, Update Interval: %d, RSSI: %d", pedalIDX, (int)(millis()-pedal_last_update[pedalIDX]),rssi[pedalIDX]);
+                delay(10);
+              }
+            }
+          }
+          PedalUpdateIntervalPrint_b=false;
+        }
+
+      #endif
+    }
+  }
+}
+

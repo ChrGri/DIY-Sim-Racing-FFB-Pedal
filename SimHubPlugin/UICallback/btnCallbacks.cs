@@ -76,7 +76,7 @@ namespace User.PluginSdkDemo
             sideWindow.Top = screenHeight / 2 - sideWindow.Height / 2;
             if (sideWindow.ShowDialog() == true)
             {
-                DAP_action_ota_st tmp_2;
+                DAP_action_ota_st tmp_2 = default;
                 int length;
                 string SSID = Plugin.Settings.SSID_string;
                 string PASS = Plugin.Settings.PASS_string;
@@ -126,30 +126,8 @@ namespace User.PluginSdkDemo
                         tmp_2.payloadOtaInfo_.WIFI_PASS[i] = array_pass[i];
                         //TextBox_serialMonitor_bridge.Text += tmp_2.WIFI_PASS[i] + ",";
                     }
-
-                    DAP_action_ota_st* v_2 = &tmp_2;
-                    byte* p_2 = (byte*)v_2;
-                    TextBox_serialMonitor_bridge.Text += "\nSending OTA info to Bridge.\n\r";
-
-                    length = sizeof(DAP_action_ota_st);
-                    //TextBox_serialMonitor_bridge.Text += "\nLength:" + length;
-                    byte[] newBuffer_2 = new byte[length];
-                    newBuffer_2 = Plugin.getBytes_Action_Ota(tmp_2);
-                    if (Plugin.ESPsync_serialPort.IsOpen)
-                    {
-                        try
-                        {
-                            // clear inbuffer 
-                            Plugin.ESPsync_serialPort.DiscardInBuffer();
-                            // send query command
-                            Plugin.ESPsync_serialPort.Write(newBuffer_2, 0, newBuffer_2.Length);
-                        }
-                        catch (Exception caughtEx)
-                        {
-                            string errorMessage = caughtEx.Message;
-                            TextBox2.Text = errorMessage;
-                        }
-                    }
+                    if (Plugin.ESPsync_serialPort.IsOpen)  Plugin.SendOTAActionBridge(tmp_2);
+                    
                 }
             }
             
@@ -400,70 +378,9 @@ namespace User.PluginSdkDemo
 
         unsafe private void RestartPedal_click(object sender, RoutedEventArgs e)
         {
-            if (Plugin.Settings.Pedal_ESPNow_Sync_flag[indexOfSelectedPedal_u])
-            {
-                if (Plugin.ESPsync_serialPort.IsOpen)
-                {
-                    try
-                    {
-                        // compute checksum
-                        DAP_action_st tmp;
-                        tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
-                        tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
-                        tmp.payloadHeader_.PedalTag = (byte)indexOfSelectedPedal_u;
-                        tmp.payloadPedalAction_.system_action_u8 = 2; //1=reset pedal position, 2 =restart esp.
-
-                        DAP_action_st* v = &tmp;
-                        tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
-                        tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
-                        tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
-                        tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
-                        byte* p = (byte*)v;
-                        tmp.payloadFooter_.checkSum = Plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
-                        int length = sizeof(DAP_action_st);
-                        byte[] newBuffer = new byte[length];
-                        newBuffer = Plugin.getBytes_Action(tmp);
-                        // clear inbuffer 
-                        Plugin.ESPsync_serialPort.DiscardInBuffer();
-
-                        // send query command
-                        Plugin.ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
-                    }
-                    catch (Exception caughtEx)
-                    {
-                        string errorMessage = caughtEx.Message;
-                        TextBox2.Text = errorMessage;
-                    }
-                }
-            }
-            else
-            {
-                //if (Plugin.Settings.USING_ESP32S3[Plugin.Settings.table_selected])
-                //{
-                    DAP_action_st tmp;
-                    tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
-                    tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
-                    tmp.payloadHeader_.PedalTag = (byte)indexOfSelectedPedal_u;
-                    tmp.payloadPedalAction_.system_action_u8 = 2; //1=reset pedal position, 2 =restart esp.
-
-                    DAP_action_st* v = &tmp;
-                    tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
-                    tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
-                    tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
-                    tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
-                    byte* p = (byte*)v;
-                    tmp.payloadFooter_.checkSum = Plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
-                    Plugin.SendPedalAction(tmp , (byte)Plugin.Settings.table_selected);
-                //}
-                //else
-                //{
-                //    Plugin._serialPort[indexOfSelectedPedal_u].DtrEnable = true;
-                //    Plugin._serialPort[indexOfSelectedPedal_u].RtsEnable = true;
-                //    System.Threading.Thread.Sleep(100);
-                //    Plugin._serialPort[indexOfSelectedPedal_u].DtrEnable = false;
-                //    Plugin._serialPort[indexOfSelectedPedal_u].RtsEnable = false;
-                //}
-            }
+            DAP_action_st tmp = default;
+            tmp.payloadPedalAction_.system_action_u8 = (byte)PedalSystemAction.PEDAL_RESTART; //1=reset pedal position, 2 =restart esp.
+            Plugin.SendPedalAction(tmp, (byte)indexOfSelectedPedal_u);
 
         }
 
@@ -823,7 +740,7 @@ namespace User.PluginSdkDemo
             sideWindow.Top = screenHeight / 2 - sideWindow.Height / 2;
             if (sideWindow.ShowDialog() == true)
             {
-                DAP_action_ota_st tmp_2;
+                DAP_action_ota_st tmp_2 = default;
                 int length;
                 string SSID = Plugin.Settings.SSID_string;
                 string PASS = Plugin.Settings.PASS_string;
@@ -888,64 +805,8 @@ namespace User.PluginSdkDemo
                             tmp_2.payloadOtaInfo_.WIFI_PASS[i] = array_pass[i];
                             //TextBox_serialMonitor_bridge.Text += tmp_2.WIFI_PASS[i] + ",";
                         }
-
-                        DAP_action_ota_st* v_2 = &tmp_2;
-                        byte* p_2 = (byte*)v_2;
-                        TextBox_serialMonitor_bridge.Text += "\nSending OTA info to Pedal:"+indexOfSelectedPedal_u+"\n";
-
-                        length = sizeof(DAP_action_ota_st);
-                        //TextBox_serialMonitor_bridge.Text += "\nLength:" + length;
-                        byte[] newBuffer_2 = new byte[length];
-                        newBuffer_2 = Plugin.getBytes_Action_Ota(tmp_2);
-                        if (Plugin.Settings.Pedal_ESPNow_Sync_flag[indexOfSelectedPedal_u])
-                        {
-                            if (Plugin.ESPsync_serialPort.IsOpen)
-                            {
-                                try
-                                {
-                                    // clear inbuffer 
-                                    Plugin.ESPsync_serialPort.DiscardInBuffer();
-
-                                    // send query command
-                                    Plugin.ESPsync_serialPort.Write(newBuffer_2, 0, newBuffer_2.Length);
-                                }
-                                catch (Exception caughtEx)
-                                {
-                                    string errorMessage = caughtEx.Message;
-                                    //TextBox_debugOutput.Text = errorMessage;
-                                    if (_serial_monitor_window != null)
-                                    {
-                                        _serial_monitor_window.TextBox_SerialMonitor.Text += errorMessage + "\n";
-                                        _serial_monitor_window.TextBox_SerialMonitor.ScrollToEnd();
-                                    }
-                                    //TextBox_serialMonitor.Text+= errorMessage+"\n";
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (Plugin._serialPort[indexOfSelectedPedal_u].IsOpen)
-                            {
-                                try
-                                {
-                                    // clear inbuffer 
-                                    Plugin._serialPort[indexOfSelectedPedal_u].DiscardInBuffer();
-
-                                    // send query command
-                                    Plugin._serialPort[indexOfSelectedPedal_u].Write(newBuffer_2, 0, newBuffer_2.Length);
-                                }
-                                catch (Exception caughtEx)
-                                {
-                                    string errorMessage = caughtEx.Message;
-                                    //TextBox_debugOutput.Text = errorMessage;
-                                    if (_serial_monitor_window != null)
-                                    {
-                                        _serial_monitor_window.TextBox_SerialMonitor.Text += errorMessage + "\n";
-                                    }
-                                    //TextBox_serialMonitor.Text += errorMessage + "\n";
-                                }
-                            }
-                        }
+                        TextBox_serialMonitor_bridge.Text += "\nSending OTA info to Pedal:" + indexOfSelectedPedal_u + "\n";
+                        Plugin.SendOTAActionPedal(tmp_2, (byte)indexOfSelectedPedal_u);
                     }
                 }
             }
@@ -954,51 +815,14 @@ namespace User.PluginSdkDemo
             
         }
 
-        unsafe private void btn_Bridge_restart_Click(object sender, RoutedEventArgs e)
+        public void btn_Bridge_restart_Click(object sender, RoutedEventArgs e)
         {
-            /*
-            Plugin.ESPsync_serialPort.DtrEnable = true;
-            Plugin.ESPsync_serialPort.RtsEnable = true;
-            System.Threading.Thread.Sleep(100);
-            Plugin.ESPsync_serialPort.DtrEnable = false;
-            Plugin.ESPsync_serialPort.RtsEnable = false;
-            */
             //write to bridge
-            DAP_bridge_state_st tmp_2;
-            int length;
-            tmp_2.payLoadHeader_.version = (byte)Constants.pedalConfigPayload_version;
-            tmp_2.payLoadHeader_.payloadType = (byte)Constants.bridgeStatePayloadType;
-            tmp_2.payLoadHeader_.PedalTag = (byte)indexOfSelectedPedal_u;
-            tmp_2.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
-            tmp_2.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
-            tmp_2.payLoadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
-            tmp_2.payLoadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
-            tmp_2.payloadBridgeState_.unassignedPedalCount = 0;
-            tmp_2.payloadBridgeState_.Pedal_availability_0 = 0;
-            tmp_2.payloadBridgeState_.Pedal_availability_1 = 0;
-            tmp_2.payloadBridgeState_.Pedal_availability_2 = 0;
+            DAP_bridge_state_st tmp_2 = default;
+
             tmp_2.payloadBridgeState_.Bridge_action = (byte)bridgeAction.BRIDGE_ACTION_RESTART; //restart bridge
-            DAP_bridge_state_st* v_2 = &tmp_2;
-            byte* p_2 = (byte*)v_2;
-            tmp_2.payloadFooter_.checkSum = Plugin.checksumCalc(p_2, sizeof(payloadHeader) + sizeof(payloadBridgeState));
-            length = sizeof(DAP_bridge_state_st);
-            byte[] newBuffer_2 = new byte[length];
-            newBuffer_2 = Plugin.getBytes_Bridge(tmp_2);
-            if (Plugin.ESPsync_serialPort.IsOpen)
-            {
-                try
-                {
-                    // clear inbuffer 
-                    Plugin.ESPsync_serialPort.DiscardInBuffer();
-                    // send query command
-                    Plugin.ESPsync_serialPort.Write(newBuffer_2, 0, newBuffer_2.Length);
-                }
-                catch (Exception caughtEx)
-                {
-                    string errorMessage = caughtEx.Message;
-                    TextBox2.Text = errorMessage;
-                }
-            }
+            Plugin.SendBridgeAction(tmp_2);
+
         }
         unsafe private void btn_rudder_initialize_Click(object sender, RoutedEventArgs e)
         {
@@ -1321,41 +1145,10 @@ namespace User.PluginSdkDemo
 
         unsafe private void btn_Bridge_print_debug_Click(object sender, RoutedEventArgs e)
         {
-            DAP_bridge_state_st tmp_2;
+            DAP_bridge_state_st tmp_2 = default;
             int length;
-            tmp_2.payLoadHeader_.version = (byte)Constants.pedalConfigPayload_version;
-            tmp_2.payLoadHeader_.payloadType = (byte)Constants.bridgeStatePayloadType;
-            tmp_2.payLoadHeader_.PedalTag = (byte)indexOfSelectedPedal_u;
-            tmp_2.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
-            tmp_2.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
-            tmp_2.payLoadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
-            tmp_2.payLoadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
-            tmp_2.payloadBridgeState_.unassignedPedalCount = 0;
-            tmp_2.payloadBridgeState_.Pedal_availability_0 = 0;
-            tmp_2.payloadBridgeState_.Pedal_availability_1 = 0;
-            tmp_2.payloadBridgeState_.Pedal_availability_2 = 0;
             tmp_2.payloadBridgeState_.Bridge_action = (byte)bridgeAction.BRIDGE_ACTION_DEBUG; //print out debug message
-            DAP_bridge_state_st* v_2 = &tmp_2;
-            byte* p_2 = (byte*)v_2;
-            tmp_2.payloadFooter_.checkSum = Plugin.checksumCalc(p_2, sizeof(payloadHeader) + sizeof(payloadBridgeState));
-            length = sizeof(DAP_bridge_state_st);
-            byte[] newBuffer_2 = new byte[length];
-            newBuffer_2 = Plugin.getBytes_Bridge(tmp_2);
-            if (Plugin.ESPsync_serialPort.IsOpen)
-            {
-                try
-                {
-                    // clear inbuffer 
-                    Plugin.ESPsync_serialPort.DiscardInBuffer();
-                    // send query command
-                    Plugin.ESPsync_serialPort.Write(newBuffer_2, 0, newBuffer_2.Length);
-                }
-                catch (Exception caughtEx)
-                {
-                    string errorMessage = caughtEx.Message;
-                    TextBox2.Text = errorMessage;
-                }
-            }
+            Plugin.SendBridgeAction(tmp_2);
         }
         unsafe private void btn_Bridge_joystick_flashing_Click(object sender, RoutedEventArgs e)
         {

@@ -15,7 +15,7 @@ public:
 
 private:
         static const uint32_t BASE_TICK_US = 300; // Base tick in microseconds
-        static const uint8_t MAX_TASKS = 10;      // Maximum tasks in scheduler
+        static const uint8_t MAX_TASKS = 15;      // Maximum tasks in scheduler
         // Task entry struct
         // Task entry struct
         typedef struct

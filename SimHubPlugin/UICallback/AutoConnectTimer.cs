@@ -41,23 +41,49 @@ namespace User.PluginSdkDemo
             count_timmer_count++;
             if (count_timmer_count > 1)
             {
+                
+                if (Plugin.BridgeHidService.IsConnected)
+                {
+                    if ((Plugin._calculations.bridgeConnectionStatus == BridgeConnectStateEnum.BRIDGE_DISCONNECT))
+                    {
+                        Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT;
+                        for (uint i = 0; i < 3; i++)
+                        {
+                            if (Plugin._calculations.pedalWirelessStatus[(uint)i] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
+                            {
+                                Plugin._calculations.pedalWirelessStatus[(uint)i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
+                            }
+
+                        }
+                        //ToastNotification("Pedal Wireless Bridge", "Connection initialized");
+                        //updateTheGuiFromConfig();
+                    }
+
+                }
+                
+                
                 if (Plugin.Settings.Pedal_ESPNow_auto_connect_flag)
                 {
+
                     if (Plugin.PortExists(Plugin.Settings.ESPNow_port))
                     {
                         if (OpenBridgeSerialConnection())
                         {
-                            Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT;
-                            for (uint i = 0; i < 3; i++)
+                            if (!Plugin.BridgeHidService.IsConnected)
                             {
-                                if (Plugin._calculations.pedalWirelessStatus[(uint)i] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
+                                Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT;
+                                for (uint i = 0; i < 3; i++)
                                 {
-                                    Plugin._calculations.pedalWirelessStatus[(uint)i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
-                                }
+                                    if (Plugin._calculations.pedalWirelessStatus[(uint)i] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
+                                    {
+                                        Plugin._calculations.pedalWirelessStatus[(uint)i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
+                                    }
 
+                                }
+                                ToastNotification("Pedal Wireless Bridge", "Connection initialized");
+                                updateTheGuiFromConfig();
                             }
-                            ToastNotification("Pedal Wireless Bridge", "Connection initialized");
-                            updateTheGuiFromConfig();
+                            
 
                             btn_connect_espnow_port.Content = "Disconnect";
 
@@ -85,7 +111,7 @@ namespace User.PluginSdkDemo
                             updateTheGuiFromConfig();
                             Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_DISCONNECT;
                             for (int i = 0; i < 3; i++) Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
-                            
+
                         }
                     }
 
@@ -218,6 +244,75 @@ namespace User.PluginSdkDemo
             {
                 tmpPedalStatusChange += "Disconnected";
                 ToastNotification("Pedal connection status", tmpPedalStatusChange);
+            }
+
+
+
+            TimeSpan diff_bridge = DateTime.Now - Plugin._calculations.bridgeConnetionlastTime;
+            if (diff_bridge.TotalMilliseconds > BridgeDisconnectTimeOutInMs && Plugin._calculations.bridgeConnectionStatus == BridgeConnectStateEnum.BRIDGE_IS_READY)
+            {
+                if (Plugin.PortExists(Plugin.ESPsync_serialPort.PortName))
+                {
+                    Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
+                    }
+                }
+                else
+                {
+                    Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_DISCONNECT;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                    }
+
+                }
+                updateTheGuiFromConfig();
+
+                ToastNotification("Wireless Connection", "Bridge disconnected");
+
+            }
+            bool toastPedalStatusChange = false;
+            string tmpStringPedalStatusChange = "";
+            for (int i = 0; i < 3; i++)
+            {
+
+                if (Plugin._calculations.pedalWirelessStatus[i] == WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY)
+                {
+                    TimeSpan diff = DateTime.Now - Plugin._calculations.pedalWirelessConnetionlastTime[i];
+                    if (diff.TotalMilliseconds > 1000)
+                    {
+                        if (Plugin._calculations.bridgeConnectionStatus == BridgeConnectStateEnum.BRIDGE_IS_READY || Plugin.PortExists(Plugin.ESPsync_serialPort.PortName))
+                        {
+                            Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
+                        }
+                        else
+                        {
+                            Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                        }
+                        toastPedalStatusChange = true;
+                        tmpStringPedalStatusChange += PedalConstStrings.PedalID[i] + " ";
+
+                    }
+                }
+            }
+            //prevent config read be sent back to pedal
+            for (int i = 0; i < 3; i++)
+            {
+                TimeSpan diff_configPreviewLock = DateTime.Now - Plugin._calculations.configPreviewLockLast[i];
+                if (diff_configPreviewLock.TotalMilliseconds > 500 && Plugin._calculations.configPreviewLock[i])
+                {
+                    Plugin._calculations.configPreviewLock[i] = false;
+                }
+            }
+
+
+            if (toastPedalStatusChange)
+            {
+                updateTheGuiFromConfig();
+                tmpStringPedalStatusChange += "disconnected";
+                ToastNotification("Wireless Connection", tmpStringPedalStatusChange);
             }
 
         }

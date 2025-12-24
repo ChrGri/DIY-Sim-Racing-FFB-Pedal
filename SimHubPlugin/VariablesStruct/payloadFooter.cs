@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace User.PluginSdkDemo
 {
     //[StructLayout(LayoutKind.Sequential, Pack = 1)]
-    
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct payloadFooter
     {
         // To check if structure is valid

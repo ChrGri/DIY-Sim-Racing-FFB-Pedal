@@ -269,7 +269,21 @@ namespace User.PluginSdkDemo
 
             return aux;
         }
+        public Dap_hidmessage_st getHidMessageFromBytes(byte[] myBuffer)
+        {
+            Dap_hidmessage_st aux;
 
+            // see https://stackoverflow.com/questions/31045358/how-do-i-copy-bytes-into-a-struct-variable-in-c
+            int size = Marshal.SizeOf(typeof(Dap_hidmessage_st));
+            IntPtr ptr = Marshal.AllocHGlobal(size);
+
+            Marshal.Copy(myBuffer, 0, ptr, size);
+
+            aux = (Dap_hidmessage_st)Marshal.PtrToStructure(ptr, typeof(Dap_hidmessage_st));
+            Marshal.FreeHGlobal(ptr);
+
+            return aux;
+        }
 
         public DAP_state_basic_st getStateFromBytes(byte[] myBuffer)
         {
@@ -487,8 +501,11 @@ namespace User.PluginSdkDemo
         unsafe public void Reading_config_auto(uint i)
         {
             // compute checksum
-            DAP_action_st tmp;
+            DAP_action_st tmp = default;
             tmp.payloadPedalAction_.returnPedalConfig_u8 = 1;
+            waiting_for_pedal_config[i] = true;
+            Plugin.SendPedalAction(tmp, (byte)i);
+            /*
             tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
             tmp.payloadHeader_.PedalTag = (byte)i;
@@ -503,7 +520,7 @@ namespace User.PluginSdkDemo
             byte[] newBuffer = new byte[length];
             newBuffer = Plugin.getBytes_Action(tmp);
             // tell the plugin that we expect config data
-            waiting_for_pedal_config[i] = true;
+            
             if (Plugin.Settings.Pedal_ESPNow_Sync_flag[i])
             {
                 if (Plugin.ESPsync_serialPort.IsOpen)
@@ -544,6 +561,7 @@ namespace User.PluginSdkDemo
                     }
                 }
             }
+            */
 
         }
 

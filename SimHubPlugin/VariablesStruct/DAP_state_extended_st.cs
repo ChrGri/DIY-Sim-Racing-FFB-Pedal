@@ -9,6 +9,7 @@ namespace User.PluginSdkDemo
 {
     //[StructLayout(LayoutKind.Sequential, Pack = 1)]
     //[Serializable]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct DAP_state_extended_st
     {
         public payloadHeader payloadHeader_;

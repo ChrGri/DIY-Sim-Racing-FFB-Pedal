@@ -18,7 +18,7 @@ namespace User.PluginSdkDemo
             //check the port availability
             if (Plugin != null)
             {
-                if (Plugin.ESPsync_serialPort.IsOpen)
+                if (Plugin.ESPsync_serialPort.IsOpen || Plugin.BridgeHidService.IsConnected)
                 {
                     Plugin._calculations.BridgeSerialConnectionStatus = true;
                     Plugin._calculations.BridgeSerialAvailability = true;
@@ -156,7 +156,7 @@ namespace User.PluginSdkDemo
                     btn_Assignment.IsEnabled = false;
                 }
 
-                if (Plugin._calculations.bridgeConnectionStatus!=BridgeConnectStateEnum.BRIDGE_DISCONNECT)
+                if (Plugin.ESPsync_serialPort.IsOpen)
                 {
                     btn_connect_espnow_port.Content = "Disconnect";
                 }
