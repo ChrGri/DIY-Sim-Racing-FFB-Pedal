@@ -125,6 +125,7 @@ public:
   bool isTestConfigGet[3];
   bool isBridgeActionGet;
   bool isOtaActionGet;
+  bool isInDebug;
   DAP_actions_st tmpAction[8];
   DAP_config_st tmpConfig[3];
   DAP_bridge_state_st tmpBridgeAction;

@@ -139,7 +139,7 @@ bool resetPedalPosition = false;
 bool dap_action_update[3]= {false,false,false};
 MovingAverageFilter rssi_filter(30);
 int32_t joystickNormalizedToInt32_local = 0;
-unsigned long pedal_last_update[3]={1,1,1};
+
 uint8_t pedal_avaliable[3]={0,0,0};
 uint8_t LED_Status=0; //0=normal 1= pairing
 TaskScheduler taskScheduler;
@@ -1055,7 +1055,7 @@ void serialCommunicationTxTask( void * pvParameters)
               ActiveSerial->println(dap_state_basic_st[i].payLoadHeader_.PedalTag);
             }
             dap_bridge_state_st.payloadBridgeState_.Pedal_availability[dap_state_basic_st[i].payLoadHeader_.PedalTag]=1;
-            pedal_last_update[dap_state_basic_st[i].payLoadHeader_.PedalTag]=millis();
+            //pedal_last_update[dap_state_basic_st[i].payLoadHeader_.PedalTag]=millis();
             if(ESPNow_error_b[i])
             {
               ActiveSerial->print("[L]Pedal:");
@@ -1704,6 +1704,9 @@ void miscTask(void *pvParameters)
         {
           ActiveSerial->printf("[L]Found %d Unconfigured Pedals", unassignedPedalCount_Last);
           ActiveSerial->println("");
+          #ifdef USB_JOYSTICK
+            tinyusbJoystick_.printf("Found %d Unconfigured Pedals", unassignedPedalCount_Last);
+          #endif
           for (UnassignedPeer &item : unassignedPeersList) 
           {
             if(!item.peerAdded)
@@ -1750,30 +1753,21 @@ void hidCommunicaitonRxTask(void *pvParameters)
     if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
     {
       #ifdef USB_JOYSTICK
-        if(tinyusbJoystick_.isGetData)
+        // debug output
+        if(tinyusbJoystick_.isInDebug)
         {
-          tinyusbJoystick_.isGetData= false;
-          ActiveSerial->println("");
-          ActiveSerial->print("[L]Raw Length:");
-          ActiveSerial->println(tinyusbJoystick_.rawLength);
-          ActiveSerial->print("[L]isGetData:");
-          ActiveSerial->print(tinyusbJoystick_.isGetData);
-          ActiveSerial->print(", buff size:");
-          ActiveSerial->print(tinyusbJoystick_.buffSizeDis);
-          ActiveSerial->print(", report type:");
-          ActiveSerial->print(tinyusbJoystick_.reportType);
-          ActiveSerial->print(", report ID:");
-          ActiveSerial->println(tinyusbJoystick_.reportID);
           ActiveSerial->print("[L]Report: ");
           for(int i =0; i<tinyusbJoystick_.buffSizeDis; i++)
           {
-              ActiveSerial->print("0x");  
-              if (tinyusbJoystick_.buffDis[i] < 16) ActiveSerial->print('0');
-              ActiveSerial->print(tinyusbJoystick_.buffDis[i], HEX);
-              ActiveSerial->print("-");
+            ActiveSerial->print("0x");  
+            if (tinyusbJoystick_.buffDis[i] < 16) ActiveSerial->print('0');
+            ActiveSerial->print(tinyusbJoystick_.buffDis[i], HEX);
+            ActiveSerial->print("-");
           }
           ActiveSerial->println("");
         }
+
+        
         if(millis()- scan_Last>1000)
         {
           //tinyusbJoystick_.isGetData = false;
@@ -1825,17 +1819,17 @@ void hidCommunicaitonRxTask(void *pvParameters)
           if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_ENABLE_PAIRING)
           {
             #ifdef ESPNow_Pairing_function
-              ActiveSerial->println("[L]Bridge Pairing...");
+              tinyusbJoystick_.printf("Bridge Pairing...");
               software_pairing_action_b = true;
             #endif
             #ifndef ESPNow_Pairing_function
-              ActiveSerial->println("[L]Pairing command didn't supported");
+              tinyusbJoystick_.printf("Pairing command didn't supported");
             #endif
           }
           // action=2, restart
           if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_RESTART)
           {
-            ActiveSerial->println("[L]Bridge Restart");
+            tinyusbJoystick_.printf("Bridge Restart");
             delay(1000);
             ESP.restart();
           }
@@ -1843,7 +1837,7 @@ void hidCommunicaitonRxTask(void *pvParameters)
           {
             // aciton=3 restart into boot mode
             #ifdef CONFIG_IDF_TARGET_ESP32S3
-              ActiveSerial->println("[L]Bridge Restart into Download mode");
+              tinyusbJoystick_.printf("Bridge Restart into Download mode");
               delay(1000);
               REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
               ESP.restart();
@@ -1857,13 +1851,13 @@ void hidCommunicaitonRxTask(void *pvParameters)
             if (isBridgeInDebugMode_b)
             {
             // aciton=4 print pedal update interval
-              ActiveSerial->println("[L]Bridge debug mode off.");
+              tinyusbJoystick_.printf("Bridge debug mode off.");
               isBridgeInDebugMode_b = false;
             }
             else
             {
               // aciton=4 print pedal update interval
-              ActiveSerial->println("[L]Bridge debug mode on.");
+              tinyusbJoystick_.printf("Bridge debug mode on.");
               isBridgeInDebugMode_b = true;
             }
           }
@@ -1873,7 +1867,7 @@ void hidCommunicaitonRxTask(void *pvParameters)
               ActiveSerial->println("[L]JOYSTICK restart into flashing mode");
               dap_joystickUART_state_lcl._payloadjoystick.JoystickAction = JOYSTICKACTION_RESET_INTO_BOOTLOADER;
             #else
-              ActiveSerial->println("[L]The command is not supported");
+              tinyusbJoystick_.printf("[L]The command is not supported");
             #endif
           }
           if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_JOYSTICK_DEBUG)
@@ -1882,14 +1876,14 @@ void hidCommunicaitonRxTask(void *pvParameters)
               ActiveSerial->println("[L]JOYSTICK debug mode on");
               dap_joystickUART_state_lcl._payloadjoystick.JoystickAction = JOYSTICKACTION_DEBUG_MODE;
             #else
-              ActiveSerial->println("[L]The command is not supported");
+              tinyusbJoystick_.printf("[L]The command is not supported");
             #endif
           }
           tinyusbJoystick_.isBridgeActionGet=false;
         }
         if(tinyusbJoystick_.isOtaActionGet)
         {
-          ActiveSerial->println("[L]get OTA command and its info");
+          tinyusbJoystick_.printf("get OTA command and its info");
           memcpy(&dap_action_ota_st, &tinyusbJoystick_.tmpOtaAction, sizeof(DAP_action_ota_st));
           #ifdef OTA_Update
           bool structChecker_b = true;
@@ -1910,7 +1904,7 @@ void hidCommunicaitonRxTask(void *pvParameters)
           if (dap_action_ota_st.payloadOtaInfo_.device_ID == DEVICE_ID && structChecker_b == true)
           {
             OTA_enable_b = true;
-            ActiveSerial->println("[L] Bridge OTA begin.");
+            tinyusbJoystick_.printf("Bridge OTA begin.");
           }
           else if (structChecker_b)
           {
@@ -1966,7 +1960,7 @@ void hidCommunicaitonTxTask(void *pvParameters)
               ActiveSerial->println(dap_state_basic_st[i].payLoadHeader_.PedalTag);
             }
             dap_bridge_state_st.payloadBridgeState_.Pedal_availability[dap_state_basic_st[i].payLoadHeader_.PedalTag]=1;
-            pedal_last_update[dap_state_basic_st[i].payLoadHeader_.PedalTag]=millis();
+            //pedal_last_update[dap_state_basic_st[i].payLoadHeader_.PedalTag]=millis();
             if(ESPNow_error_b[i])
             {
               ActiveSerial->print("[L]Pedal:");
@@ -2073,7 +2067,7 @@ void hidCommunicaitonTxTask(void *pvParameters)
               if(dap_bridge_state_st.payloadBridgeState_.Pedal_availability[pedalIDX]==1)
               {
                 tinyusbJoystick_.printf("Pedal %d, Update Interval: %d, RSSI: %d", pedalIDX, (int)(millis()-pedal_last_update[pedalIDX]),rssi[pedalIDX]);
-                delay(10);
+                //delay(10);
               }
             }
           }

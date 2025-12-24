@@ -108,10 +108,18 @@ void TinyusbJoystick::sendData(uint8_t* data, size_t totalLen)
         report[1] = (uint8_t)totalLen; 
         report[2] = (uint8_t)chunkLen; 
         memcpy(&report[3], &data[offset], chunkLen);
+        uint32_t start_time = millis();
+        uint32_t timeout_ms = 10;
+        while (!usb_hid.ready()) 
+        {
+            if (millis() - start_time > timeout_ms) 
+            {
+                break;
+            }
+            delay(1);
+        }
         usb_hid.sendReport(HID_PAYLOAD_INPUT, report, PACKET_SIZE); 
-
         offset += chunkLen;
-        delay(2);
     }
 }
 

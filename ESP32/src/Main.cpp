@@ -3072,7 +3072,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
   uint Pairing_timeout=20000;
   uint rudderPacketInterval=3;
   uint joystickPacketInterval=3;
-  uint basicStateUpdateInterval=3;
+  uint basicStateUpdateIntervalBase[3]={5,4,3};
   uint extendStateUpdateInterval=10;
   uint assignmentPacketUpdateInterval = 100;
   bool Pairing_timeout_status=false;
@@ -3100,15 +3100,19 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
   {
       if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) {
 
+
+        DAP_config_st espnow_dap_config_st;
+        global_dap_config_class.getConfig(&espnow_dap_config_st, 500);
         //basic state sendout interval
+        uint basicStateUpdateInterval = 8;
+        int pedalId=espnow_dap_config_st.payLoadPedalConfig_.pedal_type;
+        if(pedalId < 3) basicStateUpdateInterval= basicStateUpdateIntervalBase[pedalId];
         if(millis()-basic_state_update_last>basicStateUpdateInterval)
         {
           basic_state_send_b=true;
           basic_state_update_last=millis();
           
         }
-        DAP_config_st espnow_dap_config_st;
-        global_dap_config_class.getConfig(&espnow_dap_config_st, 500);
         if (espnow_dap_config_st.payLoadPedalConfig_.pedal_type ==PEDAL_ID_UNKNOWN)
         {
           noAssignmentStatus=true;

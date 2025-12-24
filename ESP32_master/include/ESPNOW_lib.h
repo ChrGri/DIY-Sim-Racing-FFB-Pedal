@@ -38,6 +38,7 @@ bool pedal_OTA_action_b=false;
 uint16_t Joystick_value[]={0,0,0};
 uint16_t Joystick_throttle_value_from_pedal=0;
 uint16_t Joystick_value_original[]={0,0,0};
+unsigned long pedal_last_update[3]={1,1,1};
 bool ESPNow_request_config_b[3]={false,false,false};
 bool ESPNow_error_b[3]={false,false,false};
 uint16_t pedal_throttle_value=0;
@@ -225,6 +226,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
         uint8_t pedalTag=dap_state_basic_st_lcl.payLoadHeader_.PedalTag;
         memcpy(&dap_state_basic_st[pedalTag], data, sizeof(DAP_state_basic_st));
         update_basic_state[pedalTag]=true;
+        pedal_last_update[pedalTag]=millis();
         if(dap_state_basic_st_lcl.payloadPedalState_Basic_.error_code_u8!=0) ESPNow_error_b[pedalTag]=true;
         float joystickData_u32= dap_state_basic_st[pedalTag].payloadPedalState_Basic_.joystickOutput_u16/32767.0f*10000.0f;
         uint16_t joystickNormalizedToInt16 = dap_state_basic_st[pedalTag].payloadPedalState_Basic_.joystickOutput_u16; 
