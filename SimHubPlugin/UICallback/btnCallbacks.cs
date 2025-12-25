@@ -826,7 +826,7 @@ namespace User.PluginSdkDemo
         }
         unsafe private void btn_rudder_initialize_Click(object sender, RoutedEventArgs e)
         {
-            if (Plugin.ESPsync_serialPort.IsOpen)
+            if (Plugin.ESPsync_serialPort.IsOpen || Plugin.BridgeHidService.IsConnected)
             {
 
                 if (Pedal_connect_status == (byte)PedalAvailability.ThreePedalConnect)

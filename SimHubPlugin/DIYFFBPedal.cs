@@ -557,8 +557,9 @@ namespace User.PluginSdkDemo
 
                     if (Settings.RPM_enable_flag[pedalIdx] == 1)
                     {
-                        if (Math.Abs(RPM_value - rpm_last_value[pedalIdx]) > 3)
+                        if (Math.Abs(RPM_value - rpm_last_value[pedalIdx]) > 3 || BridgeHidService.IsConnected)
                         {
+                            //update rpm value every frame when HID bridge is connected
                             tmp.payloadPedalAction_.RPM_u8 = (Byte)RPM_value;
                             update_flag = true;
                             rpm_last_value[pedalIdx] = (Byte)RPM_value;
@@ -749,13 +750,14 @@ namespace User.PluginSdkDemo
                         }
                     }
                     // check the update interval
-                    if (update_flag)
+                    // if connect with HID bridge, ignore the fps limit, update all the time.
+                    if (update_flag && !BridgeHidService.IsConnected)
                     {
                         Action_currentTime[pedalIdx] = DateTime.Now;
                         TimeSpan diff_action = Action_currentTime[pedalIdx] - Action_lastTime[pedalIdx];
                         int millisceonds_action = (int)diff_action.TotalMilliseconds;
                         float time_interval= (1000.0f / Settings.Pedal_action_fps[pedalIdx])-actionIntervalTolerance;
-                        if (millisceonds_action <= time_interval)
+                        if (millisceonds_action <= time_interval )
                         {
                             update_flag = false;
                         }

@@ -24,15 +24,22 @@ namespace User.PluginSdkDemo
     {
         public void ToastNotification(string message1, string message2)
         {
+            try 
+            {
+                var xml = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText02);
+                var text = xml.GetElementsByTagName("text");
+                text[0].AppendChild(xml.CreateTextNode(message1));
+                text[1].AppendChild(xml.CreateTextNode(message2));
+                var toast = new ToastNotification(xml);
+                toast.ExpirationTime = DateTime.Now.AddMilliseconds(500);
+                toast.Tag = "Pedal_notification";
+                ToastNotificationManager.CreateToastNotifier("FFB Pedal Dashboard").Show(toast);
+            }
+            catch (Exception ex)
+            {
+                SimHub.Logging.Current.Error($"Toast error: {ex.Message}");
+            }
 
-            var xml = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText02);
-            var text = xml.GetElementsByTagName("text");
-            text[0].AppendChild(xml.CreateTextNode(message1));
-            text[1].AppendChild(xml.CreateTextNode(message2));
-            var toast = new ToastNotification(xml);
-            toast.ExpirationTime = DateTime.Now.AddMilliseconds(500);
-            toast.Tag = "Pedal_notification";
-            ToastNotificationManager.CreateToastNotifier("FFB Pedal Dashboard").Show(toast);
 
 
 
