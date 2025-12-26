@@ -478,14 +478,13 @@ namespace User.PluginSdkDemo
 
         private void SystemLicense_Tab_btn_test_Click_event(object sender, EventArgs e)
         {
-            uint hash =Plugin.ConfigService.ConfigHashMap.Fnv1aHash("RudderConfig");
+            //uint hash =Plugin.ConfigService.ConfigHashMap.Fnv1aHash("RudderConfig");
             ToastNotification("Debug", "Print All parameter and available com portin Serial log");
-            
             //readRudderSettingToConfig();
             //PrintUnknownStructParameters(dap_config_st_rudder.payloadPedalConfig_);
             if (_serial_monitor_window != null)
             {
-                _serial_monitor_window.TextBox_SerialMonitor.Text += "\n\nDefaultConfig Hash:" + hash+"\n";
+                //_serial_monitor_window.TextBox_SerialMonitor.Text += "\n\nDefaultConfig Hash:" + hash+"\n";
                 PrintUnknownStructParameters(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_);
                 UpdateSerialPortList_click();
                 _serial_monitor_window.TextBox_SerialMonitor.Text += "\nCom port count: " + Plugin.comportList.Count;

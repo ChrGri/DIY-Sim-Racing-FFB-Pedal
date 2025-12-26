@@ -2,10 +2,12 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Media;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -13,7 +15,10 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Forms;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using Windows.UI.Notifications;
 using static User.PluginSdkDemo.ComPortHelper;
@@ -24,25 +29,109 @@ namespace User.PluginSdkDemo
     {
         public void ToastNotification(string message1, string message2)
         {
-            try 
+            System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
             {
-                var xml = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText02);
-                var text = xml.GetElementsByTagName("text");
-                text[0].AppendChild(xml.CreateTextNode(message1));
-                text[1].AppendChild(xml.CreateTextNode(message2));
-                var toast = new ToastNotification(xml);
-                toast.ExpirationTime = DateTime.Now.AddMilliseconds(500);
-                toast.Tag = "Pedal_notification";
-                ToastNotificationManager.CreateToastNotifier("FFB Pedal Dashboard").Show(toast);
-            }
-            catch (Exception ex)
+                try
+                {
+                    ToastWithCustumizedWindow(message1, message2);
+                }
+                catch (Exception ex)
+                {
+                    SimHub.Logging.Current.Error($"Toast error: {ex.Message}");
+                }
+            }));
+
+        }
+
+        public void ToastWithToastmanager(string message1, string message2)
+        {
+            var xml = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText02);
+            var text = xml.GetElementsByTagName("text");
+            text[0].AppendChild(xml.CreateTextNode(message1));
+            text[1].AppendChild(xml.CreateTextNode(message2));
+            var toast = new ToastNotification(xml);
+            toast.ExpirationTime = DateTime.Now.AddMilliseconds(500);
+            toast.Tag = "Pedal_notification";
+            ToastNotificationManager.CreateToastNotifier("FFB Pedal Dashboard").Show(toast);
+        }
+
+        public void ToastWithPowerShell(string title, string message)
+        {
+            string script = $"$ErrorActionPreference = 'SilentlyContinue'; " +
+                    $"[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null; " +
+                    $"$template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02); " +
+                    $"$textNodes = $template.GetElementsByTagName('text'); " +
+                    $"$textNodes.Item(0).AppendChild($template.CreateTextNode('{title}')) > $null; " +
+                    $"$textNodes.Item(1).AppendChild($template.CreateTextNode('{message}')) > $null; " +
+                    $"$toast = [Windows.UI.Notifications.ToastNotification]::new($template); " +
+                    $"[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('DIY FFB Pedal').Show($toast);";
+
+            ProcessStartInfo psi = new ProcessStartInfo
             {
-                SimHub.Logging.Current.Error($"Toast error: {ex.Message}");
-            }
+                FileName = "powershell",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{script}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            Process.Start(psi);
+        }
 
+        public void ToastWithCustumizedWindow(string title, string message)
+        {
+            
+            StackPanel container = new StackPanel
+            {
+                Margin = new Thickness(15, 10, 15, 10)
+            };
 
+            
+            TextBlock titleLabel = new TextBlock
+            {
+                Text = title,
+                FontWeight = FontWeights.Bold,
+                FontSize = 16,
+                Foreground = Brushes.White,
+                FontFamily = new FontFamily("Ariel"),
+                Margin = new Thickness(0, 0, 0, 5)
+            };
 
+            
+            TextBlock messageLabel = new TextBlock
+            {
+                Text = message,
+                FontSize = 14,
+                Foreground = Brushes.LightGray,
+                FontFamily = new FontFamily("Ariel"),
+                TextWrapping = TextWrapping.Wrap 
+            };
+            container.Children.Add(titleLabel);
+            container.Children.Add(messageLabel);
+            Window toast = new Window
+            {
+                Width = 350,
+                Height = 100,
+                WindowStyle = WindowStyle.None,
+                AllowsTransparency = true,
+                Background = Brushes.Transparent,
+                Topmost = true,
+                ShowInTaskbar = false,
+                Focusable = false
+            };
+            toast.Content = new Border
+            {
+                Background = new SolidColorBrush(Color.FromArgb(235, 48, 48, 48)),
+                CornerRadius = new CornerRadius(5),
+                BorderBrush = Brushes.Gray,
+                BorderThickness = new Thickness(1),
+                Child = container
+            };
+            var area = SystemParameters.WorkArea;
+            toast.Left = area.Right - toast.Width - 3;
+            toast.Top = area.Bottom - toast.Height - 3;
 
+            toast.Show();
+            SystemSounds.Beep.Play();
+            Task.Delay(3500).ContinueWith(_ => toast.Dispatcher.Invoke(toast.Close));
         }
 
         private void UpdateSerialPortList_click()
