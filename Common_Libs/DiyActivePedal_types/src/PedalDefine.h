@@ -1,5 +1,5 @@
 #pragma once
-#define DAP_VERSION_CONFIG 164
+#define DAP_VERSION_CONFIG 165
 
 // define the payload types
 #define DAP_PAYLOAD_TYPE_CONFIG 100

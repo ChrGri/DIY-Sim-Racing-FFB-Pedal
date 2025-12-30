@@ -138,6 +138,7 @@ void DAP_config_st::initialiseDefaults() {
   payLoadPedalConfig_.minForceForEffects_u8=0;
   payLoadPedalConfig_.servoRatioOfInertia_u8=1;
   payLoadPedalConfig_.configHash = (uint32_t)175245064 ;
+  payLoadPedalConfig_.endstopDetectionThreshold = 30;
 }
 
 

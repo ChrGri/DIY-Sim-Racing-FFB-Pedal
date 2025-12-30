@@ -32,6 +32,9 @@
                 <StackPanel Width="400" Height="50">
                     <localUI:SliderWithLabel x:Name="Slider_ServoRatioOfInertia" SliderLength="400" SliderName="Ratio of Inertia (Pr0.04)" SliderValue="1" MinValue="1" MaxValue="200" SliderValueChanged="Slider_ServoRatioOfInertia_SliderValueChanged" TickFrequency="1" Unit="%" ToolTip="Increase the value for stiffer pedal. Will increase likelihood of pedal oscillation."/>
                 </StackPanel>
+                <StackPanel Width="400" Height="50">
+                    <localUI:SliderWithLabel x:Name="Slider_ServoEndstopDetecionThreshold" SliderLength="400" SliderName="Endstop Detection Threshold" SliderValue="30" MinValue="25" MaxValue="50" SliderValueChanged="Slider_ServoEndstopDetecionThreshold_SliderValueChanged" TickFrequency="1" Unit="%" ToolTip="Increase the value if homing not get full travel. It will take effect after set the ocnfig as default and pedal restart."/>
+                </StackPanel>
             </StackPanel>
 
         </Border>

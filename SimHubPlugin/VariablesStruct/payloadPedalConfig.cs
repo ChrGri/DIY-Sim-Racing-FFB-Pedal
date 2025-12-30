@@ -165,6 +165,7 @@ namespace User.PluginSdkDemo
 
         public byte servoRatioOfInertia_u8;
         public UInt32 configHash_u32;
+        public byte endstopDetectionThreshold;
 
     }
 }

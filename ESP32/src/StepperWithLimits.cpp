@@ -4,7 +4,7 @@
 
 #include "FunctionProfiler.h"
 
-#define STEPPER_WITH_LIMITS_SENSORLESS_CURRENT_THRESHOLD_IN_PERCENT 30
+//#define STEPPER_WITH_LIMITS_SENSORLESS_CURRENT_THRESHOLD_IN_PERCENT 30
 #define MIN_POS_MAX_ENDSTOP 10000 // servo has to drive minimum N steps before it allows the detection of the max endstop
 #define INCLUDE_vTaskDelete 1
 
@@ -44,7 +44,7 @@ bool setServoToSleep_b = false;
 #define STEPPER_FORWARD_PLANNING_TIME_IN_MS (uint8_t)1
 
 
-StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool invertMotorDir_b, uint32_t stepsPerMotorRev_arg_u32, uint8_t ratioOfInertia_arg_u8)
+StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool invertMotorDir_b, uint32_t stepsPerMotorRev_arg_u32, uint8_t ratioOfInertia_arg_u8, uint8_t _endstopDetectionThreshold)
   :  _endstopLimitMin(0),    _endstopLimitMax(0)
   , _posMin(0),      _posMax(0)
   , stepsPerMotorRev_u32(stepsPerMotorRev_arg_u32)
@@ -52,7 +52,7 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool
 {
 
   	_stepper = new FastNonAccelStepper(pinStep, pinDirection, invertMotorDir_b); 
-
+	endstopDetectionThreshold = constrain(endstopDetectionThreshold, 25, 50);
 
 	// pinMode(pinMin, INPUT);
 	// pinMode(pinMax, INPUT);
@@ -253,7 +253,7 @@ void StepperWithLimits::findMinMaxSensorless(DAP_config_st dap_config_st)
 		for (uint16_t tryIdx = 0; tryIdx < 500; tryIdx++)
 		{
 			delay(5);
-			endPosDetected = abs( getServosCurrent() ) > STEPPER_WITH_LIMITS_SENSORLESS_CURRENT_THRESHOLD_IN_PERCENT;
+			endPosDetected = abs( getServosCurrent() ) > endstopDetectionThreshold;
 
 			if (false == endPosDetected)
 			{
@@ -271,7 +271,7 @@ void StepperWithLimits::findMinMaxSensorless(DAP_config_st dap_config_st)
 		
 		while( (!endPosDetected) && (getLifelineSignal()) ){
 			delay(1);
-			endPosDetected = abs( getServosCurrent() ) > STEPPER_WITH_LIMITS_SENSORLESS_CURRENT_THRESHOLD_IN_PERCENT;
+			endPosDetected = abs( getServosCurrent() ) > endstopDetectionThreshold;
 		}
 		setPosition = - 5 * ENDSTOP_MOVEMENT_SENSORLESS;
 		delay(20);
@@ -310,7 +310,7 @@ void StepperWithLimits::findMinMaxSensorless(DAP_config_st dap_config_st)
 			delay(1);
 			if (_stepper->getCurrentPosition() > MIN_POS_MAX_ENDSTOP)
     		{
-				endPosDetected = abs( getServosCurrent() ) > STEPPER_WITH_LIMITS_SENSORLESS_CURRENT_THRESHOLD_IN_PERCENT;
+				endPosDetected = abs( getServosCurrent() ) > endstopDetectionThreshold;
 			}
 
 			// virtual endstop

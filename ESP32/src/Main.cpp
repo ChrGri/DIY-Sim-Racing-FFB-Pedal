@@ -923,7 +923,7 @@ void setup()
   #endif
 
   bool invMotorDir = dap_config_st_local.payLoadPedalConfig_.invertMotorDirection_u8 > 0;
-  stepper = new StepperWithLimits(stepPinStepper, dirPinStepper, invMotorDir, dap_calculationVariables_st.stepsPerMotorRevolution, dap_config_st_local.payLoadPedalConfig_.servoRatioOfInertia_u8); 
+  stepper = new StepperWithLimits(stepPinStepper, dirPinStepper, invMotorDir, dap_calculationVariables_st.stepsPerMotorRevolution, dap_config_st_local.payLoadPedalConfig_.servoRatioOfInertia_u8, dap_config_st_local.payLoadPedalConfig_.endstopDetectionThreshold); 
 
   motorRevolutionsPerSteps_fl32 = 1.0f / ( (float)dap_calculationVariables_st.stepsPerMotorRevolution );
   // ActiveSerial->printf("Steps per motor revolution: %d\n", dap_calculationVariables_st.stepsPerMotorRevolution);

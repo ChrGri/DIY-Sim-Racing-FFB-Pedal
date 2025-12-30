@@ -56,7 +56,7 @@ private:
 	
 
 public:
-	StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool invertMotorDir_b, uint32_t stepsPerMotorRev_arg_u32, uint8_t ratioOfInertia_arg_u8);
+	StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool invertMotorDir_b, uint32_t stepsPerMotorRev_arg_u32, uint8_t ratioOfInertia_arg_u8, uint8_t _endstopDetectionThreshold);
 	bool hasValidStepper() const { return NULL != _stepper; }
 
 	void checkLimitsAndResetIfNecessary();
@@ -115,6 +115,7 @@ public:
 	
 	bool servoIdleAction();
 	uint8_t servoStatus=0;
+	uint8_t endstopDetectionThreshold=30;
 
 	
 

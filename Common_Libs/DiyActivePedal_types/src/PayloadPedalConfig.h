@@ -143,5 +143,6 @@ struct __attribute__((packed)) payloadPedalConfig {
   uint8_t minForceForEffects_u8;
   uint8_t servoRatioOfInertia_u8;
   uint32_t configHash;
+  uint8_t endstopDetectionThreshold;
 
 };
