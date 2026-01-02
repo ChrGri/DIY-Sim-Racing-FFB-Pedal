@@ -202,8 +202,11 @@ void setup()
   #ifdef USB_JOYSTICK
     ActiveSerial->println("[L]Setup controller");
     SetupController();
-    taskScheduler.addScheduledTask(hidCommunicaitonRxTask, "Hid Rx", 2000, 1, 1, 3000);
-    taskScheduler.addScheduledTask(hidCommunicaitonTxTask, "Hid Tx", 2000, 1, 1, 3000);
+    delay(500);
+    tinyusbJoystick_.printf("This work is licensed under a CC-BY-NC-SA License.\nPlease check github repo for more detail: https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal\nBridge: Board:%s, Version:%s.", BRIDGE_BOARD, BRIDGE_FIRMWARE_VERSION);
+    delay(500);
+    taskScheduler.addScheduledTask(hidCommunicaitonRxTask, "Hid Rx", REPETITION_INTERVAL_HID_RX_TASK, TASK_PRIORITY_HID_RX_TASK, CORE_ID_HID_RX_TASK, STACK_SIZE_HID_RX_TASK);
+    taskScheduler.addScheduledTask(hidCommunicaitonTxTask, "Hid Tx", REPETITION_INTERVAL_HID_TX_TASK, TASK_PRIORITY_HID_TX_TASK, CORE_ID_HID_TX_TASK, STACK_SIZE_HID_TX_TASK);
     /*
     ActiveSerial->print("[L]HID descriptor Size:");
     ActiveSerial->println(reportSize);
@@ -362,7 +365,10 @@ void setup()
   taskScheduler.begin();
 
   ActiveSerial->println("[L]Setup end");
-  tinyusbJoystick_.printf("Setup end.");
+  #ifdef USB_JOYSTICK
+    delay(2000);
+    tinyusbJoystick_.printf("Bridge setup end.");
+  #endif
   
   
 }

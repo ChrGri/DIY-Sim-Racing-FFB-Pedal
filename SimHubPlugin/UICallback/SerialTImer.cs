@@ -667,7 +667,7 @@ namespace User.PluginSdkDemo
                                             // if pedal return DefaultConfig, clear the default setting and ask re send a default config in
                                             Plugin.Settings.DefaultConfig[pedalSelected] = "";
                                             Plugin._calculations.ConfigEditing[pedalSelected] = "";
-                                            ToastNotification($"No Default Config found in {PedalConstStrings.PedalID[pedalSelected]}", $"{PedalConstStrings.PedalID[pedalSelected]}: Please Set a Config as Default");
+                                            ToastNotification($"No Startup Config found in {PedalConstStrings.PedalID[pedalSelected]}", $"{PedalConstStrings.PedalID[pedalSelected]}: Please Set a Config as Startup");
 
                                         }
                                         else

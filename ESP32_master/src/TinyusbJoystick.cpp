@@ -245,35 +245,24 @@ uint16_t TinyusbJoystick::checksumCal(uint8_t * data, uint16_t length)
    return (sum2 << 8) | sum1;
 }
 
-
-void TinyusbJoystick::printf(const char *log,...)
+void TinyusbJoystick::printf(const char *log, ...)
 {
-  uint8_t buffer[235];
-  uint8_t payloadType = DAP_PAYLOAD_TYPE_ESPNOW_LOG;
-  Dap_hidmessage_st message;
-  //uint8_t logLen = strlen(log); 
+  char buffer[235];
   va_list args;
-  char* result = NULL;
-  int needed_size;
-  va_start(args, log); // initialized va_list
-  needed_size = vsnprintf(NULL, 0, log, args);
-  va_end(args); 
-  if (needed_size < 0) return;
-  result = (char*)malloc(needed_size + 1);
-  // malloc error
-  if (result == NULL) return;
-  va_start(args, log); 
-  vsnprintf(result, needed_size + 1, log, args);
-  va_end(args); 
-  int logLen=strlen(result);
-  if (logLen > 235) logLen = 235;
-  message.payloadType = payloadType;
+  va_start(args, log);
+  int logLen = vsnprintf(buffer, sizeof(buffer), log, args);
+  va_end(args);
+  if (logLen <= 0) return;
+  if (logLen >= (int)sizeof(buffer)) {
+      logLen = sizeof(buffer) - 1; 
+  }
+  Dap_hidmessage_st message;
+  message.payloadType = DAP_PAYLOAD_TYPE_ESPNOW_LOG;
   message.magicKey1 = ESPNOW_LOG_MAGIC_KEY;
   message.magicKey2 = ESPNOW_LOG_MAGIC_KEY_2;
-  message.length = logLen;
-  memcpy(&message.text, result, logLen);
+  message.length = (uint8_t)logLen;
+  memcpy(&message.text, buffer, logLen);
   sendData((uint8_t*)&message, sizeof(Dap_hidmessage_st));
-  delay(10);
-  //ESPNow.send_message(broadcast_mac, (uint8_t *)buffer, 4 + logLen);
-  free(result);
+  
+  //delay(1);
 }

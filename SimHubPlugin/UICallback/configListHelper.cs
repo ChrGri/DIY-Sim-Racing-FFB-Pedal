@@ -46,12 +46,12 @@ namespace User.PluginSdkDemo
             
             if (isCurrent)
             {
-                result += " (Current)";
+                result += " (Active)";
             }
             
             else if (isDefault)
             {
-                result += " (Default)";
+                result += " (Startup)";
             }
 
             return result;

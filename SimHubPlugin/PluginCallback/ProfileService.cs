@@ -320,7 +320,7 @@ namespace User.PluginSdkDemo
                         item.ListName = item.ListNameOrig;
                     }
                     var foundItem = this.ProfileList.FirstOrDefault(item => item.FileName == _plugin._calculations.ProfileEditing);
-                    if (foundItem != null) foundItem.ListName += "(Loaded)";
+                    if (foundItem != null) foundItem.ListName += "(Active)";
                 }
 
             }

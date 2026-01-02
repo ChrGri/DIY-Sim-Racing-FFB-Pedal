@@ -22,6 +22,8 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using Windows.UI.Notifications;
 using static User.PluginSdkDemo.ComPortHelper;
+using Button = System.Windows.Controls.Button;
+using Cursors = System.Windows.Input.Cursors;
 
 namespace User.PluginSdkDemo
 {
@@ -78,35 +80,55 @@ namespace User.PluginSdkDemo
 
         public void ToastWithCustumizedWindow(string title, string message)
         {
-            
+            Grid mainGrid = new Grid();
             StackPanel container = new StackPanel
             {
-                Margin = new Thickness(15, 10, 15, 10)
+                Margin = new Thickness(15, 10, 25, 10) 
             };
 
-            
             TextBlock titleLabel = new TextBlock
             {
                 Text = title,
                 FontWeight = FontWeights.Bold,
                 FontSize = 16,
                 Foreground = Brushes.White,
-                FontFamily = new FontFamily("Ariel"),
+                FontFamily = new FontFamily("Arial"), 
                 Margin = new Thickness(0, 0, 0, 5)
             };
 
-            
             TextBlock messageLabel = new TextBlock
             {
                 Text = message,
                 FontSize = 14,
                 Foreground = Brushes.LightGray,
-                FontFamily = new FontFamily("Ariel"),
-                TextWrapping = TextWrapping.Wrap 
+                FontFamily = new FontFamily("Arial"),
+                TextWrapping = TextWrapping.Wrap
             };
+
             container.Children.Add(titleLabel);
             container.Children.Add(messageLabel);
-            Window toast = new Window
+            mainGrid.Children.Add(container);
+            System.Windows.Controls.Button closeButton = new Button
+            {
+                Content = "×",
+                FontSize = 18,
+                Foreground = Brushes.Gray,
+                Background = Brushes.Transparent,
+                BorderBrush = Brushes.Transparent,
+                VerticalAlignment = VerticalAlignment.Top,
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
+                Margin = new Thickness(0, 0, 0, 0),
+                Padding = new Thickness(0),
+                Width = 25,
+                Height = 25,
+                Cursor = Cursors.Hand
+            };
+            Window toast = null; 
+            closeButton.Click += (s, e) => toast?.Close();
+            closeButton.MouseEnter += (s, e) => closeButton.Foreground = Brushes.White;
+            closeButton.MouseLeave += (s, e) => closeButton.Foreground = Brushes.Gray;
+            mainGrid.Children.Add(closeButton);
+            toast = new Window
             {
                 Width = 350,
                 Height = 100,
@@ -115,23 +137,27 @@ namespace User.PluginSdkDemo
                 Background = Brushes.Transparent,
                 Topmost = true,
                 ShowInTaskbar = false,
-                Focusable = false
             };
+
             toast.Content = new Border
             {
                 Background = new SolidColorBrush(Color.FromArgb(235, 48, 48, 48)),
                 CornerRadius = new CornerRadius(5),
                 BorderBrush = Brushes.Gray,
                 BorderThickness = new Thickness(1),
-                Child = container
+                Child = mainGrid 
             };
+
             var area = SystemParameters.WorkArea;
             toast.Left = area.Right - toast.Width - 3;
             toast.Top = area.Bottom - toast.Height - 3;
 
             toast.Show();
-            SystemSounds.Beep.Play();
-            Task.Delay(3500).ContinueWith(_ => toast.Dispatcher.Invoke(toast.Close));
+            System.Media.SystemSounds.Beep.Play();
+            Task.Delay(3500).ContinueWith(_ => {
+                try { toast.Dispatcher.Invoke(() => toast.Close()); }
+                catch {  }
+            });
         }
 
         private void UpdateSerialPortList_click()
