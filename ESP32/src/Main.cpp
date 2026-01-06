@@ -914,6 +914,21 @@ void setup()
   ActiveSerial->println("Config sent successfully");
   // interprete config values
   dap_calculationVariables_st.updateFromConfig(dap_config_st_local);
+  //loadcell
+  /*
+  #ifdef USES_ADS1220
+    //Uses ADS1220
+    loadcell = new LoadCell_ADS1220();
+
+  #else
+    //Uses ADS1256
+    loadcell = new LoadCell_ADS1256();
+  #endif
+
+  loadcell->setLoadcellRating(dap_config_st_local.payLoadPedalConfig_.loadcell_rating);
+  loadcell->estimateBiasAndVariance();
+  */
+
 
   #ifdef USING_LED
       //pixels.setBrightness(20);
@@ -929,11 +944,11 @@ void setup()
   // ActiveSerial->printf("Steps per motor revolution: %d\n", dap_calculationVariables_st.stepsPerMotorRevolution);
 
   #ifdef USES_ADS1220
-    /*  Uses ADS1220 */
+    //Uses ADS1220
     loadcell = new LoadCell_ADS1220();
 
   #else
-    /*  Uses ADS1256 */
+    //Uses ADS1256
     loadcell = new LoadCell_ADS1256();
   #endif
 

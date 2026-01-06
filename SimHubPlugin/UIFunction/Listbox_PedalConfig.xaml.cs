@@ -130,6 +130,7 @@ namespace User.PluginSdkDemo.UIFunction
                     File.Delete(fileName);
                 }
                 System.IO.File.WriteAllText(fileName, jsonString);
+                _plugin._calculations.IsModifiedConfigNotSave[_plugin.Settings.table_selected] = false;
                 _plugin.ConfigService.RefreshConfigList();
             }
 
@@ -145,7 +146,10 @@ namespace User.PluginSdkDemo.UIFunction
                 tmp_config = _plugin.ConfigService.ReadConfig(item.FullPath);
                 tmp_config.payloadPedalConfig_.configHash_u32 = Plugin.ConfigService.ConfigHashMap.Fnv1aHash(item.FileName);
                 Plugin._calculations.ConfigEditing[Plugin.Settings.table_selected] = item.FileName;
+                _plugin._calculations.IsModifiedConfigNotSave[_plugin.Settings.table_selected] = false;
                 Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
+                Plugin._calculations.IsApplyingConfig = true;
+                Plugin._calculations.configApplyLockLast = DateTime.Now;
                 tmp_config.payloadPedalConfig_.pedal_type = (byte)_plugin.Settings.table_selected;
                 _plugin.wpfHandle.dap_config_st[_plugin.Settings.table_selected] = tmp_config;
                 //_plugin.SendConfigWithoutSaveToEEPROM(_plugin.wpfHandle.dap_config_st[_plugin.Settings.table_selected], (byte)_plugin.Settings.table_selected);
@@ -170,6 +174,7 @@ namespace User.PluginSdkDemo.UIFunction
             {
                 string fileName = item.FullPath;
                 Plugin._calculations.ConfigEditing[Plugin.Settings.table_selected] = item.FileName;
+                _plugin._calculations.IsModifiedConfigNotSave[_plugin.Settings.table_selected] = false;
                 Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                 DAP_config_st tmp = _plugin.wpfHandle.dap_config_st[_plugin.Settings.table_selected];
                 tmp.payloadFooter_.enfOfFrame0_u8 = _plugin.wpfHandle.ENDOFFRAMCHAR[0];
@@ -217,7 +222,7 @@ namespace User.PluginSdkDemo.UIFunction
                 //ItemList.Add(new ConfigListItem { ListName = nameGet });
                 //_plugin.wpfHandle.ToastNotification("Test", "New Config:" + nameGet);
                 Plugin._calculations.ConfigEditing[Plugin.Settings.table_selected] = nameGet + ".json";
-
+                _plugin._calculations.IsModifiedConfigNotSave[_plugin.Settings.table_selected] = false;
                 Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                 DAP_config_st tmp = _plugin.wpfHandle.dap_config_st[_plugin.Settings.table_selected];
 
@@ -288,6 +293,7 @@ namespace User.PluginSdkDemo.UIFunction
                 _plugin.wpfHandle.dap_config_st[_plugin.Settings.table_selected] = _plugin.DefaultConfig;
                 _plugin.wpfHandle.dap_config_st[_plugin.Settings.table_selected].payloadHeader_.PedalTag = (byte)_plugin.Settings.table_selected;
                 _plugin.wpfHandle.dap_config_st[_plugin.Settings.table_selected].payloadPedalConfig_.pedal_type= (byte)_plugin.Settings.table_selected;
+                _plugin._calculations.IsModifiedConfigNotSave[_plugin.Settings.table_selected] = false;
                 _plugin.wpfHandle.updateTheGuiFromConfig();
                 Plugin._calculations.ConfigEditing[Plugin.Settings.table_selected] = string.Empty;
                 Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
@@ -388,6 +394,7 @@ namespace User.PluginSdkDemo.UIFunction
                         }
 
                         //_plugin._calculations.ProfileEditing = newFileName;
+                        _plugin._calculations.IsModifiedConfigNotSave[_plugin.Settings.table_selected] = false;
                         _plugin.ConfigService.RefreshConfigList();
                         _plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                         System.Windows.MessageBox.Show("If the config is already set in porfile, please also rebind the config into profile", "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);

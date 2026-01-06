@@ -25,6 +25,8 @@ namespace User.PluginSdkDemo
         public byte pedal_state_in_ratio { get; set; }
         public bool isDragging { get; set; }
         public int unassignedPedalCount { get; set; }
+        public bool[] IsModifiedConfigNotSave { get; set; } = new bool[3] { false, false, false };
+        public bool IsApplyingConfig { get; set; } = false;
         public Point offset;
 
         public SolidColorBrush lightcolor;
@@ -68,6 +70,7 @@ namespace User.PluginSdkDemo
         public DateTime bridgeConnetionlastTime = DateTime.Now;
         public bool[] configPreviewLock = new bool[3] { false, false, false};
         public DateTime[] configPreviewLockLast = new DateTime[3];
+        public DateTime configApplyLockLast = DateTime.Now;
         public string[] ConfigEditing = new string[3] { string.Empty, string.Empty, string.Empty};
         public string ProfileEditing = string.Empty;
         public string ProfileSelected = string.Empty;

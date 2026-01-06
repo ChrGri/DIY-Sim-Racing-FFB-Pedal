@@ -107,6 +107,7 @@ namespace User.PluginSdkDemo
                     if (foundItem != null) foundItem.ListName = foundItem.ListNameOrig + "(Startup)";
                     foundItem = ConfigList.FirstOrDefault(item => item.FileName == _plugin._calculations.ConfigEditing[_plugin.Settings.table_selected]);
                     if (foundItem != null) foundItem.ListName += "(Active)";
+                    if (foundItem != null && _plugin._calculations.IsModifiedConfigNotSave[_plugin.Settings.table_selected]) foundItem.ListName = "*"+ foundItem.ListName;
                 }
 
             }

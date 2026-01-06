@@ -485,7 +485,20 @@ namespace User.PluginSdkDemo
                 {
                     live_preview_b = false;
                 }
+                if (Plugin._calculations.IsApplyingConfig)
+                {
+                    TimeSpan lockDiff = DateTime.Now - Plugin._calculations.configApplyLockLast;
+                    if (lockDiff.TotalMilliseconds > 500)
+                    {
+                        Plugin._calculations.IsApplyingConfig = false;
+                    }
+                }
                 float time_interval = 1000.0f / Plugin.Settings.Pedal_action_fps[indexOfSelectedPedal_u];
+                if (!Plugin._calculations.IsApplyingConfig && live_preview_b && !Plugin._calculations.configPreviewLock[indexOfSelectedPedal_u])
+                {
+                    Plugin._calculations.IsModifiedConfigNotSave[Plugin.Settings.table_selected] = true;
+                    Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
+                }
 
                 if (millisceonds > time_interval && live_preview_b && !Plugin._calculations.configPreviewLock[indexOfSelectedPedal_u])
                 {
