@@ -527,7 +527,7 @@ namespace User.PluginSdkDemo
 
             bool update_flag = false;
 
-            if (data.GameRunning)
+            if (data.GameRunning && data.NewData!=data.OldData)
             {
                 // Send ABS trigger signal via serial
                 for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
@@ -557,7 +557,7 @@ namespace User.PluginSdkDemo
 
                     if (Settings.RPM_enable_flag[pedalIdx] == 1)
                     {
-                        if (Math.Abs(RPM_value - rpm_last_value[pedalIdx]) > 3 || BridgeHidService.IsConnected)
+                        if (Math.Abs(RPM_value - rpm_last_value[pedalIdx]) > 3 )
                         {
                             //update rpm value every frame when HID bridge is connected
                             tmp.payloadPedalAction_.RPM_u8 = (Byte)RPM_value;
@@ -1288,11 +1288,12 @@ namespace User.PluginSdkDemo
                     wpfHandle.closeSerialAndStopReadCallback(pedalIdx);
                 }
             }
-            
+            /*
             if (ToastNotificationManager.History.GetHistory("Pedal_notification").Count != 0)
             {
                 ToastNotificationManager.History.Remove("Pedal_notification");
             }
+            */
             
 
         }

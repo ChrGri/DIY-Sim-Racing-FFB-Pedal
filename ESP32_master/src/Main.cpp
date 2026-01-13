@@ -524,11 +524,15 @@ void espNowCommunicationTxTask( void * pvParameters )
               case PEDAL_ID_THROTTLE:
                 ActiveSerial->print("[L]Sending Throttle config,Result:");
                 err = ESPNow.send_message(Gas_mac, (uint8_t *)&dap_config_st[i], sizeof(DAP_config_st));
+                
                 break;
               default:
                 break;
             }
             ActiveSerial->println(esp_err_to_name(err));
+            #ifdef USB_JOYSTICK
+              tinyusbJoystick_.printf("Forward config to Pedal: %d, result:%s", i, esp_err_to_name(err));
+            #endif
           }
         }
       }
