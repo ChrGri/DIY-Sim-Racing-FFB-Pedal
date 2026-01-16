@@ -260,14 +260,14 @@ void isv57communication::sendTunedServoParameters(bool commandRotationDirection,
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_0_00+19, tuned_parameters[pr_0_00+19]);
 
   // Pr1 register
-  // retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+0, tuned_parameters[pr_1_00+0]); // 1st position gain
-  // retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+1, tuned_parameters[pr_1_00+1]); // 1st velocity loop gain
-  // retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+2, tuned_parameters[pr_1_00+2]); // 1st time constant of velocity loop
-  // retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+3, tuned_parameters[pr_1_00+3]); // 1st filter of velocity detection
-  // retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+4, tuned_parameters[pr_1_00+4]); // 1st torque filter
-  // retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+10, tuned_parameters[pr_1_00+10]); // velocity feed forward gain
-  // retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+11, tuned_parameters[pr_1_00+11]); // velocity feed forward filter
-  // retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+12, tuned_parameters[pr_1_00+12]); // torque feed forward gain
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+0, tuned_parameters[pr_1_00+0]); // 1st position gain
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+1, tuned_parameters[pr_1_00+1]); // 1st velocity loop gain
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+2, tuned_parameters[pr_1_00+2]); // 1st time constant of velocity loop
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+3, tuned_parameters[pr_1_00+3]); // 1st filter of velocity detection
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+4, tuned_parameters[pr_1_00+4]); // 1st torque filter
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+10, tuned_parameters[pr_1_00+10]); // velocity feed forward gain
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+11, tuned_parameters[pr_1_00+11]); // velocity feed forward filter
+  retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+12, tuned_parameters[pr_1_00+12]); // torque feed forward gain
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+13, tuned_parameters[pr_1_00+13]); // torque feed forward filter
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+15, tuned_parameters[pr_1_00+15]); // control switching mode
   retValue_b |= modbus.checkAndReplaceParameter(slaveId, pr_1_00+33, tuned_parameters[pr_1_00+33]); // speed given filter

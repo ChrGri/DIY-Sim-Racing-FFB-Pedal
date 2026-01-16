@@ -7,7 +7,7 @@
 const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     1,     // Pr0.00: Reserved parameters
     0,     // Pr0.01: Control mode
-    1,     // Pr0.02: Real-time auto-gain tuning mode
+    0,     // Pr0.02: Real-time auto-gain tuning mode
     9,    // Pr0.03: Selection of machine stiffness at real-time...
     1,    // Pr0.04: Ratio of inertia
     0,     // Pr0.05: Command pulse input selection
@@ -30,19 +30,19 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     -729,  // Pr0.22: Reserved parameter
     0,     // Pr0.23: Reserved parameter
     0,     // Pr0.24: Reserved parameter
-    250,   // Pr1.00: 1st position loop gain
-    100,   // Pr1.01: 1st velocity loop gain
-    10000,   // Pr1.02: 1st time constant of velocity loop integration
-    15,    // Pr1.03: 1st filter of velocity detection
-    100,   // Pr1.04: 1st torque filter
-    100,   // Pr1.05: 2nd position loop gain
-    140,   // Pr1.06: 2nd velocity loop gain
+    140,   // Pr1.00: 1st position loop gain
+    110,   // Pr1.01: 1st velocity loop gain
+    300,   // Pr1.02: 1st time constant of velocity loop integration
+    9,    // Pr1.03: 1st filter of velocity detection
+    200,   // Pr1.04: 1st torque filter
+    175,   // Pr1.05: 2nd position loop gain
+    110,   // Pr1.06: 2nd velocity loop gain
     10000, // Pr1.07: 2nd time constant of velocity loop
-    8,     // Pr1.08: 2nd filter of velocity detection
+    9,     // Pr1.08: 2nd filter of velocity detection
     200,   // Pr1.09: 2nd torque filter
-    0,   // Pr1.10: Velocity feed forward gain
-    6400,  // Pr1.11: Velocity feed forward filter
-    500,     // Pr1.12: Torque feed forward gain
+    200,   // Pr1.10: Velocity feed forward gain
+    200,  // Pr1.11: Velocity feed forward filter
+    0,     // Pr1.12: Torque feed forward gain
     0,     // Pr1.13: Torque feed forward filter
     1,     // Pr1.14: 2nd gain setup
     0,     // Pr1.15: Control switching mode
