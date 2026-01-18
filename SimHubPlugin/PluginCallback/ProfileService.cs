@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using log4net.Plugin;
+using Newtonsoft.Json;
 using SimHub.Plugins;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace User.PluginSdkDemo
 {
-    public partial class DIY_FFB_Pedal : IPlugin, IDataPlugin, IWPFSettingsV2
+    public partial class DIY_FFB_Pedal : SimHub.Plugins.IPlugin, IDataPlugin, IWPFSettingsV2
     {
         public class ProfileService
         {
@@ -206,7 +207,9 @@ namespace User.PluginSdkDemo
                         _plugin.wpfHandle.dap_config_st[i] = tmpConfig;
                         _plugin.SendConfigWithoutSaveToEEPROM(tmpConfig, (byte)i);
                         _plugin._calculations.ConfigEditing[i] = _plugin.ConfigService.ConfigList.FirstOrDefault(item => item.FullPath == tmpProfile.ConfigPath[i]).FileName;
-
+                        _plugin._calculations.IsModifiedConfigNotSave[i] = false;
+                        _plugin._calculations.IsApplyingConfig = true;
+                        _plugin._calculations.configApplyLockLast = DateTime.Now;
                         //System.Threading.Thread.Sleep(100);
                     }
                     //write the effect setting
@@ -218,6 +221,7 @@ namespace User.PluginSdkDemo
                     _plugin.Settings.CV1_enable_flag[i] = tmpProfile.Effects[i][6];
                     _plugin.Settings.CV2_enable_flag[i] = tmpProfile.Effects[i][7];
                 }
+                
                 _plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                 //wpfHandle.updateTheGuiFromConfig();
             }
@@ -232,7 +236,9 @@ namespace User.PluginSdkDemo
                         ConfigBuffer[i] = tmpConfig;
                         GameConfigPathBuffer[i] = tmpProfile.ConfigPath[i];
                         GamePofileConfigChange_b[i] = true;
-                        
+                        _plugin._calculations.IsModifiedConfigNotSave[i] = false;
+                        _plugin._calculations.IsApplyingConfig = true;
+                        _plugin._calculations.configApplyLockLast = DateTime.Now;
                         /*
                         _plugin.wpfHandle.dap_config_st[i] = tmpConfig;
                         _plugin.SendConfigWithoutSaveToEEPROM(tmpConfig, (byte)i);

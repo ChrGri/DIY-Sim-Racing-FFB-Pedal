@@ -99,8 +99,12 @@ namespace User.PluginSdkDemo
         public ConfigListService ConfigService;
         public HidDeviceController BridgeHidService;
         public string currentGame= null;
+        public bool[] IsGetConfigSendRequest = new bool[3] { false, false, false };
+        public DAP_config_st[] BufferConfig_st = new DAP_config_st[3] { new DAP_config_st(), new DAP_config_st(), new DAP_config_st() };
+        public int ConfigSendInterval_ms = 100;
+        public DateTime[] ConfigBufferGet_lastTime = new DateTime[3] { DateTime.Now, DateTime.Now, DateTime.Now };
         //public vJoyInterfaceWrap.vJoy joystick;
-        
+
         //effect trigger timer
         DateTime[] Action_currentTime = new DateTime[3];
         DateTime[] Action_lastTime = new DateTime[3];
@@ -1215,6 +1219,10 @@ namespace User.PluginSdkDemo
                 clear_action = false;
             }
 
+            //config sending queue function
+            if (data.GameRunning) ConfigSendInterval_ms = 100;
+            else ConfigSendInterval_ms = 30;
+            ConfigSendingQueue();
             
             this.AttachDelegate("CurrentProfile", () => _calculations.ProfileSelected);
             pluginManager.SetPropertyValue("SelectedPedal", this.GetType(), current_pedal);

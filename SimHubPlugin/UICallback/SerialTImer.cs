@@ -674,7 +674,10 @@ namespace User.PluginSdkDemo
                                         {
                                             Plugin._calculations.ConfigEditing[pedalSelected] = Plugin.ConfigService.ConfigHashMap.GetFileName(pedalConfig_read_st.payloadPedalConfig_.configHash_u32);
                                         }
-                                            
+
+                                        Plugin._calculations.IsModifiedConfigNotSave[Plugin.Settings.table_selected] = false;
+                                        Plugin._calculations.IsApplyingConfig = true;
+                                        Plugin._calculations.configApplyLockLast = DateTime.Now;
                                         Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                                         updateTheGuiFromConfig();
 

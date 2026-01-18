@@ -136,8 +136,6 @@ namespace User.PluginSdkDemo
 
                 DAP_config_st* v = &tmp;
                 byte* p = (byte*)v;
-
-                // 計算 Checksum
                 tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
 
                 int length = sizeof(DAP_config_st);

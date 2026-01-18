@@ -488,7 +488,7 @@ namespace User.PluginSdkDemo
                 if (Plugin._calculations.IsApplyingConfig)
                 {
                     TimeSpan lockDiff = DateTime.Now - Plugin._calculations.configApplyLockLast;
-                    if (lockDiff.TotalMilliseconds > 500)
+                    if (lockDiff.TotalMilliseconds > 1000)
                     {
                         Plugin._calculations.IsApplyingConfig = false;
                     }
@@ -499,12 +499,19 @@ namespace User.PluginSdkDemo
                     Plugin._calculations.IsModifiedConfigNotSave[Plugin.Settings.table_selected] = true;
                     Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                 }
-
+                /*
                 if (millisceonds > time_interval && live_preview_b && !Plugin._calculations.configPreviewLock[indexOfSelectedPedal_u])
                 {
                     //live_preview_b = true;
                     Plugin.SendConfigWithoutSaveToEEPROM(dap_config_st[indexOfSelectedPedal_u], (byte)indexOfSelectedPedal_u);
                     ConfigLiveSending_last = DateTime.Now;
+                }
+                */
+                if (live_preview_b && !Plugin._calculations.configPreviewLock[indexOfSelectedPedal_u])
+                {
+                    Plugin.BufferConfig_st[Plugin.Settings.table_selected] = dap_config_st[indexOfSelectedPedal_u];
+                    Plugin.IsGetConfigSendRequest[Plugin.Settings.table_selected] = true;
+                    Plugin.ConfigBufferGet_lastTime[Plugin.Settings.table_selected] = DateTime.Now;
                 }
             }
 

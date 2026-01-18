@@ -161,6 +161,7 @@
     <Compile Include="CubicSpline.cs" />
     <Compile Include="DIYFFBPedal.cs" />
     <Compile Include="DIYFFBPedalSettings.cs" />
+    <Compile Include="PluginCallback\ConfigBufferQueueHelper.cs" />
     <Compile Include="PluginCallback\ConfigListService.cs" />
     <Compile Include="PluginCallback\DefaultConfig.cs" />
     <Compile Include="PluginCallback\FileIoHelper.cs" />

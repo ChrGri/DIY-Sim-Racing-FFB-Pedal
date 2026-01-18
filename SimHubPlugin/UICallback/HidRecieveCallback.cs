@@ -554,6 +554,7 @@ namespace User.PluginSdkDemo
                                 dap_config_st[pedalSelected] = pedalConfig_read_st;
                                 Plugin._calculations.configPreviewLock[pedalSelected] = true;
                                 Plugin._calculations.configPreviewLockLast[pedalSelected] = DateTime.Now;
+                                
                                 updateTheGuiFromConfig();
                                 TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config payload check: " + check_payload_config_b + "\n";
                                 TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config crc check: " + check_crc_config_b + "\n";
@@ -569,7 +570,9 @@ namespace User.PluginSdkDemo
                                     Plugin._calculations.ConfigEditing[pedalSelected] = Plugin.ConfigService.ConfigHashMap.GetFileName(pedalConfig_read_st.payloadPedalConfig_.configHash_u32);
                                 }
 
-
+                                Plugin._calculations.IsModifiedConfigNotSave[Plugin.Settings.table_selected] = false;
+                                Plugin._calculations.IsApplyingConfig = true;
+                                Plugin._calculations.configApplyLockLast = DateTime.Now;
                                 Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                                 
                             }
