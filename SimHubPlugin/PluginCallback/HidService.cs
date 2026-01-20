@@ -180,7 +180,7 @@ namespace User.PluginSdkDemo
 
             public void Write(byte[] data)
             {
-                _stream.WriteTimeout=3;
+                //_stream.WriteTimeout=3;
                 if (_stream != null)
                 {
                     _stream.WriteTimeout = 3;

@@ -1267,7 +1267,22 @@ namespace User.PluginSdkDemo
         /// </summary>
         /// <param name="pluginManager"></param>
         public void End(PluginManager pluginManager)
-        {           
+        {
+            //disable rudder once rudder is in aciton
+            if (Rudder_status)
+            {
+                if (wpfHandle != null)
+                {
+                    try
+                    {
+                        PedalRestartAction();
+                    }
+                    catch (Exception caughtEx)
+                    {
+                    }
+                }
+
+            }
             // Save settings
             this.SaveCommonSettings("GeneralSettings", Settings);
             BridgeHidService.Dispose();

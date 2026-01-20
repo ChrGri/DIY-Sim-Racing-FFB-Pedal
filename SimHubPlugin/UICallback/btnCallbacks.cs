@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Runtime.Serialization.Json;
 using System.Security.Policy;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
@@ -826,6 +827,14 @@ namespace User.PluginSdkDemo
         }
         unsafe private void btn_rudder_initialize_Click(object sender, RoutedEventArgs e)
         {
+            
+            RudderActions();
+
+        }
+
+        
+        unsafe public void RudderActions()
+        {
             if (Plugin.ESPsync_serialPort.IsOpen || Plugin.BridgeHidService.IsConnected)
             {
 
@@ -863,7 +872,7 @@ namespace User.PluginSdkDemo
                             tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
                             byte* p = (byte*)v;
                             tmp.payloadFooter_.checkSum = Plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
-                            Plugin.SendConfig(tmp, Plugin.Rudder_Pedal_idx[0]);
+                            Plugin.SendConfigWithoutSaveToEEPROM(tmp, Plugin.Rudder_Pedal_idx[0]);
                             //Sendconfig(Plugin.Rudder_Pedal_idx[0]);
 
                             CurveRudderForce_Tab.text_rudder_log.Text += "Send Original config back to" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[0]] + "\n";
@@ -881,7 +890,7 @@ namespace User.PluginSdkDemo
                             tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
                             byte* p = (byte*)v;
                             tmp.payloadFooter_.checkSum = Plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
-                            Plugin.SendConfig(tmp, Plugin.Rudder_Pedal_idx[1]);
+                            Plugin.SendConfigWithoutSaveToEEPROM(tmp, Plugin.Rudder_Pedal_idx[1]);
                             //Sendconfig(Plugin.Rudder_Pedal_idx[1]);
 
                             CurveRudderForce_Tab.text_rudder_log.Text += "Send Original config back to" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[1]] + "\n";
@@ -939,10 +948,7 @@ namespace User.PluginSdkDemo
                 System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
 
             }
-
-
         }
-
 
         private void btn_Rudder_load_config_Click(object sender, RoutedEventArgs e)
         {
