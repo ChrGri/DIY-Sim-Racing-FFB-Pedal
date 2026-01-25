@@ -161,6 +161,11 @@
     <Compile Include="CubicSpline.cs" />
     <Compile Include="DIYFFBPedal.cs" />
     <Compile Include="DIYFFBPedalSettings.cs" />
+    <Compile Include="Language\DiyActivePedal.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DiyActivePedal.resx</DependentUpon>
+    </Compile>
     <Compile Include="PluginCallback\ConfigBufferQueueHelper.cs" />
     <Compile Include="PluginCallback\ConfigListService.cs" />
     <Compile Include="PluginCallback\DefaultConfig.cs" />
@@ -509,6 +514,10 @@
     <Content Include="sdkmenuicon.png" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Language\DiyActivePedal.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DiyActivePedal.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

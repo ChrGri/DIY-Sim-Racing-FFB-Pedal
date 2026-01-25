@@ -20,17 +20,17 @@
             <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540" Margin="0,0,0,0">
                 <StackPanel Height="20" Width="540" Orientation="Horizontal">
                     <styles:SHToggleButton x:Name="checkbox_enable_impact" Content="" Checked="checkbox_enable_impact_Checked" Unchecked="checkbox_enable_impact_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="60,0,0,0" ToolTip="The effect trigger was save in local, no need send config to Pedal"/>
-                    <Label Content="Road Impact effect" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" Width="200" Height="15" HorizontalAlignment="Left" Margin="4,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectImpactTittle, 'Road Impact Effect'}" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" Width="200" Height="15" HorizontalAlignment="Left" Margin="4,0,0,0"/>
                 </StackPanel>
                 <StackPanel  Height="30" Width="540" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                    <Label Content="Effect Property" Height="20" Width="65" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="70,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectWheelSlipProperty, 'Effect Property'}" Height="20" Width="65" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="70,0,0,0"/>
                     <TextBox x:Name="textBox_impact_effect_string" Width="270" Height="20"  Margin="2,0,0,0" HorizontalAlignment="Left" MinHeight="20" FontSize="8" ToolTip="Binding shakeit Plugin property here" BorderThickness="0,0,0,0"/>
-                    <styles:SHButtonPrimary x:Name="Bind_Impacteffect" Click="Bind_Impacteffect_Click" Width="30" Content="Bind" Height="20" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
-                    <styles:SHButtonPrimary x:Name="Clear_Impacteffect" Click="Clear_Impacteffect_Click" Width="30" Content="Clear" Height="20" Margin="2,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                    <styles:SHButtonPrimary x:Name="Bind_Impacteffect" Click="Bind_Impacteffect_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnBind, 'Bind'}" Height="20" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                    <styles:SHButtonPrimary x:Name="Clear_Impacteffect" Click="Clear_Impacteffect_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="2,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                 </StackPanel>
 
-                <localUI:SliderWithLabel x:Name="Slider_impact_multi" Unit="%" SliderLength="400" SliderValue="10" MinValue="10" Width="400" Height="40" SliderName="Impact Multiplier" SliderValueChanged="Slider_impact_multi_SliderValueChanged"/>
-                <localUI:SliderWithLabel x:Name="Slider_impact_smoothness" Width="400" Height="40" SliderLength="400" MinValue="10" SliderValue="10" SliderName="Impact Smoothness" SliderValueChanged="Slider_impact_smoothness_SliderValueChanged"/>
+                <localUI:SliderWithLabel x:Name="Slider_impact_multi" Unit="%" SliderLength="400" SliderValue="10" MinValue="10" Width="400" Height="40" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectImpactMultiplier, 'Impact Multiplier'}" SliderValueChanged="Slider_impact_multi_SliderValueChanged"/>
+                <localUI:SliderWithLabel x:Name="Slider_impact_smoothness" Width="400" Height="40" SliderLength="400" MinValue="10" SliderValue="10" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectImpactSmoothness, 'Impact Smoothness'}" SliderValueChanged="Slider_impact_smoothness_SliderValueChanged"/>
 
             </StackPanel>
         </Border>

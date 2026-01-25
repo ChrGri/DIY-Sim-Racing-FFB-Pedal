@@ -67,11 +67,11 @@
         <Border Background="#7F4E4E4E" Height="177" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
             <StackPanel Orientation="Horizontal">
                 <StackPanel>
-                    <Label Content="Profile List" Height="20" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="5,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextProfileListTittle, 'Profile List'}" Height="20" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="5,0,0,0"/>
                     <ListBox Name="ProfileListBox" Height="150" VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="10" FontFamily="Arial" Width="150" ItemsSource="{Binding ItemList}" Margin="5,0,5,0" BorderBrush="{DynamicResource DisabledMenuItemGlyphPanel}">
                         <ListBox.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="Add new Profile" Command="{Binding AddNewProfileCommand}" FontFamily="Arial" FontSize="10"/>
+                                <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextProfileListAddNewProfile, 'Add new Profile'}" Command="{Binding AddNewProfileCommand}" FontFamily="Arial" FontSize="10"/>
                             </ContextMenu>
                         </ListBox.ContextMenu>
 
@@ -83,17 +83,17 @@
                                 <Setter Property="ContextMenu">
                                     <Setter.Value>
                                         <ContextMenu>
-                                            <MenuItem Header="Read" Command="{Binding PlacementTarget.Tag.ReadProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                            <MenuItem Header="Apply" Command="{Binding PlacementTarget.Tag.ApplyProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                            <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextRead, 'Read'}" Command="{Binding PlacementTarget.Tag.ReadProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                            <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextApply, 'Apply'}" Command="{Binding PlacementTarget.Tag.ApplyProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                             <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
-                                            <MenuItem Header="Overwrite" Command="{Binding PlacementTarget.Tag.OverwriteProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                            <MenuItem Header="Save as New Profile" Command="{Binding PlacementTarget.Tag.SaveAsNewProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                            <MenuItem Header="Rename" Command="{Binding PlacementTarget.Tag.RenameProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                            <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextOverwrite, 'Overwrite'}" Command="{Binding PlacementTarget.Tag.OverwriteProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                            <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextProfileListSaveAs, 'Save as New Profile'}" Command="{Binding PlacementTarget.Tag.SaveAsNewProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                            <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextRename, 'Rename'}" Command="{Binding PlacementTarget.Tag.RenameProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                             <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
-                                            <MenuItem Header="Add new Profile" Command="{Binding PlacementTarget.Tag.AddNewProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                            <MenuItem Header="Refresh List" Command="{Binding PlacementTarget.Tag.RefreshListCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                            <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextProfileListAddNewProfile, 'Add new Profile'}" Command="{Binding PlacementTarget.Tag.AddNewProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                            <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextRefreshList, 'Refresh List'}" Command="{Binding PlacementTarget.Tag.RefreshListCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                             <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
-                                            <MenuItem Header="Delete" Command="{Binding PlacementTarget.Tag.DeleteProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                            <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextDelete, 'Delete'}" Command="{Binding PlacementTarget.Tag.DeleteProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                         </ContextMenu>
                                     </Setter.Value>
                                 </Setter>
@@ -116,20 +116,20 @@
 
                     <Label Content="{Binding CurrentProfileName}" Height="20" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" FontSize="14"/>
                     <StackPanel Orientation="Horizontal" ToolTip="Please populate the string value for Car ID. You can retrieve this string value from the following properties: DataCorePlugin.GameData.CarId." >
-                        <Label Content="Game or Car ID:" Height="25" Width="90" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="0,5,0,5"/>
+                        <Label Content="{SLoc DIYFFBPedalPlugin_TextProfileListGameOrCar, 'Game or Car ID:'}" Height="25" Width="90" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="0,5,0,5"/>
                         <TextBox Text="{Binding tmpProfile.BindGameOrCar, Mode=TwoWay}" Height="20" MinHeight="20" Width="200" FontFamily="Arial" FontSize="10" VerticalContentAlignment="Center" BorderThickness="0,0,0,0" Margin="5,0,0,0" />
-                        <styles:SHButtonPrimary x:Name="Btn_ClearCarName" Click="Btn_ClearCarName_Click" Width="30" Content="Clear" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                        <styles:SHButtonPrimary x:Name="Btn_ClearCarName" Click="Btn_ClearCarName_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <StackPanel Orientation="Horizontal">
-                            <Label Content="Clutch:" Height="20" Width="90" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
+                            <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdClutch, 'Clutch'}" Height="20" Width="90" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
                             <ComboBox ItemsSource="{Binding ConfigList}"
                                   DisplayMemberPath="ListNameOrig"  
                                   SelectedValuePath="FullPath"    
                                   SelectedValue="{Binding tmpProfile.ConfigPath[0], Mode=TwoWay}"
                                   Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0"/>
                         </StackPanel>
-                        <styles:SHButtonPrimary x:Name="Btn_ClearClutch" Click="Btn_ClearClutch_Click" Width="30" Content="Clear" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                        <styles:SHButtonPrimary x:Name="Btn_ClearClutch" Click="Btn_ClearClutch_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
 
                     </StackPanel>
 
@@ -145,14 +145,14 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                            <Label Content="Brake:" Height="20" Width="90" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" Padding="0,5,0,5"/>
+                            <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdBrake, 'Brake'}" Height="20" Width="90" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" Padding="0,5,0,5"/>
                             <ComboBox ItemsSource="{Binding ConfigList}"
                                   DisplayMemberPath="ListNameOrig"  
                                   SelectedValuePath="FullPath"    
                                   SelectedValue="{Binding tmpProfile.ConfigPath[1], Mode=TwoWay}"
                                   Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0"/>
                         </StackPanel>
-                        <styles:SHButtonPrimary x:Name="Btn_ClearBrake" Click="Btn_ClearBrake_Click" Width="30" Content="Clear" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                        <styles:SHButtonPrimary x:Name="Btn_ClearBrake" Click="Btn_ClearBrake_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
 
                     </StackPanel>
 
@@ -168,14 +168,14 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                         <StackPanel Orientation="Horizontal">
-                            <Label Content="Throttle:" Height="20" Width="90" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" VerticalContentAlignment="Center" Padding="0,5,0,5"/>
+                            <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdThrottle, 'Throttle'}" Height="20" Width="90" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" VerticalContentAlignment="Center" Padding="0,5,0,5"/>
                             <ComboBox ItemsSource="{Binding ConfigList}"
                                   DisplayMemberPath="ListNameOrig"  
                                   SelectedValuePath="FullPath"    
                                   SelectedValue="{Binding tmpProfile.ConfigPath[2], Mode=TwoWay}"
                                   Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0" BorderBrush="{x:Null}"/>
                         </StackPanel>
-                        <styles:SHButtonPrimary x:Name="Btn_ClearThrottle" Click="Btn_ClearThrottle_Click" Width="30" Content="Clear" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                        <styles:SHButtonPrimary x:Name="Btn_ClearThrottle" Click="Btn_ClearThrottle_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
 
                     </StackPanel>
 

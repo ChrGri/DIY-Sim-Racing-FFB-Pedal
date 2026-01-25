@@ -19,7 +19,7 @@
         <Border  HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="5,5,5,5"  Margin="0,3,0,0">
             <StackPanel HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540">
                 <StackPanel Height="20" Width="540" VerticalAlignment="Top" HorizontalAlignment="Left" Orientation="Horizontal">
-                    <Label Content="PEDAL KINEMATIC SETTING" Width="200" Foreground="White" FontFamily="Arial Black" HorizontalAlignment="Center" Margin="70,0,0,0" Height="20" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalKinematicsTitle, 'PEDAL KINEMATIC SETTING'}" Width="200" Foreground="White" FontFamily="Arial Black" HorizontalAlignment="Center" Margin="70,0,0,0" Height="20" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Height="205" Width="540" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,5,0,0">
                     <!-- Travel vs Force curve GUI elements -->

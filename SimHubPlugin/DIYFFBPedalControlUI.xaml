@@ -66,7 +66,7 @@
                         <Border  Width="200" Height="40" Margin="0,0,0,0" >
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Width="26" Height="26" Source="{StaticResource Pedals}" />
-                                <Label Content="PEDALS"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
+                                <Label Content="{SLoc DIYFFBPedalPlugin_TextPedals, 'PEDALS'}"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
                             </StackPanel>
                         </Border>
                     </TabItem.Header>
@@ -128,7 +128,7 @@
                                     <TabItem x:Name="tabPedalSelection_clutch" Width="150" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
                                         <TabItem.Header>
                                             <Border  Width="150" Height="40" Margin="0,0,0,0" >
-                                                <Label Content="Clutch"  FontFamily="Arial Black" FontSize="26" Height="40" Width="150" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
+                                                <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdClutch, 'Clutch'}"  FontFamily="Arial Black" FontSize="26" Height="40" Width="150" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
 
                                             </Border>
                                         </TabItem.Header>
@@ -136,7 +136,7 @@
                                     <TabItem x:Name="tabPedalSelection_brake" Width="150" Height="40" Padding="0,0,0,0">
                                         <TabItem.Header>
                                             <Border  Width="150" Height="40" Margin="0,0,0,0" >
-                                                <Label Content="Brake"  FontFamily="Arial Black" FontSize="26" Height="40" Width="150" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
+                                                <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdBrake, 'Brake'}"  FontFamily="Arial Black" FontSize="26" Height="40" Width="150" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
                                             </Border>
                                         </TabItem.Header>
                                         <Border Height="850" Width="1120">
@@ -145,7 +145,7 @@
                                     <TabItem x:Name="tabPedalSelection_accelerator" Width="190" Height="40" Padding="0,0,0,0">
                                         <TabItem.Header>
                                             <Border  Width="190" Height="40" Margin="0,0,0,0" >
-                                                <Label Content="Throttle"  FontFamily="Arial Black" FontSize="26" Height="40" Width="190" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" RenderTransformOrigin="0.5,0.5"  >
+                                                <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdThrottle, 'Throttle'}"  FontFamily="Arial Black" FontSize="26" Height="40" Width="190" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" RenderTransformOrigin="0.5,0.5"  >
                                                     <Label.RenderTransform>
                                                         <TransformGroup>
                                                             <ScaleTransform/>
@@ -182,19 +182,19 @@
                                                     <Button Style="{StaticResource IconGridButtonStyle}" Click="RestartPedal_click" ToolTip="Restart Pedal" Margin="0,5,0,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource Restart}" />
-                                                            <Label Content="Retsart" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextPedalRestart, 'Retsart'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
                                                     <Button x:Name="btn_Assignment" Style="{StaticResource IconGridButtonStyle}" Click="btn_Assignment_Click" ToolTip="Wireless Assignment" Margin="5,5,5,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource WifiAssignment}" />
-                                                            <Label Content="Pedal Roles" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextWirelessAssignment, 'Pedal Roles'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
                                                     <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_OnlineProfile_Click" ToolTip="Community Config" Margin="0,5,0,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource CommunityConfig}" />
-                                                            <Label Content="Cloud Config" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextGetOnlineConfig, 'Cloud Config'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
                                                 </StackPanel>
@@ -202,20 +202,20 @@
                                                     <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Printlog_Click" ToolTip="Get Pedal Sensor Info" Margin="0,5,0,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource PedalInfo}" />
-                                                            <Label Content="Pedal Info" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextGetPedalInfo, 'Pedal Info'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
 
                                                     <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_OTA_enable_Click" ToolTip="OTA update" Margin="5,5,5,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource OTA}" />
-                                                            <Label Content="OTA" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextPedalOta, 'OTA'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
                                                     <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_SerialMonitorWindow_Click" ToolTip="Serial Monitor" Margin="0,5,0,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource Monitor}" />
-                                                            <Label Content="Serial Logs" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextSerialMonitor, 'Serial Logs'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
                                                 </StackPanel>
@@ -270,7 +270,7 @@
                                         <TabItem Width="180" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
                                                 <Border  Width="180" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="FORCE-TRAVEL CURVE"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="180"  />
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TextForceTravelCurve, 'FORCE-TRAVEL CURVE'}"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="180"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:CurveTab_PedalForceTravel_Modified x:Name="PedalForceTravel_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
@@ -278,7 +278,7 @@
                                         <TabItem x:Name="pedalKinematicTab" Width="180" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
                                                 <Border  Width="180" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="PEDAL KINEMATIC"  FontFamily="Arial Black" FontSize="10" Height="30" Width="270" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalKinematics, 'PEDAL KINEMATICS'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="270" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:KinematicsTab_Pedal x:Name="PedalKinematics_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
@@ -286,7 +286,7 @@
                                         <TabItem x:Name="pedalJoystickTab" Width="180" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
                                                 <Border  Width="180" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="JOYSTICK MAPPING"  FontFamily="Arial Black" FontSize="10" Height="30" Width="180" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TextJoystickMapping, 'JOYSTICK MAPPING'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="180" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:CurveTab_JoystickMapping x:Name="PedalJoystick_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
@@ -333,7 +333,7 @@
                                             <TabItem.Header>
                                                 <Border  Width="108
                                                          " Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="General"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TabTextGeneral, 'General'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:GeneralSetting_PedalSetting x:Name="Misc_Tab" ConfigChanged="Tab_ConfigChanged"/>
@@ -344,7 +344,7 @@
                                         <TabItem Width="108" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
                                                 <Border  Width="108" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Filter"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TabTextFilter, 'Filter'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:GeneralSetting_KF x:Name="KF_Tab" KF_value="8" KF_selection="2" ConfigChanged="Tab_ConfigChanged"/>
@@ -352,7 +352,7 @@
                                         <TabItem Width="108" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
                                                 <Border  Width="108" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Global Effects"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TabTextGlobalEffects, 'Global Effects'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:GeneralSetting_GlobalEffects x:Name="GlobalEffects_Tab" ConfigChanged="Tab_ConfigChanged"/>
@@ -360,7 +360,7 @@
                                         <TabItem Width="108" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
                                                 <Border  Width="108" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Servo"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TabTextServo, 'Servo'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:GeneralSetting_Servo x:Name="Servo_Tab" ConfigChanged="Tab_ConfigChanged"/>
@@ -486,7 +486,7 @@
                         <Border  Width="200" Height="40" Margin="0,0,0,0" >
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Width="26" Height="26" Source="{StaticResource plane}" />
-                                <Label Content="RUDDER"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
+                                <Label Content="{SLoc DIYFFBPedalPlugin_TextRudder, 'RUDDER'}"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
                             </StackPanel>
                         </Border>
                     </TabItem.Header>
@@ -600,7 +600,7 @@
                         <Border  Width="200" Height="40" Margin="0,0,0,0" >
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Width="26" Height="26" Source="{StaticResource Settings}" />
-                                <Label Content="SYSTEM"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
+                                <Label Content="{SLoc DIYFFBPedalPlugin_TextSystem, 'SYSTEM'}"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
                             </StackPanel>
                         </Border>
                     </TabItem.Header>
@@ -629,19 +629,19 @@
                                                 <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Bridge_restart_Click" ToolTip="Restart Bridge">
                                                     <StackPanel>
                                                         <Image Width="30" Height="30" Source="{StaticResource Restart}" />
-                                                        <Label Content="Retsart" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                        <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnBridgeRestart, 'Retsart'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
                                                 <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Bridge_OTA_Click" ToolTip="Bridge OTA update" Margin="5,0,5,0">
                                                     <StackPanel>
                                                         <Image Width="30" Height="30" Source="{StaticResource OTA}" />
-                                                        <Label Content="Bridge OTA" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                        <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnBridgeOTA, 'Bridge OTA'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
-                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Plugin_OTA_Click" ToolTip="Community Config">
+                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Plugin_OTA_Click" ToolTip="Plugin Update">
                                                     <StackPanel>
                                                         <Image Width="30" Height="30" Source="{StaticResource PluginUpdate}" />
-                                                        <Label Content="Plugin Update" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
+                                                        <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnPluginUpdate, 'Plugin Update'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
                                             </StackPanel>
@@ -649,7 +649,7 @@
                                                 <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Bridge_print_debug_Click" ToolTip="Bridge Debug Tool">
                                                     <StackPanel>
                                                         <Image Width="30" Height="30" Source="{StaticResource BridgeDebug}" />
-                                                        <Label Content="Bridge Debug" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                        <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnBridgeDebug, 'Bridge Debug'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
                                             </StackPanel>
@@ -728,7 +728,7 @@
                                             <StackPanel HorizontalAlignment="Left" Height="281" VerticalAlignment="Top" Width="540" Grid.RowSpan="2" Grid.ColumnSpan="3" Grid.Row="6" Grid.Column="1">
                                                 <StackPanel HorizontalAlignment="Center" Height="25" VerticalAlignment="Top" Width="540" Orientation="Horizontal">
                                                     <Label x:Name="text_serial_bridge" Content="Bridge Log Monitor"  FontFamily="Arial Black" FontSize="12" Height="25" Width="130" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="5,0,0,0"  />
-                                                    <styles:SHButtonPrimary x:Name="btn_serial_clear_bridge" Click="btn_serial_clear_bridge_Click" Width="30" Content="Clear" Height="20" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                                                    <styles:SHButtonPrimary x:Name="btn_serial_clear_bridge" Click="btn_serial_clear_bridge_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                                                     <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0">
                                                         <styles:SHToggleButton x:Name="Checkbox_auto_remove_serial_line_bridge" Content="" Checked="Checkbox_auto_remove_serial_line_bridge_Checked" Unchecked="Checkbox_auto_remove_serial_line_bridge_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Dump pedal realtime status to file" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
                                                         <Label Content="Auto clear" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>

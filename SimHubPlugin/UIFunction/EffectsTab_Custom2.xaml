@@ -20,7 +20,7 @@
             <StackPanel Height="240" VerticalAlignment="Top" Width="540">
                 <StackPanel Height="20" Width="400" Orientation="Horizontal" HorizontalAlignment="Left" Margin="60,0,0,0">
                     <styles:SHToggleButton x:Name="checkbox_enable_CV2" Content="" Checked="checkbox_enable_CV2_Checked" Unchecked="checkbox_enable_CV2_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="The effect trigger was save in local, no need send config to Pedal"/>
-                    <Label Content="Custom Effect 2" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" Width="200" Height="15" HorizontalAlignment="Left" Margin="4,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectCustom2Tittle, 'Custom Effect 2'}" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" Width="200" Height="15" HorizontalAlignment="Left" Margin="4,0,0,0"/>
                 </StackPanel>
                 <StackPanel  Height="40" Width="540" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Label Content="Effect NCalc &#10;Binding:" Height="40" Width="65" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="70,0,0,0" HorizontalContentAlignment="Center"/>
@@ -28,14 +28,14 @@
                     <StackPanel Height="40" Width="62" VerticalAlignment="Top">
                         <Label x:Name="Label_NCALC_CUS2" Content="" Height="20" Width="62" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10"/>
                         <StackPanel Orientation="Horizontal" Height="20" Width="62">
-                            <styles:SHButtonPrimary x:Name="Bind_CV2" Click="Bind_CV2_Click" Width="30" Content="Bind" Height="20" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
-                            <styles:SHButtonPrimary x:Name="Clear_CV2" Click="Clear_CV2_Click" Width="30" Content="Clear" Height="20" Margin="2,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                            <styles:SHButtonPrimary x:Name="Bind_CV2" Click="Bind_CV2_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnBind, 'Bind'}" Height="20" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                            <styles:SHButtonPrimary x:Name="Clear_CV2" Click="Clear_CV2_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="2,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>
-                <localUI:SliderWithLabel x:Name="Slider_CV2_trigger" Width="400" Height="40" SliderLength="400" SliderName="Effect Trigger" SliderValueChanged="Slider_CV2_trigger_SliderValueChanged"/>
-                <localUI:SliderWithLabel x:Name="Slider_CV2_AMP" Width="400" Height="40" SliderLength="400" Unit="%" MaxValue="20" TickFrequency="0.1" SliderName="Effect Amplitude" SliderValueChanged="Slider_CV2_AMP_SliderValueChanged"/>
-                <localUI:SliderWithLabel x:Name="Slider_CV2_freq" Width="400" Height="40" MinValue="10" MaxValue="50" SliderValue="10" Unit="Hz" SliderName="Effect Frequency" SliderValueChanged="Slider_CV2_freq_SliderValueChanged" SliderLength="400"/>
+                <localUI:SliderWithLabel x:Name="Slider_CV2_trigger" Width="400" Height="40" SliderLength="400" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectCustomTrigger, 'Effect Trigger'}" SliderValueChanged="Slider_CV2_trigger_SliderValueChanged"/>
+                <localUI:SliderWithLabel x:Name="Slider_CV2_AMP" Width="400" Height="40" SliderLength="400" Unit="%" MaxValue="20" TickFrequency="0.1" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectCustomAmp, 'Effect Amplitude'}" SliderValueChanged="Slider_CV2_AMP_SliderValueChanged"/>
+                <localUI:SliderWithLabel x:Name="Slider_CV2_freq" Width="400" Height="40" MinValue="10" MaxValue="50" SliderValue="10" Unit="Hz" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectCustomFreq, 'Effect Frequency'}" SliderValueChanged="Slider_CV2_freq_SliderValueChanged" SliderLength="400"/>
             </StackPanel>
         </Border>
     </Grid>

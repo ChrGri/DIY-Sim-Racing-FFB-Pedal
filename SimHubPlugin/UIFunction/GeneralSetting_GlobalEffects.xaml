@@ -22,10 +22,10 @@
         <Border Background="#7F4E4E4E" Height="190" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
             <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540">
                 <StackPanel Height="20" Width="540" Orientation="Horizontal">
-                    <Label Content="Global Effects Setting" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextGlobalEffectsSettingTittle, 'Global Effects Setting'}" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
                 </StackPanel>
                 <StackPanel Width="400" Height="50">
-                    <localUI:SliderWithLabel x:Name="Slider_MinForceForEffects" SliderLength="400" SliderName="Threshold Force for Effect" SliderValue="0" MinValue="0" MaxValue="10" SliderValueChanged="Slider_MinForceForEffects_SliderValueChanged" TickFrequency="1" Unit="kg" ToolTip="This is the minimum force that must be reached or exceeded for the effect to occur. A value of 0 indicates no force restriction."/>
+                    <localUI:SliderWithLabel x:Name="Slider_MinForceForEffects" SliderLength="400" SliderName="{SLoc DIYFFBPedalPlugin_TextGlobalEffectsSettingSliderEffectThresholdForce, 'Threshold Force for Effect'}" SliderValue="0" MinValue="0" MaxValue="10" SliderValueChanged="Slider_MinForceForEffects_SliderValueChanged" TickFrequency="1" Unit="kg" ToolTip="This is the minimum force that must be reached or exceeded for the effect to occur. A value of 0 indicates no force restriction."/>
                 </StackPanel>
             </StackPanel>
 

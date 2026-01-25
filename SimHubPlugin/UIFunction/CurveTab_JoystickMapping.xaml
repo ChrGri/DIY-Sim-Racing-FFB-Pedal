@@ -20,7 +20,7 @@
             <StackPanel HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540">
                 
                 <StackPanel Height="20" Width="540" VerticalAlignment="Top" HorizontalAlignment="Left" Orientation="Horizontal">
-                    <Label Content="JOYSTICK MAPPING" Width="200" Foreground="White" FontFamily="Arial Black" HorizontalAlignment="Center" Margin="70,0,0,0" Height="20" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextJoystickMappingTittle, 'JOYSTICK MAPPING'}" Width="200" Foreground="White" FontFamily="Arial Black" HorizontalAlignment="Center" Margin="70,0,0,0" Height="20" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                 </StackPanel>
                 <StackPanel Height="220" Width="540" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,5,0,0">
                     <Canvas x:Name="mainCanvas" Height="200" Width="400" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="70,0,0,0" MouseRightButtonDown="Canvas_MouseRightButtonDown" ToolTip="Right-click on the canvas to add a control point, right-click a point to remove it">
@@ -56,10 +56,10 @@
                     </Canvas>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <styles:SHButtonPrimary x:Name="btn_linearcurve" Click="btn_linearcurve_Click" Width="80" Content="Arrange in Line" Height="15" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" MinHeight="15" VerticalContentAlignment="Center" />
-                    <styles:SHButtonPrimary x:Name="btn_Scurve" Click="btn_Scurve_Click" Width="100" Content="Arrange in S-Curve" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="15" />
-                    <styles:SHButtonPrimary x:Name="btn_10xcurve" Click="btn_10xcurve_Click" Width="110" Content="Arrange in Exponential" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="15" />
-                    <styles:SHButtonPrimary x:Name="btn_logcurve" Click="btn_logcurve_Click" Width="110" Content="Arrange in Logarithm" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" MinHeight="15" VerticalContentAlignment="Center" />
+                    <styles:SHButtonPrimary x:Name="btn_linearcurve" Click="btn_linearcurve_Click" Width="80" Content="{SLoc DIYFFBPedalPlugin_TextJoystickMappingArrangeInLine, 'Arrange in Line'}" Height="15" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" MinHeight="15" VerticalContentAlignment="Center" />
+                    <styles:SHButtonPrimary x:Name="btn_Scurve" Click="btn_Scurve_Click" Width="100" Content="{SLoc DIYFFBPedalPlugin_TextJoystickMappingArrangeInSCurve, 'Arrange in S-Curve'}" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="15" />
+                    <styles:SHButtonPrimary x:Name="btn_10xcurve" Click="btn_10xcurve_Click" Width="110" Content="{SLoc DIYFFBPedalPlugin_TextJoystickMappingArrangeInExponential, 'Arrange in Exponential'}" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="15" />
+                    <styles:SHButtonPrimary x:Name="btn_logcurve" Click="btn_logcurve_Click" Width="110" Content="{SLoc DIYFFBPedalPlugin_TextJoystickMappingArrangeInLogarithm, 'Arrange in Logarithm'}" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" MinHeight="15" VerticalContentAlignment="Center" />
                 </StackPanel>
             </StackPanel>
         </Border>

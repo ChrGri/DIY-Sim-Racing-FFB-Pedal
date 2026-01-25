@@ -59,6 +59,7 @@ using System.Threading.Tasks;
 using static User.PluginSdkDemo.DIY_FFB_Pedal;
 using User.PluginSdkDemo.UIFunction;
 using Windows.UI.ViewManagement;
+using WoteverLocalization;
 
 
 
@@ -140,8 +141,8 @@ namespace User.PluginSdkDemo
             ThreePedalConnect
         }
         
-        
-        
+
+
         unsafe public DIYFFBPedalControlUI()
         {
             

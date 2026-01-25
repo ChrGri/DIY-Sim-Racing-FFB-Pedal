@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using WoteverLocalization;
 
 namespace User.PluginSdkDemo.UIFunction
 {
@@ -104,7 +105,7 @@ namespace User.PluginSdkDemo.UIFunction
 
                 calculation.RudderStatusString += "Off";
             }
-            if (info_rudder_label != null) info_rudder_label.Content = "Bridge:\nClutch:\nBrake:\nThrottle:\nRudder:";
+            if (info_rudder_label != null) info_rudder_label.Content = SLoc.GetValue("DIYFFBPedalPlugin_TextBridgeId", "Bridge") + ":\n"+ SLoc.GetValue("DIYFFBPedalPlugin_TextPedalIdClutch", "Clutch") + ":\n"+SLoc.GetValue("DIYFFBPedalPlugin_TextPedalIdBrake", "Brake") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextPedalIdThrottle", "Throttle") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextRudderId", "Rudder") + ":\n";
             if (info_rudder_label_2 != null) info_rudder_label_2.Content = calculation.RudderStatusString;
         }
     }

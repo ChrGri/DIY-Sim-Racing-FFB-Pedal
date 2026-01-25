@@ -68,14 +68,14 @@
             <StackPanel>
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Label Content="Profile Shortcut"  FontFamily="Arial Black" FontSize="20" Height="25" Width="200" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" RenderTransformOrigin="0,0" VerticalContentAlignment="Center" Margin="15,0,0,0"  />
-                        <Label Content="*The change of Custom Action Name will be applied after a simhub restart." Height="25" HorizontalAlignment="Right" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="8" Width="300" Margin="60,0,0,0"/>
+                        <Label Content="{SLoc DIYFFBPedalPlugin_TextProfileShortcutTittle, 'Profile Shortcut'}"  FontFamily="Arial Black" FontSize="20" Height="25" Width="200" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" RenderTransformOrigin="0,0" VerticalContentAlignment="Center" Margin="15,0,0,0"  />
+                        <Label Content="{SLoc DIYFFBPedalPlugin_TextProfileShortcutWarning, '*The change of Custom Action Name will be applied after a simhub restart.'}" Height="25" HorizontalAlignment="Right" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="8" Width="300" Margin="60,0,0,0"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="15,0,0,0" Height="15">
                         <StackPanel Orientation="Horizontal">
                             <Label Content="#" Height="15" Width="50" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,0,0,0" HorizontalContentAlignment="Center"/>
-                            <Label Content="Custom Action Name" Height="15" Width="150" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,0,0,0" Margin="5,0,0,0"/>
-                            <Label Content="Profile Binding" Height="15" Width="200" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,0,0,0" Margin="5,0,0,0"/>
+                            <Label Content="{SLoc DIYFFBPedalPlugin_TextProfileShortcutName, 'Custom Action Name'}" Height="15" Width="150" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,0,0,0" Margin="5,0,0,0"/>
+                            <Label Content="{SLoc DIYFFBPedalPlugin_TextProfileShortcutBinding, 'Profile Binding'}" Height="15" Width="200" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,0,0,0" Margin="5,0,0,0"/>
                         </StackPanel>
                         
                     </StackPanel>
@@ -90,7 +90,7 @@
                                   SelectedValue="{Binding ShortcutProfile0, Mode=TwoWay}"
                                   Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0"/>
                         </StackPanel>
-                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_0" Click="Btn_Shortcut_0_Click" Width="30" Content="Clear" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_0" Click="Btn_Shortcut_0_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="15,2,0,0">
                         <StackPanel Orientation="Horizontal">
@@ -103,7 +103,7 @@
                                   SelectedValue="{Binding ShortcutProfile1, Mode=TwoWay}"
                                   Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0"/>
                         </StackPanel>
-                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_1" Click="Btn_Shortcut_1_Click" Width="30" Content="Clear" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_1" Click="Btn_Shortcut_1_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="15,2,0,0">
                         <StackPanel Orientation="Horizontal">
@@ -116,7 +116,7 @@
                                   SelectedValue="{Binding ShortcutProfile2, Mode=TwoWay}"
                                   Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0"/>
                         </StackPanel>
-                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_2" Click="Btn_Shortcut_2_Click" Width="30" Content="Clear" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_2" Click="Btn_Shortcut_2_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="15,2,0,0">
                         <StackPanel Orientation="Horizontal">
@@ -129,7 +129,7 @@
                                   SelectedValue="{Binding ShortcutProfile3, Mode=TwoWay}"
                                   Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0"/>
                         </StackPanel>
-                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_3" Click="Btn_Shortcut_3_Click" Width="30" Content="Clear" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_3" Click="Btn_Shortcut_3_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="15,2,0,0">
                         <StackPanel Orientation="Horizontal">
@@ -142,7 +142,7 @@
                                   SelectedValue="{Binding ShortcutProfile4, Mode=TwoWay}"
                                   Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0"/>
                         </StackPanel>
-                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_4" Click="Btn_Shortcut_4_Click" Width="30" Content="Clear" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_4" Click="Btn_Shortcut_4_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="15,2,0,0">
                         <StackPanel Orientation="Horizontal">
@@ -155,7 +155,7 @@
                                   SelectedValue="{Binding ShortcutProfile5, Mode=TwoWay}"
                                   Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0"/>
                         </StackPanel>
-                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_5" Click="Btn_Shortcut_5_Click" Width="30" Content="Clear" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                        <styles:SHButtonPrimary x:Name="Btn_Shortcut_5" Click="Btn_Shortcut_5_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                     </StackPanel>
                 </StackPanel>
             </StackPanel>

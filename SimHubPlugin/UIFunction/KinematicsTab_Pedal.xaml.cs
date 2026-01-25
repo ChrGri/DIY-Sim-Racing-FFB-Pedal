@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using WoteverLocalization;
 
 namespace User.PluginSdkDemo.UIFunction
 {
@@ -318,7 +319,7 @@ namespace User.PluginSdkDemo.UIFunction
             else
             {
 
-                TextBlock_Warning_kinematics.Text = "Pedal Kinematic calculation error";
+                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
             }
         }
 
@@ -353,7 +354,7 @@ namespace User.PluginSdkDemo.UIFunction
                     }
                     else
                     {
-                        TextBlock_Warning_kinematics.Text = "Pedal Kinematic calculation error";
+                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
                     }
                 }
             }
@@ -376,7 +377,7 @@ namespace User.PluginSdkDemo.UIFunction
                     }
                     else
                     {
-                        TextBlock_Warning_kinematics.Text = "Pedal Kinematic calculation error";
+                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
                     }
                 }
             }
@@ -399,7 +400,7 @@ namespace User.PluginSdkDemo.UIFunction
                     }
                     else
                     {
-                        TextBlock_Warning_kinematics.Text = "Pedal Kinematic calculation error";
+                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
                     }
                 }
             }
@@ -422,7 +423,7 @@ namespace User.PluginSdkDemo.UIFunction
                     }
                     else
                     {
-                        TextBlock_Warning_kinematics.Text = "Pedal Kinematic calculation error";
+                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
                     }
                 }
             }
@@ -441,7 +442,7 @@ namespace User.PluginSdkDemo.UIFunction
                     }
                     else
                     {
-                        TextBlock_Warning_kinematics.Text = "Pedal Kinematic calculation error";
+                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
                     }
                 }
             }
@@ -460,7 +461,7 @@ namespace User.PluginSdkDemo.UIFunction
                     }
                     else
                     {
-                        TextBlock_Warning_kinematics.Text = "Pedal Kinematic calculation error";
+                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
                     }
                 }
             }
@@ -485,7 +486,7 @@ namespace User.PluginSdkDemo.UIFunction
             else
             {
 
-                TextBlock_Warning_kinematics.Text = "Pedal Kinematic calculation error";
+                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
             }
         }
 
@@ -508,7 +509,7 @@ namespace User.PluginSdkDemo.UIFunction
             else
             {
 
-                TextBlock_Warning_kinematics.Text = "Pedal Kinematic calculation error";
+                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
             }
         }
 
@@ -531,7 +532,7 @@ namespace User.PluginSdkDemo.UIFunction
             else
             {
 
-                TextBlock_Warning_kinematics.Text = "Pedal Kinematic calculation error";
+                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
             }
         }
 
@@ -555,7 +556,7 @@ namespace User.PluginSdkDemo.UIFunction
             else
             {
 
-                TextBlock_Warning_kinematics.Text = "Pedal Kinematic calculation error";
+                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
             }
         }
 
@@ -578,7 +579,7 @@ namespace User.PluginSdkDemo.UIFunction
             else
             {
 
-                TextBlock_Warning_kinematics.Text = "Pedal Kinematic calculation error";
+                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
             }
         }
 
@@ -601,7 +602,7 @@ namespace User.PluginSdkDemo.UIFunction
             else
             {
 
-                TextBlock_Warning_kinematics.Text = "Pedal Kinematic calculation error";
+                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
             }
         }
 
@@ -624,7 +625,7 @@ namespace User.PluginSdkDemo.UIFunction
             else
             {
 
-                TextBlock_Warning_kinematics.Text = "Pedal Kinematic calculation error";
+                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
             }
         }
 
@@ -814,8 +815,8 @@ namespace User.PluginSdkDemo.UIFunction
             angle_beta_max = Math.Acos((oc_max * oc_max + a * a - b * b) / (2 * oc_max * a));
             angle_gamma = Math.Acos((b * b + a * a - oc_max * oc_max) / (2 * b * a));
             double servo_max_force_output_in_kg = Servo_max_force * Math.Sin(angle_gamma) * b / od / Math.Cos(angle_beta_max - min_angle_2);
-
-            TextBlock_Warning_kinematics.Text = "Expected max force at max travel:" + Math.Round(servo_max_force_output_in_kg) + "kg";
+            TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsExpectedMaxForce", "Expected max force at max travel")+":" + Math.Round(servo_max_force_output_in_kg) + "kg";
+            //TextBlock_Warning_kinematics.Text = "Expected max force at max travel:" + Math.Round(servo_max_force_output_in_kg) + "kg";
         }
         private void DrawGridLines_kinematicCanvas(double OX, double OY, double scale_i)
         {

@@ -17,6 +17,7 @@ using System.Windows.Media.TextFormatting;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using WoteverCommon.WPF;
+using WoteverLocalization;
 using Point = System.Windows.Point;
 using Rectangle = System.Windows.Shapes.Rectangle;
 
@@ -838,9 +839,9 @@ namespace User.PluginSdkDemo.UIFunction
             double servo_max_force_output_in_kg = Servo_max_force * Math.Sin(angle_gamma) * b / od / Math.Cos(angle_beta_max - min_angle_2);
             if (dap_config_st.payloadPedalConfig_.maxForce > servo_max_force_output_in_kg)
             {
-                TextBlock_Warning.Text = "Caution, the config and pedal kinematics may cause servo overloaded!!";
+                TextBlock_Warning.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextOverloadWarning1", "Caution, the config and pedal kinematics may cause servo overloaded!!");
                 //TextBlock_Warning.Text += "\nExpected max force= " + Math.Round(Force_calculated)+"kg";
-                TextBlock_Warning.Text += "\nMax servo output force= " + Math.Round(servo_max_force_output_in_kg) + "kg";
+                TextBlock_Warning.Text += "\n"+SLoc.GetValue("DIYFFBPedalPlugin_TextOverloadWarning2","Max servo output force")+" =" + Math.Round(servo_max_force_output_in_kg) + "kg";
                 TextBlock_Warning.Visibility = Visibility.Visible;
                 Label_max_force.Foreground = calculation.Red_Warning;
             }

@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using WoteverLocalization;
 
 namespace User.PluginSdkDemo.UIFunction
 {
@@ -109,7 +110,8 @@ namespace User.PluginSdkDemo.UIFunction
             {
                 if (Settings != null)
                 {
-                    Label_Pedal_interval_trigger.Content = "Effects Update Rate:" + Settings.Pedal_action_fps[Settings.table_selected]+"Hz";
+                    string labeltext= SLoc.GetValue("DIYFFBPedalPlugin_TextEffectUpdateRate", "Effects Update Rate:");
+                    Label_Pedal_interval_trigger.Content = labeltext + Settings.Pedal_action_fps[Settings.table_selected]+"Hz";
                     Slider_Pedal_interval_trigger.Value = Settings.Pedal_action_fps[Settings.table_selected];
 
                     if (Settings.Pedal_ESPNow_Sync_flag[Settings.table_selected])
@@ -229,7 +231,8 @@ namespace User.PluginSdkDemo.UIFunction
         private void Slider_Pedal_interval_trigger_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             Settings.Pedal_action_fps[Settings.table_selected] = (byte)e.NewValue;
-            Label_Pedal_interval_trigger.Content = "Effects Update Rate:" + Settings.Pedal_action_fps[Settings.table_selected]+"Hz";
+            string labeltext = SLoc.GetValue("DIYFFBPedalPlugin_TextEffectUpdateRate", "Effects Update Rate:");
+            Label_Pedal_interval_trigger.Content = labeltext + Settings.Pedal_action_fps[Settings.table_selected] + "Hz";
             SettingsChangedEvent(Settings);
         }
 

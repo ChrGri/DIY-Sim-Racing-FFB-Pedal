@@ -20,26 +20,26 @@
             <StackPanel HorizontalAlignment="Left" Height="240" VerticalAlignment="Top" Width="540">
                 <StackPanel Height="20" Width="540" Orientation="Horizontal">
                     <styles:SHToggleButton x:Name="checkbox_enable_RPM" Content="" Checked="checkbox_enable_RPM_Checked" Unchecked="checkbox_enable_RPM_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="60,0,0,0" ToolTip="Enable for RPM/Spped rumble, the trigger was save in local, no need sned config to Pedal"/>
-                    <Label Content="Engine RPM / Speed Rumble Effect" Height="15" Width="300" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="4,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectEngineTittle, 'Engine RPM / Speed Rumble Effect'}" Height="15" Width="300" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="4,0,0,0"/>
                 </StackPanel>
                 <Canvas x:Name="canvas_plot_RPM" Height="50" Width="400" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Margin="70,2,0,0" >
                     <Polyline x:Name="Polyline_plot_RPM" Height="50" Width="400" Points="0,25 80,25 160,25 240,25 320,25 400,25" Stroke="{DynamicResource AccentColorBrush}" Opacity="0.7" HorizontalAlignment="Left" VerticalAlignment="Center" />
 
                 </Canvas>
                 <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal" Width="540" Height="30">
-                    <Label Content="Effect depend:" Height="25" Width="70" FontSize="10" Margin="70,0,0,0" FontFamily="Arial" VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0"/>
-                    <RadioButton x:Name="RPMeffecttype_Sel_1" Content="Engine RPM" GroupName="RPMSel_options" Checked="RPMeffecttype_Sel_1_Checked" Width="100" Height="20" BorderThickness="0,0,0,0" FontFamily="Arial" FontSize="10"/>
-                    <RadioButton x:Name="RPMeffecttype_Sel_2" Content="Speed Rumble" GroupName="RPMSel_options" Checked="RPMeffecttype_Sel_1_Checked" Width="110" Height="20" Margin="5,0,0,0" BorderThickness="0,0,0,0" FontFamily="Arial" FontSize="10"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectEngineDepend, 'Effect depend:'}" Height="25" Width="70" FontSize="10" Margin="70,0,0,0" FontFamily="Arial" VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0"/>
+                    <RadioButton x:Name="RPMeffecttype_Sel_1" Content="{SLoc DIYFFBPedalPlugin_TextEffectEngineRPM, 'Engine RPM'}" GroupName="RPMSel_options" Checked="RPMeffecttype_Sel_1_Checked" Width="100" Height="20" BorderThickness="0,0,0,0" FontFamily="Arial" FontSize="10"/>
+                    <RadioButton x:Name="RPMeffecttype_Sel_2" Content="{SLoc DIYFFBPedalPlugin_TextEffectEngineSpeed, 'Speed Rumble'}" GroupName="RPMSel_options" Checked="RPMeffecttype_Sel_1_Checked" Width="110" Height="20" Margin="5,0,0,0" BorderThickness="0,0,0,0" FontFamily="Arial" FontSize="10"/>
 
 
                 </StackPanel>
 
 
 
-                <localUI:SliderWithLabel x:Name="Slider_RPM_AMP" Width="400" Height="40" TickFrequency="0.02" MaxValue="4" SliderLength="400" Unit="%" SliderName="Effect Amplitude" SliderValueChanged="Slider_RPM_AMP_SliderValueChanged"/>
+                <localUI:SliderWithLabel x:Name="Slider_RPM_AMP" Width="400" Height="40" TickFrequency="0.02" MaxValue="4" SliderLength="400" Unit="%" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectEngineAmp, 'Effect Amplitude'}" SliderValueChanged="Slider_RPM_AMP_SliderValueChanged"/>
                 <StackPanel Width="400" Height="50">
                     <StackPanel Width="400" Height="12" Orientation="Horizontal">
-                        <Label x:Name="label_RPM_freq"  Width="250" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Effect Frequency:" Height="12" Padding="0,0,0,0"/>
+                        <Label x:Name="label_RPM_freq"  Width="250" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="{SLoc DIYFFBPedalPlugin_TextEffectEngineFreq, 'Effect Frequency:'}" Height="12" Padding="0,0,0,0"/>
                     </StackPanel>
                     <StackPanel Width="400" Height="12" Orientation="Horizontal">
                         <Label x:Name="label_RPM_freq_min"  Width="50" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="MIN:" Height="12" Padding="0,0,0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>

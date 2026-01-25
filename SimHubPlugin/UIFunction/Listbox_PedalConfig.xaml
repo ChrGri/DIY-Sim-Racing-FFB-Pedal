@@ -66,11 +66,11 @@
     </UserControl.Resources>
     <Grid>
         <StackPanel>
-            <Label Content="Config List" Height="15" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left"/>
+            <Label Content="{SLoc DIYFFBPedalPlugin_TextConfigListTittle, 'Config List'}" Height="15" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left"/>
             <ListBox Name="ConfigListBox" Height="115" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="10" FontFamily="Arial" Width="160" ItemsSource="{Binding ItemList}">
                 <ListBox.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="Add new Config" Command="{Binding AddNewConfigCommand}" FontFamily="Arial" FontSize="10"/>
+                        <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListAddNewConfig, 'Add new Config'}" Command="{Binding AddNewConfigCommand}" FontFamily="Arial" FontSize="10"/>
                     </ContextMenu>
                 </ListBox.ContextMenu>
 
@@ -82,19 +82,19 @@
                         <Setter Property="ContextMenu">
                             <Setter.Value>
                                 <ContextMenu>
-                                    <MenuItem Header="Preview" Command="{Binding PlacementTarget.Tag.PreviewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                    <MenuItem Header="Apply" Command="{Binding PlacementTarget.Tag.ApplyConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                    <MenuItem Header="Set as Startup" Command="{Binding PlacementTarget.Tag.SetDefaultConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListPreview, 'Preview'}" Command="{Binding PlacementTarget.Tag.PreviewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextApply, 'Apply'}" Command="{Binding PlacementTarget.Tag.ApplyConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListSetAsStartup, 'Set as Startup'}" Command="{Binding PlacementTarget.Tag.SetDefaultConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                     <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
-                                    <MenuItem Header="Refresh List" Command="{Binding PlacementTarget.Tag.RefreshListCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                    <MenuItem Header="Overwrite" Command="{Binding PlacementTarget.Tag.OverwriteConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                    <MenuItem Header="Save as New Config" Command="{Binding PlacementTarget.Tag.SaveAsNewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                    <MenuItem Header="Add new Config" Command="{Binding PlacementTarget.Tag.AddNewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextRefreshList, 'Refresh List'}" Command="{Binding PlacementTarget.Tag.RefreshListCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextOverwrite, 'Overwrite'}" Command="{Binding PlacementTarget.Tag.OverwriteConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListSaveAs, 'Save as New Config'}" Command="{Binding PlacementTarget.Tag.SaveAsNewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListAddNewConfig, 'Add new Config'}" Command="{Binding PlacementTarget.Tag.AddNewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                     <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
-                                    <MenuItem Header="Reset Active Config" Command="{Binding PlacementTarget.Tag.ResetEditingConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                    <MenuItem Header="Rename" Command="{Binding PlacementTarget.Tag.RenameConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListReset, 'Reset Active Config'}" Command="{Binding PlacementTarget.Tag.ResetEditingConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextRename, 'Rename'}" Command="{Binding PlacementTarget.Tag.RenameConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                     <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
-                                    <MenuItem Header="Delete" Command="{Binding PlacementTarget.Tag.DeleteConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextDelete, 'Delete'}" Command="{Binding PlacementTarget.Tag.DeleteConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                 </ContextMenu>
                             </Setter.Value>
                         </Setter>

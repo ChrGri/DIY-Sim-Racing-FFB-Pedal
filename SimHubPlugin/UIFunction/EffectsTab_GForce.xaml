@@ -20,10 +20,10 @@
             <StackPanel HorizontalAlignment="Left" Height="240" VerticalAlignment="Top" Width="540" Margin="0,0,0,0">
                 <StackPanel Height="20" Width="540" Orientation="Horizontal">
                     <styles:SHToggleButton x:Name="checkbox_enable_G_force" Content="" Checked="checkbox_enable_G_force_Checked" Unchecked="checkbox_enable_G_force_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="60,0,0,0" ToolTip="The effect trigger was save in local, no need send config to Pedal"/>
-                    <Label Content="G-Force effect" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" Width="200" Height="15" HorizontalAlignment="Left" Margin="4,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectGforceTittle, 'G-Force Effect'}" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" Width="200" Height="15" HorizontalAlignment="Left" Margin="4,0,0,0"/>
                 </StackPanel>
-                <localUI:SliderWithLabel x:Name="Slider_G_force_multi" Width="400" Height="40" SliderLength="400" SliderValue="10" MinValue="10" SliderName="G Force Multiplier" Unit="%" SliderValueChanged="Slider_G_force_multi_SliderValueChanged"/>
-                <localUI:SliderWithLabel x:Name="Slider_G_force_smoothness" Width="400" Height="40" SliderLength="400" SliderValue="10" MinValue="10" SliderName="G Force Smoothness" SliderValueChanged="Slider_G_force_smoothness_SliderValueChanged"/>
+                <localUI:SliderWithLabel x:Name="Slider_G_force_multi" Width="400" Height="40" SliderLength="400" SliderValue="10" MinValue="10" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectGforceMultiplier, 'G Force Multiplier'}" Unit="%" SliderValueChanged="Slider_G_force_multi_SliderValueChanged"/>
+                <localUI:SliderWithLabel x:Name="Slider_G_force_smoothness" Width="400" Height="40" SliderLength="400" SliderValue="10" MinValue="10" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectGforceSmoothness, 'G Force Smoothness'}" SliderValueChanged="Slider_G_force_smoothness_SliderValueChanged"/>
             </StackPanel>
         </Border>
     </Grid>
