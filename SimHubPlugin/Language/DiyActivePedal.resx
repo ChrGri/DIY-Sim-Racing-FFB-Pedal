@@ -183,6 +183,9 @@
   <data name="DIYFFBPedalPlugin_TextApply" xml:space="preserve">
     <value>Apply</value>
   </data>
+  <data name="DIYFFBPedalPlugin_TextAutoClear" xml:space="preserve">
+    <value>Auto Clear</value>
+  </data>
   <data name="DIYFFBPedalPlugin_TextAutomaticPedalConnect" xml:space="preserve">
     <value>Automatic Pedal Connect</value>
   </data>
@@ -432,6 +435,9 @@
   <data name="DIYFFBPedalPlugin_TextLabelServoState" xml:space="preserve">
     <value>Servo State</value>
   </data>
+  <data name="DIYFFBPedalPlugin_TextLeaveWithoutChange" xml:space="preserve">
+    <value>Leave without Change</value>
+  </data>
   <data name="DIYFFBPedalPlugin_TextLogPedalStates" xml:space="preserve">
     <value>Log Pedal States</value>
   </data>
@@ -452,6 +458,9 @@
   </data>
   <data name="DIYFFBPedalPlugin_TextPedalIdThrottle" xml:space="preserve">
     <value>Throttle</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPedalInfoTitle" xml:space="preserve">
+    <value>Pedal Info</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextPedalKinematics" xml:space="preserve">
     <value>PEDAL KINEMATICS</value>
@@ -489,7 +498,7 @@
   <data name="DIYFFBPedalPlugin_TextProfileShortcutTittle" xml:space="preserve">
     <value>Profile Shortcut</value>
   </data>
-  <data name="DIYFFBPedalPlugin_TextProfileShortcutWarnin" xml:space="preserve">
+  <data name="DIYFFBPedalPlugin_TextProfileShortcutWarning" xml:space="preserve">
     <value>*The change of Custom Action Name will be applied after a simhub restart.</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextRead" xml:space="preserve">
@@ -507,6 +516,9 @@
   <data name="DIYFFBPedalPlugin_TextRudderId" xml:space="preserve">
     <value>Rudder</value>
   </data>
+  <data name="DIYFFBPedalPlugin_TextRudderInfoTitle" xml:space="preserve">
+    <value>Rudder Info</value>
+  </data>
   <data name="DIYFFBPedalPlugin_TextServoSettingSliderEndstopCurrent" xml:space="preserve">
     <value>Endstop Detection Threshold</value>
   </data>
@@ -521,6 +533,30 @@
   </data>
   <data name="DIYFFBPedalPlugin_TextSystem" xml:space="preserve">
     <value>SYSTEM</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextSystemInfoTitle" xml:space="preserve">
+    <value>System Info</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextUpdateChannel" xml:space="preserve">
+    <value>Update Channel:</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextUpdateForceFlash" xml:space="preserve">
+    <value>Force Flash Firmware</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextUpdateFromPlatformio" xml:space="preserve">
+    <value>Upload from PlatformIO</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextUpdateTestBuildWarning" xml:space="preserve">
+    <value>Test Build DO NOT USE</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextUpdateWindowPass" xml:space="preserve">
+    <value>PASS:</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextUpdateWindowSSID" xml:space="preserve">
+    <value>SSID:</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextUpdateWindowTitle" xml:space="preserve">
+    <value>Update Setting</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextWirelessCommunication" xml:space="preserve">
     <value>Wireless Communication</value>

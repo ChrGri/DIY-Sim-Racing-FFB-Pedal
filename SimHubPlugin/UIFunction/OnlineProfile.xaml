@@ -13,8 +13,8 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Width="390">
                 <StackPanel Width="180" Height="305">
                     <ListBox Name="ProfilesListBox" Width="160" Height="200" SelectionChanged="ProfilesListBox_SelectionChanged" VerticalAlignment="Top" Margin="10" HorizontalAlignment="Left" FontSize="10" FontFamily="Arial"/>
-                    <styles:SHButtonPrimary x:Name="Btn_Apply" Click="CloseAndReturn_Click" Width="160" Content="Apply" Height="25" Margin="10,0,0,0" HorizontalAlignment="Left" Padding="15,0,15,0" VerticalContentAlignment="Center" />
-                    <styles:SHButtonPrimary x:Name="Btn_Online_profile_leave"  Click="Btn_Online_profile_leave_Click" Width="160" Content="Leave without Change" Height="25" Margin="10,10,0,0" HorizontalAlignment="Left" Padding="15,0,15,0" VerticalContentAlignment="Center" />
+                    <styles:SHButtonPrimary x:Name="Btn_Apply" Click="CloseAndReturn_Click" Width="160" Content="{SLoc DIYFFBPedalPlugin_TextApply, 'Apply'}" Height="25" Margin="10,0,0,0" HorizontalAlignment="Left" Padding="15,0,15,0" VerticalContentAlignment="Center" />
+                    <styles:SHButtonPrimary x:Name="Btn_Online_profile_leave"  Click="Btn_Online_profile_leave_Click" Width="160" Content="{SLoc DIYFFBPedalPlugin_TextLeaveWithoutChange, 'Leave without Change'}" Height="25" Margin="10,10,0,0" HorizontalAlignment="Left" Padding="15,0,15,0" VerticalContentAlignment="Center" />
                 </StackPanel>
                 <StackPanel Width="210" Height="305">
                     <StackPanel Height="100" HorizontalAlignment="Center" Margin="0,5,0,0">

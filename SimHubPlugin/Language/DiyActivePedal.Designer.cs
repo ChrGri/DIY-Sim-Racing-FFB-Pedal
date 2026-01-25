@@ -259,6 +259,15 @@ namespace User.PluginSdkDemo.Language {
         }
         
         /// <summary>
+        ///   查詢類似 Auto Clear 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextAutoClear {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextAutoClear", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Automatic Pedal Connect 的當地語系化字串。
         /// </summary>
         internal static string DIYFFBPedalPlugin_TextAutomaticPedalConnect {
@@ -1006,6 +1015,15 @@ namespace User.PluginSdkDemo.Language {
         }
         
         /// <summary>
+        ///   查詢類似 Leave without Change 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextLeaveWithoutChange {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextLeaveWithoutChange", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Log Pedal States 的當地語系化字串。
         /// </summary>
         internal static string DIYFFBPedalPlugin_TextLogPedalStates {
@@ -1065,6 +1083,15 @@ namespace User.PluginSdkDemo.Language {
         internal static string DIYFFBPedalPlugin_TextPedalIdThrottle {
             get {
                 return ResourceManager.GetString("DIYFFBPedalPlugin_TextPedalIdThrottle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Pedal Info 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextPedalInfoTitle {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextPedalInfoTitle", resourceCulture);
             }
         }
         
@@ -1179,9 +1206,9 @@ namespace User.PluginSdkDemo.Language {
         /// <summary>
         ///   查詢類似 *The change of Custom Action Name will be applied after a simhub restart. 的當地語系化字串。
         /// </summary>
-        internal static string DIYFFBPedalPlugin_TextProfileShortcutWarnin {
+        internal static string DIYFFBPedalPlugin_TextProfileShortcutWarning {
             get {
-                return ResourceManager.GetString("DIYFFBPedalPlugin_TextProfileShortcutWarnin", resourceCulture);
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextProfileShortcutWarning", resourceCulture);
             }
         }
         
@@ -1231,6 +1258,15 @@ namespace User.PluginSdkDemo.Language {
         }
         
         /// <summary>
+        ///   查詢類似 Rudder Info 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextRudderInfoTitle {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextRudderInfoTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Endstop Detection Threshold 的當地語系化字串。
         /// </summary>
         internal static string DIYFFBPedalPlugin_TextServoSettingSliderEndstopCurrent {
@@ -1272,6 +1308,78 @@ namespace User.PluginSdkDemo.Language {
         internal static string DIYFFBPedalPlugin_TextSystem {
             get {
                 return ResourceManager.GetString("DIYFFBPedalPlugin_TextSystem", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 System Info 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextSystemInfoTitle {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextSystemInfoTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Update Channel: 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextUpdateChannel {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextUpdateChannel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Force Flash Firmware 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextUpdateForceFlash {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextUpdateForceFlash", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Upload from PlatformIO 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextUpdateFromPlatformio {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextUpdateFromPlatformio", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Test Build DO NOT USE 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextUpdateTestBuildWarning {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextUpdateTestBuildWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 PASS: 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextUpdateWindowPass {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextUpdateWindowPass", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 SSID: 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextUpdateWindowSSID {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextUpdateWindowSSID", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Update Setting 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextUpdateWindowTitle {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextUpdateWindowTitle", resourceCulture);
             }
         }
         
