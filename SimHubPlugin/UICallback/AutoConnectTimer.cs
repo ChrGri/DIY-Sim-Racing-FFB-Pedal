@@ -62,7 +62,7 @@ namespace User.PluginSdkDemo
                 }
                 
                 
-                if (Plugin.Settings.Pedal_ESPNow_auto_connect_flag)
+                if (Plugin.Settings.IsBridgeAutoConnect)
                 {
 
                     if (Plugin.PortExists(Plugin.Settings.ESPNow_port))

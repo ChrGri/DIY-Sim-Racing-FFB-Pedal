@@ -156,11 +156,17 @@
   <data name="DIYFFBPedalPlugin_LabelSystemSettingAdvancedMode" xml:space="preserve">
     <value>Advanced Mode</value>
   </data>
+  <data name="DIYFFBPedalPlugin_LabelSystemSettingAutoComConnect" xml:space="preserve">
+    <value>Automatic Com Connect</value>
+  </data>
   <data name="DIYFFBPedalPlugin_LabelSystemSettingAutoConnectBridge" xml:space="preserve">
     <value>Automatic Bridge Connect</value>
   </data>
   <data name="DIYFFBPedalPlugin_LabelSystemSettingAutoProfileSwitch" xml:space="preserve">
     <value>Automatic Profile Switch</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_LabelSystemSettingFanatecOrPicoSupport" xml:space="preserve">
+    <value>Fanatec Or Pico Support</value>
   </data>
   <data name="DIYFFBPedalPlugin_LabelSystemSettingTittle" xml:space="preserve">
     <value>System Setting</value>

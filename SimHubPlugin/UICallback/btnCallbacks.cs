@@ -651,7 +651,7 @@ namespace User.PluginSdkDemo
                 //Plugin.Sync_esp_connection_flag = false;
                 btn_connect_espnow_port.Content = "Connect";
                 SystemSounds.Beep.Play();
-                Plugin.Settings.Pedal_ESPNow_auto_connect_flag = false;
+                Plugin.Settings.IsBridgeAutoConnect = false;
                 if (Plugin._calculations.bridgeConnectionStatus != BridgeConnectStateEnum.BRIDGE_DISCONNECT)
                 {
                     updateTheGuiFromConfig();
@@ -693,7 +693,7 @@ namespace User.PluginSdkDemo
                             ESP_host_serial_timer.Interval = 8; // in miliseconds
                             ESP_host_serial_timer.Start();
                             System.Threading.Thread.Sleep(100);
-                            if (Plugin.Settings.Pedal_ESPNow_auto_connect_flag)
+                            if (Plugin.Settings.IsBridgeAutoConnect)
                             {
                                 Plugin.Settings.ESPNow_port = Plugin.ESPsync_serialPort.PortName;
                             }

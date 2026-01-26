@@ -178,6 +178,15 @@ namespace User.PluginSdkDemo.Language {
         }
         
         /// <summary>
+        ///   查詢類似 Automatic Com Connect 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_LabelSystemSettingAutoComConnect {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_LabelSystemSettingAutoComConnect", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Automatic Bridge Connect 的當地語系化字串。
         /// </summary>
         internal static string DIYFFBPedalPlugin_LabelSystemSettingAutoConnectBridge {
@@ -192,6 +201,15 @@ namespace User.PluginSdkDemo.Language {
         internal static string DIYFFBPedalPlugin_LabelSystemSettingAutoProfileSwitch {
             get {
                 return ResourceManager.GetString("DIYFFBPedalPlugin_LabelSystemSettingAutoProfileSwitch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Fanatec Or Pico Support 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_LabelSystemSettingFanatecOrPicoSupport {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_LabelSystemSettingFanatecOrPicoSupport", resourceCulture);
             }
         }
         
