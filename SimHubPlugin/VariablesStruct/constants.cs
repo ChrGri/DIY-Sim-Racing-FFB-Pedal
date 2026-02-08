@@ -9,7 +9,7 @@ namespace User.PluginSdkDemo
     static class Constants
     {
         // payload revisiom
-        public const uint pedalConfigPayload_version = 165;
+        public const uint pedalConfigPayload_version = 166;
 
 
         // pyload types
@@ -20,7 +20,7 @@ namespace User.PluginSdkDemo
         public const uint bridgeStatePayloadType = 210;
         public const uint OtaPayloadType = 220;
         public const uint pedalHidMessage_type = 225;
-        public const string pluginVersion = "0.90.28";
+        public const string pluginVersion = "0.90.29";
         public const string version_control_url = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/version_control.json";
         public const int DEFAULTBAUD = 921600;
         public const int BAUD3M = 3000000;

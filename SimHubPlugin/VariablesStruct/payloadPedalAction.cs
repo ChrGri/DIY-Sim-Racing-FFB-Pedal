@@ -23,6 +23,8 @@ namespace User.PluginSdkDemo
         public byte impact_value;
         public byte Trigger_CV_1;
         public byte Trigger_CV_2;
+        public byte Trigger_CV_3;
+        public byte Trigger_CV_4;
         public byte Rudder_action;
         public byte Rudder_brake_action;
     };

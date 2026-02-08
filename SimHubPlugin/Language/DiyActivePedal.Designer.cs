@@ -232,6 +232,42 @@ namespace User.PluginSdkDemo.Language {
         }
         
         /// <summary>
+        ///   查詢類似 CUSTOM1 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TabItemCustom1 {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TabItemCustom1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 CUSTOM2 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TabItemCustom2 {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TabItemCustom2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 CUSTOM3 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TabItemCustom3 {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TabItemCustom3", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 CUSTOM4 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TabItemCustom4 {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TabItemCustom4", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Filter 的當地語系化字串。
         /// </summary>
         internal static string DIYFFBPedalPlugin_TabTextFilter {
@@ -525,6 +561,24 @@ namespace User.PluginSdkDemo.Language {
         internal static string DIYFFBPedalPlugin_TextEffectCustom2Tittle {
             get {
                 return ResourceManager.GetString("DIYFFBPedalPlugin_TextEffectCustom2Tittle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Custom Effect 3 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextEffectCustom3Tittle {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextEffectCustom3Tittle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Custom Effect 4 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextEffectCustom4Tittle {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextEffectCustom4Tittle", resourceCulture);
             }
         }
         

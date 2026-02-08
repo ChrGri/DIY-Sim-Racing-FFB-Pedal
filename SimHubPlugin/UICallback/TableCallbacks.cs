@@ -19,6 +19,8 @@ namespace User.PluginSdkDemo
                 Plugin.Settings.table_selected = (uint)MyTab.SelectedIndex;                
                 Plugin._calculations.Update_CV1_textbox = true;
                 Plugin._calculations.Update_CV2_textbox = true;
+                Plugin._calculations.Update_CV3_textbox = true;
+                Plugin._calculations.Update_CV4_textbox = true;
                 Plugin._calculations.OTASettingUpdate_b = true;
                 PedalTabChange = true;
                 PedalTabChange_last = DateTime.Now;
@@ -44,6 +46,8 @@ namespace User.PluginSdkDemo
                 //Update_CV_textbox = true;
                 Plugin._calculations.Update_CV1_textbox = true;
                 Plugin._calculations.Update_CV2_textbox = true;
+                Plugin._calculations.Update_CV3_textbox = true;
+                Plugin._calculations.Update_CV4_textbox = true;
                 Plugin._calculations.OTASettingUpdate_b = true;
                 updateTheGuiFromConfig();
             }

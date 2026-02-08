@@ -12,6 +12,8 @@ struct __attribute__((packed)) payloadPedalAction {
   uint8_t impact_value_u8;
   uint8_t Trigger_CV_1;
   uint8_t Trigger_CV_2;
+  uint8_t Trigger_CV_3;
+  uint8_t Trigger_CV_4;
   uint8_t Rudder_action;
   uint8_t Rudder_brake_action;
 };

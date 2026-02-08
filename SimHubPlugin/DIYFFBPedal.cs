@@ -331,6 +331,8 @@ namespace User.PluginSdkDemo
             byte Road_impact_value = 0;
             double CV1_value = 0;
             double CV2_value = 0;
+            double CV3_value = 0;
+            double CV4_value = 0;
             double MSFS_RPM_Value_Simhub = 0;
             double RUDDER_DEFLECTION_Simhub = 0;
             double RELATIVE_WIND_VELOCITY_BODY_Z_Simhub = 0;
@@ -725,8 +727,70 @@ namespace User.PluginSdkDemo
                             CV2_value = 0;
                             SimHub.Logging.Current.Error("CV2 Reading error:"+ caughtEx);
                         }
+                    }
+                    if (Settings.CV3_enable_flag[pedalIdx] == true)
+                    {
 
+                        //CV2_value = Convert.ToByte(pluginManager.GetPropertyValue(Settings.CV2_bindings[pedalIdx]));
+                        try
+                        {
+                            string temp_string = Ncalc_reading(Settings.CV3_bindings[pedalIdx]);
+                            if (temp_string != "Error")
+                            {
+                                CV3_value = Convert.ToDouble(temp_string);
+                            }
+                            else
+                            {
+                                CV3_value = 0;
+                                SimHub.Logging.Current.Error("CV3 Reading error");
+                            }
+                            if (CV3_value > Byte.MaxValue)
+                            {
+                                SimHub.Logging.Current.Error("CV3 value exceed limit");
+                            }
+                            if (CV3_value > (Settings.CV2_trigger[pedalIdx]))
+                            {
+                                tmp.payloadPedalAction_.Trigger_CV_3 = 1;
+                                update_flag = true;
+                            }
+                        }
+                        catch (Exception caughtEx)
+                        {
+                            CV3_value = 0;
+                            SimHub.Logging.Current.Error("CV3 Reading error:" + caughtEx);
+                        }
+                    }
+                    if (Settings.CV4_enable_flag[pedalIdx] == true)
+                    {
 
+                        //CV4_value = Convert.ToByte(pluginManager.GetPropertyValue(Settings.CV2_bindings[pedalIdx]));
+                        try
+                        {
+                            string temp_string = Ncalc_reading(Settings.CV4_bindings[pedalIdx]);
+                            if (temp_string != "Error")
+                            {
+                                CV4_value = Convert.ToDouble(temp_string);
+                            }
+                            else
+                            {
+                                CV4_value = 0;
+                                SimHub.Logging.Current.Error("CV4 Reading error");
+                            }
+                            if (CV4_value > Byte.MaxValue)
+                            {
+                                SimHub.Logging.Current.Error("CV4 value exceed limit");
+                            }
+                            if (CV4_value > (Settings.CV2_trigger[pedalIdx]))
+                            {
+                                tmp.payloadPedalAction_.Trigger_CV_3 = 1;
+                                update_flag = true;
+                            }
+                        }
+                        catch (Exception caughtEx)
+                        {
+                            CV4_value = 0;
+                            SimHub.Logging.Current.Error("CV4 Reading error:" + caughtEx);
+                        }
                     }
                     //ABS/TC function
                     if (pedalIdx == 1)

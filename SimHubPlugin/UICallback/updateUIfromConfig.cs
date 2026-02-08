@@ -73,8 +73,8 @@ namespace User.PluginSdkDemo
                 EffectsGFroce_Tab.dap_config_st = tmp_struct;
                 EffectsWheelSlip_Tab.dap_config_st = tmp_struct;
                 EffectsRoadImpact_Tab.dap_config_st = tmp_struct;
-                EffectsCustom1_tab.dap_config_st = tmp_struct;
-                EffectsCustom2_Tab.dap_config_st = tmp_struct;
+                EffectsCustom_tab.dap_config_st = tmp_struct;
+                //EffectsCustom2_Tab.dap_config_st = tmp_struct;
                 PedalForceTravel_Tab.dap_config_st = tmp_struct;
                 PedalJoystick_Tab.dap_config_st= tmp_struct;
                 GlobalEffects_Tab.dap_config_st=tmp_struct;
@@ -93,8 +93,8 @@ namespace User.PluginSdkDemo
                 EffectsGFroce_Tab.Settings = Plugin.Settings;
                 EffectsWheelSlip_Tab.Settings = Plugin.Settings;
                 EffectsRoadImpact_Tab.Settings = Plugin.Settings;
-                EffectsCustom1_tab.Settings = Plugin.Settings;
-                EffectsCustom2_Tab.Settings = Plugin.Settings;
+                EffectsCustom_tab.Settings = Plugin.Settings;
+                //EffectsCustom_Tab.Settings = Plugin.Settings;
 
                 PedalForceTravel_Tab.Settings = Plugin.Settings;
                 PedalKinematics_Tab.Settings = Plugin.Settings;
@@ -112,8 +112,8 @@ namespace User.PluginSdkDemo
 
                 EffectsABS_Tab.calculation = Plugin._calculations;
                 EffectsBitePoint_Tab.calculation = Plugin._calculations;
-                EffectsCustom1_tab.calculation = Plugin._calculations;
-                EffectsCustom2_Tab.calculation = Plugin._calculations;
+                EffectsCustom_tab.calculation = Plugin._calculations;
+                //EffectsCustom2_Tab.calculation = Plugin._calculations;
                 Misc_Tab.calculation = Plugin._calculations;
                 PedalForceTravel_Tab.calculation = Plugin._calculations;
                 PedalSettingsSection.calculation = Plugin._calculations;
@@ -125,8 +125,8 @@ namespace User.PluginSdkDemo
                 RudderInfo.calculation = Plugin._calculations;
                 if (firstAssignPlugin)
                 {
-                    EffectsCustom1_tab.Plugin = Plugin;
-                    EffectsCustom2_Tab.Plugin = Plugin;
+                    EffectsCustom_tab.Plugin = Plugin;
+                    //EffectsCustom2_Tab.Plugin = Plugin;
                     Listbox_PedalConfig.Plugin = Plugin;
                     SystemProfile_TabNew.Plugin = Plugin;
                     SystemShortcut_Tab.Plugin = Plugin;

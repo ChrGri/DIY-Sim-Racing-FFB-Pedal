@@ -460,18 +460,10 @@
                                         <TabItem Width="67.5" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
                                                 <Border  Width="67.5" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Custom-1"  FontFamily="Arial Black" FontSize="10" Height="30" Width="67.5" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip=" "  />
+                                                    <Label Content="Custom"  FontFamily="Arial Black" FontSize="10" Height="30" Width="67.5" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip=" "  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <localFunction:EffectsTab_Custom1 x:Name="EffectsCustom1_tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
-                                        </TabItem>
-                                        <TabItem Width="67.5" Height="30" Padding="0,0,0,0">
-                                            <TabItem.Header>
-                                                <Border  Width="67.5" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Custom-2"  FontFamily="Arial Black" FontSize="10" Height="30" Width="67.5" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
-                                                </Border>
-                                            </TabItem.Header>
-                                            <localFunction:EffectsTab_Custom2 x:Name="EffectsCustom2_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
+                                            <localFunction:EffectsTab_Custom x:Name="EffectsCustom_tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
                                         </TabItem>
                                     </TabControl>
                                 </StackPanel>

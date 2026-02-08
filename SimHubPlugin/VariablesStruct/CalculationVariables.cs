@@ -18,6 +18,8 @@ namespace User.PluginSdkDemo
         public bool IsUIRefreshNeeded { get; set; }
         public bool Update_CV1_textbox { get; set; }
         public bool Update_CV2_textbox { get; set; }
+        public bool Update_CV3_textbox { get; set; }
+        public bool Update_CV4_textbox { get; set; }
 
         public double[] Force_curve_Y = new double[101];
 

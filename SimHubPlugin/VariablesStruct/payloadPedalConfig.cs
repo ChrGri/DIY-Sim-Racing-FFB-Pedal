@@ -23,14 +23,6 @@ namespace User.PluginSdkDemo
 
         // design force vs travel curve
         // In percent
-        /*
-        public byte relativeForce_p000;
-        public byte relativeForce_p020;
-        public byte relativeForce_p040;
-        public byte relativeForce_p060;
-        public byte relativeForce_p080;
-        public byte relativeForce_p100;
-        */
         public byte quantityOfControl;
         public byte relativeForce00;
         public byte relativeForce01;
@@ -122,7 +114,12 @@ namespace User.PluginSdkDemo
         //Custom Vibration 2
         public byte CV_amp_2;
         public byte CV_freq_2;
-
+        //Custom Vibration 3
+        public byte CV_amp_3;
+        public byte CV_freq_3;
+        //Custom Vibration 4
+        public byte CV_amp_4;
+        public byte CV_freq_4;
         public byte maxGameOutput;
 
         // Kalman filter model noise

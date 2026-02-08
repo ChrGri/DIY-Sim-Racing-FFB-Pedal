@@ -231,6 +231,9 @@
     <Compile Include="UIFunction\EffectsTab_BitePoint.xaml.cs">
       <DependentUpon>EffectsTab_BitePoint.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\EffectsTab_Custom.xaml.cs">
+      <DependentUpon>EffectsTab_Custom.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\EffectsTab_Custom1.xaml.cs">
       <DependentUpon>EffectsTab_Custom1.xaml</DependentUpon>
     </Compile>
@@ -392,6 +395,10 @@
     <Page Include="UIFunction\EffectsTab_BitePoint.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\EffectsTab_Custom.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UIFunction\EffectsTab_Custom1.xaml">
       <SubType>Designer</SubType>

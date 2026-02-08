@@ -107,7 +107,12 @@ struct __attribute__((packed)) payloadPedalConfig {
   //Custom Vibration 2
   uint8_t CV_amp_2;
   uint8_t CV_freq_2;
-
+  //Custom Vibration 3
+  uint8_t CV_amp_3;
+  uint8_t CV_freq_3;
+  //Custom Vibration 4
+  uint8_t CV_amp_4;
+  uint8_t CV_freq_4;
   // controller settings
   uint8_t maxGameOutput;
 

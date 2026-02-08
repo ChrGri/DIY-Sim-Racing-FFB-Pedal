@@ -556,8 +556,9 @@ namespace User.PluginSdkDemo
                                 Plugin._calculations.configPreviewLockLast[pedalSelected] = DateTime.Now;
                                 
                                 updateTheGuiFromConfig();
-                                TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config payload check: " + check_payload_config_b + "\n";
-                                TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config crc check: " + check_crc_config_b + "\n";
+                                string timestamp = DateTime.Now.ToString("HH:mm:ss");
+                                TextBox_serialMonitor_bridge.Text += "["+ timestamp+ "] Pedal:" + pedalSelected + " Payload config payload check: " + check_payload_config_b + "\n";
+                                TextBox_serialMonitor_bridge.Text += "[" + timestamp + "] Pedal:" + pedalSelected + " Payload config crc check: " + check_crc_config_b + "\n";
                                 if (pedalConfig_read_st.payloadPedalConfig_.configHash_u32 == (uint)175245064)
                                 {
                                     // if pedal return DefaultConfig, clear the default setting and ask re send a default config in
@@ -578,10 +579,11 @@ namespace User.PluginSdkDemo
                             }
                             else
                             {
-                                TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config payload check: " + check_payload_config_b + "\n";
-                                TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload expected:" + Constants.pedalConfigPayload_type + " Payload get:" + pedalConfig_read_st.payloadHeader_.payloadType + "\n";
-                                TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config crc check: " + check_crc_config_b + "\n";
-                                TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " CRC expected" + Plugin.checksumCalc(p_config, sizeof(payloadHeader) + sizeof(payloadPedalConfig)) + " CRC Get:" + pedalConfig_read_st.payloadFooter_.checkSum + "\n";
+                                string timestamp = DateTime.Now.ToString("HH:mm:ss");
+                                TextBox_serialMonitor_bridge.Text += "[" + timestamp + "] Pedal:" + pedalSelected + " Payload config payload check: " + check_payload_config_b + "\n";
+                                TextBox_serialMonitor_bridge.Text += "[" + timestamp + "] Pedal:" + pedalSelected + " Payload expected:" + Constants.pedalConfigPayload_type + " Payload get:" + pedalConfig_read_st.payloadHeader_.payloadType + "\n";
+                                TextBox_serialMonitor_bridge.Text += "[" + timestamp + "] Pedal:" + pedalSelected + " Payload config crc check: " + check_crc_config_b + "\n";
+                                TextBox_serialMonitor_bridge.Text += "[" + timestamp + "] Pedal:" + pedalSelected + " CRC expected" + Plugin.checksumCalc(p_config, sizeof(payloadHeader) + sizeof(payloadPedalConfig)) + " CRC Get:" + pedalConfig_read_st.payloadFooter_.checkSum + "\n";
                             }
 
 
@@ -599,7 +601,9 @@ namespace User.PluginSdkDemo
                             if (pedalMessage_read_st.magicKey2 != Constants.ESPNOW_LOG_MAGIC_KEY_2) structChecker = false;
                             if (structChecker)
                             {
-                                string textContent = System.Text.Encoding.UTF8.GetString(pedalMessage_read_st.text, pedalMessage_read_st.length);
+                                string textContent_orig = System.Text.Encoding.UTF8.GetString(pedalMessage_read_st.text, pedalMessage_read_st.length);
+                                string timestamp = DateTime.Now.ToString("HH:mm:ss");
+                                string textContent = $"[{timestamp}] {textContent_orig}";
                                 TextBox_serialMonitor_bridge.Text += textContent + "\n";
                                 if (_serial_monitor_window != null)
                                 {

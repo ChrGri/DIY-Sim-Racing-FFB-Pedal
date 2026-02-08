@@ -117,6 +117,8 @@ WSOscillation _WSOscillation;
 Road_impact_effect _Road_impact_effect;
 Custom_vibration CV1;
 Custom_vibration CV2;
+Custom_vibration CV3;
+Custom_vibration CV4;
 Rudder _rudder;
 helicoptersRudder helicopterRudder_;
 Rudder_G_Force _rudder_g_force;
@@ -1649,7 +1651,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       _Road_impact_effect.forceOffset(&dap_calculationVariables_st, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.Road_multi);
       CV1.forceOffset(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_freq_1,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_amp_1,dap_calculationVariables_st.stepperPosRange);
       CV2.forceOffset(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_freq_2,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_amp_2,dap_calculationVariables_st.stepperPosRange);
-      
+      CV3.forceOffset(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_freq_3,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_amp_3,dap_calculationVariables_st.stepperPosRange);
+      CV4.forceOffset(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_freq_4,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_amp_4,dap_calculationVariables_st.stepperPosRange);     
       if(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.BP_trigger==1)
       {
         if(Position_check > BP_trigger_min)
@@ -1879,6 +1882,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         effect_pos_fl32 += _BitePointOscillation.BitePointOffset; 
         effect_pos_fl32 += CV1.CustomVibrationOffset;
         effect_pos_fl32 += CV2.CustomVibrationOffset;
+        effect_pos_fl32 += CV3.CustomVibrationOffset;
+        effect_pos_fl32 += CV4.CustomVibrationOffset;
         effect_pos_fl32 += _RPMOscillation.RPM_position_offset;
       }
 
@@ -2655,15 +2660,13 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                             systemIdentificationMode_b = true;
                           }
                           // trigger Custom effect effect 1
-                          if (received_action.payloadPedalAction_.Trigger_CV_1)
-                          {
-                            CV1.trigger();
-                          }
+                          if (received_action.payloadPedalAction_.Trigger_CV_1) CV1.trigger();
                           // trigger Custom effect effect 2
-                          if (received_action.payloadPedalAction_.Trigger_CV_2)
-                          {
-                            CV2.trigger();
-                          }
+                          if (received_action.payloadPedalAction_.Trigger_CV_2) CV2.trigger();
+                          // trigger Custom effect effect 3
+                          if (received_action.payloadPedalAction_.Trigger_CV_3) CV3.trigger();
+                          // trigger Custom effect effect 4
+                          if (received_action.payloadPedalAction_.Trigger_CV_4) CV4.trigger();
                           // trigger return pedal position
                           if (received_action.payloadPedalAction_.returnPedalConfig_u8)
                           {

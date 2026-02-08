@@ -423,15 +423,13 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               systemIdentificationMode_b = true;
             }
             // trigger Custom effect effect 1
-            if (dap_actions_st.payloadPedalAction_.Trigger_CV_1)
-            {
-              CV1.trigger();
-            }
+            if (dap_actions_st.payloadPedalAction_.Trigger_CV_1) CV1.trigger();
             // trigger Custom effect effect 2
-            if (dap_actions_st.payloadPedalAction_.Trigger_CV_2)
-            {
-              CV2.trigger();
-            }
+            if (dap_actions_st.payloadPedalAction_.Trigger_CV_2) CV2.trigger();
+            // trigger Custom effect effect 3
+            if (dap_actions_st.payloadPedalAction_.Trigger_CV_3) CV3.trigger();
+            // trigger Custom effect effect 4
+            if (dap_actions_st.payloadPedalAction_.Trigger_CV_4) CV4.trigger();
             // trigger return pedal position
             if (dap_actions_st.payloadPedalAction_.returnPedalConfig_u8)
             {

@@ -345,7 +345,7 @@ public:
   //float RPM_value =0;
   float CustomVibrationOffset = 0.0f;
 public:
-  void IRAM_ATTR_FLAG trigger() {
+  void trigger() {
     _timeLastTriggerMillis = millis();
   }
   

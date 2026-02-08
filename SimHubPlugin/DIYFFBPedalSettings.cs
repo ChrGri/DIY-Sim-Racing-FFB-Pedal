@@ -42,6 +42,12 @@ namespace User.PluginSdkDemo
         public bool[] CV2_enable_flag = new bool[3] { false, false, false };
         public int[] CV2_trigger = new int[3] { 0, 0, 0 };
         public string[] CV2_bindings = new string[3] { "", "", "" };
+        public bool[] CV3_enable_flag = new bool[3] { false, false, false };
+        public int[] CV3_trigger = new int[3] { 0, 0, 0 };
+        public string[] CV3_bindings = new string[3] { "", "", "" };
+        public bool[] CV4_enable_flag = new bool[3] { false, false, false };
+        public int[] CV4_trigger = new int[3] { 0, 0, 0 };
+        public string[] CV4_bindings = new string[3] { "", "", "" };
         public string ESPNow_port = "";
         public bool[] Pedal_ESPNow_Sync_flag = new bool[3] { false, false, false };
         public bool IsBridgeAutoConnect = false;
