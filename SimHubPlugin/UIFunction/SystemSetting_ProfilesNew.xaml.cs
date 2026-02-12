@@ -285,7 +285,7 @@ namespace User.PluginSdkDemo.UIFunction
         private void Btn_ClearClutch_Click(object sender, RoutedEventArgs e)
         {
             tmpProfile.ConfigPath[0] = string.Empty;
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < 10; i++)
             {
                 tmpProfile.Effects[0][i] = false;
             }
@@ -296,7 +296,7 @@ namespace User.PluginSdkDemo.UIFunction
         private void Btn_ClearBrake_Click(object sender, RoutedEventArgs e)
         {
             tmpProfile.ConfigPath[1] = string.Empty;
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < 10; i++)
             {
                 tmpProfile.Effects[1][i] = false;
             }
@@ -308,7 +308,7 @@ namespace User.PluginSdkDemo.UIFunction
         {
             DAP_system_profile_cls tmp = tmpProfile;
             tmp.ConfigPath[2] = string.Empty;
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < 10; i++)
             {
                 tmp.Effects[2][i] = false;
             }

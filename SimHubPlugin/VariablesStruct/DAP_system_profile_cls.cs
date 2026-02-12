@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,7 +21,26 @@ namespace User.PluginSdkDemo
             Effects = new bool[3][];
             for (int i = 0; i < 3; i++)
             {
-                Effects[i] = new bool[8];
+                Effects[i] = new bool[10];
+            }
+        }
+        [OnDeserialized]
+        internal void OnDeserializedMethod(StreamingContext context)
+        {
+            if (Effects == null)
+            {
+                Effects = new bool[3][];
+            }
+            for (int i = 0; i < Effects.Length; i++)
+            {
+                if (Effects[i] == null)
+                {
+                    Effects[i] = new bool[10];
+                }
+                else if (Effects[i].Length < 10)
+                {
+                    Array.Resize(ref Effects[i], 10);
+                }
             }
         }
     }

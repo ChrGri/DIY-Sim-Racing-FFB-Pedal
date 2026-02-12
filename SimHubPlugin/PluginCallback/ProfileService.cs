@@ -198,7 +198,8 @@ namespace User.PluginSdkDemo
             }
             public void ApplyProfile(string profilePath)
             {
-                DAP_system_profile_cls tmpProfile = LoadProfileFromJsonFile(profilePath);
+                DAP_system_profile_cls tmpProfile = new DAP_system_profile_cls();
+                tmpProfile = LoadProfileFromJsonFile(profilePath);
                 for (int i = 0; i < 3; i++)
                 {
                     if (tmpProfile.ConfigPath[i] != "" && File.Exists(tmpProfile.ConfigPath[i]))
@@ -220,6 +221,8 @@ namespace User.PluginSdkDemo
                     _plugin.Settings.Road_impact_enable_flag[i] = _plugin.BoolToInt(tmpProfile.Effects[i][5]);
                     _plugin.Settings.CV1_enable_flag[i] = tmpProfile.Effects[i][6];
                     _plugin.Settings.CV2_enable_flag[i] = tmpProfile.Effects[i][7];
+                    _plugin.Settings.CV3_enable_flag[i] = tmpProfile.Effects[i][8];
+                    _plugin.Settings.CV4_enable_flag[i] = tmpProfile.Effects[i][9];
                 }
                 
                 _plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
@@ -255,6 +258,8 @@ namespace User.PluginSdkDemo
                     _plugin.Settings.Road_impact_enable_flag[i] = _plugin.BoolToInt(tmpProfile.Effects[i][5]);
                     _plugin.Settings.CV1_enable_flag[i] = tmpProfile.Effects[i][6];
                     _plugin.Settings.CV2_enable_flag[i] = tmpProfile.Effects[i][7];
+                    _plugin.Settings.CV3_enable_flag[i] = tmpProfile.Effects[i][8];
+                    _plugin.Settings.CV4_enable_flag[i] = tmpProfile.Effects[i][9];
                 }
                 _plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                 //wpfHandle.updateTheGuiFromConfig();

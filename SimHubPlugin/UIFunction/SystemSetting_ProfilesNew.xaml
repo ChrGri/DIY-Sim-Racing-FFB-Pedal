@@ -139,9 +139,11 @@
                         <CheckBox Content="B.P" IsChecked="{Binding tmpProfile.Effects[0][2]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial" IsEnabled="False"/>
                         <CheckBox Content="G-F" IsChecked="{Binding tmpProfile.Effects[0][3]}" Margin="3,0,0,0" Padding="1,0,0,0" IsEnabled="False" FontSize="9" FontFamily="Arial"/>
                         <CheckBox Content="W.S" IsChecked="{Binding tmpProfile.Effects[0][4]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
-                        <CheckBox Content="IMPACT" IsChecked="{Binding tmpProfile.Effects[0][5]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
-                        <CheckBox Content="CUS-1" IsChecked="{Binding tmpProfile.Effects[0][6]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
-                        <CheckBox Content="CUS-2" IsChecked="{Binding tmpProfile.Effects[0][7]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="IMP" IsChecked="{Binding tmpProfile.Effects[0][5]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-1" IsChecked="{Binding tmpProfile.Effects[0][6]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-2" IsChecked="{Binding tmpProfile.Effects[0][7]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-3" IsChecked="{Binding tmpProfile.Effects[0][8]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-4" IsChecked="{Binding tmpProfile.Effects[0][9]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
@@ -162,9 +164,11 @@
                         <CheckBox Content="B.P" IsChecked="{Binding tmpProfile.Effects[1][2]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial" IsEnabled="False"/>
                         <CheckBox Content="G-F" IsChecked="{Binding tmpProfile.Effects[1][3]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
                         <CheckBox Content="W.S" IsChecked="{Binding tmpProfile.Effects[1][4]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
-                        <CheckBox Content="IMPACT" IsChecked="{Binding tmpProfile.Effects[1][5]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
-                        <CheckBox Content="CUS-1" IsChecked="{Binding tmpProfile.Effects[1][6]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
-                        <CheckBox Content="CUS-2" IsChecked="{Binding tmpProfile.Effects[1][7]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="IMP" IsChecked="{Binding tmpProfile.Effects[1][5]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-1" IsChecked="{Binding tmpProfile.Effects[1][6]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-2" IsChecked="{Binding tmpProfile.Effects[1][7]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-3" IsChecked="{Binding tmpProfile.Effects[1][8]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-4" IsChecked="{Binding tmpProfile.Effects[1][9]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                         <StackPanel Orientation="Horizontal">
@@ -185,9 +189,11 @@
                         <CheckBox Content="B.P" IsChecked="{Binding tmpProfile.Effects[2][2]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial" IsEnabled="False"/>
                         <CheckBox Content="G-F" IsChecked="{Binding tmpProfile.Effects[2][3]}" Margin="3,0,0,0" Padding="1,0,0,0" IsEnabled="False" FontSize="9" FontFamily="Arial"/>
                         <CheckBox Content="W.S" IsChecked="{Binding tmpProfile.Effects[2][4]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
-                        <CheckBox Content="IMPACT" IsChecked="{Binding tmpProfile.Effects[2][5]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
-                        <CheckBox Content="CUS-1" IsChecked="{Binding tmpProfile.Effects[2][6]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
-                        <CheckBox Content="CUS-2" IsChecked="{Binding tmpProfile.Effects[2][7]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="IMP" IsChecked="{Binding tmpProfile.Effects[2][5]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-1" IsChecked="{Binding tmpProfile.Effects[2][6]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-2" IsChecked="{Binding tmpProfile.Effects[2][7]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-3" IsChecked="{Binding tmpProfile.Effects[2][8]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-4" IsChecked="{Binding tmpProfile.Effects[2][9]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
                     </StackPanel>
                 </StackPanel>
             </StackPanel>
