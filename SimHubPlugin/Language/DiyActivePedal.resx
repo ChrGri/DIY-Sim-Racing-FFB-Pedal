@@ -225,6 +225,12 @@
   <data name="DIYFFBPedalPlugin_TextBtnClear" xml:space="preserve">
     <value>Clear</value>
   </data>
+  <data name="DIYFFBPedalPlugin_TextBtnEditor" xml:space="preserve">
+    <value>Script Editor</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextBtnLeave" xml:space="preserve">
+    <value>Leave</value>
+  </data>
   <data name="DIYFFBPedalPlugin_TextBtnPluginUpdate" xml:space="preserve">
     <value>Plugin Update</value>
   </data>
@@ -464,6 +470,9 @@
   </data>
   <data name="DIYFFBPedalPlugin_TextLogPedalStates" xml:space="preserve">
     <value>Log Pedal States</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextNcalcEditorTitle" xml:space="preserve">
+    <value>Ncalc Script Editor</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextOverloadWarning1" xml:space="preserve">
     <value>Caution, the config and pedal kinematics may cause servo overloaded!!</value>

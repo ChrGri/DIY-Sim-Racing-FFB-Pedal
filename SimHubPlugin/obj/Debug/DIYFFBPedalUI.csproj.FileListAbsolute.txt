@@ -2168,3 +2168,5 @@ X:\AC MOD\private works\ActivePedal\simhub_plugin\V90-0104\SimHubPlugin\obj\Debu
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V90-0104\SimHubPlugin\obj\Debug\User.PluginSdkDemo.Language.DiyActivePedal.resources
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V90-0104\SimHubPlugin\obj\Debug\UIFunction\EffectsTab_Custom.g.cs
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V90-0104\SimHubPlugin\obj\Debug\UIFunction\EffectsTab_Custom.baml
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V90-0104\SimHubPlugin\obj\Debug\UIElement\NcalcScriptEditor.g.cs
+X:\AC MOD\private works\ActivePedal\simhub_plugin\V90-0104\SimHubPlugin\obj\Debug\UIElement\NcalcScriptEditor.baml

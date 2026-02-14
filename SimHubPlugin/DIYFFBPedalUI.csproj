@@ -201,6 +201,9 @@
     <Compile Include="UIElement\ConfigPreviewWindow.xaml.cs">
       <DependentUpon>ConfigPreviewWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIElement\NcalcScriptEditor.xaml.cs">
+      <DependentUpon>NcalcScriptEditor.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIElement\NameInputWindow.xaml.cs">
       <DependentUpon>NameInputWindow.xaml</DependentUpon>
     </Compile>
@@ -355,6 +358,10 @@
     <Page Include="UIElement\ConfigPreviewWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIElement\NcalcScriptEditor.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UIElement\NameInputWindow.xaml">
       <SubType>Designer</SubType>

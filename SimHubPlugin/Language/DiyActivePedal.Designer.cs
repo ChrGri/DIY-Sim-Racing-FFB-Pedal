@@ -385,6 +385,24 @@ namespace User.PluginSdkDemo.Language {
         }
         
         /// <summary>
+        ///   查詢類似 Script Editor 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextBtnEditor {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextBtnEditor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Leave 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextBtnLeave {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextBtnLeave", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Plugin Update 的當地語系化字串。
         /// </summary>
         internal static string DIYFFBPedalPlugin_TextBtnPluginUpdate {
@@ -1101,6 +1119,15 @@ namespace User.PluginSdkDemo.Language {
         internal static string DIYFFBPedalPlugin_TextLogPedalStates {
             get {
                 return ResourceManager.GetString("DIYFFBPedalPlugin_TextLogPedalStates", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Ncalc Script Editor 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextNcalcEditorTitle {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextNcalcEditorTitle", resourceCulture);
             }
         }
         

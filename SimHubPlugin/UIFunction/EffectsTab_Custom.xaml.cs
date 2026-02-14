@@ -203,18 +203,15 @@ namespace User.PluginSdkDemo.UIFunction
 
         private void Bind_CV1_Click(object sender, RoutedEventArgs e)
         {
-            if (Plugin.Ncalc_reading(textBox_CV1_string.Text) != "Error")
+            NcalcScriptEditor sideWindow = new NcalcScriptEditor(Plugin, 1, (int)Plugin.Settings.table_selected);
+            double screenWidth = SystemParameters.PrimaryScreenWidth;
+            double screenHeight = SystemParameters.PrimaryScreenHeight;
+            sideWindow.Left = screenWidth / 2 - sideWindow.Width / 2;
+            sideWindow.Top = screenHeight / 2 - sideWindow.Height / 2;
+            sideWindow.input = Plugin.Settings.CV1_bindings[Plugin.Settings.table_selected];
+            if (sideWindow.ShowDialog() == true)
             {
-                Settings.CV1_bindings[Settings.table_selected] = (string)textBox_CV1_string.Text;
-                Settings.CV1_enable_flag[Settings.table_selected] = true;
-                SettingsChangedEvent(Settings);
-            }
-            else
-            {
-                Plugin.Settings.CV1_enable_flag[Settings.table_selected] = false;
-                string MSG_tmp = "ERROR! String can not be evaluated";
-                System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-
+                textBox_CV1_string.Text = sideWindow.input;
             }
         }
 
@@ -226,13 +223,6 @@ namespace User.PluginSdkDemo.UIFunction
             SettingsChangedEvent(Settings);
         }
 
-        private void textBox_CV1_string_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            string var1 = "";
-
-            if(Plugin!=null) var1 = Plugin.Ncalc_reading(textBox_CV1_string.Text.ToString());
-            Label_NCALC_CUS1.Content = var1;
-        }
         
 
         private void Slider_CV1_trigger_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -269,45 +259,18 @@ namespace User.PluginSdkDemo.UIFunction
             SettingsChangedEvent(Settings);
         }
 
-        private void textBox_CV2_string_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            try
-            {
-                try
-                {
-                    string var1 = "";
-                    if (Plugin != null) var1 = Plugin.Ncalc_reading(textBox_CV2_string.Text.ToString());
-                    Label_NCALC_CUS2.Content = var1;
-                }
-                catch { }
-            }
-            catch
-            {
-
-            }
-        }
 
         private void Bind_CV2_Click(object sender, RoutedEventArgs e)
         {
-            try
+            NcalcScriptEditor sideWindow = new NcalcScriptEditor(Plugin, 2, (int)Plugin.Settings.table_selected);
+            double screenWidth = SystemParameters.PrimaryScreenWidth;
+            double screenHeight = SystemParameters.PrimaryScreenHeight;
+            sideWindow.Left = screenWidth / 2 - sideWindow.Width / 2;
+            sideWindow.Top = screenHeight / 2 - sideWindow.Height / 2;
+            sideWindow.input = Plugin.Settings.CV2_bindings[Plugin.Settings.table_selected];
+            if (sideWindow.ShowDialog() == true)
             {
-                if (Plugin.Ncalc_reading(textBox_CV2_string.Text) != "Error")
-                {
-                    Settings.CV2_bindings[Settings.table_selected] = (string)textBox_CV2_string.Text;
-                    Settings.CV2_enable_flag[Settings.table_selected] = true;
-                    SettingsChangedEvent(Settings);
-                }
-                else
-                {
-                    Plugin.Settings.CV2_enable_flag[Settings.table_selected] = false;
-                    string MSG_tmp = "ERROR! String can not be evaluated";
-                    System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-
-                }
-            }
-            catch
-            {
-
+                textBox_CV2_string.Text = sideWindow.input;
             }
         }
 
@@ -354,45 +317,18 @@ namespace User.PluginSdkDemo.UIFunction
             SettingsChangedEvent(Settings);
         }
 
-        private void textBox_CV3_string_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            try
-            {
-                try
-                {
-                    string var1 = "";
-                    if (Plugin != null) var1 = Plugin.Ncalc_reading(textBox_CV3_string.Text.ToString());
-                    Label_NCALC_CUS3.Content = var1;
-                }
-                catch { }
-            }
-            catch
-            {
-
-            }
-        }
 
         private void Bind_CV3_Click(object sender, RoutedEventArgs e)
         {
-            try
+            NcalcScriptEditor sideWindow = new NcalcScriptEditor(Plugin, 2, (int)Plugin.Settings.table_selected);
+            double screenWidth = SystemParameters.PrimaryScreenWidth;
+            double screenHeight = SystemParameters.PrimaryScreenHeight;
+            sideWindow.Left = screenWidth / 2 - sideWindow.Width / 2;
+            sideWindow.Top = screenHeight / 2 - sideWindow.Height / 2;
+            sideWindow.input = Plugin.Settings.CV3_bindings[Plugin.Settings.table_selected];
+            if (sideWindow.ShowDialog() == true)
             {
-                if (Plugin.Ncalc_reading(textBox_CV3_string.Text) != "Error")
-                {
-                    Settings.CV3_bindings[Settings.table_selected] = (string)textBox_CV3_string.Text;
-                    Settings.CV3_enable_flag[Settings.table_selected] = true;
-                    SettingsChangedEvent(Settings);
-                }
-                else
-                {
-                    Plugin.Settings.CV3_enable_flag[Settings.table_selected] = false;
-                    string MSG_tmp = "ERROR! String can not be evaluated";
-                    System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-
-                }
-            }
-            catch
-            {
-
+                textBox_CV3_string.Text = sideWindow.input;
             }
         }
 
@@ -439,45 +375,19 @@ namespace User.PluginSdkDemo.UIFunction
             SettingsChangedEvent(Settings);
         }
 
-        private void textBox_CV4_string_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            try
-            {
-                try
-                {
-                    string var1 = "";
-                    if (Plugin != null) var1 = Plugin.Ncalc_reading(textBox_CV4_string.Text.ToString());
-                    Label_NCALC_CUS4.Content = var1;
-                }
-                catch { }
-            }
-            catch
-            {
 
-            }
-        }
 
         private void Bind_CV4_Click(object sender, RoutedEventArgs e)
         {
-            try
+            NcalcScriptEditor sideWindow = new NcalcScriptEditor(Plugin, 2, (int)Plugin.Settings.table_selected);
+            double screenWidth = SystemParameters.PrimaryScreenWidth;
+            double screenHeight = SystemParameters.PrimaryScreenHeight;
+            sideWindow.Left = screenWidth / 2 - sideWindow.Width / 2;
+            sideWindow.Top = screenHeight / 2 - sideWindow.Height / 2;
+            sideWindow.input = Plugin.Settings.CV4_bindings[Plugin.Settings.table_selected];
+            if (sideWindow.ShowDialog() == true)
             {
-                if (Plugin.Ncalc_reading(textBox_CV3_string.Text) != "Error")
-                {
-                    Settings.CV4_bindings[Settings.table_selected] = (string)textBox_CV4_string.Text;
-                    Settings.CV4_enable_flag[Settings.table_selected] = true;
-                    SettingsChangedEvent(Settings);
-                }
-                else
-                {
-                    Plugin.Settings.CV3_enable_flag[Settings.table_selected] = false;
-                    string MSG_tmp = "ERROR! String can not be evaluated";
-                    System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-
-                }
-            }
-            catch
-            {
-
+                textBox_CV4_string.Text = sideWindow.input;
             }
         }
 

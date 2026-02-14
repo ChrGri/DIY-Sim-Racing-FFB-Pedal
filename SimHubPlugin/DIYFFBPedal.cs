@@ -291,7 +291,7 @@ namespace User.PluginSdkDemo
         }
         public string Ncalc_reading(String expression)
         {
-            string value = "";
+            string value = "Error";
             try
             {
                 NCalc.Expression exp = new NCalc.Expression(expression);
