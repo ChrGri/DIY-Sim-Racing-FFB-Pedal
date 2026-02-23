@@ -164,7 +164,7 @@ int32_t IRAM_ATTR_FLAG MoveByPidStrategy(float loadCellReadingKg, StepperWithLim
     for (uint32_t sampleIdx_u32 = 0; sampleIdx_u32 < 2000; sampleIdx_u32++)
     {
       // get loadcell reading
-      loadcellReading = loadcell->getReadingKg();
+      loadcellReading = loadcell->readLoadcellWeightInKg();
 
       // update time
       t = micros() - initialTime;

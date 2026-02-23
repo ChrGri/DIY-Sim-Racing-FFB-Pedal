@@ -433,7 +433,7 @@ void IRAM_ATTR_FLAG loadcellReadingTask( void * pvParameters )
       profiler_loadcellReading.start(0);
 
       // no need for delay, since getReadingKg will block until DRDY edge down is detected
-      loadcellReading_fl32 = loadcell->getReadingKg();
+      loadcellReading_fl32 = loadcell->readLoadcellWeightInKg();
 
       // Invert the loadcell reading digitally if desired
       if (loadcellTask_dap_config_st.payLoadPedalConfig_.invertLoadcellReading_u8 == 1)
@@ -2617,7 +2617,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                             char logString[200];
                             snprintf(logString, sizeof(logString),
                                     "Pedal ID: %d\nBoard: %s\nLoadcell shift= %.3f kg\nLoadcell variance= %.3f kg\nPSU voltage:%.1f V\nMax endstop:%lu\nCurrentPos:%lu\n\0",
-                                    sct_dap_config_st.payLoadPedalConfig_.pedal_type, CONTROL_BOARD, loadcell->getShiftingEstimate(), loadcell->getSTDEstimate(), ((float)stepper->getServosVoltage() / 10.0f), dap_calculationVariables_st.stepperPosMaxEndstop, dap_calculationVariables_st.current_pedal_position);
+                                    sct_dap_config_st.payLoadPedalConfig_.pedal_type, CONTROL_BOARD, loadcell->getBiasEstimate(), loadcell->getStandardDeviationEstimate(), ((float)stepper->getServosVoltage() / 10.0f), dap_calculationVariables_st.stepperPosMaxEndstop, dap_calculationVariables_st.current_pedal_position);
                             ActiveSerial->println(logString);
                           }
 

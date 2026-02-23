@@ -1,103 +1,80 @@
 #ifndef MODBUS_H
 #define MODBUS_H
 
-//   #ifdef MODEBUS_LOG
-//  #define MODEBUS_LOG
-
-
 #include <Arduino.h>
 #include <Stream.h>
-#include <vector>
-using namespace std;
+
+#define COIL_REGISTER_U8            0x01
+#define DISCRET_REGISTER_U8         0x02
+#define HOLDING_REGISTER_U8         0x03
+#define INPUT_REGISTER_U8           0x04
+#define WRITE_HOLDING_REGISTER_U8   0x06
 
 class Modbus
 {
 private:
     /* data */
-    bool log = false;
-    unsigned long timeout_ = 100;
-    HardwareSerial* s ;
-    uint8_t rawRx[512];
-    int  lenRx = 0;
-    uint8_t dataRx[512];
-    int  datalen = 0;
-    int  SlaveID = 0x01;
-    uint8_t txout[9] = {0,0,0,0,0,0,0,0,0};
-    #define Coil_Register       0x01
-    #define Discret_Register    0x02
-    #define Holding_Register    0x03
-    #define Input_Register      0x04  
-	#define Write_Holding_Register      0x06
-    // vector <char> txbuff;
-    // vector <char> rxbuff;
+    bool logEnabled_b = false;
+    uint32_t timeout_u32 = 100;
+    HardwareSerial* serial_pHS;
+    uint8_t rawRxBuffer_au8[512];
+    int32_t rawRxBufferLength_i32 = 0;
+    uint8_t dataRxBuffer_au8[512];
+    int32_t dataRxBufferLength_i32 = 0;
+    int32_t slaveId_i32 = 0x01;
+    uint8_t txBuffer_au8[9] = {0,0,0,0,0,0,0,0,0};
+
+    int32_t computeCrc(uint8_t *buffer_pu8, int32_t bufferLength_i32);
     
 public:
     
     Modbus();
-    Modbus(HardwareSerial &st);
+    Modbus(HardwareSerial &serial_pHS);
     
-    bool init(bool en_log = false);
-    void setTimeout(uint16_t timeout);
+    bool initialize(bool enableLogging_b = false);
+    void setSerialTimeout(uint16_t timeout_u16);
 
-
-    uint8_t byteRead(int nb);
-    int blockRead(int index);
-    int coilRead(int address);                                      //Return 1 byte = 8 bit coil
-    int coilRead(int id, int address);
-    int discreteInputRead(int address);
-    int discreteInputRead(int id, int address);
-    long holdingRegisterRead(int address);
-    long holdingRegisterRead(int id, int address, int block);
-    long inputRegisterRead(int address);
-    long inputRegisterRead(int id, int address, int block);
+    uint8_t readByteFromRxBuffer(int32_t index_i32);
+    int32_t readBlockFromRxBuffer(int32_t index_i32);
+    int32_t readCoilFromDevice(int32_t registerAddress_i32);
+    int32_t readCoilFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32);
+    int32_t readDiscreteInputFromDevice(int32_t registerAddress_i32);
+    int32_t readDiscreteInputFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32);
+    int32_t readHoldingRegisterFromDevice(int32_t registerAddress_i32);
+    int32_t readHoldingRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32, int32_t block_i32);
+    int32_t readInputRegisterFromDevice(int32_t registerAddress_i32);
+    int32_t readInputRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32, int32_t block_i32);
     
-    int coilWrite(int address, uint8_t value);
-    int coilWrite(int id, int address, uint8_t value);
-    int holdingRegisterWrite(int address, uint16_t value);
-    int holdingRegisterWrite(int id, int address, uint16_t value);
-    void RxRaw(uint8_t *raw, uint8_t &rlen);
-    void TxRaw(uint8_t *raw, uint8_t &rlen);
-    //Read multiple coils, discrete inputs, holding registers, or input register values.
-    //int requestFrom(int type, int address, int nb, byte *ret,int len);
-    int requestFrom(int slaveId, int type, int address,int nb);
-    //  ~Modbus();
-    bool checkAndReplaceParameter(uint16_t slaveId_local_u16, int16_t parameterAdress, long value);
-    void readParameter(uint16_t slaveId_local_u16, uint16_t parameterAdress);
+    int32_t writeCoilToDevice(int32_t registerAddress_i32, uint8_t value_u8);
+    int32_t writeCoilToDevice(int32_t slaveId_i32, int32_t registerAddress_i32, uint8_t value_u8);
+    int32_t writeHoldingRegisterToDevice(int32_t registerAddress_i32, uint16_t value_u16);
+    int32_t writeHoldingRegisterToDevice(int32_t slaveId_i32, int32_t registerAddress_i32, uint16_t value_u16);
+    void getRawRxBuffer(uint8_t *rawBuffer_pu8, uint8_t &rawBufferLength_u8);
+    void getRawTxBuffer(uint8_t *rawBuffer_pu8, uint8_t &rawBufferLength_u8);
+
+    int32_t sendRequestAndReceiveResponse(int32_t slaveId_i32, int32_t functionCode_i32, int32_t registerAddress_i32, int32_t numberOfRegisters_i32);
+
+    bool writeAndVerifyDeviceParameter(uint16_t slaveId_u16, int16_t parameterAddress_i16, int32_t value_i32);
+    void readDeviceParameter(uint16_t slaveId_u16, uint16_t parameterAddress_u16);
 
 
     // Read Coil Register       0x01
-    int ReadCoilReg(int add);
-    int ReadCoilReg(int slaveId, int add);
-    int ReadCoilReg(int slaveId, int add, int nbit);
+    int32_t readCoilRegisterFromDevice(int32_t registerAddress_i32);
+    int32_t readCoilRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32);
+    int32_t readCoilRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32, int32_t numberOfBits_i32);
 
     // Read Discret Register    0x02
-    int ReadDiscretReg(int add);
-    int ReadDiscretReg(int slaveId, int add);
-    int ReadDiscretReg(int slaveId, int add, int nbit);
+    int32_t readDiscreteRegisterFromDevice(int32_t registerAddress_i32);
+    int32_t readDiscreteRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32);
+    int32_t readDiscreteRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32, int32_t numberOfBits_i32);
 
     // Read Holding Register    0x03
-    int ReadHoldingReg(int add); 
-    int ReadHoldingReg(int slaveId, int add);
-    int ReadHoldingReg(int slaveId, int add, int nbyte);
+    int32_t readHoldingRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32);
 
     // Read Input Register      0x04
-    int ReadInputReg(int add);
-    int ReadInputReg(int slaveId, int add);
-    int ReadInputReg(int slaveId, int add, int nbyte);
+    int32_t readInputRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32);
 
-
-    // int8_t   uint8(int add);
-    // uint16_t uint16(int add);
-    // uint32_t uint32(int add, bool byteHL = true);
-
-    int16_t int16(int add);
-
-
-    int CheckCRC(uint8_t *buf, int len);
+    int16_t convertRxBufferToInt16(int32_t index_i32);
 };
-
-//  #else
-//   #error "Log not defined"
-//  #endif
 
 #endif

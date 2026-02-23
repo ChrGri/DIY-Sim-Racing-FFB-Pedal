@@ -2,161 +2,152 @@
 #include <Arduino.h>
 #include "Main.h"
 
+// CRC-16-Modbus constants
+const int32_t CRC_POLYNOMIAL_I32 = 0xA001;
+const int32_t CRC_INITIAL_VALUE_I32 = 0xFFFF;
+
 Modbus::Modbus()
 {
-    this->s = NULL;
-}
-Modbus::Modbus(HardwareSerial &st)
-{
-    this->s = &st;
+    this->serial_pHS = NULL;
 }
 
-
-bool Modbus::init(bool en_log)
+Modbus::Modbus(HardwareSerial &serial_pHS)
 {
-     this->log   =  en_log;
+    this->serial_pHS = &serial_pHS;
+}
+
+bool Modbus::initialize(bool enableLogging_b)
+{
+     this->logEnabled_b = enableLogging_b;
      return true;
 }
 
-void Modbus::setTimeout(uint16_t timeout)
+void Modbus::setSerialTimeout(uint16_t timeout_u16)
 {
-  timeout_ = timeout;
+  timeout_u32 = timeout_u16;
 }
 
-uint8_t Modbus::byteRead(int index)
+uint8_t Modbus::readByteFromRxBuffer(int32_t index_i32)
 {
-  return rawRx[index+3];
+  return rawRxBuffer_au8[index_i32 + 3];
 }
 
-int Modbus::blockRead(int index)
+int32_t Modbus::readBlockFromRxBuffer(int32_t index_i32)
 {
-   return  ((dataRx[index*2] << 8) | dataRx[index*2+1]);
+   return  (((uint16_t)dataRxBuffer_au8[index_i32 * 2] << 8) | dataRxBuffer_au8[index_i32 * 2 + 1]);
 }
 
-int Modbus::coilRead(int address){
- 
-    return coilRead(SlaveID,address);
+int32_t Modbus::readCoilFromDevice(int32_t registerAddress_i32)
+{
+    return readCoilFromDevice(slaveId_i32, registerAddress_i32);
 }
 
-int Modbus::coilRead(int id, int address){
-   if(requestFrom(id,Coil_Register,address,1))
+int32_t Modbus::readCoilFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32)
+{
+   if(sendRequestAndReceiveResponse(slaveId_i32, COIL_REGISTER_U8, registerAddress_i32, 1))
    {
-    uint8_t x = byteRead(0);
-    return bitRead(x,0);
-   }else
+    uint8_t x_u8 = readByteFromRxBuffer(0);
+    return bitRead(x_u8, 0);
+   }
+   else
    {
     return -1;
    }
 }
 
-int Modbus::discreteInputRead(int address)
+int32_t Modbus::readDiscreteInputFromDevice(int32_t registerAddress_i32)
 {
-   return discreteInputRead(SlaveID,address);
+   return readDiscreteInputFromDevice(slaveId_i32, registerAddress_i32);
 }
 
-int Modbus::discreteInputRead(int id, int address)
+int32_t Modbus::readDiscreteInputFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32)
 {
-   if(requestFrom(id,Discret_Register,address,1))
+   if(sendRequestAndReceiveResponse(slaveId_i32, DISCRET_REGISTER_U8, registerAddress_i32, 1))
    {
-    uint8_t x = byteRead(0);
-    return bitRead(x,0);
-   }else
+    uint8_t x_u8 = readByteFromRxBuffer(0);
+    return bitRead(x_u8, 0);
+   }
+   else
    {
     return -1;
    }
 }
 
+void Modbus::readDeviceParameter(uint16_t slaveId_u16, uint16_t parameterAddress_u16)
+{
+  uint8_t rawBuffer_au8[2];
+  uint8_t length_u8;
+  int16_t registerArray_ai16[4];
+  registerArray_ai16[0] = -1;
+  registerArray_ai16[1] = -1;
+  registerArray_ai16[2] = -1;
+  registerArray_ai16[3] = -1;
 
-
-// check target values at register address. If target value was already present, return 0. If target value has to be set, return 1.
-void Modbus::readParameter(uint16_t slaveId_local_u16, uint16_t parameterAdress) {
-
-  bool retValue_b = false;
-
-  // check if value at address is already target value
-  uint8_t raw2[2];
-  uint8_t len;
-  int16_t regArray[4];
-  regArray[0] = -1;
-  regArray[1] = -1;
-  regArray[2] = -1;
-  regArray[3] = -1;
-
-  // read the four registers simultaneously
-  if(requestFrom(slaveId_local_u16, 0x03, parameterAdress,  2) > 0)
+  if(sendRequestAndReceiveResponse(slaveId_u16, 0x03, parameterAddress_u16,  2) > 0)
   {
-    RxRaw(raw2,  len);
-    regArray[0] = int16(0);
+    getRawRxBuffer(rawBuffer_au8, length_u8);
+    registerArray_ai16[0] = convertRxBufferToInt16(0);
   }
   
-  // write to public variables
-  int16_t returnValue = regArray[0];
+  int16_t returnValue_i16 = registerArray_ai16[0];
 
-
-
-  // if value is not target value --> overwrite value
-  ActiveSerial->print("Parameter address: ");
-  ActiveSerial->print(parameterAdress);
-  ActiveSerial->print(",    actual:");
-  ActiveSerial->println(returnValue);
-
+  if (logEnabled_b)
+  {
+    ActiveSerial->print("Parameter address: ");
+    ActiveSerial->print(parameterAddress_u16);
+    ActiveSerial->print(",    actual:");
+    ActiveSerial->println(returnValue_i16);
+  }
 
   delay(50);
 }
 
-
-// check target values at register address. If target value was already present, return 0. If target value has to be set, return 1.
-bool Modbus::checkAndReplaceParameter(uint16_t slaveId_local_u16, int16_t parameterAdress, long value) {
-
+bool Modbus::writeAndVerifyDeviceParameter(uint16_t slaveId_u16, int16_t parameterAddress_i16, int32_t value_i32)
+{
   bool registerWritten_b = false;
   bool registerValueAsTarget_b = false;
 
-  // check and set the register at maximum N times
-  for (uint8_t tryIdx_u8 = 0; tryIdx_u8 < 10; tryIdx_u8++)
+  for (uint8_t tryIndex_u8 = 0; tryIndex_u8 < 10; tryIndex_u8++)
   {
-    
     if (true == registerValueAsTarget_b)
     {
-      // when register has proper setting, break the loop
       break;
     }
 
     delay(10);
 
-    // check if value at address is already target value
-    uint8_t raw2[2];
-    uint8_t len;
-    int16_t regArray[4];
-    regArray[0] = -1;
-    regArray[1] = -1;
-    regArray[2] = -1;
-    regArray[3] = -1;
+    uint8_t rawBuffer_au8[2];
+    uint8_t length_u8;
+    int16_t registerArray_ai16[4];
+    registerArray_ai16[0] = -1;
+    registerArray_ai16[1] = -1;
+    registerArray_ai16[2] = -1;
+    registerArray_ai16[3] = -1;
     
-    // read the four registers simultaneously
-    if(requestFrom(slaveId_local_u16, 0x03, parameterAdress,  2) > 0)
+    if(sendRequestAndReceiveResponse(slaveId_u16, 0x03, parameterAddress_i16,  2) > 0)
     {
-      RxRaw(raw2,  len);
-      regArray[0] = int16(0);
+      getRawRxBuffer(rawBuffer_au8, length_u8);
+      registerArray_ai16[0] = convertRxBufferToInt16(0);
     }
     
-    // write to public variables
-    int16_t returnValue = regArray[0];
+    int16_t returnValue_i16 = registerArray_ai16[0];
 
-    long targetValue_l = value;
+    int32_t targetValue_i32 = value_i32;
 
-    // if value is not target value --> overwrite value
-    if(returnValue!= targetValue_l)
+    if(returnValue_i16 != targetValue_i32)
     {
-
       delay(30);
-      ActiveSerial->print("Parameter adresse: ");
-      ActiveSerial->print(parameterAdress);
-      ActiveSerial->print(",    actual: ");
-      ActiveSerial->print(returnValue);
-      ActiveSerial->print(",    target: ");
-      ActiveSerial->println(targetValue_l);
+      if (logEnabled_b)
+      {
+        ActiveSerial->print("Parameter adresse: ");
+        ActiveSerial->print(parameterAddress_i16);
+        ActiveSerial->print(",    actual: ");
+        ActiveSerial->print(returnValue_i16);
+        ActiveSerial->print(",    target: ");
+        ActiveSerial->println(targetValue_i32);
+      }
 
-      holdingRegisterWrite(slaveId_local_u16, parameterAdress, targetValue_l); 
+      writeHoldingRegisterToDevice(slaveId_u16, parameterAddress_i16, targetValue_i32); 
 
       registerWritten_b = true;
     }
@@ -169,47 +160,25 @@ bool Modbus::checkAndReplaceParameter(uint16_t slaveId_local_u16, int16_t parame
   return registerWritten_b;
 }
 
-
-long Modbus::holdingRegisterRead(int address)
+int32_t Modbus::readHoldingRegisterFromDevice(int32_t registerAddress_i32)
 {
-  return holdingRegisterRead(SlaveID, address, 1);
+  return readHoldingRegisterFromDevice(slaveId_i32, registerAddress_i32, 1);
 }
 
-long Modbus::holdingRegisterRead(int id, int address, int block)
+int32_t Modbus::readHoldingRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32, int32_t block_i32)
 {
-  if(block > 2){block = 2;}
-  if(requestFrom(SlaveID, Holding_Register, address, block))
+  if(block_i32 > 2){block_i32 = 2;}
+  if(sendRequestAndReceiveResponse(slaveId_i32, HOLDING_REGISTER_U8, registerAddress_i32, block_i32))
   {
-    if(block == 2)
+    if(block_i32 == 2)
     {
-      return (blockRead(0) << 16 | blockRead(1));
+      uint32_t high_u32 = (uint32_t)readBlockFromRxBuffer(0);
+      uint32_t low_u32 = (uint32_t)readBlockFromRxBuffer(1);
+      return (int32_t)((high_u32 << 16) | low_u32);
     }
-    else{
-      return blockRead(0);
-    }
-  }
-  else{
-    return -1;
-  }
-
-}
-
-long Modbus::inputRegisterRead(int address)
-{
-   return inputRegisterRead(SlaveID , address, 1);
-}
-
-long Modbus::inputRegisterRead(int id, int address, int block)
-{
-  if(block > 2){block = 2;}
-  if(requestFrom(id, Input_Register,address,block))
-  {
-    if(block == 2)
+    else
     {
-      return (blockRead(0) << 16 | blockRead(1));
-    }
-    else{
-      return blockRead(0);
+      return readBlockFromRxBuffer(0);
     }
   }
   else
@@ -218,367 +187,300 @@ long Modbus::inputRegisterRead(int id, int address, int block)
   }
 }
 
-
- 
-
-
-
-int Modbus::requestFrom(int slaveId, int type, int address, int nb)
+int32_t Modbus::readInputRegisterFromDevice(int32_t registerAddress_i32)
 {
-    
-    // address = address - 1;
-    int crc ;
-    txout[0] = slaveId;
-    txout[1] = type;
-    txout[2] = address >> 8;
-    txout[3] = address;
-    txout[4] = nb >> 8;
-    txout[5] = nb;
-    crc = this->CheckCRC(txout,6);
-    txout[6] = crc ;
-    txout[7] = crc >> 8;
+   return readInputRegisterFromDevice(slaveId_i32, registerAddress_i32, 1);
+}
+
+int32_t Modbus::readInputRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32, int32_t block_i32)
+{
+  if(block_i32 > 2){block_i32 = 2;}
+  if(sendRequestAndReceiveResponse(slaveId_i32, INPUT_REGISTER_U8, registerAddress_i32, block_i32))
+  {
+    if(block_i32 == 2)
+    {
+      uint32_t high_u32 = (uint32_t)readBlockFromRxBuffer(0);
+      uint32_t low_u32 = (uint32_t)readBlockFromRxBuffer(1);
+      return (int32_t)((high_u32 << 16) | low_u32);
+    }
+    else
+    {
+      return readBlockFromRxBuffer(0);
+    }
+  }
+  else
+  {
+    return -1;
+  }
+}
+
+int32_t Modbus::sendRequestAndReceiveResponse(int32_t slaveId_i32, int32_t functionCode_i32, int32_t registerAddress_i32, int32_t numberOfRegisters_i32)
+{
+    int32_t crc_i32;
+    txBuffer_au8[0] = slaveId_i32;
+    txBuffer_au8[1] = functionCode_i32;
+    txBuffer_au8[2] = registerAddress_i32 >> 8;
+    txBuffer_au8[3] = registerAddress_i32;
+    txBuffer_au8[4] = numberOfRegisters_i32 >> 8;
+    txBuffer_au8[5] = numberOfRegisters_i32;
+    crc_i32 = this->computeCrc(txBuffer_au8, 6);
+    txBuffer_au8[6] = crc_i32;
+    txBuffer_au8[7] = crc_i32 >> 8;
  
-    size_t bufferCapacity = this->s->availableForWrite();
-    this->s->write(txout,8);
+    size_t bufferCapacity_st = this->serial_pHS->availableForWrite();
+    this->serial_pHS->write(txBuffer_au8, 8);
     delay(1);
-    uint8_t timeOutInMs_u8 = 10;
-    while( (bufferCapacity != this->s->availableForWrite() ) && (timeOutInMs_u8 > 0) ) 
+    uint8_t timeoutCounter_u8 = 10;
+    while( (bufferCapacity_st != this->serial_pHS->availableForWrite() ) && (timeoutCounter_u8 > 0) ) 
     { 
       delay(1);
-      timeOutInMs_u8--;
+      timeoutCounter_u8--;
     }
 
-    unsigned long t = millis();
-    lenRx   = 0;
-    datalen = 0;
-    int ll = 0;
-    int rx;
-    uint8_t found = 0;
+    uint32_t startTime_u32 = millis();
+    rawRxBufferLength_i32   = 0;
+    dataRxBufferLength_i32 = 0;
+    int32_t echoMatchCount_i32 = 0;
+    int32_t receivedByte_i32;
+    uint8_t receiveState_u8 = 0;
 
     bool allDataReceived_b = false;
-    while( (false == allDataReceived_b) && ((millis() - t) < timeout_)){
-        // delay for certain time to allow a context switch
+    while( (false == allDataReceived_b) && ((millis() - startTime_u32) < timeout_u32))
+    {
        delay(1);
        
-       while(this->s->available())
+       while(this->serial_pHS->available())
        {
-        t = millis();
-        rx = this->s->read();
+            startTime_u32 = millis();
+            receivedByte_i32 = this->serial_pHS->read();
 
-        if(found == 0)
-        {
-          if(txout[ll] == rx){ll++;}else{ll = 0;}
-          if(ll == 2)
-          { 
-            found = 1; 
-          }
-        }
-        else if(found == 1){
-          
-         rawRx[0] = txout[0]; // Slave ID
-         rawRx[1] = txout[1]; // Function code
-         rawRx[2] = rx; // Bytes count to follow + 2 Byte CRC
-         lenRx = 3;
-         found = 2;
-        } 
-        else if(found == 2)
-        {
-         this->rawRx[lenRx++] =  rx;
+            if(receiveState_u8 == 0)
+            {
+              if(txBuffer_au8[echoMatchCount_i32] == receivedByte_i32){ echoMatchCount_i32++; } else { echoMatchCount_i32 = 0; }
+              if(echoMatchCount_i32 == 2)
+              { 
+                receiveState_u8 = 1; 
+              }
+            }
+            else if(receiveState_u8 == 1)
+            {
+             rawRxBuffer_au8[0] = txBuffer_au8[0];
+             rawRxBuffer_au8[1] = txBuffer_au8[1];
+             rawRxBuffer_au8[2] = receivedByte_i32;
+             rawRxBufferLength_i32 = 3;
+             receiveState_u8 = 2;
+            } 
+            else if(receiveState_u8 == 2)
+            {
+             this->rawRxBuffer_au8[rawRxBufferLength_i32++] =  receivedByte_i32;
 
-         // the receive message looks like this
-         // Byte 1: SalveId e.g. 0x3F
-         // Byte 2: Function code e.g. 0x03
-         // Byte 3: Bytes to read e.g. m=8 to read 4 consecutive registers
-         // Byte 4-(N-2): Register values
-         // Byte N-1: CRC MSB
-         // Byte N: CRC LSB
-
-         // The total message length is thus N = 5+m
-         if(lenRx >= rawRx[2] + 5) { 
-            allDataReceived_b = true;
-            break; 
-          }
-        }
-        
+             if(rawRxBufferLength_i32 >= rawRxBuffer_au8[2] + 5)
+             { 
+                allDataReceived_b = true;
+                break; 
+              }
+            }
        }
-        
-
     }
 
-    // if(log){
-    //     ActiveSerial->print("RX: ");
-    //     for(int i =0; i < lenRx; i++)
-    //         {
-    //          ActiveSerial->printf("%02X ",rawRx[i] );
-    //         }
-    //         ActiveSerial->println();
-    //  }
+    if(rawRxBufferLength_i32 > 2)
+    {
+        int32_t receivedCrc_i32 = ((uint16_t)rawRxBuffer_au8[rawRxBufferLength_i32 - 1] << 8) | rawRxBuffer_au8[rawRxBufferLength_i32 - 2];
+        int32_t computedCrc_i32 = computeCrc(rawRxBuffer_au8, rawRxBufferLength_i32 - 2);
 
-    /*ActiveSerial->print(lenRx);
-    ActiveSerial->println();*/
-
-
-    if(lenRx > 2){
-        int crc1 = rawRx[lenRx - 1] <<8 | rawRx[lenRx - 2];
-        int crc2 = CheckCRC(rawRx, lenRx - 2);
-        //ActiveSerial->printf("CRC1: %04X CRC2: %04X\n",crc1, crc2);
-
-
-        /*ActiveSerial->print("CRC1: ");
-        ActiveSerial->print(crc1);
-        ActiveSerial->print(",   CRC2: ");
-        ActiveSerial->print(crc2);
-        ActiveSerial->println();*/
-
-         if(crc1 == crc2)
-          {
-            datalen = rawRx[2];
-            /*ActiveSerial->print("Datalen: ");
-            ActiveSerial->print(datalen);
-            ActiveSerial->println();*/
-            return datalen;
-          }
-          else
-          { 
+        if(receivedCrc_i32 == computedCrc_i32)
+        {
+            dataRxBufferLength_i32 = rawRxBuffer_au8[2];
+            return dataRxBufferLength_i32;
+        }
+        else
+        { 
             return -1; 
-          }
-    }else{
+        }
+    }
+    else
+    {
         return -1;
     }
 }
 
-
-
-
-
-
-
-int Modbus::ReadCoilReg(int add)
+int32_t Modbus::readCoilRegisterFromDevice(int32_t registerAddress_i32)
 {
-    return ReadCoilReg(1,  add, 1);
+    return readCoilRegisterFromDevice(1,  registerAddress_i32, 1);
 }
 
-int Modbus::ReadCoilReg(int slaveId, int add)
+int32_t Modbus::readCoilRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32)
 {
-    return ReadCoilReg( slaveId, add, 1);
+    return readCoilRegisterFromDevice(slaveId_i32, registerAddress_i32, 1);
 }
 
-int Modbus::ReadCoilReg(int slaveId, int add, int nbit)
+int32_t Modbus::readCoilRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32, int32_t numberOfBits_i32)
 {
-   if(requestFrom(slaveId,Coil_Register,add,nbit))
+   if(sendRequestAndReceiveResponse(slaveId_i32, COIL_REGISTER_U8, registerAddress_i32, numberOfBits_i32))
    {
-    return byteRead(0);
-   }else
+    return readByteFromRxBuffer(0);
+   }
+   else
    {
     return -1;
    }
- 
 }
 
-int Modbus::ReadDiscretReg(int add)
+int32_t Modbus::readDiscreteRegisterFromDevice(int32_t registerAddress_i32)
 {
-    return ReadDiscretReg(1,add,1);
+    return readDiscreteRegisterFromDevice(1, registerAddress_i32, 1);
 }
 
-int Modbus::ReadDiscretReg(int slaveId, int add)
+int32_t Modbus::readDiscreteRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32)
 {
-    return ReadDiscretReg(slaveId,add,1);
+    return readDiscreteRegisterFromDevice(slaveId_i32, registerAddress_i32, 1);
 }
 
-int Modbus::ReadDiscretReg(int slaveId, int add, int nbit)
+int32_t Modbus::readDiscreteRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32, int32_t numberOfBits_i32)
 {
-    if(requestFrom(slaveId,Discret_Register,add,nbit)) {
-    return byteRead(0);
-   }
-   else {
-    return -1;
-   }
-}
-
-int Modbus::ReadHoldingReg(int add)
-{
-    return 0;
-}
-
-int Modbus::ReadHoldingReg(int slaveId, int add)
-{
-    return 0;
-}
-
-int Modbus::ReadHoldingReg(int slaveId, int add, int nbyte)
-{
-    return 0;
-}
-
-int Modbus::ReadInputReg(int add)
-{
-    return 0;
-}
-
-int Modbus::ReadInputReg(int slaveId, int add)
-{
-    return 0;
-}
-
-int Modbus::ReadInputReg(int slaveId, int add, int nbyte)
-{
-    return 0;
-}
-
-// int8_t Modbus::uint8(int add)
-// {
-//     return rawRx[add*2+3];
-// }
-
-
-
-
-// uint16_t Modbus::uint16(int add)
-// {
-//     int add_ = (add)*2 + 3;
- 
-//     return (rawRx[add_] << 8 | rawRx[add_+1]);
-// }
-
-
-int16_t Modbus::int16(int add)
-{
-    int add_ = (add)*2 + 3;
- 
-    // return (int16_t)((uint8_t)rawRx[add_] << 8 | (uint8_t)rawRx[add_+1]);
-    return (int16_t)(((int16_t)rawRx[add_] << 8) | rawRx[add_+1]);
-
-}
-
-// uint32_t Modbus::uint32(int add, bool byteHL)
-// {
-//     uint32_t val ;
-//     if (byteHL)
-//     {
-//       val = uint16(add) << 16 | uint16(add+1);
-//     }
-//     else
-//     {
-//       val = uint16(add+1)<< 16 | uint16(add);
-//     }
-//     return val;
-// }
-
-void Modbus::RxRaw(uint8_t*raw, uint8_t &rlen)
-{
-   
-   
-   for(int i =0; i < lenRx; i++)
+    if(sendRequestAndReceiveResponse(slaveId_i32, DISCRET_REGISTER_U8, registerAddress_i32, numberOfBits_i32))
     {
-      raw[i] = rawRx[i];
-      //  if(rawRx[i] < 16)
-      //    {
-      //      ActiveSerial->print("0");
-      //     }
-      //     ActiveSerial->print(rawRx[i],HEX);
+        return readByteFromRxBuffer(0);
     }
-     rlen = this->lenRx;
-    //  ActiveSerial->println(rlen);
-}
-
-
-void Modbus::TxRaw(uint8_t*raw, uint8_t &rlen)
-{
-   
-   
-   for(int i =0; i < 8; i++)
+    else
     {
-      raw[i] = txout[i];
-      //  if(rawRx[i] < 16)
-      //    {
-      //      ActiveSerial->print("0");
-      //     }
-      //     ActiveSerial->print(rawRx[i],HEX);
+        return -1;
     }
-     rlen = 8;
-    //  ActiveSerial->println(rlen);
 }
 
-
-int Modbus::CheckCRC(uint8_t*buf, int len)
+int32_t Modbus::readHoldingRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32)
 {
-  int nominal = 0xA001;
-  int crc = 0xFFFF;
-  unsigned char pos,i;
+    return 0; // Not implemented
+}
+
+int32_t Modbus::readInputRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32)
+{
+    return 0; // Not implemented
+}
+
+int16_t Modbus::convertRxBufferToInt16(int32_t index_i32)
+{
+    int32_t address_i32 = (index_i32 * 2) + 3;
+    return (int16_t)((uint16_t)rawRxBuffer_au8[address_i32] << 8 | rawRxBuffer_au8[address_i32+1]);
+}
+
+void Modbus::getRawRxBuffer(uint8_t *rawBuffer_pu8, uint8_t &rawBufferLength_u8)
+{
+   for(int32_t i_i32 = 0; i_i32 < rawRxBufferLength_i32; i_i32++)
+    {
+      rawBuffer_pu8[i_i32] = rawRxBuffer_au8[i_i32];
+    }
+     rawBufferLength_u8 = this->rawRxBufferLength_i32;
+}
+
+void Modbus::getRawTxBuffer(uint8_t *rawBuffer_pu8, uint8_t &rawBufferLength_u8)
+{
+   for(int32_t i_i32 = 0; i_i32 < 8; i_i32++)
+    {
+      rawBuffer_pu8[i_i32] = txBuffer_au8[i_i32];
+    }
+     rawBufferLength_u8 = 8;
+}
+
+int32_t Modbus::computeCrc(uint8_t *buffer_pu8, int32_t bufferLength_i32)
+{
+  int32_t crc_i32 = CRC_INITIAL_VALUE_I32;
+  uint8_t pos_u8, i_u8;
  
-  for ( pos = 0; pos < len; pos++) {
-    crc ^= (unsigned int)buf[pos];          // XOR byte into least sig. byte of crc
+  for (pos_u8 = 0; pos_u8 < bufferLength_i32; pos_u8++)
+  {
+    crc_i32 ^= (uint32_t)buffer_pu8[pos_u8];
  
-    for (i = 8; i != 0; i--) {        // Loop over each bit
-      if ((crc & 0x0001) != 0) {      // If the LSB is set
-        crc >>= 1;                    // Shift right and XOR 0xA001
-        crc ^= nominal;
+    for (i_u8 = 8; i_u8 != 0; i_u8--)
+    {
+      if ((crc_i32 & 0x0001) != 0)
+      {
+        crc_i32 >>= 1;
+        crc_i32 ^= CRC_POLYNOMIAL_I32;
       }
-      else                            // Else LSB is not set
-        crc >>= 1;                    // Just shift right
+      else
+      {
+        crc_i32 >>= 1;
+      }
     }
   }
-  // Note, this number has low and high bytes swapped, so use it accordingly (or swap bytes)
-  return crc;  
+  return crc_i32;  
 }
 
-
-    
-int Modbus::holdingRegisterWrite(int id, int address, uint16_t value)
+int32_t Modbus::writeHoldingRegisterToDevice(int32_t registerAddress_i32, uint16_t value_u16)
 {
-    int crc ;
+    return writeHoldingRegisterToDevice(slaveId_i32, registerAddress_i32, value_u16);
+}
+    
+int32_t Modbus::writeHoldingRegisterToDevice(int32_t slaveId_i32, int32_t registerAddress_i32, uint16_t value_u16)
+{
+    int32_t crc_i32;
 	
-	// form signal
-    txout[0] = id;
-    txout[1] = Write_Holding_Register;
-    txout[2] = address >> 8;
-    txout[3] = address;
-    txout[4] = value >> 8;
-    txout[5] = value;
-    crc = this->CheckCRC(txout,6);
-    txout[6] = crc ;
-    txout[7] = crc >> 8;
+    txBuffer_au8[0] = slaveId_i32;
+    txBuffer_au8[1] = WRITE_HOLDING_REGISTER_U8;
+    txBuffer_au8[2] = registerAddress_i32 >> 8;
+    txBuffer_au8[3] = registerAddress_i32;
+    txBuffer_au8[4] = value_u16 >> 8;
+    txBuffer_au8[5] = value_u16;
+    crc_i32 = this->computeCrc(txBuffer_au8, 6);
+    txBuffer_au8[6] = crc_i32;
+    txBuffer_au8[7] = crc_i32 >> 8;
 	
-	// send signal
-  size_t bufferCapacity = this->s->availableForWrite();
+  size_t bufferCapacity_st = this->serial_pHS->availableForWrite();
   delay(1);
-  this->s->write(txout,8);
+  this->serial_pHS->write(txBuffer_au8, 8);
   delay(1);
-  uint8_t timeOutInMs_u8 = 10;
-  while( (bufferCapacity != this->s->availableForWrite() ) && (timeOutInMs_u8 > 0) ) 
+  uint8_t timeOutCounter_u8 = 10;
+  while( (bufferCapacity_st != this->serial_pHS->availableForWrite() ) && (timeOutCounter_u8 > 0) ) 
   { 
     delay(1);
-    timeOutInMs_u8--;
+    timeOutCounter_u8--;
   }
 
   delay(1);
 
-  // verify return signal
-  // should be identical to transmit signal, otherwise error
-
-  unsigned long t = millis();
-  int ll = 0;
-  int rx;
+  uint32_t startTime_u32 = millis();
+  int32_t echoMatchCount_i32 = 0;
+  int32_t receivedByte_i32;
   
-  bool returnSignalIsCopyOfTransmittedSignal_b = false;
-  while( ( (millis() - t) < timeout_)  && (false == returnSignalIsCopyOfTransmittedSignal_b)) {
+  bool responseReceived_b = false;
+  while( ( (millis() - startTime_u32) < timeout_u32)  && (false == responseReceived_b))
+  {
       delay(1);
-      t = millis();
-      while(this->s->available())
+      startTime_u32 = millis();
+      while(this->serial_pHS->available())
       {
-        rx = this->s->read();
-        if(txout[ll] == rx){ll++;}else{ll = 0;}
-
-        if (ll == 8)
+        receivedByte_i32 = this->serial_pHS->read();
+        if(txBuffer_au8[echoMatchCount_i32] == receivedByte_i32)
         {
-          returnSignalIsCopyOfTransmittedSignal_b = true;
+            echoMatchCount_i32++;
+        }
+        else
+        {
+            echoMatchCount_i32 = 0;
+        }
+
+        if (echoMatchCount_i32 == 8)
+        {
+          responseReceived_b = true;
           break;
         }
       }
-      
   }
 
   delay(5);
 
-  return returnSignalIsCopyOfTransmittedSignal_b;
+  return responseReceived_b;
+}
+
+int32_t Modbus::writeCoilToDevice(int32_t registerAddress_i32, uint8_t value_u8)
+{
+    // Not implemented
+    return -1;
+}
+
+int32_t Modbus::writeCoilToDevice(int32_t slaveId_i32, int32_t registerAddress_i32, uint8_t value_u8)
+{
+    // Not implemented
+    return -1;
 }
