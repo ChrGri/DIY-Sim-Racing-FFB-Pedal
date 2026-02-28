@@ -25,7 +25,7 @@ private:
 	int32_t _endstopLimitMin, _endstopLimitMax;    // stepper position at limit switches
 	int32_t _posMin,   _posMax;      // stepper position at min/max of travel
 
-	isv57communication isv57;
+	Isv57Communication isv57;
 	
 	
 	bool isv57LifeSignal_b = false;
@@ -64,7 +64,7 @@ public:
 	void pauseTask();
 	bool isAtMinPos();
 	void correctPos();
-	void findMinMaxSensorless(DAP_config_st dap_config_st);
+	void findMinMaxSensorless(DapConfig_t dap_config_st);
 	void forceStop();
 	int8_t moveTo(int32_t position, bool blocking = false);
 	void moveSlowlyToPos(int32_t targetPos_ui32);
@@ -115,7 +115,7 @@ public:
 	
 	bool servoIdleAction();
 	uint8_t servoStatus=0;
-	uint8_t endstopDetectionThreshold=30;
+	uint8_t endstopDetectionThreshold_u8=30;
 
 	
 

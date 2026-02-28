@@ -1,28 +1,28 @@
-#pragma once
+﻿#pragma once
 
 #include "DiyActivePedal_types.h"
 #include "StepperWithLimits.h"
 #include "FastTrig.h"
 
 
-static inline float sledPositionInMM(StepperWithLimits* stepper, DAP_config_st * config_st, float motorRevolutionsPerStep_fl32) {
+static inline float sledPositionInMM(StepperWithLimits* stepper, DapConfig_t * config_st, float motorRevolutionsPerStep_fl32) {
   float currentPos = stepper->getCurrentPositionFromMin();
-  return currentPos * motorRevolutionsPerStep_fl32 * (float)config_st->payLoadPedalConfig_.spindlePitch_mmPerRev_u8;
+  return currentPos * motorRevolutionsPerStep_fl32 * (float)config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8;
 }
 
-static inline float sledPositionInMM_withPositionAsArgument(float currentPos_fl32, DAP_config_st * config_st, float motorRevolutionsPerStep_fl32) {
-  return currentPos_fl32 * motorRevolutionsPerStep_fl32 * (float)config_st->payLoadPedalConfig_.spindlePitch_mmPerRev_u8;
+static inline float sledPositionInMM_withPositionAsArgument(float currentPos_fl32, DapConfig_t * config_st, float motorRevolutionsPerStep_fl32) {
+  return currentPos_fl32 * motorRevolutionsPerStep_fl32 * (float)config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8;
 }
 
-static inline float pedalInclineAngleDeg(float sledPositionMM, DAP_config_st * config_st) {
+static inline float pedalInclineAngleDeg(float sledPositionMM, DapConfig_t * config_st) {
   // see https://de.wikipedia.org/wiki/Kosinussatz
   // A: is lower pedal pivot
   // C: is upper pedal pivot
   // B: is rear pedal pivot
-  float a = (float)config_st->payLoadPedalConfig_.lengthPedal_a;
-  float b = (float)config_st->payLoadPedalConfig_.lengthPedal_b;
-  float c_ver = (float)config_st->payLoadPedalConfig_.lengthPedal_c_vertical;
-  float c_hor = (float)config_st->payLoadPedalConfig_.lengthPedal_c_horizontal + sledPositionMM;
+  float a = (float)config_st->payloadPedalConfig_st.lengthPedalA_i16;
+  float b = (float)config_st->payloadPedalConfig_st.lengthPedalB_i16;
+  float c_ver = (float)config_st->payloadPedalConfig_st.lengthPedalCVertical_i16;
+  float c_hor = (float)config_st->payloadPedalConfig_st.lengthPedalCHorizontal_i16 + sledPositionMM;
   float c = sqrtf(c_ver * c_ver + c_hor * c_hor);
   
 
@@ -69,7 +69,7 @@ static inline float pedalInclineAngleDeg(float sledPositionMM, DAP_config_st * c
 }
 
 
-static inline float convertToPedalForce(float F_l, float sledPositionMM, DAP_config_st * config_st) {
+static inline float convertToPedalForce(float F_l, float sledPositionMM, DapConfig_t * config_st) {
   // see https://de.wikipedia.org/wiki/Kosinussatz
   // A: is lower pedal pivot
   // B: is rear pedal pivot
@@ -81,12 +81,12 @@ static inline float convertToPedalForce(float F_l, float sledPositionMM, DAP_con
   // c: is sled line (connection AC)
   // d: is upper pedal plate  (connection AC)
 
-  float a = (float)config_st->payLoadPedalConfig_.lengthPedal_a;
-  float b = (float)config_st->payLoadPedalConfig_.lengthPedal_b;
-  float d = (float)config_st->payLoadPedalConfig_.lengthPedal_d;
+  float a = (float)config_st->payloadPedalConfig_st.lengthPedalA_i16;
+  float b = (float)config_st->payloadPedalConfig_st.lengthPedalB_i16;
+  float d = (float)config_st->payloadPedalConfig_st.lengthPedalD_i16;
 
-  float c_ver = (float)config_st->payLoadPedalConfig_.lengthPedal_c_vertical;
-  float c_hor = (float)config_st->payLoadPedalConfig_.lengthPedal_c_horizontal + sledPositionMM;
+  float c_ver = (float)config_st->payloadPedalConfig_st.lengthPedalCVertical_i16;
+  float c_hor = (float)config_st->payloadPedalConfig_st.lengthPedalCHorizontal_i16 + sledPositionMM;
   float c = sqrtf(c_ver * c_ver + c_hor * c_hor);
   
 
@@ -128,7 +128,7 @@ static inline float convertToPedalForce(float F_l, float sledPositionMM, DAP_con
 
 // Calculate gradient of phi with respect to sled position.
 // This is done by taking the derivative of the force with respect to the sled position.
-static inline float convertToPedalForceGain(float sledPositionMM, DAP_config_st * config_st) {
+static inline float convertToPedalForceGain(float sledPositionMM, DapConfig_t * config_st) {
   // see https://de.wikipedia.org/wiki/Kosinussatz
   // A: is lower pedal pivot
   // B: is rear pedal pivot
@@ -141,12 +141,12 @@ static inline float convertToPedalForceGain(float sledPositionMM, DAP_config_st 
   // c: is sled line (connection AC)
   // d: is upper pedal plate  (connection AC)
 
-  float a = (float)config_st->payLoadPedalConfig_.lengthPedal_a;
-  float b = (float)config_st->payLoadPedalConfig_.lengthPedal_b;
-  float d = (float)config_st->payLoadPedalConfig_.lengthPedal_d;
+  float a = (float)config_st->payloadPedalConfig_st.lengthPedalA_i16;
+  float b = (float)config_st->payloadPedalConfig_st.lengthPedalB_i16;
+  float d = (float)config_st->payloadPedalConfig_st.lengthPedalD_i16;
 
-  float c_ver = (float)config_st->payLoadPedalConfig_.lengthPedal_c_vertical;
-  float c_hor = (float)config_st->payLoadPedalConfig_.lengthPedal_c_horizontal + sledPositionMM;
+  float c_ver = (float)config_st->payloadPedalConfig_st.lengthPedalCVertical_i16;
+  float c_hor = (float)config_st->payloadPedalConfig_st.lengthPedalCHorizontal_i16 + sledPositionMM;
   float c = sqrtf(c_ver * c_ver + c_hor * c_hor);
   
 

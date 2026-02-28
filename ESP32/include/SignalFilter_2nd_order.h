@@ -5,9 +5,9 @@
 #include <Arduino.h> // Assuming this is for `micros()` and `fabsf()`
 
 // Kalman Filter class declaration
-class KalmanFilter_2nd_order {
+class KalmanFilter2ndOrder {
 public:
-    KalmanFilter_2nd_order(float varianceEstimate);
+    KalmanFilter2ndOrder(float varianceEstimate);
     float filteredValue(float measurement, float command, uint8_t modelNoiseScaling_u8);
     float changeVelocity();
     float changeAccel();

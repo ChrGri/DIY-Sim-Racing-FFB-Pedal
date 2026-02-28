@@ -114,7 +114,7 @@ ADS1220_WE& getADC()
 
 
 
-LoadCell_ADS1220::LoadCell_ADS1220()
+LoadCellAds1220::LoadCellAds1220()
   : zeroPoint_fl32(0.0f), varianceEstimate_fl32(DEFAULT_VARIANCE_ESTIMATE_FL32)
 {
   // differential channels
@@ -124,7 +124,7 @@ LoadCell_ADS1220::LoadCell_ADS1220()
 
 
 
-void LoadCell_ADS1220::setLoadcellRating(uint8_t loadcellRating_u8) const 
+void LoadCellAds1220::setLoadcellRating(uint8_t loadcellRating_u8) const 
 {
   getADC(); // Ensure ADC is initialized
   
@@ -142,7 +142,7 @@ void LoadCell_ADS1220::setLoadcellRating(uint8_t loadcellRating_u8) const
 
 
 // #define LOADCELL_RADING_INTERVALL_IN_US (uint32_t)500
-float IRAM_ATTR LoadCell_ADS1220::readLoadcellWeightInKg() const 
+float IRAM_ATTR LoadCellAds1220::readLoadcellWeightInKg() const 
 {
   ADS1220_WE& adc_awe = getADC();
   static float s_voltage_mV_fl32;
@@ -173,7 +173,7 @@ float IRAM_ATTR LoadCell_ADS1220::readLoadcellWeightInKg() const
 
 
 
-void LoadCell_ADS1220::estimateBiasAndVariance() 
+void LoadCellAds1220::estimateBiasAndVariance() 
 {
   getADC(); // Ensure ADC is initialized
   

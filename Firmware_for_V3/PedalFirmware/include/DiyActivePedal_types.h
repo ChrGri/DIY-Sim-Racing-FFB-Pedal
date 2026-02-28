@@ -278,6 +278,16 @@ struct payloadFooter {
   uint16_t checkSum;
 };
 
+typedef payloadHeader PayloadHeader_t;
+typedef payloadPedalAction PayloadPedalAction_t;
+typedef payloadPedalState_Basic PayloadPedalStateBasic_t;
+typedef payloadPedalState_Extended PayloadPedalStateExtended_t;
+typedef payloadBridgeState PayloadBridgeState_t;
+typedef payloadRudderState PayloadRudderState_t;
+typedef payloadPedalConfig PayloadPedalConfig_t;
+typedef payloadESPNowInfo PayloadEspnowInfo_t;
+typedef payloadFooter PayloadFooter_t;
+
 
 struct DAP_actions_st {
   payloadHeader payLoadHeader_;
@@ -308,9 +318,9 @@ struct DAP_config_st {
   payloadPedalConfig payLoadPedalConfig_;
   payloadFooter payloadFooter_; 
   
-  void initialiseDefaults();
-  void loadConfigFromEprom(DAP_config_st& config_st);
-  void storeConfigToEprom(DAP_config_st& config_st);
+  void initializeDefaults();
+  void loadConfigFromEeprom(DAP_config_st& config_st);
+  void storeConfigToEeprom(DAP_config_st& config_st);
 };
 
 struct DAP_ESPPairing_st {
@@ -328,15 +338,15 @@ struct DAP_calculationVariables_st
 {
   float springStiffnesss;
   float springStiffnesssInv;
-  float Force_Min;
-  float Force_Max;
-  float Force_Range;
+  float forceMin_f;
+  float forceMax_f;
+  float forceRange_f;
   long stepperPosMinEndstop;
   long stepperPosMaxEndstop;
   long stepperPosEndstopRange;
-  float RPM_max_freq;
-  float RPM_min_freq;
-  float RPM_AMP;
+  float rpmMaxFreq_f;
+  float rpmMinFreq_f;
+  float rpmAmp_f;
   long stepperPosMin;
   long stepperPosMax;
   float stepperPosRange;
@@ -344,29 +354,29 @@ struct DAP_calculationVariables_st
   float endPosRel;
   float absFrequency;
   float absAmplitude;
-  float rpm_value;
-  float BP_trigger_value;
-  float BP_amp;
-  float BP_freq;
+  float rpmValue_f;
+  float bpTriggerValue_f;
+  float bpAmp_f;
+  float bpFreq_f;
   float dampingPress;
-  float Force_Max_default;
-  float WS_amp;
-  float WS_freq;
-  bool Rudder_status;
-  bool isRudderInitialized=false;
-  bool helicopterRudderStatus;
-  bool isHelicopterRudderInitialized=false;
-  uint8_t pedal_type;
-  uint32_t sync_pedal_position;
-  uint32_t current_pedal_position;
-  float current_pedal_position_ratio;
-  float Sync_pedal_position_ratio;
-  bool rudder_brake_status;
-  long stepperPosMin_default;
-  long stepperPosMax_default;
-  float stepperPosRange_default;
+  float forceMaxDefault_f;
+  float wsAmp_f;
+  float wsFreq_f;
+  bool rudderStatus_b;
+  bool isRudderInitialized_b=false;
+  bool helicopterRudderStatus_b;
+  bool isHelicopterRudderInitialized_b=false;
+  uint8_t pedalType_u8;
+  uint32_t syncPedalPosition_u32;
+  uint32_t currentPedalPosition_u32;
+  float currentPedalPositionRatio_f;
+  float syncPedalPositionRatio_f;
+  bool rudderBrakeStatus_b;
+  long stepperPosMinDefault;
+  long stepperPosMaxDefault;
+  float stepperPosRangeDefault;
   uint32_t stepsPerMotorRevolution;
-  uint8_t TrackCondition;
+  uint8_t trackCondition_u8;
   float currentForceReading;
   float force[11];
   float travel[11]; 
@@ -382,12 +392,12 @@ struct DAP_calculationVariables_st
   void updateFromConfig(DAP_config_st& config_st);
   void updateEndstops(long newMinEndstop, long newMaxEndstop);
   void updateStiffness();
-  void dynamic_update();
-  void reset_maxforce();
-  void StepperPos_setback();
-  void Default_pos();
-  void update_stepperMinpos(long newMinstop);
-  void update_stepperMaxpos(long newMaxstop);
+  void dynamicUpdate();
+  void resetMaxForce();
+  void stepperPosSetback();
+  void setDefaultPos();
+  void updateStepperMinPos(long newMinstop);
+  void updateStepperMaxPos(long newMaxstop);
 };
 
 enum class PedalSystemAction
@@ -422,10 +432,10 @@ public:
   void setConfig(DAP_config_st tmp);
 
   // Methode zum Laden der Konfiguration aus dem EEPROM
-  void loadConfigFromEprom();
+  void loadConfigFromEeprom();
 
   // Methode zum Speichern der Konfiguration im EEPROM
-  void storeConfigToEprom();
+  void storeConfigToEeprom();
 
   //initialized config if needed
   void initializedConfig();

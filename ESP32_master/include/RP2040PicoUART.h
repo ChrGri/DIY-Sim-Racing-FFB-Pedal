@@ -21,7 +21,7 @@ struct __attribute__((packed)) payloadjoystick
 struct __attribute__((packed)) JoystickPayloadFooter
 {
     // To check if structure is valid
-    uint16_t checkSum;
+    uint16_t checkSum_u16;
 };
 struct __attribute__((packed)) DAP_JoystickUART_State
 {

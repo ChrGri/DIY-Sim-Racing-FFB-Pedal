@@ -81,7 +81,7 @@ void printDecodedAlarmString(uint16_t alarm_code)
 
 
 // initialize the communication
-isv57communication::isv57communication()
+Isv57Communication::Isv57Communication()
 {
   
   
@@ -110,7 +110,7 @@ isv57communication::isv57communication()
 
 
 // send tuned servo parameters
-void isv57communication::setupServoStateReading() {
+void Isv57Communication::setupServoStateReading() {
 
   
   // The iSV57 has four registers (0x0191, 0x0192, 0x0193, 0x0194) in which we can write, which values we want to obtain cyclicly
@@ -124,7 +124,7 @@ void isv57communication::setupServoStateReading() {
 }
 
 
-void isv57communication::readAllServoParameters() {
+void Isv57Communication::readAllServoParameters() {
   for (uint16_t reg_sub_add_u16 = 0;  reg_sub_add_u16 < (pr_7_00+49); reg_sub_add_u16++)
   {
     modbus.readDeviceParameter(slaveId, pr_0_00 + reg_sub_add_u16);
@@ -132,7 +132,7 @@ void isv57communication::readAllServoParameters() {
 }
 
 // Disable aixs command
-void isv57communication::disableAxis()
+void Isv57Communication::disableAxis()
 {
 
   ActiveSerial->println("Disabling servo");
@@ -151,7 +151,7 @@ void isv57communication::disableAxis()
   delay(5);
 }
 
-void isv57communication::enableAxis() 
+void Isv57Communication::enableAxis() 
 {
   ActiveSerial->println("Enabling servo");
 
@@ -190,7 +190,7 @@ void isv57communication::enableAxis()
 
 
 
-void  isv57communication::clearServoUnitPosition()
+void  Isv57Communication::clearServoUnitPosition()
 {
 	// According to Leadshines User Manual of 2ELD2-RD DC Servo
 	// https://www.leadshine.com/upfiles/downloads/a3d7d12a120fd8e114f6288b6235ac1a_1690179981835.pdf
@@ -202,24 +202,24 @@ void  isv57communication::clearServoUnitPosition()
   delay(100);
 }
 
-bool isv57communication::setServoVoltage(uint16_t voltageInVolt_u16)
+bool Isv57Communication::setServoVoltage(uint16_t voltageInVolt_u16)
 {
   return modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+32, voltageInVolt_u16 + 2); // bleeder braking voltage. Voltage when braking is activated
 }
 
-bool isv57communication::setPositionSmoothingFactor(uint16_t posSmoothingFactor_u16)
+bool Isv57Communication::setPositionSmoothingFactor(uint16_t posSmoothingFactor_u16)
 {
   return modbus.writeAndVerifyDeviceParameter(slaveId, pr_2_00+22, posSmoothingFactor_u16); // positional command smoothing factor in 0.1ms
 }
 
-bool isv57communication::setRatioOfInertia(uint8_t ratiOfInertia_u8)
+bool Isv57Communication::setRatioOfInertia(uint8_t ratiOfInertia_u8)
 {
   return modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+4, ratiOfInertia_u8); // positional command smoothing factor in 0.1ms
 }
 
 
 // send tuned servo parameters
-void isv57communication::sendTunedServoParameters(bool commandRotationDirection, uint32_t stepsPerMotorRev_u32, uint32_t ratioOfInertia_u32) {
+void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection, uint32_t stepsPerMotorRev_u32, uint32_t ratioOfInertia_u32) {
   
   bool retValue_b = false;
 
@@ -386,7 +386,7 @@ void isv57communication::sendTunedServoParameters(bool commandRotationDirection,
 
 }
 
-bool isv57communication::findServosSlaveId()
+bool Isv57Communication::findServosSlaveId()
 {
   bool slaveIdFound = false;
 
@@ -426,7 +426,7 @@ bool isv57communication::findServosSlaveId()
 
 
 
-bool isv57communication::checkCommunication()
+bool Isv57Communication::checkCommunication()
 {
   if(modbus.sendRequestAndReceiveResponse(slaveId, 0x03, 0x0000, 2) > 0)
   {
@@ -443,29 +443,29 @@ bool isv57communication::checkCommunication()
 
 
 
-void isv57communication::setZeroPos()
+void Isv57Communication::setZeroPos()
 {
   zeroPos = isv57dynamicStates_.servo_pos_given_p;
 }
 
-void isv57communication::applyOfsetToZeroPos(int16_t givenPosOffset_i16)
+void Isv57Communication::applyOfsetToZeroPos(int16_t givenPosOffset_i16)
 {
   zeroPos += givenPosOffset_i16;
 }
 
-int16_t isv57communication::getZeroPos()
+int16_t Isv57Communication::getZeroPos()
 {
   return zeroPos;
 }
 
-int16_t isv57communication::getPosFromMin()
+int16_t Isv57Communication::getPosFromMin()
 {
   return isv57dynamicStates_.servo_pos_given_p - zeroPos;
 }
 
 
 // read servo states
-void isv57communication::readServoStates() {
+void Isv57Communication::readServoStates() {
 
   // initialize with -1 to indicate non-trustworthyness
   regArray[0] = -1;
@@ -489,12 +489,12 @@ void isv57communication::readServoStates() {
   // servo_pos_given_p = regArray[0];
   // servo_current_percent = regArray[1];
   // servo_pos_error_p = regArray[2];
-  // servo_voltage_0p1V = regArray[3];
+  // servoVoltage0p1V_i16 = regArray[3];
 
   isv57dynamicStates_.servo_pos_given_p = regArray[0];
   isv57dynamicStates_.servo_current_percent = regArray[1];
   isv57dynamicStates_.servo_pos_error_p = regArray[2];
-  isv57dynamicStates_.servo_voltage_0p1V = regArray[3];
+  isv57dynamicStates_.servoVoltage0p1V_i16 = regArray[3];
   isv57dynamicStates_.lastUpdateTimeInMS_u32 = millis();
 
   //ActiveSerial->print("Bytes :");
@@ -515,7 +515,7 @@ void isv57communication::readServoStates() {
     ActiveSerial->print(isv57dynamicStates_.servo_current_percent);
 
     ActiveSerial->print(",Voltage:");
-    ActiveSerial->print(isv57dynamicStates_.servo_voltage_0p1V);
+    ActiveSerial->print(isv57dynamicStates_.servoVoltage0p1V_i16);
 
     ActiveSerial->println(" "); 
   }
@@ -524,7 +524,7 @@ void isv57communication::readServoStates() {
 
 
 
-bool isv57communication::clearServoAlarms() {
+bool Isv57Communication::clearServoAlarms() {
 
   // read the alarm list
   // int8_t numberOfRegistersToRead_u8 = 0;
@@ -541,7 +541,7 @@ bool isv57communication::clearServoAlarms() {
 }
 
 
-bool isv57communication::readCurrentAlarm() {
+bool Isv57Communication::readCurrentAlarm() {
   int bytesReceived_i = modbus.sendRequestAndReceiveResponse(slaveId, 0x03, 0x01F2, 1);
   if(bytesReceived_i == (2))
   {
@@ -558,7 +558,7 @@ bool isv57communication::readCurrentAlarm() {
 }
 
 
-bool isv57communication::readAlarmHistory() {
+bool Isv57Communication::readAlarmHistory() {
 
   bool alarmWasFound_b = false;
 	ActiveSerial->print("\niSV57 alarm history: ");
@@ -605,7 +605,7 @@ bool isv57communication::readAlarmHistory() {
 
 
 
-void isv57communication::resetToFactoryParams() 
+void Isv57Communication::resetToFactoryParams() 
 {
   // Identified with Free Device Monitoring Studio: https://hhdsoftware.com/device-monitoring-studio
   // Data view

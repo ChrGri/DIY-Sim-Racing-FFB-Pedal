@@ -1,4 +1,4 @@
-#include "TinyusbJoystick.h"
+﻿#include "TinyusbJoystick.h"
 #define ESPNOW_LOG_MAGIC_KEY 0x99
 #define ESPNOW_LOG_MAGIC_KEY_2 0x97
 TinyusbJoystick* TinyusbJoystick::instance = nullptr;
@@ -166,50 +166,50 @@ void TinyusbJoystick::context_callback(uint8_t report_id, hid_report_type_t repo
 
 void TinyusbJoystick::ProcessFullData(uint8_t *rxBuffer, uint8_t totalLen)
 {
-    if(totalLen== sizeof(DAP_actions_st))
+    if(totalLen== sizeof(DapActions_t))
     {
-        DAP_actions_st tmp;
+        DapActions_t tmp;
         memcpy(&tmp, rxBuffer, totalLen);
         bool structChecker= true;
-        if(tmp.payLoadHeader_.payloadType !=DAP_PAYLOAD_TYPE_ACTION ) structChecker = false;
-        if(tmp.payLoadHeader_.version !=DAP_VERSION_CONFIG ) structChecker = false;
-        uint16_t crc = checksumCal((uint8_t*)(&(tmp.payLoadHeader_)), sizeof(tmp.payLoadHeader_) + sizeof(tmp.payloadPedalAction_));
-        if(crc != tmp.payloadFooter_.checkSum) structChecker = false;
+        if(tmp.payloadHeader_st.payloadType !=DAP_PAYLOAD_TYPE_ACTION ) structChecker = false;
+        if(tmp.payloadHeader_st.version !=DAP_VERSION_CONFIG ) structChecker = false;
+        uint16_t crc = checksumCal((uint8_t*)(&(tmp.payloadHeader_st)), sizeof(tmp.payloadHeader_st) + sizeof(tmp.payloadPedalAction_st));
+        if(crc != tmp.payloadFooter_st.checkSum_u16) structChecker = false;
         if(structChecker)
         {
-            uint8_t pedalTag= tmp.payLoadHeader_.PedalTag;
+            uint8_t pedalTag= tmp.payloadHeader_st.pedalTag_u8;
             memcpy( &tmpAction[pedalTag], &tmp,totalLen);
             isActionGet[pedalTag]= true;
         }
 
     }
-    if(totalLen== sizeof(DAP_config_st))
+    if(totalLen== sizeof(DapConfig_t))
     {
-        DAP_config_st tmp;
+        DapConfig_t tmp;
         memcpy(&tmp, rxBuffer, totalLen);
         bool structChecker= true;
-        if(tmp.payLoadHeader_.payloadType !=DAP_PAYLOAD_TYPE_CONFIG ) structChecker = false;
-        if(tmp.payLoadHeader_.version !=DAP_VERSION_CONFIG ) structChecker = false;
-        uint16_t crc = checksumCal((uint8_t*)(&(tmp.payLoadHeader_)), sizeof(tmp.payLoadHeader_) + sizeof(tmp.payLoadPedalConfig_));
-        if(crc != tmp.payloadFooter_.checkSum) structChecker = false;
+        if(tmp.payloadHeader_st.payloadType !=DAP_PAYLOAD_TYPE_CONFIG ) structChecker = false;
+        if(tmp.payloadHeader_st.version !=DAP_VERSION_CONFIG ) structChecker = false;
+        uint16_t crc = checksumCal((uint8_t*)(&(tmp.payloadHeader_st)), sizeof(tmp.payloadHeader_st) + sizeof(tmp.payloadPedalConfig_st));
+        if(crc != tmp.payloadFooter_st.checkSum_u16) structChecker = false;
         if(structChecker)
         {
-            uint8_t pedalTag= tmp.payLoadHeader_.PedalTag;
+            uint8_t pedalTag= tmp.payloadHeader_st.pedalTag_u8;
             memcpy(&tmpConfig[pedalTag], &tmp,  totalLen);
             isConfigGet[pedalTag]= true;
             isTestConfigGet[pedalTag] = true;
         }
 
     }
-    if(totalLen== sizeof(DAP_bridge_state_st))
+    if(totalLen== sizeof(DapBridgeState_t))
     {
-        DAP_bridge_state_st tmp;
+        DapBridgeState_t tmp;
         memcpy(&tmp, rxBuffer, totalLen);
         bool structChecker= true;
-        if(tmp.payLoadHeader_.payloadType !=DAP_PAYLOAD_TYPE_BRIDGE_STATE ) structChecker = false;
-        if(tmp.payLoadHeader_.version !=DAP_VERSION_CONFIG ) structChecker = false;
-        uint16_t crc = checksumCal((uint8_t*)(&(tmp.payLoadHeader_)), sizeof(tmp.payLoadHeader_) + sizeof(tmp.payloadBridgeState_));
-        if(crc != tmp.payloadFooter_.checkSum) structChecker = false;
+        if(tmp.payloadHeader_st.payloadType !=DAP_PAYLOAD_TYPE_BRIDGE_STATE ) structChecker = false;
+        if(tmp.payloadHeader_st.version !=DAP_VERSION_CONFIG ) structChecker = false;
+        uint16_t crc = checksumCal((uint8_t*)(&(tmp.payloadHeader_st)), sizeof(tmp.payloadHeader_st) + sizeof(tmp.payloadBridgeState_st));
+        if(crc != tmp.payloadFooter_st.checkSum_u16) structChecker = false;
         if(structChecker)
         {
             memcpy(&tmpBridgeAction, &tmp, totalLen);
@@ -217,12 +217,12 @@ void TinyusbJoystick::ProcessFullData(uint8_t *rxBuffer, uint8_t totalLen)
         }
         
     }
-    if(totalLen == sizeof(DAP_action_ota_st))
+    if(totalLen == sizeof(DapActionOta_t))
     {
-        DAP_action_ota_st tmp;
+        DapActionOta_t tmp;
         memcpy(&tmp, rxBuffer, totalLen);
         bool structChecker= true;
-        if(tmp.payLoadHeader_.payloadType !=DAP_PAYLOAD_TYPE_ACTION_OTA ) structChecker = false;
+        if(tmp.payloadHeader_st.payloadType !=DAP_PAYLOAD_TYPE_ACTION_OTA ) structChecker = false;
         if(structChecker)
         {
             memcpy(&tmpOtaAction, &tmp, totalLen);
@@ -256,13 +256,13 @@ void TinyusbJoystick::printf(const char *log, ...)
   if (logLen >= (int)sizeof(buffer)) {
       logLen = sizeof(buffer) - 1; 
   }
-  Dap_hidmessage_st message;
+    PayloadHidMessage_t message;
   message.payloadType = DAP_PAYLOAD_TYPE_ESPNOW_LOG;
   message.magicKey1 = ESPNOW_LOG_MAGIC_KEY;
   message.magicKey2 = ESPNOW_LOG_MAGIC_KEY_2;
   message.length = (uint8_t)logLen;
-  memcpy(&message.text, buffer, logLen);
-  sendData((uint8_t*)&message, sizeof(Dap_hidmessage_st));
+  memcpy(&message.text_ac, buffer, logLen);
+    sendData((uint8_t*)&message, sizeof(PayloadHidMessage_t));
   
   //delay(1);
 }

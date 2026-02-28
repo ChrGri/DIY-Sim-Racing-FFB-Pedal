@@ -1,4 +1,4 @@
-#include "ForceCurve.h"
+﻿#include "ForceCurve.h"
 //#include "InterpolationLib.h"
 #include "Arduino.h"
 
@@ -10,28 +10,28 @@
 /*                                                                                            */
 /**********************************************************************************************/
 // see https://swharden.com/blog/2022-01-22-spline-interpolation/
-float ForceCurve_Interpolated::EvalForceCubicSpline(const DAP_config_st* config_st, const DAP_calculationVariables_st* calc_st, float fractionalPos)
+float ForceCurveInterpolated::EvalForceCubicSpline(const DapConfig_t* config_st, const DapCalculationVariables_t* calc_st, float fractionalPos_fl32)
 {
 
-  float fractionalPos_lcl = constrain(fractionalPos, 0, 1);
-  float fractionalPos_float=fractionalPos_lcl*100.0f;
-  //float splineSegment_fl32 = fractionalPos_lcl * 5.0f;
-  uint32_t numberOfPoints_u32 = config_st->payLoadPedalConfig_.quantityOfControl;
-  float numberOfSplineSegments = (config_st->payLoadPedalConfig_.quantityOfControl-1); // quantityOfControl is number of points
-  float splineSegment_fl32 = 0; // initialize to 0, because (fractionalPos_float > calc_st->travel[i]) wont fin it otherwise
+  float fractionalPosLcl_fl32 = constrain(fractionalPos_fl32, 0, 1);
+  float fractionalPosPercent_fl32 = fractionalPosLcl_fl32 * 100.0f;
+  //float splineSegment_fl32 = fractionalPosLcl_fl32 * 5.0f;
+  uint32_t numberOfPoints_u32 = config_st->payloadPedalConfig_st.quantityOfControl_u8;
+  float numberOfSplineSegments_fl32 = (config_st->payloadPedalConfig_st.quantityOfControl_u8-1); // quantityOfControl_u8 is number of points
+  float splineSegment_fl32 = 0; // initialize to 0, because (fractionalPos_float > calc_st->travel_afl32[i]) wont fin it otherwise
 
   for(int i=0; i < numberOfPoints_u32; i++)
   {
-    if(fractionalPos_float > calc_st->travel[i])
+    if(fractionalPosPercent_fl32 > calc_st->travel_afl32[i])
     {
-      if(i== (numberOfSplineSegments) )
+      if(i== (numberOfSplineSegments_fl32) )
       {
         splineSegment_fl32=(float)i;
       }
       else
       {
-        float diff= (fractionalPos_float-(float)calc_st->travel[i])/(float)(calc_st->travel[i+1]-calc_st->travel[i]);
-        splineSegment_fl32=(float)i+diff;
+        float diff_fl32 = (fractionalPosPercent_fl32-(float)calc_st->travel_afl32[i])/(float)(calc_st->travel_afl32[i+1]-calc_st->travel_afl32[i]);
+        splineSegment_fl32=(float)i+diff_fl32;
       }  
     }
     else
@@ -42,41 +42,41 @@ float ForceCurve_Interpolated::EvalForceCubicSpline(const DAP_config_st* config_
   uint8_t splineSegment_u8 = (uint8_t)floor(splineSegment_fl32);
   
   // if (splineSegment_u8 < 0){splineSegment_u8 = 0;}
-  if (splineSegment_u8 > (numberOfSplineSegments) )
+  if (splineSegment_u8 > (numberOfSplineSegments_fl32) )
   {
-    splineSegment_u8 = numberOfSplineSegments;
+    splineSegment_u8 = numberOfSplineSegments_fl32;
   }
-  float a = calc_st->interpolatorA[splineSegment_u8];
-  float b = calc_st->interpolatorB[splineSegment_u8];
+  float a_fl32 = calc_st->interpolatorA_pfl32[splineSegment_u8];
+  float b_fl32 = calc_st->interpolatorB_pfl32[splineSegment_u8];
 
   float yOrig[numberOfPoints_u32];
 
   for(int i=0; i<numberOfPoints_u32; i++)
   {
-    yOrig[i]=calc_st->force[i];
+    yOrig[i]=calc_st->force_afl32[i];
   }
 
   //double dx = 1.0f;
-  float t = (splineSegment_fl32 - (float)splineSegment_u8);// / dx;
-  float y=0.0f;
+  float t_fl32 = (splineSegment_fl32 - (float)splineSegment_u8);// / dx;
+  float y_fl32=0.0f;
 
-  if(splineSegment_u8 >= numberOfSplineSegments)
+  if(splineSegment_u8 >= numberOfSplineSegments_fl32)
   {
-    y = yOrig[splineSegment_u8];
+    y_fl32 = yOrig[splineSegment_u8];
   }
   else
   {
-    y = (1.0f - t) * yOrig[splineSegment_u8] + t * yOrig[splineSegment_u8 + 1] + t * (1.0f - t) * (a * (1.0f - t) + b * t);
+    y_fl32 = (1.0f - t_fl32) * yOrig[splineSegment_u8] + t_fl32 * yOrig[splineSegment_u8 + 1] + t_fl32 * (1.0f - t_fl32) * (a_fl32 * (1.0f - t_fl32) + b_fl32 * t_fl32);
   }
   
   
-  if (calc_st->Force_Range> 0)
+  if (calc_st->forceRange_fl32> 0)
   {
-      y = calc_st->Force_Min + y / 100.0f * calc_st->Force_Range;
+      y_fl32 = calc_st->forceMin_fl32 + y_fl32 / 100.0f * calc_st->forceRange_fl32;
   }
   else
   {
-    y = calc_st->Force_Min;
+    y_fl32 = calc_st->forceMin_fl32;
   }
   /*
   if(fractionalPos>0.9)
@@ -97,7 +97,7 @@ float ForceCurve_Interpolated::EvalForceCubicSpline(const DAP_config_st* config_
     ActiveSerial->println(b);     
   }
   */
-  return y;
+  return y_fl32;
   
 }
 
@@ -108,27 +108,27 @@ float ForceCurve_Interpolated::EvalForceCubicSpline(const DAP_config_st* config_
 /*                                                                                            */
 /**********************************************************************************************/
 
-float ForceCurve_Interpolated::EvalForceGradientCubicSpline(const DAP_config_st* config_st, const DAP_calculationVariables_st* calc_st, float fractionalPos, bool normalized_b)
+float ForceCurveInterpolated::EvalForceGradientCubicSpline(const DapConfig_t* config_st, const DapCalculationVariables_t* calc_st, float fractionalPos_fl32, bool normalized_b)
 {
-  float fractionalPos_lcl = constrain(fractionalPos, 0, 1);
-  float fractionalPos_float=fractionalPos_lcl*100.0f;
+  float fractionalPosLcl_fl32 = constrain(fractionalPos_fl32, 0, 1);
+  float fractionalPosPercent_fl32 = fractionalPosLcl_fl32*100.0f;
   
-  float numberOfSplineSegments = (config_st->payLoadPedalConfig_.quantityOfControl-1); // quantityOfControl is number of points
-  uint32_t numberOfPoints_u32 = config_st->payLoadPedalConfig_.quantityOfControl;
-  float splineSegment_fl32 = 0.0f; // initialize to 0, because (fractionalPos_float > calc_st->travel[i]) wont fin it otherwise
+  float numberOfSplineSegments_fl32 = (config_st->payloadPedalConfig_st.quantityOfControl_u8-1); // quantityOfControl_u8 is number of points
+  uint32_t numberOfPoints_u32 = config_st->payloadPedalConfig_st.quantityOfControl_u8;
+  float splineSegment_fl32 = 0.0f; // initialize to 0, because (fractionalPos_float > calc_st->travel_afl32[i]) wont fin it otherwise
 
   for(int i=0; i < numberOfPoints_u32; i++)
   {
-    if(fractionalPos_float > calc_st->travel[i])
+    if(fractionalPosPercent_fl32 > calc_st->travel_afl32[i])
     {
-      if(i== numberOfSplineSegments )
+      if(i== numberOfSplineSegments_fl32 )
       {
         splineSegment_fl32=(float)i;
       }
       else
       {
-        float diff= (fractionalPos_float-(float)calc_st->travel[i])/(float)(calc_st->travel[i+1]-calc_st->travel[i]);
-        splineSegment_fl32=(float)i+diff;
+        float diff_fl32 = (fractionalPosPercent_fl32-(float)calc_st->travel_afl32[i])/(float)(calc_st->travel_afl32[i+1]-calc_st->travel_afl32[i]);
+        splineSegment_fl32=(float)i+diff_fl32;
       }  
     }
     else
@@ -139,51 +139,51 @@ float ForceCurve_Interpolated::EvalForceGradientCubicSpline(const DAP_config_st*
   uint8_t splineSegment_u8 = (uint8_t)floor(splineSegment_fl32);
   
   // if (splineSegment_u8 < 0){splineSegment_u8 = 0;}
-  if (splineSegment_u8 > (numberOfSplineSegments) )
+  if (splineSegment_u8 > (numberOfSplineSegments_fl32) )
   {
-    splineSegment_u8 = numberOfSplineSegments;
+    splineSegment_u8 = numberOfSplineSegments_fl32;
   }
-  float a = calc_st->interpolatorA[splineSegment_u8];
-  float b = calc_st->interpolatorB[splineSegment_u8];
+  float a_fl32 = calc_st->interpolatorA_pfl32[splineSegment_u8];
+  float b_fl32 = calc_st->interpolatorB_pfl32[splineSegment_u8];
 
   float yOrig[numberOfPoints_u32];
   for(int i=0; i<numberOfPoints_u32; i++)
   {
-    yOrig[i]=calc_st->force[i];
+    yOrig[i]=calc_st->force_afl32[i];
   }
 
 
 
-  float Delta_x_orig = 100.0f; // total horizontal range [0,100]
-  float dx = Delta_x_orig / numberOfSplineSegments; // spline segment horizontal range
-  float t = (splineSegment_fl32 - (float)splineSegment_u8); // relative position in spline segment [0, 1]
-  float dy =0.0f;
-  if(splineSegment_u8 >= numberOfSplineSegments)
+  float deltaXOrig_fl32 = 100.0f; // total horizontal range [0,100]
+  float dx_fl32 = deltaXOrig_fl32 / numberOfSplineSegments_fl32; // spline segment horizontal range
+  float t_fl32 = (splineSegment_fl32 - (float)splineSegment_u8); // relative position in spline segment [0, 1]
+  float dy_fl32 =0.0f;
+  if(splineSegment_u8 >= numberOfSplineSegments_fl32)
   {
-    dy=0;
+    dy_fl32=0;
   }
   else
   {
-    dy = yOrig[splineSegment_u8 + 1] - yOrig[splineSegment_u8]; // spline segment vertical range
+    dy_fl32 = yOrig[splineSegment_u8 + 1] - yOrig[splineSegment_u8]; // spline segment vertical range
   }
   
-  float y_prime = 0.0f;
-  if (fabsf(dx) > 0)
+  float yPrime_fl32 = 0.0f;
+  if (fabsf(dx_fl32) > 0)
   {
-      y_prime = dy / dx + (1.0f - 2.0f * t) * (a * (1.0f - t) + b * t) / dx + t * (1.0f - t) * (b - a) / dx;
+      yPrime_fl32 = dy_fl32 / dx_fl32 + (1.0f - 2.0f * t_fl32) * (a_fl32 * (1.0f - t_fl32) + b_fl32 * t_fl32) / dx_fl32 + t_fl32 * (1.0f - t_fl32) * (b_fl32 - a_fl32) / dx_fl32;
   }
   // when the spline was identified, x and y were givin in the unit of percent --> 0-100
   // --> conversion of the gradient to the proper axis scaling is performed
   if (normalized_b == false)
   {
-    float d_y_scale = calc_st->Force_Range / 100.0f;
-    float d_x_scale=0.0f;
-    if (fabs(calc_st->stepperPosRange) > 0.01f)
+    float dYScale_fl32 = calc_st->forceRange_fl32 / 100.0f;
+    float dXScale_fl32=0.0f;
+    if (fabs(calc_st->stepperPosRange_fl32) > 0.01f)
     {
-        d_x_scale = 100.0f / calc_st->stepperPosRange;
+      dXScale_fl32 = 100.0f / calc_st->stepperPosRange_fl32;
     }
     
-    y_prime *= d_x_scale * d_y_scale;
+    yPrime_fl32 *= dXScale_fl32 * dYScale_fl32;
   }
   /*
   if(fractionalPos>0.9)
@@ -225,39 +225,39 @@ float ForceCurve_Interpolated::EvalForceGradientCubicSpline(const DAP_config_st*
 
   }
   */
-  return y_prime;
+  return yPrime_fl32;
 }
 
 
 
-float ForceCurve_Interpolated::EvalJoystickCubicSpline(const DAP_config_st* config_st, const DAP_calculationVariables_st* calc_st, float fractionalPos)
+float ForceCurveInterpolated::EvalJoystickCubicSpline(const DapConfig_t* config_st, const DapCalculationVariables_t* calc_st, float fractionalPos_fl32)
 {
 
-  float fractionalPos_lcl = constrain(fractionalPos, 0, 1);
-  float fractionalPos_float=fractionalPos_lcl*100.0f;
-  //float splineSegment_fl32 = fractionalPos_lcl * 5.0f;
-  uint32_t numberOfPoints_u32 = calc_st->numOfJoystickControl;
-  float numberOfSplineSegments = calc_st->numOfJoystickControl-1; // quantityOfControl is number of points
-  float splineSegment_fl32 = 0; // initialize to 0, because (fractionalPos_float > calc_st->travel[i]) wont fin it otherwise
-  float y=0.0f;
-  if(fractionalPos_float < calc_st->joystickOrig[0])
+  float fractionalPosLcl_fl32 = constrain(fractionalPos_fl32, 0, 1);
+  float fractionalPosPercent_fl32 = fractionalPosLcl_fl32*100.0f;
+  //float splineSegment_fl32 = fractionalPosLcl_fl32 * 5.0f;
+  uint32_t numberOfPoints_u32 = calc_st->numOfJoystickControl_u8;
+  float numberOfSplineSegments_fl32 = calc_st->numOfJoystickControl_u8-1; // quantityOfControl_u8 is number of points
+  float splineSegment_fl32 = 0; // initialize to 0, because (fractionalPos_float > calc_st->travel_afl32[i]) wont fin it otherwise
+  float y_fl32=0.0f;
+  if(fractionalPosPercent_fl32 < calc_st->joystickOrig_afl32[0])
   {
-    y=0.0f;
+    y_fl32=0.0f;
   }
-  if(fractionalPos_float >= calc_st->joystickOrig[0] && fractionalPos_float < calc_st->joystickOrig[(int)numberOfSplineSegments])
+  if(fractionalPosPercent_fl32 >= calc_st->joystickOrig_afl32[0] && fractionalPosPercent_fl32 < calc_st->joystickOrig_afl32[(int)numberOfSplineSegments_fl32])
   {
     for(int i=0; i < numberOfPoints_u32; i++)
     {
-      if(fractionalPos_float > calc_st->joystickOrig[i])
+      if(fractionalPosPercent_fl32 > calc_st->joystickOrig_afl32[i])
       {
-        if(i== (numberOfSplineSegments) )
+        if(i== (numberOfSplineSegments_fl32) )
         {
           splineSegment_fl32=(float)i;
         }
         else
         {
-          float diff= (fractionalPos_float-(float)calc_st->joystickOrig[i])/(float)(calc_st->joystickOrig[i+1]-calc_st->joystickOrig[i]);
-          splineSegment_fl32=(float)i+diff;
+          float diff_fl32 = (fractionalPosPercent_fl32-(float)calc_st->joystickOrig_afl32[i])/(float)(calc_st->joystickOrig_afl32[i+1]-calc_st->joystickOrig_afl32[i]);
+          splineSegment_fl32=(float)i+diff_fl32;
         }  
       }
       else
@@ -268,41 +268,41 @@ float ForceCurve_Interpolated::EvalJoystickCubicSpline(const DAP_config_st* conf
     uint8_t splineSegment_u8 = (uint8_t)floor(splineSegment_fl32);
     
     // if (splineSegment_u8 < 0){splineSegment_u8 = 0;}
-    if (splineSegment_u8 > (numberOfSplineSegments) )
+    if (splineSegment_u8 > (numberOfSplineSegments_fl32) )
     {
-      splineSegment_u8 = numberOfSplineSegments;
+      splineSegment_u8 = numberOfSplineSegments_fl32;
     }
-    float a = calc_st->joystickInterpolarter._result.a[splineSegment_u8];
-    float b = calc_st->joystickInterpolarter._result.b[splineSegment_u8];
+    float a_fl32 = calc_st->joystickInterpolator_st.result_st.a_afl32[splineSegment_u8];
+    float b_fl32 = calc_st->joystickInterpolator_st.result_st.b_afl32[splineSegment_u8];
 
     float yOrig[numberOfPoints_u32];
 
     for(int i=0; i<numberOfPoints_u32; i++)
     {
-      yOrig[i]=calc_st->joystickMapping[i];
+      yOrig[i]=calc_st->joystickMapping_afl32[i];
     }
 
     //double dx = 1.0f;
-    float t = (splineSegment_fl32 - (float)splineSegment_u8);// / dx;
+    float t_fl32 = (splineSegment_fl32 - (float)splineSegment_u8);// / dx;
     
 
-    if(splineSegment_u8 >= numberOfSplineSegments)
+    if(splineSegment_u8 >= numberOfSplineSegments_fl32)
     {
-      y = yOrig[splineSegment_u8];
+      y_fl32 = yOrig[splineSegment_u8];
     }
     else
     {
-      y = (1.0f - t) * yOrig[splineSegment_u8] + t * yOrig[splineSegment_u8 + 1] + t * (1.0f - t) * (a * (1.0f - t) + b * t);
+      y_fl32 = (1.0f - t_fl32) * yOrig[splineSegment_u8] + t_fl32 * yOrig[splineSegment_u8 + 1] + t_fl32 * (1.0f - t_fl32) * (a_fl32 * (1.0f - t_fl32) + b_fl32 * t_fl32);
     }
     
-    float joystickMappingRange=calc_st->joystickMapping[(int)numberOfSplineSegments]-calc_st->joystickMapping[0];
-    if (joystickMappingRange> 0)
+    float joystickMappingRange_fl32 = calc_st->joystickMapping_afl32[(int)numberOfSplineSegments_fl32]-calc_st->joystickMapping_afl32[0];
+    if (joystickMappingRange_fl32> 0)
     {
-        y =  y / 100.0f * joystickMappingRange;
+        y_fl32 =  y_fl32 / 100.0f * joystickMappingRange_fl32;
     }
     else
     {
-      y = 0.0f;
+      y_fl32 = 0.0f;
     }
     //debug
     /*
@@ -322,12 +322,12 @@ float ForceCurve_Interpolated::EvalJoystickCubicSpline(const DAP_config_st* conf
     ActiveSerial->println(b);
     */  
   }
-  if (fractionalPos_float>= calc_st->joystickOrig[(int)numberOfSplineSegments])
+  if (fractionalPosPercent_fl32>= calc_st->joystickOrig_afl32[(int)numberOfSplineSegments_fl32])
   {
     /* code */
-    y=100.0f;
+    y_fl32=100.0f;
   }
 
-  return y;
+  return y_fl32;
   
 }

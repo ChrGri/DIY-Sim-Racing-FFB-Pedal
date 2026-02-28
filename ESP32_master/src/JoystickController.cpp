@@ -3,7 +3,7 @@ uint8_t* hidDescriptorBufferForCheck = nullptr;
 uint16_t reportSize=0;
 
 //#include "Main.h"
-uint16_t NormalizeControllerOutputValue(float value, float minVal, float maxVal, float maxGameOutput)
+uint16_t NormalizeControllerOutputValue(float value, float minVal, float maxVal, float maxGameOutput_u8)
 {
     float valRange = (maxVal - minVal);
     if (abs(valRange) < 0.01)
@@ -12,7 +12,7 @@ uint16_t NormalizeControllerOutputValue(float value, float minVal, float maxVal,
     }
 
     float fractional = (value - minVal) / valRange;
-    uint16_t controller = JOYSTICK_MIN_VALUE + (maxGameOutput / 100.0f) * (fractional * JOYSTICK_RANGE);
+    uint16_t controller = JOYSTICK_MIN_VALUE + (maxGameOutput_u8 / 100.0f) * (fractional * JOYSTICK_RANGE);
     return controller;
 }
 

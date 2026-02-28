@@ -54,7 +54,7 @@ public:
     {
       //frequency depend on road condition
       float absFreq = calcVars_st->absFrequency;
-      absFreq = absFreq*(1.0f + ((float)calcVars_st->TrackCondition) * 0.1f );
+      absFreq = absFreq*(1.0f + ((float)calcVars_st->trackCondition_u8) * 0.1f );
       absFreq = constrain(absFreq, 0, 50.0f);
       
       float absForceOffset_local = 0.0f;
@@ -146,14 +146,14 @@ public:
     }
     else
     {
-      float RPM_max_freq = calcVars_st->RPM_max_freq;
-      float RPM_min_freq = calcVars_st->RPM_min_freq;
+      float RPM_max_freq = calcVars_st->rpmMaxFreq_f;
+      float RPM_min_freq = calcVars_st->rpmMinFreq_f;
       if(RPM_value == 0.0f)
       {
         RPM_min_freq = 0.0f;
       }
 
-      float RPM_amp_base = calcVars_st->RPM_AMP;
+      float RPM_amp_base = calcVars_st->rpmAmp_f;
       float RPM_amp = 0.0f; 
 
       RPM_amp = RPM_amp_base*(1.0f+ 0.3f * RPM_value * 0.01f);
@@ -165,9 +165,9 @@ public:
 
     _lastCallTimeMillis = timeNowMillis;
     RPM_VALUE_LAST = RPMForceOffset;
-    if (calcVars_st->Force_Range > 0.0f)
+    if (calcVars_st->forceRange_f > 0.0f)
     {
-        RPM_position_offset = calcVars_st->stepperPosRange* ( RPMForceOffset / calcVars_st->Force_Range );
+        RPM_position_offset = calcVars_st->stepperPosRange* ( RPMForceOffset / calcVars_st->forceRange_f );
     }
   }
 };
@@ -204,8 +204,8 @@ public:
     }
     else
     {
-      float BP_freq = calcVars_st->BP_freq;
-      float BP_amp = calcVars_st->BP_amp;
+      float BP_freq = calcVars_st->bpFreq_f;
+      float BP_amp = calcVars_st->bpAmp_f;
 
       _BiteTimeMillis += timeNowMillis - _lastCallTimeMillis;
       float BPTimeSeconds = _BiteTimeMillis * 0.001f;
@@ -277,7 +277,7 @@ public:
     float timeSinceTrigger = (timeNowMillis - _timeLastTriggerMillis);
     float WSForceOffset = 0.0f;
     
-    float WS_amp = calcVars_st->WS_amp;
+    float WS_amp = calcVars_st->wsAmp_f;
 
     if (timeSinceTrigger > WS_ACTIVE_TIME_PER_TRIGGER_MILLIS)
     {
@@ -285,7 +285,7 @@ public:
     }
     else
     {
-      float WS_freq = calcVars_st->WS_freq;
+      float WS_freq = calcVars_st->wsFreq_f;
       _WSTimeMillis += timeNowMillis - _lastCallTimeMillis;
       float WSTimeSeconds = _WSTimeMillis * 0.001f;
       WSForceOffset = WS_amp * isin( 2.0f*PI* WS_freq* WSTimeSeconds * RAD_TO_DEG);   
@@ -307,10 +307,10 @@ class Road_impact_effect
 
   void forceOffset(DAP_calculationVariables_st* calcVars_st, uint8_t Road_impact_multi)
   {
-    uint32_t Force_Range;
+    uint32_t forceRange_u32;
     float Road_multiplier = ((float)Road_impact_multi)* 0.01f;
-    Force_Range = calcVars_st->Force_Range;
-    Road_Impact_force_raw = 0.3f*Road_multiplier*((float)Force_Range)*((float)Road_Impact_value)* 0.01f;
+    forceRange_u32 = calcVars_st->forceRange_f;
+    Road_Impact_force_raw = 0.3f*Road_multiplier*((float)forceRange_u32)*((float)Road_Impact_value)* 0.01f;
 
     //apply filter
     Road_Impact_force = movingAverageFilter_roadimpact.process(Road_Impact_force_raw);

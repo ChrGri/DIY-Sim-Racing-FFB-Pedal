@@ -126,10 +126,10 @@ public:
   bool isBridgeActionGet;
   bool isOtaActionGet;
   bool isInDebug;
-  DAP_actions_st tmpAction[8];
-  DAP_config_st tmpConfig[3];
-  DAP_bridge_state_st tmpBridgeAction;
-  DAP_action_ota_st tmpOtaAction;
+  DapActions_t tmpAction[8];
+  DapConfig_t tmpConfig[3];
+  DapBridgeState_t tmpBridgeAction;
+  DapActionOta_t tmpOtaAction;
   uint8_t rawLength;
   static TinyusbJoystick* instance;
   TinyusbJoystick();

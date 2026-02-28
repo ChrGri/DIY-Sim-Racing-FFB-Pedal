@@ -1,8 +1,9 @@
 #pragma once
 #include "Arduino.h"
-struct __attribute__((packed)) payloadESPNowInfo{
-  uint8_t _deviceID;
-  uint8_t occupy;
-  uint8_t occupy2;
+typedef struct __attribute__((packed)) PayloadEspnowInfo
+{
+  uint8_t deviceId_u8;
+  uint8_t occupy_u8;
+  uint8_t occupy2_u8;
 
-};
+} PayloadEspnowInfo_t;

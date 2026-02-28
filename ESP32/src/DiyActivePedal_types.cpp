@@ -1,4 +1,4 @@
-#include "DiyActivePedal_types.h"
+﻿#include "DiyActivePedal_types.h"
 
 
 #include "PedalGeometry.h"
@@ -6,171 +6,172 @@
 
 #include <EEPROM.h>
 
-static const float ABS_SCALING = 50.0f;
+static const float s_absScaling_fl32 = 50.0f;
 
-#define WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT 500
+#define WAIT_TIME_IN_MS_TO_ACQUIRE_GLOBAL_STRUCT_U32 500U
 
-const uint32_t EEPROM_OFFSET = ASSIGNMENT_EEPROM_OFFSET+ sizeof(DAP_Assignement_reg)+ASSIGNMENT_EEPROM_OFFSET/*+(DAP_VERSION_CONFIG-128) * sizeof(DAP_config_st) % (2048-sizeof(DAP_config_st))*/;
+static const uint32_t s_eepromOffset_u32 = ASSIGNMENT_EEPROM_OFFSET_U32 + sizeof(DapAssignmentReg_t) + ASSIGNMENT_EEPROM_OFFSET_U32/*+(DAP_VERSION_CONFIG_U8-128) * sizeof(DapConfig_t) % (2048-sizeof(DapConfig_t))*/;
 
-void DAP_config_st::initialiseDefaults() {
+void DapConfig_t::initializeDefaults()
+{
 
-  payLoadHeader_.startOfFrame0_u8 = SOF_BYTE_0;
-  payLoadHeader_.startOfFrame1_u8 = SOF_BYTE_1;
-  payLoadHeader_.payloadType = DAP_PAYLOAD_TYPE_CONFIG;
-  payLoadHeader_.version = DAP_VERSION_CONFIG;
-  payLoadHeader_.storeToEeprom = false;
+  payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+  payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+  payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_CONFIG_U8;
+  payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
+  payloadHeader_st.storeToEeprom_u8 = false;
 
-  payloadFooter_.enfOfFrame0_u8 = EOF_BYTE_0;
-  payloadFooter_.enfOfFrame1_u8 = EOF_BYTE_1;
+  payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+  payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
 
-  payLoadPedalConfig_.pedalStartPosition = 10;
-  payLoadPedalConfig_.pedalEndPosition = 85;
+  payloadPedalConfig_st.pedalStartPosition_u8 = 10;
+  payloadPedalConfig_st.pedalEndPosition_u8 = 85;
 
-  payLoadPedalConfig_.maxForce = 60;
-  payLoadPedalConfig_.preloadForce = 2;
+  payloadPedalConfig_st.maxForce_fl32 = 60;
+  payloadPedalConfig_st.preloadForce_fl32 = 2;
   /*
-  payLoadPedalConfig_.relativeForce_p000 = 0;
-  payLoadPedalConfig_.relativeForce_p020 = 20;
-  payLoadPedalConfig_.relativeForce_p040 = 40;
-  payLoadPedalConfig_.relativeForce_p060 = 60;
-  payLoadPedalConfig_.relativeForce_p080 = 80;
-  payLoadPedalConfig_.relativeForce_p100 = 100;
+  payloadPedalConfig_st.relativeForce_p000 = 0;
+  payloadPedalConfig_st.relativeForce_p020 = 20;
+  payloadPedalConfig_st.relativeForce_p040 = 40;
+  payloadPedalConfig_st.relativeForce_p060 = 60;
+  payloadPedalConfig_st.relativeForce_p080 = 80;
+  payloadPedalConfig_st.relativeForce_p100 = 100;
   */
-  payLoadPedalConfig_.quantityOfControl=6;
-  payLoadPedalConfig_.relativeForce00 = 0;
-  payLoadPedalConfig_.relativeForce01 = 20;
-  payLoadPedalConfig_.relativeForce02 = 40;
-  payLoadPedalConfig_.relativeForce03 = 60;
-  payLoadPedalConfig_.relativeForce04 = 80;
-  payLoadPedalConfig_.relativeForce05 = 100;
-  payLoadPedalConfig_.relativeForce06 = 0;
-  payLoadPedalConfig_.relativeForce07 = 0;
-  payLoadPedalConfig_.relativeForce08 = 0;
-  payLoadPedalConfig_.relativeForce09 = 0;
-  payLoadPedalConfig_.relativeForce10 = 0;
-  payLoadPedalConfig_.relativeTravel00 = 0;
-  payLoadPedalConfig_.relativeTravel01 = 20;
-  payLoadPedalConfig_.relativeTravel02 = 40;
-  payLoadPedalConfig_.relativeTravel03 = 60;
-  payLoadPedalConfig_.relativeTravel04 = 80;
-  payLoadPedalConfig_.relativeTravel05 = 100;
-  payLoadPedalConfig_.relativeTravel06 = 0;
-  payLoadPedalConfig_.relativeTravel07 = 0;
-  payLoadPedalConfig_.relativeTravel08 = 0;
-  payLoadPedalConfig_.relativeTravel09 = 0;
-  payLoadPedalConfig_.relativeTravel10 = 0;
+  payloadPedalConfig_st.quantityOfControl_u8 = 6;
+  payloadPedalConfig_st.relativeForce00_u8 = 0;
+  payloadPedalConfig_st.relativeForce01_u8 = 20;
+  payloadPedalConfig_st.relativeForce02_u8 = 40;
+  payloadPedalConfig_st.relativeForce03_u8 = 60;
+  payloadPedalConfig_st.relativeForce04_u8 = 80;
+  payloadPedalConfig_st.relativeForce05_u8 = 100;
+  payloadPedalConfig_st.relativeForce06_u8 = 0;
+  payloadPedalConfig_st.relativeForce07_u8 = 0;
+  payloadPedalConfig_st.relativeForce08_u8 = 0;
+  payloadPedalConfig_st.relativeForce09_u8 = 0;
+  payloadPedalConfig_st.relativeForce10_u8 = 0;
+  payloadPedalConfig_st.relativeTravel00_u8 = 0;
+  payloadPedalConfig_st.relativeTravel01_u8 = 20;
+  payloadPedalConfig_st.relativeTravel02_u8 = 40;
+  payloadPedalConfig_st.relativeTravel03_u8 = 60;
+  payloadPedalConfig_st.relativeTravel04_u8 = 80;
+  payloadPedalConfig_st.relativeTravel05_u8 = 100;
+  payloadPedalConfig_st.relativeTravel06_u8 = 0;
+  payloadPedalConfig_st.relativeTravel07_u8 = 0;
+  payloadPedalConfig_st.relativeTravel08_u8 = 0;
+  payloadPedalConfig_st.relativeTravel09_u8 = 0;
+  payloadPedalConfig_st.relativeTravel10_u8 = 0;
 
-  payLoadPedalConfig_.numOfJoystickMapControl=6;
-  payLoadPedalConfig_.joystickMapOrig00=0;
-  payLoadPedalConfig_.joystickMapOrig01=20;
-  payLoadPedalConfig_.joystickMapOrig02=40;
-  payLoadPedalConfig_.joystickMapOrig03=60;
-  payLoadPedalConfig_.joystickMapOrig04=80;
-  payLoadPedalConfig_.joystickMapOrig05=100;
-  payLoadPedalConfig_.joystickMapOrig06=0;
-  payLoadPedalConfig_.joystickMapOrig07=0;
-  payLoadPedalConfig_.joystickMapOrig08=0;
-  payLoadPedalConfig_.joystickMapOrig09=0;
-  payLoadPedalConfig_.joystickMapOrig10=0;
-  payLoadPedalConfig_.joystickMapMapped00=0;
-  payLoadPedalConfig_.joystickMapMapped01=20;
-  payLoadPedalConfig_.joystickMapMapped02=40;
-  payLoadPedalConfig_.joystickMapMapped03=60;
-  payLoadPedalConfig_.joystickMapMapped04=80;
-  payLoadPedalConfig_.joystickMapMapped05=100;
-  payLoadPedalConfig_.joystickMapMapped06=0;
-  payLoadPedalConfig_.joystickMapMapped07=0;
-  payLoadPedalConfig_.joystickMapMapped08=0;
-  payLoadPedalConfig_.joystickMapMapped09=0;
-  payLoadPedalConfig_.joystickMapMapped10=0;
+  payloadPedalConfig_st.numOfJoystickMapControl_u8 = 6;
+  payloadPedalConfig_st.joystickMapOrig00_u8 = 0;
+  payloadPedalConfig_st.joystickMapOrig01_u8 = 20;
+  payloadPedalConfig_st.joystickMapOrig02_u8 = 40;
+  payloadPedalConfig_st.joystickMapOrig03_u8 = 60;
+  payloadPedalConfig_st.joystickMapOrig04_u8 = 80;
+  payloadPedalConfig_st.joystickMapOrig05_u8 = 100;
+  payloadPedalConfig_st.joystickMapOrig06_u8 = 0;
+  payloadPedalConfig_st.joystickMapOrig07_u8 = 0;
+  payloadPedalConfig_st.joystickMapOrig08_u8 = 0;
+  payloadPedalConfig_st.joystickMapOrig09_u8 = 0;
+  payloadPedalConfig_st.joystickMapOrig10_u8 = 0;
+  payloadPedalConfig_st.joystickMapMapped00_u8 = 0;
+  payloadPedalConfig_st.joystickMapMapped01_u8 = 20;
+  payloadPedalConfig_st.joystickMapMapped02_u8 = 40;
+  payloadPedalConfig_st.joystickMapMapped03_u8 = 60;
+  payloadPedalConfig_st.joystickMapMapped04_u8 = 80;
+  payloadPedalConfig_st.joystickMapMapped05_u8 = 100;
+  payloadPedalConfig_st.joystickMapMapped06_u8 = 0;
+  payloadPedalConfig_st.joystickMapMapped07_u8 = 0;
+  payloadPedalConfig_st.joystickMapMapped08_u8 = 0;
+  payloadPedalConfig_st.joystickMapMapped09_u8 = 0;
+  payloadPedalConfig_st.joystickMapMapped10_u8 = 0;
 
-  payLoadPedalConfig_.dampingPress = 0;
-  payLoadPedalConfig_.dampingPull = 0;
+  payloadPedalConfig_st.dampingPress_u8 = 0;
+  payloadPedalConfig_st.dampingPull_u8 = 0;
 
-  payLoadPedalConfig_.absFrequency = 15;
-  payLoadPedalConfig_.absAmplitude = 0;
-  payLoadPedalConfig_.absPattern = 0;
-  payLoadPedalConfig_.absForceOrTarvelBit = 0;
+  payloadPedalConfig_st.absFrequency_u8 = 15;
+  payloadPedalConfig_st.absAmplitude_u8 = 0;
+  payloadPedalConfig_st.absPattern_u8 = 0;
+  payloadPedalConfig_st.absForceOrTarvelBit_u8 = 0;
 
-  payLoadPedalConfig_.lengthPedal_a = 205;
-  payLoadPedalConfig_.lengthPedal_b = 220; 
-  payLoadPedalConfig_.lengthPedal_d = 60; 
-  payLoadPedalConfig_.lengthPedal_c_horizontal = 215;
-  payLoadPedalConfig_.lengthPedal_c_vertical = 60;
-  payLoadPedalConfig_.lengthPedal_travel = 100;
-  payLoadPedalConfig_.spindlePitch_mmPerRev_u8=5;
+  payloadPedalConfig_st.lengthPedalA_i16 = 205;
+  payloadPedalConfig_st.lengthPedalB_i16 = 220; 
+  payloadPedalConfig_st.lengthPedalD_i16 = 60; 
+  payloadPedalConfig_st.lengthPedalCHorizontal_i16 = 215;
+  payloadPedalConfig_st.lengthPedalCVertical_i16 = 60;
+  payloadPedalConfig_st.lengthPedalTravel_i16 = 100;
+  payloadPedalConfig_st.spindlePitch_mmPerRev_u8 = 5;
 
-  payLoadPedalConfig_.Simulate_ABS_trigger = 0;// add for abs trigger
-  payLoadPedalConfig_.Simulate_ABS_value = 80;// add for abs trigger
-  payLoadPedalConfig_.RPM_max_freq = 40;
-  payLoadPedalConfig_.RPM_min_freq = 10;
-  payLoadPedalConfig_.RPM_AMP = 5;
-  payLoadPedalConfig_.BP_trigger_value =50;
-  payLoadPedalConfig_.BP_amp=1;
-  payLoadPedalConfig_.BP_freq=15;
-  payLoadPedalConfig_.BP_trigger=0;
-  payLoadPedalConfig_.G_multi = 50;
-  payLoadPedalConfig_.G_window=60;
-  payLoadPedalConfig_.WS_amp=1;
-  payLoadPedalConfig_.WS_freq=15;
-  payLoadPedalConfig_.Road_multi = 50;
-  payLoadPedalConfig_.Road_window=60;
+  payloadPedalConfig_st.simulateAbsTrigger_u8 = 0;// add for abs trigger
+  payloadPedalConfig_st.simulateAbsValue_u8 = 80;// add for abs trigger
+  payloadPedalConfig_st.rpmMaxFreq_u8 = 40;
+  payloadPedalConfig_st.rpmMinFreq_u8 = 10;
+  payloadPedalConfig_st.rpmAmp_u8 = 5;
+  payloadPedalConfig_st.bpTriggerValue_u8 = 50;
+  payloadPedalConfig_st.bpAmp_u8 = 1;
+  payloadPedalConfig_st.bpFreq_u8 = 15;
+  payloadPedalConfig_st.bpTrigger_u8 = 0;
+  payloadPedalConfig_st.gMulti_u8 = 50;
+  payloadPedalConfig_st.gWindow_u8 = 60;
+  payloadPedalConfig_st.wsAmp_u8 = 1;
+  payloadPedalConfig_st.wsFreq_u8 = 15;
+  payloadPedalConfig_st.roadMulti_u8 = 50;
+  payloadPedalConfig_st.roadWindow_u8 = 60;
 
-  payLoadPedalConfig_.maxGameOutput = 100;
+  payloadPedalConfig_st.maxGameOutput_u8 = 100;
 
-  payLoadPedalConfig_.kf_modelNoise = 128;
-  payLoadPedalConfig_.kf_modelOrder = 1;
+  payloadPedalConfig_st.kfModelNoise_u8 = 128;
+  payloadPedalConfig_st.kfModelOrder_u8 = 1;
 
-  payLoadPedalConfig_.debug_flags_0 = 0;
+  payloadPedalConfig_st.debugFlags0_u8 = 0;
 
-  payLoadPedalConfig_.loadcell_rating = 150;
+  payloadPedalConfig_st.loadcellRating_u8 = 150;
 
-  payLoadPedalConfig_.travelAsJoystickOutput_u8 = 0;
+  payloadPedalConfig_st.travelAsJoystickOutput_u8 = 0;
 
-  payLoadPedalConfig_.invertLoadcellReading_u8 = 0;
+  payloadPedalConfig_st.invertLoadcellReading_u8 = 0;
 
-  payLoadPedalConfig_.invertMotorDirection_u8 = 0;
-  payLoadPedalConfig_.pedal_type=4;
-  payLoadPedalConfig_.stepLossFunctionFlags_u8=0b11;
-  payLoadPedalConfig_.kf_modelNoise_joystick=1;
-  payLoadPedalConfig_.kf_Joystick_u8=0;
-  payLoadPedalConfig_.servoIdleTimeout=0;
-  payLoadPedalConfig_.minForceForEffects_u8=0;
-  payLoadPedalConfig_.servoRatioOfInertia_u8=1;
-  payLoadPedalConfig_.configHash = (uint32_t)175245064 ;
-  payLoadPedalConfig_.endstopDetectionThreshold = 30;
+  payloadPedalConfig_st.invertMotorDirection_u8 = 0;
+  payloadPedalConfig_st.pedalType_u8 = 4;
+  payloadPedalConfig_st.stepLossFunctionFlags_u8 = 0b11;
+  payloadPedalConfig_st.kfModelNoiseJoystick_u8 = 1;
+  payloadPedalConfig_st.kfJoystick_u8 = 0;
+  payloadPedalConfig_st.servoIdleTimeout_u8 = 0;
+  payloadPedalConfig_st.minForceForEffects_u8 = 0;
+  payloadPedalConfig_st.servoRatioOfInertia_u8 = 1;
+  payloadPedalConfig_st.configHash_u32 = (uint32_t)175245064 ;
+  payloadPedalConfig_st.endstopDetectionThreshold_u8 = 30;
 }
 
 
 
 
-void DAP_config_st::storeConfigToEprom(DAP_config_st& config_st)
+void DapConfig_t::storeConfigToEeprom(DapConfig_t& config_st)
 {
 
-  EEPROM.put(EEPROM_OFFSET, config_st); 
+  EEPROM.put(s_eepromOffset_u32, config_st); 
   EEPROM.commit();
   ActiveSerial->println("Successfully stored config in EPROM");
   
-  /*if (true == config_st.payLoadHeader_.storeToEeprom)
+  /*if (true == config_st.payloadHeader_st.storeToEeprom_u8)
   {
-    config_st.payLoadHeader_.storeToEeprom = false; // set to false, thus at restart existing EEPROM config isn't restored to EEPROM
+    config_st.payloadHeader_st.storeToEeprom_u8 = false; // set to false, thus at restart existing EEPROM config isn't restored to EEPROM
     EEPROM.put(0, config_st); 
     EEPROM.commit();
     ActiveSerial->println("Successfully stored config in EPROM");
   }*/
 }
 
-void DAP_config_st::loadConfigFromEprom(DAP_config_st& config_st)
+void DapConfig_t::loadConfigFromEeprom(DapConfig_t& config_st)
 {
-  DAP_config_st local_config_st;
+  DapConfig_t local_config_st;
 
-  EEPROM.get(EEPROM_OFFSET, local_config_st);
+  EEPROM.get(s_eepromOffset_u32, local_config_st);
   //EEPROM.commit();
 
   config_st = local_config_st;
 
   // check if version matches revision, in case, update the default config
-  /*if (local_config_st.payLoadHeader_.version == DAP_VERSION_CONFIG)
+  /*if (local_config_st.payloadHeader_st.version_u8 == DAP_VERSION_CONFIG_U8)
   {
     config_st = local_config_st;
     ActiveSerial->println("Successfully loaded config from EPROM");
@@ -179,9 +180,9 @@ void DAP_config_st::loadConfigFromEprom(DAP_config_st& config_st)
   { 
     ActiveSerial->println("Couldn't load config from EPROM due to version mismatch");
     ActiveSerial->print("Target version: ");
-    ActiveSerial->println(DAP_VERSION_CONFIG);
+    ActiveSerial->println(DAP_VERSION_CONFIG_U8);
     ActiveSerial->print("Source version: ");
-    ActiveSerial->println(local_config_st.payLoadHeader_.version);
+    ActiveSerial->println(local_config_st.payloadHeader_st.version_u8);
 
   }*/
 
@@ -191,210 +192,212 @@ void DAP_config_st::loadConfigFromEprom(DAP_config_st& config_st)
 
 
 
-void DAP_calculationVariables_st::updateFromConfig(DAP_config_st& config_st) 
+void DapCalculationVariables_t::updateFromConfig(DapConfig_t& config_st)
 {
-  startPosRel = ((float)config_st.payLoadPedalConfig_.pedalStartPosition) / 100.0f;
-  endPosRel = ((float)config_st.payLoadPedalConfig_.pedalEndPosition) / 100.0f;
+  startPosRel_fl32 = ((float)config_st.payloadPedalConfig_st.pedalStartPosition_u8) / 100.0f;
+  endPosRel_fl32 = ((float)config_st.payloadPedalConfig_st.pedalEndPosition_u8) / 100.0f;
   
   //read force and trave linto calculaiton Variables
-  force[0] = config_st.payLoadPedalConfig_.relativeForce00;
-  force[1] = config_st.payLoadPedalConfig_.relativeForce01;
-  force[2] = config_st.payLoadPedalConfig_.relativeForce02;
-  force[3] = config_st.payLoadPedalConfig_.relativeForce03;
-  force[4] = config_st.payLoadPedalConfig_.relativeForce04;
-  force[5] = config_st.payLoadPedalConfig_.relativeForce05;
-  force[6] = config_st.payLoadPedalConfig_.relativeForce06;
-  force[7] = config_st.payLoadPedalConfig_.relativeForce07;
-  force[8] = config_st.payLoadPedalConfig_.relativeForce08;
-  force[9] = config_st.payLoadPedalConfig_.relativeForce09;
-  force[10] = config_st.payLoadPedalConfig_.relativeForce10;
+  force_afl32[0] = config_st.payloadPedalConfig_st.relativeForce00_u8;
+  force_afl32[1] = config_st.payloadPedalConfig_st.relativeForce01_u8;
+  force_afl32[2] = config_st.payloadPedalConfig_st.relativeForce02_u8;
+  force_afl32[3] = config_st.payloadPedalConfig_st.relativeForce03_u8;
+  force_afl32[4] = config_st.payloadPedalConfig_st.relativeForce04_u8;
+  force_afl32[5] = config_st.payloadPedalConfig_st.relativeForce05_u8;
+  force_afl32[6] = config_st.payloadPedalConfig_st.relativeForce06_u8;
+  force_afl32[7] = config_st.payloadPedalConfig_st.relativeForce07_u8;
+  force_afl32[8] = config_st.payloadPedalConfig_st.relativeForce08_u8;
+  force_afl32[9] = config_st.payloadPedalConfig_st.relativeForce09_u8;
+  force_afl32[10] = config_st.payloadPedalConfig_st.relativeForce10_u8;
 
-  travel[0] = config_st.payLoadPedalConfig_.relativeTravel00;
-  travel[1] = config_st.payLoadPedalConfig_.relativeTravel01;
-  travel[2] = config_st.payLoadPedalConfig_.relativeTravel02;
-  travel[3] = config_st.payLoadPedalConfig_.relativeTravel03;
-  travel[4] = config_st.payLoadPedalConfig_.relativeTravel04;
-  travel[5] = config_st.payLoadPedalConfig_.relativeTravel05;
-  travel[6] = config_st.payLoadPedalConfig_.relativeTravel06;
-  travel[7] = config_st.payLoadPedalConfig_.relativeTravel07;
-  travel[8] = config_st.payLoadPedalConfig_.relativeTravel08;
-  travel[9] = config_st.payLoadPedalConfig_.relativeTravel09;
-  travel[10] = config_st.payLoadPedalConfig_.relativeTravel10;
+  travel_afl32[0] = config_st.payloadPedalConfig_st.relativeTravel00_u8;
+  travel_afl32[1] = config_st.payloadPedalConfig_st.relativeTravel01_u8;
+  travel_afl32[2] = config_st.payloadPedalConfig_st.relativeTravel02_u8;
+  travel_afl32[3] = config_st.payloadPedalConfig_st.relativeTravel03_u8;
+  travel_afl32[4] = config_st.payloadPedalConfig_st.relativeTravel04_u8;
+  travel_afl32[5] = config_st.payloadPedalConfig_st.relativeTravel05_u8;
+  travel_afl32[6] = config_st.payloadPedalConfig_st.relativeTravel06_u8;
+  travel_afl32[7] = config_st.payloadPedalConfig_st.relativeTravel07_u8;
+  travel_afl32[8] = config_st.payloadPedalConfig_st.relativeTravel08_u8;
+  travel_afl32[9] = config_st.payloadPedalConfig_st.relativeTravel09_u8;
+  travel_afl32[10] = config_st.payloadPedalConfig_st.relativeTravel10_u8;
   // cubic interpolator
-  float travel_x[config_st.payLoadPedalConfig_.quantityOfControl];
-  float force_y[config_st.payLoadPedalConfig_.quantityOfControl];
+  float travel_x_afl32[config_st.payloadPedalConfig_st.quantityOfControl_u8];
+  float force_y_afl32[config_st.payloadPedalConfig_st.quantityOfControl_u8];
   
-  for (int i = 0; i < config_st.payLoadPedalConfig_.quantityOfControl;i++)
+  for (int index_i32 = 0; index_i32 < config_st.payloadPedalConfig_st.quantityOfControl_u8; index_i32++)
   {
-    travel_x[i]=travel[i];
-    force_y[i]=force[i];
+    travel_x_afl32[index_i32] = travel_afl32[index_i32];
+    force_y_afl32[index_i32] = force_afl32[index_i32];
   }
   
-  _cubic.Interpolate1D(travel_x, force_y, config_st.payLoadPedalConfig_.quantityOfControl - 1, config_st.payLoadPedalConfig_.quantityOfControl-1);
-  interpolatorA = _cubic._result.a;
-  interpolatorB = _cubic._result.b;
+  cubic_st.interpolate1D(travel_x_afl32, force_y_afl32, config_st.payloadPedalConfig_st.quantityOfControl_u8 - 1, config_st.payloadPedalConfig_st.quantityOfControl_u8 - 1);
+  interpolatorA_pfl32 = cubic_st.result_st.a_afl32;
+  interpolatorB_pfl32 = cubic_st.result_st.b_afl32;
   /*
-  for (int i = 0; i < config_st.payLoadPedalConfig_.quantityOfControl - 1; ++i)
+  for (int i = 0; i < config_st.payloadPedalConfig_st.quantityOfControl_u8 - 1; ++i)
   {
-    //ActiveSerial->printf("original a=%.3f, b=%.3f\n", config_st.payLoadPedalConfig_.cubic_spline_param_a_array[i], config_st.payLoadPedalConfig_.cubic_spline_param_b_array[i]);
-    ActiveSerial->printf("ESP calculated a=%.3f, b=%.3f\n", interpolatorA[i], interpolatorB[i]);
+    //ActiveSerial->printf("original a=%.3f, b=%.3f\n", config_st.payloadPedalConfig_st.cubic_spline_param_a_array[i], config_st.payloadPedalConfig_st.cubic_spline_param_b_array[i]);
+    ActiveSerial->printf("ESP calculated a=%.3f, b=%.3f\n", interpolatorA_pfl32[i], interpolatorB_pfl32[i]);
   }
   */
   
   //testing code
-  numOfJoystickControl=config_st.payLoadPedalConfig_.numOfJoystickMapControl;
-  joystickOrig[0]=config_st.payLoadPedalConfig_.joystickMapOrig00;
-  joystickOrig[1]=config_st.payLoadPedalConfig_.joystickMapOrig01;
-  joystickOrig[2]=config_st.payLoadPedalConfig_.joystickMapOrig02;
-  joystickOrig[3]=config_st.payLoadPedalConfig_.joystickMapOrig03;
-  joystickOrig[4]=config_st.payLoadPedalConfig_.joystickMapOrig04;
-  joystickOrig[5]=config_st.payLoadPedalConfig_.joystickMapOrig05;
-  joystickOrig[6]=config_st.payLoadPedalConfig_.joystickMapOrig06;
-  joystickOrig[7]=config_st.payLoadPedalConfig_.joystickMapOrig07;
-  joystickOrig[8]=config_st.payLoadPedalConfig_.joystickMapOrig08;
-  joystickOrig[9]=config_st.payLoadPedalConfig_.joystickMapOrig09;
-  joystickOrig[10]=config_st.payLoadPedalConfig_.joystickMapOrig10;
-  joystickMapping[0]=config_st.payLoadPedalConfig_.joystickMapMapped00;
-  joystickMapping[1]=config_st.payLoadPedalConfig_.joystickMapMapped01;
-  joystickMapping[2]=config_st.payLoadPedalConfig_.joystickMapMapped02;
-  joystickMapping[3]=config_st.payLoadPedalConfig_.joystickMapMapped03;
-  joystickMapping[4]=config_st.payLoadPedalConfig_.joystickMapMapped04;
-  joystickMapping[5]=config_st.payLoadPedalConfig_.joystickMapMapped05;
-  joystickMapping[6]=config_st.payLoadPedalConfig_.joystickMapMapped06;
-  joystickMapping[7]=config_st.payLoadPedalConfig_.joystickMapMapped07;
-  joystickMapping[8]=config_st.payLoadPedalConfig_.joystickMapMapped08;
-  joystickMapping[9]=config_st.payLoadPedalConfig_.joystickMapMapped09;
-  joystickMapping[10]=config_st.payLoadPedalConfig_.joystickMapMapped10;
+  numOfJoystickControl_u8 = config_st.payloadPedalConfig_st.numOfJoystickMapControl_u8;
+  joystickOrig_afl32[0] = config_st.payloadPedalConfig_st.joystickMapOrig00_u8;
+  joystickOrig_afl32[1] = config_st.payloadPedalConfig_st.joystickMapOrig01_u8;
+  joystickOrig_afl32[2] = config_st.payloadPedalConfig_st.joystickMapOrig02_u8;
+  joystickOrig_afl32[3] = config_st.payloadPedalConfig_st.joystickMapOrig03_u8;
+  joystickOrig_afl32[4] = config_st.payloadPedalConfig_st.joystickMapOrig04_u8;
+  joystickOrig_afl32[5] = config_st.payloadPedalConfig_st.joystickMapOrig05_u8;
+  joystickOrig_afl32[6] = config_st.payloadPedalConfig_st.joystickMapOrig06_u8;
+  joystickOrig_afl32[7] = config_st.payloadPedalConfig_st.joystickMapOrig07_u8;
+  joystickOrig_afl32[8] = config_st.payloadPedalConfig_st.joystickMapOrig08_u8;
+  joystickOrig_afl32[9] = config_st.payloadPedalConfig_st.joystickMapOrig09_u8;
+  joystickOrig_afl32[10] = config_st.payloadPedalConfig_st.joystickMapOrig10_u8;
+  joystickMapping_afl32[0] = config_st.payloadPedalConfig_st.joystickMapMapped00_u8;
+  joystickMapping_afl32[1] = config_st.payloadPedalConfig_st.joystickMapMapped01_u8;
+  joystickMapping_afl32[2] = config_st.payloadPedalConfig_st.joystickMapMapped02_u8;
+  joystickMapping_afl32[3] = config_st.payloadPedalConfig_st.joystickMapMapped03_u8;
+  joystickMapping_afl32[4] = config_st.payloadPedalConfig_st.joystickMapMapped04_u8;
+  joystickMapping_afl32[5] = config_st.payloadPedalConfig_st.joystickMapMapped05_u8;
+  joystickMapping_afl32[6] = config_st.payloadPedalConfig_st.joystickMapMapped06_u8;
+  joystickMapping_afl32[7] = config_st.payloadPedalConfig_st.joystickMapMapped07_u8;
+  joystickMapping_afl32[8] = config_st.payloadPedalConfig_st.joystickMapMapped08_u8;
+  joystickMapping_afl32[9] = config_st.payloadPedalConfig_st.joystickMapMapped09_u8;
+  joystickMapping_afl32[10] = config_st.payloadPedalConfig_st.joystickMapMapped10_u8;
   
-  float joystick_x[numOfJoystickControl]={0};
-  float joystick_y[numOfJoystickControl]={0};
-  for(int i=0;i<numOfJoystickControl;i++)
+  float joystick_x_afl32[numOfJoystickControl_u8] = {0};
+  float joystick_y_afl32[numOfJoystickControl_u8] = {0};
+  for (int index_i32 = 0; index_i32 < numOfJoystickControl_u8; index_i32++)
   {
-    joystick_x[i]=joystickOrig[i]-joystickOrig[0];
-    joystick_y[i]=joystickMapping[i];
+    joystick_x_afl32[index_i32] = joystickOrig_afl32[index_i32] - joystickOrig_afl32[0];
+    joystick_y_afl32[index_i32] = joystickMapping_afl32[index_i32];
   }
-  joystickInterpolarter.Interpolate1D(joystick_x,joystick_y,numOfJoystickControl,100);
+  joystickInterpolator_st.interpolate1D(joystick_x_afl32, joystick_y_afl32, numOfJoystickControl_u8, 100);
   /*
   for (int i = 0; i < 5; ++i)
   {
-    //ActiveSerial->printf("original a=%.3f, b=%.3f\n", config_st.payLoadPedalConfig_.cubic_spline_param_a_array[i], config_st.payLoadPedalConfig_.cubic_spline_param_b_array[i]);
-    ActiveSerial->printf("joystick calculated a=%.3f, b=%.3f\n", joystickInterpolarter._result.a[i], joystickInterpolarter._result.b[i]);
+    //ActiveSerial->printf("original a=%.3f, b=%.3f\n", config_st.payloadPedalConfig_st.cubic_spline_param_a_array[i], config_st.payloadPedalConfig_st.cubic_spline_param_b_array[i]);
+    ActiveSerial->printf("joystick calculated a=%.3f, b=%.3f\n", joystickInterpolator._result.a[i], joystickInterpolator._result.b[i]);
   }
   
-  for(int i=0;i<100;i++)
+  for (int i = 0; i < 100; i++)
   {
-    ActiveSerial->printf("joystick value:y= %.3f\n",joystickInterpolarter._result.yInterp[i]);
+    ActiveSerial->printf("joystick value:y= %.3f\n", joystickInterpolator._result.yInterp[i]);
   }
   */
 
 
 
-  if (startPosRel == endPosRel)
+  if (startPosRel_fl32 == endPosRel_fl32)
   {
-    endPosRel = startPosRel + 0.01f;
+    endPosRel_fl32 = startPosRel_fl32 + 0.01f;
   }
 
-  absFrequency = ((float)config_st.payLoadPedalConfig_.absFrequency);
-  absAmplitude = ((float)config_st.payLoadPedalConfig_.absAmplitude)  *0.001f;//in percent, max 20% of force range
+  absFrequency_fl32 = ((float)config_st.payloadPedalConfig_st.absFrequency_u8);
+  absAmplitude_fl32 = ((float)config_st.payloadPedalConfig_st.absAmplitude_u8)  *0.001f;//in percent, max 20% of force range
 
-  dampingPress = ((float)config_st.payLoadPedalConfig_.dampingPress) * 0.00015f;
-  RPM_max_freq = ((float)config_st.payLoadPedalConfig_.RPM_max_freq);
-  RPM_min_freq = ((float)config_st.payLoadPedalConfig_.RPM_min_freq);
-  RPM_AMP = ((float)config_st.payLoadPedalConfig_.RPM_AMP)  * 0.0002f;//in kg, max 4% of force range
+  dampingPress_fl32 = ((float)config_st.payloadPedalConfig_st.dampingPress_u8) * 0.00015f;
+  rpmMaxFreq_fl32 = ((float)config_st.payloadPedalConfig_st.rpmMaxFreq_u8);
+  rpmMinFreq_fl32 = ((float)config_st.payloadPedalConfig_st.rpmMinFreq_u8);
+  rpmAmp_fl32 = ((float)config_st.payloadPedalConfig_st.rpmAmp_u8)  * 0.0002f;//in kg, max 4% of force range
   // Bite point effect;
 
-  BP_trigger_value = (float)config_st.payLoadPedalConfig_.BP_trigger_value;
-  BP_amp = ((float)config_st.payLoadPedalConfig_.BP_amp)   *0.001f;//in kg, max 20% of force range
-  BP_freq = (float)config_st.payLoadPedalConfig_.BP_freq;
-  WS_amp = ((float)config_st.payLoadPedalConfig_.WS_amp)  *0.001f;//in kg, max 20% of force range
-  WS_freq = (float)config_st.payLoadPedalConfig_.WS_freq;
+  bpTriggerValue_fl32 = (float)config_st.payloadPedalConfig_st.bpTriggerValue_u8;
+  bpAmp_fl32 = ((float)config_st.payloadPedalConfig_st.bpAmp_u8)   *0.001f;//in kg, max 20% of force range
+  bpFreq_fl32 = (float)config_st.payloadPedalConfig_st.bpFreq_u8;
+  wsAmp_fl32 = ((float)config_st.payloadPedalConfig_st.wsAmp_u8)  *0.001f;//in kg, max 20% of force range
+  wsFreq_fl32 = (float)config_st.payloadPedalConfig_st.wsFreq_u8;
   // update force variables
-  Force_Min = ((float)config_st.payLoadPedalConfig_.preloadForce);
-  Force_Max = ((float)config_st.payLoadPedalConfig_.maxForce);
-  Force_Range = Force_Max - Force_Min;
-  Force_Max_default = ((float)config_st.payLoadPedalConfig_.maxForce);
-  pedal_type = config_st.payLoadPedalConfig_.pedal_type;
+  forceMin_fl32 = ((float)config_st.payloadPedalConfig_st.preloadForce_fl32);
+  forceMax_fl32 = ((float)config_st.payloadPedalConfig_st.maxForce_fl32);
+  forceRange_fl32 = forceMax_fl32 - forceMin_fl32;
+  forceMaxDefault_fl32 = ((float)config_st.payloadPedalConfig_st.maxForce_fl32);
+  pedalType_u8 = config_st.payloadPedalConfig_st.pedalType_u8;
 
   // calculate steps per motor revolution
-  float helper = MAXIMUM_STEPPER_SPEED / (MAXIMUM_STEPPER_RPM / SECONDS_PER_MINUTE);
-  helper = floor(helper / 10.0f) * 10.0f;
-  helper = constrain(helper, 2000.0f, 10000.0f);
-  stepsPerMotorRevolution = helper;
+  float helper_fl32 = MAXIMUM_STEPPER_SPEED_U32 / (s_maximumStepperRpm_u32 / s_secondsPerMinute_u32);
+  helper_fl32 = floor(helper_fl32 / 10.0f) * 10.0f;
+  helper_fl32 = constrain(helper_fl32, 2000.0f, 10000.0f);
+  stepsPerMotorRevolution_u32 = helper_fl32;
 
     // // when spindle pitch is smaller than 8, choose coarse microstepping
-    // if ( 8 > config_st.payLoadPedalConfig_.spindlePitch_mmPerRev_u8)
-    // {stepsPerMotorRevolution = 3200;}
-    // else{stepsPerMotorRevolution = 6400;}
+    // if ( 8 > config_st.payloadPedalConfig_st.spindlePitch_mmPerRev_u8)
+    // {stepsPerMotorRevolution_u32 = 3200;}
+    // else{stepsPerMotorRevolution_u32 = 6400;}
 
-    // stepsPerMotorRevolution = 3750;
+    // stepsPerMotorRevolution_u32 = 3750;
 }
 
-void IRAM_ATTR_FLAG DAP_calculationVariables_st::dynamic_update()
+void IRAM_ATTR_FLAG DapCalculationVariables_t::dynamicUpdate()
 {
-  Force_Range = Force_Max - Force_Min;
+  forceRange_fl32 = forceMax_fl32 - forceMin_fl32;
 }
 
-void IRAM_ATTR_FLAG DAP_calculationVariables_st::reset_maxforce()
+void IRAM_ATTR_FLAG DapCalculationVariables_t::resetMaxForce()
 {
-  Force_Max = Force_Max_default;
+  forceMax_fl32 = forceMaxDefault_fl32;
 }
 
-void IRAM_ATTR_FLAG DAP_calculationVariables_st::updateEndstops(long newMinEndstop, long newMaxEndstop) {
+void IRAM_ATTR_FLAG DapCalculationVariables_t::updateEndstops(int32_t newMinEndstop_i32, int32_t newMaxEndstop_i32)
+{
  
-  if ( newMinEndstop == newMaxEndstop )
+  if (newMinEndstop_i32 == newMaxEndstop_i32)
   {
-    newMaxEndstop = newMinEndstop  + 10;
+    newMaxEndstop_i32 = newMinEndstop_i32 + 10;
   }
   
-  stepperPosMinEndstop = newMinEndstop;
-  stepperPosMaxEndstop = newMaxEndstop;
-  stepperPosEndstopRange = stepperPosMaxEndstop - stepperPosMinEndstop;
+  stepperPosMinEndstop_i32 = newMinEndstop_i32;
+  stepperPosMaxEndstop_i32 = newMaxEndstop_i32;
+  stepperPosEndstopRange_i32 = stepperPosMaxEndstop_i32 - stepperPosMinEndstop_i32;
   
-  stepperPosMin = stepperPosEndstopRange * startPosRel;
-  stepperPosMax = stepperPosEndstopRange * endPosRel;
-  stepperPosMin_default = stepperPosMin;
-  stepperPosRange = stepperPosMax - stepperPosMin;
-  //current_pedal_position_ratio=((float)(current_pedal_position-stepperPosMin_default))/((float)stepperPosRange_default);
+  stepperPosMin_i32 = stepperPosEndstopRange_i32 * startPosRel_fl32;
+  stepperPosMax_i32 = stepperPosEndstopRange_i32 * endPosRel_fl32;
+  stepperPosMinDefault_i32 = stepperPosMin_i32;
+  stepperPosRange_fl32 = stepperPosMax_i32 - stepperPosMin_i32;
+  //currentPedalPositionRatio_fl32=((float)(currentPedalPosition_u32-stepperPosMinDefault_i32))/((float)stepperPosRangeDefault_fl32);
 }
 
-void IRAM_ATTR_FLAG DAP_calculationVariables_st::updateStiffness() {
-  springStiffnesss = Force_Range / stepperPosRange;
-  if ( fabsf(springStiffnesss) > 0.0001f )
+void IRAM_ATTR_FLAG DapCalculationVariables_t::updateStiffness()
+{
+  springStiffnesss_fl32 = forceRange_fl32 / stepperPosRange_fl32;
+  if ( fabsf(springStiffnesss_fl32) > 0.0001f )
   {
-      springStiffnesssInv = 1.0f / springStiffnesss;
+    springStiffnesssInv_fl32 = 1.0f / springStiffnesss_fl32;
   }
   else
   {
-    springStiffnesssInv = 1000000.0f;
+    springStiffnesssInv_fl32 = 1000000.0f;
   }
-  
-  }
-
-void DAP_calculationVariables_st::StepperPos_setback()
-{
-  stepperPosMin=stepperPosMin_default;
-  stepperPosMax=stepperPosMax_default;
-  stepperPosRange = stepperPosRange_default;
 }
 
-void DAP_calculationVariables_st::update_stepperMinpos(long newMinstop)
+void DapCalculationVariables_t::stepperPosSetback()
 {
-  stepperPosMin=newMinstop;
-  
-  stepperPosRange = stepperPosMax - stepperPosMin;
-}
-void DAP_calculationVariables_st::update_stepperMaxpos( long newMaxstop)
-{
-  
-  stepperPosMax=newMaxstop;
-  stepperPosRange = stepperPosMax - stepperPosMin;
+  stepperPosMin_i32 = stepperPosMinDefault_i32;
+  stepperPosMax_i32 = stepperPosMaxDefault_i32;
+  stepperPosRange_fl32 = stepperPosRangeDefault_fl32;
 }
 
-void DAP_calculationVariables_st::Default_pos()
+void DapCalculationVariables_t::updateStepperMinPos(int32_t newMinstop_i32)
 {
-  stepperPosMin_default = stepperPosMin;
-  stepperPosMax_default = stepperPosMax;
-  stepperPosRange_default=stepperPosRange;
+  stepperPosMin_i32 = newMinstop_i32;
+  
+  stepperPosRange_fl32 = stepperPosMax_i32 - stepperPosMin_i32;
+}
+
+void DapCalculationVariables_t::updateStepperMaxPos(int32_t newMaxstop_i32)
+{
+  
+  stepperPosMax_i32 = newMaxstop_i32;
+  stepperPosRange_fl32 = stepperPosMax_i32 - stepperPosMin_i32;
+}
+
+void DapCalculationVariables_t::setDefaultPos()
+{
+  stepperPosMinDefault_i32 = stepperPosMin_i32;
+  stepperPosMaxDefault_i32 = stepperPosMax_i32;
+  stepperPosRangeDefault_fl32 = stepperPosRange_fl32;
 }
 
 
@@ -405,29 +408,33 @@ void DAP_calculationVariables_st::Default_pos()
 /*                                                                                            */
 /**********************************************************************************************/
 // constructor
-DAP_config_class::DAP_config_class() {
+DapConfigClass::DapConfigClass()
+{
 
   // create the mutex
-  mutex = xSemaphoreCreateMutex();
-  if (mutex == NULL) {
+  m_mutex_sh = xSemaphoreCreateMutex();
+  if (m_mutex_sh == NULL)
+  {
     ActiveSerial->println("Error: Mutex could not be created!");
     ESP.restart();
   }
 
   // initialize the default config
-  _config_st.initialiseDefaults();
+  m_config_st.initializeDefaults();
 }
 
 
 // method to safely get the config variable
-bool DAP_config_class::getConfig(DAP_config_st * dapConfigIn_pst, uint16_t timeoutInMs_u16) {
+bool DapConfigClass::getConfig(DapConfig_t* dapConfigIn_pst, uint16_t timeoutInMs_u16)
+{
   bool configUpdated_b = false;
   // requests the mutex, waits N milliseconds if not available immediately
   // if (xSemaphoreTake(mutex, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE) {
-  if (xSemaphoreTake(mutex, pdMS_TO_TICKS(timeoutInMs_u16)) == pdTRUE) {
-    *dapConfigIn_pst = _config_st;
+  if (xSemaphoreTake(m_mutex_sh, pdMS_TO_TICKS(timeoutInMs_u16)) == pdTRUE)
+  {
+    *dapConfigIn_pst = m_config_st;
     // gives back the mutex
-    xSemaphoreGive(mutex);
+    xSemaphoreGive(m_mutex_sh);
     configUpdated_b = true;
   }
 
@@ -435,14 +442,16 @@ bool DAP_config_class::getConfig(DAP_config_st * dapConfigIn_pst, uint16_t timeo
 }
 
 // method to safely set the config variable
-void DAP_config_class::setConfig(DAP_config_st tmp) {
+void DapConfigClass::setConfig(DapConfig_t config_st)
+{
   // boolean returnV_b = false;
   // requests the mutex, waits N milliseconds if not available immediately
-  if (xSemaphoreTake(mutex, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE) {
-    _config_st = tmp;
+  if (xSemaphoreTake(m_mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_ACQUIRE_GLOBAL_STRUCT_U32)) == pdTRUE)
+  {
+    m_config_st = config_st;
     // returnV_b = true;
     // gives back the mutex
-    xSemaphoreGive(mutex);
+    xSemaphoreGive(m_mutex_sh);
   }
   else
   {
@@ -452,47 +461,53 @@ void DAP_config_class::setConfig(DAP_config_st tmp) {
   // return returnV_b;
 }
 
-uint16_t  DAP_config_class::checksumCalculator(uint8_t * data, uint16_t length)
+uint16_t DapConfigClass::checksumCalculator_u16(uint8_t *data_pu8, uint16_t length_u16)
 {
-   uint16_t curr_crc = 0x0000;
-   uint8_t sum1 = (uint8_t) curr_crc;
-   uint8_t sum2 = (uint8_t) (curr_crc >> 8);
-   int index;
-   for(index = 0; index < length; index = index+1)
-   {
-      sum1 = (sum1 + data[index]) % 255;
-      sum2 = (sum2 + sum1) % 255;
-   }
-   return (sum2 << 8) | sum1;
+  uint16_t currentCrc_u16 = 0x0000U;
+  uint8_t sum1_u8 = (uint8_t)currentCrc_u16;
+  uint8_t sum2_u8 = (uint8_t)(currentCrc_u16 >> 8U);
+  int index_i32;
+
+  for (index_i32 = 0; index_i32 < length_u16; index_i32 = index_i32 + 1)
+  {
+    sum1_u8 = (sum1_u8 + data_pu8[index_i32]) % 255U;
+    sum2_u8 = (sum2_u8 + sum1_u8) % 255U;
+  }
+
+  return (uint16_t)((sum2_u8 << 8U) | sum1_u8);
 }
 
-void DAP_config_class::loadConfigFromEprom() {
-  if (xSemaphoreTake(mutex, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE) {
-    _config_st.loadConfigFromEprom(_config_st);
-    xSemaphoreGive(mutex);
+void DapConfigClass::loadConfigFromEeprom()
+{
+  if (xSemaphoreTake(m_mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_ACQUIRE_GLOBAL_STRUCT_U32)) == pdTRUE)
+  {
+    m_config_st.loadConfigFromEeprom(m_config_st);
+    xSemaphoreGive(m_mutex_sh);
   }
 }
 
-void DAP_config_class::storeConfigToEprom() {
-  if (xSemaphoreTake(mutex, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE) {
-    _config_st.payLoadHeader_.storeToEeprom = 0;
-    uint16_t crc = checksumCalculator((uint8_t*)(&(_config_st.payLoadHeader_)), sizeof(_config_st.payLoadHeader_) + sizeof(_config_st.payLoadPedalConfig_));
-    _config_st.payloadFooter_.checkSum = crc;
-    _config_st.storeConfigToEprom(_config_st);
-    xSemaphoreGive(mutex);
+void DapConfigClass::storeConfigToEeprom()
+{
+  if (xSemaphoreTake(m_mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_ACQUIRE_GLOBAL_STRUCT_U32)) == pdTRUE)
+  {
+    m_config_st.payloadHeader_st.storeToEeprom_u8 = 0;
+    uint16_t crc_u16 = checksumCalculator_u16((uint8_t*)(&(m_config_st.payloadHeader_st)), sizeof(m_config_st.payloadHeader_st) + sizeof(m_config_st.payloadPedalConfig_st));
+    m_config_st.payloadFooter_st.checkSum_u16 = crc_u16;
+    m_config_st.storeConfigToEeprom(m_config_st);
+    xSemaphoreGive(m_mutex_sh);
   }
 }
 
-void DAP_config_class::initializedConfig()
+void DapConfigClass::initializedConfig()
 {
   // boolean returnV_b = false;
   // requests the mutex, waits N milliseconds if not available immediately
-  if (xSemaphoreTake(mutex, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE)
+  if (xSemaphoreTake(m_mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_ACQUIRE_GLOBAL_STRUCT_U32)) == pdTRUE)
   {
-    _config_st.initialiseDefaults();
+    m_config_st.initializeDefaults();
     // returnV_b = true;
     // gives back the mutex
-    xSemaphoreGive(mutex);
+    xSemaphoreGive(m_mutex_sh);
   }
   else
   {

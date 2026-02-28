@@ -8,7 +8,7 @@
 
 
 /*  Uses ADS1256 */
-class LoadCell_ADS1220 
+class LoadCellAds1220 
 {
 private:
   float zeroPoint_fl32 = 0.0f;
@@ -16,7 +16,7 @@ private:
   float standardDeviationEstimate_fl32 = 0.0f;
 
 public:
-  LoadCell_ADS1220();
+  LoadCellAds1220();
   float readLoadcellWeightInKg() const;
   void setLoadcellRating(uint8_t loadcellRating_u8) const;
   void estimateBiasAndVariance();

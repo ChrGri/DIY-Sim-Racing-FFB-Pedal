@@ -31,3 +31,6 @@
 [submodule "Arduino/libs/Adafruit_MCP4725"]
 	path = Arduino/libs/Adafruit_MCP4725
 	url = https://github.com/adafruit/Adafruit_MCP4725.git
+[submodule "shared/Guidelines"]
+	path = shared/Guidelines
+	url = https://github.com/ChrGri/c-coding-guidelines.git

@@ -93,7 +93,7 @@ int melody_victory_theme[] = {
 };
 
 // note durations: 4 = quarter note, 8 = eighth note, etD.:
-double melody_durations_Victory_theme[] = {
+float melody_durations_Victory_theme[] = {
   12, 12, 12, 4, 4, 4, 12, 12, 12, 2
 };
 
@@ -102,7 +102,7 @@ int melody_Airship_theme[] = {
   NOTE_C5, NOTE_F5, NOTE_G5, NOTE_AS5, NOTE_A5, NOTE_G5, NOTE_F5, NOTE_A5, NOTE_G5/*, NOTE_C5, NOTE_D5, NOTE_DS5, NOTE_C5*/
 };
 
-double melody_Airship_theme_duration[] = {
+float melody_Airship_theme_duration[] = {
   8, 8, 8, 8, 16, 16, 16, 16, 8/*, 16, 16, 4, 2*/
 };
 
@@ -110,6 +110,6 @@ int melodyAirwolfTheme[] = {
   NOTE_A3, NOTE_D4, NOTE_E4, NOTE_G4, NOTE_A4, NOTE_C5, NOTE_B4, NOTE_G4, NOTE_A4, NOTE_C5, NOTE_B4, NOTE_G4, NOTE_A4, NOTE_G4, NOTE_B4, NOTE_E4
 };
 
-double melodyAirwolfThemeDuration[] = {
+float melodyAirwolfThemeDuration[] = {
   4, 16, 16, 16, 4, 16, 16, 16, 4, 16, 16, 16, 4, 8, 16, 4
 };

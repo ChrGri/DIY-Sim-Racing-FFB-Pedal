@@ -1,10 +1,13 @@
 #pragma once
-enum pedalStatus{
+typedef enum PedalStatus
+{
   PEDAL_STATUS_NORMAL,
   PEDAL_STATUS_RUDDER,
   PEDAL_STATUS_RUDDERBRAKE
-};
-enum pedalID{
+} PedalStatus_t;
+
+typedef enum PedalId
+{
   PEDAL_ID_CLUTCH,
   PEDAL_ID_BRAKE,
   PEDAL_ID_THROTTLE,
@@ -13,8 +16,10 @@ enum pedalID{
   PEDAL_ID_TEMP_1,
   PEDAL_ID_TEMP_2,
   PEDAL_ID_TEMP_3
-};
-enum class PedalSystemAction{
+} PedalId_t;
+
+enum class PedalSystemAction
+{
   NONE,
   RESET_PEDAL_POSITION, // not in use
   PEDAL_RESTART,
@@ -28,7 +33,11 @@ enum class PedalSystemAction{
   CLEAR_ASSIGNMENT,
   ASSIGNMENT_CHECK_BEEP
 };
-enum class RudderAction{
+
+using PedalSystemAction_t = PedalSystemAction;
+
+enum class RudderAction
+{
   NONE,
   RUDDER_THROTTLE_AND_BRAKE,
   RUDDER_CLEAR_RUDDER_STATUS,
@@ -37,7 +46,10 @@ enum class RudderAction{
   HELIRUDDER_THROTTLE_AND_CLUTCH
 };
 
-enum bridgeAction{
+using RudderAction_t = RudderAction;
+
+typedef enum BridgeAction
+{
   BRIDGE_ACTION_NONE,
   BRIDGE_ACTION_ENABLE_PAIRING,
   BRIDGE_ACTION_RESTART,
@@ -45,10 +57,11 @@ enum bridgeAction{
   BRIDGE_ACTION_DEBUG,
   BRIDGE_ACTION_JOYSTICK_FLASHING_MODE,
   BRIDGE_ACTION_JOYSTICK_DEBUG 
-};
+} BridgeAction_t;
 
-enum otaAction{
+typedef enum OtaAction
+{
   OTA_ACTION_NORMAL,
   OTA_ACTION_FORCE_UPDATE,
   OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD
-};
+} OtaAction_t;

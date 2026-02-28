@@ -1,7 +1,8 @@
 #pragma once
 #include "Arduino.h"
-struct __attribute__((packed)) payloadAssignmentRequest{
-  uint8_t assignmentAction;
-  uint8_t assignmentState;
-  uint8_t macAddress[6];
-};
+typedef struct __attribute__((packed)) PayloadAssignmentRequest
+{
+  uint8_t assignmentAction_u8;
+  uint8_t assignmentState_u8;
+  uint8_t macAddress_au8[6];
+} PayloadAssignmentRequest_t;

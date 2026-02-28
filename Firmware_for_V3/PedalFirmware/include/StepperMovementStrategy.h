@@ -113,8 +113,8 @@ int32_t MoveByPidStrategy(float loadCellReadingKg, float stepperPosFraction, Ste
   loadCellTargetKg -=absForceOffset_fl32;
 
   // clip to min & max force to prevent Ki to overflow
-  float loadCellReadingKg_clip = constrain(loadCellReadingKg, calc_st->Force_Min, calc_st->Force_Max);
-  float loadCellTargetKg_clip = constrain(loadCellTargetKg, calc_st->Force_Min, calc_st->Force_Max);
+  float loadCellReadingKg_clip = constrain(loadCellReadingKg, calc_st->forceMin_f, calc_st->forceMax_f);
+  float loadCellTargetKg_clip = constrain(loadCellTargetKg, calc_st->forceMin_f, calc_st->forceMax_f);
 
 
   // dynamically scale the PID values depending on the force curve gradient
@@ -149,15 +149,15 @@ int32_t MoveByPidStrategy(float loadCellReadingKg, float stepperPosFraction, Ste
   
   
   // ToDO
-  // - Min and Max force need to be identified from forceCurve->forceAtPosition() as they migh differ from calc_st.Force_Min & calc_st.Force_Max
+  // - Min and Max force need to be identified from forceCurve->forceAtPosition() as they migh differ from calc_st.forceMin_f & calc_st.forceMax_f
   // - model predictive control, see e.g. https://www.researchgate.net/profile/Mohamed-Mourad-Lafifi/post/Model-Predictive-Control-examples/attachment/60202ac761fb570001029f61/AS%3A988637009301508%401612720839656/download/An+Introduction+to+Model-based+Predictive+Control+%28MPC%29.pdf
   //	https://www.youtube.com/watch?v=XaD8Lngfkzk
   //	https://github.com/pronenewbits/Arduino_Constrained_MPC_Library
 
-  if (calc_st->Force_Range > 0.001f)
+  if (calc_st->forceRange_f > 0.001f)
   {
-      Input = ( loadCellReadingKg_clip - calc_st->Force_Min) / calc_st->Force_Range;
-      Setpoint = ( loadCellTargetKg_clip - calc_st->Force_Min) / calc_st->Force_Range; 
+      Input = ( loadCellReadingKg_clip - calc_st->forceMin_f) / calc_st->forceRange_f;
+      Setpoint = ( loadCellTargetKg_clip - calc_st->forceMin_f) / calc_st->forceRange_f; 
   }
   else
   {
@@ -485,7 +485,7 @@ int32_t MoveByForceTargetingStrategy(float loadCellReadingKg, StepperWithLimits*
   
 
 //   // get loadcell reading
-//   float loadCellReadingKg_clip = constrain(loadCellReadingKg, calc_st->Force_Min, calc_st->Force_Max);
+//   float loadCellReadingKg_clip = constrain(loadCellReadingKg, calc_st->forceMin_f, calc_st->forceMax_f);
 
   
   
@@ -622,7 +622,7 @@ int32_t MoveByForceTargetingStrategy(float loadCellReadingKg, StepperWithLimits*
 
       // get current position
       currentPos = stepper->getCurrentPositionFraction();
-      loadcellReading = (loadcellReading - calc_st->Force_Min) / calc_st->Force_Range; 
+      loadcellReading = (loadcellReading - calc_st->forceMin_f) / calc_st->forceRange_f; 
 
       static RTDebugOutput<float, 3, 9> rtDebugFilter;
       rtDebugFilter.offerData({ ((float)t) *1e-6f , currentPos,  loadcellReading});   

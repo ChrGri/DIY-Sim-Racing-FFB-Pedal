@@ -1,130 +1,131 @@
 #pragma once
 #include "Arduino.h"
-struct __attribute__((packed)) payloadPedalConfig {
+typedef struct __attribute__((packed)) PayloadPedalConfig
+{
   // configure pedal start and endpoint
   // In percent
-  uint8_t pedalStartPosition;
-  uint8_t pedalEndPosition;
+  uint8_t pedalStartPosition_u8;
+  uint8_t pedalEndPosition_u8;
 
   // configure pedal forces
-  float maxForce;
-  float preloadForce;
+  float maxForce_fl32;
+  float preloadForce_fl32;
   
   // design force vs travel curve
-  uint8_t quantityOfControl;
-  uint8_t relativeForce00;
-  uint8_t relativeForce01;
-  uint8_t relativeForce02;
-  uint8_t relativeForce03;
-  uint8_t relativeForce04;
-  uint8_t relativeForce05;
-  uint8_t relativeForce06;
-  uint8_t relativeForce07;
-  uint8_t relativeForce08;
-  uint8_t relativeForce09;
-  uint8_t relativeForce10;
-  uint8_t relativeTravel00;
-  uint8_t relativeTravel01;
-  uint8_t relativeTravel02;
-  uint8_t relativeTravel03;
-  uint8_t relativeTravel04;
-  uint8_t relativeTravel05;
-  uint8_t relativeTravel06;
-  uint8_t relativeTravel07;
-  uint8_t relativeTravel08;
-  uint8_t relativeTravel09;
-  uint8_t relativeTravel10;
+  uint8_t quantityOfControl_u8;
+  uint8_t relativeForce00_u8;
+  uint8_t relativeForce01_u8;
+  uint8_t relativeForce02_u8;
+  uint8_t relativeForce03_u8;
+  uint8_t relativeForce04_u8;
+  uint8_t relativeForce05_u8;
+  uint8_t relativeForce06_u8;
+  uint8_t relativeForce07_u8;
+  uint8_t relativeForce08_u8;
+  uint8_t relativeForce09_u8;
+  uint8_t relativeForce10_u8;
+  uint8_t relativeTravel00_u8;
+  uint8_t relativeTravel01_u8;
+  uint8_t relativeTravel02_u8;
+  uint8_t relativeTravel03_u8;
+  uint8_t relativeTravel04_u8;
+  uint8_t relativeTravel05_u8;
+  uint8_t relativeTravel06_u8;
+  uint8_t relativeTravel07_u8;
+  uint8_t relativeTravel08_u8;
+  uint8_t relativeTravel09_u8;
+  uint8_t relativeTravel10_u8;
 
-  uint8_t numOfJoystickMapControl;
-  uint8_t joystickMapOrig00;
-  uint8_t joystickMapOrig01;
-  uint8_t joystickMapOrig02;
-  uint8_t joystickMapOrig03;
-  uint8_t joystickMapOrig04;
-  uint8_t joystickMapOrig05;
-  uint8_t joystickMapOrig06;
-  uint8_t joystickMapOrig07;
-  uint8_t joystickMapOrig08;
-  uint8_t joystickMapOrig09;
-  uint8_t joystickMapOrig10;
-  uint8_t joystickMapMapped00;
-  uint8_t joystickMapMapped01;
-  uint8_t joystickMapMapped02;
-  uint8_t joystickMapMapped03;
-  uint8_t joystickMapMapped04;
-  uint8_t joystickMapMapped05;
-  uint8_t joystickMapMapped06;
-  uint8_t joystickMapMapped07;
-  uint8_t joystickMapMapped08;
-  uint8_t joystickMapMapped09;
-  uint8_t joystickMapMapped10;
+  uint8_t numOfJoystickMapControl_u8;
+  uint8_t joystickMapOrig00_u8;
+  uint8_t joystickMapOrig01_u8;
+  uint8_t joystickMapOrig02_u8;
+  uint8_t joystickMapOrig03_u8;
+  uint8_t joystickMapOrig04_u8;
+  uint8_t joystickMapOrig05_u8;
+  uint8_t joystickMapOrig06_u8;
+  uint8_t joystickMapOrig07_u8;
+  uint8_t joystickMapOrig08_u8;
+  uint8_t joystickMapOrig09_u8;
+  uint8_t joystickMapOrig10_u8;
+  uint8_t joystickMapMapped00_u8;
+  uint8_t joystickMapMapped01_u8;
+  uint8_t joystickMapMapped02_u8;
+  uint8_t joystickMapMapped03_u8;
+  uint8_t joystickMapMapped04_u8;
+  uint8_t joystickMapMapped05_u8;
+  uint8_t joystickMapMapped06_u8;
+  uint8_t joystickMapMapped07_u8;
+  uint8_t joystickMapMapped08_u8;
+  uint8_t joystickMapMapped09_u8;
+  uint8_t joystickMapMapped10_u8;
   // parameter to configure damping
-  uint8_t dampingPress;
-  uint8_t dampingPull;
+  uint8_t dampingPress_u8;
+  uint8_t dampingPull_u8;
 
   // configure ABS effect 
-  uint8_t absFrequency; // In Hz
-  uint8_t absAmplitude; // In kg/20
-  uint8_t absPattern; // 0: sinewave, 1: sawtooth
-  uint8_t absForceOrTarvelBit; // 0: Force, 1: travel
+  uint8_t absFrequency_u8; // In Hz
+  uint8_t absAmplitude_u8; // In kg/20
+  uint8_t absPattern_u8; // 0: sinewave, 1: sawtooth
+  uint8_t absForceOrTarvelBit_u8; // 0: Force, 1: travel
 
 
   // geometric properties of the pedal
   // in mm
-  int16_t lengthPedal_a;
-  int16_t lengthPedal_b;
-  int16_t lengthPedal_d;
-  int16_t lengthPedal_c_horizontal;
-  int16_t lengthPedal_c_vertical;
-  int16_t lengthPedal_travel;
+  int16_t lengthPedalA_i16;
+  int16_t lengthPedalB_i16;
+  int16_t lengthPedalD_i16;
+  int16_t lengthPedalCHorizontal_i16;
+  int16_t lengthPedalCVertical_i16;
+  int16_t lengthPedalTravel_i16;
   
 
   //Simulate ABS trigger
-  uint8_t Simulate_ABS_trigger;
-  uint8_t Simulate_ABS_value;
+  uint8_t simulateAbsTrigger_u8;
+  uint8_t simulateAbsValue_u8;
   // configure for RPM effect
-  uint8_t RPM_max_freq; //In HZ
-  uint8_t RPM_min_freq; //In HZ
-  uint8_t RPM_AMP; //In Kg
+  uint8_t rpmMaxFreq_u8; //In HZ
+  uint8_t rpmMinFreq_u8; //In HZ
+  uint8_t rpmAmp_u8; //In Kg
 
   //configure for bite point
-  uint8_t BP_trigger_value;
-  uint8_t BP_amp;
-  uint8_t BP_freq;
-  uint8_t BP_trigger;
+  uint8_t bpTriggerValue_u8;
+  uint8_t bpAmp_u8;
+  uint8_t bpFreq_u8;
+  uint8_t bpTrigger_u8;
   //G force effect
-  uint8_t G_multi;
-  uint8_t G_window;
+  uint8_t gMulti_u8;
+  uint8_t gWindow_u8;
   //wheel slip
-  uint8_t WS_amp;
-  uint8_t WS_freq;
+  uint8_t wsAmp_u8;
+  uint8_t wsFreq_u8;
   //Road impact effect
-  uint8_t Road_multi;
-  uint8_t Road_window;
+  uint8_t roadMulti_u8;
+  uint8_t roadWindow_u8;
   //Custom Vibration 1
-  uint8_t CV_amp_1;
-  uint8_t CV_freq_1;
+  uint8_t cvAmp1_u8;
+  uint8_t cvFreq1_u8;
   //Custom Vibration 2
-  uint8_t CV_amp_2;
-  uint8_t CV_freq_2;
+  uint8_t cvAmp2_u8;
+  uint8_t cvFreq2_u8;
   //Custom Vibration 3
-  uint8_t CV_amp_3;
-  uint8_t CV_freq_3;
+  uint8_t cvAmp3_u8;
+  uint8_t cvFreq3_u8;
   //Custom Vibration 4
-  uint8_t CV_amp_4;
-  uint8_t CV_freq_4;
+  uint8_t cvAmp4_u8;
+  uint8_t cvFreq4_u8;
   // controller settings
-  uint8_t maxGameOutput;
+  uint8_t maxGameOutput_u8;
 
   // Kalman filter model noise
-  uint8_t kf_modelNoise;
-  uint8_t kf_modelOrder;
+  uint8_t kfModelNoise_u8;
+  uint8_t kfModelOrder_u8;
 
   // debug flags, sued to enable debug output
-  uint8_t debug_flags_0;
+  uint8_t debugFlags0_u8;
 
   // loadcell rating in kg / 2 --> to get value in kg, muiltiply by 2
-  uint8_t loadcell_rating;
+  uint8_t loadcellRating_u8;
 
   // use loadcell or travel as joystick output
   uint8_t travelAsJoystickOutput_u8;
@@ -139,15 +140,15 @@ struct __attribute__((packed)) payloadPedalConfig {
   uint8_t spindlePitch_mmPerRev_u8;
 
   //pedal type, 0= clutch, 1= brake, 2= gas
-  uint8_t pedal_type;
+  uint8_t pedalType_u8;
   uint8_t stepLossFunctionFlags_u8;
-  uint8_t kf_Joystick_u8;
-  uint8_t kf_modelNoise_joystick;
-  uint8_t servoIdleTimeout;
+  uint8_t kfJoystick_u8;
+  uint8_t kfModelNoiseJoystick_u8;
+  uint8_t servoIdleTimeout_u8;
   uint8_t positionSmoothingFactor_u8;
   uint8_t minForceForEffects_u8;
   uint8_t servoRatioOfInertia_u8;
-  uint32_t configHash;
-  uint8_t endstopDetectionThreshold;
+  uint32_t configHash_u32;
+  uint8_t endstopDetectionThreshold_u8;
 
-};
+} PayloadPedalConfig_t;

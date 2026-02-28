@@ -4,7 +4,7 @@
 static const float KF_MODEL_NOISE_FORCE_JERK = 1.0f * 1e-5;
 
 // Constructor
-KalmanFilter_2nd_order::KalmanFilter_2nd_order(float varianceEstimate)
+KalmanFilter2ndOrder::KalmanFilter2ndOrder(float varianceEstimate)
   : _timeLastObservation(micros()), _R(varianceEstimate)
 {
   // Initialize state
@@ -33,7 +33,7 @@ KalmanFilter_2nd_order::KalmanFilter_2nd_order(float varianceEstimate)
   _R *= 1000.0f * 1000.0f;
 }
 
-float KalmanFilter_2nd_order::filteredValue(float measurement, float command, uint8_t modelNoiseScaling_u8) {
+float KalmanFilter2ndOrder::filteredValue(float measurement, float command, uint8_t modelNoiseScaling_u8) {
   // Obtain time
   unsigned long currentTime = micros();
   unsigned long elapsedTime = currentTime - _timeLastObservation;
@@ -233,10 +233,10 @@ float KalmanFilter_2nd_order::filteredValue(float measurement, float command, ui
   return _x[0] / 1000.0f;
 }
 
-float KalmanFilter_2nd_order::changeVelocity() {
+float KalmanFilter2ndOrder::changeVelocity() {
   return _x[1]; // conversion g/ms --> kg/s
 }
 
-float KalmanFilter_2nd_order::changeAccel() {
+float KalmanFilter2ndOrder::changeAccel() {
   return _x[2] * 1000.0f; // conversion g/ms^2 --> kg/s^2
 }

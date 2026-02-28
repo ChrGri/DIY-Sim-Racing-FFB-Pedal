@@ -4,7 +4,7 @@
 
     #include <math.h>
     #include "driver/ledc.h"
-    class Simple_Buzzer {
+    class SimpleBuzzer {
     private:
         int buzzer_pin;
         int channel;
@@ -166,7 +166,7 @@
         }
     };
 #else
-    class Simple_Buzzer
+    class SimpleBuzzer
     {
         public:
             inline void initialized(int, int) {}
@@ -177,4 +177,4 @@
     };
     int BuzzerPin = 1;
 #endif
-extern Simple_Buzzer Buzzer;
+extern SimpleBuzzer Buzzer;

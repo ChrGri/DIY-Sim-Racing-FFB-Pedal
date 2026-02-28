@@ -26,7 +26,7 @@
 /********************************************************************/
 
 // target cycle time for pedal update task, to get constant cycle times, required for FIR filtering
-#define DAP_MICROSECONDS_PER_SECOND 1000000
+#define DAP_MICROSECONDS_PER_SECOND_U32 1000000U
 
 // 15kHz
 //#define ADC_SAMPLE_RATE ADS1256_DRATE_15000SPS
@@ -41,8 +41,8 @@
 //#define PUT_TARGET_CYCLE_TIME_IN_US DAP_MICROSECONDS_PER_SECOND / 3750
 
 // 2.0kHz
-#define ADC_SAMPLE_RATE ADS1256_DRATE_2000SPS
-#define PUT_TARGET_CYCLE_TIME_IN_US DAP_MICROSECONDS_PER_SECOND / 2000
+#define ADC_SAMPLE_RATE_U32 ADS1256_DRATE_2000SPS
+#define PUT_TARGET_CYCLE_TIME_IN_US_U32 (DAP_MICROSECONDS_PER_SECOND_U32 / 2000U)
 
 // #define PUT_TARGET_CYCLE_TIME_IN_US 300
 
@@ -66,9 +66,9 @@
 /*                      Motor defines                            */
 /********************************************************************/
 //#define MOTOR_INVERT_MOTOR_DIR false
-static const uint32_t MAXIMUM_STEPPER_RPM = 4000;     
-static const uint32_t SECONDS_PER_MINUTE = 60;
-#define MAXIMUM_STEPPER_SPEED (uint32_t)MAX_SPEED_IN_HZ//100000//  max steps per second, see https://github.com/gin66/FastAccelStepper
+static const uint32_t s_maximumStepperRpm_u32 = 4000;
+static const uint32_t s_secondsPerMinute_u32 = 60;
+#define MAXIMUM_STEPPER_SPEED_U32 (uint32_t)MAX_SPEED_IN_HZ//100000//  max steps per second, see https://github.com/gin66/FastAccelStepper
 
 
 /********************************************************************/
@@ -77,16 +77,16 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
 // initial version of dev PCB for regular ESP32
 #if PCB_VERSION == 1
   // ADC defines
-  #define PIN_DRDY 17// 17 --> DRDY
-  #define PIN_RST  16 // X --> X
-  #define PIN_SCK 18 // 18 -->SCLK
-  #define PIN_MISO 19 // 19 --> DOUT
-  #define PIN_MOSI 23 // 23 --> DIN
-  #define PIN_CS 5 // 5 --> CS
+  #define PIN_DRDY_U8 17// 17 --> DRDY
+  #define PIN_RST_U8  16 // X --> X
+  #define PIN_SCK_U8 18 // 18 -->SCLK
+  #define PIN_MISO_U8 19 // 19 --> DOUT
+  #define PIN_MOSI_U8 23 // 23 --> DIN
+  #define PIN_CS_U8 5 // 5 --> CS
 
   // stepper pins
-  #define dirPinStepper    0
-  #define stepPinStepper   4
+  #define DIR_PIN_STEPPER_U8    0
+  #define STEP_PIN_STEPPER_U8   4
 
 
   // level shifter not present on this PCB design
@@ -101,16 +101,16 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
 // initial version of dev PCB for ESP32 S2 mini
 #if PCB_VERSION == 2
   // ADC defines
-  #define PIN_DRDY 37// 37 --> DRDY
-  #define PIN_RST  16 // X --> X
-  #define PIN_SCK 18 // 18 -->SCLK
-  #define PIN_MISO 35 // 35 --> DOUT
-  #define PIN_MOSI 33 // 33 --> DIN
-  #define PIN_CS 39 // 39 --> CS
+  #define PIN_DRDY_U8 37// 37 --> DRDY
+  #define PIN_RST_U8  16 // X --> X
+  #define PIN_SCK_U8 18 // 18 -->SCLK
+  #define PIN_MISO_U8 35 // 35 --> DOUT
+  #define PIN_MOSI_U8 33 // 33 --> DIN
+  #define PIN_CS_U8 39 // 39 --> CS
 
   // stepper pins
-  #define dirPinStepper    8
-  #define stepPinStepper   9
+  #define DIR_PIN_STEPPER_U8    8
+  #define STEP_PIN_STEPPER_U8   9
 
 
   // level shifter not present on this PCB design
@@ -126,18 +126,18 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
 // V3 version of dev PCB for regular ESP32
 #if PCB_VERSION == 3
   // ADC defines
-  #define PIN_DRDY 19// 19 --> DRDY
-  #define PIN_RST  15 // X --> X
-  #define PIN_SCK 16 // 16 -->SCLK
-  #define PIN_MISO 18 // 18 --> DOUT
-  #define PIN_MOSI 17 // 17 --> DIN
-  #define PIN_CS 21 // 21 --> CS
+  #define PIN_DRDY_U8 19// 19 --> DRDY
+  #define PIN_RST_U8  15 // X --> X
+  #define PIN_SCK_U8 16 // 16 -->SCLK
+  #define PIN_MISO_U8 18 // 18 --> DOUT
+  #define PIN_MOSI_U8 17 // 17 --> DIN
+  #define PIN_CS_U8 21 // 21 --> CS
 
   // stepper pins
-  #define dirPinStepper    22
-  #define stepPinStepper   23
+  #define DIR_PIN_STEPPER_U8    22
+  #define STEP_PIN_STEPPER_U8   23
   //analog output pin
-  #define D_O 25 
+  #define DAC_OUTPUT_PIN_U8 25 
   //I2Cpins
   #define I2C_SDA 32
   #define I2C_SCL 33
@@ -171,16 +171,16 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
 // speedcrafter PCB V1.3
 #if PCB_VERSION == 4
   // ADC defines
-  #define PIN_DRDY 27// 19 --> DRDY
-  #define PIN_RST  5 // X --> X
-  #define PIN_SCK 14 // 16 -->SCLK
-  #define PIN_MISO 12 // 18 --> DOUT
-  #define PIN_MOSI 13 // 17 --> DIN
-  #define PIN_CS 15 // 21 --> CS
+  #define PIN_DRDY_U8 27// 19 --> DRDY
+  #define PIN_RST_U8  5 // X --> X
+  #define PIN_SCK_U8 14 // 16 -->SCLK
+  #define PIN_MISO_U8 12 // 18 --> DOUT
+  #define PIN_MOSI_U8 13 // 17 --> DIN
+  #define PIN_CS_U8 15 // 21 --> CS
 
   // stepper pins
-  #define dirPinStepper    32
-  #define stepPinStepper   33
+  #define DIR_PIN_STEPPER_U8    32
+  #define STEP_PIN_STEPPER_U8   33
 
   // level shifter is present on this PCB design
   #define SENSORLESS_HOMING true
@@ -202,16 +202,16 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
 // Speedcrafters PCB V1.4
 #if PCB_VERSION == 5
   // ADC defines
-  #define PIN_DRDY 19// 19 --> DRDY
-  #define PIN_RST  34 // X --> X
-  #define PIN_SCK 15 // 16 -->SCLK
-  #define PIN_MISO 18 // 18 --> DOUT
-  #define PIN_MOSI 13 // 17 --> DIN
-  #define PIN_CS 21 // 21 --> CS
+  #define PIN_DRDY_U8 19// 19 --> DRDY
+  #define PIN_RST_U8  34 // X --> X
+  #define PIN_SCK_U8 15 // 16 -->SCLK
+  #define PIN_MISO_U8 18 // 18 --> DOUT
+  #define PIN_MOSI_U8 13 // 17 --> DIN
+  #define PIN_CS_U8 21 // 21 --> CS
 
   // stepper pins
-  #define dirPinStepper    22
-  #define stepPinStepper   23
+  #define DIR_PIN_STEPPER_U8    22
+  #define STEP_PIN_STEPPER_U8   23
 
   // level shifter is present on this PCB design
   #define SENSORLESS_HOMING true
@@ -220,7 +220,7 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
   #define ESPNOW_Enable
   //#define USB_JOYSTICK
   #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 3
-  #define Pairing_GPIO 0
+  #define PAIRING_GPIO_U8 0
   //#define ESPNow_Pairing_function
   #define ESPNow_ESP32
   #define OTA_update
@@ -236,22 +236,22 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
 // 2. USB CDC On Boot Enabled
 #if PCB_VERSION == 6
   // ADC defines
-  #define PIN_DRDY 15//19// 19 --> DRDY
-  #define PIN_RST  6 // X --> X
-  #define PIN_SCK 16//16 // 16 -->SCLK
-  #define PIN_MISO 18 // 18 --> DOUT
-  #define PIN_MOSI 17 // 17 --> DIN
-  #define PIN_CS 7//21 // 21 --> CS
+  #define PIN_DRDY_U8 15//19// 19 --> DRDY
+  #define PIN_RST_U8  6 // X --> X
+  #define PIN_SCK_U8 16//16 // 16 -->SCLK
+  #define PIN_MISO_U8 18 // 18 --> DOUT
+  #define PIN_MOSI_U8 17 // 17 --> DIN
+  #define PIN_CS_U8 7//21 // 21 --> CS
 
   // stepper pins
-  #define dirPinStepper    37//22
-  #define stepPinStepper   38//23
+  #define DIR_PIN_STEPPER_U8    37//22
+  #define STEP_PIN_STEPPER_U8   38//23
 
   //analog output pin
   //#define D_O 25   
   //MCP4725 SDA SCL
-  #define MCP_SDA 48
-  #define MCP_SCL 47
+  #define MCP_SDA_U8 48
+  #define MCP_SCL_U8 47
 
   // level shifter is present on this PCB design
   #define SENSORLESS_HOMING true
@@ -277,31 +277,31 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
 // 1. USB CDC On Boot Enabled
 #if PCB_VERSION == 7
   // ADC defines
-  #define PIN_DRDY 15//19// 19 --> DRDY
-  #define PIN_RST  6 // X --> X
-  #define PIN_SCK 16//16 // 16 -->SCLK
-  #define PIN_MISO 18 // 18 --> DOUT
-  #define PIN_MOSI 17 // 17 --> DIN
-  #define PIN_CS 7//21 // 21 --> CS
+  #define PIN_DRDY_U8 15//19// 19 --> DRDY
+  #define PIN_RST_U8  6 // X --> X
+  #define PIN_SCK_U8 16//16 // 16 -->SCLK
+  #define PIN_MISO_U8 18 // 18 --> DOUT
+  #define PIN_MOSI_U8 17 // 17 --> DIN
+  #define PIN_CS_U8 7//21 // 21 --> CS
 
   // stepper pins
-  #define dirPinStepper    37//22
-  #define stepPinStepper   38//23
+  #define DIR_PIN_STEPPER_U8    37//22
+  #define STEP_PIN_STEPPER_U8   38//23
 
   //analog output pin
   //#define D_O 25   
   //MCP4725 SDA SCL
-  #define MCP_SDA 5
-  #define MCP_SCL 4
+  #define MCP_SDA_U8 5
+  #define MCP_SCL_U8 4
 
   // Pedal assignment pin
   //#define PEDAL_HARDWARE_ASSIGNMENT
   #define PEDAL_SOFTWARE_ASSIGNMENT
-  #define CFG1 1
-  #define CFG2 2
+  #define CFG1_U8 1
+  #define CFG2_U8 2
 
   #define EMERGENCY_BUTTON
-  #define BuzzerPin 6
+  #define BUZZER_PIN_U8 6
   // level shifter is present on this PCB design
   #define SENSORLESS_HOMING true
   #define ISV57_TXPIN 10//27 //17
@@ -312,10 +312,10 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
   #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 5
   //#define ESPNow_Pairing_function
   //#define Hardware_Pairing_button
-  #define Pairing_GPIO 0
+  #define PAIRING_GPIO_U8 0
   //#define ESPNow_debug_rudder
   #define USING_LED
-  #define LED_GPIO 12
+  #define LED_GPIO_U8 12
   #define OTA_update
   #define USING_BUZZER
   #define USE_CDC_INSTEAD_OF_UART
@@ -324,29 +324,29 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
 // PCBA V2
 #if PCB_VERSION == 9
   // ADC defines
-  #define PIN_DRDY 15//--> DRDY
-  #define PIN_RST  6 //--> X
-  #define PIN_SCK 16//-->SCLK
-  #define PIN_MISO 18 //--> DOUT
-  #define PIN_MOSI 17 //--> DIN
-  #define PIN_CS 7//--> CS
+  #define PIN_DRDY_U8 15//--> DRDY
+  #define PIN_RST_U8  6 //--> X
+  #define PIN_SCK_U8 16//-->SCLK
+  #define PIN_MISO_U8 18 //--> DOUT
+  #define PIN_MOSI_U8 17 //--> DIN
+  #define PIN_CS_U8 7//--> CS
 
   // stepper pins
-  #define dirPinStepper    37//22
-  #define stepPinStepper   38//23
+  #define DIR_PIN_STEPPER_U8    37//22
+  #define STEP_PIN_STEPPER_U8   38//23
 
-  #define MCP_SDA 5
-  #define MCP_SCL 4
+  #define MCP_SDA_U8 5
+  #define MCP_SCL_U8 4
 
   // Pedal assignment pin
   //#define PEDAL_HARDWARE_ASSIGNMENT
   #define PEDAL_SOFTWARE_ASSIGNMENT
-  #define CFG1 1
-  #define CFG2 2
+  #define CFG1_U8 1
+  #define CFG2_U8 2
 
   // #define EMERGENCY_BUTTON
   // #define ShutdownPin 6
-  #define BuzzerPin 21
+  #define BUZZER_PIN_U8 21
   // level shifter is present on this PCB design
   #define SENSORLESS_HOMING true
   #define ISV57_TXPIN 10 // 27 //17
@@ -357,49 +357,49 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
   #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 5
   // #define ESPNow_Pairing_function
   // #define Hardware_Pairing_button
-  #define Pairing_GPIO 33
+  #define PAIRING_GPIO_U8 33
   // #define ESPNow_debug_rudder
   #define CONTROLLER_SPECIFIC_VIDPID
   #define USING_LED
-  #define LED_GPIO 12
+  #define LED_GPIO_U8 12
   #define OTA_update
   #define USING_BUZZER
-  #define BRAKE_RESISTOR_PIN 4
+  #define BRAKE_RESISTOR_PIN_U8 4
   #define SERVO_POWER_PIN 3
-  #define EMERGENCY_PIN 6
+  #define EMERGENCY_PIN_U8 6
   #define BAUDRATE3M
 #endif
 // Switch-!t PCB for Waveshare ESP32-S3-DEV-KIT-N8R8
 // More information at https://github.com/gaggi/ActivePedalPCB
 #if PCB_VERSION == 11
   // ADC defines
-  #define PIN_DRDY 15//19// 19 --> DRDY
-  #define PIN_RST  6 // X --> X
-  #define PIN_SCK 16//16 // 16 -->SCLK
-  #define PIN_MISO 18 // 18 --> DOUT
-  #define PIN_MOSI 17 // 17 --> DIN
-  #define PIN_CS 7//21 // 21 --> CS
+  #define PIN_DRDY_U8 15//19// 19 --> DRDY
+  #define PIN_RST_U8  6 // X --> X
+  #define PIN_SCK_U8 16//16 // 16 -->SCLK
+  #define PIN_MISO_U8 18 // 18 --> DOUT
+  #define PIN_MOSI_U8 17 // 17 --> DIN
+  #define PIN_CS_U8 7//21 // 21 --> CS
 
   // stepper pins
-  #define dirPinStepper    37//22
-  #define stepPinStepper   36//23
+  #define DIR_PIN_STEPPER_U8    37//22
+  #define STEP_PIN_STEPPER_U8   36//23
 
   //analog output pin
   //#define D_O 25   
   //MCP4725 SDA SCL
-  #define MCP_SDA 5
-  #define MCP_SCL 4
+  #define MCP_SDA_U8 5
+  #define MCP_SCL_U8 4
 
   // endstop pins
-  #define minPin 12
-  #define maxPin 13
+  #define MIN_PIN_U8 12
+  #define MAX_PIN_U8 13
   // Pedal assignment pin
   #define PEDAL_HARDWARE_ASSIGNMENT
-  #define CFG1 2
-  #define CFG2 1
+  #define CFG1_U8 2
+  #define CFG2_U8 1
 
   #define EMERGENCY_BUTTON
-  #define BuzzerPin 5
+  #define BUZZER_PIN_U8 5
   // level shifter is present on this PCB design
   #define SENSORLESS_HOMING true
   #define ISV57_TXPIN 10//27 //17
@@ -413,11 +413,11 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
   #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 5
   //#define ESPNow_Pairing_function
   #define Hardware_Pairing_button
-  #define Pairing_GPIO 33
+  #define PAIRING_GPIO_U8 33
   //#define ESPNow_debug_rudder
   #define CONTROLLER_SPECIFIC_VIDPID
   #define USING_LED
-  #define LED_GPIO 38
+  #define LED_GPIO_U8 38
   #define LED_ENABLE_RGB
   #define OTA_update
   #define USING_BUZZER
@@ -433,30 +433,30 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
 // 2. USB CDC On Boot Enabled
 #if PCB_VERSION == 12
   // ADC defines
-  #define PIN_DRDY 16 //--> DRDY
-  #define PIN_RST  18 // X --> X
-  #define PIN_SCK 6 //-->SCLK
-  #define PIN_MISO 15 //--> DOUT
-  #define PIN_MOSI 7 //--> DIN
-  #define PIN_CS 17 //--> CS
+  #define PIN_DRDY_U8 16 //--> DRDY
+  #define PIN_RST_U8  18 // X --> X
+  #define PIN_SCK_U8 6 //-->SCLK
+  #define PIN_MISO_U8 15 //--> DOUT
+  #define PIN_MOSI_U8 7 //--> DIN
+  #define PIN_CS_U8 17 //--> CS
 
   // stepper pins
-  #define dirPinStepper    36
-  #define stepPinStepper   37
+  #define DIR_PIN_STEPPER_U8    36
+  #define STEP_PIN_STEPPER_U8   37
 
   // level shifter is present on this PCB design
   #define SENSORLESS_HOMING true
   #define ISV57_TXPIN 2
   #define ISV57_RXPIN 1
 
-  #define BRAKE_RESISTOR_PIN 35
+  #define BRAKE_RESISTOR_PIN_U8 35
 
   #define USB_JOYSTICK
   //#define ESPNOW_Enable
   //#define ESPNow_S3
   #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 0
   //#define ESPNow_Pairing_function
-  #define Pairing_GPIO 0
+  #define PAIRING_GPIO_U8 0
   #define OTA_update
   #define CONTROLLER_SPECIFIC_VIDPID
   #define BAUDRATE3M
@@ -479,8 +479,8 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
   #define FFB_ADS1220_CS      17
 
   // stepper pins
-  #define dirPinStepper    36
-  #define stepPinStepper   37
+  #define DIR_PIN_STEPPER_U8    36
+  #define STEP_PIN_STEPPER_U8   37
 
   // level shifter is present on this PCB design
   #define SENSORLESS_HOMING true
@@ -488,14 +488,14 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
   #define ISV57_TXPIN 2
   #define ISV57_RXPIN 1
 
-  #define BRAKE_RESISTOR_PIN 35
+  #define BRAKE_RESISTOR_PIN_U8 35
   
   #define USB_JOYSTICK
   //#define ESPNOW_Enable
   //#define ESPNow_S3
   #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 0
   //#define ESPNow_Pairing_function
-  #define Pairing_GPIO 0
+  #define PAIRING_GPIO_U8 0
   #define OTA_update
   #define CONTROLLER_SPECIFIC_VIDPID
   #define BAUDRATE3M
@@ -523,17 +523,17 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
 /********************************************************************/
 /*                      Task defines                                */
 /********************************************************************/
-#define CORE_ID_PEDAL_UPDATE_TASK (uint8_t)1
-#define CORE_ID_SERIAL_COMMUNICATION_TASK (uint8_t)0
-#define CORE_ID_JOYSTICK_TASK (uint8_t)1
-#define CORE_ID_MISC_TASK (uint8_t)0
-#define CORE_ID_OTA_TASK (uint8_t)0
-#define CORE_ID_SERVO_COMMUNICATION_TASK (uint8_t)0
-#define CORE_ID_ESPNOW_TASK (uint8_t)0
-#define CORE_ID_STEPPER_TASK (uint8_t)1
-#define CORE_ID_LOADCELLREADING_TASK (uint8_t)1
-#define CORE_ID_PROFILER_TASK (uint8_t)0
-#define CORE_ID_CONFIG_HANDLING_TASK (uint8_t)0
+#define CORE_ID_PEDAL_UPDATE_TASK_U8 (uint8_t)1
+#define CORE_ID_SERIAL_COMMUNICATION_TASK_U8 (uint8_t)0
+#define CORE_ID_JOYSTICK_TASK_U8 (uint8_t)1
+#define CORE_ID_MISC_TASK_U8 (uint8_t)0
+#define CORE_ID_OTA_TASK_U8 (uint8_t)0
+#define CORE_ID_SERVO_COMMUNICATION_TASK_U8 (uint8_t)0
+#define CORE_ID_ESPNOW_TASK_U8 (uint8_t)0
+#define CORE_ID_STEPPER_TASK_U8 (uint8_t)1
+#define CORE_ID_LOADCELLREADING_TASK_U8 (uint8_t)1
+#define CORE_ID_PROFILER_TASK_U8 (uint8_t)0
+#define CORE_ID_CONFIG_HANDLING_TASK_U8 (uint8_t)0
 
 // #define CORE_ID_PEDAL_UPDATE_TASK ( 0x7FFFFFFF )
 // #define CORE_ID_SERIAL_COMMUNICATION_TASK ( 0x7FFFFFFF )
@@ -546,47 +546,47 @@ static const uint32_t SECONDS_PER_MINUTE = 60;
 // #define CORE_ID_LOADCELLREADING_TASK ( 0x7FFFFFFF )
 
 #ifdef RUN_IN_CACHE
-  #define REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US (int64_t)600
+  #define REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 (int64_t)600
 #else
-  #define REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US (int64_t)300
+  #define REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 (int64_t)300
 #endif
 
-#define REPETITION_INTERVAL_JOYSTICKOUTPUT_TASK_IN_US (int64_t)10000
-#define REPETITION_INTERVAL_SERIALCOMMUNICATION_TASK_IN_US (int64_t)10000
-#define REPETITION_INTERVAL_ESPNOW_TASK_IN_US (int64_t)3000
-#define REPETITION_INTERVAL_OTA_TASK_IN_US (int64_t)10000
-#define REPETITION_INTERVAL_SERVO_COMMUNICATION_TASK_IN_US (int64_t)10000
+#define REPETITION_INTERVAL_JOYSTICKOUTPUT_TASK_IN_US_I64 (int64_t)10000
+#define REPETITION_INTERVAL_SERIALCOMMUNICATION_TASK_IN_US_I64 (int64_t)10000
+#define REPETITION_INTERVAL_ESPNOW_TASK_IN_US_I64 (int64_t)3000
+#define REPETITION_INTERVAL_OTA_TASK_IN_US_I64 (int64_t)10000
+#define REPETITION_INTERVAL_SERVO_COMMUNICATION_TASK_IN_US_I64 (int64_t)10000
 
 
 #ifdef RUN_IN_CACHE
   // equal task priority --> round robin 
-  #define TASK_PRIORITY_PEDAL_UPDATE_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_JOYSTICKOUTPUT_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_LOADCELL_READING_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_SERIALCOMMUNICATION_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_SERIALCOMMUNICATION_TX_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_ESPNOW_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_OTA_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_SERVO_COMMUNICATION_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_CONFIG_HANDLING_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_PROFILER_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_MISC_TASK (UBaseType_t)1
+  #define TASK_PRIORITY_PEDAL_UPDATE_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_JOYSTICKOUTPUT_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_LOADCELL_READING_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_SERIALCOMMUNICATION_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_SERIALCOMMUNICATION_TX_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_ESPNOW_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_OTA_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_SERVO_COMMUNICATION_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_CONFIG_HANDLING_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_PROFILER_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_MISC_TASK_UBASETYPE (UBaseType_t)1
 #else
-  #define TASK_PRIORITY_PEDAL_UPDATE_TASK (UBaseType_t)3
-  #define TASK_PRIORITY_JOYSTICKOUTPUT_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_LOADCELL_READING_TASK (UBaseType_t)2
-  #define TASK_PRIORITY_SERIALCOMMUNICATION_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_SERIALCOMMUNICATION_TX_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_ESPNOW_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_OTA_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_SERVO_COMMUNICATION_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_CONFIG_HANDLING_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_PROFILER_TASK (UBaseType_t)1
-  #define TASK_PRIORITY_MISC_TASK (UBaseType_t)1
+  #define TASK_PRIORITY_PEDAL_UPDATE_TASK_UBASETYPE (UBaseType_t)3
+  #define TASK_PRIORITY_JOYSTICKOUTPUT_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_LOADCELL_READING_TASK_UBASETYPE (UBaseType_t)2
+  #define TASK_PRIORITY_SERIALCOMMUNICATION_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_SERIALCOMMUNICATION_TX_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_ESPNOW_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_OTA_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_SERVO_COMMUNICATION_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_CONFIG_HANDLING_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_PROFILER_TASK_UBASETYPE (UBaseType_t)1
+  #define TASK_PRIORITY_MISC_TASK_UBASETYPE (UBaseType_t)1
 #endif
 
 
 // alias to serial stream, thus it can dynamically switch depending on board
 extern Stream *ActiveSerial;
 
-#define BAUDRATE 3000000
+#define BAUDRATE_U32 3000000U

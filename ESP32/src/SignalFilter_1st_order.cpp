@@ -4,7 +4,7 @@
 static const float KF_MODEL_NOISE_ACCELERATION = 1.0f * 1e2; // Tune this value
 
 // Constructor
-KalmanFilter_1st_order::KalmanFilter_1st_order(float varianceEstimate)
+KalmanFilter1stOrder::KalmanFilter1stOrder(float varianceEstimate)
   : _timeLastObservation(micros()), _R(varianceEstimate)
 {
   // Initialize 2D state [position, velocity]
@@ -26,7 +26,7 @@ KalmanFilter_1st_order::KalmanFilter_1st_order(float varianceEstimate)
   _R *= 1000.0f * 1000.0f;
 }
 
-float IRAM_ATTR_FLAG KalmanFilter_1st_order::filteredValue(float measurement, float command, uint8_t modelNoiseScaling_u8) {
+float IRAM_ATTR_FLAG KalmanFilter1stOrder::filteredValue(float measurement, float command, uint8_t modelNoiseScaling_u8) {
   // Obtain time (this part is unchanged)
   unsigned long currentTime = micros();
   unsigned long elapsedTime = currentTime - _timeLastObservation;
@@ -132,6 +132,6 @@ float IRAM_ATTR_FLAG KalmanFilter_1st_order::filteredValue(float measurement, fl
   return _x[0] / 1000.0f; // conversion g --> kg
 }
 
-float IRAM_ATTR_FLAG KalmanFilter_1st_order::changeVelocity() {
+float IRAM_ATTR_FLAG KalmanFilter1stOrder::changeVelocity() {
   return _x[1]; // conversion g/ms --> kg/s
 }

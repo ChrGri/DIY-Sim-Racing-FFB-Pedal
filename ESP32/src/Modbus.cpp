@@ -167,7 +167,11 @@ int32_t Modbus::readHoldingRegisterFromDevice(int32_t registerAddress_i32)
 
 int32_t Modbus::readHoldingRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32, int32_t block_i32)
 {
-  if(block_i32 > 2){block_i32 = 2;}
+  if (block_i32 > 2)
+  {
+    block_i32 = 2;
+  }
+
   if(sendRequestAndReceiveResponse(slaveId_i32, HOLDING_REGISTER_U8, registerAddress_i32, block_i32))
   {
     if(block_i32 == 2)
@@ -194,7 +198,11 @@ int32_t Modbus::readInputRegisterFromDevice(int32_t registerAddress_i32)
 
 int32_t Modbus::readInputRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32, int32_t block_i32)
 {
-  if(block_i32 > 2){block_i32 = 2;}
+  if (block_i32 > 2)
+  {
+    block_i32 = 2;
+  }
+
   if(sendRequestAndReceiveResponse(slaveId_i32, INPUT_REGISTER_U8, registerAddress_i32, block_i32))
   {
     if(block_i32 == 2)
@@ -256,7 +264,14 @@ int32_t Modbus::sendRequestAndReceiveResponse(int32_t slaveId_i32, int32_t funct
 
             if(receiveState_u8 == 0)
             {
-              if(txBuffer_au8[echoMatchCount_i32] == receivedByte_i32){ echoMatchCount_i32++; } else { echoMatchCount_i32 = 0; }
+              if (txBuffer_au8[echoMatchCount_i32] == receivedByte_i32)
+              {
+                echoMatchCount_i32++;
+              }
+              else
+              {
+                echoMatchCount_i32 = 0;
+              }
               if(echoMatchCount_i32 == 2)
               { 
                 receiveState_u8 = 1; 

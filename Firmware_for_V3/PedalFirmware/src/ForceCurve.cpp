@@ -70,13 +70,13 @@ float ForceCurve_Interpolated::EvalForceCubicSpline(const DAP_config_st* config_
   }
   
   
-  if (calc_st->Force_Range> 0)
+  if (calc_st->forceRange_f> 0)
   {
-      y = calc_st->Force_Min + y / 100.0f * calc_st->Force_Range;
+      y = calc_st->forceMin_f + y / 100.0f * calc_st->forceRange_f;
   }
   else
   {
-    y = calc_st->Force_Min;
+    y = calc_st->forceMin_f;
   }
   /*
   if(fractionalPos>0.9)
@@ -176,7 +176,7 @@ float ForceCurve_Interpolated::EvalForceGradientCubicSpline(const DAP_config_st*
   // --> conversion of the gradient to the proper axis scaling is performed
   if (normalized_b == false)
   {
-    float d_y_scale = calc_st->Force_Range / 100.0f;
+    float d_y_scale = calc_st->forceRange_f / 100.0f;
     float d_x_scale=0.0f;
     if (fabs(calc_st->stepperPosRange) > 0.01f)
     {

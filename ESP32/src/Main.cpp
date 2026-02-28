@@ -1,4 +1,4 @@
-
+﻿
 /* Todo*/
 // https://github.com/espressif/arduino-esp32/issues/7779
 
@@ -7,24 +7,24 @@
 #include "esp_partition.h"
 
 
-#define ESTIMATE_LOADCELL_VARIANCE
+#define ESTIMATE_LOADCELL_VARIANCE_B
 //#define PRINT_SERVO_STATES
 
-#define DEBUG_INFO_0_CYCLE_TIMER 1
-#define DEBUG_INFO_0_NET_RUNTIME 2
+#define DEBUG_INFO_0_CYCLE_TIMER_U8 1U
+#define DEBUG_INFO_0_NET_RUNTIME_U8 2U
 // #define DEBUG_INFO_0_LOADCELL_READING 4
-#define DEBUG_INFO_0_SERVO_READINGS 8
-#define DEBUG_INFO_0_RESET_ALL_SERVO_ALARMS 16
-#define DEBUG_INFO_0_RESET_SERVO_TO_FACTORY 32
-#define DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT 64
-#define DEBUG_INFO_0_LOG_ALL_SERVO_PARAMS 128
+#define DEBUG_INFO_0_SERVO_READINGS_U8 8U
+#define DEBUG_INFO_0_RESET_ALL_SERVO_ALARMS_U8 16U
+#define DEBUG_INFO_0_RESET_SERVO_TO_FACTORY_U8 32U
+#define DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT_U8 64U
+#define DEBUG_INFO_0_LOG_ALL_SERVO_PARAMS_U8 128U
 
 
-#define EFFECT_SCALING_FACTOR_FL32 4.0f;
-#define EFFECT_POSITION_SCALING_FACTOR_FL32 0.1f;
+#define EFFECT_SCALING_FACTOR_FL32 4.0f
+#define EFFECT_POSITION_SCALING_FACTOR_FL32 0.1f
 
-#define BAUD3M 3000000
-#define DEFAULTBAUD 921600
+#define BAUD_3M_U32 3000000U
+#define DEFAULT_BAUD_U32 921600U
 #include "Arduino.h"
 #include "Main.h"
 #ifdef CONFIG_IDF_TARGET_ESP32S3
@@ -77,18 +77,18 @@ void configUpdateTask( void * pvParameters );
 
 #define INCLUDE_vTaskDelete 1
 // https://www.tutorialspoint.com/cyclic-redundancy-check-crc-in-arduino
-inline uint16_t checksumCalculator(uint8_t * data, uint16_t length)
+inline uint16_t checksumCalculator_u16(uint8_t * data_pu8, uint16_t length_u16)
 {
-   uint16_t curr_crc = 0x0000;
-   uint8_t sum1 = (uint8_t) curr_crc;
-   uint8_t sum2 = (uint8_t) (curr_crc >> 8);
-   int index;
-   for(index = 0; index < length; index = index + 1)
+  uint16_t curr_crc_u16 = 0x0000;
+  uint8_t sum1_u8 = (uint8_t) curr_crc_u16;
+  uint8_t sum2_u8 = (uint8_t) (curr_crc_u16 >> 8);
+  int index_i32;
+  for(index_i32 = 0; index_i32 < length_u16; index_i32 = index_i32 + 1)
    {
-      sum1 = (sum1 + data[index]) % 255;
-      sum2 = (sum2 + sum1) % 255;
+    sum1_u8 = (sum1_u8 + data_pu8[index_i32]) % 255;
+    sum2_u8 = (sum2_u8 + sum1_u8) % 255;
    }
-   return (sum2 << 8) | sum1;
+  return (sum2_u8 << 8) | sum1_u8;
 }
 
 
@@ -104,7 +104,7 @@ bool splineDebug_b = false;
 
 
 #include <EEPROM.h>
-#define EEPROM_offset 15
+#define EEPROM_OFFSET_U32 15U
 
 
 #include "ABSOscillation.h"
@@ -112,29 +112,29 @@ bool splineDebug_b = false;
 ABSOscillation absOscillation;
 RPMOscillation _RPMOscillation;
 BitePointOscillation _BitePointOscillation;
-G_force_effect _G_force_effect;
+GForceEffect gForceEffect_;
 WSOscillation _WSOscillation;
-Road_impact_effect _Road_impact_effect;
-Custom_vibration CV1;
-Custom_vibration CV2;
-Custom_vibration CV3;
-Custom_vibration CV4;
+RoadImpactEffect roadImpactEffect_;
+CustomVibration customVibration1_;
+CustomVibration customVibration2_;
+CustomVibration customVibration3_;
+CustomVibration customVibration4_;
 Rudder _rudder;
-helicoptersRudder helicopterRudder_;
-Rudder_G_Force _rudder_g_force;
+HelicoptersRudder helicopterRudder_;
+RudderGForce rudderGForce_;
 MovingAverageFilter averagefilter_joystick(40);
 
 
 
 #include "DiyActivePedal_types.h"
 
-DAP_config_class global_dap_config_class;
-DRAM_ATTR DAP_calculationVariables_st dap_calculationVariables_st;
-DAP_state_basic_st dap_state_basic_st;
-DAP_state_extended_st dap_state_extended_st;
-DAP_ESPPairing_st dap_esppairing_st;//saving
-DAP_ESPPairing_st dap_esppairing_lcl;//sending
-DAP_action_ota_st dap_action_ota_st;//OTA command(do not check version)
+DapConfigClass global_dap_config_class;
+DRAM_ATTR DapCalculationVariables_t dap_calculationVariables_st;
+DapStateBasic_t dap_state_basic_st;
+DapStateExtended_t dap_state_extended_st;
+DapEspPairing_t dap_esppairing_st;//saving
+DapEspPairing_t dap_esppairing_lcl;//sending
+DapActionOta_t dap_action_ota_st;//OTA command(do not check version)
 
 
 
@@ -145,7 +145,7 @@ DAP_action_ota_st dap_action_ota_st;//OTA command(do not check version)
 /**********************************************************************************************/
 
 #include "ForceCurve.h"
-ForceCurve_Interpolated forceCurve;
+ForceCurveInterpolated forceCurve;
 
 
 
@@ -185,8 +185,8 @@ static QueueHandle_t configUpdateSendToSerialRXTaskQueue = NULL;
 
 // ADD THIS: New data structure to send both states together in one package
 typedef struct {
-    DAP_state_basic_st    basic_st;
-    DAP_state_extended_st extended_st;
+    DapStateBasic_t    basic_st;
+    DapStateExtended_t extended_st;
     bool sendBasicFlag_b;
     bool sendExtendedFlag_b;
 } PedalStatePackage_t;
@@ -201,7 +201,7 @@ typedef struct {
 } loadcellDataPackage_t;
 
 typedef struct {
-    DAP_config_st config_st;
+    DapConfig_t config_st;
 } configDataPackage_t;
 
 
@@ -243,11 +243,11 @@ float motorRevolutionsPerSteps_fl32 = 1.0f / 3200.0f;
 /**********************************************************************************************/
 
 #include "SignalFilter_1st_order.h"
-KalmanFilter_1st_order* kalman = NULL;
-KalmanFilter_1st_order* kalman_joystick = NULL;
+KalmanFilter1stOrder* kalman = NULL;
+KalmanFilter1stOrder* kalman_joystick = NULL;
 
 #include "SignalFilter_2nd_order.h"
-KalmanFilter_2nd_order* kalman_2nd_order = NULL;
+KalmanFilter2ndOrder* kalman_2nd_order = NULL;
 
 
 
@@ -261,12 +261,12 @@ KalmanFilter_2nd_order* kalman_2nd_order = NULL;
 #ifdef USES_ADS1220
   /*  Uses ADS1220 */
   #include "LoadCell_ads1220.h"
-  LoadCell_ADS1220* loadcell = NULL;
+  LoadCellAds1220* loadcell = NULL;
 
 #else
   /*  Uses ADS1256 */
   #include "LoadCell.h"
-  LoadCell_ADS1256* loadcell = NULL;
+  LoadCellAds1256* loadcell = NULL;
 #endif
 
 
@@ -319,9 +319,9 @@ char* APhost;
   #include <Adafruit_NeoPixel.h>
   #define LEDS_COUNT 1
   #ifdef LED_ENABLE_RGB
-    Adafruit_NeoPixel pixels(LEDS_COUNT, LED_GPIO, NEO_RGB + NEO_KHZ800);
+    Adafruit_NeoPixel pixels(LEDS_COUNT, LED_GPIO_U8, NEO_RGB + NEO_KHZ800);
   #else
-    Adafruit_NeoPixel pixels(LEDS_COUNT, LED_GPIO, NEO_GRB + NEO_KHZ800);
+    Adafruit_NeoPixel pixels(LEDS_COUNT, LED_GPIO_U8, NEO_GRB + NEO_KHZ800);
   #endif
   #define CHANNEL 0
   #define LED_BRIGHT 30
@@ -339,7 +339,7 @@ char* APhost;
 
 
 #include "Buzzer.h"
-Simple_Buzzer Buzzer;
+SimpleBuzzer Buzzer;
 bool buzzerBeepAction_b = false;
 #include <cstring>
 
@@ -362,13 +362,15 @@ bool buzzerBeepAction_b = false;
 /**********************************************************************************************/
 void IRAM_ATTR_FLAG configHandlingTask( void * pvParameters )
 {
-  DAP_config_st dap_config_st_local;
+  DapConfig_t dap_config_st_local;
   configDataPackage_t configPackage_st;
 
-  for(;;){
+  for (;;)
+  {
 
     // check if config update is available
-    if (xQueueReceive(configUpdateAvailableQueue, &configPackage_st, portMAX_DELAY) == pdPASS) {
+    if (xQueueReceive(configUpdateAvailableQueue, &configPackage_st, portMAX_DELAY) == pdPASS)
+    {
       global_dap_config_class.setConfig(configPackage_st.config_st);
 
       ActiveSerial->println("Config update received: config handling task");
@@ -402,22 +404,24 @@ void IRAM_ATTR_FLAG loadcellReadingTask( void * pvParameters )
   profiler_loadcellReading.setNumberOfCalls(3000);
 
   static float loadcellReading_fl32 = 0.0f;
-  static DAP_config_st loadcellTask_dap_config_st;
+  static DapConfig_t loadcellTask_dap_config_st;
   configDataPackage_t configPackage_st;
 
   static float previousLoadcellReadingInKg_fl32 = 0.0f;
 
-  for(;;){
+  for (;;)
+  {
 
     if (loadcell != NULL)
     {
 
       // if new data package is available, update the local config
-      if (xQueueReceive(configUpdateSendToLoadcellTaskQueue, &configPackage_st, (TickType_t)0) == pdPASS) {
+      if (xQueueReceive(configUpdateSendToLoadcellTaskQueue, &configPackage_st, (TickType_t)0) == pdPASS)
+      {
         loadcellTask_dap_config_st = configPackage_st.config_st;
 
         // activate profiler depending on pedal config
-        if (loadcellTask_dap_config_st.payLoadPedalConfig_.debug_flags_0 & DEBUG_INFO_0_CYCLE_TIMER) 
+        if (loadcellTask_dap_config_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_CYCLE_TIMER_U8) 
         {
           profiler_loadcellReading.activate( true );
         }
@@ -436,7 +440,7 @@ void IRAM_ATTR_FLAG loadcellReadingTask( void * pvParameters )
       loadcellReading_fl32 = loadcell->readLoadcellWeightInKg();
 
       // Invert the loadcell reading digitally if desired
-      if (loadcellTask_dap_config_st.payLoadPedalConfig_.invertLoadcellReading_u8 == 1)
+      if (loadcellTask_dap_config_st.payloadPedalConfig_st.invertLoadcellReading_u8 == 1)
       {
         loadcellReading_fl32 *= -1.0f;
       }
@@ -450,7 +454,8 @@ void IRAM_ATTR_FLAG loadcellReadingTask( void * pvParameters )
         // reject update when loadcell reading likely outlier
           
         // send joystick data to queue
-        if (loadcellDataQueue != NULL) {
+        if (loadcellDataQueue != NULL)
+        {
 
           // Package the new state data into a single struct
           loadcellDataPackage_t newLoadcellPackage;
@@ -561,11 +566,11 @@ TaskHandle_t handle_otaTask = NULL;
 TaskHandle_t handle_espnowTask = NULL;
 TaskHandle_t handle_configHandlingTask = NULL;
 
-#define COUNTER_SIZE 4u
-uint16_t tickCount_au16[COUNTER_SIZE] = {0};
+#define COUNTER_SIZE_U32 4u
+uint16_t tickCount_au16[COUNTER_SIZE_U32] = {0};
 
 
-static uint16_t timerTicks_espNowTask_u16 = REPETITION_INTERVAL_ESPNOW_TASK_IN_US / BASE_TICK_US;
+static uint16_t timerTicks_espNowTask_u16 = REPETITION_INTERVAL_ESPNOW_TASK_IN_US_I64 / BASE_TICK_US;
 
 
 
@@ -581,9 +586,9 @@ static uint16_t timerTicks_espNowTask_u16 = REPETITION_INTERVAL_ESPNOW_TASK_IN_U
 #include "driver/uart.h"
 
 // Structure to hold a complete UART packet
-#define UART_RX_BUF_SIZE sizeof(DAP_config_st)
+#define UART_RX_BUF_SIZE_U32 sizeof(DapConfig_t)
 typedef struct {
-    uint8_t data[UART_RX_BUF_SIZE];
+  uint8_t data[UART_RX_BUF_SIZE_U32];
     size_t len;
 } UartPacket_t;
 
@@ -594,21 +599,21 @@ static QueueHandle_t serial_packet_queue;
 static QueueHandle_t uart_queue;
 
 // --- ADD THIS LINE ---
-#define TEMP_BUFFER_SIZE (UART_RX_BUF_SIZE * 2)
+#define TEMP_BUFFER_SIZE_U32 (UART_RX_BUF_SIZE_U32 * 2)
 
 /**
  * @brief Task to handle UART events with persistent buffering.
  *
  * This task accumulates data in a static buffer. After new data arrives,
  * it scans the buffer for one or more complete packets ending in the
- * {EOF_BYTE_0, EOF_BYTE_1} sequence. Valid packets are extracted, queued
+ * {EOF_BYTE_0_U8, EOF_BYTE_1_U8} sequence. Valid packets are extracted, queued
  * for processing, and removed from the buffer.
  */
 static void uart_event_task(void *pvParameters) {
     uart_event_t event;
     
     // Persistent buffer to accumulate fragmented data
-    static uint8_t temp_buffer[TEMP_BUFFER_SIZE];
+    static uint8_t temp_buffer[TEMP_BUFFER_SIZE_U32];
     static size_t temp_buffer_len = 0;
 
     for (;;) {
@@ -623,14 +628,14 @@ static void uart_event_task(void *pvParameters) {
                     ActiveSerial->println("EOF1 detected");
 
                     // // Read all available new data from the hardware buffer
-                    // uint8_t incoming_data[UART_RX_BUF_SIZE];
+                    // uint8_t incoming_data[UART_RX_BUF_SIZE_U32];
                     // size_t buffered_size;
                     // uart_get_buffered_data_len(UART_NUM_0, &buffered_size);
                     // int read_len = uart_read_bytes(UART_NUM_0, incoming_data, buffered_size, pdMS_TO_TICKS(100));
 
                     // if (read_len > 0) {
                     //     // --- 1. Append new data, checking for overflow ---
-                    //     if (temp_buffer_len + read_len > TEMP_BUFFER_SIZE) {
+                    //     if (temp_buffer_len + read_len > TEMP_BUFFER_SIZE_U32) {
                     //         ActiveSerial->println("ERROR: UART temporary buffer overflow. Discarding all data.");
                     //         temp_buffer_len = 0; // Reset the buffer
                     //         break; 
@@ -639,7 +644,7 @@ static void uart_event_task(void *pvParameters) {
                     //     temp_buffer_len += read_len;
 
                     //     // --- 2. Scan buffer for complete packets and process them ---
-                    //     if (temp_buffer[temp_buffer_len-2] == EOF_BYTE_0 && temp_buffer[temp_buffer_len-1] == EOF_BYTE_1) {
+                    //     if (temp_buffer[temp_buffer_len-2] == EOF_BYTE_0_U8 && temp_buffer[temp_buffer_len-1] == EOF_BYTE_1_U8) {
                             
 
                     //         // --- 3. Extract the packet and send it to the queue ---
@@ -688,13 +693,13 @@ static void uart_event_task(void *pvParameters) {
 
 void setup()
 {
-  DAP_config_st dap_config_st_local;
-  DAP_config_st dap_config_st_eeprom;
+  DapConfig_t dap_config_st_local;
+  DapConfig_t dap_config_st_eeprom;
 
   // setup serial
   // #define USE_CDC_INSTEAD_OF_UART
   #ifdef USE_CDC_INSTEAD_OF_UART
-    Serial.begin(DEFAULTBAUD);
+    Serial.begin(DEFAULT_BAUD_U32);
     //Serial.enableReboot(false);
     
     Serial.setTxTimeoutMs(100);
@@ -704,12 +709,12 @@ void setup()
       SetupController();
     #endif
   #elif CONFIG_IDF_TARGET_ESP32S3
-    Serial1.begin(BAUD3M, SERIAL_8N1, 44, 43);
-    // Serial.begin(BAUD3M, SERIAL_8N1, 44, 43);
+    Serial1.begin(BAUD_3M_U32, SERIAL_8N1, 44, 43);
+    // Serial.begin(BAUD_3M_U32, SERIAL_8N1, 44, 43);
     ActiveSerial = &Serial1;
   #elif CONFIG_IDF_TARGET_ESP32
-    Serial.begin(DEFAULTBAUD);
-    // Serial.begin(BAUD3M, SERIAL_8N1, 44, 43);
+    Serial.begin(DEFAULT_BAUD_U32);
+    // Serial.begin(BAUD_3M_U32, SERIAL_8N1, 44, 43);
     ActiveSerial = &Serial;
   #endif
 
@@ -720,36 +725,43 @@ void setup()
   // ADD THIS: Create the queue before creating the tasks that use it.
   // The queue can hold up to N state packages.
   pedalStateQueue = xQueueCreate(10, sizeof(PedalStatePackage_t));
-  if (pedalStateQueue == NULL) {
-      ActiveSerial->println("Error creating the pedal state queue!");
+  if (pedalStateQueue == NULL)
+  {
+    ActiveSerial->println("Error creating the pedal state queue!");
   }
   joystickDataQueue = xQueueCreate(1, sizeof(joystickDataPackage_t));
-  if (joystickDataQueue == NULL) {
-      ActiveSerial->println("Error creating the joystick data queue!");
+  if (joystickDataQueue == NULL)
+  {
+    ActiveSerial->println("Error creating the joystick data queue!");
   }
   loadcellDataQueue = xQueueCreate(1, sizeof(loadcellDataPackage_t));
-  if (loadcellDataQueue == NULL) {
-      ActiveSerial->println("Error creating the joystick data queue!");
+  if (loadcellDataQueue == NULL)
+  {
+    ActiveSerial->println("Error creating the joystick data queue!");
   }
-  configUpdateAvailableQueue= xQueueCreate(1, sizeof(configDataPackage_t));
-  if (configUpdateAvailableQueue == NULL) {
-      ActiveSerial->println("Error creating the config data queue!");
+  configUpdateAvailableQueue = xQueueCreate(1, sizeof(configDataPackage_t));
+  if (configUpdateAvailableQueue == NULL)
+  {
+    ActiveSerial->println("Error creating the config data queue!");
   }
-  configUpdateSendToPedalUpdateTaskQueue= xQueueCreate(1, sizeof(configDataPackage_t));
-  if (configUpdateSendToPedalUpdateTaskQueue == NULL) {
-      ActiveSerial->println("Error creating the config data queue!");
+  configUpdateSendToPedalUpdateTaskQueue = xQueueCreate(1, sizeof(configDataPackage_t));
+  if (configUpdateSendToPedalUpdateTaskQueue == NULL)
+  {
+    ActiveSerial->println("Error creating the config data queue!");
   }
-  configUpdateSendToLoadcellTaskQueue= xQueueCreate(1, sizeof(configDataPackage_t));
-  if (configUpdateSendToLoadcellTaskQueue == NULL) {
-      ActiveSerial->println("Error creating the config data queue!");
+  configUpdateSendToLoadcellTaskQueue = xQueueCreate(1, sizeof(configDataPackage_t));
+  if (configUpdateSendToLoadcellTaskQueue == NULL)
+  {
+    ActiveSerial->println("Error creating the config data queue!");
   }
   // configUpdateSendToJoystickTaskQueue= xQueueCreate(1, sizeof(configDataPackage_t));
   // if (configUpdateSendToJoystickTaskQueue == NULL) {
   //     ActiveSerial->println("Error creating the config data queue!");
   // }
-  configUpdateSendToSerialRXTaskQueue= xQueueCreate(1, sizeof(configDataPackage_t));
-  if (configUpdateSendToSerialRXTaskQueue == NULL) {
-      ActiveSerial->println("Error creating the config data queue!");
+  configUpdateSendToSerialRXTaskQueue = xQueueCreate(1, sizeof(configDataPackage_t));
+  if (configUpdateSendToSerialRXTaskQueue == NULL)
+  {
+    ActiveSerial->println("Error creating the config data queue!");
   }
 
 
@@ -759,22 +771,22 @@ void setup()
                     "configHandlingTask",     /* name of task. */
                     3000,       /* Stack size of task */
                     NULL,        /* parameter of the task */
-                    TASK_PRIORITY_CONFIG_HANDLING_TASK,           /* priority of the task */
+                    TASK_PRIORITY_CONFIG_HANDLING_TASK_UBASETYPE,           /* priority of the task */
                     &handle_configHandlingTask,      /* Task handle to keep track of created task */
-                    CORE_ID_CONFIG_HANDLING_TASK);          /* pin task to core 1 */  
+                    CORE_ID_CONFIG_HANDLING_TASK_U8);          /* pin task to core 1 */  
 
   
 
   
 
   // setup brake resistor pin
-  #ifdef BRAKE_RESISTOR_PIN
-    pinMode(BRAKE_RESISTOR_PIN, OUTPUT);  // Set GPIO13 as an output
-    digitalWrite(BRAKE_RESISTOR_PIN, LOW);  // Turn the LED on
+  #ifdef BRAKE_RESISTOR_PIN_U8
+    pinMode(BRAKE_RESISTOR_PIN_U8, OUTPUT);  // Set GPIO13 as an output
+    digitalWrite(BRAKE_RESISTOR_PIN_U8, LOW);  // Turn the LED on
   #endif
 
-  #ifdef EMERGENCY_PIN
-    pinMode(EMERGENCY_PIN,INPUT_PULLUP);
+  #ifdef EMERGENCY_PIN_U8
+    pinMode(EMERGENCY_PIN_U8,INPUT_PULLUP);
   #endif
 
   #ifdef ANGLE_SENSOR_GPIO
@@ -791,7 +803,11 @@ void setup()
     pixels.show(); 
   #endif
 
-  Buzzer.initialized(BuzzerPin, 1);
+  #ifdef BUZZER_PIN_U8
+    Buzzer.initialized(BUZZER_PIN_U8, 1);
+  #else
+    Buzzer.initialized(1, 1);
+  #endif
   Buzzer.single_beep_tone(770, 100);
 
 
@@ -830,7 +846,7 @@ void setup()
   #endif
   
 	#ifdef Hardware_Pairing_button
-    pinMode(Pairing_GPIO, INPUT_PULLUP);
+    pinMode(PAIRING_GPIO_U8, INPUT_PULLUP);
   #endif
 
   #ifdef USING_LED
@@ -841,35 +857,38 @@ void setup()
 
   // Load config from EEPROM, if valid, overwrite initial config
   EEPROM.begin(2048);
-  global_dap_config_class.loadConfigFromEprom();
+  global_dap_config_class.loadConfigFromEeprom();
   global_dap_config_class.getConfig(&dap_config_st_eeprom, 500);
 
 
   // check validity of data from EEPROM  
   bool structChecker = true;
   uint16_t crc;
-  if ( dap_config_st_eeprom.payLoadHeader_.payloadType != DAP_PAYLOAD_TYPE_CONFIG ){ 
+  if (dap_config_st_eeprom.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_CONFIG_U8)
+  {
     structChecker = false;
     /*ActiveSerial->print("Payload type expected: ");
-    ActiveSerial->print(DAP_PAYLOAD_TYPE_CONFIG);
+    ActiveSerial->print(DAP_PAYLOAD_TYPE_CONFIG_U8);
     ActiveSerial->print(",   Payload type received: ");
-    ActiveSerial->println(dap_config_st_local.payLoadHeader_.payloadType);*/
+    ActiveSerial->println(dap_config_st_local.payloadHeader_st.payloadType_u8);*/
   }
-  if ( dap_config_st_eeprom.payLoadHeader_.version != DAP_VERSION_CONFIG ){ 
+  if (dap_config_st_eeprom.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8)
+  {
     structChecker = false;
     /*ActiveSerial->print("Config version expected: ");
-    ActiveSerial->print(DAP_VERSION_CONFIG);
+    ActiveSerial->print(DAP_VERSION_CONFIG_U8);
     ActiveSerial->print(",   Config version received: ");
-    ActiveSerial->println(dap_config_st_local.payLoadHeader_.version);*/
+    ActiveSerial->println(dap_config_st_local.payloadHeader_st.version_u8);*/
   }
   // checksum validation
-  crc = checksumCalculator((uint8_t*)(&(dap_config_st_eeprom.payLoadHeader_)), sizeof(dap_config_st_eeprom.payLoadHeader_) + sizeof(dap_config_st_eeprom.payLoadPedalConfig_));
-  if (crc != dap_config_st_eeprom.payloadFooter_.checkSum){ 
+  crc = checksumCalculator_u16((uint8_t*)(&(dap_config_st_eeprom.payloadHeader_st)), sizeof(dap_config_st_eeprom.payloadHeader_st) + sizeof(dap_config_st_eeprom.payloadPedalConfig_st));
+  if (crc != dap_config_st_eeprom.payloadFooter_st.checkSum_u16)
+  {
     structChecker = false;
     /*ActiveSerial->print("CRC expected: ");
     ActiveSerial->print(crc);
     ActiveSerial->print(",   CRC received: ");
-    ActiveSerial->println(dap_config_st_local.payloadFooter_.checkSum);*/
+    ActiveSerial->println(dap_config_st_local.payloadFooter_st.checkSum_u16);*/
   }
 
 
@@ -894,19 +913,19 @@ void setup()
     ActiveSerial->println("Couldn't load config from EPROM due to mismatch: ");
 
     ActiveSerial->print("Payload type expected: ");
-    ActiveSerial->print(DAP_PAYLOAD_TYPE_CONFIG);
+    ActiveSerial->print(DAP_PAYLOAD_TYPE_CONFIG_U8);
     ActiveSerial->print(",   Payload type received: ");
-    ActiveSerial->println(dap_config_st_local.payLoadHeader_.payloadType);
+    ActiveSerial->println(dap_config_st_local.payloadHeader_st.payloadType_u8);
 
     ActiveSerial->print("Target version: ");
-    ActiveSerial->print(DAP_VERSION_CONFIG);
+    ActiveSerial->print(DAP_VERSION_CONFIG_U8);
     ActiveSerial->print(",    Source version: ");
-    ActiveSerial->println(dap_config_st_local.payLoadHeader_.version);
+    ActiveSerial->println(dap_config_st_local.payloadHeader_st.version_u8);
 
     ActiveSerial->print("CRC expected: ");
     ActiveSerial->print(crc);
     ActiveSerial->print(",   CRC received: ");
-    ActiveSerial->println(dap_config_st_local.payloadFooter_.checkSum);
+    ActiveSerial->println(dap_config_st_local.payloadFooter_st.checkSum_u16);
     //if the config check all failed, reinitialzie _config_st
     ActiveSerial->println("initialized config");
     global_dap_config_class.initializedConfig();
@@ -920,14 +939,14 @@ void setup()
   /*
   #ifdef USES_ADS1220
     //Uses ADS1220
-    loadcell = new LoadCell_ADS1220();
+    loadcell = new LoadCellAds1220();
 
   #else
     //Uses ADS1256
-    loadcell = new LoadCell_ADS1256();
+    loadcell = new LoadCellAds1256();
   #endif
 
-  loadcell->setLoadcellRating(dap_config_st_local.payLoadPedalConfig_.loadcell_rating);
+  loadcell->setLoadcellRating(dap_config_st_local.payloadPedalConfig_st.loadcellRating_u8);
   loadcell->estimateBiasAndVariance();
   */
 
@@ -939,22 +958,22 @@ void setup()
       //delay(3000);
   #endif
 
-  bool invMotorDir = dap_config_st_local.payLoadPedalConfig_.invertMotorDirection_u8 > 0;
-  stepper = new StepperWithLimits(stepPinStepper, dirPinStepper, invMotorDir, dap_calculationVariables_st.stepsPerMotorRevolution, dap_config_st_local.payLoadPedalConfig_.servoRatioOfInertia_u8, dap_config_st_local.payLoadPedalConfig_.endstopDetectionThreshold); 
+  bool invMotorDir = dap_config_st_local.payloadPedalConfig_st.invertMotorDirection_u8 > 0;
+  stepper = new StepperWithLimits(STEP_PIN_STEPPER_U8, DIR_PIN_STEPPER_U8, invMotorDir, dap_calculationVariables_st.stepsPerMotorRevolution_u32, dap_config_st_local.payloadPedalConfig_st.servoRatioOfInertia_u8, dap_config_st_local.payloadPedalConfig_st.endstopDetectionThreshold_u8); 
 
-  motorRevolutionsPerSteps_fl32 = 1.0f / ( (float)dap_calculationVariables_st.stepsPerMotorRevolution );
-  // ActiveSerial->printf("Steps per motor revolution: %d\n", dap_calculationVariables_st.stepsPerMotorRevolution);
+  motorRevolutionsPerSteps_fl32 = 1.0f / ( (float)dap_calculationVariables_st.stepsPerMotorRevolution_u32 );
+  // ActiveSerial->printf("Steps per motor revolution: %d\n", dap_calculationVariables_st.stepsPerMotorRevolution_u32);
 
   #ifdef USES_ADS1220
     //Uses ADS1220
-    loadcell = new LoadCell_ADS1220();
+    loadcell = new LoadCellAds1220();
 
   #else
     //Uses ADS1256
-    loadcell = new LoadCell_ADS1256();
+    loadcell = new LoadCellAds1256();
   #endif
 
-  loadcell->setLoadcellRating(dap_config_st_local.payLoadPedalConfig_.loadcell_rating);
+  loadcell->setLoadcellRating(dap_config_st_local.payloadPedalConfig_st.loadcellRating_u8);
   loadcell->estimateBiasAndVariance();       // automatically identify sensor noise for KF parameterization
 
 	// find the min & max endstops
@@ -967,9 +986,9 @@ void setup()
   // setup Kalman filters
   // ActiveSerial->print("Given loadcell variance: ");
   // ActiveSerial->println(loadcell->getVarianceEstimate(), 5);
-  kalman = new KalmanFilter_1st_order(loadcell->getVarianceEstimate());
-  kalman_joystick =new KalmanFilter_1st_order(0.1f);
-  kalman_2nd_order = new KalmanFilter_2nd_order(loadcell->getVarianceEstimate());
+  kalman = new KalmanFilter1stOrder(loadcell->getVarianceEstimate());
+  kalman_joystick =new KalmanFilter1stOrder(0.1f);
+  kalman_2nd_order = new KalmanFilter2ndOrder(loadcell->getVarianceEstimate());
 
 
   // LED signal 
@@ -1002,8 +1021,8 @@ void setup()
   ActiveSerial->println("Starting other tasks");
 
   // Register tasks
-  addScheduledTask(pedalUpdateTask, "pedalUpdateTask", REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US, TASK_PRIORITY_PEDAL_UPDATE_TASK, CORE_ID_PEDAL_UPDATE_TASK, 7000);
-  addScheduledTask(serialCommunicationTaskRx, "serComRx", REPETITION_INTERVAL_SERIALCOMMUNICATION_TASK_IN_US, TASK_PRIORITY_SERIALCOMMUNICATION_TASK, CORE_ID_SERIAL_COMMUNICATION_TASK, 6000);
+  addScheduledTask(pedalUpdateTask, "pedalUpdateTask", REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64, TASK_PRIORITY_PEDAL_UPDATE_TASK_UBASETYPE, CORE_ID_PEDAL_UPDATE_TASK_U8, 7000);
+  addScheduledTask(serialCommunicationTaskRx, "serComRx", REPETITION_INTERVAL_SERIALCOMMUNICATION_TASK_IN_US_I64, TASK_PRIORITY_SERIALCOMMUNICATION_TASK_UBASETYPE, CORE_ID_SERIAL_COMMUNICATION_TASK_U8, 6000);
 
   // === Replace hw_timer with esp_timer ===
   const esp_timer_create_args_t periodic_timer_args = {
@@ -1025,9 +1044,9 @@ void setup()
       "serComTx",    /* name of task. */
       2000,                           /* Stack size of task */
       NULL,                           /* parameter of the task */
-      TASK_PRIORITY_SERIALCOMMUNICATION_TX_TASK,                              /* priority of the task (e.g., 2, slightly higher than producer) */
+      TASK_PRIORITY_SERIALCOMMUNICATION_TX_TASK_UBASETYPE,                              /* priority of the task (e.g., 2, slightly higher than producer) */
       &handle_serialCommunicationTx,  /* Task handle */
-      CORE_ID_SERIAL_COMMUNICATION_TASK); /* pin task to core */
+      CORE_ID_SERIAL_COMMUNICATION_TASK_U8); /* pin task to core */
 
   // the joystickOutputTask does not need a dedicated timer, since it triggered by queue 
 #ifdef USB_JOYSTICK
@@ -1036,9 +1055,9 @@ void setup()
       "joystickOutputTask",    /* name of task. */
       4000,                           /* Stack size of task */
       NULL,                           /* parameter of the task */
-      TASK_PRIORITY_JOYSTICKOUTPUT_TASK,                              /* priority of the task (e.g., 2, slightly higher than producer) */
+      TASK_PRIORITY_JOYSTICKOUTPUT_TASK_UBASETYPE,                              /* priority of the task (e.g., 2, slightly higher than producer) */
       &handle_joystickOutput,  /* Task handle */
-      CORE_ID_JOYSTICK_TASK); /* pin task to core */
+      CORE_ID_JOYSTICK_TASK_U8); /* pin task to core */
 #endif
   // the loadcell task does not need a dedicated timer, since it blocks by DRDY ready ISR
   xTaskCreatePinnedToCore(
@@ -1046,9 +1065,9 @@ void setup()
                     "loadcellReadingTask",     /* name of task. */
                     1500,       /* Stack size of task */
                     NULL,        /* parameter of the task */
-                    TASK_PRIORITY_LOADCELL_READING_TASK,           /* priority of the task */
+                    TASK_PRIORITY_LOADCELL_READING_TASK_UBASETYPE,           /* priority of the task */
                     &handle_loadcellReadingTask,      /* Task handle to keep track of created task */
-                    CORE_ID_LOADCELLREADING_TASK);          /* pin task to core 1 */  
+                    CORE_ID_LOADCELLREADING_TASK_U8);          /* pin task to core 1 */  
 
   // xTaskCreatePinnedToCore(
   //                   serialCommunicationTaskRx,   /* Task function. */
@@ -1067,18 +1086,18 @@ xTaskCreatePinnedToCore(
                     "profilerTask",     /* name of task. */
                     3000,       /* Stack size of task */
                     NULL,        /* parameter of the task */
-                    TASK_PRIORITY_PROFILER_TASK,           /* priority of the task */
+                    TASK_PRIORITY_PROFILER_TASK_UBASETYPE,           /* priority of the task */
                     &handle_profilerTask,      /* Task handle to keep track of created task */
-                    CORE_ID_PROFILER_TASK);          /* pin task to core 1 */
+                    CORE_ID_PROFILER_TASK_U8);          /* pin task to core 1 */
 
   xTaskCreatePinnedToCore(
                     miscTask,   
                     "miscTask", 
                     2000,  
                     NULL,      
-                    TASK_PRIORITY_MISC_TASK,         
+                    TASK_PRIORITY_MISC_TASK_UBASETYPE,         
                     &handle_miscTask,    
-                    CORE_ID_MISC_TASK);     
+                    CORE_ID_MISC_TASK_U8);     
 
 
                     
@@ -1095,7 +1114,7 @@ xTaskCreatePinnedToCore(
   
   // --- MODIFIED: Install driver over the existing UART0 ---
   // Note: This will reconfigure the port used by the Arduino `Serial` object.
-  esp_err_t err = uart_driver_install(UART_NUM_0, UART_RX_BUF_SIZE * 2, 0, 20, &uart_queue, 0);
+  esp_err_t err = uart_driver_install(UART_NUM_0, UART_RX_BUF_SIZE_U32 * 2, 0, 20, &uart_queue, 0);
   if (err != ESP_OK) {
     ActiveSerial->printf("Failed to install UART driver: %d\n", err);
     return;
@@ -1104,7 +1123,7 @@ xTaskCreatePinnedToCore(
   // Configure UART parameters
   // SERIAL_8N1
   uart_config_t uart_config = {
-      .baud_rate = BAUD3M,
+      .baud_rate = BAUD_3M_U32,
       .data_bits = UART_DATA_8_BITS,
       .parity    = UART_PARITY_DISABLE,
       .stop_bits = UART_STOP_BITS_1,
@@ -1117,7 +1136,7 @@ xTaskCreatePinnedToCore(
 
   // --- NEW: Enable UART pattern detection ---
   #define SERIAL_PATTERN_DETECTION_TIMEOUT_IN_US 100
-  uart_enable_pattern_det_baud_intr(UART_NUM_0, EOF_BYTE_1, 1, SERIAL_PATTERN_DETECTION_TIMEOUT_IN_US, 0, 0);
+  uart_enable_pattern_det_baud_intr(UART_NUM_0, EOF_BYTE_1_U8, 1, SERIAL_PATTERN_DETECTION_TIMEOUT_IN_US, 0, 0);
 
   // Create the task that will handle UART events
   xTaskCreate(
@@ -1135,7 +1154,7 @@ xTaskCreatePinnedToCore(
 
 
   #if defined(OTA_update)  || defined(OTA_update_ESP32)
-    switch(dap_config_st_local.payLoadPedalConfig_.pedal_type)
+    switch(dap_config_st_local.payloadPedalConfig_st.pedalType_u8)
     {
       case 0:
         APhost=new char[strlen("FFBPedalClutch") + 1];
@@ -1158,7 +1177,7 @@ xTaskCreatePinnedToCore(
         //APhost="FFBPedal";
         break;        
     }                    
-    addScheduledTask(otaUpdateTask, "OTATask", REPETITION_INTERVAL_OTA_TASK_IN_US, TASK_PRIORITY_OTA_TASK, CORE_ID_OTA_TASK, 16000);
+    addScheduledTask(otaUpdateTask, "OTATask", REPETITION_INTERVAL_OTA_TASK_IN_US_I64, TASK_PRIORITY_OTA_TASK_UBASETYPE, CORE_ID_OTA_TASK_U8, 16000);
     delay(200);
   #endif
   #ifdef USING_LED
@@ -1169,10 +1188,10 @@ xTaskCreatePinnedToCore(
   #endif
 
   //print pedal role assignment
-  if(dap_config_st_local.payLoadPedalConfig_.pedal_type!=PEDAL_ID_UNKNOWN)
+  if(dap_config_st_local.payloadPedalConfig_st.pedalType_u8!=PEDAL_ID_UNKNOWN)
   {
     ActiveSerial->print("Pedal Assignment: ");
-    ActiveSerial->println(dap_config_st_local.payLoadPedalConfig_.pedal_type);
+    ActiveSerial->println(dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
   }
   else
   {
@@ -1187,20 +1206,20 @@ xTaskCreatePinnedToCore(
     //overwrite the pedal type with device ID
     if (deviceIdStructChecker)
     {
-      dap_config_st_local.payLoadPedalConfig_.pedal_type = dap_assignement_reg.deviceID;
+      dap_config_st_local.payloadPedalConfig_st.pedalType_u8 = dap_assignement_reg.deviceId_u8;
     }
     else
     {
-      dap_config_st_local.payLoadPedalConfig_.pedal_type = PEDAL_ID_UNKNOWN;
+      dap_config_st_local.payloadPedalConfig_st.pedalType_u8 = PEDAL_ID_UNKNOWN;
     }
   #endif
   #ifdef PEDAL_HARDWARE_ASSIGNMENT
-    pinMode(CFG1, INPUT_PULLUP);
-    pinMode(CFG2, INPUT_PULLUP);
+    pinMode(CFG1_U8, INPUT_PULLUP);
+    pinMode(CFG2_U8, INPUT_PULLUP);
     delay(50); // give the pin time to settle
     ActiveSerial->println("Overriding Pedal Role Assignment from Hardware switch......");
-    uint8_t CFG1_reading = digitalRead(CFG1);
-    uint8_t CFG2_reading = digitalRead(CFG2);
+    uint8_t CFG1_reading = digitalRead(CFG1_U8);
+    uint8_t CFG2_reading = digitalRead(CFG2_U8);
     uint8_t Pedal_assignment = CFG1_reading * 2 + CFG2_reading * 1; // 00=clutch 01=brk  02=gas
     if (Pedal_assignment == PEDAL_ID_ASSIGNMENT_ERROR)
     {
@@ -1218,10 +1237,10 @@ xTaskCreatePinnedToCore(
           ActiveSerial->println("Overriding Pedal as Brake.");
         if (Pedal_assignment == PEDAL_ID_THROTTLE)
           ActiveSerial->println("Overriding Pedal as Throttle.");
-        DAP_config_st tmp;
+        DapConfig_t tmp;
         global_dap_config_class.getConfig(&tmp, 500);
-        tmp.payLoadPedalConfig_.pedal_type = Pedal_assignment;
-        dap_config_st_local.payLoadPedalConfig_.pedal_type = Pedal_assignment;
+        tmp.payloadPedalConfig_st.pedalType_u8 = Pedal_assignment;
+        dap_config_st_local.payloadPedalConfig_st.pedalType_u8 = Pedal_assignment;
         // global_dap_config_class.setConfig(tmp);
 
         configDataPackage_t configPackage_st;
@@ -1239,33 +1258,33 @@ xTaskCreatePinnedToCore(
 
     //enable ESP-NOW
   #ifdef ESPNOW_Enable
-    dap_calculationVariables_st.rudder_brake_status=false;
+    dap_calculationVariables_st.rudderBrakeStatus_b=false;
     ActiveSerial->println("Starting ESP now tasks");
     ESPNow_initialize();
     ActiveSerial->println("ESPNOW initialized, add task in");
-    addScheduledTask(espNowCommunicationTaskTx, "ESPNOW_update_Task", REPETITION_INTERVAL_ESPNOW_TASK_IN_US, TASK_PRIORITY_ESPNOW_TASK, CORE_ID_ESPNOW_TASK, 10000);
+    addScheduledTask(espNowCommunicationTaskTx, "ESPNOW_update_Task", REPETITION_INTERVAL_ESPNOW_TASK_IN_US_I64, TASK_PRIORITY_ESPNOW_TASK_UBASETYPE, CORE_ID_ESPNOW_TASK_U8, 10000);
     ActiveSerial->println("ESPNOW task added");
     delay(500);
   #endif
 
   #if defined(CONTROLLER_SPECIFIC_VIDPID) && defined(USB_JOYSTICK) && !defined(USE_CDC_INSTEAD_OF_UART)
       ActiveSerial->println("Setup Controller");
-      SetupController_USB(dap_config_st_local.payLoadPedalConfig_.pedal_type);
+      SetupController_USB(dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
       delay(500);
   #endif
   #ifdef ESPNOW_Enable
       //print out basic pedal info via espnow
-      sendESPNOWLog("Pedal:%d DAP version: %d", dap_config_st_local.payLoadPedalConfig_.pedal_type, DAP_VERSION_CONFIG);
+      sendESPNOWLog("Pedal:%d DAP version: %d", dap_config_st_local.payloadPedalConfig_st.pedalType_u8, DAP_VERSION_CONFIG_U8);
       delay(2);
-      sendESPNOWLog("Pedal:%d Control Board: %s, Firmware: %s", dap_config_st_local.payLoadPedalConfig_.pedal_type, CONTROL_BOARD, DAP_FIRMWARE_VERSION);
+      sendESPNOWLog("Pedal:%d Control Board: %s, Firmware: %s", dap_config_st_local.payloadPedalConfig_st.pedalType_u8, CONTROL_BOARD, DAP_FIRMWARE_VERSION);
       delay(2);
-      sendESPNOWLog("Pedal:%d Servo Voltage: %.0f V, Rail pitch set to %d mm.",dap_config_st_local.payLoadPedalConfig_.pedal_type, (float)stepper->getServosVoltage()/10.0f , dap_config_st_local.payLoadPedalConfig_.spindlePitch_mmPerRev_u8);
+      sendESPNOWLog("Pedal:%d Servo Voltage: %.0f V, Rail pitch set to %d mm.",dap_config_st_local.payloadPedalConfig_st.pedalType_u8, (float)stepper->getServosVoltage()/10.0f , dap_config_st_local.payloadPedalConfig_st.spindlePitch_mmPerRev_u8);
       delay(2);
-      sendESPNOWLog("Pedal:%d Loadcell shifting: %.3f kg, Stdev: %.4f",dap_config_st_local.payLoadPedalConfig_.pedal_type, loadcell->getShiftingEstimate(),loadcell->getSTDEstimate());
+      sendESPNOWLog("Pedal:%d Loadcell shifting: %.3f kg, Stdev: %.4f",dap_config_st_local.payloadPedalConfig_st.pedalType_u8, loadcell->getShiftingEstimate(),loadcell->getSTDEstimate());
       delay(2);
-      sendESPNOWLog("Pedal:%d Min pos: %d, Max pos: %d, Current pos: %d",dap_config_st_local.payLoadPedalConfig_.pedal_type, stepper->getLimitMin(), stepper->getLimitMax(), stepper->getCurrentPosition());
+      sendESPNOWLog("Pedal:%d Min pos: %d, Max pos: %d, Current pos: %d",dap_config_st_local.payloadPedalConfig_st.pedalType_u8, stepper->getLimitMin(), stepper->getLimitMax(), stepper->getCurrentPosition());
       delay(2);
-      sendESPNOWLog("Pedal:%d Setup end.",dap_config_st_local.payLoadPedalConfig_.pedal_type);
+      sendESPNOWLog("Pedal:%d Setup end.",dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
   #endif
   ActiveSerial->println("Setup end");
   #ifdef USING_LED
@@ -1275,7 +1294,7 @@ xTaskCreatePinnedToCore(
       //delay(3000);
   #endif
   
-  Buzzer.InitializedSound((int)dap_config_st_local.payLoadPedalConfig_.pedal_type);
+  Buzzer.InitializedSound((int)dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
 
 }
 
@@ -1289,12 +1308,12 @@ xTaskCreatePinnedToCore(
 /**********************************************************************************************/
 void updatePedalCalcParameters()
 {
-  DAP_config_st dap_config_st_local;  
+  DapConfig_t dap_config_st_local;  
   global_dap_config_class.getConfig(&dap_config_st_local, 500);
 
   dap_calculationVariables_st.updateFromConfig(dap_config_st_local);
   dap_calculationVariables_st.updateEndstops(stepper->getLimitMin(), stepper->getLimitMax());
-  stepper->updatePedalMinMaxPos(dap_config_st_local.payLoadPedalConfig_.pedalStartPosition, dap_config_st_local.payLoadPedalConfig_.pedalEndPosition);
+  stepper->updatePedalMinMaxPos(dap_config_st_local.payloadPedalConfig_st.pedalStartPosition_u8, dap_config_st_local.payloadPedalConfig_st.pedalEndPosition_u8);
   dap_calculationVariables_st.updateStiffness();
 
   // tune the PID settings
@@ -1370,26 +1389,30 @@ void printTaskStats() {
         }
 
         // Free the previous snapshot and save the current one for the next cycle
-        if (pxPreviousTaskArray != NULL) {
+        if (pxPreviousTaskArray != NULL)
+        {
             vPortFree(pxPreviousTaskArray);
         }
         pxPreviousTaskArray = pxCurrentTaskArray;
         ulPreviousTotalRunTime = ulCurrentTotalRunTime;
         uxPreviousArraySize = uxCurrentArraySize;
-    } else {
+    }
+    else
+    {
         ActiveSerial->println("Failed to allocate memory for task stats.");
     }
 }
 
 void profilerTask( void * pvParameters )
 {
-  for(;;){
+  for (;;)
+  {
     // copy global struct to local for faster and safe executiion
-    DAP_config_st dap_config_profilerTask_st;
+    DapConfig_t dap_config_profilerTask_st;
     global_dap_config_class.getConfig(&dap_config_profilerTask_st, 500);
 
     // activate profiler depending on pedal config
-    if (dap_config_profilerTask_st.payLoadPedalConfig_.debug_flags_0 & DEBUG_INFO_0_NET_RUNTIME) 
+    if (dap_config_profilerTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_NET_RUNTIME_U8) 
     {
       printTaskStats();
     }
@@ -1425,9 +1448,9 @@ void loop() {
 void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 {
 
-  static DRAM_ATTR DAP_state_extended_st dap_state_extended_st_lcl_pedalUpdateTask;
-  static DRAM_ATTR DAP_state_basic_st dap_state_basic_st_lcl_pedalUpdateTask;
-  static DRAM_ATTR DAP_config_st dap_config_pedalUpdateTask_st;
+  static DRAM_ATTR DapStateExtended_t dap_state_extended_st_lcl_pedalUpdateTask;
+  static DRAM_ATTR DapStateBasic_t dap_state_basic_st_lcl_pedalUpdateTask;
+  static DRAM_ATTR DapConfig_t dap_config_pedalUpdateTask_st;
 
   static loadcellDataPackage_t loadcellDataReceived_st;
   static configDataPackage_t configPackage_st;
@@ -1449,7 +1472,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
   float effect_force_fl32;
   float effect_pos_fl32;
   int32_t Position_effect;
-  int32_t BP_trigger_value;
+  int32_t bpTriggerValue_u8;
   int32_t BP_trigger_min;
   int32_t BP_trigger_max;
   int32_t Position_check;
@@ -1466,8 +1489,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
   
   global_dap_config_class.getConfig(&dap_config_pedalUpdateTask_st, 500);
 
-  static const uint8_t joystickSendCounterMax_u8 = (REPETITION_INTERVAL_JOYSTICKOUTPUT_TASK_IN_US) / (REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US) ;
-  static const uint8_t serialSendCounterMax_u8 = (REPETITION_INTERVAL_SERIALCOMMUNICATION_TASK_IN_US) / (REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US) ;
+  static const uint8_t joystickSendCounterMax_u8 = (REPETITION_INTERVAL_JOYSTICKOUTPUT_TASK_IN_US_I64) / (REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) ;
+  static const uint8_t serialSendCounterMax_u8 = (REPETITION_INTERVAL_SERIALCOMMUNICATION_TASK_IN_US_I64) / (REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) ;
 
   
   
@@ -1482,18 +1505,21 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
   static int32_t stepperPosCurrent_i32;
   static uint32_t cycleCount_u32 = 0;
 
-  for(;;){
+  for (;;)
+  {
 
 
     // trigger task 
-    if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) {
+    if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
+    {
 
       // if new data package is available, update the local config
-      if (xQueueReceive(configUpdateSendToPedalUpdateTaskQueue, &configPackage_st, (TickType_t)0) == pdPASS) {
+      if (xQueueReceive(configUpdateSendToPedalUpdateTaskQueue, &configPackage_st, (TickType_t)0) == pdPASS)
+      {
         dap_config_pedalUpdateTask_st = configPackage_st.config_st;
 
         // activate profiler depending on pedal config
-        if (dap_config_pedalUpdateTask_st.payLoadPedalConfig_.debug_flags_0 & DEBUG_INFO_0_CYCLE_TIMER) 
+        if (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_CYCLE_TIMER_U8) 
         {
           profiler_pedalUpdateTask.activate( true );
         }
@@ -1509,17 +1535,17 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         // update the calc params
         ActiveSerial->println("Updating the calc params");
         //ActiveSerial->print("save to eeprom tag:");
-        //ActiveSerial->println(dap_config_pedalUpdateTask_st.payLoadHeader_.storeToEeprom);
+        //ActiveSerial->println(dap_config_pedalUpdateTask_st.payloadHeader_st.storeToEeprom_u8);
         saveToEEPRomDuration = millis();
         
-        if (true == dap_config_pedalUpdateTask_st.payLoadHeader_.storeToEeprom)
+        if (true == dap_config_pedalUpdateTask_st.payloadHeader_st.storeToEeprom_u8)
         {
-          dap_config_pedalUpdateTask_st.payLoadHeader_.storeToEeprom = false; // set to false, thus at restart existing EEPROM config isn't restored to EEPROM
-          uint16_t crc = checksumCalculator((uint8_t*)(&(dap_config_pedalUpdateTask_st.payLoadHeader_)), sizeof(dap_config_pedalUpdateTask_st.payLoadHeader_) + sizeof(dap_config_pedalUpdateTask_st.payLoadPedalConfig_));
-          dap_config_pedalUpdateTask_st.payloadFooter_.checkSum = crc;
+          dap_config_pedalUpdateTask_st.payloadHeader_st.storeToEeprom_u8 = false; // set to false, thus at restart existing EEPROM config isn't restored to EEPROM
+          uint16_t crc = checksumCalculator_u16((uint8_t*)(&(dap_config_pedalUpdateTask_st.payloadHeader_st)), sizeof(dap_config_pedalUpdateTask_st.payloadHeader_st) + sizeof(dap_config_pedalUpdateTask_st.payloadPedalConfig_st));
+          dap_config_pedalUpdateTask_st.payloadFooter_st.checkSum_u16 = crc;
           global_dap_config_class.setConfig(dap_config_pedalUpdateTask_st);
           ActiveSerial->println("Saving into EEPROM");
-          global_dap_config_class.storeConfigToEprom();
+          global_dap_config_class.storeConfigToEeprom();
           
           saveToEEPRomDuration = 0;
         }
@@ -1528,23 +1554,23 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         moveSlowlyToPosition_b = true;
 
         // enable/disable step loss recovery and crash
-        stepper->configSteplossRecovAndCrashDetection(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.stepLossFunctionFlags_u8);
+        stepper->configSteplossRecovAndCrashDetection(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.stepLossFunctionFlags_u8);
 
         // set position command smoothing
-        stepper->configSetPositionCommandSmoothingFactor(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.positionSmoothingFactor_u8);
-        stepper->configSetProfilingFlag( (dap_config_pedalUpdateTask_st.payLoadPedalConfig_.debug_flags_0 & DEBUG_INFO_0_CYCLE_TIMER) );
-        stepper->configSetRatioOfInertia(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.servoRatioOfInertia_u8);
+        stepper->configSetPositionCommandSmoothingFactor(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.positionSmoothingFactor_u8);
+        stepper->configSetProfilingFlag( (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_CYCLE_TIMER_U8) );
+        stepper->configSetRatioOfInertia(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.servoRatioOfInertia_u8);
 
         // reset all servo alarms
-        if ( (dap_config_pedalUpdateTask_st.payLoadPedalConfig_.debug_flags_0 & DEBUG_INFO_0_RESET_ALL_SERVO_ALARMS) )
+        if ( (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_RESET_ALL_SERVO_ALARMS_U8) )
         {
           ActiveSerial->println("Set clear alarm history flag");
           stepper->clearAllServoAlarms();
           delay(1000); // makes sure the routine has finished
 
-          DAP_config_st tmp;
+          DapConfig_t tmp;
           global_dap_config_class.getConfig(&tmp, 500);
-          tmp.payLoadPedalConfig_.debug_flags_0 &= ( ~(uint8_t)DEBUG_INFO_0_RESET_ALL_SERVO_ALARMS); // clear the debug bit
+          tmp.payloadPedalConfig_st.debugFlags0_u8 &= ( ~(uint8_t)DEBUG_INFO_0_RESET_ALL_SERVO_ALARMS_U8); // clear the debug bit
           //global_dap_config_class.setConfig(tmp);
 
           configDataPackage_t configPackage_st;
@@ -1553,12 +1579,12 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         }
 
         // reset all servo alarms
-        if ( (dap_config_pedalUpdateTask_st.payLoadPedalConfig_.debug_flags_0 & DEBUG_INFO_0_RESET_SERVO_TO_FACTORY) )
+        if ( (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_RESET_SERVO_TO_FACTORY_U8) )
         {
-          DAP_config_st tmp;
+          DapConfig_t tmp;
           global_dap_config_class.getConfig(&tmp, 500);
-          tmp.payLoadPedalConfig_.debug_flags_0 &= ( ~(uint8_t)DEBUG_INFO_0_RESET_SERVO_TO_FACTORY); // clear the debug bit
-          tmp.payLoadHeader_.storeToEeprom = 1;
+          tmp.payloadPedalConfig_st.debugFlags0_u8 &= ( ~(uint8_t)DEBUG_INFO_0_RESET_SERVO_TO_FACTORY_U8); // clear the debug bit
+          tmp.payloadHeader_st.storeToEeprom_u8 = 1;
           //global_dap_config_class.setConfig(tmp);
 
           configDataPackage_t configPackage_st;
@@ -1567,7 +1593,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
           delay(500);
 
-          global_dap_config_class.storeConfigToEprom();
+          global_dap_config_class.storeConfigToEeprom();
 
           ActiveSerial->println("Resetting servo parameters to factory values");
           stepper->resetServoParametersToFactoryValues();
@@ -1576,11 +1602,11 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         
 
         // print all servo parameters for debug purposes
-        if ( (dap_config_pedalUpdateTask_st.payLoadPedalConfig_.debug_flags_0 & DEBUG_INFO_0_LOG_ALL_SERVO_PARAMS) )
+        if ( (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_LOG_ALL_SERVO_PARAMS_U8) )
         {
-          DAP_config_st tmp;
+          DapConfig_t tmp;
           global_dap_config_class.getConfig(&tmp, 500);
-          tmp.payLoadPedalConfig_.debug_flags_0 &= ( ~(uint8_t)DEBUG_INFO_0_LOG_ALL_SERVO_PARAMS); // clear the debug bit
+          tmp.payloadPedalConfig_st.debugFlags0_u8 &= ( ~(uint8_t)DEBUG_INFO_0_LOG_ALL_SERVO_PARAMS_U8); // clear the debug bit
           //global_dap_config_class.setConfig(tmp);
 
           configDataPackage_t configPackage_st;
@@ -1591,14 +1617,14 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           stepper->printAllServoParameters();
         }
 
-        // ActiveSerial->printf("Abs ampl.: %0.3f\n", (float)dap_calculationVariables_st.absAmplitude);
-        // ActiveSerial->printf("force range.: %0.3f\n", (float)dap_calculationVariables_st.Force_Range);
-        // ActiveSerial->printf("pos range: %0.3f\n", (float)dap_calculationVariables_st.stepperPosRange);
+        // ActiveSerial->printf("Abs ampl.: %0.3f\n", (float)dap_calculationVariables_st.absAmplitude_fl32);
+        // ActiveSerial->printf("force range.: %0.3f\n", (float)dap_calculationVariables_st.forceRange_fl32);
+        // ActiveSerial->printf("pos range: %0.3f\n", (float)dap_calculationVariables_st.stepperPosRange_fl32);
         
         //bitepoint trigger
-        BP_trigger_value = dap_config_pedalUpdateTask_st.payLoadPedalConfig_.BP_trigger_value;
-        BP_trigger_min = (BP_trigger_value-4);
-        BP_trigger_max = (BP_trigger_value+4);
+        bpTriggerValue_u8 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.bpTriggerValue_u8;
+        BP_trigger_min = (bpTriggerValue_u8-4);
+        BP_trigger_max = (bpTriggerValue_u8+4);
 
       }
 
@@ -1639,21 +1665,21 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       Position_check = (int32_t)(stepperPosFraction_fl32 * 100.0f);
 
       // compute pedal oscillation, when ABS is active
-      dap_calculationVariables_st.Default_pos();
+      dap_calculationVariables_st.setDefaultPos();
 
       // trigger and compute effects
-      absOscillation.forceOffset(&dap_calculationVariables_st, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.absPattern, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.absForceOrTarvelBit);
+      absOscillation.forceOffset(&dap_calculationVariables_st, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.absPattern_u8, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.absForceOrTarvelBit_u8);
       _RPMOscillation.trigger();
       _RPMOscillation.forceOffset(&dap_calculationVariables_st);
       _BitePointOscillation.forceOffset(&dap_calculationVariables_st);
-      _G_force_effect.forceOffset(&dap_calculationVariables_st, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.G_multi);
+      gForceEffect_.forceOffset(&dap_calculationVariables_st, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.gMulti_u8);
       _WSOscillation.forceOffset(&dap_calculationVariables_st);
-      _Road_impact_effect.forceOffset(&dap_calculationVariables_st, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.Road_multi);
-      CV1.forceOffset(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_freq_1,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_amp_1,dap_calculationVariables_st.stepperPosRange);
-      CV2.forceOffset(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_freq_2,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_amp_2,dap_calculationVariables_st.stepperPosRange);
-      CV3.forceOffset(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_freq_3,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_amp_3,dap_calculationVariables_st.stepperPosRange);
-      CV4.forceOffset(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_freq_4,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.CV_amp_4,dap_calculationVariables_st.stepperPosRange);     
-      if(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.BP_trigger==1)
+      roadImpactEffect_.forceOffset(&dap_calculationVariables_st, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.roadMulti_u8);
+      customVibration1_.forceOffset(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq1_u8,dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp1_u8,dap_calculationVariables_st.stepperPosRange_fl32);
+      customVibration2_.forceOffset(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq2_u8,dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp2_u8,dap_calculationVariables_st.stepperPosRange_fl32);
+      customVibration3_.forceOffset(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq3_u8,dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp3_u8,dap_calculationVariables_st.stepperPosRange_fl32);
+      customVibration4_.forceOffset(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq4_u8,dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp4_u8,dap_calculationVariables_st.stepperPosRange_fl32);     
+      if(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.bpTrigger_u8==1)
       {
         if(Position_check > BP_trigger_min)
         {
@@ -1665,52 +1691,52 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       }
       
 
-      if(dap_calculationVariables_st.Rudder_status) 
+      if(dap_calculationVariables_st.rudderStatus_b) 
       {
-        _rudder_g_force.offset_calculate(&dap_calculationVariables_st);
-        dap_calculationVariables_st.update_stepperMaxpos(_rudder_g_force.offset_filter);
-        _rudder.offset_calculate(&dap_calculationVariables_st);
-        dap_calculationVariables_st.update_stepperMinpos(_rudder.offset_filter);
+        rudderGForce_.offsetCalculate(&dap_calculationVariables_st);
+        dap_calculationVariables_st.updateStepperMaxPos(rudderGForce_.offsetFilter_l);
+        _rudder.offsetCalculate(&dap_calculationVariables_st);
+        dap_calculationVariables_st.updateStepperMinPos(_rudder.offsetFilter_i32);
 
       }
-      if(dap_calculationVariables_st.helicopterRudderStatus) 
+      if(dap_calculationVariables_st.helicopterRudderStatus_b) 
       {
-        helicopterRudder_.offset_calculate(&dap_calculationVariables_st);
-        dap_calculationVariables_st.update_stepperMinpos(helicopterRudder_.offset_filter);
+        helicopterRudder_.offsetCalculate(&dap_calculationVariables_st);
+        dap_calculationVariables_st.updateStepperMinPos(helicopterRudder_.offsetFilter_i32);
       }
       #ifdef ESPNow_debug_rudder
-      if(dap_calculationVariables_st.Rudder_status || dap_calculationVariables_st.helicopterRudderStatus)
+      if(dap_calculationVariables_st.rudderStatus_b || dap_calculationVariables_st.helicopterRudderStatus_b)
       {
         if(millis()-debugMessageLast>500 )
         {
           debugMessageLast=millis();
           ActiveSerial->print("Center offset:");
-          ActiveSerial->println(_rudder.offset_filter);
+          ActiveSerial->println(_rudder.offsetFilter_i32);
           ActiveSerial->print("pos min:");
-          ActiveSerial->println(dap_calculationVariables_st.stepperPosMin);
+          ActiveSerial->println(dap_calculationVariables_st.stepperPosMin_i32);
           ActiveSerial->print("pos max:");
-          ActiveSerial->println(dap_calculationVariables_st.stepperPosMax);
+          ActiveSerial->println(dap_calculationVariables_st.stepperPosMax_i32);
           ActiveSerial->print("max Force:");
           ActiveSerial->print("max Force:");
-          ActiveSerial->print(dap_calculationVariables_st.Force_Max);
+          ActiveSerial->print(dap_calculationVariables_st.forceMax_fl32);
           ActiveSerial->print(" min Force:");
-          ActiveSerial->println(dap_calculationVariables_st.Force_Min);
+          ActiveSerial->println(dap_calculationVariables_st.forceMin_fl32);
           ActiveSerial->print("Force:");
           ActiveSerial->println(filteredReading);
         }
       }
       #endif
 
-      //_rudder.force_offset_calculate(&dap_calculationVariables_st);
+      //_rudder.forceOffsetCalculate(&dap_calculationVariables_st);
 
 
       //update max force with G force effect
-      movingAverageFilter.dataPointsCount = dap_config_pedalUpdateTask_st.payLoadPedalConfig_.G_window;
-      movingAverageFilter_roadimpact.dataPointsCount = dap_config_pedalUpdateTask_st.payLoadPedalConfig_.Road_window;
-      dap_calculationVariables_st.reset_maxforce();
-      dap_calculationVariables_st.Force_Max += _G_force_effect.G_force;
-      dap_calculationVariables_st.Force_Max += _Road_impact_effect.Road_Impact_force;
-      dap_calculationVariables_st.dynamic_update();
+      g_movingAverageFilter_st.dataPointsCount_i32 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.gWindow_u8;
+      g_movingAverageFilterRoadImpact_st.dataPointsCount_i32 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.roadWindow_u8;
+      dap_calculationVariables_st.resetMaxForce();
+      dap_calculationVariables_st.forceMax_fl32 += gForceEffect_.gForce_fl32;
+      dap_calculationVariables_st.forceMax_fl32 += roadImpactEffect_.roadImpactForce_fl32;
+      dap_calculationVariables_st.dynamicUpdate();
       dap_calculationVariables_st.updateStiffness();
     
       // end profiler 1, effects
@@ -1744,8 +1770,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       float d_phi_d_x = convertToPedalForceGain(sledPosition, &dap_config_pedalUpdateTask_st);
 
       // compute gain for horizontal foot model
-      float b = (float)dap_config_pedalUpdateTask_st.payLoadPedalConfig_.lengthPedal_b;
-      float d = (float)dap_config_pedalUpdateTask_st.payLoadPedalConfig_.lengthPedal_d;
+      float b = (float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st.lengthPedalB_i16;
+      float d = (float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st.lengthPedalD_i16;
       float d_x_hor_d_phi = -(float)(b+d) * isin(pedalInclineAngleInDeg_fl32);
       d_x_hor_d_phi *= DEG_TO_RAD_FL32; // inner derivative
 
@@ -1756,15 +1782,15 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       profiler_pedalUpdateTask.start(4);
       
       // Do the loadcell signal filtering
-      float alpha_exp_filter = 1.0f - ( (float)dap_config_pedalUpdateTask_st.payLoadPedalConfig_.kf_modelNoise) / 5000.0f;
+      float alpha_exp_filter = 1.0f - ( (float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfModelNoise_u8) / 5000.0f;
       // const velocity model denoising filter
-      switch (dap_config_pedalUpdateTask_st.payLoadPedalConfig_.kf_modelOrder) {
+      switch (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfModelOrder_u8) {
         case 0:
-          filteredReading = kalman->filteredValue(pedalForce_fl32, 0.0f, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.kf_modelNoise);
+          filteredReading = kalman->filteredValue(pedalForce_fl32, 0.0f, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfModelNoise_u8);
           changeVelocity = kalman->changeVelocity();
           break;
         case 1:
-          filteredReading = kalman_2nd_order->filteredValue(pedalForce_fl32, 0.0f, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.kf_modelNoise);
+          filteredReading = kalman_2nd_order->filteredValue(pedalForce_fl32, 0.0f, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfModelNoise_u8);
           changeVelocity = kalman_2nd_order->changeVelocity();
           break;
         case 2:
@@ -1776,7 +1802,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           break;
       }
       //write filter reading into calculation_st
-      dap_calculationVariables_st.currentForceReading=filteredReading;
+      dap_calculationVariables_st.currentForceReading_fl32=filteredReading;
 
 
       // end profiler 4, loadcell reading filtering
@@ -1785,9 +1811,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
       
       float FilterReadingJoystick=0.0f;
-      if(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.kf_Joystick_u8==1)
+      if(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfJoystick_u8==1)
       {
-        FilterReadingJoystick=kalman_joystick->filteredValue(filteredReading,0.0f,dap_config_pedalUpdateTask_st.payLoadPedalConfig_.kf_modelNoise_joystick);
+        FilterReadingJoystick=kalman_joystick->filteredValue(filteredReading,0.0f,dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfModelNoiseJoystick_u8);
 
       }
       else
@@ -1797,7 +1823,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
 
       //if filtered reading > min force, mark the servo was in aciton
-      if(filteredReading > dap_config_pedalUpdateTask_st.payLoadPedalConfig_.preloadForce)
+      if(filteredReading > dap_config_pedalUpdateTask_st.payloadPedalConfig_st.preloadForce_fl32)
       {
         servoActionLast = millis();
       }
@@ -1814,8 +1840,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       }
 
       // pedal not in action, disable pedal power
-      uint32_t pedalIdleTimout = dap_config_pedalUpdateTask_st.payLoadPedalConfig_.servoIdleTimeout * 60 * 1000; // timeout in ms
-      if ((stepper->servoStatus == SERVO_CONNECTED) && ((millis() - servoActionLast) > pedalIdleTimout) && (dap_config_pedalUpdateTask_st.payLoadPedalConfig_.servoIdleTimeout != 0))
+      uint32_t pedalIdleTimout = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.servoIdleTimeout_u8 * 60 * 1000; // timeout in ms
+      if ((stepper->servoStatus == SERVO_CONNECTED) && ((millis() - servoActionLast) > pedalIdleTimout) && (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.servoIdleTimeout_u8 != 0))
       {
         stepper->servoIdleAction();
         stepper->servoStatus = SERVO_IDLE_NOT_CONNECTED;
@@ -1830,8 +1856,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       }
       //emergency button
 
-      #ifdef EMERGENCY_PIN
-        if ((stepper->servoStatus == SERVO_CONNECTED) && (stepper->servoStatus != SERVO_FORCE_STOP) && (digitalRead(EMERGENCY_PIN) == LOW))
+      #ifdef EMERGENCY_PIN_U8
+        if ((stepper->servoStatus == SERVO_CONNECTED) && (stepper->servoStatus != SERVO_FORCE_STOP) && (digitalRead(EMERGENCY_PIN_U8) == LOW))
         {
           stepper->servoIdleAction();
           stepper->servoStatus = SERVO_FORCE_STOP;
@@ -1860,9 +1886,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       effect_force_fl32 = 0.0f;
       bool effectsCalculated_b=false;
       // only add force when not at min position 
-      if(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.minForceForEffects_u8!=0)
+      if(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.minForceForEffects_u8!=0)
       {
-        if(filteredReading >= (float)dap_config_pedalUpdateTask_st.payLoadPedalConfig_.minForceForEffects_u8)
+        if(filteredReading >= (float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st.minForceForEffects_u8)
         {
           effectsCalculated_b = true;
         }
@@ -1875,23 +1901,23 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       }
       if(effectsCalculated_b)
       {
-        effect_force_fl32 += absOscillation.absOscillation_Force_offset;
+        effect_force_fl32 += absOscillation.absOscillationPositionOffset_fl32;
         // accumulate position offsets
-        effect_pos_fl32 += absOscillation.absOscillation_Position_offset;
-        effect_pos_fl32 += _WSOscillation.WheelSlipOffset;
-        effect_pos_fl32 += _BitePointOscillation.BitePointOffset; 
-        effect_pos_fl32 += CV1.CustomVibrationOffset;
-        effect_pos_fl32 += CV2.CustomVibrationOffset;
-        effect_pos_fl32 += CV3.CustomVibrationOffset;
-        effect_pos_fl32 += CV4.CustomVibrationOffset;
-        effect_pos_fl32 += _RPMOscillation.RPM_position_offset;
+        effect_pos_fl32 += absOscillation.absOscillationPositionOffset_fl32;
+        effect_pos_fl32 += _WSOscillation.wheelSlipOffset_fl32;
+        effect_pos_fl32 += _BitePointOscillation.bitePointOffset_fl32;
+        effect_pos_fl32 += customVibration1_.customVibrationOffset_fl32;
+        effect_pos_fl32 += customVibration2_.customVibrationOffset_fl32;
+        effect_pos_fl32 += customVibration3_.customVibrationOffset_fl32;
+        effect_pos_fl32 += customVibration4_.customVibrationOffset_fl32;
+        effect_pos_fl32 += _RPMOscillation.rpmPositionOffset_i32;
       }
 
       // add dampening
-      if (dap_calculationVariables_st.dampingPress  > 0.0001f)
+      if (dap_calculationVariables_st.dampingPress_fl32  > 0.0001f)
       {
         // dampening is proportional to velocity --> D-gain for stability
-        effect_pos_fl32 -= dap_calculationVariables_st.dampingPress * changeVelocity * dap_calculationVariables_st.springStiffnesssInv;
+        effect_pos_fl32 -= dap_calculationVariables_st.dampingPress_fl32 * changeVelocity * dap_calculationVariables_st.springStiffnesssInv_fl32;
       }
 
 
@@ -1915,7 +1941,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // compute next position with PID strategy
       // MPC control strategy for rudder
       int32_t positionWithoutEffect=0;
-      if(dap_calculationVariables_st.Rudder_status || dap_calculationVariables_st.helicopterRudderStatus)
+      if(dap_calculationVariables_st.rudderStatus_b || dap_calculationVariables_st.helicopterRudderStatus_b)
       {
         // Rudder only
         Position_Next = MoveByForceTargetingStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, 0.0f/*effect_force*/, changeVelocity, d_phi_d_x, d_x_hor_d_phi);
@@ -1945,19 +1971,19 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
       
       // clip target position to configured target interval with RPM effect movement in the endstop
-      Position_Next = (int32_t)constrain(Position_Next, dap_calculationVariables_st.stepperPosMinEndstop, dap_calculationVariables_st.stepperPosMaxEndstop);
-      //Position_Next = (int32_t)constrain(Position_Next, dap_calculationVariables_st.stepperPosMin, dap_calculationVariables_st.stepperPosMax);
+      Position_Next = (int32_t)constrain(Position_Next, dap_calculationVariables_st.stepperPosMinEndstop_i32, dap_calculationVariables_st.stepperPosMaxEndstop_i32);
+      //Position_Next = (int32_t)constrain(Position_Next, dap_calculationVariables_st.stepperPosMin_i32, dap_calculationVariables_st.stepperPosMax_i32);
 
       
 
       // rudder helper
-      Rudder_real_poisiton= 100*((positionWithoutEffect-dap_calculationVariables_st.stepperPosMin_default) / dap_calculationVariables_st.stepperPosRange_default);
+      Rudder_real_poisiton= 100*((positionWithoutEffect-dap_calculationVariables_st.stepperPosMinDefault_i32) / dap_calculationVariables_st.stepperPosRangeDefault_fl32);
 
-      dap_calculationVariables_st.current_pedal_position = positionWithoutEffect;
-      dap_calculationVariables_st.current_pedal_position_ratio=((float)(dap_calculationVariables_st.current_pedal_position-dap_calculationVariables_st.stepperPosMin_default))/((float)dap_calculationVariables_st.stepperPosRange_default);
+      dap_calculationVariables_st.currentPedalPosition_u32 = positionWithoutEffect;
+      dap_calculationVariables_st.currentPedalPositionRatio_fl32=((float)(dap_calculationVariables_st.currentPedalPosition_u32-dap_calculationVariables_st.stepperPosMinDefault_i32))/((float)dap_calculationVariables_st.stepperPosRangeDefault_fl32);
       //Rudder initialzing and de initializing
       #ifdef ESPNOW_Enable
-        if(dap_calculationVariables_st.Rudder_status)
+        if(dap_calculationVariables_st.rudderStatus_b)
         {
           if(Rudder_initializing)
           {
@@ -1981,7 +2007,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
                 Rudder_initializing=false;
                 moveSlowlyToPosition_b=false;
                 ActiveSerial->println("Rudder initialized");
-                dap_calculationVariables_st.isRudderInitialized=true;
+                dap_calculationVariables_st.isRudderInitialized_b=true;
                 Rudder_initialized_time=0;
                 Buzzer.play_melody_tone(melody_Airship_theme, sizeof(melody_Airship_theme)/sizeof(melody_Airship_theme[0]),melody_Airship_theme_duration);
               }
@@ -2000,10 +2026,10 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           Rudder_deinitializing=false;
           moveSlowlyToPosition_b=false;
           ActiveSerial->println("Rudder deinitialized");
-          dap_calculationVariables_st.isRudderInitialized=false;
+          dap_calculationVariables_st.isRudderInitialized_b=false;
         }
         //helicopter rudder initialzied
-        if(dap_calculationVariables_st.helicopterRudderStatus)
+        if(dap_calculationVariables_st.helicopterRudderStatus_b)
         {
           if(HeliRudder_initializing)
           {
@@ -2027,7 +2053,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
                 HeliRudder_initializing=false;
                 moveSlowlyToPosition_b=false;
                 ActiveSerial->println("HeliRudder initialized");
-                dap_calculationVariables_st.isHelicopterRudderInitialized=true;
+                dap_calculationVariables_st.isHelicopterRudderInitialized_b=true;
                 Rudder_initialized_time=0;
                 Buzzer.play_melody_tone(melodyAirwolfTheme, sizeof(melodyAirwolfTheme)/sizeof(melodyAirwolfTheme[0]),melodyAirwolfThemeDuration);
               }
@@ -2044,14 +2070,14 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           HeliRudder_deinitializing=false;
           moveSlowlyToPosition_b=false;
           ActiveSerial->println("HeliRudder deinitialized");
-          dap_calculationVariables_st.isHelicopterRudderInitialized=false;
+          dap_calculationVariables_st.isHelicopterRudderInitialized_b=false;
         }
       #endif
 
       
 
       // if pedal in min position, recalibrate position --> automatic step loss compensation
-      // stepper->configSteplossRecovAndCrashDetection(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.stepLossFunctionFlags_u8);
+      // stepper->configSteplossRecovAndCrashDetection(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.stepLossFunctionFlags_u8);
       if( (stepper->getLifelineSignal()==true) && (stepper->servoStatus==SERVO_CONNECTED) )
       {
         if (stepper->isAtMinPos())
@@ -2095,40 +2121,40 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       }
     
       // compute controller output
-      dap_calculationVariables_st.StepperPos_setback();
-      dap_calculationVariables_st.reset_maxforce();
-      dap_calculationVariables_st.dynamic_update();
+      dap_calculationVariables_st.stepperPosSetback();
+      dap_calculationVariables_st.resetMaxForce();
+      dap_calculationVariables_st.dynamicUpdate();
       dap_calculationVariables_st.updateStiffness();
       
 
       // compute joystick value
-      if(dap_calculationVariables_st.Rudder_status&&dap_calculationVariables_st.rudder_brake_status)
+      if(dap_calculationVariables_st.rudderStatus_b&&dap_calculationVariables_st.rudderBrakeStatus_b)
       {
-        if (1 == dap_config_pedalUpdateTask_st.payLoadPedalConfig_.travelAsJoystickOutput_u8)
+        if (1 == dap_config_pedalUpdateTask_st.payloadPedalConfig_st.travelAsJoystickOutput_u8)
         {
-          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue((stepperPosCurrent_i32-dap_calculationVariables_st.stepperPosRange/2), dap_calculationVariables_st.stepperPosMin, dap_calculationVariables_st.stepperPosMin+dap_calculationVariables_st.stepperPosRange/2.0f, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.maxGameOutput);
+          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue((stepperPosCurrent_i32-dap_calculationVariables_st.stepperPosRange_fl32/2), dap_calculationVariables_st.stepperPosMin_i32, dap_calculationVariables_st.stepperPosMin_i32+dap_calculationVariables_st.stepperPosRange_fl32/2.0f, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.maxGameOutput_u8);
         }
         else
         {
-          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue((FilterReadingJoystick/*filteredReading*/), dap_calculationVariables_st.Force_Min, dap_calculationVariables_st.Force_Max, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.maxGameOutput);
+          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue((FilterReadingJoystick/*filteredReading*/), dap_calculationVariables_st.forceMin_fl32, dap_calculationVariables_st.forceMax_fl32, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.maxGameOutput_u8);
         }
       }
       else
       {
-        if (1 == dap_config_pedalUpdateTask_st.payLoadPedalConfig_.travelAsJoystickOutput_u8)
+        if (1 == dap_config_pedalUpdateTask_st.payloadPedalConfig_st.travelAsJoystickOutput_u8)
         {
-          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(stepperPosCurrent_i32, dap_calculationVariables_st.stepperPosMin, dap_calculationVariables_st.stepperPosMax, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.maxGameOutput);
+          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(stepperPosCurrent_i32, dap_calculationVariables_st.stepperPosMin_i32, dap_calculationVariables_st.stepperPosMax_i32, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.maxGameOutput_u8);
         }
         else
         {            
-          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(FilterReadingJoystick/*filteredReading*/, dap_calculationVariables_st.Force_Min, dap_calculationVariables_st.Force_Max, dap_config_pedalUpdateTask_st.payLoadPedalConfig_.maxGameOutput);
+          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(FilterReadingJoystick/*filteredReading*/, dap_calculationVariables_st.forceMin_fl32, dap_calculationVariables_st.forceMax_fl32, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.maxGameOutput_u8);
         }
       }
-      joystickfrac=(float)joystickNormalizedToInt32_orig/(float)JOYSTICK_MAX_VALUE;
+      joystickfrac=(float)joystickNormalizedToInt32_orig/(float)JOYSTICK_MAX_VALUE_U16;
       joystickNormalizedToInt32_eval = forceCurve.EvalJoystickCubicSpline(&dap_config_pedalUpdateTask_st, &dap_calculationVariables_st, joystickfrac);
       
-      joystickNormalizedToUInt16 = joystickNormalizedToInt32_eval/100.0f* JOYSTICK_MAX_VALUE;
-      joystickNormalizedToUInt16 = constrain(joystickNormalizedToUInt16, JOYSTICK_MIN_VALUE, JOYSTICK_MAX_VALUE);      
+      joystickNormalizedToUInt16 = joystickNormalizedToInt32_eval/100.0f* JOYSTICK_MAX_VALUE_U16;
+      joystickNormalizedToUInt16 = constrain(joystickNormalizedToUInt16, JOYSTICK_MIN_VALUE_U16, JOYSTICK_MAX_VALUE_U16);      
 
 
       // send joystick data to queue
@@ -2158,7 +2184,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // provide joystick output on PIN
       #ifdef Using_analog_output
         int dac_value=(int)(joystickNormalizedToInt32*255/10000);
-        dacWrite(D_O,dac_value);
+        dacWrite(DAC_OUTPUT_PIN_U8,dac_value);
       #endif
 
       #ifdef Using_analog_output_ESP32_S3
@@ -2171,15 +2197,15 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
       
       
-      if ( fabs(dap_calculationVariables_st.Force_Range) > 0.01f)
+        if ( fabs(dap_calculationVariables_st.forceRange_fl32) > 0.01f)
       {
-          normalizedPedalReading_fl32 = constrain((filteredReading - dap_calculationVariables_st.Force_Min) / dap_calculationVariables_st.Force_Range, 0.0f, 1.0f);
+          normalizedPedalReading_fl32 = constrain((filteredReading - dap_calculationVariables_st.forceMin_fl32) / dap_calculationVariables_st.forceRange_fl32, 0.0f, 1.0f);
       }
       
       // simulate ABS trigger 
-      if(dap_config_pedalUpdateTask_st.payLoadPedalConfig_.Simulate_ABS_trigger==1)
+      if(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.simulateAbsTrigger_u8==1)
       {
-        ABS_trigger_value=dap_config_pedalUpdateTask_st.payLoadPedalConfig_.Simulate_ABS_value;
+        ABS_trigger_value=dap_config_pedalUpdateTask_st.payloadPedalConfig_st.simulateAbsValue_u8;
         if( (normalizedPedalReading_fl32*100.0f) > ABS_trigger_value)
         {
           absOscillation.trigger();
@@ -2197,7 +2223,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       
       // update pedal states
       // check if data needs to be send
-      if ( (dap_config_pedalUpdateTask_st.payLoadPedalConfig_.debug_flags_0 & DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT) )
+      if ( (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT_U8) )
       {
         // send data every frame
         sendPedalStructsViaSerialCounter_u8 = 0;
@@ -2218,80 +2244,80 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
         if (sendBasicFlag_b)
         {
-          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalState_Basic_.pedalForce_u16 =  normalizedPedalReading_fl32 * 65535.0f;
-          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalState_Basic_.pedalPosition_u16 = constrain(stepperPosFraction_fl32, 0.0f, 1.0f) * 65535.0f;
-          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalState_Basic_.joystickOutput_u16 = joystickNormalizedToUInt16;
-          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalState_Basic_.pedalFirmwareVersion_u8[0] = versionMajor;
-          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalState_Basic_.pedalFirmwareVersion_u8[1] = versionMinor;  
-          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalState_Basic_.pedalFirmwareVersion_u8[2] = versionPatch;
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.pedalForce_u16 =  normalizedPedalReading_fl32 * 65535.0f;
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.pedalPosition_u16 = constrain(stepperPosFraction_fl32, 0.0f, 1.0f) * 65535.0f;
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.joystickOutput_u16 = joystickNormalizedToUInt16;
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.pedalFirmwareVersion_au8[0] = versionMajor;
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.pedalFirmwareVersion_au8[1] = versionMinor;  
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.pedalFirmwareVersion_au8[2] = versionPatch;
           //error code
-          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalState_Basic_.error_code_u8 = 0;
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.errorCode_u8 = 0;
           //pedal status update
-          if(dap_calculationVariables_st.Rudder_status)
+          if(dap_calculationVariables_st.rudderStatus_b)
           {
-            if(dap_calculationVariables_st.rudder_brake_status) dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalState_Basic_.pedalStatus=PEDAL_STATUS_RUDDERBRAKE;
-            else dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalState_Basic_.pedalStatus=PEDAL_STATUS_RUDDER;
+            if(dap_calculationVariables_st.rudderBrakeStatus_b) dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.pedalStatus_u8=PEDAL_STATUS_RUDDERBRAKE;
+            else dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.pedalStatus_u8=PEDAL_STATUS_RUDDER;
           }
-          else dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalState_Basic_.pedalStatus=PEDAL_STATUS_NORMAL;
+          else dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.pedalStatus_u8=PEDAL_STATUS_NORMAL;
           //servo status update
-          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalState_Basic_.servoStatus=stepper->servoStatus;
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.servoStatus_u8=stepper->servoStatus;
 
           #ifdef ESPNOW_Enable
             if(ESPNow_error_code!=0)
             {
-              dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalState_Basic_.error_code_u8=ESPNow_error_code;
+              dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.errorCode_u8=ESPNow_error_code;
               ESPNow_error_code=0;
             }
           #endif
 
           if( (stepper->getLifelineSignal()==false) && (stepper->servoStatus!=SERVO_IDLE_NOT_CONNECTED) )
           {
-            dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalState_Basic_.error_code_u8=12;
+            dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.errorCode_u8=12;
           }
           
           //fill the header
-          dap_state_basic_st_lcl_pedalUpdateTask.payLoadHeader_.startOfFrame0_u8 = SOF_BYTE_0;
-          dap_state_basic_st_lcl_pedalUpdateTask.payLoadHeader_.startOfFrame1_u8 = SOF_BYTE_1;
-          dap_state_basic_st_lcl_pedalUpdateTask.payloadFooter_.enfOfFrame0_u8 = EOF_BYTE_0;
-          dap_state_basic_st_lcl_pedalUpdateTask.payloadFooter_.enfOfFrame1_u8 = EOF_BYTE_1;
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
 
-          dap_state_basic_st_lcl_pedalUpdateTask.payLoadHeader_.payloadType = DAP_PAYLOAD_TYPE_STATE_BASIC;
-          dap_state_basic_st_lcl_pedalUpdateTask.payLoadHeader_.version = DAP_VERSION_CONFIG;
-          dap_state_basic_st_lcl_pedalUpdateTask.payLoadHeader_.PedalTag = dap_config_pedalUpdateTask_st.payLoadPedalConfig_.pedal_type;        
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_STATE_BASIC_U8;
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadHeader_st.pedalTag_u8 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.pedalType_u8;        
           
         }
 
         if (sendExtendedFlag_b)
         {
           // update extended pedal structures
-          dap_state_extended_st_lcl_pedalUpdateTask.payLoadHeader_.startOfFrame0_u8 = SOF_BYTE_0; // 170
-          dap_state_extended_st_lcl_pedalUpdateTask.payLoadHeader_.startOfFrame1_u8 = SOF_BYTE_1; // 85
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8; // 170
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8; // 85
 
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadFooter_.enfOfFrame0_u8 =  EOF_BYTE_0; // 170
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadFooter_.enfOfFrame1_u8 =  EOF_BYTE_1; // 86
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadFooter_st.enfOfFrame0_u8 =  EOF_BYTE_0_U8; // 170
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadFooter_st.enfOfFrame1_u8 =  EOF_BYTE_1_U8; // 86
 
           // update extended struct 
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalState_Extended_.timeInUs_u32 = micros();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalState_Extended_.cycleCount_u32 = cycleCount_u32;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalState_Extended_.pedalForce_raw_fl32 =  loadcellReading;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalState_Extended_.pedalForce_filtered_fl32 =  filteredReading;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalState_Extended_.forceVel_est_fl32 =  changeVelocity;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.timeInUs_u32 = micros();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.cycleCount_u32 = cycleCount_u32;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.pedalForceRaw_fl32 =  loadcellReading;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.pedalForceFiltered_fl32 =  filteredReading;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.forceVelEst_fl32 =  changeVelocity;
 
           int32_t minPos = 0; //stepper->getMinPosition();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalState_Extended_.servoPosition_i32 = stepper->getServosInternalPositionCorrected() - minPos;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalState_Extended_.servo_voltage_0p1V =  stepper->getServosVoltage();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalState_Extended_.servo_current_percent_i16 = stepper->getServosCurrent();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalState_Extended_.servo_position_error_i16 = stepper->getServosPosError();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalState_Extended_.servoPositionEstimated_i16 = stepper->getEstimatedPosError();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalState_Extended_.targetPosition_i32 = Position_Next - minPos;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalState_Extended_.servoPositionTarget_i32 = stepper->getCurrentPosition() - minPos;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalState_Extended_.currentSpeedInMilliHz_i32 = stepper->getCurrentSpeedInMilliHz();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPosition_i32 = stepper->getServosInternalPositionCorrected() - minPos;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoVoltage0p1V_i16 =  stepper->getServosVoltage();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoCurrentPercent_i16 = stepper->getServosCurrent();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionError_i16 = stepper->getServosPosError();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionEstimated_i16 = stepper->getEstimatedPosError();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.targetPosition_i32 = Position_Next - minPos;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionTarget_i32 = stepper->getCurrentPosition() - minPos;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.currentSpeedInMilliHz_i32 = stepper->getCurrentSpeedInMilliHz();
 
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalState_Extended_.angleSensorOutput_ui16 = angleReading_ui16;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalState_Extended_.brakeResistorState_b = stepper->getBrakeResistorState();
-          dap_state_extended_st_lcl_pedalUpdateTask.payLoadHeader_.PedalTag = dap_config_pedalUpdateTask_st.payLoadPedalConfig_.pedal_type;
-          dap_state_extended_st_lcl_pedalUpdateTask.payLoadHeader_.payloadType = DAP_PAYLOAD_TYPE_STATE_EXTENDED;
-          dap_state_extended_st_lcl_pedalUpdateTask.payLoadHeader_.version = DAP_VERSION_CONFIG;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.angleSensorOutput_u16 = angleReading_ui16;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.brakeResistorState_b = stepper->getBrakeResistorState();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.pedalTag_u8 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.pedalType_u8;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_STATE_EXTENDED_U8;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
         }
 
 
@@ -2339,17 +2365,19 @@ void IRAM_ATTR_FLAG joystickOutputTask( void * pvParameters )
   // profiler_joystickOutputTask.setName("JoystickOutput");
   // profiler_joystickOutputTask.setNumberOfCalls(500);
   // configDataPackage_t configPackage_st;
-  // static DAP_config_st jut_dap_config_st;
+  // static DapConfig_t jut_dap_config_st;
   
 
   // This task now waits for a complete package of data from the queue.
   joystickDataPackage_t receivedJoystickData;
 
   
-  for(;;){
+  for (;;)
+  {
 
     // if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) {
-    if (xQueueReceive(joystickDataQueue, &receivedJoystickData, portMAX_DELAY) == pdPASS) {
+    if (xQueueReceive(joystickDataQueue, &receivedJoystickData, portMAX_DELAY) == pdPASS)
+    {
 
 
       // start profiler 0, overall function
@@ -2358,7 +2386,7 @@ void IRAM_ATTR_FLAG joystickOutputTask( void * pvParameters )
       // if (xQueueReceive(configUpdateSendToJoystickTaskQueue, &configPackage_st, (TickType_t)0) == pdPASS) {
       //   jut_dap_config_st = configPackage_st.config_st;
       //   // activate profiler depending on pedal config
-      //   if (jut_dap_config_st.payLoadPedalConfig_.debug_flags_0 & DEBUG_INFO_0_CYCLE_TIMER) 
+      //   if (jut_dap_config_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_CYCLE_TIMER) 
       //   {
       //     profiler_joystickOutputTask.activate( true );
       //   }
@@ -2382,7 +2410,7 @@ void IRAM_ATTR_FLAG joystickOutputTask( void * pvParameters )
         // send joystick output
         if (IsControllerReady()) 
         {
-          if(dap_calculationVariables_st.Rudder_status==false)
+          if(dap_calculationVariables_st.rudderStatus_b==false)
           {
             //general output
             // ActiveSerial->printf("joystick: %lu\n", joystickData_u16);
@@ -2418,12 +2446,12 @@ typedef struct {
 // Returns 0 if the payload type is unknown.
 static inline size_t getExpectedPacketSize(uint8_t payloadType) {
     switch (payloadType) {
-        case DAP_PAYLOAD_TYPE_CONFIG:
-            return sizeof(DAP_config_st);
-        case DAP_PAYLOAD_TYPE_ACTION:
-            return sizeof(DAP_actions_st);
-        case DAP_PAYLOAD_TYPE_ACTION_OTA:
-            return sizeof(DAP_action_ota_st);
+        case DAP_PAYLOAD_TYPE_CONFIG_U8:
+            return sizeof(DapConfig_t);
+        case DAP_PAYLOAD_TYPE_ACTION_U8:
+            return sizeof(DapActions_t);
+        case DAP_PAYLOAD_TYPE_ACTION_OTA_U8:
+            return sizeof(DapActionOta_t);
         // Add other packet types here in the future
         default:
             return 0;
@@ -2436,7 +2464,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
     profiler_serialCommunicationTask.setName("SerialCommunicationRx");
     profiler_serialCommunicationTask.setNumberOfCalls(500);
 
-    static DAP_config_st sct_dap_config_st;
+    static DapConfig_t sct_dap_config_st;
 
     // Buffer to accumulate incoming serial data
     const size_t RX_BUFFER_SIZE = 1028; // Should be at least 2x the largest possible packet
@@ -2445,17 +2473,20 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
 
     configDataPackage_t configPackage_st;
 
-    for (;;) {
+    for (;;)
+    {
         // Wait for a notification that data might be available
-        if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) {
+      if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
+      {
 
 
           // if new data package is available, update the local config
-          if (xQueueReceive(configUpdateSendToSerialRXTaskQueue, &configPackage_st, (TickType_t)0) == pdPASS) {
+          if (xQueueReceive(configUpdateSendToSerialRXTaskQueue, &configPackage_st, (TickType_t)0) == pdPASS)
+          {
             sct_dap_config_st = configPackage_st.config_st;
 
             // activate profiler depending on pedal config
-            if (sct_dap_config_st.payLoadPedalConfig_.debug_flags_0 & DEBUG_INFO_0_CYCLE_TIMER) 
+            if (sct_dap_config_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_CYCLE_TIMER_U8) 
             {
               profiler_serialCommunicationTask.activate( true );
             }
@@ -2473,10 +2504,12 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
           profiler_serialCommunicationTask.start(0);
 
           // --- 1. Read all available data into our buffer ---
-          if (ActiveSerial->available()) {
+            if (ActiveSerial->available())
+            {
               // Prevent buffer overflow by only reading what fits
               size_t bytesToRead = min((size_t)ActiveSerial->available(), RX_BUFFER_SIZE - buffer_len);
-              if (bytesToRead > 0) {
+              if (bytesToRead > 0)
+              {
                   ActiveSerial->readBytes(&rx_buffer[buffer_len], bytesToRead);
                   buffer_len += bytesToRead;
               }
@@ -2486,9 +2519,11 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
 
           // --- 2. Process all complete packets in the buffer ---
           size_t buffer_idx = 0;
-          while (buffer_idx < buffer_len) {
+            while (buffer_idx < buffer_len)
+            {
               // A. Find the next valid Start-of-Frame (SOF)
-              if (rx_buffer[buffer_idx] != SOF_BYTE_0 || (buffer_idx + 1 < buffer_len && rx_buffer[buffer_idx + 1] != SOF_BYTE_1)) {
+              if (rx_buffer[buffer_idx] != SOF_BYTE_0_U8 || (buffer_idx + 1 < buffer_len && rx_buffer[buffer_idx + 1] != SOF_BYTE_1_U8))
+              {
                   buffer_idx++;
                   continue; // Keep scanning for a SOF
               }
@@ -2496,7 +2531,8 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
               // ActiveSerial->println("1st check passed");
 
               // SOF found at buffer_idx. Check if we have enough data for a header.
-              if (buffer_len < buffer_idx + 3) {
+                if (buffer_len < buffer_idx + 3)
+                {
                   // Not enough data for a full header, stop parsing for now
                   break;
               }
@@ -2505,7 +2541,8 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
               uint8_t payloadType = rx_buffer[buffer_idx + 2];
               size_t expectedSize = getExpectedPacketSize(payloadType);
 
-              if (expectedSize == 0) {
+                if (expectedSize == 0)
+                {
                   // Unknown payload type, this SOF is corrupt. Skip it and continue scanning.
                   buffer_idx++;
                   continue;
@@ -2514,13 +2551,15 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
               // ActiveSerial->println("2nd check passed");
 
               // C. Check if the full packet has arrived
-              if (buffer_len < buffer_idx + expectedSize) {
+                if (buffer_len < buffer_idx + expectedSize)
+                {
                   // Full packet is not yet in the buffer, wait for more data
                   break;
               }
 
               // D. Check for valid End-of-Frame (EOF)
-              if (rx_buffer[buffer_idx + expectedSize - 2] != EOF_BYTE_0 || rx_buffer[buffer_idx + expectedSize - 1] != EOF_BYTE_1) {
+                if (rx_buffer[buffer_idx + expectedSize - 2] != EOF_BYTE_0_U8 || rx_buffer[buffer_idx + expectedSize - 1] != EOF_BYTE_1_U8)
+                {
                   // EOF is wrong, this packet is corrupt. Skip the SOF and continue scanning.
                   buffer_idx++;
                   continue;
@@ -2533,16 +2572,19 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
               uint16_t calculated_crc = 0;
 
               switch (payloadType) {
-                  case DAP_PAYLOAD_TYPE_CONFIG: {
-                      DAP_config_st received_config;
-                      memcpy(&received_config, packet_start, sizeof(DAP_config_st));
+                  case DAP_PAYLOAD_TYPE_CONFIG_U8: {
+                      DapConfig_t received_config;
+                      memcpy(&received_config, packet_start, sizeof(DapConfig_t));
                       
-                      calculated_crc = checksumCalculator((uint8_t*)(&(received_config.payLoadHeader_)), sizeof(received_config.payLoadHeader_) + sizeof(received_config.payLoadPedalConfig_));
-                      received_crc = received_config.payloadFooter_.checkSum;
+                      calculated_crc = checksumCalculator_u16((uint8_t*)(&(received_config.payloadHeader_st)), sizeof(received_config.payloadHeader_st) + sizeof(received_config.payloadPedalConfig_st));
+                      received_crc = received_config.payloadFooter_st.checkSum_u16;
 
-                      if (calculated_crc != received_crc || received_config.payLoadHeader_.version != DAP_VERSION_CONFIG) {
+                        if (calculated_crc != received_crc || received_config.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8)
+                        {
                           structIsValid = false;
-                      } else {
+                        }
+                        else
+                        {
                           // --- VALID CONFIG PACKET ---
                         ActiveSerial->println("Updating pedal config from serial");
                         //global_dap_config_class.setConfig(received_config);
@@ -2551,35 +2593,40 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                         configPackage_st.config_st = received_config;
                         xQueueSend(configUpdateAvailableQueue, &configPackage_st, portMAX_DELAY);
                         
-                        if (received_config.payLoadHeader_.storeToEeprom == 1) {
+                        if (received_config.payloadHeader_st.storeToEeprom_u8 == 1)
+                        {
                           Buzzer.single_beep_tone(700, 100);
                         }
                       }
                       break;
                   }
-                  case DAP_PAYLOAD_TYPE_ACTION: {
-                      DAP_actions_st received_action;
-                      memcpy(&received_action, packet_start, sizeof(DAP_actions_st));
+                  case DAP_PAYLOAD_TYPE_ACTION_U8: {
+                      DapActions_t received_action;
+                      memcpy(&received_action, packet_start, sizeof(DapActions_t));
 
                       // ActiveSerial->println("Action received");
 
-                      calculated_crc = checksumCalculator((uint8_t*)(&(received_action.payLoadHeader_)), sizeof(received_action.payLoadHeader_) + sizeof(received_action.payloadPedalAction_));
-                      received_crc = received_action.payloadFooter_.checkSum;
+                      calculated_crc = checksumCalculator_u16((uint8_t*)(&(received_action.payloadHeader_st)), sizeof(received_action.payloadHeader_st) + sizeof(received_action.payloadPedalAction_st));
+                      received_crc = received_action.payloadFooter_st.checkSum_u16;
 
-                      if (calculated_crc != received_crc || received_action.payLoadHeader_.version != DAP_VERSION_CONFIG) {
+                        if (calculated_crc != received_crc || received_action.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8)
+                        {
                           structIsValid = false;
-                      } else {
+                        }
+                        else
+                        {
                           // --- VALID ACTION PACKET ---
                           // Place your extensive action handling logic here
                           // For clarity, this could be moved to its own function: handleActionPacket(received_action);
-                          if (received_action.payloadPedalAction_.system_action_u8 == 2) {
+                          if (received_action.payloadPedalAction_st.systemAction_u8 == 2)
+                          {
                               ActiveSerial->println("ESP restart by user request");
                               ESP.restart();
                           }
 
                           //3= Wifi OTA
                           #ifdef ESPNOW_Enable
-                          if (received_action.payloadPedalAction_.system_action_u8==(uint8_t)PedalSystemAction::ENABLE_OTA)
+                          if (received_action.payloadPedalAction_st.systemAction_u8==(uint8_t)PedalSystemAction::ENABLE_OTA)
                           {
                             ActiveSerial->println("Get OTA command");
                             OTA_enable_b=true;
@@ -2588,7 +2635,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                           }
                           #endif
                           //4 Enable pairing
-                          if (received_action.payloadPedalAction_.system_action_u8==4)
+                          if (received_action.payloadPedalAction_st.systemAction_u8==4)
                           {
                             #ifdef ESPNow_Pairing_function
                               ActiveSerial->println("Get Pairing command");
@@ -2599,7 +2646,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                             #endif
                           }
                           
-                          if (received_action.payloadPedalAction_.system_action_u8==(uint8_t)PedalSystemAction::ESP_BOOT_INTO_DOWNLOAD_MODE)
+                          if (received_action.payloadPedalAction_st.systemAction_u8==(uint8_t)PedalSystemAction::ESP_BOOT_INTO_DOWNLOAD_MODE)
                           {
                             #ifdef ESPNow_S3
                               ActiveSerial->println("Restart into Download mode");
@@ -2612,42 +2659,42 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                             #endif
                             //ESPNOW_BootIntoDownloadMode = false;
                           }
-                          if (received_action.payloadPedalAction_.system_action_u8 == (uint8_t)PedalSystemAction::PRINT_PEDAL_INFO)
+                          if (received_action.payloadPedalAction_st.systemAction_u8 == (uint8_t)PedalSystemAction::PRINT_PEDAL_INFO)
                           {
                             char logString[200];
                             snprintf(logString, sizeof(logString),
                                     "Pedal ID: %d\nBoard: %s\nLoadcell shift= %.3f kg\nLoadcell variance= %.3f kg\nPSU voltage:%.1f V\nMax endstop:%lu\nCurrentPos:%lu\n\0",
-                                    sct_dap_config_st.payLoadPedalConfig_.pedal_type, CONTROL_BOARD, loadcell->getBiasEstimate(), loadcell->getStandardDeviationEstimate(), ((float)stepper->getServosVoltage() / 10.0f), dap_calculationVariables_st.stepperPosMaxEndstop, dap_calculationVariables_st.current_pedal_position);
+                                     sct_dap_config_st.payloadPedalConfig_st.pedalType_u8, CONTROL_BOARD, loadcell->getBiasEstimate(), loadcell->getStandardDeviationEstimate(), ((float)stepper->getServosVoltage() / 10.0f), dap_calculationVariables_st.stepperPosMaxEndstop_i32, dap_calculationVariables_st.currentPedalPosition_u32);
                             ActiveSerial->println(logString);
                           }
 
                           // trigger ABS effect
-                          if (received_action.payloadPedalAction_.triggerAbs_u8>0)
+                          if (received_action.payloadPedalAction_st.triggerAbs_u8>0)
                           {
                             // ActiveSerial->println("Trigger ABS");
                             absOscillation.trigger();
-                            if(received_action.payloadPedalAction_.triggerAbs_u8>1)
+                            if(received_action.payloadPedalAction_st.triggerAbs_u8>1)
                             {
-                              dap_calculationVariables_st.TrackCondition=received_action.payloadPedalAction_.triggerAbs_u8-1;
+                              dap_calculationVariables_st.trackCondition_u8=received_action.payloadPedalAction_st.triggerAbs_u8-1;
                             }
                             else
                             {
-                              dap_calculationVariables_st.TrackCondition=received_action.payloadPedalAction_.triggerAbs_u8=0;
+                              dap_calculationVariables_st.trackCondition_u8=received_action.payloadPedalAction_st.triggerAbs_u8=0;
                             }
                           }
                           //RPM effect
-                          _RPMOscillation.RPM_value=received_action.payloadPedalAction_.RPM_u8;
+                          _RPMOscillation.rpmValue_fl32=received_action.payloadPedalAction_st.rpm_u8;
                           //G force effect
-                          _G_force_effect.G_value=received_action.payloadPedalAction_.G_value-128;       
+                          gForceEffect_.gValue_fl32=received_action.payloadPedalAction_st.gValue_u8-128;       
                           //wheel slip
-                          if (received_action.payloadPedalAction_.WS_u8)
+                          if (received_action.payloadPedalAction_st.wheelSlip_u8)
                           {
                             _WSOscillation.trigger();
                           }     
                           //Road impact
-                          if(dap_calculationVariables_st.Rudder_status==false)
+                          if(dap_calculationVariables_st.rudderStatus_b==false)
                           {
-                            _Road_impact_effect.Road_Impact_value=received_action.payloadPedalAction_.impact_value_u8;
+                            roadImpactEffect_.roadImpactValue_u8=received_action.payloadPedalAction_st.impactValue_u8;
                           }
                           else
                           {
@@ -2655,85 +2702,85 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                           }
                           
                           // trigger system identification
-                          if (received_action.payloadPedalAction_.startSystemIdentification_u8)
+                          if (received_action.payloadPedalAction_st.startSystemIdentification_u8)
                           {
                             systemIdentificationMode_b = true;
                           }
                           // trigger Custom effect effect 1
-                          if (received_action.payloadPedalAction_.Trigger_CV_1) CV1.trigger();
+                          if (received_action.payloadPedalAction_st.triggerCv1_u8) customVibration1_.trigger();
                           // trigger Custom effect effect 2
-                          if (received_action.payloadPedalAction_.Trigger_CV_2) CV2.trigger();
+                          if (received_action.payloadPedalAction_st.triggerCv2_u8) customVibration2_.trigger();
                           // trigger Custom effect effect 3
-                          if (received_action.payloadPedalAction_.Trigger_CV_3) CV3.trigger();
+                          if (received_action.payloadPedalAction_st.triggerCv3_u8) customVibration3_.trigger();
                           // trigger Custom effect effect 4
-                          if (received_action.payloadPedalAction_.Trigger_CV_4) CV4.trigger();
+                          if (received_action.payloadPedalAction_st.triggerCv4_u8) customVibration4_.trigger();
                           // trigger return pedal position
-                          if (received_action.payloadPedalAction_.returnPedalConfig_u8)
+                          if (received_action.payloadPedalAction_st.returnPedalConfig_u8)
                           {
                           
-                            DAP_config_st * dap_config_st_local_ptr;
+                            DapConfig_t * dap_config_st_local_ptr;
                             dap_config_st_local_ptr = &sct_dap_config_st;
-                            dap_config_st_local_ptr->payLoadHeader_.startOfFrame0_u8 = SOF_BYTE_0;
-                            dap_config_st_local_ptr->payLoadHeader_.startOfFrame1_u8 = SOF_BYTE_1;
-                            dap_config_st_local_ptr->payloadFooter_.enfOfFrame0_u8 = EOF_BYTE_0;
-                            dap_config_st_local_ptr->payloadFooter_.enfOfFrame1_u8 = EOF_BYTE_1;
-                            uint16_t crc = checksumCalculator((uint8_t*)(&(sct_dap_config_st.payLoadHeader_)), sizeof(sct_dap_config_st.payLoadHeader_) + sizeof(sct_dap_config_st.payLoadPedalConfig_));
-                            dap_config_st_local_ptr->payloadFooter_.checkSum = crc;
+                            dap_config_st_local_ptr->payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+                            dap_config_st_local_ptr->payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+                            dap_config_st_local_ptr->payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+                            dap_config_st_local_ptr->payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
+                            uint16_t crc = checksumCalculator_u16((uint8_t*)(&(sct_dap_config_st.payloadHeader_st)), sizeof(sct_dap_config_st.payloadHeader_st) + sizeof(sct_dap_config_st.payloadPedalConfig_st));
+                            dap_config_st_local_ptr->payloadFooter_st.checkSum_u16 = crc;
 
                             // suspend the serial Tx task so that data can properly be send
                             vTaskSuspend(handle_serialCommunicationTx);
                             delay(50);
-                            ActiveSerial->write((char*)dap_config_st_local_ptr, sizeof(DAP_config_st));
+                            ActiveSerial->write((char*)dap_config_st_local_ptr, sizeof(DapConfig_t));
                             ActiveSerial->print("Return pedal config");
                             delay(50);
                             vTaskResume(handle_serialCommunicationTx);
 
                           }
                           #ifdef ESPNOW_Enable
-                            if(received_action.payloadPedalAction_.Rudder_action==1)//Enable Rudder
+                            if(received_action.payloadPedalAction_st.rudderAction_u8==1)//Enable Rudder
                             {
-                              if(dap_calculationVariables_st.Rudder_status==false)
+                              if(dap_calculationVariables_st.rudderStatus_b==false)
                               {
-                                dap_calculationVariables_st.Rudder_status=true;
+                                dap_calculationVariables_st.rudderStatus_b=true;
                                 ActiveSerial->println("Rudder on");
                                 Rudder_initializing=true;
                                 moveSlowlyToPosition_b=true;
                                 //ActiveSerial->print("status:");
-                                //ActiveSerial->println(dap_calculationVariables_st.Rudder_status);
+                                //ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
                               }
                               else
                               {
-                                dap_calculationVariables_st.Rudder_status=false;
+                                dap_calculationVariables_st.rudderStatus_b=false;
                                 ActiveSerial->println("Rudder off");
                                 Rudder_deinitializing=true;
                                 moveSlowlyToPosition_b=true; 
 
                                 //ActiveSerial->print("status:");
-                                //ActiveSerial->println(dap_calculationVariables_st.Rudder_status);
+                                //ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
                               }
                             }
-                            if(received_action.payloadPedalAction_.Rudder_brake_action==1)
+                            if(received_action.payloadPedalAction_st.rudderBrakeAction_u8==1)
                             {
-                              if(dap_calculationVariables_st.rudder_brake_status==false&&dap_calculationVariables_st.Rudder_status==true)
+                              if(dap_calculationVariables_st.rudderBrakeStatus_b==false&&dap_calculationVariables_st.rudderStatus_b==true)
                               {
-                                dap_calculationVariables_st.rudder_brake_status=true;
+                                dap_calculationVariables_st.rudderBrakeStatus_b=true;
                                 ActiveSerial->println("Rudder brake on");
                                 //ActiveSerial->print("status:");
-                                //ActiveSerial->println(dap_calculationVariables_st.Rudder_status);
+                                //ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
                               }
                               else
                               {
-                                dap_calculationVariables_st.rudder_brake_status=false;
+                                dap_calculationVariables_st.rudderBrakeStatus_b=false;
                                 ActiveSerial->println("Rudder brake off");
                                 //ActiveSerial->print("status:");
-                                //ActiveSerial->println(dap_calculationVariables_st.Rudder_status);
+                                //ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
                               }
                             }
                             //clear rudder status
-                            if(received_action.payloadPedalAction_.Rudder_action==2)
+                            if(received_action.payloadPedalAction_st.rudderAction_u8==2)
                             {
-                              dap_calculationVariables_st.Rudder_status=false;
-                              dap_calculationVariables_st.rudder_brake_status=false;
+                              dap_calculationVariables_st.rudderStatus_b=false;
+                              dap_calculationVariables_st.rudderBrakeStatus_b=false;
                               ActiveSerial->println("Rudder Status Clear");
                               Rudder_deinitializing=true;
                               moveSlowlyToPosition_b=true;
@@ -2747,23 +2794,23 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                       }
                       break;
                   }
-                  case DAP_PAYLOAD_TYPE_ACTION_OTA:{
-                    memcpy(&dap_action_ota_st, packet_start, sizeof(DAP_action_ota_st));
+                  case DAP_PAYLOAD_TYPE_ACTION_OTA_U8:{
+                    memcpy(&dap_action_ota_st, packet_start, sizeof(DapActionOta_t));
                     ActiveSerial->println("Get OTA command");
                     buzzerBeepAction_b=true;
 
-                    //ActiveSerial->readBytes((char*)&dap_action_ota_st, sizeof(DAP_action_ota_st));
+                    //ActiveSerial->readBytes((char*)&dap_action_ota_st, sizeof(DapActionOta_t));
                     #ifdef OTA_update
-                      if(dap_action_ota_st.payLoadHeader_.payloadType==DAP_PAYLOAD_TYPE_ACTION_OTA)
+                      if(dap_action_ota_st.payloadHeader_st.payloadType_u8==DAP_PAYLOAD_TYPE_ACTION_OTA_U8)
                       {
-                        if(dap_action_ota_st.payloadOtaInfo_.device_ID == sct_dap_config_st.payLoadPedalConfig_.pedal_type)
+                        if(dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 == sct_dap_config_st.payloadPedalConfig_st.pedalType_u8)
                         {
-                          SSID=new char[dap_action_ota_st.payloadOtaInfo_.SSID_Length+1];
-                          PASS=new char[dap_action_ota_st.payloadOtaInfo_.PASS_Length+1];
-                          memcpy(SSID,dap_action_ota_st.payloadOtaInfo_.WIFI_SSID,dap_action_ota_st.payloadOtaInfo_.SSID_Length);
-                          memcpy(PASS,dap_action_ota_st.payloadOtaInfo_.WIFI_PASS,dap_action_ota_st.payloadOtaInfo_.PASS_Length);
-                          SSID[dap_action_ota_st.payloadOtaInfo_.SSID_Length]=0;
-                          PASS[dap_action_ota_st.payloadOtaInfo_.PASS_Length]=0;
+                          SSID=new char[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8+1];
+                          PASS=new char[dap_action_ota_st.payloadOtaInfo_st.passLength_u8+1];
+                          memcpy(SSID,dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8,dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8);
+                          memcpy(PASS,dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8,dap_action_ota_st.payloadOtaInfo_st.passLength_u8);
+                          SSID[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8]=0;
+                          PASS[dap_action_ota_st.payloadOtaInfo_st.passLength_u8]=0;
                           OTA_enable_b=true;
                           OTA_enable_start=true;
                           #ifdef ESPNOW_Enable
@@ -2780,19 +2827,24 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                   
               } // end switch
 
-              if (!structIsValid) {
+                if (!structIsValid)
+                {
                   ActiveSerial->printf("Invalid packet detected (Type: %d). Skipping SOF.\n", payloadType);
                   buffer_idx++; // Skip the failed SOF and continue scanning
-              } else {
+                }
+                else
+                {
                   // Packet was valid and processed, advance index past this packet
                   buffer_idx += expectedSize;
               }
           } // end while
 
           // --- 3. Clean up the buffer ---
-          if (buffer_idx > 0) {
+              if (buffer_idx > 0)
+              {
               size_t remaining_len = buffer_len - buffer_idx;
-              if (remaining_len > 0) {
+                if (remaining_len > 0)
+                {
                   memmove(rx_buffer, &rx_buffer[buffer_idx], remaining_len);
               }
               buffer_len = remaining_len;
@@ -2813,35 +2865,37 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
   // profiler_serialCommunicationTask.setName("SerialCommunicationTx");
   // profiler_serialCommunicationTask.setNumberOfCalls(500);
 
-  // static DAP_config_st sct_dap_config_st;
+  // static DapConfig_t sct_dap_config_st;
 
   // This task now waits for a complete package of data from the queue.
   PedalStatePackage_t receivedState;
 
-  for(;;){
+  for (;;)
+  {
 
     // global_dap_config_class.getConfig(&sct_dap_config_st, 0);
 
     // Block indefinitely until a new state package arrives from pedalUpdateTask.
     // This is now the ONLY trigger for this task.
-    if (xQueueReceive(pedalStateQueue, &receivedState, portMAX_DELAY) == pdPASS) {
+    if (xQueueReceive(pedalStateQueue, &receivedState, portMAX_DELAY) == pdPASS)
+    {
       
       // Now, process the first item, and then enter a loop to
       // empty the rest of the queue.
       do {
                 
         // Copy to a local variable to calculate CRC
-        DAP_state_basic_st basic_to_send = receivedState.basic_st;
-        DAP_state_extended_st extended_to_send = receivedState.extended_st;
+        DapStateBasic_t basic_to_send = receivedState.basic_st;
+        DapStateExtended_t extended_to_send = receivedState.extended_st;
 
 
 
   // Provide pedal states to ESPnow task
   #ifdef ESPNOW_Enable
         // update pedal states
-        if(semaphore_updatePedalStates!=NULL)
+        if (semaphore_updatePedalStates != NULL)
         {
-          if(xSemaphoreTake(semaphore_updatePedalStates, (TickType_t)0)==pdTRUE) 
+          if (xSemaphoreTake(semaphore_updatePedalStates, (TickType_t)0) == pdTRUE)
           {
             // move local structure values to global structures
             dap_state_basic_st = basic_to_send;
@@ -2860,7 +2914,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
 
 
         // activate profiler depending on pedal config
-        // if (sct_dap_config_st.payLoadPedalConfig_.debug_flags_0 & DEBUG_INFO_0_CYCLE_TIMER) 
+        // if (sct_dap_config_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_CYCLE_TIMER) 
         // {
         //   profiler_serialCommunicationTask.activate( true );
         // }
@@ -2875,16 +2929,16 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
         if (receivedState.sendBasicFlag_b)
         {
           // update CRC before transmission
-          basic_to_send.payloadFooter_.checkSum = checksumCalculator((uint8_t*)(&(basic_to_send.payLoadHeader_)), sizeof(basic_to_send.payLoadHeader_) + sizeof(basic_to_send.payloadPedalState_Basic_));
-          ActiveSerial->write((char*)&basic_to_send, sizeof(DAP_state_basic_st));
+          basic_to_send.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(basic_to_send.payloadHeader_st)), sizeof(basic_to_send.payloadHeader_st) + sizeof(basic_to_send.payloadPedalStateBasic_st));
+          ActiveSerial->write((char*)&basic_to_send, sizeof(DapStateBasic_t));
         }
 
         // send extended pedal state struct
         if (receivedState.sendExtendedFlag_b)
         {
           // update CRC before transmission
-          extended_to_send.payloadFooter_.checkSum = checksumCalculator((uint8_t*)(&(extended_to_send.payLoadHeader_)), sizeof(extended_to_send.payLoadHeader_) + sizeof(extended_to_send.payloadPedalState_Extended_));
-          ActiveSerial->write((char*)&extended_to_send, sizeof(DAP_state_extended_st));
+          extended_to_send.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(extended_to_send.payloadHeader_st)), sizeof(extended_to_send.payloadHeader_st) + sizeof(extended_to_send.payloadPedalStateExtended_st));
+          ActiveSerial->write((char*)&extended_to_send, sizeof(DapStateExtended_t));
         }
 
         // profiler_serialCommunicationTask.end(0);
@@ -2906,19 +2960,20 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
 
 void otaUpdateTask( void * pvParameters )
 {
-  uint16_t OTA_count=0;
-  unsigned long ota_debug_messaage_last=0;
-  bool message_out_b=false;
-  int OTA_update_status=99;
+  uint16_t OTA_count = 0;
+  unsigned long ota_debug_messaage_last = 0;
+  bool message_out_b = false;
+  int OTA_update_status = 99;
 
-  for(;;)
+  for (;;)
   {
-    if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) {
+    if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
+    {
 
-      if(OTA_count>200)
+      if (OTA_count > 200)
       {
-        message_out_b=true;
-        OTA_count=0;
+        message_out_b = true;
+        OTA_count = 0;
       }
       else
       {
@@ -2946,7 +3001,7 @@ void otaUpdateTask( void * pvParameters )
             }
             else
             {
-              if(dap_action_ota_st.payloadOtaInfo_.ota_action==OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD)
+              if(dap_action_ota_st.payloadOtaInfo_st.otaAction_u8==OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD)
               {
                 //updload ota from platformio
                 //sendESPNOWLog("Upload from platformIO");
@@ -3012,14 +3067,14 @@ void otaUpdateTask( void * pvParameters )
             wifi_initialized(SSID,PASS);
             delay(2000);
             //sendESPNOWLog("Wifi Connected");
-            if(dap_action_ota_st.payloadOtaInfo_.ota_action!=OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD)
+            if(dap_action_ota_st.payloadOtaInfo_st.otaAction_u8!=OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD)
             {
               ESP32OTAPull ota;
               int ret;
               ota.SetCallback(OTAcallback);
               ota.OverrideBoard(CONTROL_BOARD);
               char* version_tag;
-              if(dap_action_ota_st.payloadOtaInfo_.ota_action==OTA_ACTION_FORCE_UPDATE)
+              if(dap_action_ota_st.payloadOtaInfo_st.otaAction_u8==OTA_ACTION_FORCE_UPDATE)
               {
                 const char* str;
                 if(PCB_VERSION==3||PCB_VERSION==5||PCB_VERSION==9) str ="0.90.16";// for those board which change the partition table
@@ -3028,13 +3083,13 @@ void otaUpdateTask( void * pvParameters )
                 strcpy(version_tag, str);
                 ActiveSerial->println("Force update");
               }
-              if(dap_action_ota_st.payloadOtaInfo_.ota_action==OTA_ACTION_NORMAL)
+              if(dap_action_ota_st.payloadOtaInfo_st.otaAction_u8==OTA_ACTION_NORMAL)
               {
                 version_tag=new char[strlen(DAP_FIRMWARE_VERSION) + 1];
                 strcpy(version_tag, DAP_FIRMWARE_VERSION);
                 //version_tag=DAP_FIRMWARE_VERSION;
               }
-              switch (dap_action_ota_st.payloadOtaInfo_.mode_select)
+              switch (dap_action_ota_st.payloadOtaInfo_st.modeSelect_u8)
               {
                 case 1:
                   ActiveSerial->printf("Flashing to latest release, checking %s to see if an update is available...\n", OTA_JSON_URL_MAIN);
@@ -3119,11 +3174,11 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
       if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) {
 
 
-        DAP_config_st espnow_dap_config_st;
+        DapConfig_t espnow_dap_config_st;
         global_dap_config_class.getConfig(&espnow_dap_config_st, 500);
         //basic state sendout interval
         uint basicStateUpdateInterval = 8;
-        int pedalId=espnow_dap_config_st.payLoadPedalConfig_.pedal_type;
+        int pedalId=espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8;
         if(pedalId < 3) basicStateUpdateInterval= basicStateUpdateIntervalBase[pedalId];
         if(millis()-basic_state_update_last>basicStateUpdateInterval)
         {
@@ -3131,7 +3186,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
           basic_state_update_last=millis();
           
         }
-        if (espnow_dap_config_st.payLoadPedalConfig_.pedal_type ==PEDAL_ID_UNKNOWN)
+        if (espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 ==PEDAL_ID_UNKNOWN)
         {
           noAssignmentStatus=true;
         }
@@ -3139,12 +3194,12 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
         if(ESPNow_restart)
         {
           ActiveSerial->println("ESP restart by ESPnow request");
-          sendESPNOWLog("Pedal:%d restarted by request", espnow_dap_config_st.payLoadPedalConfig_.pedal_type);
+          sendESPNOWLog("Pedal:%d restarted by request", espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8);
           delay(2);
           ESP.restart();
         }
         //entend state send out interval
-        if((millis()-extend_state_update_last>extendStateUpdateInterval) && espnow_dap_config_st.payLoadPedalConfig_.debug_flags_0 == DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT)
+        if((millis()-extend_state_update_last>extendStateUpdateInterval) && espnow_dap_config_st.payloadPedalConfig_st.debugFlags0_u8 == DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT_U8)
         {
           extend_state_send_b=true;
           extend_state_update_last=millis();
@@ -3156,7 +3211,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
           assignmentPacketUpdateLast = millis();
         }
         // activate profiler depending on pedal config
-        if (espnow_dap_config_st.payLoadPedalConfig_.debug_flags_0 & DEBUG_INFO_0_CYCLE_TIMER) 
+        if (espnow_dap_config_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_CYCLE_TIMER_U8) 
         {
           profiler_espNow.activate( true );
         }
@@ -3181,7 +3236,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
         {
           #ifdef ESPNow_Pairing_function
           #ifdef Hardware_Pairing_button
-            if(digitalRead(Pairing_GPIO)==LOW)
+            if(digitalRead(PAIRING_GPIO_U8)==LOW)
             {
               hardware_pairing_action_b=true;
             }
@@ -3206,12 +3261,12 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
               {
                 uint16_t crc=0;          
                 building_dap_esppairing_lcl=false;
-                dap_esppairing_lcl.payloadESPNowInfo_._deviceID = espnow_dap_config_st.payLoadPedalConfig_.pedal_type;
-                dap_esppairing_lcl.payLoadHeader_.payloadType = DAP_PAYLOAD_TYPE_ESPNOW_PAIRING;
-                dap_esppairing_lcl.payLoadHeader_.PedalTag = espnow_dap_config_st.payLoadPedalConfig_.pedal_type;
-                dap_esppairing_lcl.payLoadHeader_.version = DAP_VERSION_CONFIG;
-                crc = checksumCalculator((uint8_t*)(&(dap_esppairing_lcl.payLoadHeader_)), sizeof(dap_esppairing_lcl.payLoadHeader_) + sizeof(dap_esppairing_lcl.payloadESPNowInfo_));
-                dap_esppairing_lcl.payloadFooter_.checkSum=crc;
+                dap_esppairing_lcl.payloadEspnowInfo_st.deviceId_u8 = espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8;
+                dap_esppairing_lcl.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_ESPNOW_PAIRING_U8;
+                dap_esppairing_lcl.payloadHeader_st.pedalTag_u8 = espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8;
+                dap_esppairing_lcl.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
+                crc = checksumCalculator_u16((uint8_t*)(&(dap_esppairing_lcl.payloadHeader_st)), sizeof(dap_esppairing_lcl.payloadHeader_st) + sizeof(dap_esppairing_lcl.payloadEspnowInfo_st));
+                dap_esppairing_lcl.payloadFooter_st.checkSum_u16=crc;
               }
               if(now-Pairing_state_last_sending>400)
               {
@@ -3226,17 +3281,17 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
               {
                 ESPNow_pairing_action_b=false;
                 ActiveSerial->print("Pedal: ");
-                ActiveSerial->print(espnow_dap_config_st.payLoadPedalConfig_.pedal_type);
+                ActiveSerial->print(espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8);
                 ActiveSerial->println(" timeout.");
                 Buzzer.single_beep_tone(700,100);
                 if(UpdatePairingToEeprom)
                 {
-                  EEPROM.put(EEPROM_offset,_ESP_pairing_reg);
+                  EEPROM.put(EEPROM_OFFSET_U32,_ESP_pairing_reg);
                   EEPROM.commit();
                   UpdatePairingToEeprom=false;
                   //list eeprom
                   ESP_pairing_reg ESP_pairing_reg_local;
-                  EEPROM.get(EEPROM_offset, ESP_pairing_reg_local);
+                  EEPROM.get(EEPROM_OFFSET_U32, ESP_pairing_reg_local);
                   for(int i=0;i<4;i++)
                   {
                     if(ESP_pairing_reg_local.Pair_status[i]==1)
@@ -3283,11 +3338,11 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
                         delay(100);
                         ESPNow.add_peer(esp_Host);                
                       }        
-                      if(espnow_dap_config_st.payLoadPedalConfig_.pedal_type==1)
+                      if(espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8==1)
                       {
                         Recv_mac=Gas_mac;
                       }
-                      if(espnow_dap_config_st.payLoadPedalConfig_.pedal_type==2)
+                      if(espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8==2)
                       {
                         Recv_mac=Brk_mac;
                       }
@@ -3317,25 +3372,25 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
           {
             //ActiveSerial->println("Send out assignment request");
             assignmentUpdatePacketSend_b=false;
-            DAP_AssignmentBoardcast_st dap_assignmentBoardcast_st;
-            dap_assignmentBoardcast_st.payLoadHeader_.startOfFrame0_u8 = SOF_BYTE_0;
-            dap_assignmentBoardcast_st.payLoadHeader_.startOfFrame1_u8 = SOF_BYTE_1;
-            dap_assignmentBoardcast_st.payLoadHeader_.version = DAP_VERSION_CONFIG;
-            dap_assignmentBoardcast_st.payLoadHeader_.payloadType = DAP_PAYLOAD_TYPE_ASSIGNMENT;
-            dap_assignmentBoardcast_st.payloadFooter_.enfOfFrame0_u8 = EOF_BYTE_0;
-            dap_assignmentBoardcast_st.payloadFooter_.enfOfFrame1_u8 = EOF_BYTE_1;
-            dap_assignmentBoardcast_st.payloadAssignmentRequest_.assignmentAction=1;
-            memcpy(dap_assignmentBoardcast_st.payloadAssignmentRequest_.macAddress,esp_Mac,6);
+            DapAssignmentBroadcast_t dap_assignmentBoardcast_st;
+            dap_assignmentBoardcast_st.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+            dap_assignmentBoardcast_st.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+            dap_assignmentBoardcast_st.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
+            dap_assignmentBoardcast_st.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_ASSIGNMENT_U8;
+            dap_assignmentBoardcast_st.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+            dap_assignmentBoardcast_st.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
+            dap_assignmentBoardcast_st.payloadAssignmentRequest_st.assignmentAction=1;
+            memcpy(dap_assignmentBoardcast_st.payloadAssignmentRequest_st.macAddress,esp_Mac,6);
             uint16_t crc = 0;
-            crc = checksumCalculator((uint8_t *)(&(dap_assignmentBoardcast_st.payLoadHeader_)), sizeof(dap_assignmentBoardcast_st.payLoadHeader_) + sizeof(dap_assignmentBoardcast_st.payloadAssignmentRequest_));
-            dap_assignmentBoardcast_st.payloadFooter_.checkSum=crc;
-            ESPNow.send_message(broadcast_mac, (uint8_t *)&dap_assignmentBoardcast_st, sizeof(DAP_AssignmentBoardcast_st));
+            crc = checksumCalculator_u16((uint8_t *)(&(dap_assignmentBoardcast_st.payloadHeader_st)), sizeof(dap_assignmentBoardcast_st.payloadHeader_st) + sizeof(dap_assignmentBoardcast_st.payloadAssignmentRequest_st));
+            dap_assignmentBoardcast_st.payloadFooter_st.checkSum_u16=crc;
+            ESPNow.send_message(broadcast_mac, (uint8_t *)&dap_assignmentBoardcast_st, sizeof(DapAssignmentBroadcast_t));
           }
           // basic state packet send out  
           if(basic_state_send_b && !noAssignmentStatus)
           {
             // update pedal states
-            DAP_state_basic_st dap_state_basic_st_lcl;       
+            DapStateBasic_t dap_state_basic_st_lcl;       
             // initialize with zeros in case semaphore couldn't be aquired
             memset(&dap_state_basic_st_lcl, 0, sizeof(dap_state_basic_st_lcl));
             if(semaphore_updatePedalStates!=NULL)
@@ -3347,7 +3402,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
 
                 // release semaphore
                 xSemaphoreGive(semaphore_updatePedalStates);
-                dap_state_basic_st_lcl.payloadFooter_.checkSum = checksumCalculator((uint8_t*)(&(dap_state_basic_st_lcl.payLoadHeader_)), sizeof(dap_state_basic_st_lcl.payLoadHeader_) + sizeof(dap_state_basic_st_lcl.payloadPedalState_Basic_));
+                dap_state_basic_st_lcl.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(dap_state_basic_st_lcl.payloadHeader_st)), sizeof(dap_state_basic_st_lcl.payloadHeader_st) + sizeof(dap_state_basic_st_lcl.payloadPedalStateBasic_st));
               }
             }
             else
@@ -3365,7 +3420,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
           if (extend_state_send_b && !noAssignmentStatus)
           {
             // update pedal states
-            DAP_state_extended_st dap_state_extended_st_espNow; 
+            DapStateExtended_t dap_state_extended_st_espNow; 
             // initialize with zeros in case semaphore couldn't be aquired
             memset(&dap_state_extended_st_espNow, 0, sizeof(dap_state_extended_st_espNow));
             if(semaphore_updatePedalStates!=NULL)
@@ -3376,7 +3431,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
                 dap_state_extended_st_espNow = dap_state_extended_st; 
                 // release semaphore
                 xSemaphoreGive(semaphore_updatePedalStates);
-                dap_state_extended_st_espNow.payloadFooter_.checkSum = checksumCalculator((uint8_t*)(&(dap_state_extended_st_espNow.payLoadHeader_)), sizeof(dap_state_extended_st_espNow.payLoadHeader_) + sizeof(dap_state_extended_st_espNow.payloadPedalState_Extended_));
+                dap_state_extended_st_espNow.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(dap_state_extended_st_espNow.payloadHeader_st)), sizeof(dap_state_extended_st_espNow.payloadHeader_st) + sizeof(dap_state_extended_st_espNow.payloadPedalStateExtended_st));
               }
             }
             else
@@ -3392,19 +3447,19 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
 
           if (ESPNow_config_request && !noAssignmentStatus)
           {
-            DAP_config_st * dap_config_st_local_ptr;
+            DapConfig_t * dap_config_st_local_ptr;
             dap_config_st_local_ptr = &espnow_dap_config_st;
-            dap_config_st_local_ptr->payLoadHeader_.startOfFrame0_u8 = SOF_BYTE_0;
-            dap_config_st_local_ptr->payLoadHeader_.startOfFrame1_u8 = SOF_BYTE_1;
-            dap_config_st_local_ptr->payloadFooter_.enfOfFrame0_u8 = EOF_BYTE_0;
-            dap_config_st_local_ptr->payloadFooter_.enfOfFrame1_u8 = EOF_BYTE_1;
-            dap_config_st_local_ptr->payLoadHeader_.PedalTag = dap_config_st_local_ptr->payLoadPedalConfig_.pedal_type;
+            dap_config_st_local_ptr->payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+            dap_config_st_local_ptr->payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+            dap_config_st_local_ptr->payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+            dap_config_st_local_ptr->payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
+            dap_config_st_local_ptr->payloadHeader_st.pedalTag_u8 = dap_config_st_local_ptr->payloadPedalConfig_st.pedalType_u8;
             uint16_t crc=0;
-            crc = checksumCalculator((uint8_t*)(&(espnow_dap_config_st.payLoadHeader_)), sizeof(espnow_dap_config_st.payLoadHeader_) + sizeof(espnow_dap_config_st.payLoadPedalConfig_));
-            dap_config_st_local_ptr->payloadFooter_.checkSum = crc;
+            crc = checksumCalculator_u16((uint8_t*)(&(espnow_dap_config_st.payloadHeader_st)), sizeof(espnow_dap_config_st.payloadHeader_st) + sizeof(espnow_dap_config_st.payloadPedalConfig_st));
+            dap_config_st_local_ptr->payloadFooter_st.checkSum_u16 = crc;
             ESPNow.send_message(broadcast_mac,(uint8_t *) & espnow_dap_config_st, sizeof(espnow_dap_config_st));
             ESPNow_config_request=false;
-            sendESPNOWLog("Pedal:%d Config returned by user request, CRC:%d", espnow_dap_config_st.payLoadPedalConfig_.pedal_type, crc);
+            sendESPNOWLog("Pedal:%d Config returned by user request, CRC:%d", espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8, crc);
             delay(2);
           }
 
@@ -3426,19 +3481,19 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
             ESPNow_OTA_enable=false;
             OTA_update_action_b = false;
             //ActiveSerial->println("get basic wifi info");
-            //ActiveSerial->readBytes((char*)&dap_action_ota_st, sizeof(DAP_action_ota_st));
+            //ActiveSerial->readBytes((char*)&dap_action_ota_st, sizeof(DapActionOta_t));
             #ifdef OTA_update
 
-              if(dap_action_ota_st.payLoadHeader_.payloadType==DAP_PAYLOAD_TYPE_ACTION_OTA)
+              if(dap_action_ota_st.payloadHeader_st.payloadType_u8==DAP_PAYLOAD_TYPE_ACTION_OTA_U8)
               {
-                if(dap_action_ota_st.payloadOtaInfo_.device_ID == espnow_dap_config_st.payLoadPedalConfig_.pedal_type)
+                if(dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 == espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8)
                 {
-                  SSID=new char[dap_action_ota_st.payloadOtaInfo_.SSID_Length+1];
-                  PASS=new char[dap_action_ota_st.payloadOtaInfo_.PASS_Length+1];
-                  memcpy(SSID,dap_action_ota_st.payloadOtaInfo_.WIFI_SSID,dap_action_ota_st.payloadOtaInfo_.SSID_Length);
-                  memcpy(PASS,dap_action_ota_st.payloadOtaInfo_.WIFI_PASS,dap_action_ota_st.payloadOtaInfo_.PASS_Length);
-                  SSID[dap_action_ota_st.payloadOtaInfo_.SSID_Length]=0;
-                  PASS[dap_action_ota_st.payloadOtaInfo_.PASS_Length]=0;
+                  SSID=new char[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8+1];
+                  PASS=new char[dap_action_ota_st.payloadOtaInfo_st.passLength_u8+1];
+                  memcpy(SSID,dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8,dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8);
+                  memcpy(PASS,dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8,dap_action_ota_st.payloadOtaInfo_st.passLength_u8);
+                  SSID[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8]=0;
+                  PASS[dap_action_ota_st.payloadOtaInfo_st.passLength_u8]=0;
                   OTA_enable_b=true;
                 }
               }
@@ -3452,11 +3507,11 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
             printPedalInfo_b=false;
             buzzerBeepAction_b=true;
             delay(100);
-            pedalInfoBuilder.BuildInfoString(espnow_dap_config_st.payLoadPedalConfig_.pedal_type, CONTROL_BOARD, loadcell->getShiftingEstimate(), loadcell->getSTDEstimate(), ((float)stepper->getServosVoltage()/10.0f),dap_calculationVariables_st.stepperPosMaxEndstop,dap_calculationVariables_st.current_pedal_position);
+             pedalInfoBuilder.BuildInfoString(espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8, CONTROL_BOARD, loadcell->getShiftingEstimate(), loadcell->getSTDEstimate(), ((float)stepper->getServosVoltage()/10.0f),dap_calculationVariables_st.stepperPosMaxEndstop_i32,dap_calculationVariables_st.currentPedalPosition_u32);
             sendESPNOWLog(pedalInfoBuilder.logString);
             ActiveSerial->println(pedalInfoBuilder.logString);
             delay(3);
-            pedalInfoBuilder.BuildESPNOWInfo(espnow_dap_config_st.payLoadPedalConfig_.pedal_type,rssi);
+            pedalInfoBuilder.BuildESPNOWInfo(espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8,rssi);
             sendESPNOWLog(pedalInfoBuilder.logESPNOWString);
             ActiveSerial->println(pedalInfoBuilder.logESPNOWString);
 
@@ -3475,7 +3530,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
           {
             #ifdef ESPNow_S3
               ActiveSerial->println("Restart into Download mode");
-              sendESPNOWLog("Pedal:%d restart into Download mode", espnow_dap_config_st.payLoadPedalConfig_.pedal_type);
+              sendESPNOWLog("Pedal:%d restart into Download mode", espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8);
               delay(1000);
               REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
               ESP.restart();
@@ -3488,18 +3543,18 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
           //send out rudder packet after rudder initialized
           if (rudderPacketsUpdateLast - millis() > rudderPacketInterval && !noAssignmentStatus)
           {
-            if((dap_calculationVariables_st.Rudder_status || dap_calculationVariables_st.helicopterRudderStatus) && (!Rudder_initializing && !HeliRudder_initializing))
+            if((dap_calculationVariables_st.rudderStatus_b || dap_calculationVariables_st.helicopterRudderStatus_b) && (!Rudder_initializing && !HeliRudder_initializing))
             {              
-              dap_rudder_sending.payloadRudderState_.pedal_position_ratio=dap_calculationVariables_st.current_pedal_position_ratio;
-              dap_rudder_sending.payloadRudderState_.pedal_position=dap_calculationVariables_st.current_pedal_position;
-              dap_rudder_sending.payLoadHeader_.payloadType=DAP_PAYLOAD_TYPE_ESPNOW_RUDDER;
-              dap_rudder_sending.payLoadHeader_.PedalTag = espnow_dap_config_st.payLoadPedalConfig_.pedal_type;
-              dap_rudder_sending.payLoadHeader_.version=DAP_VERSION_CONFIG;
+               dap_rudder_sending.payloadRudderState_st.pedalPositionRatio_fl32=dap_calculationVariables_st.currentPedalPositionRatio_fl32;
+               dap_rudder_sending.payloadRudderState_st.pedalPosition_u16=dap_calculationVariables_st.currentPedalPosition_u32;
+              dap_rudder_sending.payloadHeader_st.payloadType_u8=DAP_PAYLOAD_TYPE_ESPNOW_RUDDER_U8;
+              dap_rudder_sending.payloadHeader_st.pedalTag_u8 = espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8;
+              dap_rudder_sending.payloadHeader_st.version_u8=DAP_VERSION_CONFIG_U8;
               uint16_t crc=0;
-              crc = checksumCalculator((uint8_t*)(&(dap_rudder_sending.payLoadHeader_)), sizeof(dap_rudder_sending.payLoadHeader_) + sizeof(dap_rudder_sending.payloadRudderState_));
-              dap_rudder_sending.payloadFooter_.checkSum=crc;
+              crc = checksumCalculator_u16((uint8_t*)(&(dap_rudder_sending.payloadHeader_st)), sizeof(dap_rudder_sending.payloadHeader_st) + sizeof(dap_rudder_sending.payloadRudderState_st));
+              dap_rudder_sending.payloadFooter_st.checkSum_u16=crc;
               ESPNow.send_message(broadcast_mac,(uint8_t *) &dap_rudder_sending,sizeof(dap_rudder_sending));   
-              //ESPNow_send=dap_calculationVariables_st.current_pedal_position; 
+               //ESPNow_send=dap_calculationVariables_st.currentPedalPosition_u32; 
               //esp_err_t result =ESPNow.send_message(Recv_mac,(uint8_t *) &_ESPNow_Send,sizeof(_ESPNow_Send));                
               //if (result == ESP_OK) 
               //{
@@ -3507,9 +3562,9 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
               //}
               if (ESPNow_Rudder_Update && !noAssignmentStatus)
               {
-                //dap_calculationVariables_st.sync_pedal_position=ESPNow_recieve;
-                dap_calculationVariables_st.sync_pedal_position=dap_rudder_receiving.payloadRudderState_.pedal_position;
-                dap_calculationVariables_st.Sync_pedal_position_ratio=dap_rudder_receiving.payloadRudderState_.pedal_position_ratio;
+                //dap_calculationVariables_st.syncPedalPosition_u32=ESPNow_recieve;
+                dap_calculationVariables_st.syncPedalPosition_u32=dap_rudder_receiving.payloadRudderState_st.pedalPosition_u16;
+                dap_calculationVariables_st.syncPedalPositionRatio_fl32=dap_rudder_receiving.payloadRudderState_st.pedalPositionRatio_fl32;
                 ESPNow_Rudder_Update=false;
               }                
             }
@@ -3520,28 +3575,28 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
         #ifdef ESPNow_debug_rudder
           if(print_count>1000)
           {
-            if(dap_calculationVariables_st.Rudder_status)
+            if(dap_calculationVariables_st.rudderStatus_b)
             {
               ActiveSerial->print("Pedal:");
-              ActiveSerial->print(espnow_dap_config_st.payLoadPedalConfig_.pedal_type);
+              ActiveSerial->print(espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8);
               ActiveSerial->print(", Send %: ");
-              ActiveSerial->print(dap_rudder_sending.payloadRudderState_.pedal_position_ratio);
+              ActiveSerial->print(dap_rudder_sending.payloadRudderState_st.pedalPositionRatio_fl32);
               ActiveSerial->print(", Recieve %:");
-              ActiveSerial->print(dap_rudder_receiving.payloadRudderState_.pedal_position_ratio);
+              ActiveSerial->print(dap_rudder_receiving.payloadRudderState_st.pedalPositionRatio_fl32);
               ActiveSerial->print(", Send Position: ");
-              ActiveSerial->print(dap_calculationVariables_st.current_pedal_position);
+               ActiveSerial->print(dap_calculationVariables_st.currentPedalPosition_u32);
               ActiveSerial->print(", % in cal: ");
-              ActiveSerial->print(dap_calculationVariables_st.current_pedal_position_ratio); 
+               ActiveSerial->print(dap_calculationVariables_st.currentPedalPositionRatio_fl32); 
               ActiveSerial->print(", min cal: ");
-              ActiveSerial->print(dap_calculationVariables_st.stepperPosMin_default); 
+              ActiveSerial->print(dap_calculationVariables_st.stepperPosMinDefault_i32); 
               ActiveSerial->print(", max cal: ");
-              ActiveSerial->print(dap_calculationVariables_st.stepperPosMax_default);
+              ActiveSerial->print(dap_calculationVariables_st.stepperPosMaxDefault_i32);
               ActiveSerial->print(", range in cal: ");
-              ActiveSerial->println(dap_calculationVariables_st.stepperPosRange_default); 
+              ActiveSerial->println(dap_calculationVariables_st.stepperPosRangeDefault_fl32); 
             }
 
             //Debug_rudder_last=now_rudder;
-            //ActiveSerial->println(dap_calculationVariables_st.current_pedal_position);                  
+             //ActiveSerial->println(dap_calculationVariables_st.currentPedalPosition_u32);                  
                 
             print_count=0;
           }
@@ -3572,7 +3627,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
 
 void miscTask( void * pvParameters )
 {
-  static DAP_config_st misc_dap_config_st;
+  static DapConfig_t misc_dap_config_st;
   // for the task no need complete asap, ex buzzer, led 
   for(;;)
   {
@@ -3626,3 +3681,4 @@ void miscTask( void * pvParameters )
     delay(50);
   }
 }
+

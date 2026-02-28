@@ -4,12 +4,12 @@
 #include <MovingAverageFilter.h>
 #include "FastTrig.h"
 
-static const long ABS_ACTIVE_TIME_PER_TRIGGER_MILLIS = 100;
-static const long RPM_ACTIVE_TIME_PER_TRIGGER_MILLIS = 100;
-static const long BP_ACTIVE_TIME_PER_TRIGGER_MILLIS = 100;
-static const long WS_ACTIVE_TIME_PER_TRIGGER_MILLIS = 100;
-static const long CV_ACTIVE_TIME_PER_TRIGGER_MILLIS = 100;
-static float RPM_VALUE_LAST = 0.0f;
+static const long s_absActiveTimePerTriggerMillis_i32 = 100;
+static const long s_rpmActiveTimePerTriggerMillis_i32 = 100;
+static const long s_bpActiveTimePerTriggerMillis_i32 = 100;
+static const long s_wsActiveTimePerTriggerMillis_i32 = 100;
+static const long s_cvActiveTimePerTriggerMillis_i32 = 100;
+static float s_rpmValueLast_fl32 = 0.0f;
 
 enum class TrackCondition
 {
@@ -23,54 +23,57 @@ enum class TrackCondition
 };
 class ABSOscillation {
 private:
-  long _timeLastTriggerMillis;
-  long _absTimeMillis;
-  long _lastCallTimeMillis = 0;
+  long timeLastTriggerMillis_i32;
+  long absTimeMillis_i32;
+  long lastCallTimeMillis_i32 = 0;
 
 public:
-  float absOscillation_Force_offset = 0.0f;
-  float absOscillation_Position_offset = 0.0f;
+  float absOscillationForceOffset_fl32 = 0.0f;
+  float absOscillationPositionOffset_fl32 = 0.0f;
   ABSOscillation()
-    : _timeLastTriggerMillis(0)
+    : timeLastTriggerMillis_i32(0)
   {}
 
 public:
-  void IRAM_ATTR_FLAG trigger() {
-    _timeLastTriggerMillis = millis();
+  void IRAM_ATTR_FLAG trigger()
+  {
+    timeLastTriggerMillis_i32 = millis();
   }
   
-  void IRAM_ATTR_FLAG forceOffset(DAP_calculationVariables_st* calcVars_st, uint8_t absPattern, uint8_t absForceOrTarvelBit) {
+  void IRAM_ATTR_FLAG forceOffset(DapCalculationVariables_t* calcVars_st, uint8_t absPattern_u8, uint8_t absForceOrTarvelBit_u8)
+  {
 
     long timeNowMillis = millis();
-    float timeSinceTrigger = (timeNowMillis - _timeLastTriggerMillis);
+    float timeSinceTrigger_fl32 = (timeNowMillis - timeLastTriggerMillis_i32);
     
     
 
-    if (timeSinceTrigger > ABS_ACTIVE_TIME_PER_TRIGGER_MILLIS)
+    if (timeSinceTrigger_fl32 > s_absActiveTimePerTriggerMillis_i32)
     {
-      _absTimeMillis = 0;
-      absOscillation_Force_offset = 0.0f;
-      absOscillation_Position_offset = 0.0f;
+      absTimeMillis_i32 = 0;
+      absOscillationForceOffset_fl32 = 0.0f;
+      absOscillationPositionOffset_fl32 = 0.0f;
     }
     else
     {
       //frequency depend on road condition
-      float absFreq = calcVars_st->absFrequency;
-      absFreq = absFreq*(1.0f + ((float)calcVars_st->TrackCondition) * 0.1f );
-      absFreq = constrain(absFreq, 0.0f, 50.0f);
+      float absFreq_fl32 = calcVars_st->absFrequency_fl32;
+      absFreq_fl32 = absFreq_fl32*(1.0f + ((float)calcVars_st->trackCondition_u8) * 0.1f );
+      absFreq_fl32 = constrain(absFreq_fl32, 0.0f, 50.0f);
       
-      float absForceOffset_local = 0.0f;
-      _absTimeMillis += timeNowMillis - _lastCallTimeMillis;
-      float absTimeSeconds = _absTimeMillis * 0.001f;
+      float absForceOffsetLocal_fl32 = 0.0f;
+      absTimeMillis_i32 += timeNowMillis - lastCallTimeMillis_i32;
+      float absTimeSeconds_fl32 = absTimeMillis_i32 * 0.001f;
 
       // abs amplitude
       float absAmp_fl32 = 0.0f;
-      switch (absForceOrTarvelBit) {
+      switch (absForceOrTarvelBit_u8)
+      {
         case 0:
-          absAmp_fl32 = calcVars_st->absAmplitude* calcVars_st->Force_Range; 
+          absAmp_fl32 = calcVars_st->absAmplitude_fl32* calcVars_st->forceRange_fl32; 
           break;
         case 1:
-          absAmp_fl32 = calcVars_st->stepperPosRange * calcVars_st->absAmplitude; // since absAmplitude is given in percent, needs to be scaled to from intervall [0%, 100%] to intervall [0, 1]
+          absAmp_fl32 = calcVars_st->stepperPosRange_fl32 * calcVars_st->absAmplitude_fl32; // since absAmplitude_u8 is given in percent, needs to be scaled to from intervall [0%, 100%] to intervall [0, 1]
           break;
         default:
           break;
@@ -78,32 +81,34 @@ public:
 
 
       float sineArgInDeg_fl32;
-      switch (absPattern) {
+      switch (absPattern_u8)
+      {
         case 0:
           // sine wave pattern
-          sineArgInDeg_fl32 = 360.0f * absFreq * absTimeSeconds;
-          absForceOffset_local =  isin(sineArgInDeg_fl32);
+          sineArgInDeg_fl32 = 360.0f * absFreq_fl32 * absTimeSeconds_fl32;
+          absForceOffsetLocal_fl32 =  isin(sineArgInDeg_fl32);
           break;
         case 1:
           // sawtooth pattern
-          if (calcVars_st->absFrequency > 0.0f)
+          if (calcVars_st->absFrequency_fl32 > 0.0f)
           {
-            absForceOffset_local = fmodf(absTimeSeconds, 1.0f / (float)absFreq) * (float)absFreq;
-            absForceOffset_local -= 0.5f; // make it symmetrical around 0
+            absForceOffsetLocal_fl32 = fmodf(absTimeSeconds_fl32, 1.0f / (float)absFreq_fl32) * (float)absFreq_fl32;
+            absForceOffsetLocal_fl32 -= 0.5f; // make it symmetrical around 0
           }
           break;
         default:
           break;
       }
       
-      switch (absForceOrTarvelBit) {
+      switch (absForceOrTarvelBit_u8)
+      {
         case 0:
-          absOscillation_Force_offset = absAmp_fl32 * absForceOffset_local;
-          absOscillation_Position_offset = 0.0f;
+          absOscillationForceOffset_fl32 = absAmp_fl32 * absForceOffsetLocal_fl32;
+          absOscillationPositionOffset_fl32 = 0.0f;
           break;
         case 1:
-          absOscillation_Force_offset = 0.0f;
-          absOscillation_Position_offset = absAmp_fl32 * absForceOffset_local;
+          absOscillationForceOffset_fl32 = 0.0f;
+          absOscillationPositionOffset_fl32 = absAmp_fl32 * absForceOffsetLocal_fl32;
           break;
         default:
           break;
@@ -111,7 +116,7 @@ public:
       
     }
 
-    _lastCallTimeMillis = timeNowMillis;
+    lastCallTimeMillis_i32 = timeNowMillis;
 
     // ActiveSerial->printf("%0.3f, %0.3f\n", absForceOffset, absPosOffset);
 
@@ -122,253 +127,260 @@ public:
 
 class RPMOscillation {
 private:
-  long _timeLastTriggerMillis;
-  long _RPMTimeMillis;
-  long _lastCallTimeMillis = 0;
+  long timeLastTriggerMillis_i32;
+  long rpmTimeMillis_i32;
+  long lastCallTimeMillis_i32 = 0;
   
 
 public:
   RPMOscillation()
-    : _timeLastTriggerMillis(0)
+    : timeLastTriggerMillis_i32(0)
   {}
-  float RPM_value = 0.0f;
-  int32_t RPM_position_offset = 0;
+  float rpmValue_fl32 = 0.0f;
+  int32_t rpmPositionOffset_i32 = 0;
 public:
-  void IRAM_ATTR_FLAG trigger() {
-    _timeLastTriggerMillis = millis();
+  void IRAM_ATTR_FLAG trigger()
+  {
+    timeLastTriggerMillis_i32 = millis();
   }
   
-  void IRAM_ATTR_FLAG forceOffset(DAP_calculationVariables_st* calcVars_st) {
+  void IRAM_ATTR_FLAG forceOffset(DapCalculationVariables_t* calcVars_st)
+  {
 
     long timeNowMillis = millis();
-    float timeSinceTrigger = (timeNowMillis - _timeLastTriggerMillis);
-    float RPMForceOffset = 0.0f;
+    float timeSinceTrigger_fl32 = (timeNowMillis - timeLastTriggerMillis_i32);
+    float rpmForceOffset_fl32 = 0.0f;
     
-    if (timeSinceTrigger > RPM_ACTIVE_TIME_PER_TRIGGER_MILLIS)
+    if (timeSinceTrigger_fl32 > s_rpmActiveTimePerTriggerMillis_i32)
     {
-      _RPMTimeMillis = 0;
-      RPMForceOffset = RPM_VALUE_LAST;
+      rpmTimeMillis_i32 = 0;
+      rpmForceOffset_fl32 = s_rpmValueLast_fl32;
     }
     else
     {
-      float RPM_max_freq = calcVars_st->RPM_max_freq;
-      float RPM_min_freq = calcVars_st->RPM_min_freq;
-      float RPM_amp_base = calcVars_st->RPM_AMP;
-      float stepperPosRange = calcVars_st->stepperPosRange;
-      float RPM_amp = 0.0f; 
+      float rpmMaxFreq_fl32 = calcVars_st->rpmMaxFreq_fl32;
+      float rpmMinFreq_fl32 = calcVars_st->rpmMinFreq_fl32;
+      float rpmAmpBase_fl32 = calcVars_st->rpmAmp_fl32;
+      float stepperPosRange_fl32 = calcVars_st->stepperPosRange_fl32;
+      float rpmAmp_fl32 = 0.0f; 
 
-      if(RPM_value == 0.0f)
+      if (rpmValue_fl32 == 0.0f)
       {
-        RPM_min_freq = 0.0f;
-        RPM_amp_base = 0.0f;
-        RPMForceOffset = 0.0f;
+        rpmMinFreq_fl32 = 0.0f;
+        rpmAmpBase_fl32 = 0.0f;
+        rpmForceOffset_fl32 = 0.0f;
       }
       else
       {
-          RPM_amp = RPM_amp_base * (1.0f + 0.3f * RPM_value * 0.01f);
-        float RPM_freq = constrain(RPM_value*(RPM_max_freq-RPM_min_freq)* 0.01f, RPM_min_freq, RPM_max_freq);
-        _RPMTimeMillis += timeNowMillis - _lastCallTimeMillis;
-        float RPMTimeSeconds = _RPMTimeMillis * 0.001f;
-        RPMForceOffset = stepperPosRange* RPM_amp * isin( 360.0f * RPM_freq* RPMTimeSeconds ); 
+          rpmAmp_fl32 = rpmAmpBase_fl32 * (1.0f + 0.3f * rpmValue_fl32 * 0.01f);
+        float rpmFreq_fl32 = constrain(rpmValue_fl32*(rpmMaxFreq_fl32-rpmMinFreq_fl32)* 0.01f, rpmMinFreq_fl32, rpmMaxFreq_fl32);
+        rpmTimeMillis_i32 += timeNowMillis - lastCallTimeMillis_i32;
+        float rpmTimeSeconds_fl32 = rpmTimeMillis_i32 * 0.001f;
+        rpmForceOffset_fl32 = stepperPosRange_fl32 * rpmAmp_fl32 * isin( 360.0f * rpmFreq_fl32 * rpmTimeSeconds_fl32 ); 
       }
       
     }
 
-    _lastCallTimeMillis = timeNowMillis;
-    RPM_VALUE_LAST = RPMForceOffset;
-    if (calcVars_st->Force_Range > 0.0f)
+    lastCallTimeMillis_i32 = timeNowMillis;
+    s_rpmValueLast_fl32 = rpmForceOffset_fl32;
+    if (calcVars_st->forceRange_fl32 > 0.0f)
     {
-        RPM_position_offset = RPMForceOffset;
+      rpmPositionOffset_i32 = rpmForceOffset_fl32;
     }
   }
 };
 
 class BitePointOscillation {
 private:
-  long _timeLastTriggerMillis;
-  long _BiteTimeMillis;
-  long _lastCallTimeMillis = 0;
+  long timeLastTriggerMillis_i32;
+  long biteTimeMillis_i32;
+  long lastCallTimeMillis_i32 = 0;
   
 
 public:
   BitePointOscillation()
-    : _timeLastTriggerMillis(0)
+    : timeLastTriggerMillis_i32(0)
   {}
   //float RPM_value =0;
-  float BitePointOffset = 0.0f;
+  float bitePointOffset_fl32 = 0.0f;
 public:
-  void IRAM_ATTR_FLAG  trigger() {
-    _timeLastTriggerMillis = millis();
+  void IRAM_ATTR_FLAG  trigger()
+  {
+    timeLastTriggerMillis_i32 = millis();
   }
   
-  void IRAM_ATTR_FLAG forceOffset(DAP_calculationVariables_st* calcVars_st) {
+  void IRAM_ATTR_FLAG forceOffset(DapCalculationVariables_t* calcVars_st)
+  {
 
     long timeNowMillis = millis();
-    float timeSinceTrigger = (timeNowMillis - _timeLastTriggerMillis);
-    float bitePointOffset = 0.0f;
+    float timeSinceTrigger_fl32 = (timeNowMillis - timeLastTriggerMillis_i32);
+    float bitePointOffsetLocal_fl32 = 0.0f;
     
 
-    if (timeSinceTrigger > BP_ACTIVE_TIME_PER_TRIGGER_MILLIS)
+    if (timeSinceTrigger_fl32 > s_bpActiveTimePerTriggerMillis_i32)
     {
-      _BiteTimeMillis = 0;
-      bitePointOffset = 0.0f;
+      biteTimeMillis_i32 = 0;
+      bitePointOffsetLocal_fl32 = 0.0f;
     }
     else
     {
-      float BP_freq = calcVars_st->BP_freq;
-      float BP_amp = calcVars_st->BP_amp;
-      float stepperPosRange= calcVars_st->stepperPosRange;
-      _BiteTimeMillis += timeNowMillis - _lastCallTimeMillis;
-      float BPTimeSeconds = _BiteTimeMillis * 0.001f;
+      float bpFreq_fl32 = calcVars_st->bpFreq_fl32;
+      float bpAmp_fl32 = calcVars_st->bpAmp_fl32;
+      float stepperPosRange_fl32 = calcVars_st->stepperPosRange_fl32;
+      biteTimeMillis_i32 += timeNowMillis - lastCallTimeMillis_i32;
+      float bpTimeSeconds_fl32 = biteTimeMillis_i32 * 0.001f;
 
-      //RPMForceOffset = calcVars_st->absAmplitude * sin(calcVars_st->absFrequency * RPMTimeSeconds);
-      bitePointOffset = stepperPosRange*BP_amp * isin( 360.0f * BP_freq * BPTimeSeconds);
+      //RPMForceOffset = calcVars_st->absAmplitude_fl32 * sin(calcVars_st->absFrequency_fl32 * RPMTimeSeconds);
+      bitePointOffsetLocal_fl32 = stepperPosRange_fl32 * bpAmp_fl32 * isin( 360.0f * bpFreq_fl32 * bpTimeSeconds_fl32);
     }
 
-    BitePointOffset = bitePointOffset;
-    _lastCallTimeMillis = timeNowMillis;
+    bitePointOffset_fl32 = bitePointOffsetLocal_fl32;
+    lastCallTimeMillis_i32 = timeNowMillis;
 
   }
 };
 
 
-MovingAverageFilter movingAverageFilter(100);
+MovingAverageFilter g_movingAverageFilter_st(100);
 // G force effect
-class G_force_effect
+class GForceEffect
 {
   public:
-  float G_value = 0;
-  float G_force_raw = 0;
-  float G_force = 0;
-  float g_norm_inverse = 0.10193679918450560652395514780836f; //1 / 9.81f;
+  float gValue_fl32 = 0.0f;
+  float gForceRaw_fl32 = 0.0f;
+  float gForce_fl32 = 0.0f;
+  float gNormInverse_fl32 = 0.10193679918450560652395514780836f; //1 / 9.81f;
   
 
-  void IRAM_ATTR_FLAG forceOffset(DAP_calculationVariables_st* calcVars_st, uint8_t G_multi)
+  void IRAM_ATTR_FLAG forceOffset(DapCalculationVariables_t* calcVars_st, uint8_t gMulti_u8)
   {
     
-    if(G_value == -128.0f)
+    if (gValue_fl32 == -128.0f)
     {
-      G_force_raw = 0.0f;
+      gForceRaw_fl32 = 0.0f;
     }
     else
     {
-      float G_multiplier = ((float)G_multi) * 0.01f;
-      G_force_raw = 10.0f*(G_value)*G_multiplier * g_norm_inverse;
+      float gMultiplier_fl32 = ((float)gMulti_u8) * 0.01f;
+      gForceRaw_fl32 = 10.0f * gValue_fl32 * gMultiplier_fl32 * gNormInverse_fl32;
     }
 
     //apply filter
-    G_force = movingAverageFilter.process(G_force_raw);
-    //G_force=G_force_raw;
+    gForce_fl32 = g_movingAverageFilter_st.process(gForceRaw_fl32);
+    //gForce_fl32 = gForceRaw_fl32;
     
   }
 };
 //Wheel slip
 class WSOscillation {
 private:
-  long _timeLastTriggerMillis;
-  long _WSTimeMillis;
-  long _lastCallTimeMillis = 0;
+  long timeLastTriggerMillis_i32;
+  long wsTimeMillis_i32;
+  long lastCallTimeMillis_i32 = 0;
   
 
 public:
   WSOscillation()
-    : _timeLastTriggerMillis(0)
+    : timeLastTriggerMillis_i32(0)
   {}
   //float RPM_value =0;
-  float WheelSlipOffset = 0.0f;
+  float wheelSlipOffset_fl32 = 0.0f;
 public:
-  void IRAM_ATTR_FLAG trigger() {
-    _timeLastTriggerMillis = millis();
+  void IRAM_ATTR_FLAG trigger()
+  {
+    timeLastTriggerMillis_i32 = millis();
   }
   
-  void IRAM_ATTR_FLAG forceOffset(DAP_calculationVariables_st* calcVars_st) {
+  void IRAM_ATTR_FLAG forceOffset(DapCalculationVariables_t* calcVars_st)
+  {
 
 
     long timeNowMillis = millis();
-    float timeSinceTrigger = (timeNowMillis - _timeLastTriggerMillis);
-    float wsOffset = 0.0f;
+    float timeSinceTrigger_fl32 = (timeNowMillis - timeLastTriggerMillis_i32);
+    float wsOffset_fl32 = 0.0f;
     
-    float WS_amp = calcVars_st->WS_amp;
+    float wsAmp_fl32 = calcVars_st->wsAmp_fl32;
 
-    if (timeSinceTrigger > WS_ACTIVE_TIME_PER_TRIGGER_MILLIS)
+    if (timeSinceTrigger_fl32 > s_wsActiveTimePerTriggerMillis_i32)
     {
-      _WSTimeMillis = 0;
+      wsTimeMillis_i32 = 0;
     }
     else
     {
-      float stepperPosRange= calcVars_st->stepperPosRange;
-      float WS_freq = calcVars_st->WS_freq;
-      _WSTimeMillis += timeNowMillis - _lastCallTimeMillis;
-      float WSTimeSeconds = _WSTimeMillis * 0.001f;
-      wsOffset = stepperPosRange* WS_amp * isin( 360.0f * WS_freq* WSTimeSeconds );   
+      float stepperPosRange_fl32 = calcVars_st->stepperPosRange_fl32;
+      float wsFreq_fl32 = calcVars_st->wsFreq_fl32;
+      wsTimeMillis_i32 += timeNowMillis - lastCallTimeMillis_i32;
+      float wsTimeSeconds_fl32 = wsTimeMillis_i32 * 0.001f;
+      wsOffset_fl32 = stepperPosRange_fl32 * wsAmp_fl32 * isin( 360.0f * wsFreq_fl32 * wsTimeSeconds_fl32 );   
     }
 
-    WheelSlipOffset = wsOffset;
-    _lastCallTimeMillis = timeNowMillis;
+    wheelSlipOffset_fl32 = wsOffset_fl32;
+    lastCallTimeMillis_i32 = timeNowMillis;
 
   }
 };
 //Road impact
-MovingAverageFilter movingAverageFilter_roadimpact(100);
-class Road_impact_effect
+MovingAverageFilter g_movingAverageFilterRoadImpact_st(100);
+class RoadImpactEffect
 {
   public:
-  float Road_Impact_force=0;
-  float Road_Impact_force_raw=0;
-  uint8_t Road_Impact_value=0;
+  float roadImpactForce_fl32 = 0;
+  float roadImpactForceRaw_fl32 = 0;
+  uint8_t roadImpactValue_u8 = 0;
 
-  void IRAM_ATTR_FLAG forceOffset(DAP_calculationVariables_st* calcVars_st, uint8_t Road_impact_multi)
+  void IRAM_ATTR_FLAG forceOffset(DapCalculationVariables_t* calcVars_st, uint8_t roadImpactMulti_u8)
   {
-    uint32_t Force_Range;
-    float Road_multiplier = ((float)Road_impact_multi)* 0.01f;
-    Force_Range = calcVars_st->Force_Range;
-    Road_Impact_force_raw = 0.3f*Road_multiplier*((float)Force_Range)*((float)Road_Impact_value)* 0.01f;
+    float forceRange_fl32;
+    float roadMultiplier_fl32 = ((float)roadImpactMulti_u8) * 0.01f;
+    forceRange_fl32 = calcVars_st->forceRange_fl32;
+    roadImpactForceRaw_fl32 = 0.3f * roadMultiplier_fl32 * forceRange_fl32 * ((float)roadImpactValue_u8) * 0.01f;
 
     //apply filter
-    Road_Impact_force = movingAverageFilter_roadimpact.process(Road_Impact_force_raw);
+    roadImpactForce_fl32 = g_movingAverageFilterRoadImpact_st.process(roadImpactForceRaw_fl32);
 
   }
 };
 //Custom effects
-class Custom_vibration {
+class CustomVibration {
 private:
-  long _timeLastTriggerMillis;
-  long _CVTimeMillis;
-  long _lastCallTimeMillis = 0;
-  float CV_amp = 0.0f;
+  long timeLastTriggerMillis_i32;
+  long cvTimeMillis_i32;
+  long lastCallTimeMillis_i32 = 0;
+  float cvAmp_fl32 = 0.0f;
 
 
 public:
-  Custom_vibration()
-    : _timeLastTriggerMillis(0)
+  CustomVibration()
+    : timeLastTriggerMillis_i32(0)
   {}
   //float RPM_value =0;
-  float CustomVibrationOffset = 0.0f;
+  float customVibrationOffset_fl32 = 0.0f;
 public:
-  void trigger() {
-    _timeLastTriggerMillis = millis();
+  void trigger()
+  {
+    timeLastTriggerMillis_i32 = millis();
   }
   
-  void forceOffset(float CV_freq, float CV_amp_in_percent, float travelRange) 
+  void forceOffset(float cvFreq_fl32, float cvAmpInPercent_fl32, float travelRange_fl32)
   {
     long timeNowMillis = millis();
-    float timeSinceTrigger = (timeNowMillis - _timeLastTriggerMillis);
-    float customVibrationOffset = 0.0f;
-    CV_amp = CV_amp_in_percent * 0.001f *travelRange;
+    float timeSinceTrigger_fl32 = (timeNowMillis - timeLastTriggerMillis_i32);
+    float customVibrationOffsetLocal_fl32 = 0.0f;
+    cvAmp_fl32 = cvAmpInPercent_fl32 * 0.001f * travelRange_fl32;
 
-    if (timeSinceTrigger > CV_ACTIVE_TIME_PER_TRIGGER_MILLIS)
+    if (timeSinceTrigger_fl32 > s_cvActiveTimePerTriggerMillis_i32)
     {
-      _CVTimeMillis = 0;
-      customVibrationOffset = 0.0f;
+      cvTimeMillis_i32 = 0;
+      customVibrationOffsetLocal_fl32 = 0.0f;
     }
     else
     {
-      _CVTimeMillis += timeNowMillis - _lastCallTimeMillis;
-      float CVTimeSeconds = _CVTimeMillis * 0.001f;
-      customVibrationOffset = CV_amp * isin( 360.0f * CV_freq* CVTimeSeconds );  
+      cvTimeMillis_i32 += timeNowMillis - lastCallTimeMillis_i32;
+      float cvTimeSeconds_fl32 = cvTimeMillis_i32 * 0.001f;
+      customVibrationOffsetLocal_fl32 = cvAmp_fl32 * isin( 360.0f * cvFreq_fl32 * cvTimeSeconds_fl32 );  
     }
 
-    CustomVibrationOffset = customVibrationOffset;
-    _lastCallTimeMillis = timeNowMillis;
+    customVibrationOffset_fl32 = customVibrationOffsetLocal_fl32;
+    lastCallTimeMillis_i32 = timeNowMillis;
   }
 };

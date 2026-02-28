@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <stdint.h>
 #include "Arduino.h"
@@ -19,162 +19,175 @@
 #include "PayloadHidMessage.h"
 
 // define the payload revision
-struct __attribute__((packed)) DAP_actions_st {
-  payloadHeader payLoadHeader_;
-  payloadPedalAction payloadPedalAction_;
-  payloadFooter payloadFooter_; 
-};
+typedef struct __attribute__((packed)) DapActions
+{
+  PayloadHeader_t payloadHeader_st;
+  PayloadPedalAction_t payloadPedalAction_st;
+  PayloadFooter_t payloadFooter_st;
+} DapActions_t;
 
-struct __attribute__((packed)) DAP_state_basic_st {
-  payloadHeader payLoadHeader_;
-  payloadPedalState_Basic payloadPedalState_Basic_;
-  payloadFooter payloadFooter_; 
-};
+typedef struct __attribute__((packed)) DapStateBasic
+{
+  PayloadHeader_t payloadHeader_st;
+  PayloadPedalStateBasic_t payloadPedalStateBasic_st;
+  PayloadFooter_t payloadFooter_st;
+} DapStateBasic_t;
 
-struct __attribute__((packed)) DAP_state_extended_st {
-  payloadHeader payLoadHeader_;
-  payloadPedalState_Extended payloadPedalState_Extended_;
-  payloadFooter payloadFooter_; 
-};
-struct __attribute__((packed)) DAP_bridge_state_st {
-  payloadHeader payLoadHeader_;
-  payloadBridgeState payloadBridgeState_;
-  payloadFooter payloadFooter_; 
-};
+typedef struct __attribute__((packed)) DapStateExtended
+{
+  PayloadHeader_t payloadHeader_st;
+  PayloadPedalStateExtended_t payloadPedalStateExtended_st;
+  PayloadFooter_t payloadFooter_st;
+} DapStateExtended_t;
 
-struct __attribute__((packed)) DAP_action_ota_st {
-  payloadHeader payLoadHeader_;
-  payloadOtaInfo payloadOtaInfo_;
-  payloadFooter payloadFooter_; 
-};
+typedef struct __attribute__((packed)) DapBridgeState
+{
+  PayloadHeader_t payloadHeader_st;
+  PayloadBridgeState_t payloadBridgeState_st;
+  PayloadFooter_t payloadFooter_st;
+} DapBridgeState_t;
 
-struct __attribute__((packed)) DAP_config_st {
+typedef struct __attribute__((packed)) DapActionOta
+{
+  PayloadHeader_t payloadHeader_st;
+  PayloadOtaInfo_t payloadOtaInfo_st;
+  PayloadFooter_t payloadFooter_st;
+} DapActionOta_t;
 
-  payloadHeader payLoadHeader_;
-  payloadPedalConfig payLoadPedalConfig_;
-  payloadFooter payloadFooter_; 
+typedef struct __attribute__((packed)) DapConfig
+{
+
+  PayloadHeader_t payloadHeader_st;
+  PayloadPedalConfig_t payloadPedalConfig_st;
+  PayloadFooter_t payloadFooter_st;
   
-  void initialiseDefaults();
-  void loadConfigFromEprom(DAP_config_st& config_st);
-  void storeConfigToEprom(DAP_config_st& config_st);
-};
+  void initializeDefaults();
+  void loadConfigFromEeprom(DapConfig& config_st);
+  void storeConfigToEeprom(DapConfig& config_st);
+} DapConfig_t;
 
-struct __attribute__((packed)) DAP_ESPPairing_st {
-  payloadHeader payLoadHeader_;
-  payloadESPNowInfo payloadESPNowInfo_;
-  payloadFooter payloadFooter_; 
-};
-
-struct __attribute__((packed)) DAP_AssignmentBoardcast_st {
-  payloadHeader payLoadHeader_;
-  payloadAssignmentRequest payloadAssignmentRequest_;
-  payloadFooter payloadFooter_; 
-};
-struct __attribute__((packed)) DAP_Rudder_st {
-  payloadHeader payLoadHeader_;
-  payloadRudderState payloadRudderState_;
-  payloadFooter payloadFooter_; 
-};
-
-struct DAP_Assignement_reg
+typedef struct __attribute__((packed)) DapEspPairing
 {
-  uint8_t payloadType;
-  uint8_t magicKey;
-  uint8_t isAdvancedPaired;
-  uint8_t deviceID;
-  uint8_t pairstatus[4];
-  uint8_t pairedMac[4][6];
-  uint16_t crc;
-};
+  PayloadHeader_t payloadHeader_st;
+  PayloadEspnowInfo_t payloadEspnowInfo_st;
+  PayloadFooter_t payloadFooter_st;
+} DapEspPairing_t;
 
-struct DAP_calculationVariables_st
+typedef struct __attribute__((packed)) DapAssignmentBroadcast
 {
-  float springStiffnesss;
-  float springStiffnesssInv;
-  float Force_Min;
-  float Force_Max;
-  float Force_Range;
-  long stepperPosMinEndstop;
-  long stepperPosMaxEndstop;
-  long stepperPosEndstopRange;
-  float RPM_max_freq;
-  float RPM_min_freq;
-  float RPM_AMP;
-  long stepperPosMin;
-  long stepperPosMax;
-  float stepperPosRange;
-  float startPosRel;
-  float endPosRel;
-  float absFrequency;
-  float absAmplitude;
-  float rpm_value;
-  float BP_trigger_value;
-  float BP_amp;
-  float BP_freq;
-  float dampingPress;
-  float Force_Max_default;
-  float WS_amp;
-  float WS_freq;
-  bool Rudder_status;
-  bool isRudderInitialized=false;
-  bool helicopterRudderStatus;
-  bool isHelicopterRudderInitialized=false;
-  uint8_t pedal_type;
-  uint32_t sync_pedal_position;
-  uint32_t current_pedal_position;
-  float current_pedal_position_ratio;
-  float Sync_pedal_position_ratio;
-  bool rudder_brake_status;
-  long stepperPosMin_default;
-  long stepperPosMax_default;
-  float stepperPosRange_default;
-  uint32_t stepsPerMotorRevolution;
-  uint8_t TrackCondition;
-  float currentForceReading;
-  float force[11];
-  float travel[11]; 
-  float *interpolatorA= nullptr;
-  float *interpolatorB = nullptr;
-  float *joystickInterpolatorA= nullptr;
-  float *joystickInterpolatorB = nullptr;
-  float joystickOrig[11];
-  float joystickMapping[11];
-  uint8_t numOfJoystickControl;
-  Cubic _cubic;
-  Cubic joystickInterpolarter;
-  void updateFromConfig(DAP_config_st& config_st);
-  void updateEndstops(long newMinEndstop, long newMaxEndstop);
+  PayloadHeader_t payloadHeader_st;
+  PayloadAssignmentRequest_t payloadAssignmentRequest_st;
+  PayloadFooter_t payloadFooter_st;
+} DapAssignmentBroadcast_t;
+
+typedef struct __attribute__((packed)) DapRudder
+{
+  PayloadHeader_t payloadHeader_st;
+  PayloadRudderState_t payloadRudderState_st;
+  PayloadFooter_t payloadFooter_st;
+} DapRudder_t;
+
+typedef struct DapAssignmentReg
+{
+  uint8_t payloadType_u8;
+  uint8_t magicKey_u8;
+  uint8_t isAdvancedPaired_u8;
+  uint8_t deviceId_u8;
+  uint8_t pairStatus_au8[4];
+  uint8_t pairedMac_aau8[4][6];
+  uint16_t crc_u16;
+} DapAssignmentReg_t;
+
+typedef struct DapCalculationVariables
+{
+  float springStiffnesss_fl32;
+  float springStiffnesssInv_fl32;
+  float forceMin_fl32;
+  float forceMax_fl32;
+  float forceRange_fl32;
+  int32_t stepperPosMinEndstop_i32;
+  int32_t stepperPosMaxEndstop_i32;
+  int32_t stepperPosEndstopRange_i32;
+  float rpmMaxFreq_fl32;
+  float rpmMinFreq_fl32;
+  float rpmAmp_fl32;
+  int32_t stepperPosMin_i32;
+  int32_t stepperPosMax_i32;
+  float stepperPosRange_fl32;
+  float startPosRel_fl32;
+  float endPosRel_fl32;
+  float absFrequency_fl32;
+  float absAmplitude_fl32;
+  float rpmValue_fl32;
+  float bpTriggerValue_fl32;
+  float bpAmp_fl32;
+  float bpFreq_fl32;
+  float dampingPress_fl32;
+  float forceMaxDefault_fl32;
+  float wsAmp_fl32;
+  float wsFreq_fl32;
+  bool rudderStatus_b;
+  bool isRudderInitialized_b = false;
+  bool helicopterRudderStatus_b;
+  bool isHelicopterRudderInitialized_b = false;
+  uint8_t pedalType_u8;
+  uint32_t syncPedalPosition_u32;
+  uint32_t currentPedalPosition_u32;
+  float currentPedalPositionRatio_fl32;
+  float syncPedalPositionRatio_fl32;
+  bool rudderBrakeStatus_b;
+  int32_t stepperPosMinDefault_i32;
+  int32_t stepperPosMaxDefault_i32;
+  float stepperPosRangeDefault_fl32;
+  uint32_t stepsPerMotorRevolution_u32;
+  uint8_t trackCondition_u8;
+  float currentForceReading_fl32;
+  float force_afl32[11];
+  float travel_afl32[11]; 
+  float *interpolatorA_pfl32 = nullptr;
+  float *interpolatorB_pfl32 = nullptr;
+  float *joystickInterpolatorA_pfl32 = nullptr;
+  float *joystickInterpolatorB_pfl32 = nullptr;
+  float joystickOrig_afl32[11];
+  float joystickMapping_afl32[11];
+  uint8_t numOfJoystickControl_u8;
+  Cubic cubic_st;
+  Cubic joystickInterpolator_st;
+  void updateFromConfig(DapConfig_t& config_st);
+  void updateEndstops(int32_t newMinEndstop_i32, int32_t newMaxEndstop_i32);
   void updateStiffness();
-  void dynamic_update();
-  void reset_maxforce();
-  void StepperPos_setback();
-  void Default_pos();
-  void update_stepperMinpos(long newMinstop);
-  void update_stepperMaxpos(long newMaxstop);
-};
+  void dynamicUpdate();
+  void resetMaxForce();
+  void stepperPosSetback();
+  void setDefaultPos();
+  void updateStepperMinPos(int32_t newMinstop_i32);
+  void updateStepperMaxPos(int32_t newMaxstop_i32);
+} DapCalculationVariables_t;
 
-class DAP_config_class {
+class DapConfigClass
+{
 public:
   // Konstruktor
-  DAP_config_class();
+  DapConfigClass();
 
   // Methode zum sicheren Abrufen der Konfiguration
-  bool getConfig(DAP_config_st * dapConfigIn_pst, uint16_t timeoutInMs_u16);
+  bool getConfig(DapConfig_t *dapConfigIn_pst, uint16_t timeoutInMs_u16);
 
   // Methode zum sicheren Setzen der Konfiguration
-  void setConfig(DAP_config_st tmp);
+  void setConfig(DapConfig_t config_st);
 
   // Methode zum Laden der Konfiguration aus dem EEPROM
-  void loadConfigFromEprom();
+  void loadConfigFromEeprom();
 
   // Methode zum Speichern der Konfiguration im EEPROM
-  void storeConfigToEprom();
+  void storeConfigToEeprom();
 
   //initialized config if needed
   void initializedConfig();
 
 private:
-  SemaphoreHandle_t mutex;
-  DAP_config_st _config_st;
-  uint16_t checksumCalculator(uint8_t * data, uint16_t length);
+  SemaphoreHandle_t m_mutex_sh;
+  DapConfig_t m_config_st;
+  uint16_t checksumCalculator_u16(uint8_t *data_pu8, uint16_t length_u16);
 };
+

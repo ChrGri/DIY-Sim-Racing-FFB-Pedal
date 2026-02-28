@@ -5,10 +5,10 @@
 #include <stdint.h>
 #include "Main.h"
 
-class KalmanFilter_1st_order {
+class KalmanFilter1stOrder {
 public:
   // Constructor
-  KalmanFilter_1st_order(float varianceEstimate);
+  KalmanFilter1stOrder(float varianceEstimate);
 
   // Main filter function
   float IRAM_ATTR_FLAG filteredValue(float measurement, float command, uint8_t modelNoiseScaling_u8);

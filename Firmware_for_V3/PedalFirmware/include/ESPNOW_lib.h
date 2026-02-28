@@ -104,9 +104,9 @@ void ESPNow_Joystick_Broadcast(int32_t controllerValue)
   _dap_joystick_message.cycleCnt_u64++;
   _dap_joystick_message.timeSinceBoot_i64 = esp_timer_get_time() / 1000;
   _dap_joystick_message.controllerValue_i32 = controllerValue;
-  if(dap_calculationVariables_st.Rudder_status)
+  if(dap_calculationVariables_st.rudderStatus_b)
   {
-    if(dap_calculationVariables_st.rudder_brake_status)
+    if(dap_calculationVariables_st.rudderBrakeStatus_b)
     {
       _dap_joystick_message.pedal_status=2;
     }
@@ -339,11 +339,11 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
                     absOscillation.trigger();
                     if(dap_actions_st.payloadPedalAction_.triggerAbs_u8>1)
                     {
-                      dap_calculationVariables_st.TrackCondition=dap_actions_st.payloadPedalAction_.triggerAbs_u8-1;
+                      dap_calculationVariables_st.trackCondition_u8=dap_actions_st.payloadPedalAction_.triggerAbs_u8-1;
                     }
                     else
                     {
-                      dap_calculationVariables_st.TrackCondition=dap_actions_st.payloadPedalAction_.triggerAbs_u8=0;
+                      dap_calculationVariables_st.trackCondition_u8=dap_actions_st.payloadPedalAction_.triggerAbs_u8=0;
                     }
                     
                   }
@@ -357,7 +357,7 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
                     _WSOscillation.trigger();
                   }     
                   //Road impact && Rudder G impact
-                  if(dap_calculationVariables_st.Rudder_status==false)
+                  if(dap_calculationVariables_st.rudderStatus_b==false)
                   {
                     _Road_impact_effect.Road_Impact_value=dap_actions_st.payloadPedalAction_.impact_value_u8;
                   }
@@ -405,23 +405,23 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
                         //ESPNow.add_peer(Recv_mac);
                       }
                     }
-                    if(dap_calculationVariables_st.Rudder_status==false)
+                    if(dap_calculationVariables_st.rudderStatus_b==false)
                     {
-                      dap_calculationVariables_st.Rudder_status=true;
+                      dap_calculationVariables_st.rudderStatus_b=true;
                       Rudder_initializing=true;
                       //Serial.println("Rudder on");
                       moveSlowlyToPosition_b=true;
                       //Serial.print("status:");
-                      //Serial.println(dap_calculationVariables_st.Rudder_status);
+                      //Serial.println(dap_calculationVariables_st.rudderStatus_b);
                     }
                     else
                     {
-                      dap_calculationVariables_st.Rudder_status=false;
+                      dap_calculationVariables_st.rudderStatus_b=false;
                       //Serial.println("Rudder off");
                       Rudder_deinitializing=true;
                       moveSlowlyToPosition_b=true;
                       //Serial.print("status:");
-                      //Serial.println(dap_calculationVariables_st.Rudder_status);
+                      //Serial.println(dap_calculationVariables_st.rudderStatus_b);
                     }
                   }
                   if(dap_actions_st.payloadPedalAction_.Rudder_action==(uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_BRAKE || dap_actions_st.payloadPedalAction_.Rudder_action==(uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_CLUTCH)
@@ -435,49 +435,49 @@ void onRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len)
                         //ESPNow.add_peer(Recv_mac);
                       }
                     }
-                    if(dap_calculationVariables_st.helicopterRudderStatus==false)
+                    if(dap_calculationVariables_st.helicopterRudderStatus_b==false)
                     {
-                      dap_calculationVariables_st.helicopterRudderStatus=true;
+                      dap_calculationVariables_st.helicopterRudderStatus_b=true;
                       HeliRudder_initializing=true;
                       //Serial.println("Rudder on");
                       moveSlowlyToPosition_b=true;
                       //Serial.print("status:");
-                      //Serial.println(dap_calculationVariables_st.Rudder_status);
+                      //Serial.println(dap_calculationVariables_st.rudderStatus_b);
                     }
                     else
                     {
-                      dap_calculationVariables_st.helicopterRudderStatus=false;
+                      dap_calculationVariables_st.helicopterRudderStatus_b=false;
                       //Serial.println("Rudder off");
                       HeliRudder_deinitializing=true;
                       moveSlowlyToPosition_b=true;
                       //Serial.print("status:");
-                      //Serial.println(dap_calculationVariables_st.Rudder_status);
+                      //Serial.println(dap_calculationVariables_st.rudderStatus_b);
                     }
                   }
                   if(dap_actions_st.payloadPedalAction_.Rudder_brake_action==1)
                   {
                     Get_Rudder_action_b=true;
-                    if(dap_calculationVariables_st.rudder_brake_status==false&&dap_calculationVariables_st.Rudder_status==true)
+                    if(dap_calculationVariables_st.rudderBrakeStatus_b==false&&dap_calculationVariables_st.rudderStatus_b==true)
                     {
-                      dap_calculationVariables_st.rudder_brake_status=true;
+                      dap_calculationVariables_st.rudderBrakeStatus_b=true;
                       //Serial.println("Rudder brake on");
                       //Serial.print("status:");
-                      //Serial.println(dap_calculationVariables_st.Rudder_status);
+                      //Serial.println(dap_calculationVariables_st.rudderStatus_b);
                     }
                     else
                     {
-                      dap_calculationVariables_st.rudder_brake_status=false;
+                      dap_calculationVariables_st.rudderBrakeStatus_b=false;
                       //Serial.println("Rudder brake off");
                       //Serial.print("status:");
-                      //Serial.println(dap_calculationVariables_st.Rudder_status);
+                      //Serial.println(dap_calculationVariables_st.rudderStatus_b);
                     }
                   }
                   //clear rudder status
                   if(dap_actions_st.payloadPedalAction_.Rudder_action==(uint8_t)RudderAction::RUDDER_CLEAR_RUDDER_STATUS)
                   {
-                    dap_calculationVariables_st.Rudder_status=false;
-                    dap_calculationVariables_st.helicopterRudderStatus=false;
-                    dap_calculationVariables_st.rudder_brake_status=false;
+                    dap_calculationVariables_st.rudderStatus_b=false;
+                    dap_calculationVariables_st.helicopterRudderStatus_b=false;
+                    dap_calculationVariables_st.rudderBrakeStatus_b=false;
                     //Serial.println("Rudder Status Clear");
                     Rudder_deinitializing=true;
                     HeliRudder_deinitializing=true;

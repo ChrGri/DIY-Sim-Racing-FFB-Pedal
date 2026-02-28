@@ -1,4 +1,4 @@
-#include "StepperWithLimits.h"
+﻿#include "StepperWithLimits.h"
 #include "Main.h"
 #include "Math.h"
 
@@ -52,7 +52,7 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool
 {
 
   	_stepper = new FastNonAccelStepper(pinStep, pinDirection, invertMotorDir_b); 
-	endstopDetectionThreshold = constrain(endstopDetectionThreshold, 25, 50);
+	endstopDetectionThreshold_u8 = constrain(endstopDetectionThreshold_u8, 25, 50);
 
 	// pinMode(pinMin, INPUT);
 	// pinMode(pinMax, INPUT);
@@ -64,7 +64,7 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool
     // _stepper->setAutoEnable(true);
     // _stepper->setAbsoluteSpeedLimit( maxSpeedInTicks ); // ticks
     // _stepper->setSpeedInTicks( maxSpeedInTicks ); // ticks
-    // _stepper->setAcceleration(MAXIMUM_STEPPER_ACCELERATION);  // steps/s²
+    // _stepper->setAcceleration(MAXIMUM_STEPPER_ACCELERATION);  // steps/sÂ²
 	// _stepper->setLinearAcceleration(0);
     // _stepper->setForwardPlanningTimeInMs(STEPPER_FORWARD_PLANNING_TIME_IN_MS);
 
@@ -128,7 +128,7 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool
 		
 		
 		// print all servo registers
-		/*if (dap_config_st.payLoadPedalConfig_.debug_flags_0 & DEBUG_INFO_0_PRINT_ALL_SERVO_REGISTERS) 
+		/*if (dap_config_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_PRINT_ALL_SERVO_REGISTERS) 
 		{
 			isv57.readAllServoParameters();
 		}*/
@@ -141,9 +141,9 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool
 						  4096,  
 						  //STACK_SIZE_FOR_TASK_2,    
 						  this,//NULL,      
-						  TASK_PRIORITY_SERVO_COMMUNICATION_TASK,         
+						  TASK_PRIORITY_SERVO_COMMUNICATION_TASK_UBASETYPE,         
 						  &task_iSV_Communication,    
-						  CORE_ID_SERVO_COMMUNICATION_TASK);   
+						  CORE_ID_SERVO_COMMUNICATION_TASK_U8);   
 
 
 						  
@@ -182,7 +182,7 @@ void StepperWithLimits::configSetProfilingFlag(bool proFlag_b)
 }
 
 
-void StepperWithLimits::findMinMaxSensorless(DAP_config_st dap_config_st)
+void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st)
 {
 
   if (! hasValidStepper()) return;
@@ -253,7 +253,7 @@ void StepperWithLimits::findMinMaxSensorless(DAP_config_st dap_config_st)
 		for (uint16_t tryIdx = 0; tryIdx < 500; tryIdx++)
 		{
 			delay(5);
-			endPosDetected = abs( getServosCurrent() ) > endstopDetectionThreshold;
+			endPosDetected = abs( getServosCurrent() ) > endstopDetectionThreshold_u8;
 
 			if (false == endPosDetected)
 			{
@@ -262,16 +262,16 @@ void StepperWithLimits::findMinMaxSensorless(DAP_config_st dap_config_st)
 		}
 			
 		// reduce speed and acceleration
-		_stepper->setMaxSpeed(MAXIMUM_STEPPER_SPEED / 16);
+		_stepper->setMaxSpeed(MAXIMUM_STEPPER_SPEED_U32 / 16);
 
 		// run continously in one direction until endstop is hit
 		ActiveSerial->println("Move to min");
 		// _stepper->forceStopAndNewPosition(0);
-		_stepper->keepRunningBackward(MAXIMUM_STEPPER_SPEED / 16);
+		_stepper->keepRunningBackward(MAXIMUM_STEPPER_SPEED_U32 / 16);
 		
 		while( (!endPosDetected) && (getLifelineSignal()) ){
 			delay(1);
-			endPosDetected = abs( getServosCurrent() ) > endstopDetectionThreshold;
+			endPosDetected = abs( getServosCurrent() ) > endstopDetectionThreshold_u8;
 		}
 		setPosition = - 5 * ENDSTOP_MOVEMENT_SENSORLESS;
 		delay(20);
@@ -296,8 +296,8 @@ void StepperWithLimits::findMinMaxSensorless(DAP_config_st dap_config_st)
 		/* 					max endstop	detection					*/
 		/************************************************************/
 		// calculate max steps for endstop limit
-		float spindlePitch = max( dap_config_st.payLoadPedalConfig_.spindlePitch_mmPerRev_u8, (uint8_t)1 );
-		float maxRevToReachEndPos = (float)dap_config_st.payLoadPedalConfig_.lengthPedal_travel / spindlePitch;
+		float spindlePitch = max( dap_config_st.payloadPedalConfig_st.spindlePitch_mmPerRev_u8, (uint8_t)1 );
+		float maxRevToReachEndPos = (float)dap_config_st.payloadPedalConfig_st.lengthPedalTravel_i16 / spindlePitch;
 		float maxStepsToReachEndPos = maxRevToReachEndPos * (float)stepsPerMotorRev_u32;
   
 		endPosDetected = false; //abs( isv57.servo_current_percent) > STEPPER_WITH_LIMITS_SENSORLESS_CURRENT_THRESHOLD_IN_PERCENT;
@@ -310,7 +310,7 @@ void StepperWithLimits::findMinMaxSensorless(DAP_config_st dap_config_st)
 			delay(1);
 			if (_stepper->getCurrentPosition() > MIN_POS_MAX_ENDSTOP)
     		{
-				endPosDetected = abs( getServosCurrent() ) > endstopDetectionThreshold;
+				endPosDetected = abs( getServosCurrent() ) > endstopDetectionThreshold_u8;
 			}
 
 			// virtual endstop
@@ -328,7 +328,7 @@ void StepperWithLimits::findMinMaxSensorless(DAP_config_st dap_config_st)
 		moveSlowlyToPos(100);
 		
 		// increase speed back to normal
-		_stepper->setMaxSpeed(MAXIMUM_STEPPER_SPEED);
+		_stepper->setMaxSpeed(MAXIMUM_STEPPER_SPEED_U32);
 	}	
 	
 
@@ -346,7 +346,7 @@ void StepperWithLimits::moveSlowlyToPos(int32_t targetPos_ui32) {
   uint32_t prevSpeed_u32 = _stepper->getMaxSpeed();
 
   // reduce speed
-  _stepper->setMaxSpeed(MAXIMUM_STEPPER_SPEED / 8);
+	_stepper->setMaxSpeed(MAXIMUM_STEPPER_SPEED_U32 / 8);
 
   // move to min
   _stepper->moveTo(targetPos_ui32, true);
@@ -354,7 +354,7 @@ void StepperWithLimits::moveSlowlyToPos(int32_t targetPos_ui32) {
   // reset speed to previous speedlevel
 //   _stepper->setMaxSpeed(prevSpeed_u32);
   delay(1);
-  _stepper->setMaxSpeed(MAXIMUM_STEPPER_SPEED);
+	_stepper->setMaxSpeed(MAXIMUM_STEPPER_SPEED_U32);
   delay(1);
 }
 
@@ -442,7 +442,7 @@ uint32_t StepperWithLimits::getMaxSpeedInMilliHz()
 {
 	// return _stepper->getMaxSpeedInMilliHz();
 	// Hz to mHz: 1 Hz = 1000 milli Hz
-	return MAXIMUM_STEPPER_SPEED * 1000;
+	return MAXIMUM_STEPPER_SPEED_U32 * 1000;
 }
 
 
@@ -527,7 +527,7 @@ void StepperWithLimits::setLifelineSignal()
 
 int32_t StepperWithLimits::getServosVoltage()
 {
-	return isv57.isv57dynamicStates_.servo_voltage_0p1V;
+	return isv57.isv57dynamicStates_.servoVoltage0p1V_i16;
 }
 
 int32_t StepperWithLimits::getServosCurrent()
@@ -656,7 +656,7 @@ uint32_t stackSizeIdx_u32 = 0;
 
 int64_t timeNow_isv57SerialCommunicationTask_l = 0;
 
-#ifdef BRAKE_RESISTOR_PIN
+#ifdef BRAKE_RESISTOR_PIN_U8
 int64_t time_brakeResistorLastPassive = 0;
 #endif
 
@@ -693,7 +693,7 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 
 	// 3. Start the timer to fire periodically
 	// The second argument is the period in microseconds.
-	esp_timer_start_periodic(timer_handle_servoCommunication, REPETITION_INTERVAL_SERVO_COMMUNICATION_TASK_IN_US); 
+	esp_timer_start_periodic(timer_handle_servoCommunication, REPETITION_INTERVAL_SERVO_COMMUNICATION_TASK_IN_US_I64); 
 
   	// Cast the parameter to StepperWithLimits pointer
 	StepperWithLimits* stepper_cl = static_cast<StepperWithLimits*>(pvParameters);
@@ -825,7 +825,7 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 						ActiveSerial->print( servoBusVoltageParameterized_fl32 );
 						ActiveSerial->println("V");
 
-						#ifdef BRAKE_RESISTOR_PIN
+						#ifdef BRAKE_RESISTOR_PIN_U8
 							ActiveSerial->print("Setting real brake resistor thresholds to ");
 							ActiveSerial->print( servoBusVoltageParameterized_fl32+BRAKE_RESISTOR_UPPER_TRHESHOLD_VOLTAGE );
 							ActiveSerial->print("V and ");
@@ -864,7 +864,7 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 
 					
 
-					#ifdef BRAKE_RESISTOR_PIN
+					#ifdef BRAKE_RESISTOR_PIN_U8
 
 						float brakeResistorVoltageOn_inV_fl32 = (servoBusVoltageParameterized_fl32 + BRAKE_RESISTOR_UPPER_TRHESHOLD_VOLTAGE);
 						float brakeResistorVoltageOff_inV_fl32 = (servoBusVoltageParameterized_fl32 + BRAKE_RESISTOR_LOWER_TRHESHOLD_VOLTAGE);
@@ -877,12 +877,12 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 								brakeResistorUpTime_i64 < BRAKE_RESISTOR_DEACTIVATION_TIME_IN_MS &&
 								busVoltage_inV_fl32 > brakeResistorVoltageOff_inV_fl32))
 						{
-							digitalWrite(BRAKE_RESISTOR_PIN, HIGH); 
+							digitalWrite(BRAKE_RESISTOR_PIN_U8, HIGH); 
 							stepper_cl->brakeResistorState_b = true;
 						}
 						else
 						{
-							digitalWrite(BRAKE_RESISTOR_PIN, LOW);
+							digitalWrite(BRAKE_RESISTOR_PIN_U8, LOW);
 							stepper_cl->brakeResistorState_b = false;
 							time_brakeResistorLastPassive = timeNow_isv57SerialCommunicationTask_l;
 						}
@@ -1142,8 +1142,8 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 					delay(100);
 					previousIsv57LifeSignal_b = false;
 					// De-activate brake resistor once servo communication is lost to prevent resistor damage
-					#ifdef BRAKE_RESISTOR_PIN
-						digitalWrite(BRAKE_RESISTOR_PIN, LOW);
+					#ifdef BRAKE_RESISTOR_PIN_U8
+						digitalWrite(BRAKE_RESISTOR_PIN_U8, LOW);
 						stepper_cl->brakeResistorState_b = false;
 					#endif
 				}
@@ -1210,6 +1210,7 @@ bool StepperWithLimits::servoIdleAction()
 
 	return servo_offset_compensation_steps_i32;
 }*/
+
 
 
 

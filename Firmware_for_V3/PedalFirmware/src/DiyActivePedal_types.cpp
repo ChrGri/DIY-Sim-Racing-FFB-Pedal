@@ -12,7 +12,7 @@ static const float ABS_SCALING = 50;
 
 const uint32_t EEPROM_OFFSET = (DAP_VERSION_CONFIG-128) * sizeof(DAP_config_st) % (2048-sizeof(DAP_config_st));
 
-void DAP_config_st::initialiseDefaults() {
+void DAP_config_st::initializeDefaults() {
   payLoadHeader_.payloadType = DAP_PAYLOAD_TYPE_CONFIG;
   payLoadHeader_.version = DAP_VERSION_CONFIG;
   payLoadHeader_.storeToEeprom = false;
@@ -159,7 +159,7 @@ void DAP_config_st::initialiseDefaults() {
 
 
 
-void DAP_config_st::storeConfigToEprom(DAP_config_st& config_st)
+void DAP_config_st::storeConfigToEeprom(DAP_config_st& config_st)
 {
 
   EEPROM.put(EEPROM_OFFSET, config_st); 
@@ -175,7 +175,7 @@ void DAP_config_st::storeConfigToEprom(DAP_config_st& config_st)
   }*/
 }
 
-void DAP_config_st::loadConfigFromEprom(DAP_config_st& config_st)
+void DAP_config_st::loadConfigFromEeprom(DAP_config_st& config_st)
 {
   DAP_config_st local_config_st;
 
@@ -313,22 +313,22 @@ void DAP_calculationVariables_st::updateFromConfig(DAP_config_st& config_st)
   absAmplitude = ((float)config_st.payLoadPedalConfig_.absAmplitude) / 20.0f; // in kg or percent
 
   dampingPress = ((float)config_st.payLoadPedalConfig_.dampingPress) * 0.00015f;
-  RPM_max_freq = ((float)config_st.payLoadPedalConfig_.RPM_max_freq);
-  RPM_min_freq = ((float)config_st.payLoadPedalConfig_.RPM_min_freq);
-  RPM_AMP = ((float)config_st.payLoadPedalConfig_.RPM_AMP) / 100.0f;
+  rpmMaxFreq_f = ((float)config_st.payLoadPedalConfig_.RPM_max_freq);
+  rpmMinFreq_f = ((float)config_st.payLoadPedalConfig_.RPM_min_freq);
+  rpmAmp_f = ((float)config_st.payLoadPedalConfig_.RPM_AMP) / 100.0f;
   // Bite point effect;
 
-  BP_trigger_value = (float)config_st.payLoadPedalConfig_.BP_trigger_value;
-  BP_amp = ((float)config_st.payLoadPedalConfig_.BP_amp) / 100.0f;
-  BP_freq = (float)config_st.payLoadPedalConfig_.BP_freq;
-  WS_amp = ((float)config_st.payLoadPedalConfig_.WS_amp) / 20.0f;
-  WS_freq = (float)config_st.payLoadPedalConfig_.WS_freq;
+  bpTriggerValue_f = (float)config_st.payLoadPedalConfig_.BP_trigger_value;
+  bpAmp_f = ((float)config_st.payLoadPedalConfig_.BP_amp) / 100.0f;
+  bpFreq_f = (float)config_st.payLoadPedalConfig_.BP_freq;
+  wsAmp_f = ((float)config_st.payLoadPedalConfig_.WS_amp) / 20.0f;
+  wsFreq_f = (float)config_st.payLoadPedalConfig_.WS_freq;
   // update force variables
-  Force_Min = ((float)config_st.payLoadPedalConfig_.preloadForce);
-  Force_Max = ((float)config_st.payLoadPedalConfig_.maxForce);
-  Force_Range = Force_Max - Force_Min;
-  Force_Max_default = ((float)config_st.payLoadPedalConfig_.maxForce);
-  pedal_type = config_st.payLoadPedalConfig_.pedal_type;
+  forceMin_f = ((float)config_st.payLoadPedalConfig_.preloadForce);
+  forceMax_f = ((float)config_st.payLoadPedalConfig_.maxForce);
+  forceRange_f = forceMax_f - forceMin_f;
+  forceMaxDefault_f = ((float)config_st.payLoadPedalConfig_.maxForce);
+  pedalType_u8 = config_st.payLoadPedalConfig_.pedal_type;
 
   // calculate steps per motor revolution
   float helper = MAXIMUM_STEPPER_SPEED / (MAXIMUM_STEPPER_RPM / SECONDS_PER_MINUTE);
@@ -344,14 +344,14 @@ void DAP_calculationVariables_st::updateFromConfig(DAP_config_st& config_st)
     // stepsPerMotorRevolution = 3750;
 }
 
-void DAP_calculationVariables_st::dynamic_update()
+void DAP_calculationVariables_st::dynamicUpdate()
 {
-  Force_Range = Force_Max - Force_Min;
+  forceRange_f = forceMax_f - forceMin_f;
 }
 
-void DAP_calculationVariables_st::reset_maxforce()
+void DAP_calculationVariables_st::resetMaxForce()
 {
-  Force_Max = Force_Max_default;
+  forceMax_f = forceMaxDefault_f;
 }
 
 void DAP_calculationVariables_st::updateEndstops(long newMinEndstop, long newMaxEndstop) {
@@ -367,13 +367,13 @@ void DAP_calculationVariables_st::updateEndstops(long newMinEndstop, long newMax
   
   stepperPosMin = stepperPosEndstopRange * startPosRel;
   stepperPosMax = stepperPosEndstopRange * endPosRel;
-  stepperPosMin_default = stepperPosMin;
+  stepperPosMinDefault = stepperPosMin;
   stepperPosRange = stepperPosMax - stepperPosMin;
-  //current_pedal_position_ratio=((float)(current_pedal_position-stepperPosMin_default))/((float)stepperPosRange_default);
+  //currentPedalPositionRatio_f=((float)(currentPedalPosition_u32-stepperPosMinDefault))/((float)stepperPosRangeDefault);
 }
 
 void DAP_calculationVariables_st::updateStiffness() {
-  springStiffnesss = Force_Range / stepperPosRange;
+  springStiffnesss = forceRange_f / stepperPosRange;
   if ( fabs(springStiffnesss) > 0.0001 )
   {
       springStiffnesssInv = 1.0 / springStiffnesss;
@@ -385,31 +385,31 @@ void DAP_calculationVariables_st::updateStiffness() {
   
   }
 
-void DAP_calculationVariables_st::StepperPos_setback()
+void DAP_calculationVariables_st::stepperPosSetback()
 {
-  stepperPosMin=stepperPosMin_default;
-  stepperPosMax=stepperPosMax_default;
-  stepperPosRange = stepperPosRange_default;
+  stepperPosMin=stepperPosMinDefault;
+  stepperPosMax=stepperPosMaxDefault;
+  stepperPosRange = stepperPosRangeDefault;
 }
 
-void DAP_calculationVariables_st::update_stepperMinpos(long newMinstop)
+void DAP_calculationVariables_st::updateStepperMinPos(long newMinstop)
 {
   stepperPosMin=newMinstop;
   
   stepperPosRange = stepperPosMax - stepperPosMin;
 }
-void DAP_calculationVariables_st::update_stepperMaxpos( long newMaxstop)
+void DAP_calculationVariables_st::updateStepperMaxPos(long newMaxstop)
 {
   
   stepperPosMax=newMaxstop;
   stepperPosRange = stepperPosMax - stepperPosMin;
 }
 
-void DAP_calculationVariables_st::Default_pos()
+void DAP_calculationVariables_st::setDefaultPos()
 {
-  stepperPosMin_default = stepperPosMin;
-  stepperPosMax_default = stepperPosMax;
-  stepperPosRange_default=stepperPosRange;
+  stepperPosMinDefault = stepperPosMin;
+  stepperPosMaxDefault = stepperPosMax;
+  stepperPosRangeDefault=stepperPosRange;
 }
 
 
@@ -424,13 +424,14 @@ DAP_config_class::DAP_config_class() {
 
   // create the mutex
   mutex = xSemaphoreCreateMutex();
-  if (mutex == NULL) {
+  if (mutex == NULL)
+  {
     Serial.println("Error: Mutex could not be created!");
     ESP.restart();
   }
 
   // initialize the default config
-  _config_st.initialiseDefaults();
+  _config_st.initializeDefaults();
 }
 
 
@@ -467,16 +468,16 @@ void DAP_config_class::setConfig(DAP_config_st tmp) {
 
 
 
-void DAP_config_class::loadConfigFromEprom() {
+void DAP_config_class::loadConfigFromEeprom() {
   if (xSemaphoreTake(mutex, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE) {
-    _config_st.loadConfigFromEprom(_config_st);
+    _config_st.loadConfigFromEeprom(_config_st);
     xSemaphoreGive(mutex);
   }
 }
 
-void DAP_config_class::storeConfigToEprom() {
+void DAP_config_class::storeConfigToEeprom() {
   if (xSemaphoreTake(mutex, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE) {
-    _config_st.storeConfigToEprom(_config_st);
+    _config_st.storeConfigToEeprom(_config_st);
     xSemaphoreGive(mutex);
   }
 }
@@ -487,7 +488,7 @@ void DAP_config_class::initializedConfig()
   // requests the mutex, waits N milliseconds if not available immediately
   if (xSemaphoreTake(mutex, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE)
   {
-    _config_st.initialiseDefaults();
+    _config_st.initializeDefaults();
     // returnV_b = true;
     // gives back the mutex
     xSemaphoreGive(mutex);
