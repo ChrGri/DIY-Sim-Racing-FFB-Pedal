@@ -144,8 +144,8 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
     DapAssignmentBroadcast_t dap_assignmentboardcast_st_lcl;
     memcpy(&dap_assignmentboardcast_st_lcl, data, sizeof(DapAssignmentBroadcast_t));
     bool structChecker=true;
-    if(dap_assignmentboardcast_st_lcl.payloadHeader_st.version!=DAP_VERSION_CONFIG) structChecker=false;
-    if(dap_assignmentboardcast_st_lcl.payloadHeader_st.payloadType!=DAP_PAYLOAD_TYPE_ASSIGNMENT) structChecker=false;
+    if(dap_assignmentboardcast_st_lcl.payloadHeader_st.version_u8!=DAP_VERSION_CONFIG_U8) structChecker=false;
+    if(dap_assignmentboardcast_st_lcl.payloadHeader_st.payloadType_u8!=DAP_PAYLOAD_TYPE_ASSIGNMENT_U8) structChecker=false;
     uint16_t crcChecker = checksumCalculator((uint8_t*)(&(dap_assignmentboardcast_st_lcl.payloadHeader_st)), sizeof(dap_assignmentboardcast_st_lcl.payloadHeader_st) + sizeof(dap_assignmentboardcast_st_lcl.payloadAssignmentRequest_st));
     if(crcChecker!=dap_assignmentboardcast_st_lcl.payloadFooter_st.checkSum_u16) structChecker=false;
     if(structChecker)
@@ -183,7 +183,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
   //only recieve the package from registed mac address
   if(MacCheck((uint8_t*)esp_now_info->src_addr, Clu_mac)||MacCheck((uint8_t*)esp_now_info->src_addr, Brk_mac)||MacCheck((uint8_t*)esp_now_info->src_addr, Gas_mac))
   {
-    if(data[0]==DAP_PAYLOAD_TYPE_ESPNOW_LOG && data[1]==ESPNOW_LOG_MAGIC_KEY && data[2]==ESPNOW_LOG_MAGIC_KEY_2)
+    if(data[0]==DAP_PAYLOAD_TYPE_ESPNOW_LOG_U8 && data[1]==ESPNOW_LOG_MAGIC_KEY && data[2]==ESPNOW_LOG_MAGIC_KEY_2)
     {
 
       PayloadHidMessage_t receivedMsg;
@@ -194,10 +194,10 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
       {
 
         memset(receivedMsg.text_ac, 0, sizeof(receivedMsg.text_ac));
-        receivedMsg.payloadType=DAP_PAYLOAD_TYPE_ESPNOW_LOG;
-        receivedMsg.magicKey1 = ESPNOW_LOG_MAGIC_KEY;
-        receivedMsg.magicKey2=ESPNOW_LOG_MAGIC_KEY_2;
-        receivedMsg.length= copyLen;
+        receivedMsg.payloadType_u8=DAP_PAYLOAD_TYPE_ESPNOW_LOG_U8;
+        receivedMsg.magicKey1_u8 = ESPNOW_LOG_MAGIC_KEY;
+        receivedMsg.magicKey2_u8=ESPNOW_LOG_MAGIC_KEY_2;
+        receivedMsg.length_u8= copyLen;
         memcpy(receivedMsg.text_ac, &data[4], copyLen);
         receivedMsg.text_ac[copyLen] = '\0';
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -215,8 +215,8 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
       DapStateBasic_t dap_state_basic_st_lcl;
       memcpy(&dap_state_basic_st_lcl, data, sizeof(DapStateBasic_t));
       bool structChecker=true;
-      if(dap_state_basic_st_lcl.payloadHeader_st.version!=DAP_VERSION_CONFIG) structChecker=false;
-      if(dap_state_basic_st_lcl.payloadHeader_st.payloadType!=DAP_PAYLOAD_TYPE_STATE_BASIC) structChecker=false;
+      if(dap_state_basic_st_lcl.payloadHeader_st.version_u8!=DAP_VERSION_CONFIG_U8) structChecker=false;
+      if(dap_state_basic_st_lcl.payloadHeader_st.payloadType_u8!=DAP_PAYLOAD_TYPE_STATE_BASIC_U8) structChecker=false;
       uint16_t crcChecker = checksumCalculator((uint8_t*)(&(dap_state_basic_st_lcl.payloadHeader_st)), sizeof(dap_state_basic_st_lcl.payloadHeader_st) + sizeof(dap_state_basic_st_lcl.payloadPedalStateBasic_st));
       if(crcChecker!=dap_state_basic_st_lcl.payloadFooter_st.checkSum_u16) structChecker=false;
       
@@ -246,7 +246,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
             pedal_throttle_value=joystickNormalizedToInt16;
             Joystick_value[2]=joystickData_u32;
             Joystick_value_original[2] = dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.joystickOutput_u16;
-            pedal_status=dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.pedalStatus;//control pedal status only by Throttle
+            pedal_status=dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.pedalStatus_u8;//control pedal status only by Throttle
             Joystick_throttle_value_from_pedal=dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.joystickOutput_u16;
           break;
           default:
@@ -262,8 +262,8 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
       memcpy(&dap_state_extend_st_lcl, data, sizeof(DapStateExtended_t));
       bool structChecker=true;      
       uint8_t pedalTag=dap_state_extend_st_lcl.payloadHeader_st.pedalTag_u8;
-      if(dap_state_extend_st_lcl.payloadHeader_st.version!=DAP_VERSION_CONFIG) structChecker=false;
-      if(dap_state_extend_st_lcl.payloadHeader_st.payloadType!=DAP_PAYLOAD_TYPE_STATE_EXTENDED) structChecker=false;
+      if(dap_state_extend_st_lcl.payloadHeader_st.version_u8!=DAP_VERSION_CONFIG_U8) structChecker=false;
+      if(dap_state_extend_st_lcl.payloadHeader_st.payloadType_u8!=DAP_PAYLOAD_TYPE_STATE_EXTENDED_U8) structChecker=false;
       uint16_t crcChecker = checksumCalculator((uint8_t*)(&(dap_state_extend_st_lcl.payloadHeader_st)), sizeof(dap_state_extend_st_lcl.payloadHeader_st) + sizeof(dap_state_extend_st_lcl.payloadPedalStateExtended_st));
       if(crcChecker!=dap_state_extend_st_lcl.payloadFooter_st.checkSum_u16) structChecker=false;
       if(structChecker)

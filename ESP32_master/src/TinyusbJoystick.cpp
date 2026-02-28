@@ -171,8 +171,8 @@ void TinyusbJoystick::ProcessFullData(uint8_t *rxBuffer, uint8_t totalLen)
         DapActions_t tmp;
         memcpy(&tmp, rxBuffer, totalLen);
         bool structChecker= true;
-        if(tmp.payloadHeader_st.payloadType !=DAP_PAYLOAD_TYPE_ACTION ) structChecker = false;
-        if(tmp.payloadHeader_st.version !=DAP_VERSION_CONFIG ) structChecker = false;
+        if(tmp.payloadHeader_st.payloadType_u8 !=DAP_PAYLOAD_TYPE_ACTION_U8 ) structChecker = false;
+        if(tmp.payloadHeader_st.version_u8 !=DAP_VERSION_CONFIG_U8 ) structChecker = false;
         uint16_t crc = checksumCal((uint8_t*)(&(tmp.payloadHeader_st)), sizeof(tmp.payloadHeader_st) + sizeof(tmp.payloadPedalAction_st));
         if(crc != tmp.payloadFooter_st.checkSum_u16) structChecker = false;
         if(structChecker)
@@ -188,8 +188,8 @@ void TinyusbJoystick::ProcessFullData(uint8_t *rxBuffer, uint8_t totalLen)
         DapConfig_t tmp;
         memcpy(&tmp, rxBuffer, totalLen);
         bool structChecker= true;
-        if(tmp.payloadHeader_st.payloadType !=DAP_PAYLOAD_TYPE_CONFIG ) structChecker = false;
-        if(tmp.payloadHeader_st.version !=DAP_VERSION_CONFIG ) structChecker = false;
+        if(tmp.payloadHeader_st.payloadType_u8 !=DAP_PAYLOAD_TYPE_CONFIG_U8 ) structChecker = false;
+        if(tmp.payloadHeader_st.version_u8 !=DAP_VERSION_CONFIG_U8 ) structChecker = false;
         uint16_t crc = checksumCal((uint8_t*)(&(tmp.payloadHeader_st)), sizeof(tmp.payloadHeader_st) + sizeof(tmp.payloadPedalConfig_st));
         if(crc != tmp.payloadFooter_st.checkSum_u16) structChecker = false;
         if(structChecker)
@@ -206,8 +206,8 @@ void TinyusbJoystick::ProcessFullData(uint8_t *rxBuffer, uint8_t totalLen)
         DapBridgeState_t tmp;
         memcpy(&tmp, rxBuffer, totalLen);
         bool structChecker= true;
-        if(tmp.payloadHeader_st.payloadType !=DAP_PAYLOAD_TYPE_BRIDGE_STATE ) structChecker = false;
-        if(tmp.payloadHeader_st.version !=DAP_VERSION_CONFIG ) structChecker = false;
+        if(tmp.payloadHeader_st.payloadType_u8 !=DAP_PAYLOAD_TYPE_BRIDGE_STATE_U8 ) structChecker = false;
+        if(tmp.payloadHeader_st.version_u8 !=DAP_VERSION_CONFIG_U8 ) structChecker = false;
         uint16_t crc = checksumCal((uint8_t*)(&(tmp.payloadHeader_st)), sizeof(tmp.payloadHeader_st) + sizeof(tmp.payloadBridgeState_st));
         if(crc != tmp.payloadFooter_st.checkSum_u16) structChecker = false;
         if(structChecker)
@@ -222,7 +222,7 @@ void TinyusbJoystick::ProcessFullData(uint8_t *rxBuffer, uint8_t totalLen)
         DapActionOta_t tmp;
         memcpy(&tmp, rxBuffer, totalLen);
         bool structChecker= true;
-        if(tmp.payloadHeader_st.payloadType !=DAP_PAYLOAD_TYPE_ACTION_OTA ) structChecker = false;
+        if(tmp.payloadHeader_st.payloadType_u8 !=DAP_PAYLOAD_TYPE_ACTION_OTA_U8 ) structChecker = false;
         if(structChecker)
         {
             memcpy(&tmpOtaAction, &tmp, totalLen);
@@ -257,10 +257,10 @@ void TinyusbJoystick::printf(const char *log, ...)
       logLen = sizeof(buffer) - 1; 
   }
     PayloadHidMessage_t message;
-  message.payloadType = DAP_PAYLOAD_TYPE_ESPNOW_LOG;
-  message.magicKey1 = ESPNOW_LOG_MAGIC_KEY;
-  message.magicKey2 = ESPNOW_LOG_MAGIC_KEY_2;
-  message.length = (uint8_t)logLen;
+  message.payloadType_u8 = DAP_PAYLOAD_TYPE_ESPNOW_LOG_U8;
+  message.magicKey1_u8 = ESPNOW_LOG_MAGIC_KEY;
+  message.magicKey2_u8 = ESPNOW_LOG_MAGIC_KEY_2;
+  message.length_u8 = (uint8_t)logLen;
   memcpy(&message.text_ac, buffer, logLen);
     sendData((uint8_t*)&message, sizeof(PayloadHidMessage_t));
   

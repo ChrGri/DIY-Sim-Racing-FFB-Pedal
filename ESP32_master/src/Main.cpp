@@ -618,13 +618,13 @@ typedef struct {
 // Returns 0 if the payload type is unknown.
 static inline size_t getExpectedPacketSize(uint8_t payloadType) {
     switch (payloadType) {
-        case DAP_PAYLOAD_TYPE_CONFIG:
+        case DAP_PAYLOAD_TYPE_CONFIG_U8:
             return sizeof(DapConfig_t);
-        case DAP_PAYLOAD_TYPE_ACTION:
+        case DAP_PAYLOAD_TYPE_ACTION_U8:
             return sizeof(DapActions_t);
-        case DAP_PAYLOAD_TYPE_ACTION_OTA:
+        case DAP_PAYLOAD_TYPE_ACTION_OTA_U8:
             return sizeof(DapActionOta_t);
-        case DAP_PAYLOAD_TYPE_BRIDGE_STATE:
+        case DAP_PAYLOAD_TYPE_BRIDGE_STATE_U8:
             return sizeof(DapBridgeState_t);
         // Add other packet types here in the future
         default:
@@ -662,7 +662,7 @@ void serialCommunicationRxTask( void * pvParameters)
       while (buffer_idx < buffer_len)
       {
         // A. Find the next valid Start-of-Frame (SOF)
-        if (rx_buffer[buffer_idx] != SOF_BYTE_0 || (buffer_idx + 1 < buffer_len && rx_buffer[buffer_idx + 1] != SOF_BYTE_1))
+        if (rx_buffer[buffer_idx] != SOF_BYTE_0_U8 || (buffer_idx + 1 < buffer_len && rx_buffer[buffer_idx + 1] != SOF_BYTE_1_U8))
         {
           buffer_idx++;
           continue; // Keep scanning for a SOF
@@ -698,7 +698,7 @@ void serialCommunicationRxTask( void * pvParameters)
         }
 
         // D. Check for valid End-of-Frame (EOF)
-        if (rx_buffer[buffer_idx + expectedSize - 2] != EOF_BYTE_0 || rx_buffer[buffer_idx + expectedSize - 1] != EOF_BYTE_1)
+        if (rx_buffer[buffer_idx + expectedSize - 2] != EOF_BYTE_0_U8 || rx_buffer[buffer_idx + expectedSize - 1] != EOF_BYTE_1_U8)
         {
           // EOF is wrong, this packet is corrupt. Skip the SOF and continue scanning.
           buffer_idx++;
@@ -714,30 +714,30 @@ void serialCommunicationRxTask( void * pvParameters)
         switch (payloadType)
         {
           //case config
-          case DAP_PAYLOAD_TYPE_CONFIG:
+          case DAP_PAYLOAD_TYPE_CONFIG_U8:
           {
             #ifndef USB_JOYSTICK
               bool structChecker = true;
               DapConfig_t dap_config_st_local;
               memcpy(&dap_config_st_local, packet_start, sizeof(DapConfig_t));
               //ActiveSerial->readBytes((char *)&dap_config_st_local, sizeof(DapConfig_t));
-              if (dap_config_st_local.payloadHeader_st.payloadType != DAP_PAYLOAD_TYPE_CONFIG)
+              if (dap_config_st_local.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_CONFIG_U8)
               {
                 structChecker = false;
                 structIsValid=false;
                 ActiveSerial->print("[L]Payload type expected: ");
-                ActiveSerial->print(DAP_PAYLOAD_TYPE_CONFIG);
+                ActiveSerial->print(DAP_PAYLOAD_TYPE_CONFIG_U8);
                 ActiveSerial->print(",   Payload type received: ");
-                ActiveSerial->println(dap_config_st_local.payloadHeader_st.payloadType);
+                ActiveSerial->println(dap_config_st_local.payloadHeader_st.payloadType_u8);
               }
-              if (dap_config_st_local.payloadHeader_st.version != DAP_VERSION_CONFIG)
+              if (dap_config_st_local.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8)
               {
                 structChecker = false;
                 structIsValid = false;
                 ActiveSerial->print("[L]Config version expected: ");
-                ActiveSerial->print(DAP_VERSION_CONFIG);
+                ActiveSerial->print(DAP_VERSION_CONFIG_U8);
                 ActiveSerial->print(",   Config version received: ");
-                ActiveSerial->println(dap_config_st_local.payloadHeader_st.version);
+                ActiveSerial->println(dap_config_st_local.payloadHeader_st.version_u8);
               }
               // checksum validation
               uint16_t crc = checksumCalculator((uint8_t *)(&(dap_config_st_local.payloadHeader_st)), sizeof(dap_config_st_local.payloadHeader_st) + sizeof(dap_config_st_local.payloadPedalConfig_st));
@@ -762,7 +762,7 @@ void serialCommunicationRxTask( void * pvParameters)
             break;
           }
           //case action to pedal
-          case DAP_PAYLOAD_TYPE_ACTION:
+          case DAP_PAYLOAD_TYPE_ACTION_U8:
           {
             #ifndef USB_JOYSTICK
               bool structChecker = true;
@@ -770,23 +770,23 @@ void serialCommunicationRxTask( void * pvParameters)
               memcpy(&dap_actions_st_local, packet_start, sizeof(DapActions_t));
               //memcpy(&dap_actions_st_local, packet_start, sizeof(DapConfig_t));
               //ActiveSerial->readBytes((char *)&dap_actions_st_local, sizeof(DapActions_t));
-              if (dap_actions_st_local.payloadHeader_st.payloadType != DAP_PAYLOAD_TYPE_ACTION)
+              if (dap_actions_st_local.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_ACTION_U8)
               {
                 structChecker = false;
                 structIsValid = false;
                 ActiveSerial->print("[L]Payload type expected: ");
-                ActiveSerial->print(DAP_PAYLOAD_TYPE_ACTION);
+                ActiveSerial->print(DAP_PAYLOAD_TYPE_ACTION_U8);
                 ActiveSerial->print(",   Payload type received: ");
-                ActiveSerial->println(dap_actions_st_local.payloadHeader_st.payloadType);
+                ActiveSerial->println(dap_actions_st_local.payloadHeader_st.payloadType_u8);
               }
-              if (dap_actions_st_local.payloadHeader_st.version != DAP_VERSION_CONFIG)
+              if (dap_actions_st_local.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8)
               {
                 structChecker = false;
                 structIsValid = false;
                 ActiveSerial->print("[L]Config version expected: ");
-                ActiveSerial->print(DAP_VERSION_CONFIG);
+                ActiveSerial->print(DAP_VERSION_CONFIG_U8);
                 ActiveSerial->print(",   Config version received: ");
-                ActiveSerial->println(dap_actions_st_local.payloadHeader_st.version);
+                ActiveSerial->println(dap_actions_st_local.payloadHeader_st.version_u8);
               }
 
               uint16_t crc = checksumCalculator((uint8_t *)(&(dap_actions_st_local.payloadHeader_st)), sizeof(dap_actions_st_local.payloadHeader_st) + sizeof(dap_actions_st_local.payloadPedalAction_st));
@@ -823,7 +823,7 @@ void serialCommunicationRxTask( void * pvParameters)
           }
 
           //case action for ota
-          case DAP_PAYLOAD_TYPE_ACTION_OTA:
+          case DAP_PAYLOAD_TYPE_ACTION_OTA_U8:
           {
             #ifndef USB_JOYSTICK
               ActiveSerial->println("[L]get OTA command and its info");
@@ -831,7 +831,7 @@ void serialCommunicationRxTask( void * pvParameters)
               //ActiveSerial->readBytes((char *)&dap_action_ota_st, sizeof(DapActionOta_t));
               #ifdef OTA_Update
                 bool structChecker_b = true;
-                if (dap_action_ota_st.payloadHeader_st.payloadType != DAP_PAYLOAD_TYPE_ACTION_OTA)
+                if (dap_action_ota_st.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_ACTION_OTA_U8)
                 {
                   structChecker_b = false;
                   structIsValid = false;
@@ -881,7 +881,7 @@ void serialCommunicationRxTask( void * pvParameters)
             #endif
             break;
           }
-          case DAP_PAYLOAD_TYPE_BRIDGE_STATE:
+          case DAP_PAYLOAD_TYPE_BRIDGE_STATE_U8:
           {
             #ifndef USB_JOYSTICK
               bool structChecker = true;
@@ -890,23 +890,23 @@ void serialCommunicationRxTask( void * pvParameters)
               memcpy(&dap_bridge_state_local, packet_start, sizeof(DapBridgeState_t));
               //ActiveSerial->readBytes((char *)dap_bridge_state_local_ptr, sizeof(DapBridgeState_t));
               // check if data is plausible
-              if (dap_bridge_state_local.payloadHeader_st.payloadType != DAP_PAYLOAD_TYPE_BRIDGE_STATE)
+              if (dap_bridge_state_local.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_BRIDGE_STATE_U8)
               {
                 structChecker = false;
                 structIsValid = false;
                 ActiveSerial->print("[L]Payload type expected: ");
-                ActiveSerial->print(DAP_PAYLOAD_TYPE_BRIDGE_STATE);
+                ActiveSerial->print(DAP_PAYLOAD_TYPE_BRIDGE_STATE_U8);
                 ActiveSerial->print(",   Payload type received: ");
-                ActiveSerial->println(dap_bridge_state_local.payloadHeader_st.payloadType);
+                ActiveSerial->println(dap_bridge_state_local.payloadHeader_st.payloadType_u8);
               }
-              if (dap_bridge_state_local.payloadHeader_st.version != DAP_VERSION_CONFIG)
+              if (dap_bridge_state_local.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8)
               {
                 structChecker = false;
                 structIsValid = false;
                 ActiveSerial->print("[L]Config version expected: ");
-                ActiveSerial->print(DAP_VERSION_CONFIG);
+                ActiveSerial->print(DAP_VERSION_CONFIG_U8);
                 ActiveSerial->print(",   Config version received: ");
-                ActiveSerial->println(dap_bridge_state_lcl.payloadHeader_st.version);
+                ActiveSerial->println(dap_bridge_state_lcl.payloadHeader_st.version_u8);
               }
               // checksum validation
               uint16_t crc = checksumCalculator((uint8_t *)(&(dap_bridge_state_local.payloadHeader_st)), sizeof(dap_bridge_state_local.payloadHeader_st) + sizeof(dap_bridge_state_local.payloadBridgeState_st));
@@ -1127,15 +1127,15 @@ void serialCommunicationTxTask( void * pvParameters)
         if(basic_rssi_update)//Bridge action
         {
           //fill header and footer
-          dap_bridge_state_st.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0;
-          dap_bridge_state_st.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1;
-          dap_bridge_state_st.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0;
-          dap_bridge_state_st.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1;
+          dap_bridge_state_st.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+          dap_bridge_state_st.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+          dap_bridge_state_st.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+          dap_bridge_state_st.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
           int rssi_filter_value=constrain(rssi_filter.process(rssi_display),-100,0) ;
           dap_bridge_state_st.payloadBridgeState_st.unassignedPedalCount_u8=(byte)unassignedPeersList.size();
           dap_bridge_state_st.payloadHeader_st.pedalTag_u8=5; //5 means bridge
-          dap_bridge_state_st.payloadHeader_st.payloadType=DAP_PAYLOAD_TYPE_BRIDGE_STATE;
-          dap_bridge_state_st.payloadHeader_st.version=DAP_VERSION_CONFIG;
+          dap_bridge_state_st.payloadHeader_st.payloadType_u8=DAP_PAYLOAD_TYPE_BRIDGE_STATE_U8;
+          dap_bridge_state_st.payloadHeader_st.version_u8=DAP_VERSION_CONFIG_U8;
           dap_bridge_state_st.payloadBridgeState_st.bridgeAction_u8=0;
           memcpy(dap_bridge_state_st.payloadBridgeState_st.pedalRssiRealtime_ai32,rssi,sizeof(int32_t)*3);
           //parse_version(BRIDGE_FIRMWARE_VERSION,&dap_bridge_state_st.payloadBridgeState_st.Bridge_firmware_version_u8[0],&dap_bridge_state_st.payloadBridgeState_st.Bridge_firmware_version_u8[1],&dap_bridge_state_st.payloadBridgeState_st.Bridge_firmware_version_u8[2]);
@@ -1897,7 +1897,7 @@ void hidCommunicaitonRxTask(void *pvParameters)
           memcpy(&dap_action_ota_st, &tinyusbJoystick_.tmpOtaAction, sizeof(DapActionOta_t));
           #ifdef OTA_Update
           bool structChecker_b = true;
-          if (dap_action_ota_st.payloadHeader_st.payloadType != DAP_PAYLOAD_TYPE_ACTION_OTA)
+          if (dap_action_ota_st.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_ACTION_OTA_U8)
           {
             structChecker_b = false;
             //structIsValid = false;
@@ -2032,15 +2032,15 @@ void hidCommunicaitonTxTask(void *pvParameters)
         if(basic_rssi_update)//Bridge action
         {
           //fill header and footer
-          dap_bridge_state_st.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0;
-          dap_bridge_state_st.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1;
-          dap_bridge_state_st.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0;
-          dap_bridge_state_st.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1;
+          dap_bridge_state_st.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+          dap_bridge_state_st.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+          dap_bridge_state_st.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+          dap_bridge_state_st.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
           int rssi_filter_value=constrain(rssi_filter.process(rssi_display),-100,0) ;
           dap_bridge_state_st.payloadBridgeState_st.unassignedPedalCount_u8=(byte)unassignedPeersList.size();
           dap_bridge_state_st.payloadHeader_st.pedalTag_u8=5; //5 means bridge
-          dap_bridge_state_st.payloadHeader_st.payloadType=DAP_PAYLOAD_TYPE_BRIDGE_STATE;
-          dap_bridge_state_st.payloadHeader_st.version=DAP_VERSION_CONFIG;
+          dap_bridge_state_st.payloadHeader_st.payloadType_u8=DAP_PAYLOAD_TYPE_BRIDGE_STATE_U8;
+          dap_bridge_state_st.payloadHeader_st.version_u8=DAP_VERSION_CONFIG_U8;
           dap_bridge_state_st.payloadBridgeState_st.bridgeAction_u8=0;
           memcpy(dap_bridge_state_st.payloadBridgeState_st.pedalRssiRealtime_ai32,rssi,sizeof(int32_t)*3);
           //parse_version(BRIDGE_FIRMWARE_VERSION,&dap_bridge_state_st.payloadBridgeState_st.Bridge_firmware_version_u8[0],&dap_bridge_state_st.payloadBridgeState_st.Bridge_firmware_version_u8[1],&dap_bridge_state_st.payloadBridgeState_st.Bridge_firmware_version_u8[2]);
@@ -2050,7 +2050,7 @@ void hidCommunicaitonTxTask(void *pvParameters)
           int indexMac = 0;
           for (UnassignedPeer &item : unassignedPeersList) 
           {
-            memcpy(&dap_bridge_state_st.payloadBridgeState_st.macAddressDetected[indexMac], item.mac,6);
+            memcpy(&dap_bridge_state_st.payloadBridgeState_st.macAddressDetected_au8[indexMac], item.mac,6);
             indexMac=indexMac+6;
           }
           //CRC check should be in the final
