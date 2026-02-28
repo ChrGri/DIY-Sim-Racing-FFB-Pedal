@@ -14,30 +14,30 @@
 #define ESPNOW_LOG_MAGIC_KEY_2 0x97
 #define ESPNOW_ASSIGNMENT_MAGIC_KEY 0x99
 
-uint8_t esp_master[] = {0x36, 0x33, 0x33, 0x33, 0x33, 0x31};
+uint8_t g_esp_master[] = {0x36, 0x33, 0x33, 0x33, 0x33, 0x31};
 //uint8_t esp_master[] = {0xdc, 0xda, 0x0c, 0x22, 0x8f, 0xd8}; // S3
 //uint8_t esp_master[] = {0x48, 0x27, 0xe2, 0x59, 0x48, 0xc0}; // S2 mini
-uint8_t Clu_mac[] = {0x36, 0x33, 0x33, 0x33, 0x33, 0x32};
-uint8_t Gas_mac[] = {0x36, 0x33, 0x33, 0x33, 0x33, 0x33};
-uint8_t Brk_mac[] = {0x36, 0x33, 0x33, 0x33, 0x33, 0x34};
-uint8_t broadcast_mac[]={0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-uint8_t esp_Host[] = {0x36, 0x33, 0x33, 0x33, 0x33, 0x35};
-uint8_t esp_Mac[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-uint8_t Recv_mac[]={0};
-uint16_t ESPNow_send=0;
-uint16_t ESPNow_recieve=0;
-int32_t rssi[4]={0,0,0,0};//clutch, brake,throttle,bridge
+uint8_t g_Clu_mac[] = {0x36, 0x33, 0x33, 0x33, 0x33, 0x32};
+uint8_t g_Gas_mac[] = {0x36, 0x33, 0x33, 0x33, 0x33, 0x33};
+uint8_t g_Brk_mac[] = {0x36, 0x33, 0x33, 0x33, 0x33, 0x34};
+uint8_t g_broadcast_mac[]={0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+uint8_t g_esp_Host[] = {0x36, 0x33, 0x33, 0x33, 0x33, 0x35};
+uint8_t g_esp_Mac[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+uint8_t g_Recv_mac[]={0};
+uint16_t g_ESPNow_send=0;
+uint16_t g_ESPNow_recieve=0;
+int32_t g_rssi[4]={0,0,0,0};//clutch, brake,throttle,bridge
 //bool MAC_get=false;
-bool ESPNOW_status =false;
-bool ESPNow_initial_status=false;
-bool ESPNow_Rudder_Update= false;
-bool ESPNow_no_device=false;
-bool ESPNow_config_request=false;
-bool ESPNow_restart=false;
-bool ESPNow_OTA_enable=false;
-uint8_t ESPNow_error_code=0;
-bool ESPNow_Pairing_status = false;
-bool UpdatePairingToEeprom = false;
+bool g_ESPNOW_status =false;
+bool g_ESPNow_initial_status=false;
+bool g_ESPNow_Rudder_Update= false;
+bool g_ESPNow_no_device=false;
+bool g_ESPNow_config_request=false;
+bool g_ESPNow_restart=false;
+bool g_ESPNow_OTA_enable=false;
+uint8_t g_ESPNow_error_code=0;
+bool g_ESPNow_Pairing_status = false;
+bool g_UpdatePairingToEeprom = false;
 bool ESPNow_pairing_action_b = false;
 bool software_pairing_action_b = false;
 bool hardware_pairing_action_b = false;
@@ -130,7 +130,7 @@ void ESPNow_Joystick_Broadcast(int32_t controllerValue)
   {
     _dap_joystick_message.pedal_status=0;
   }
-  esp_now_send(broadcast_mac, (uint8_t *) &_dap_joystick_message, sizeof(_dap_joystick_message));
+  esp_now_send(g_broadcast_mac, (uint8_t *) &_dap_joystick_message, sizeof(_dap_joystick_message));
 
   
   
@@ -138,12 +138,12 @@ void ESPNow_Joystick_Broadcast(int32_t controllerValue)
   /*
   if (result != ESP_OK) 
   {
-    ESPNow_no_device=true;
+    g_ESPNow_no_device=true;
     //ActiveSerial->println("Failed send data to ESP_Master");
   }
   else
   {
-    ESPNow_no_device=false;
+    g_ESPNow_no_device=false;
   }
   */
   
@@ -165,14 +165,14 @@ void ESPNow_Pairing_callback(const uint8_t *mac_addr, const uint8_t *data, int d
     {
       memcpy(&_ESP_pairing_reg.Pair_mac[dap_esppairing_st.payloadEspnowInfo_st.deviceId_u8], mac_addr , 6);
       _ESP_pairing_reg.Pair_status[dap_esppairing_st.payloadEspnowInfo_st.deviceId_u8]=1;
-      UpdatePairingToEeprom = true;
+      g_UpdatePairingToEeprom = true;
     }
     //bridge and analog device, for pedal, only save for bridge
     if(dap_esppairing_st.payloadEspnowInfo_st.deviceId_u8==99/*||dap_esppairing_st.payloadEspnowInfo_st.deviceId_u8==98*/)
     {
       memcpy(&_ESP_pairing_reg.Pair_mac[3], mac_addr , 6);
       _ESP_pairing_reg.Pair_status[3]=1;
-      UpdatePairingToEeprom = true;
+      g_UpdatePairingToEeprom = true;
     }
   }
 
@@ -191,9 +191,9 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
   global_dap_config_class.getConfig(&dap_config_espnow_recv_st, 500);
 
   /*
-  if(ESPNOW_status)
+  if(g_ESPNOW_status)
   {
-    memcpy(&ESPNow_recieve, data, sizeof(ESPNow_recieve));
+    memcpy(&g_ESPNow_recieve, data, sizeof(g_ESPNow_recieve));
     ESPNow_update=true;
   }
   */
@@ -202,10 +202,10 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
   {
     ESPNow_Pairing_callback(esp_now_info->src_addr, data, data_len);
   }
-  if(ESPNOW_status)
+  if(g_ESPNOW_status)
   {
     //rudder message
-    if(MacCheck(Recv_mac,(uint8_t *)esp_now_info->src_addr))
+    if(MacCheck(g_Recv_mac,(uint8_t *)esp_now_info->src_addr))
     {
       if(data_len==sizeof(DapRudder_t))
       {
@@ -233,17 +233,17 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
         if (structChecker == true)
         {
           memcpy(&dap_rudder_receiving, data, sizeof(DapRudder_t));
-          ESPNow_Rudder_Update=true;
+          g_ESPNow_Rudder_Update=true;
         }
 
       }
     }
-    if(MacCheck(esp_Host,(uint8_t *)esp_now_info->src_addr))
+    if(MacCheck(g_esp_Host,(uint8_t *)esp_now_info->src_addr))
     {
       
       if (data_len == sizeof(DapConfig_t))
       {
-        if (esp_now_info->src_addr[5] == esp_Host[5])
+        if (esp_now_info->src_addr[5] == g_esp_Host[5])
         {
           // ActiveSerial->println("dap_config_st ESPNow recieved");
 
@@ -258,14 +258,14 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
           if (dap_config_espnow_recv_st.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_CONFIG_U8)
           {
             structChecker = false;
-            ESPNow_error_code = 101;
+            g_ESPNow_error_code = 101;
           }
           if (dap_config_espnow_recv_st.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8)
           {
             structChecker = false;
-            if (ESPNow_error_code == 0)
+            if (g_ESPNow_error_code == 0)
             {
-              ESPNow_error_code = 102;
+              g_ESPNow_error_code = 102;
             }
           }
           // checksum validation
@@ -273,9 +273,9 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
           if (crc != dap_config_espnow_recv_st.payloadFooter_st.checkSum_u16)
           {
             structChecker = false;
-            if (ESPNow_error_code == 0)
+            if (g_ESPNow_error_code == 0)
             {
-              ESPNow_error_code = 103;
+              g_ESPNow_error_code = 103;
             }
           }
 
@@ -285,7 +285,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
             // ActiveSerial->println("Updating pedal config");
             configDataPackage_t configPackage_st;
             configPackage_st.config_st = dap_config_espnow_recv_st;
-            xQueueSend(configUpdateAvailableQueue, &configPackage_st, portMAX_DELAY);
+            xQueueSend(s_configUpdateAvailableQueue, &configPackage_st, portMAX_DELAY);
             //global_dap_config_class.setConfig(dap_config_espnow_recv_st);
             if(dap_config_espnow_recv_st.payloadHeader_st.storeToEeprom_u8==1)
             {
@@ -315,26 +315,26 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
           if (dap_actions_st.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_ACTION_U8)
           {
             structChecker = false;
-            if (ESPNow_error_code == 0)
+            if (g_ESPNow_error_code == 0)
             {
-              ESPNow_error_code = 111;
+              g_ESPNow_error_code = 111;
             }
           }
           if (dap_actions_st.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8)
           {
             structChecker = false;
-            if (ESPNow_error_code == 0)
+            if (g_ESPNow_error_code == 0)
             {
-              ESPNow_error_code = 112;
+              g_ESPNow_error_code = 112;
             }
           }
           crc = checksumCalculator((uint8_t *)(&(dap_actions_st.payloadHeader_st)), sizeof(dap_actions_st.payloadHeader_st) + sizeof(dap_actions_st.payloadPedalAction_st));
           if (crc != dap_actions_st.payloadFooter_st.checkSum_u16)
           {
             structChecker = false;
-            if (ESPNow_error_code == 0)
+            if (g_ESPNow_error_code == 0)
             {
-              ESPNow_error_code = 113;
+              g_ESPNow_error_code = 113;
             }
           }
 
@@ -344,12 +344,12 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
             // 2= restart pedal
             if (dap_actions_st.payloadPedalAction_st.systemAction_u8 == (uint8_t)PedalSystemAction::PEDAL_RESTART)
             {
-              ESPNow_restart = true;
+              g_ESPNow_restart = true;
             }
             // 3= Wifi OTA
             if (dap_actions_st.payloadPedalAction_st.systemAction_u8 == (uint8_t)PedalSystemAction::ENABLE_OTA)
             {
-              ESPNow_OTA_enable = true;
+              g_ESPNow_OTA_enable = true;
             }
             // 5= Boot into download mode
             if (dap_actions_st.payloadPedalAction_st.systemAction_u8 == (uint8_t)PedalSystemAction::ESP_BOOT_INTO_DOWNLOAD_MODE)
@@ -433,7 +433,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
             // trigger return pedal position
             if (dap_actions_st.payloadPedalAction_st.returnPedalConfig_u8)
             {
-              ESPNow_config_request = true;
+              g_ESPNow_config_request = true;
               /*
               DapConfig_t * dap_config_st_local_ptr;
               dap_config_st_local_ptr = &dap_config_st;
@@ -452,7 +452,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
                 if (dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8 == 2)
                 {
                   // Recv_mac=Clu_mac;
-                  memcpy(Recv_mac, Clu_mac, 6);
+                  memcpy(g_Recv_mac, g_Clu_mac, 6);
                   // ESPNow.add_peer(Recv_mac);
                 }
               }
@@ -482,7 +482,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               {
                 if (dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8 == 2)
                 {
-                  memcpy(Recv_mac, Clu_mac, 6);
+                  memcpy(g_Recv_mac, g_Clu_mac, 6);
                   // ESPNow.add_peer(Recv_mac);
                 }
               }
@@ -572,21 +572,21 @@ void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type) {
     const uint8_t *addr_SOURCE = payload + 10;  
     uint8_t addr_package[6];
     memcpy(addr_package, addr_SOURCE, 6);
-    if(MacCheck(addr_package, Clu_mac))
+    if(MacCheck(addr_package, g_Clu_mac))
     {
-      rssi[0]=ppkt->rx_ctrl.rssi;
+      g_rssi[0]=ppkt->rx_ctrl.rssi;
     }
-    if(MacCheck(addr_package, Brk_mac))
+    if(MacCheck(addr_package, g_Brk_mac))
     {
-      rssi[1]=ppkt->rx_ctrl.rssi;
+      g_rssi[1]=ppkt->rx_ctrl.rssi;
     }
-    if(MacCheck(addr_package, Gas_mac))
+    if(MacCheck(addr_package, g_Gas_mac))
     {
-      rssi[2]=ppkt->rx_ctrl.rssi;
+      g_rssi[2]=ppkt->rx_ctrl.rssi;
     }
-    if(MacCheck(addr_package, esp_Host))
+    if(MacCheck(addr_package, g_esp_Host))
     {
-      rssi[3]=ppkt->rx_ctrl.rssi;
+      g_rssi[3]=ppkt->rx_ctrl.rssi;
     }
   }
   
@@ -603,19 +603,19 @@ void ESPNow_initialize()
   ActiveSerial->println("Initializing Wifi, please wait");
   // ActiveSerial->print("Current MAC Address:  ");
   // ActiveSerial->println(WiFi.macAddress());
-  WiFi.macAddress(esp_Mac);
-  ActiveSerial->printf("Device Mac: %02X:%02X:%02X:%02X:%02X:%02X\n", esp_Mac[0], esp_Mac[1], esp_Mac[2], esp_Mac[3], esp_Mac[4], esp_Mac[5]);
+  WiFi.macAddress(g_esp_Mac);
+  ActiveSerial->printf("Device Mac: %02X:%02X:%02X:%02X:%02X:%02X\n", g_esp_Mac[0], g_esp_Mac[1], g_esp_Mac[2], g_esp_Mac[3], g_esp_Mac[4], g_esp_Mac[5]);
   #ifndef ESPNow_Pairing_function
     switch (dap_config_espnow_init_st.payloadPedalConfig_st.pedalType_u8)
     {
     case PEDAL_ID_CLUTCH:
-      esp_wifi_set_mac(WIFI_IF_STA, &Clu_mac[0]);
+      esp_wifi_set_mac(WIFI_IF_STA, &g_Clu_mac[0]);
       break;
     case PEDAL_ID_BRAKE:
-      esp_wifi_set_mac(WIFI_IF_STA, &Brk_mac[0]);
+      esp_wifi_set_mac(WIFI_IF_STA, &g_Brk_mac[0]);
       break;  
     case PEDAL_ID_THROTTLE:
-      esp_wifi_set_mac(WIFI_IF_STA, &Gas_mac[0]);
+      esp_wifi_set_mac(WIFI_IF_STA, &g_Gas_mac[0]);
       break;         
     default:
       ActiveSerial->println("Mac address overwrite failed, no pedal role assignment.");
@@ -661,19 +661,19 @@ void ESPNow_initialize()
       {
         if (i == 0)
         {
-          memcpy(&Clu_mac, &_ESP_pairing_reg.Pair_mac[i], 6);
+          memcpy(&g_Clu_mac, &_ESP_pairing_reg.Pair_mac[i], 6);
         }
         if (i == 1)
         {
-          memcpy(&Brk_mac, &_ESP_pairing_reg.Pair_mac[i], 6);
+          memcpy(&g_Brk_mac, &_ESP_pairing_reg.Pair_mac[i], 6);
         }
         if (i == 2)
         {
-          memcpy(&Gas_mac, &_ESP_pairing_reg.Pair_mac[i], 6);
+          memcpy(&g_Gas_mac, &_ESP_pairing_reg.Pair_mac[i], 6);
         }
         if (i == 3)
         {
-          memcpy(&esp_Host, &_ESP_pairing_reg.Pair_mac[i], 6);
+          memcpy(&g_esp_Host, &_ESP_pairing_reg.Pair_mac[i], 6);
         }
       }
     }
@@ -681,20 +681,20 @@ void ESPNow_initialize()
 
     if (dap_config_espnow_init_st.payloadPedalConfig_st.pedalType_u8 == PEDAL_ID_BRAKE || dap_config_espnow_init_st.payloadPedalConfig_st.pedalType_u8 == PEDAL_ID_CLUTCH)
     {
-      memcpy(Recv_mac, Gas_mac, 6);
-      ESPNow.add_peer(Recv_mac);
+      memcpy(g_Recv_mac, g_Gas_mac, 6);
+      ESPNow.add_peer(g_Recv_mac);
     }
 
     if (dap_config_espnow_init_st.payloadPedalConfig_st.pedalType_u8 == PEDAL_ID_THROTTLE)
     {
-      memcpy(Recv_mac, Brk_mac, 6);
-      ESPNow.add_peer(Brk_mac);
-      ESPNow.add_peer(Clu_mac);
+      memcpy(g_Recv_mac, g_Brk_mac, 6);
+      ESPNow.add_peer(g_Brk_mac);
+      ESPNow.add_peer(g_Clu_mac);
     }
     bool peerAddingChecker=true;
-    if(ESPNow.add_peer(esp_master)!= ESP_OK) peerAddingChecker=false;
-    if(ESPNow.add_peer(broadcast_mac)!= ESP_OK) peerAddingChecker=false;
-    if(ESPNow.add_peer(esp_Host)!= ESP_OK) peerAddingChecker=false;
+    if(ESPNow.add_peer(g_esp_master)!= ESP_OK) peerAddingChecker=false;
+    if(ESPNow.add_peer(g_broadcast_mac)!= ESP_OK) peerAddingChecker=false;
+    if(ESPNow.add_peer(g_esp_Host)!= ESP_OK) peerAddingChecker=false;
     if(peerAddingChecker) ActiveSerial->println("Sucess to add peers");
 
     ESPNow.reg_recv_cb(onRecv);
@@ -702,8 +702,8 @@ void ESPNow_initialize()
     //rssi calculate
     esp_wifi_set_promiscuous(true);
     esp_wifi_set_promiscuous_rx_cb(&promiscuous_rx_cb);
-    ESPNow_initial_status=true;
-    ESPNOW_status=true;
+    g_ESPNow_initial_status=true;
+    g_ESPNOW_status=true;
     ActiveSerial->println("ESPNow Initialized");
   
 }
@@ -733,7 +733,7 @@ void sendESPNOWLog(const char *log,...)
   buffer[2] = ESPNOW_LOG_MAGIC_KEY_2;
   buffer[3] = logLen;
   memcpy(&buffer[4], result, logLen);
-  ESPNow.send_message(broadcast_mac, (uint8_t *)buffer, 4 + logLen);
+  ESPNow.send_message(g_broadcast_mac, (uint8_t *)buffer, 4 + logLen);
   free(result);
 }
 
@@ -787,7 +787,7 @@ void softwareAssignmentInitialize()
   }
   configDataPackage_t configPackage_st;
   configPackage_st.config_st = tmp;
-  xQueueSend(configUpdateAvailableQueue, &configPackage_st, portMAX_DELAY);
+  xQueueSend(s_configUpdateAvailableQueue, &configPackage_st, portMAX_DELAY);
   delay(1000); // delay for writting config into global
 }
 

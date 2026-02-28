@@ -423,15 +423,15 @@ void DAP_calculationVariables_st::setDefaultPos()
 DAP_config_class::DAP_config_class() {
 
   // create the mutex
-  mutex = xSemaphoreCreateMutex();
-  if (mutex == NULL)
+  mutex_sh = xSemaphoreCreateMutex();
+  if (mutex_sh == NULL)
   {
     Serial.println("Error: Mutex could not be created!");
     ESP.restart();
   }
 
   // initialize the default config
-  _config_st.initializeDefaults();
+  config_st.initializeDefaults();
 }
 
 
@@ -439,10 +439,10 @@ DAP_config_class::DAP_config_class() {
 DAP_config_st DAP_config_class::getConfig() {
   DAP_config_st tmp;
   // requests the mutex, waits N milliseconds if not available immediately
-  if (xSemaphoreTake(mutex, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE) {
-    tmp = _config_st;
+  if (xSemaphoreTake(mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE) {
+    tmp = config_st;
     // gives back the mutex
-    xSemaphoreGive(mutex);
+    xSemaphoreGive(mutex_sh);
   }
 
   return tmp;
@@ -452,11 +452,11 @@ DAP_config_st DAP_config_class::getConfig() {
 void DAP_config_class::setConfig(DAP_config_st tmp) {
   // boolean returnV_b = false;
   // requests the mutex, waits N milliseconds if not available immediately
-  if (xSemaphoreTake(mutex, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE) {
-    _config_st = tmp;
+  if (xSemaphoreTake(mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE) {
+    config_st = tmp;
     // returnV_b = true;
     // gives back the mutex
-    xSemaphoreGive(mutex);
+    xSemaphoreGive(mutex_sh);
   }
   else
   {
@@ -469,16 +469,16 @@ void DAP_config_class::setConfig(DAP_config_st tmp) {
 
 
 void DAP_config_class::loadConfigFromEeprom() {
-  if (xSemaphoreTake(mutex, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE) {
-    _config_st.loadConfigFromEeprom(_config_st);
-    xSemaphoreGive(mutex);
+  if (xSemaphoreTake(mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE) {
+    config_st.loadConfigFromEeprom(config_st);
+    xSemaphoreGive(mutex_sh);
   }
 }
 
 void DAP_config_class::storeConfigToEeprom() {
-  if (xSemaphoreTake(mutex, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE) {
-    _config_st.storeConfigToEeprom(_config_st);
-    xSemaphoreGive(mutex);
+  if (xSemaphoreTake(mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE) {
+    config_st.storeConfigToEeprom(config_st);
+    xSemaphoreGive(mutex_sh);
   }
 }
 
@@ -486,12 +486,12 @@ void DAP_config_class::initializedConfig()
 {
   // boolean returnV_b = false;
   // requests the mutex, waits N milliseconds if not available immediately
-  if (xSemaphoreTake(mutex, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE)
+  if (xSemaphoreTake(mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE)
   {
-    _config_st.initializeDefaults();
+    config_st.initializeDefaults();
     // returnV_b = true;
     // gives back the mutex
-    xSemaphoreGive(mutex);
+    xSemaphoreGive(mutex_sh);
   }
   else
   {

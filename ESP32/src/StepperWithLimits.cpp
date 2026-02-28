@@ -10,9 +10,9 @@
 
 #define BRAKE_RESISTOR_DEACTIVATION_TIME_IN_MS 1000
 
-static const uint8_t LIMIT_TRIGGER_VALUE = LOW;                                   // does endstop trigger high or low
+static const uint8_t s_LIMIT_TRIGGER_VALUE = LOW;                                   // does endstop trigger high or low
 static const int32_t ENDSTOP_MOVEMENT = (float)100; // how much to move between trigger checks
-static const int32_t ENDSTOP_MOVEMENT_SENSORLESS = ENDSTOP_MOVEMENT * 5;
+static const int32_t s_ENDSTOP_MOVEMENT_SENSORLESS = ENDSTOP_MOVEMENT * 5;
 
 
 #define MAX_ESTIMATED_SERVO_OFFSET (int16_t)5000
@@ -24,16 +24,16 @@ bool previousIsv57LifeSignal_b = true;
 #define TIME_SINCE_SERVO_POS_CHANGE_TO_DETECT_CRASH_IN_MS 10000
 #define TWO_TO_THE_POWER_OF_15_MINUS_1 (uint32_t)32767 // 2^15 - 1
 //#define INT16_MAX (int32_t)65536
-static SemaphoreHandle_t semaphore_lifelineSignal = NULL;
+static SemaphoreHandle_t s_semaphore_lifelineSignal = NULL;
 static SemaphoreHandle_t semaphore_resetServoPos = xSemaphoreCreateMutex();
 static SemaphoreHandle_t semaphore_readServoValues = xSemaphoreCreateMutex();
 static SemaphoreHandle_t semaphore_getSetCorrectedServoPos = xSemaphoreCreateMutex();
 
 
-static float servoBusVoltageParameterized_fl32 = SERVO_MAX_VOLTAGE_IN_V_36V;
-static bool servoBusVoltageParameterized_b = true;
+static float s_servoBusVoltageParameterized_fl32 = SERVO_MAX_VOLTAGE_IN_V_36V;
+static bool s_servoBusVoltageParameterized_b = true;
 
-static bool printProfilingFlag_b = false;
+static bool s_printProfilingFlag_b = false;
 
 bool setServoToSleep_b = false;
 
@@ -178,7 +178,7 @@ void StepperWithLimits::printAllServoParameters()
 
 void StepperWithLimits::configSetProfilingFlag(bool proFlag_b)
 {
-	printProfilingFlag_b = proFlag_b;
+	s_printProfilingFlag_b = proFlag_b;
 }
 
 
@@ -210,8 +210,8 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st)
 
 			if (true == servoRadingsTrustworthy_36VRange_b)
 			{
-				servoBusVoltageParameterized_fl32 = SERVO_MAX_VOLTAGE_IN_V_36V;
-				servoBusVoltageParameterized_b = false;
+				s_servoBusVoltageParameterized_fl32 = SERVO_MAX_VOLTAGE_IN_V_36V;
+				s_servoBusVoltageParameterized_b = false;
 				ActiveSerial->print("Servos bus voltage in expected range (36V range): ");
 				ActiveSerial->print( servosBusVoltageInVolt_fl32 );
 				ActiveSerial->println("V");
@@ -220,8 +220,8 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st)
 
 			if (true == servoRadingsTrustworthy_48VRange_b)
 			{
-				servoBusVoltageParameterized_fl32 = SERVO_MAX_VOLTAGE_IN_V_48V;
-				servoBusVoltageParameterized_b = false;
+				s_servoBusVoltageParameterized_fl32 = SERVO_MAX_VOLTAGE_IN_V_48V;
+				s_servoBusVoltageParameterized_b = false;
 				ActiveSerial->print("Servos bus voltage in expected range (48V range): ");
 				ActiveSerial->print( servosBusVoltageInVolt_fl32 );
 				ActiveSerial->println("V");
@@ -273,7 +273,7 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st)
 			delay(1);
 			endPosDetected = abs( getServosCurrent() ) > endstopDetectionThreshold_u8;
 		}
-		setPosition = - 5 * ENDSTOP_MOVEMENT_SENSORLESS;
+		setPosition = - 5 * s_ENDSTOP_MOVEMENT_SENSORLESS;
 		delay(20);
 		_stepper->forceStopAndNewPosition(setPosition);
 		delay(100);
@@ -320,7 +320,7 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st)
 		}
 		_stepper->forceStop();
 		delay(100);
-		_endstopLimitMax = _stepper->getCurrentPosition() - 5 * ENDSTOP_MOVEMENT_SENSORLESS;
+		_endstopLimitMax = _stepper->getCurrentPosition() - 5 * s_ENDSTOP_MOVEMENT_SENSORLESS;
 
 		ActiveSerial->printf("Max endstop reached: %d\n", _endstopLimitMax);
 		
@@ -493,10 +493,10 @@ void StepperWithLimits::correctPos()
 bool StepperWithLimits::getLifelineSignal()
 {
 	bool signal_b = false;
-	// if(semaphore_lifelineSignal!=NULL)
+	// if(s_semaphore_lifelineSignal!=NULL)
 	// {
 	// 	// Take the semaphore and just update the config file, then release the semaphore
-	// 	if(xSemaphoreTake(semaphore_lifelineSignal, pdMS_TO_TICKS(1))==pdTRUE)
+	// 	if(xSemaphoreTake(s_semaphore_lifelineSignal, pdMS_TO_TICKS(1))==pdTRUE)
 	// 	{
 		  signal_b = isv57LifeSignal_b;
 	// 	}
@@ -508,10 +508,10 @@ bool StepperWithLimits::getLifelineSignal()
 
 void StepperWithLimits::setLifelineSignal()
 {
-	// if(semaphore_lifelineSignal!=NULL)
+	// if(s_semaphore_lifelineSignal!=NULL)
 	// {
 	// 	// Take the semaphore and just update the config file, then release the semaphore
-	// 	if(xSemaphoreTake(semaphore_lifelineSignal, pdMS_TO_TICKS(1))==pdTRUE)
+	// 	if(xSemaphoreTake(s_semaphore_lifelineSignal, pdMS_TO_TICKS(1))==pdTRUE)
 	// 	{
 		  isv57LifeSignal_b = isv57.checkCommunication();
 // 		}
@@ -662,16 +662,16 @@ int64_t time_brakeResistorLastPassive = 0;
 
 
 
-static SemaphoreHandle_t timer_fireServoCommunication; // Semaphore to signal the pedal update task
+static SemaphoreHandle_t s_timer_fireServoCommunication; // Semaphore to signal the pedal update task
 void IRAM_ATTR timer_servoCommunication_callback(void* arg) {
-  if(timer_fireServoCommunication != NULL)
+	if(s_timer_fireServoCommunication != NULL)
   {
     // It immediately gives the semaphore to wake up myCore1Task.
-    xSemaphoreGiveFromISR(timer_fireServoCommunication, NULL);
+		xSemaphoreGiveFromISR(s_timer_fireServoCommunication, NULL);
   }
 //   else
 //   {
-//     timer_fireServoCommunication = xSemaphoreCreateBinary();
+//     s_timer_fireServoCommunication = xSemaphoreCreateBinary();
 //   }
 }
 
@@ -679,7 +679,7 @@ void IRAM_ATTR timer_servoCommunication_callback(void* arg) {
 void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 {
   
-	timer_fireServoCommunication = xSemaphoreCreateBinary();
+	s_timer_fireServoCommunication = xSemaphoreCreateBinary();
 
 	// 1. Define timer configuration
 	const esp_timer_create_args_t timer_args_servoCommunication = {
@@ -707,12 +707,12 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 
 		// wait for the timer to fire
 		// This will block until the timer callback gives the semaphore. It won't consume CPU time while waiting.
-		if(timer_fireServoCommunication != NULL)
+		if(s_timer_fireServoCommunication != NULL)
 		{
-			if (xSemaphoreTake(timer_fireServoCommunication, portMAX_DELAY) == pdTRUE) {
+			if (xSemaphoreTake(s_timer_fireServoCommunication, portMAX_DELAY) == pdTRUE) {
 
 				
-				profiler_servoCommunication.activate( printProfilingFlag_b );
+				profiler_servoCommunication.activate( s_printProfilingFlag_b );
 
 
 				// start profiler 0, overall function
@@ -819,23 +819,23 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 						delay(15);
 					}
 
-					if (false == servoBusVoltageParameterized_b)
+					if (false == s_servoBusVoltageParameterized_b)
 					{
 						ActiveSerial->print("Setting virtual brake resistor to ");
-						ActiveSerial->print( servoBusVoltageParameterized_fl32 );
+						ActiveSerial->print( s_servoBusVoltageParameterized_fl32 );
 						ActiveSerial->println("V");
 
 						#ifdef BRAKE_RESISTOR_PIN_U8
 							ActiveSerial->print("Setting real brake resistor thresholds to ");
-							ActiveSerial->print( servoBusVoltageParameterized_fl32+BRAKE_RESISTOR_UPPER_TRHESHOLD_VOLTAGE );
+							ActiveSerial->print( s_servoBusVoltageParameterized_fl32+BRAKE_RESISTOR_UPPER_TRHESHOLD_VOLTAGE );
 							ActiveSerial->print("V and ");
-							ActiveSerial->print( servoBusVoltageParameterized_fl32+BRAKE_RESISTOR_LOWER_TRHESHOLD_VOLTAGE );
+							ActiveSerial->print( s_servoBusVoltageParameterized_fl32+BRAKE_RESISTOR_LOWER_TRHESHOLD_VOLTAGE );
 							ActiveSerial->println("V");
 						#endif
 
 						// set iSV57 parameters for 36 or 48V range
-						stepper_cl->isv57.setServoVoltage(servoBusVoltageParameterized_fl32);
-						servoBusVoltageParameterized_b = true;
+						stepper_cl->isv57.setServoVoltage(s_servoBusVoltageParameterized_fl32);
+						s_servoBusVoltageParameterized_b = true;
 					}
 
 
@@ -866,8 +866,8 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 
 					#ifdef BRAKE_RESISTOR_PIN_U8
 
-						float brakeResistorVoltageOn_inV_fl32 = (servoBusVoltageParameterized_fl32 + BRAKE_RESISTOR_UPPER_TRHESHOLD_VOLTAGE);
-						float brakeResistorVoltageOff_inV_fl32 = (servoBusVoltageParameterized_fl32 + BRAKE_RESISTOR_LOWER_TRHESHOLD_VOLTAGE);
+						float brakeResistorVoltageOn_inV_fl32 = (s_servoBusVoltageParameterized_fl32 + BRAKE_RESISTOR_UPPER_TRHESHOLD_VOLTAGE);
+						float brakeResistorVoltageOff_inV_fl32 = (s_servoBusVoltageParameterized_fl32 + BRAKE_RESISTOR_LOWER_TRHESHOLD_VOLTAGE);
 						
 						float busVoltage_inV_fl32 = ( (float)stepper_cl->getServosVoltage() ) * 0.1f;
 						int64_t brakeResistorUpTime_i64 = timeNow_isv57SerialCommunicationTask_l - time_brakeResistorLastPassive;

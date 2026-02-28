@@ -186,8 +186,8 @@ public:
   void initializedConfig();
 
 private:
-  SemaphoreHandle_t m_mutex_sh;
-  DapConfig_t m_config_st;
+  SemaphoreHandle_t mutex_sh;
+  DapConfig_t config_st;
   uint16_t checksumCalculator_u16(uint8_t *data_pu8, uint16_t length_u16);
 };
 

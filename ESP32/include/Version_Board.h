@@ -50,9 +50,9 @@ const char *DAP_FIRMWARE_VERSION = "0.90.29";
 		#define CONTROL_BOARD "V6_ESP32S3_Without_Wireless"
 	#endif
 #endif
-uint8_t versionMajor;
-uint8_t versionMinor;
-uint8_t versionPatch;
+uint8_t g_versionMajor;
+uint8_t g_versionMinor;
+uint8_t g_versionPatch;
 void parse_version(const char *version, uint8_t *major, uint8_t *minor, uint8_t *patch) 
 {
      int imajor, iminor, ipatch;

@@ -3,9 +3,9 @@
 #include "Arduino.h"
 #include "Main.h"
 
-static const uint16_t JOYSTICK_MIN_VALUE_U16 = 0U;
-static const uint16_t JOYSTICK_MAX_VALUE_U16 = UINT16_MAX;
-static const uint16_t JOYSTICK_RANGE_U16 = JOYSTICK_MAX_VALUE_U16 - JOYSTICK_MIN_VALUE_U16;
+static const uint16_t s_JOYSTICK_MIN_VALUE_U16 = 0U;
+static const uint16_t s_JOYSTICK_MAX_VALUE_U16 = UINT16_MAX;
+static const uint16_t s_JOYSTICK_RANGE_U16 = s_JOYSTICK_MAX_VALUE_U16 - s_JOYSTICK_MIN_VALUE_U16;
 
 uint16_t NormalizeControllerOutputValue(float value, float minVal, float maxVal, float maxGameOutput_u8);
 

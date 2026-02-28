@@ -1,0 +1,2 @@
+C:/Users/chris/OneDrive/Dokumente/GitHub/DIY-Sim-Racing-FFB-Pedal/ESP32/src/LoadCell.cpp:23:global-or-static:s_globalChannel2_u8
+C:/Users/chris/OneDrive/Dokumente/GitHub/DIY-Sim-Racing-FFB-Pedal/ESP32/include/isv57communication.h:97:local:raw

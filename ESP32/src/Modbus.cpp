@@ -3,8 +3,8 @@
 #include "Main.h"
 
 // CRC-16-Modbus constants
-const int32_t CRC_POLYNOMIAL_I32 = 0xA001;
-const int32_t CRC_INITIAL_VALUE_I32 = 0xFFFF;
+const int32_t g_crcPolynomial_i32 = 0xA001;
+const int32_t g_crcInitialValue_i32 = 0xFFFF;
 
 Modbus::Modbus()
 {
@@ -399,7 +399,7 @@ void Modbus::getRawTxBuffer(uint8_t *rawBuffer_pu8, uint8_t &rawBufferLength_u8)
 
 int32_t Modbus::computeCrc(uint8_t *buffer_pu8, int32_t bufferLength_i32)
 {
-  int32_t crc_i32 = CRC_INITIAL_VALUE_I32;
+  int32_t crc_i32 = g_crcInitialValue_i32;
   uint8_t pos_u8, i_u8;
  
   for (pos_u8 = 0; pos_u8 < bufferLength_i32; pos_u8++)
@@ -411,7 +411,7 @@ int32_t Modbus::computeCrc(uint8_t *buffer_pu8, int32_t bufferLength_i32)
       if ((crc_i32 & 0x0001) != 0)
       {
         crc_i32 >>= 1;
-        crc_i32 ^= CRC_POLYNOMIAL_I32;
+        crc_i32 ^= g_crcPolynomial_i32;
       }
       else
       {

@@ -19,7 +19,7 @@ struct DAP_otaWifiInfo_st
     uint8_t WIFI_PASS[30];
 };
 
-DAP_otaWifiInfo_st _dap_OtaWifiInfo_st;
+DAP_otaWifiInfo_st g_dap_OtaWifiInfo_st;
 
 
 
@@ -27,8 +27,8 @@ DAP_otaWifiInfo_st _dap_OtaWifiInfo_st;
 //const char *new_ssid = "ADD_WANTED_SSID_HERE";
 const char *password = "pedaladmin";
 WebServer server(80);
-bool OTA_status=false;
-bool OTA_enable_b=false;
+bool g_OTA_status=false;
+bool g_OTA_enable_b=false;
 //OTA update page
 #define jquery_min_js_v3_2_1_gz_len 30178
 PROGMEM const char jquery_min_js_v3_2_1_gz[]  = {
@@ -233,5 +233,5 @@ void ota_wifi_initialize(char* APhostname)
             }
         });
     server.begin();
-    //OTA_status=true;
+    //g_OTA_status=true;
 }

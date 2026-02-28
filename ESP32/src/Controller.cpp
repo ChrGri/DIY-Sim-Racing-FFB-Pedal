@@ -12,12 +12,12 @@ uint16_t IRAM_ATTR_FLAG NormalizeControllerOutputValue(float value, float minVal
   
   if (fabsf(corrected_valRange_fl32) < 0.0000001f)
   {
-    return JOYSTICK_MIN_VALUE_U16;   // avoid div-by-zero
+    return s_JOYSTICK_MIN_VALUE_U16;   // avoid div-by-zero
   }
 
   float fractional_fl32 = (value - corrected_min_value_fl32) / corrected_valRange_fl32;
-  float controller_fl32 = JOYSTICK_MIN_VALUE_U16 + (fractional_fl32 * JOYSTICK_RANGE_U16);
-  uint16_t controller_u16 = constrain(controller_fl32, JOYSTICK_MIN_VALUE_U16, (maxGameOutput_u8 * 0.01f) * JOYSTICK_MAX_VALUE_U16);
+  float controller_fl32 = s_JOYSTICK_MIN_VALUE_U16 + (fractional_fl32 * s_JOYSTICK_RANGE_U16);
+  uint16_t controller_u16 = constrain(controller_fl32, s_JOYSTICK_MIN_VALUE_U16, (maxGameOutput_u8 * 0.01f) * s_JOYSTICK_MAX_VALUE_U16);
   return controller_u16;
 }
 

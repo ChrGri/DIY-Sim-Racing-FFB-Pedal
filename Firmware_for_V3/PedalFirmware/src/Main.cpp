@@ -275,13 +275,13 @@ bool moveSlowlyToPosition_b = false;
 //#include "ota.h"
 #include "OTA_Pull.h"
 TaskHandle_t Task4;
-char* APhost;
+char* g_apHost_pc;
 #endif
 #ifdef OTA_update_ESP32
   #include "ota.h"
   //#include "OTA_Pull.h"
   TaskHandle_t Task4;
-  char* APhost;
+  char* g_apHost_pc;
 #endif
 
 #if !defined(OTA_update) && !defined(OTA_update_ESP32)
@@ -616,23 +616,23 @@ void setup()
     switch(dap_config_st_local.payLoadPedalConfig_.pedal_type)
     {
       case 0:
-        APhost=new char[strlen("FFBPedalClutch") + 1];
-        strcpy(APhost, "FFBPedalClutch");
+        g_apHost_pc=new char[strlen("FFBPedalClutch") + 1];
+        strcpy(g_apHost_pc, "FFBPedalClutch");
         //APhost="FFBPedalClutch";
         break;
       case 1:
-        APhost=new char[strlen("FFBPedalBrake") + 1];
-        strcpy(APhost, "FFBPedalBrake");
+        g_apHost_pc=new char[strlen("FFBPedalBrake") + 1];
+        strcpy(g_apHost_pc, "FFBPedalBrake");
         //APhost="FFBPedalBrake";
         break;
       case 2:
-        APhost=new char[strlen("FFBPedalGas") + 1];
-        strcpy(APhost, "FFBPedalGas");
+        g_apHost_pc=new char[strlen("FFBPedalGas") + 1];
+        strcpy(g_apHost_pc, "FFBPedalGas");
         //APhost="FFBPedalGas";
         break;
       default:
-        APhost=new char[strlen("FFBPedal") + 1];
-        strcpy(APhost, "FFBPedal");
+        g_apHost_pc=new char[strlen("FFBPedal") + 1];
+        strcpy(g_apHost_pc, "FFBPedal");
         //APhost="FFBPedal";
         break;        
 
@@ -2347,7 +2347,7 @@ void OTATask( void * pvParameters )
           #endif 
           delay(1000);
           #ifdef OTA_update_ESP32
-          ota_wifi_initialize(APhost);
+          ota_wifi_initialize(g_apHost_pc);
           #endif
           #ifdef USING_LED
               //pixels.setBrightness(20);
@@ -2362,43 +2362,43 @@ void OTATask( void * pvParameters )
           int ret;
           ota.SetCallback(OTAcallback);
           ota.OverrideBoard(CONTROL_BOARD);
-          char* version_tag;
+          char* versionTag_pc;
           if(_dap_OtaWifiInfo_st.wifi_action==1)
           {
-            const char* str ="0.0.0";
-            version_tag=new char[strlen(str) + 1];
-            strcpy(version_tag, str);
+            const char* versionTagSource_pc ="0.0.0";
+            versionTag_pc=new char[strlen(versionTagSource_pc) + 1];
+            strcpy(versionTag_pc, versionTagSource_pc);
             Serial.println("Force update");
           }
           else
           {
-            version_tag=new char[strlen(DAP_FIRMWARE_VERSION) + 1];
-            strcpy(version_tag, DAP_FIRMWARE_VERSION);
+            versionTag_pc=new char[strlen(DAP_FIRMWARE_VERSION) + 1];
+            strcpy(versionTag_pc, DAP_FIRMWARE_VERSION);
             //version_tag=DAP_FIRMWARE_VERSION;
           }
           switch (_dap_OtaWifiInfo_st.mode_select)
           {
             case 1:
               Serial.printf("Flashing to latest Main, checking %s to see if an update is available...\n", JSON_URL_main);
-              ret = ota.CheckForOTAUpdate(JSON_URL_main, version_tag, ESP32OTAPull::UPDATE_BUT_NO_BOOT);
+              ret = ota.CheckForOTAUpdate(JSON_URL_main, versionTag_pc, ESP32OTAPull::UPDATE_BUT_NO_BOOT);
               Serial.printf("CheckForOTAUpdate returned %d (%s)\n\n", ret, errtext(ret));
               OTA_update_status=ret;
               break;
             case 2:
               Serial.printf("Flashing to latest Dev, checking %s to see if an update is available...\n", JSON_URL_dev);
-              ret = ota.CheckForOTAUpdate(JSON_URL_dev, version_tag, ESP32OTAPull::UPDATE_BUT_NO_BOOT);
+              ret = ota.CheckForOTAUpdate(JSON_URL_dev, versionTag_pc, ESP32OTAPull::UPDATE_BUT_NO_BOOT);
               Serial.printf("CheckForOTAUpdate returned %d (%s)\n\n", ret, errtext(ret));
               OTA_update_status=ret;
               break;
             case 3:
               Serial.printf("Flashing to Daily build, checking %s to see if an update is available...\n", JSON_URL_dev);
-              ret = ota.CheckForOTAUpdate(JSON_URL_daily, version_tag, ESP32OTAPull::UPDATE_BUT_NO_BOOT);
+              ret = ota.CheckForOTAUpdate(JSON_URL_daily, versionTag_pc, ESP32OTAPull::UPDATE_BUT_NO_BOOT);
               Serial.printf("CheckForOTAUpdate returned %d (%s)\n\n", ret, errtext(ret));
               OTA_update_status=ret;
               break;
             default:
             break;
-            delete[] version_tag; 
+            delete[] versionTag_pc; 
           }
           #endif
 

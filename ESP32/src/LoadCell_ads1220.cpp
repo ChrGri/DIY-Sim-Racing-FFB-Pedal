@@ -8,9 +8,9 @@
 #include <ADS1220_WE.h>
 
 
-static const int NUMBER_OF_SAMPLES_FOR_LOADCELL_OFFFSET_ESTIMATION_I32 = 1000;
-static const float DEFAULT_VARIANCE_ESTIMATE_FL32 = 0.2f * 0.2f;
-static const float LOADCELL_VARIANCE_MIN_FL32 = 7.0f * 1e-5f; // on 8th april 2025, approx. 50g fluctuation were observed --> 6 * sigma = 50g --> sigma = 50g / 6 = 8g --> sigma^2 = (8g)^2 = 0.00064
+static const int s_numberOfSamplesForLoadcellOfffsetEstimation_i32 = 1000;
+static const float s_defaultVarianceEstimate_fl32 = 0.2f * 0.2f;
+static const float s_loadcellVarianceMin_fl32 = 7.0f * 1e-5f; // on 8th april 2025, approx. 50g fluctuation were observed --> 6 * sigma = 50g --> sigma = 50g / 6 = 8g --> sigma^2 = (8g)^2 = 0.00064
 
 static float s_updatedConversionFactor_fl32 = 1.0f;
 
@@ -18,9 +18,9 @@ static float s_updatedConversionFactor_fl32 = 1.0f;
 #define DELAY_IN_US_FOR_DRDY_TO_BECOME_LOW_U32 (uint32_t)20
 
 // reference voltage in milli-volts
-static float s_refVoltageInMV_fl32 = 5000.0f;
+static float s_refVoltageInMv_fl32 = 5000.0f;
 
-static SemaphoreHandle_t g_timer_fireLoadcellReadingReady_sh;
+static SemaphoreHandle_t g_timerFireLoadcellReadingReady_sh;
 // --- Semaphore Handle ---
 // Moved to global scope to be accessible by the ISR and the class
 
@@ -30,9 +30,9 @@ void IRAM_ATTR drdyInterrupt()
 {
   BaseType_t higherPriorityTaskWoken_bt = pdFALSE;
     // Give the semaphore to unblock the reading task.
-    if (g_timer_fireLoadcellReadingReady_sh != NULL) 
+    if (g_timerFireLoadcellReadingReady_sh != NULL) 
     {
-        xSemaphoreGiveFromISR(g_timer_fireLoadcellReadingReady_sh, &higherPriorityTaskWoken_bt);
+      xSemaphoreGiveFromISR(g_timerFireLoadcellReadingReady_sh, &higherPriorityTaskWoken_bt);
         portYIELD_FROM_ISR(higherPriorityTaskWoken_bt);  // request context switch if needed
     }
 }
@@ -73,7 +73,7 @@ ADS1220_WE& getADC()
     s_adc_awe.setAvddAvssAsVrefAndCalibrate();
 
     float refVolt_fl32 = s_adc_awe.getVRef_V();
-    s_refVoltageInMV_fl32 = refVolt_fl32 * 1000.0f; // convert to mV
+    s_refVoltageInMv_fl32 = refVolt_fl32 * 1000.0f; // convert to mV
     ActiveSerial->print("Reference voltage: ");
     ActiveSerial->print(refVolt_fl32);
     ActiveSerial->println("V");
@@ -115,11 +115,11 @@ ADS1220_WE& getADC()
 
 
 LoadCellAds1220::LoadCellAds1220()
-  : zeroPoint_fl32(0.0f), varianceEstimate_fl32(DEFAULT_VARIANCE_ESTIMATE_FL32)
+  : zeroPoint_fl32(0.0f), varianceEstimate_fl32(s_defaultVarianceEstimate_fl32)
 {
   // differential channels
   getADC().setCompareChannels(ADS1220_MUX_0_1);              // Differential AIN0 - AIN1
-  g_timer_fireLoadcellReadingReady_sh = xSemaphoreCreateBinary();
+  g_timerFireLoadcellReadingReady_sh = xSemaphoreCreateBinary();
 }
 
 
@@ -131,10 +131,10 @@ void LoadCellAds1220::setLoadcellRating(uint8_t loadcellRating_u8) const
   s_updatedConversionFactor_fl32 = 1.0f;
   if (LOADCELL_WEIGHT_RATING_KG>0)
   {
-      float excitationVoltage_fl32 = s_refVoltageInMV_fl32 / 1000.0f;
-      float fullScale_mV_fl32 = LOADCELL_SENSITIVITY_MV_V * excitationVoltage_fl32; // 2 mV/V * Vexc
+      float excitationVoltage_fl32 = s_refVoltageInMv_fl32 / 1000.0f;
+      float fullScaleMv_fl32 = LOADCELL_SENSITIVITY_MV_V * excitationVoltage_fl32; // 2 mV/V * Vexc
       float loadcellRatingInGram_fl32 = (((float)loadcellRating_u8) * 1000.0f); // convert kg to gram
-      float gramsPerMillivolt_fl32 =  loadcellRatingInGram_fl32  / fullScale_mV_fl32;  // g per mV
+      float gramsPerMillivolt_fl32 =  loadcellRatingInGram_fl32  / fullScaleMv_fl32;  // g per mV
       s_updatedConversionFactor_fl32 = gramsPerMillivolt_fl32;
       s_updatedConversionFactor_fl32 *= 2.0f; // empirically identified
   }
@@ -145,30 +145,30 @@ void LoadCellAds1220::setLoadcellRating(uint8_t loadcellRating_u8) const
 float IRAM_ATTR LoadCellAds1220::readLoadcellWeightInKg() const 
 {
   ADS1220_WE& adc_awe = getADC();
-  static float s_voltage_mV_fl32;
+  static float s_voltageMv_fl32;
 
   // wait for the timer to fire
   // This will block until the timer callback gives the semaphore. It won't consume CPU time while waiting.
-  if(g_timer_fireLoadcellReadingReady_sh != NULL)
+  if(g_timerFireLoadcellReadingReady_sh != NULL)
   {
-    if (xSemaphoreTake(g_timer_fireLoadcellReadingReady_sh, portMAX_DELAY) == pdTRUE) 
+    if (xSemaphoreTake(g_timerFireLoadcellReadingReady_sh, portMAX_DELAY) == pdTRUE) 
     {
       
       // final check if DRDY is low. If nor, just discard the measurement.
       if (digitalRead(FFB_ADS1220_DRDY) == LOW)
       {
         // Read the voltage from the ADS1220
-        s_voltage_mV_fl32 = adc_awe.getVoltage_mV();
+        s_voltageMv_fl32 = adc_awe.getVoltage_mV();
       }
       
     }
   }
 
-  float weight_grams_fl32 = s_voltage_mV_fl32 * s_updatedConversionFactor_fl32;
-  float weight_kg_fl32 = weight_grams_fl32 * 0.001f; // convert grams to kg
+  float weightGrams_fl32 = s_voltageMv_fl32 * s_updatedConversionFactor_fl32;
+  float weightKg_fl32 = weightGrams_fl32 * 0.001f; // convert grams to kg
   
   // correct bias, assume AWGN --> 3 * sigma is 99.9 %
-  return weight_kg_fl32 - ( zeroPoint_fl32 + 3.0f * standardDeviationEstimate_fl32 );
+  return weightKg_fl32 - ( zeroPoint_fl32 + 3.0f * standardDeviationEstimate_fl32 );
 }
 
 
@@ -178,7 +178,7 @@ void LoadCellAds1220::estimateBiasAndVariance()
   getADC(); // Ensure ADC is initialized
   
   ActiveSerial->println("Identify loadcell bias and variance");
-  float varianceEstimate_fl32;
+  float varianceEstimateLocal_fl32;
   float mean_fl32 = 0.0f;
   float sumOfSquaresOfDifferences_fl32 = 0.0f;
   long sampleCount_i64 = 0;
@@ -186,7 +186,7 @@ void LoadCellAds1220::estimateBiasAndVariance()
 
   // capturer N measurements on do regressive mean and variance estimate
   // Use Welford-algorithm
-  for (long i_i64 = 0; i_i64 < NUMBER_OF_SAMPLES_FOR_LOADCELL_OFFFSET_ESTIMATION_I32; i_i64++)
+  for (long i_i64 = 0; i_i64 < s_numberOfSamplesForLoadcellOfffsetEstimation_i32; i_i64++)
   {
     float loadcellReading_fl32 = readLoadcellWeightInKg();
     sampleCount_i64++;
@@ -195,16 +195,16 @@ void LoadCellAds1220::estimateBiasAndVariance()
     sumOfSquaresOfDifferences_fl32 += delta_fl32 * (loadcellReading_fl32 - mean_fl32);
   }
 
-  varianceEstimate_fl32 = sumOfSquaresOfDifferences_fl32 / ((float)sampleCount_i64 - 1.0f); // empirical variance 
+  varianceEstimateLocal_fl32 = sumOfSquaresOfDifferences_fl32 / ((float)sampleCount_i64 - 1.0f); // empirical variance 
   // make sure estimate is nonzero
-  if (varianceEstimate_fl32 < LOADCELL_VARIANCE_MIN_FL32) 
+  if (varianceEstimateLocal_fl32 < s_loadcellVarianceMin_fl32) 
   { 
-    varianceEstimate_fl32 = LOADCELL_VARIANCE_MIN_FL32;
+    varianceEstimateLocal_fl32 = s_loadcellVarianceMin_fl32;
   }
 
   zeroPoint_fl32 = mean_fl32;
-  standardDeviationEstimate_fl32 = sqrt(varianceEstimate_fl32);
-  varianceEstimate_fl32 = varianceEstimate_fl32;
+  standardDeviationEstimate_fl32 = sqrt(varianceEstimateLocal_fl32);
+  varianceEstimate_fl32 = varianceEstimateLocal_fl32;
 
   ActiveSerial->print("Offset ");
   ActiveSerial->print(zeroPoint_fl32, 5);

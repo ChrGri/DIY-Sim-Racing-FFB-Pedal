@@ -412,15 +412,15 @@ DapConfigClass::DapConfigClass()
 {
 
   // create the mutex
-  m_mutex_sh = xSemaphoreCreateMutex();
-  if (m_mutex_sh == NULL)
+  mutex_sh = xSemaphoreCreateMutex();
+  if (mutex_sh == NULL)
   {
     ActiveSerial->println("Error: Mutex could not be created!");
     ESP.restart();
   }
 
   // initialize the default config
-  m_config_st.initializeDefaults();
+  config_st.initializeDefaults();
 }
 
 
@@ -430,11 +430,11 @@ bool DapConfigClass::getConfig(DapConfig_t* dapConfigIn_pst, uint16_t timeoutInM
   bool configUpdated_b = false;
   // requests the mutex, waits N milliseconds if not available immediately
   // if (xSemaphoreTake(mutex, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_AQUIRE_GLOBAL_STRUCT)) == pdTRUE) {
-  if (xSemaphoreTake(m_mutex_sh, pdMS_TO_TICKS(timeoutInMs_u16)) == pdTRUE)
+  if (xSemaphoreTake(mutex_sh, pdMS_TO_TICKS(timeoutInMs_u16)) == pdTRUE)
   {
-    *dapConfigIn_pst = m_config_st;
+    *dapConfigIn_pst = config_st;
     // gives back the mutex
-    xSemaphoreGive(m_mutex_sh);
+    xSemaphoreGive(mutex_sh);
     configUpdated_b = true;
   }
 
@@ -446,12 +446,12 @@ void DapConfigClass::setConfig(DapConfig_t config_st)
 {
   // boolean returnV_b = false;
   // requests the mutex, waits N milliseconds if not available immediately
-  if (xSemaphoreTake(m_mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_ACQUIRE_GLOBAL_STRUCT_U32)) == pdTRUE)
+  if (xSemaphoreTake(mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_ACQUIRE_GLOBAL_STRUCT_U32)) == pdTRUE)
   {
-    m_config_st = config_st;
+    this->config_st = config_st;
     // returnV_b = true;
     // gives back the mutex
-    xSemaphoreGive(m_mutex_sh);
+    xSemaphoreGive(mutex_sh);
   }
   else
   {
@@ -479,22 +479,22 @@ uint16_t DapConfigClass::checksumCalculator_u16(uint8_t *data_pu8, uint16_t leng
 
 void DapConfigClass::loadConfigFromEeprom()
 {
-  if (xSemaphoreTake(m_mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_ACQUIRE_GLOBAL_STRUCT_U32)) == pdTRUE)
+  if (xSemaphoreTake(mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_ACQUIRE_GLOBAL_STRUCT_U32)) == pdTRUE)
   {
-    m_config_st.loadConfigFromEeprom(m_config_st);
-    xSemaphoreGive(m_mutex_sh);
+    config_st.loadConfigFromEeprom(config_st);
+    xSemaphoreGive(mutex_sh);
   }
 }
 
 void DapConfigClass::storeConfigToEeprom()
 {
-  if (xSemaphoreTake(m_mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_ACQUIRE_GLOBAL_STRUCT_U32)) == pdTRUE)
+  if (xSemaphoreTake(mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_ACQUIRE_GLOBAL_STRUCT_U32)) == pdTRUE)
   {
-    m_config_st.payloadHeader_st.storeToEeprom_u8 = 0;
-    uint16_t crc_u16 = checksumCalculator_u16((uint8_t*)(&(m_config_st.payloadHeader_st)), sizeof(m_config_st.payloadHeader_st) + sizeof(m_config_st.payloadPedalConfig_st));
-    m_config_st.payloadFooter_st.checkSum_u16 = crc_u16;
-    m_config_st.storeConfigToEeprom(m_config_st);
-    xSemaphoreGive(m_mutex_sh);
+    config_st.payloadHeader_st.storeToEeprom_u8 = 0;
+    uint16_t crc_u16 = checksumCalculator_u16((uint8_t*)(&(config_st.payloadHeader_st)), sizeof(config_st.payloadHeader_st) + sizeof(config_st.payloadPedalConfig_st));
+    config_st.payloadFooter_st.checkSum_u16 = crc_u16;
+    config_st.storeConfigToEeprom(config_st);
+    xSemaphoreGive(mutex_sh);
   }
 }
 
@@ -502,12 +502,12 @@ void DapConfigClass::initializedConfig()
 {
   // boolean returnV_b = false;
   // requests the mutex, waits N milliseconds if not available immediately
-  if (xSemaphoreTake(m_mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_ACQUIRE_GLOBAL_STRUCT_U32)) == pdTRUE)
+  if (xSemaphoreTake(mutex_sh, pdMS_TO_TICKS(WAIT_TIME_IN_MS_TO_ACQUIRE_GLOBAL_STRUCT_U32)) == pdTRUE)
   {
-    m_config_st.initializeDefaults();
+    config_st.initializeDefaults();
     // returnV_b = true;
     // gives back the mutex
-    xSemaphoreGive(m_mutex_sh);
+    xSemaphoreGive(mutex_sh);
   }
   else
   {

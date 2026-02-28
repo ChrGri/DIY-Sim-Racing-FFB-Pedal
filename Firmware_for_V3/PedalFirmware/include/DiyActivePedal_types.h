@@ -441,6 +441,6 @@ public:
   void initializedConfig();
 
 private:
-  SemaphoreHandle_t mutex;
-  DAP_config_st _config_st;
+  SemaphoreHandle_t mutex_sh;
+  DAP_config_st config_st;
 };
