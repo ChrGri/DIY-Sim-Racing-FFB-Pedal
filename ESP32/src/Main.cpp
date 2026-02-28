@@ -1280,7 +1280,7 @@ xTaskCreatePinnedToCore(
       delay(2);
       sendESPNOWLog("Pedal:%d Servo Voltage: %.0f V, Rail pitch set to %d mm.",dap_config_st_local.payloadPedalConfig_st.pedalType_u8, (float)stepper->getServosVoltage()/10.0f , dap_config_st_local.payloadPedalConfig_st.spindlePitch_mmPerRev_u8);
       delay(2);
-      sendESPNOWLog("Pedal:%d Loadcell shifting: %.3f kg, Stdev: %.4f",dap_config_st_local.payloadPedalConfig_st.pedalType_u8, loadcell->getShiftingEstimate(),loadcell->getSTDEstimate());
+      sendESPNOWLog("Pedal:%d Loadcell shifting: %.3f kg, Stdev: %.4f",dap_config_st_local.payloadPedalConfig_st.pedalType_u8, loadcell->getBiasEstimate(),loadcell->getStandardDeviationEstimate());
       delay(2);
       sendESPNOWLog("Pedal:%d Min pos: %d, Max pos: %d, Current pos: %d",dap_config_st_local.payloadPedalConfig_st.pedalType_u8, stepper->getLimitMin(), stepper->getLimitMax(), stepper->getCurrentPosition());
       delay(2);
@@ -3379,8 +3379,8 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
             dap_assignmentBoardcast_st.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_ASSIGNMENT_U8;
             dap_assignmentBoardcast_st.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
             dap_assignmentBoardcast_st.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
-            dap_assignmentBoardcast_st.payloadAssignmentRequest_st.assignmentAction=1;
-            memcpy(dap_assignmentBoardcast_st.payloadAssignmentRequest_st.macAddress,g_esp_Mac,6);
+            dap_assignmentBoardcast_st.payloadAssignmentRequest_st.assignmentAction_u8=1;
+            memcpy(dap_assignmentBoardcast_st.payloadAssignmentRequest_st.macAddress_au8,g_esp_Mac,6);
             uint16_t crc = 0;
             crc = checksumCalculator_u16((uint8_t *)(&(dap_assignmentBoardcast_st.payloadHeader_st)), sizeof(dap_assignmentBoardcast_st.payloadHeader_st) + sizeof(dap_assignmentBoardcast_st.payloadAssignmentRequest_st));
             dap_assignmentBoardcast_st.payloadFooter_st.checkSum_u16=crc;
@@ -3507,7 +3507,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
             printPedalInfo_b=false;
             buzzerBeepAction_b=true;
             delay(100);
-             pedalInfoBuilder.BuildInfoString(espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8, CONTROL_BOARD, loadcell->getShiftingEstimate(), loadcell->getSTDEstimate(), ((float)stepper->getServosVoltage()/10.0f),dap_calculationVariables_st.stepperPosMaxEndstop_i32,dap_calculationVariables_st.currentPedalPosition_u32);
+             pedalInfoBuilder.BuildInfoString(espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8, CONTROL_BOARD, loadcell->getBiasEstimate(), loadcell->getStandardDeviationEstimate(), ((float)stepper->getServosVoltage()/10.0f),dap_calculationVariables_st.stepperPosMaxEndstop_i32,dap_calculationVariables_st.currentPedalPosition_u32);
             sendESPNOWLog(pedalInfoBuilder.logString);
             ActiveSerial->println(pedalInfoBuilder.logString);
             delay(3);

@@ -132,7 +132,7 @@ LoadCellAds1256::LoadCellAds1256(uint8_t channel0, uint8_t channel1)
     adc.setChannel(channel0, channel1);
 }
 
-float LoadCellAds1256::getReadingKg() const
+float LoadCellAds1256::readLoadcellWeightInKg() const
 {
   ADS1256& adc = ADC();
 
@@ -181,7 +181,7 @@ void LoadCellAds1256::estimateBiasAndVariance()
   // Use Welford-algorithm
   for (long i = 0; i < s_numberOfSamplesForLoadcellOffsetEstimation_i32; i++)
   {
-    float loadcellReading = getReadingKg();
+    float loadcellReading = readLoadcellWeightInKg();
     n++;
     float delta = loadcellReading - mean;
     mean += delta / n;

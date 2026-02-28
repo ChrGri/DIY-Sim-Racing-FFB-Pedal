@@ -224,7 +224,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
           structChecker = false;
         }
         // checksum validation
-        crc = checksumCalculator((uint8_t*)(&(dap_rudder_st_local.payloadHeader_st)), sizeof(dap_rudder_st_local.payloadHeader_st) + sizeof(dap_rudder_st_local.payloadRudderState_st));
+        crc = checksumCalculator_u16((uint8_t*)(&(dap_rudder_st_local.payloadHeader_st)), sizeof(dap_rudder_st_local.payloadHeader_st) + sizeof(dap_rudder_st_local.payloadRudderState_st));
         if (crc != dap_rudder_st_local.payloadFooter_st.checkSum_u16)
         {
           structChecker = false;
@@ -269,7 +269,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
             }
           }
           // checksum validation
-          crc = checksumCalculator((uint8_t *)(&(dap_config_espnow_recv_st.payloadHeader_st)), sizeof(dap_config_espnow_recv_st.payloadHeader_st) + sizeof(dap_config_espnow_recv_st.payloadPedalConfig_st));
+          crc = checksumCalculator_u16((uint8_t *)(&(dap_config_espnow_recv_st.payloadHeader_st)), sizeof(dap_config_espnow_recv_st.payloadHeader_st) + sizeof(dap_config_espnow_recv_st.payloadPedalConfig_st));
           if (crc != dap_config_espnow_recv_st.payloadFooter_st.checkSum_u16)
           {
             structChecker = false;
@@ -328,7 +328,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               g_ESPNow_error_code = 112;
             }
           }
-          crc = checksumCalculator((uint8_t *)(&(dap_actions_st.payloadHeader_st)), sizeof(dap_actions_st.payloadHeader_st) + sizeof(dap_actions_st.payloadPedalAction_st));
+          crc = checksumCalculator_u16((uint8_t *)(&(dap_actions_st.payloadHeader_st)), sizeof(dap_actions_st.payloadHeader_st) + sizeof(dap_actions_st.payloadPedalAction_st));
           if (crc != dap_actions_st.payloadFooter_st.checkSum_u16)
           {
             structChecker = false;
@@ -742,7 +742,7 @@ void softwareAssignmentInitialize()
   DapAssignmentReg_t dap_assignement_reg_local;
   EEPROM.get(ASSIGNMENT_EEPROM_OFFSET_U32, dap_assignement_reg_local);
   bool structChecker= true;
-  uint16_t crc = checksumCalculator((uint8_t *)(&dap_assignement_reg_local), sizeof(DapAssignmentReg_t) - sizeof(uint16_t));
+  uint16_t crc = checksumCalculator_u16((uint8_t *)(&dap_assignement_reg_local), sizeof(DapAssignmentReg_t) - sizeof(uint16_t));
   if(dap_assignement_reg_local.payloadType_u8 != DAP_PAYLOAD_TYPE_ASSIGNMENT_U8) structChecker = false;
   if(dap_assignement_reg_local.magicKey_u8 != ESPNOW_ASSIGNMENT_MAGIC_KEY) structChecker = false;
   if(crc != dap_assignement_reg_local.crc_u16) structChecker = false;
@@ -797,7 +797,7 @@ void writeAssignmentToEeprom()
   dap_assignement_reg.magicKey_u8 = ESPNOW_ASSIGNMENT_MAGIC_KEY;
   dap_assignement_reg.payloadType_u8 = DAP_PAYLOAD_TYPE_ASSIGNMENT_U8;
   //refill the crc
-  dap_assignement_reg.crc_u16 = checksumCalculator((uint8_t *)(&dap_assignement_reg), sizeof(DapAssignmentReg_t) - sizeof(uint16_t));
+  dap_assignement_reg.crc_u16 = checksumCalculator_u16((uint8_t *)(&dap_assignement_reg), sizeof(DapAssignmentReg_t) - sizeof(uint16_t));
   // write assignment to eeprom
   EEPROM.put(ASSIGNMENT_EEPROM_OFFSET_U32, dap_assignement_reg);
   EEPROM.commit();
