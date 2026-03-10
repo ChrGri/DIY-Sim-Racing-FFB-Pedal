@@ -1901,7 +1901,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       }
       if(effectsCalculated_b)
       {
-        effect_force_fl32 += absOscillation.absOscillationPositionOffset_fl32;
+        effect_force_fl32 += absOscillation.absOscillationForceOffset_fl32;
         // accumulate position offsets
         effect_pos_fl32 += absOscillation.absOscillationPositionOffset_fl32;
         effect_pos_fl32 += _WSOscillation.wheelSlipOffset_fl32;

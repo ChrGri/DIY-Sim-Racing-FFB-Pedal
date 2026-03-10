@@ -306,7 +306,7 @@ namespace User.PluginSdkDemo
                     Plugin._calculations.configPreviewLock[i] = false;
                 }
             }
-
+ 
 
             if (toastPedalStatusChange)
             {

@@ -212,6 +212,7 @@ namespace User.PluginSdkDemo.UIFunction
             if (sideWindow.ShowDialog() == true)
             {
                 textBox_CV1_string.Text = sideWindow.input;
+                Plugin.Settings.CV1_bindings[Plugin.Settings.table_selected] = sideWindow.input;
             }
         }
 
@@ -271,6 +272,7 @@ namespace User.PluginSdkDemo.UIFunction
             if (sideWindow.ShowDialog() == true)
             {
                 textBox_CV2_string.Text = sideWindow.input;
+                Plugin.Settings.CV2_bindings[Plugin.Settings.table_selected] = sideWindow.input;
             }
         }
 
@@ -329,6 +331,7 @@ namespace User.PluginSdkDemo.UIFunction
             if (sideWindow.ShowDialog() == true)
             {
                 textBox_CV3_string.Text = sideWindow.input;
+                Plugin.Settings.CV3_bindings[Plugin.Settings.table_selected] = sideWindow.input;
             }
         }
 
@@ -388,6 +391,7 @@ namespace User.PluginSdkDemo.UIFunction
             if (sideWindow.ShowDialog() == true)
             {
                 textBox_CV4_string.Text = sideWindow.input;
+                Plugin.Settings.CV4_bindings[Plugin.Settings.table_selected] = sideWindow.input;
             }
         }
 
