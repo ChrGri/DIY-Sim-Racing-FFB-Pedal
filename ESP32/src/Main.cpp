@@ -6,6 +6,7 @@
 #include "esp_timer.h" // Include the header for the high-resolution timer
 #include "esp_partition.h"
 
+//#define S_CURVE_POSITION_SHAPING
 
 #define ESTIMATE_LOADCELL_VARIANCE_B
 //#define PRINT_SERVO_STATES
@@ -1557,7 +1558,11 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         stepper->configSteplossRecovAndCrashDetection(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.stepLossFunctionFlags_u8);
 
         // set position command smoothing
-        stepper->configSetPositionCommandSmoothingFactor(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.positionSmoothingFactor_u8);
+        #ifdef S_CURVE_POSITION_SHAPING
+          stepper->configSetPositionCommandSmoothingFactor(0); // no additional smoothing, since S-curve already shapes the position command
+        #else
+          stepper->configSetPositionCommandSmoothingFactor(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.positionSmoothingFactor_u8);
+        #endif
         stepper->configSetProfilingFlag( (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_CYCLE_TIMER_U8) );
         stepper->configSetRatioOfInertia(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.servoRatioOfInertia_u8);
 
@@ -2109,6 +2114,107 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // Move to new position
       if (doMovement_b)
       {
+		  
+
+#ifdef S_CURVE_POSITION_SHAPING
+        static bool s_positionGovernorInitialized_b = false;
+        static float s_positionGovernorPos_fl32 = 0.0f;
+        static float s_positionGovernorVel_fl32 = 0.0f;
+        static float s_positionGovernorAcc_fl32 = 0.0f;
+
+        // --- Jerk-limited position command shaping ("S-curve-ish" governor) ---
+        // Purpose:
+        //   Limit discontinuities in the commanded position/velocity/acceleration that would
+        //   otherwise excite the (aggressive) servo inner PID and create audible/feelable jitter.
+        //
+        // We maintain an internal trajectory state (x_g, v_g, a_g) and drive it toward the
+        // instantaneous command x_cmd (= Position_Next), subject to limits.
+        //
+        // Constraints:
+        //   |v_g| <= v_max
+        //   |a_g| <= a_max
+        //   |j_g| <= j_max   where j_g := da_g/dt
+        //
+        // Parameterization (simple, monotonic mapping from "smoothing time" T):
+        //   a_max = v_max / T
+        //   j_max = a_max / T = v_max / T^2
+        //
+        // Discrete-time update each control tick (dt):
+        //   e      = x_cmd - x_g
+        //   v_des  = clamp(e/dt,  ±v_max)
+        //   a_des  = clamp((v_des - v_g)/dt, ±a_max)
+        //   a_g   += clamp(a_des - a_g, ±j_max*dt)
+        //   v_g   += a_g * dt
+        //   x_g   += v_g * dt
+        //
+        // Finally, we round x_g back to integer steps for the stepper command.
+
+        bool isPedalControlStrategy_b = !(dap_calculationVariables_st.rudderStatus_b || dap_calculationVariables_st.helicopterRudderStatus_b);
+        bool enablePositionGovernor_b = isPedalControlStrategy_b && (0u != dap_config_pedalUpdateTask_st.payloadPedalConfig_st.positionSmoothingFactor_u8);
+
+        if (moveSlowlyToPosition_b)
+        {
+          s_positionGovernorInitialized_b = false;
+        }
+
+        if (enablePositionGovernor_b && (!moveSlowlyToPosition_b))
+        {
+          float deltaTime_s_fl32 = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
+          float smoothingTime_s_fl32 = ((float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st.positionSmoothingFactor_u8) * 1e-4f;
+
+          if ((deltaTime_s_fl32 > 0.0f) && (smoothingTime_s_fl32 > 0.0f))
+          {
+            if (!s_positionGovernorInitialized_b)
+            {
+              s_positionGovernorPos_fl32 = (float)stepper->getTargetPositionSteps();
+              s_positionGovernorVel_fl32 = 0.0f;
+              s_positionGovernorAcc_fl32 = 0.0f;
+              s_positionGovernorInitialized_b = true;
+            }
+
+            float maxSpeed_stepsPerS_fl32 = (float)stepper->getCurrentSpeedInMilliHz();
+            if (maxSpeed_stepsPerS_fl32 < 1.0f)
+            {
+              maxSpeed_stepsPerS_fl32 = (float)MAXIMUM_STEPPER_SPEED_U32;
+            }
+
+            float maxAccel_stepsPerS2_fl32 = maxSpeed_stepsPerS_fl32 / smoothingTime_s_fl32;
+            float maxJerk_stepsPerS3_fl32 = maxAccel_stepsPerS2_fl32 / smoothingTime_s_fl32;
+
+            float targetPos_fl32 = (float)Position_Next;
+            float errorSteps_fl32 = targetPos_fl32 - s_positionGovernorPos_fl32;
+            float desiredVel_stepsPerS_fl32 = constrain(errorSteps_fl32 / deltaTime_s_fl32, -maxSpeed_stepsPerS_fl32, maxSpeed_stepsPerS_fl32);
+
+            float desiredAcc_stepsPerS2_fl32 = (desiredVel_stepsPerS_fl32 - s_positionGovernorVel_fl32) / deltaTime_s_fl32;
+            desiredAcc_stepsPerS2_fl32 = constrain(desiredAcc_stepsPerS2_fl32, -maxAccel_stepsPerS2_fl32, maxAccel_stepsPerS2_fl32);
+
+            float accDelta_stepsPerS2_fl32 = desiredAcc_stepsPerS2_fl32 - s_positionGovernorAcc_fl32;
+            float maxAccDelta_stepsPerS2_fl32 = maxJerk_stepsPerS3_fl32 * deltaTime_s_fl32;
+            accDelta_stepsPerS2_fl32 = constrain(accDelta_stepsPerS2_fl32, -maxAccDelta_stepsPerS2_fl32, maxAccDelta_stepsPerS2_fl32);
+            s_positionGovernorAcc_fl32 += accDelta_stepsPerS2_fl32;
+
+            s_positionGovernorVel_fl32 += s_positionGovernorAcc_fl32 * deltaTime_s_fl32;
+            s_positionGovernorVel_fl32 = constrain(s_positionGovernorVel_fl32, -maxSpeed_stepsPerS_fl32, maxSpeed_stepsPerS_fl32);
+
+            s_positionGovernorPos_fl32 += s_positionGovernorVel_fl32 * deltaTime_s_fl32;
+
+            if (((errorSteps_fl32 >= 0.0f) && (s_positionGovernorPos_fl32 > targetPos_fl32)) || ((errorSteps_fl32 <= 0.0f) && (s_positionGovernorPos_fl32 < targetPos_fl32)))
+            {
+              s_positionGovernorPos_fl32 = targetPos_fl32;
+              s_positionGovernorVel_fl32 = 0.0f;
+              s_positionGovernorAcc_fl32 = 0.0f;
+            }
+
+            Position_Next = (int32_t)floorf(s_positionGovernorPos_fl32 + 0.5f);
+            Position_Next = (int32_t)constrain(Position_Next, dap_calculationVariables_st.stepperPosMinEndstop_i32, dap_calculationVariables_st.stepperPosMaxEndstop_i32);
+          }
+        }
+        else
+        {
+          s_positionGovernorInitialized_b = false;
+        }
+#endif
+		
         if (!moveSlowlyToPosition_b)
         {
           stepper->moveTo(Position_Next, false);

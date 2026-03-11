@@ -112,13 +112,13 @@ int32_t IRAM_ATTR_FLAG MoveByPidStrategy(float loadCellReadingKg_fl32, StepperWi
   posStepperNew_fl32 += calc_st->stepperPosMin_i32;
 
   // convert position to integer
-  int32_t posStepperNew = floor(posStepperNew_fl32);
+  int32_t posStepperNew_i32 = floor(posStepperNew_fl32);
   
   // clamp target position to range
-  posStepperNew=constrain(posStepperNew,calc_st->stepperPosMin_i32,calc_st->stepperPosMax_i32 );
-  //posStepperNew=constrain(posStepperNew,calc_st->stepperPosMinEndstop_i32,calc_st->stepperPosMaxEndstop_i32 );
+  posStepperNew_i32 = (int32_t)constrain(posStepperNew_i32, calc_st->stepperPosMin_i32, calc_st->stepperPosMax_i32);
+  //posStepperNew_i32 = (int32_t)constrain(posStepperNew_i32, calc_st->stepperPosMinEndstop_i32, calc_st->stepperPosMaxEndstop_i32);
 
-  return posStepperNew;
+  return posStepperNew_i32;
 }
 
 
