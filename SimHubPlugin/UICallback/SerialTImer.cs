@@ -653,6 +653,10 @@ namespace User.PluginSdkDemo
 
                                         bufferByteAssignedToStruct.AsSpan(srcBufferOffset_0, sizeof(DAP_config_st)).Fill(true);
                                         lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + sizeof(DAP_config_st));
+                                        TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config payload check: " + check_payload_config_b + "\n";
+                                        TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload expected:" + Constants.pedalConfigPayload_type + " Payload get:" + pedalConfig_read_st.payloadHeader_.payloadType + "\n";
+                                        TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config crc check: " + check_crc_config_b + "\n";
+                                        TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " CRC expected" + Plugin.checksumCalc(p_config, sizeof(payloadHeader) + sizeof(payloadPedalConfig)) + " CRC Get:" + pedalConfig_read_st.payloadFooter_.checkSum + "\n";
                                         if (Plugin._calculations.pedalSerialStatus[pedalSelected] == ConnectStateEnum.PEDAL_GET_BASIC_PACKETS)
                                         {
                                             Plugin._calculations.pedalSerialStatus[pedalSelected] = ConnectStateEnum.PEDAL_IS_READY;
@@ -690,6 +694,10 @@ namespace User.PluginSdkDemo
 
                                         TextBox2.Text = "Payload config test 1: " + check_payload_config_b;
                                         TextBox2.Text += "Payload config test 2: " + check_crc_config_b;
+                                        TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config payload check: " + check_payload_config_b + "\n";
+                                        TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload expected:" + Constants.pedalConfigPayload_type + " Payload get:" + pedalConfig_read_st.payloadHeader_.payloadType + "\n";
+                                        TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config crc check: " + check_crc_config_b + "\n";
+                                        TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " CRC expected" + Plugin.checksumCalc(p_config, sizeof(payloadHeader) + sizeof(payloadPedalConfig)) + " CRC Get:" + pedalConfig_read_st.payloadFooter_.checkSum + "\n";
                                     }
 
                                 }
