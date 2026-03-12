@@ -886,8 +886,16 @@ namespace User.PluginSdkDemo
                 pedal_serial_read_timer[pedalIdx].Stop();
                 pedal_serial_read_timer[pedalIdx].Dispose();
             }
-            connect_timer.Dispose();
-            connect_timer.Stop();
+            if (manualDisconnect_b)
+            {
+                manualDisconnect_b = false;
+            }
+            else
+            {
+                connect_timer.Dispose();
+                connect_timer.Stop();
+            }
+
             if (ESP_host_serial_timer != null)
             {
                 ESP_host_serial_timer.Stop();
@@ -911,6 +919,7 @@ namespace User.PluginSdkDemo
                 Plugin._serialPort[pedalIdx].DiscardOutBuffer();
                 Plugin._serialPort[pedalIdx].Close();
                 Plugin.Settings.connect_status[pedalIdx] = 0;
+                Plugin._calculations.pedalSerialStatus[pedalIdx] = ConnectStateEnum.PEDAL_DISCONNECT;
             }
             if (Plugin.ESPsync_serialPort.IsOpen)
             {

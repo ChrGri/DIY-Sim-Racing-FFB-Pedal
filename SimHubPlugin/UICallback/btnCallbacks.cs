@@ -346,6 +346,7 @@ namespace User.PluginSdkDemo
                 }
                 else
                 {
+                    manualDisconnect_b = true;
                     closeSerialAndStopReadCallback(indexOfSelectedPedal_u);
 
                     //Plugin._serialPort[indexOfSelectedPedal_u].DataReceived -= sp_DataReceived;
@@ -356,11 +357,14 @@ namespace User.PluginSdkDemo
                     Plugin.Settings.connect_flag[indexOfSelectedPedal_u] = 0;
                     Plugin.connectSerialPort[indexOfSelectedPedal_u] = false;
                     btn_pedal_connect.Content = "Connect";
+
+                    
                 }
             }
             else
             {
                 ConnectToPedal.IsChecked = false;
+                manualDisconnect_b = true;
                 closeSerialAndStopReadCallback(indexOfSelectedPedal_u);
                 TextBox2.Text = "Serialport close";
                 Plugin.connectSerialPort[indexOfSelectedPedal_u] = false;

@@ -127,6 +127,7 @@ namespace User.PluginSdkDemo
         //public byte[,] PedalFirmwareVersion = new byte[3, 3] { { 0, 0, 0}, { 0, 0, 0 }, { 0, 0, 0 } };
         public bool PedalTabChange = false;
         private bool firstAssignPlugin = true;
+        private bool manualDisconnect_b = false;
 
 
         public enum PedalAvailability        
