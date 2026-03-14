@@ -6,7 +6,7 @@
 #include "esp_timer.h" // Include the header for the high-resolution timer
 #include "esp_partition.h"
 
-//#define S_CURVE_POSITION_SHAPING
+#define S_CURVE_POSITION_SHAPING
 
 #define ESTIMATE_LOADCELL_VARIANCE_B
 //#define PRINT_SERVO_STATES
@@ -2215,9 +2215,40 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         }
 #endif
 		
+        		
         if (!moveSlowlyToPosition_b)
         {
+#ifdef S_CURVE_POSITION_SHAPING
+          // Option 2: Time-Based Exact Pulse Spacing for maximum stability
+          
+          // Calculate how many steps we need to travel in this cycle
+          int32_t distanceToMove = abs(Position_Next - stepperPosCurrent_i32);
+          
+          if (distanceToMove > 0) 
+          {
+            // Calculate exact speed needed to spread pulses over the entire cycle time
+            float deltaTime_s_fl32 = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
+            float requiredSpeed = (float)distanceToMove / deltaTime_s_fl32;
+            
+            // Add a small 10% margin so it reaches the target just BEFORE the next cycle, 
+            // preventing accumulated lag behind the target
+            requiredSpeed *= 1.1f; 
+
+            // Clamp max speed to hardware limits
+            if (requiredSpeed > (float)MAXIMUM_STEPPER_SPEED_U32) {
+                requiredSpeed = (float)MAXIMUM_STEPPER_SPEED_U32;
+            }
+
+            stepper->setSpeedLive((uint32_t)requiredSpeed);
+            stepper->moveTo(Position_Next, false);
+          } 
+          else 
+          {
+            stepper->moveTo(Position_Next, false);
+          }
+#else
           stepper->moveTo(Position_Next, false);
+#endif
         }
         else
         {

@@ -339,6 +339,10 @@ void StepperWithLimits::moveToPosWithSpeed(int32_t targetPos_ui32, uint32_t spee
   _stepper->moveTo(targetPos_ui32, false);
 }
 
+void StepperWithLimits::setSpeedLive(uint32_t speedInHz_u32) {
+  _stepper->setSpeedLive(speedInHz_u32);
+}
+
 
 void StepperWithLimits::moveSlowlyToPos(int32_t targetPos_ui32) {
 
