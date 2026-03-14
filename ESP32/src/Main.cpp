@@ -6,7 +6,7 @@
 #include "esp_timer.h" // Include the header for the high-resolution timer
 #include "esp_partition.h"
 
-#define S_CURVE_POSITION_SHAPING
+//#define S_CURVE_POSITION_SHAPING
 
 #define ESTIMATE_LOADCELL_VARIANCE_B
 //#define PRINT_SERVO_STATES
@@ -2216,10 +2216,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 #endif
 		
         		
-        if (!moveSlowlyToPosition_b)
+                if (!moveSlowlyToPosition_b)
         {
-#ifdef S_CURVE_POSITION_SHAPING
-          // Option 2: Time-Based Exact Pulse Spacing for maximum stability
+          // Time-Based Exact Pulse Spacing for maximum stability
           
           // Calculate how many steps we need to travel in this cycle
           int32_t distanceToMove = abs(Position_Next - stepperPosCurrent_i32);
@@ -2246,9 +2245,6 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           {
             stepper->moveTo(Position_Next, false);
           }
-#else
-          stepper->moveTo(Position_Next, false);
-#endif
         }
         else
         {
