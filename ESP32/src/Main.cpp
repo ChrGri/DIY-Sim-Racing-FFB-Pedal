@@ -2216,7 +2216,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 #endif
 		
         		
-                if (!moveSlowlyToPosition_b)
+                          if (!moveSlowlyToPosition_b)
         {
           // Time-Based Exact Pulse Spacing for maximum stability
           
@@ -2238,7 +2238,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
                 requiredSpeed = (float)MAXIMUM_STEPPER_SPEED_U32;
             }
 
-            //stepper->setSpeedLive((uint32_t)requiredSpeed);
+            stepper->setSpeedLive((uint32_t)requiredSpeed);
             stepper->moveTo(Position_Next, false);
           } 
           else 

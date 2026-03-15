@@ -47,7 +47,7 @@ int32_t IRAM_ATTR_FLAG MoveByPidStrategy(float loadCellReadingKg_fl32, StepperWi
   float currentPos_m = g_admittancePos_fl32 * totalTravel_m;
 
   // Parameters can be exposed to config later.
-  float virtualMass_kg = 0.05f; // e.g., 2.0 kg of virtual pedal mass
+  float virtualMass_kg = 0.2f; // e.g., 2.0 kg of virtual pedal mass
 
   // Calculate local physical spring stiffness (N/m) based on a small delta around current position
   float springForcePlus_N = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(g_admittancePos_fl32 + 0.01f, 0.0f, 1.0f));
@@ -74,8 +74,16 @@ int32_t IRAM_ATTR_FLAG MoveByPidStrategy(float loadCellReadingKg_fl32, StepperWi
   float netForce_N = humanForce_N - springForce_N - (virtualDamping_Ns_m * g_admittanceVel_fl32);
   float acceleration_m_s2 = netForce_N / virtualMass_kg;
 
-  // 4. Integrate acceleration to get physical velocity
+    // 4. Integrate acceleration to get physical velocity
   g_admittanceVel_fl32 += acceleration_m_s2 * dt;
+
+  // Protect against mathematical blow-up and clamp velocity to hardware maximum limits
+  // Calculate max physical velocity (m/s) achievable by stepper
+  float maxPhysicalVel_m_s = 1.0f; 
+  if (totalTravel_m > 0.0001f) {
+      maxPhysicalVel_m_s = ((float)MAXIMUM_STEPPER_SPEED_U32) / travelSteps * totalTravel_m;
+  }
+  g_admittanceVel_fl32 = constrain(g_admittanceVel_fl32, -maxPhysicalVel_m_s, maxPhysicalVel_m_s);
 
   // 5. Integrate physical velocity to get physical position
   currentPos_m += g_admittanceVel_fl32 * dt;
