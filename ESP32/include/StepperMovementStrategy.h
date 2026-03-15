@@ -31,21 +31,61 @@ int32_t IRAM_ATTR_FLAG MoveByPidStrategy(float loadCellReadingKg_fl32, StepperWi
       springForceNorm_fl32 = 0.0f;
   }
 
-  // 3. Admittance physics model (Mass-Spring-Damper)
-  // These parameters can be exposed to config later. For now, we set them for a stable, heavy pedal feel.
-  const float virtualMass = 0.0005f;   // Adjust for "heaviness" of the pedal
-  const float virtualDamping = 0.008f; // Adjust for "friction/viscosity"
+    // 3. Admittance physics model (Mass-Spring-Damper)
+  // Converting to SI Units (Meters, Newtons) to allow true physical parameterization.
+  // 1 kg of force = ~9.81 N
+  float humanForce_N = appliedForce_fl32 * calc_st->forceRange_fl32 * 9.81f;
+  float springForce_N = springForceNorm_fl32 * calc_st->forceRange_fl32 * 9.81f;
+
+  // Convert current virtual position [0, 1] to actual physical travel in meters
+  // stepperPosMax_i32 - stepperPosMin_i32 is the total travel in steps.
+  // motorRevolutionsPerSteps_fl32 = 1.0 / 3200
+  // spindlePitch_mmPerRev_u8 is mm/rev
+  float travelSteps = (float)(calc_st->stepperPosMax_i32 - calc_st->stepperPosMin_i32);
+  float totalTravel_m = travelSteps * motorRevolutionsPerSteps_fl32 * config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8 * 0.001f;
+  
+  float currentPos_m = g_admittancePos_fl32 * totalTravel_m;
+
+  // Parameters can be exposed to config later.
+  float virtualMass_kg = 0.05f; // e.g., 2.0 kg of virtual pedal mass
+
+  // Calculate local physical spring stiffness (N/m) based on a small delta around current position
+  float springForcePlus_N = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(g_admittancePos_fl32 + 0.01f, 0.0f, 1.0f));
+  if (calc_st->forceRange_fl32 > 0.001f) {
+      springForcePlus_N = (springForcePlus_N - calc_st->forceMin_fl32) / calc_st->forceRange_fl32 * calc_st->forceRange_fl32 * 9.81f;
+  } else {
+      springForcePlus_N = 0.0f;
+  }
+  float localStiffness_N_m = 0.0f;
+  if (totalTravel_m > 0.0001f) {
+      localStiffness_N_m = max((springForcePlus_N - springForce_N) / (0.01f * totalTravel_m), 1.0f);
+  }
+
+  // Calculate Critical Damping: c_c = 2 * sqrt(mass * stiffness)
+  // We apply a parameterizable damping ratio (zeta).
+  // zeta = 1.0 is critically damped (no oscillation, fastest settling without overshoot).
+  float dampingRatio_zeta = 0.9f; 
+  float virtualDamping_Ns_m = dampingRatio_zeta * 2.0f * sqrtf(virtualMass_kg * localStiffness_N_m);
+
   float dt = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
 
   // F_net = F_human - F_spring - F_damping = M * a
-  float netForce = appliedForce_fl32 - springForceNorm_fl32 - (virtualDamping * g_admittanceVel_fl32);
-  float acceleration = netForce / virtualMass;
+  // Velocity is tracked in m/s
+  float netForce_N = humanForce_N - springForce_N - (virtualDamping_Ns_m * g_admittanceVel_fl32);
+  float acceleration_m_s2 = netForce_N / virtualMass_kg;
 
-  // 4. Integrate acceleration to get velocity
-  g_admittanceVel_fl32 += acceleration * dt;
+  // 4. Integrate acceleration to get physical velocity
+  g_admittanceVel_fl32 += acceleration_m_s2 * dt;
 
-  // 5. Integrate velocity to get position
-  g_admittancePos_fl32 += g_admittanceVel_fl32 * dt;
+  // 5. Integrate physical velocity to get physical position
+  currentPos_m += g_admittanceVel_fl32 * dt;
+
+  // Map physical position back to normalized percentage
+  if (totalTravel_m > 0.0001f) {
+      g_admittancePos_fl32 = currentPos_m / totalTravel_m;
+  } else {
+      g_admittancePos_fl32 = 0.0f;
+  }
 
   // 6. Hard constraint at mechanical boundaries (inelastic collision)
   if (g_admittancePos_fl32 <= 0.0f) {
