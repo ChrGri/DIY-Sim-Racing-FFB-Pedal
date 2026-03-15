@@ -33,8 +33,8 @@ int32_t IRAM_ATTR_FLAG MoveByPidStrategy(float loadCellReadingKg_fl32, StepperWi
 
   // 3. Admittance physics model (Mass-Spring-Damper)
   // These parameters can be exposed to config later. For now, we set them for a stable, heavy pedal feel.
-  const float virtualMass = 0.05f;   // Adjust for "heaviness" of the pedal
-  const float virtualDamping = 0.8f; // Adjust for "friction/viscosity"
+  const float virtualMass = 0.0005f;   // Adjust for "heaviness" of the pedal
+  const float virtualDamping = 0.008f; // Adjust for "friction/viscosity"
   float dt = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
 
   // F_net = F_human - F_spring - F_damping = M * a
