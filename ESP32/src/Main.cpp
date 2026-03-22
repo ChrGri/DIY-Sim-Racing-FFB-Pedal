@@ -1277,6 +1277,10 @@ xTaskCreatePinnedToCore(
       //print out basic pedal info via espnow
       sendESPNOWLog("Pedal:%d DAP version: %d", dap_config_st_local.payloadPedalConfig_st.pedalType_u8, DAP_VERSION_CONFIG_U8);
       delay(2);
+      #ifdef LOWER_WIFI_TRANSMISSION_POWER
+        sendESPNOWLog("Pedal:%d WIFI TX Power set to 8.5dBm", dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
+        delay(2);
+      #endif
       sendESPNOWLog("Pedal:%d Control Board: %s, Firmware: %s", dap_config_st_local.payloadPedalConfig_st.pedalType_u8, CONTROL_BOARD, DAP_FIRMWARE_VERSION);
       delay(2);
       sendESPNOWLog("Pedal:%d Servo Voltage: %.0f V, Rail pitch set to %d mm.",dap_config_st_local.payloadPedalConfig_st.pedalType_u8, (float)stepper->getServosVoltage()/10.0f , dap_config_st_local.payloadPedalConfig_st.spindlePitch_mmPerRev_u8);
