@@ -123,171 +123,177 @@ int32_t IRAM_ATTR_FLAG MoveByPidStrategy(float loadCellReadingKg_fl32, StepperWi
   return posStepperNew_i32;
 }
 
+/**
+ * @brief Executes the Admittance Control strategy for the active pedal.
+ * * Admittance control is a branch of robotics and haptics where the system measures 
+ * an external force (user's foot) and outputs a position or velocity based on a 
+ * simulated virtual environment. This function simulates a 1-Degree-of-Freedom (1-DOF) 
+ * Mass-Spring-Damper system.
+ * * The control loop works by calculating the net force on a "Virtual Mass":
+ * F_net = F_human - F_spring - F_damping
+ * * It then integrates acceleration (F_net / Mass) to find virtual velocity, and 
+ * integrates velocity to find the new virtual position. The physical stepper motor 
+ * is then commanded to track this virtual position.
+ * * @note CRUCIAL ARCHITECTURAL WARNING regarding `g_vModelPos_01`:
+ * DO NOT overwrite the virtual model position (`g_vModelPos_01`) with the physical 
+ * motor's current position (`stepper->getCurrentPositionFraction()`) at the start 
+ * of the loop. 
+ * * In admittance control, the virtual model is the "Ground Truth" of the physics 
+ * engine. The physical motor is merely a slave trying to follow this model. 
+ * If you overwrite the virtual position with the physical position:
+ * 1. You destroy the second-order physics (Mass and Damping). The system degrades 
+ * into a jittery first-order system because the velocity integrator loses its 
+ * historical state.
+ * 2. You introduce a "Unity-Gain Loopback". The physics engine will calculate a 
+ * reaction based on a delayed physical state, command a new physical state, 
+ * and then snap back to the delayed state on the next frame. This destroys 
+ * phase margin and causes violent, high-frequency oscillations (hunting).
+ * * Instead, we use a "Soft Leash" (divergence correction) at the end of the loop 
+ * to gently pull the virtual model toward reality, correcting floating-point drift 
+ * without corrupting the inertia and damping integrators.
+ * * @note INERTIAL COUPLING & PARASITIC MASS:
+ * Because the load cell is physically sandwiched between the motor and the pedal 
+ * faceplate, it measures the force required to accelerate the physical faceplate 
+ * in addition to the user's input (F_measured = F_human + m_physical * a).
+ * When solving the admittance equation with this measured force, the physical mass 
+ * of the faceplate mathematically adds itself to the virtual mass parameter: 
+ * m_effective = m_virtual + m_physical.
+ * Therefore, the absolute lowest effective mass the user can feel is the physical 
+ * weight of the faceplate itself (e.g., 500g). Setting `virtualMass_kg` lower than 
+ * this simply means the perceived mass approaches the physical mass.
+ * * @see "Impedance and Admittance Control" - Siciliano & Khatib, Springer Handbook of Robotics.
+ * @see "Virtual Model Control" - Pratt et al. (For concepts on simulating virtual components on physical actuators).
+ * @see "Control System Design: An Introduction to State-Space Methods" - Friedland (For state observers and divergence correction).
+ * * @param loadCellReadingKg_fl32 Raw force applied by the user in Kg.
+ * @param stepper Pointer to the stepper motor control interface.
+ * @param forceCurve Pointer to the interpolated force/travel curve.
+ * @param calc_st Pointer to the pedal's static calculation variables.
+ * @param config_st Pointer to the pedal's configuration structure.
+ * @param absForceOffset_fl32 High-frequency force offset (e.g., ABS vibration force).
+ * @param absPosOffset_fl32 High-frequency position offset (e.g., ABS vibration displacement).
+ * @return int32_t The next absolute target position in steps for the stepper motor driver.
+ */
 
-// Admittance Control Variables
-float g_admittancePos_fl32 = 0.0f;
-float g_admittanceVel_fl32 = 0.0f;
-
+ 
+// --- Global Admittance State Variables ---
+// renamed from g_admittancePos_fl32 and g_admittanceVel_fl32
+float g_vModelPos_01 = 0.0f;    // Normalized virtual position [0.0 to 1.0]
+float g_vModelVel_mps = 0.0f;   // Physical virtual velocity [meters/second]
 
 int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, StepperWithLimits* stepper, ForceCurveInterpolated* forceCurve, const DapCalculationVariables_t* calc_st, DapConfig_t* config_st, float absForceOffset_fl32, float absPosOffset_fl32)
 {
-
+  // --- 1. PHYSICAL PARAMETERS & CONFIGURATION ---
   // Parameters can be exposed to config later.
-  float virtualMass_kg = 0.7f; // e.g., 2.0 kg of virtual pedal mass
-  float dampingRatio_zeta = 1.3f;  // Damping ratio > 1 for overdamped response, < 1 for underdamped, = 1 for critically damped
+  float virtualMass_kg = 0.3f;     // Virtual pedal inertia
+  float dampingRatio_zeta = 1.3f;  // Overdamped (zeta > 1) to ensure stability and "heavy" feel
+  const float GRAVITY_N_KG = 9.81f; // Conversion constant for Kg to Newtons
+
+  // Time step for integration (seconds), but use actual loop time for better performance and stability.
+  // But make sure to protect against wrapsound of the timer by using uint64_t and checking for large dt values.
+  uint64_t currentTimeUs = esp_timer_get_time();
+  static uint64_t lastTimeUs = 0;
+  if (lastTimeUs == 0) {
+    lastTimeUs = currentTimeUs;
+  }
+  float dt_s = ((float)currentTimeUs - (float)lastTimeUs) * 1e-6f;
+  if (dt_s > 1.0f || dt_s <= 0.0f) {
+    // If the time step is too large (e.g., due to timer wraparound or long loop delay), reset it to a default value to prevent instability.
+    dt_s = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
+  }
+  lastTimeUs = currentTimeUs;
 
 
-  // ground truth position from servo can be obtained via stepper->getServosInternalPositionCorrected()
-  // This position gives the true servo position, but the signal might lag 10ms behind, due to the communication delay. 
-  // The stepper->getCurrentPositionFromMin() gives the position based on the step commands, which is more responsive but might deviate from the true position if there is step loss or other issues.
-
-
-  // read current ESP position and convert to fraction of total travel
-  int32_t currentPosFromMinInSteps_i32 = stepper->getCurrentPositionFromMin();
-
-  // obtain servos output position from min
-  int32_t servosPosFromMin_i32 = ( stepper->getServosInternalPositionCorrected() + stepper->getServosPosError() ) - stepper->getMinPosition(); 
-  float actualServoPosFraction_fl32 = (float)servosPosFromMin_i32 / (float)(stepper->getTravelSteps());
+  // Calculate total physical travel in meters
+  // travelSteps_cnt: total steps from min to max
+  float travelSteps_cnt = (float)(calc_st->stepperPosMax_i32 - calc_st->stepperPosMin_i32);
   
-  // set servo position for admittance control
-  float actualPosFraction_fl32 = stepper->getCurrentPositionFraction(); 
-  //actualPosFraction_fl32 = actualServoPosFraction_fl32;
-
+  // totalTravel_m: physical length of the pedal stroke in meters
+  float totalTravel_m = travelSteps_cnt * motorRevolutionsPerSteps_fl32 * config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8 * 0.001f;
   
+  // actualPosFraction_01: The current command position of the ESP stepper [0.0, 1.0]
+  float actualPosFraction_01 = stepper->getCurrentPositionFraction(); 
+
+  // --- 2. FORCE NORMALIZATION (Converting Human Input to SI Newtons) ---
   // 1. Convert loadcell reading (human force) into normalized percentage [0, 1]
   float loadCellReadingKgClip_fl32 = constrain(loadCellReadingKg_fl32, calc_st->forceMin_fl32, calc_st->forceMax_fl32);
-  float humanForceNorm_fl32 = 0.0f;
-  if (calc_st->forceRange_fl32 > 0.001f) {
-    humanForceNorm_fl32 = (loadCellReadingKgClip_fl32 - calc_st->forceMin_fl32) / calc_st->forceRange_fl32;
-  }
   
-  // Add external force effects (ABS, etc.)
-  float appliedForce_fl32 = humanForceNorm_fl32 - (absForceOffset_fl32 / max(calc_st->forceRange_fl32, 0.001f));
+  // Add external force effects (ABS, etc.) and convert to Newtons
+  //float appliedForce_01 = humanForceNorm_01 - (absForceOffset_fl32 / max(calc_st->forceRange_fl32, 0.001f));
+  float appliedForce_kg = loadCellReadingKgClip_fl32 + absForceOffset_fl32;
+  float humanForce_N = appliedForce_kg * GRAVITY_N_KG;
 
-  // 2. Read the spring force (target force) from the spline based on current virtual position
-  float springForceNorm_fl32 = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(actualPosFraction_fl32, 0.0f, 1.0f));
-  //float springForceNorm_fl32 = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(g_admittancePos_fl32, 0.0f, 1.0f));
-  if (calc_st->forceRange_fl32 > 0.001f) {
-      springForceNorm_fl32 = (springForceNorm_fl32 - calc_st->forceMin_fl32) / calc_st->forceRange_fl32;
-  } else {
-      springForceNorm_fl32 = 0.0f;
-  }
+  // --- 3. SPRING REACTION (The Force Curve) ---
+  // 2. Read the spring force (target force) from the spline based on current physical position
+  // We use actualPosFraction_01 here to couple the "feel" to the pedal's real location
+  float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(actualPosFraction_01, 0.0f, 1.0f));
+  float springForce_N = springForceRaw_kg * GRAVITY_N_KG;
 
-    // 3. Admittance physics model (Mass-Spring-Damper)
-  // Converting to SI Units (Meters, Newtons) to allow true physical parameterization.
-  // 1 kg of force = ~9.81 N
-  float humanForce_N = appliedForce_fl32 * calc_st->forceRange_fl32 * 9.81f;
-  float springForce_N = springForceNorm_fl32 * calc_st->forceRange_fl32 * 9.81f;
-
-  // Convert current virtual position [0, 1] to actual physical travel in meters
-  // stepperPosMax_i32 - stepperPosMin_i32 is the total travel in steps.
-  // motorRevolutionsPerSteps_fl32 = 1.0 / 3200
-  // spindlePitch_mmPerRev_u8 is mm/rev
-  float travelSteps = (float)(calc_st->stepperPosMax_i32 - calc_st->stepperPosMin_i32);
-  float totalTravel_m = travelSteps * motorRevolutionsPerSteps_fl32 * config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8 * 0.001f;
-  
-  float currentPos_m = g_admittancePos_fl32 * totalTravel_m;
-
-  
-
-  // Calculate local physical spring stiffness (N/m) based on a small delta around current position
-#ifdef FORCE_CURVE_STIFFNESS_BY_DIFFERENCE
-  
-  float springForcePlus_N = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(actualPosFraction_fl32 + 0.01f, 0.0f, 1.0f));
-  if (calc_st->forceRange_fl32 > 0.001f) {
-      springForcePlus_N = (springForcePlus_N - calc_st->forceMin_fl32) / calc_st->forceRange_fl32 * calc_st->forceRange_fl32 * 9.81f;
-  } else {
-      springForcePlus_N = 0.0f;
-  }
-  float localStiffness_N_m = 0.0f;
-  if (totalTravel_m > 0.0001f) {
-      localStiffness_N_m = max((springForcePlus_N - springForce_N) / (0.01f * totalTravel_m), 1.0f);
-  }
-#else
-
-  // Alternative: directly compute stiffness from the gradient of the force curve
-  // units are kg/step, but target is N/m, so we need to convert by multiplying with (steps/m) and (9.81 N/kg)
-  float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, constrain(actualPosFraction_fl32, 0.0f, 1.0f), false);
-  float localStiffness_N_m = localStiffness_kg_step * travelSteps / totalTravel_m * 9.81f;
-#endif
-
+  // --- 4. DYNAMIC STIFFNESS & DAMPING ---
+  // Calculate local physical spring stiffness (N/m) 
+  // units are kg/step, convert to N/m: (kg/step) * (steps/m) * (N/kg)
+  float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, constrain(actualPosFraction_01, 0.0f, 1.0f), false);
+  float localStiffness_N_m = max(localStiffness_kg_step * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG, 1.0f);
 
   // Calculate Critical Damping: c_c = 2 * sqrt(mass * stiffness)
-  // We apply a parameterizable damping ratio (zeta).
+  // Applied damping coefficient in [Newton-seconds / meter]
   float virtualDamping_Ns_m = dampingRatio_zeta * 2.0f * sqrtf(virtualMass_kg * localStiffness_N_m);
 
-  float dt = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
-
+  // --- 5. ADMITTANCE PHYSICS MODEL (Mass-Spring-Damper) ---
   // F_net = F_human - F_spring - F_damping = M * a
-  // Velocity is tracked in m/s
-  float netForce_N = humanForce_N - springForce_N - (virtualDamping_Ns_m * g_admittanceVel_fl32);
-  float acceleration_m_s2 = netForce_N / virtualMass_kg;
+  float netForce_N = humanForce_N - springForce_N - (virtualDamping_Ns_m * g_vModelVel_mps);
+  float acceleration_mps2 = netForce_N / virtualMass_kg;
 
-  // 4. Integrate acceleration to get physical velocity
-  g_admittanceVel_fl32 += acceleration_m_s2 * dt;
+  // Integrate acceleration to get physical velocity [m/s]
+  g_vModelVel_mps += acceleration_mps2 * dt_s;
 
   // Protect against mathematical blow-up and clamp velocity to hardware maximum limits
-  // Calculate max physical velocity (m/s) achievable by stepper
-  float maxPhysicalVel_m_s = 1.0f; 
-  if (totalTravel_m > 0.0001f) {
-      maxPhysicalVel_m_s = ((float)MAXIMUM_STEPPER_SPEED_U32) / travelSteps * totalTravel_m;
+  // Example: 250000steps/s * 10mm/rev * 1rev/3780steps = ~0.66 m/s
+  float maxPhysicalVel_mps = 1.0f; 
+  if (calc_st->stepsPerMotorRevolution_u32 > 0) {
+    float maxPhysicalVel_mps = MAXIMUM_STEPPER_SPEED_U32;
+    maxPhysicalVel_mps *= (float)config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8;
+    maxPhysicalVel_mps /= (float)calc_st->stepsPerMotorRevolution_u32;
+    maxPhysicalVel_mps *= 0.001f; // convert mm/s to m/s
   }
-  g_admittanceVel_fl32 = constrain(g_admittanceVel_fl32, -maxPhysicalVel_m_s, maxPhysicalVel_m_s);
+  g_vModelVel_mps = constrain(g_vModelVel_mps, -maxPhysicalVel_mps, maxPhysicalVel_mps);
 
-  // 5. Integrate physical velocity to get physical position
-  currentPos_m += g_admittanceVel_fl32 * dt;
+  // Integrate physical velocity to get physical position [meters]
+  float currentPos_m = (g_vModelPos_01 * totalTravel_m) + (g_vModelVel_mps * dt_s);
 
-  // Map physical position back to normalized percentage
+  // Map physical position back to normalized percentage [0, 1]
   if (totalTravel_m > 0.0001f) {
-      g_admittancePos_fl32 = currentPos_m / totalTravel_m;
+      g_vModelPos_01 = currentPos_m / totalTravel_m;
   } else {
-      g_admittancePos_fl32 = 0.0f;
+      g_vModelPos_01 = 0.0f;
   }
 
-  // 6. Hard constraint at mechanical boundaries (inelastic collision)
-  if (g_admittancePos_fl32 <= 0.0f) {
-      g_admittancePos_fl32 = 0.0f;
-      if (g_admittanceVel_fl32 < 0.0f) g_admittanceVel_fl32 = 0.0f;
-  } else if (g_admittancePos_fl32 >= 1.0f) {
-      g_admittancePos_fl32 = 1.0f;
-      if (g_admittanceVel_fl32 > 0.0f) g_admittanceVel_fl32 = 0.0f;
+  // --- 6. BOUNDARY CONSTRAINTS ---
+  // Hard constraint at mechanical boundaries (inelastic collision)
+  if (g_vModelPos_01 <= 0.0f) {
+      g_vModelPos_01 = 0.0f;
+      if (g_vModelVel_mps < 0.0f) g_vModelVel_mps = 0.0f;
+  } else if (g_vModelPos_01 >= 1.0f) {
+      g_vModelPos_01 = 1.0f;
+      if (g_vModelVel_mps > 0.0f) g_vModelVel_mps = 0.0f;
   }
 
-  // 7. Convert normalized position to stepper integer steps
-  float posStepperNew_fl32 = g_admittancePos_fl32 * (float)(calc_st->stepperPosMax_i32 - calc_st->stepperPosMin_i32);
-  posStepperNew_fl32 += calc_st->stepperPosMin_i32;
+  // --- 7. DRIFT CORRECTION (State Synchronization) ---
+  // Synchronize the virtual model with the actual stepper command position
+  // This prevents the model from diverging due to integration errors or floating point drift.
+  float divergence_01 = actualPosFraction_01 - g_vModelPos_01;
+  g_vModelPos_01 += divergence_01 * 0.05f; // 5% correction per cycle
 
-  // apply position offsets (like ABS vibrations, bite points, etc)
-  posStepperNew_fl32 -= (absPosOffset_fl32 * (float)(calc_st->stepperPosMax_i32 - calc_st->stepperPosMin_i32));
+  // --- 8. STEP CONVERSION & OUTPUT ---
+  // Convert normalized position to stepper integer steps
+  float targetPosSteps_fl32 = g_vModelPos_01 * travelSteps_cnt;
+  targetPosSteps_fl32 += (float)calc_st->stepperPosMin_i32;
 
-  int32_t posStepperNew_i32 = floor(posStepperNew_fl32);
+  // Apply high-frequency position offsets (ABS vibrations, etc) 
+  // Offset is applied after the physics loop to keep the integrator "clean"
+  targetPosSteps_fl32 -= (absPosOffset_fl32 * travelSteps_cnt);
+
+  int32_t finalTargetPos_i32 = (int32_t)floor(targetPosSteps_fl32);
   
-  // clamp target position to range
-  posStepperNew_i32 = (int32_t)constrain(posStepperNew_i32, calc_st->stepperPosMin_i32, calc_st->stepperPosMax_i32);
-
-
-  /*float physicalPos_fl32 = stepper->getCurrentPositionFraction();
-  float positionError = g_admittancePos_fl32 - physicalPos_fl32;
-
-  // If the virtual model is way ahead of the motor, pull the virtual model back 
-  // to prevent a "jump" once the motor regains control.
-  if (abs(positionError) > 0.05f) { 
-      g_admittancePos_fl32 = physicalPos_fl32 + (positionError * 0.1f); // Simple low-pass sync
-  }*/
-
-  // After the physics integration:
-  float theoreticalPos = stepper->getCurrentPositionFraction();
-  float divergence = theoreticalPos - g_admittancePos_fl32;
-
-  // Apply a tiny correction (e.g., 5% of the error)
-  // This ensures they never drift apart due to floating point errors, 
-  // but keeps the "mass" and "damping" feel intact.
-  g_admittancePos_fl32 += divergence * 0.05f;
-
-  return posStepperNew_i32;
+  // Final safety clamp to hardware limits
+  return (int32_t)constrain(finalTargetPos_i32, calc_st->stepperPosMin_i32, calc_st->stepperPosMax_i32);
 }
-
-
-
-
-

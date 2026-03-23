@@ -1963,7 +1963,13 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       {
         // Pedal control
         //Position_Next = MoveByPidStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, effect_force_fl32, 0);
-        Position_Next = MoveByAdmittanceStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, effect_force_fl32, 0);
+        Position_Next = MoveByAdmittanceStrategy(filteredReading
+          , stepper
+          , &forceCurve
+          , &dap_calculationVariables_st
+          , &dap_config_pedalUpdateTask_st
+          , effect_force_fl32
+          , 0);
         
         if(effectsCalculated_b)
         {
@@ -2116,112 +2122,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // Move to new position
       if (doMovement_b)
       {
-		  
-
-#ifdef S_CURVE_POSITION_SHAPING
-        static bool s_positionGovernorInitialized_b = false;
-        static float s_positionGovernorPos_fl32 = 0.0f;
-        static float s_positionGovernorVel_fl32 = 0.0f;
-        static float s_positionGovernorAcc_fl32 = 0.0f;
-
-        // --- Jerk-limited position command shaping ("S-curve-ish" governor) ---
-        // Purpose:
-        //   Limit discontinuities in the commanded position/velocity/acceleration that would
-        //   otherwise excite the (aggressive) servo inner PID and create audible/feelable jitter.
-        //
-        // We maintain an internal trajectory state (x_g, v_g, a_g) and drive it toward the
-        // instantaneous command x_cmd (= Position_Next), subject to limits.
-        //
-        // Constraints:
-        //   |v_g| <= v_max
-        //   |a_g| <= a_max
-        //   |j_g| <= j_max   where j_g := da_g/dt
-        //
-        // Parameterization (simple, monotonic mapping from "smoothing time" T):
-        //   a_max = v_max / T
-        //   j_max = a_max / T = v_max / T^2
-        //
-        // Discrete-time update each control tick (dt):
-        //   e      = x_cmd - x_g
-        //   v_des  = clamp(e/dt,  ±v_max)
-        //   a_des  = clamp((v_des - v_g)/dt, ±a_max)
-        //   a_g   += clamp(a_des - a_g, ±j_max*dt)
-        //   v_g   += a_g * dt
-        //   x_g   += v_g * dt
-        //
-        // Finally, we round x_g back to integer steps for the stepper command.
-
-        bool isPedalControlStrategy_b = !(dap_calculationVariables_st.rudderStatus_b || dap_calculationVariables_st.helicopterRudderStatus_b);
-        bool enablePositionGovernor_b = isPedalControlStrategy_b && (0u != dap_config_pedalUpdateTask_st.payloadPedalConfig_st.positionSmoothingFactor_u8);
-
-        if (moveSlowlyToPosition_b)
-        {
-          s_positionGovernorInitialized_b = false;
-        }
-
-        if (enablePositionGovernor_b && (!moveSlowlyToPosition_b))
-        {
-          float deltaTime_s_fl32 = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
-          float smoothingTime_s_fl32 = ((float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st.positionSmoothingFactor_u8) * 1e-4f;
-
-          if ((deltaTime_s_fl32 > 0.0f) && (smoothingTime_s_fl32 > 0.0f))
-          {
-            if (!s_positionGovernorInitialized_b)
-            {
-              s_positionGovernorPos_fl32 = (float)stepper->getTargetPositionSteps();
-              s_positionGovernorVel_fl32 = 0.0f;
-              s_positionGovernorAcc_fl32 = 0.0f;
-              s_positionGovernorInitialized_b = true;
-            }
-
-            float maxSpeed_stepsPerS_fl32 = (float)stepper->getCurrentSpeedInMilliHz();
-            if (maxSpeed_stepsPerS_fl32 < 1.0f)
-            {
-              maxSpeed_stepsPerS_fl32 = (float)MAXIMUM_STEPPER_SPEED_U32;
-            }
-
-            float maxAccel_stepsPerS2_fl32 = maxSpeed_stepsPerS_fl32 / smoothingTime_s_fl32;
-            float maxJerk_stepsPerS3_fl32 = maxAccel_stepsPerS2_fl32 / smoothingTime_s_fl32;
-
-            float targetPos_fl32 = (float)Position_Next;
-            float errorSteps_fl32 = targetPos_fl32 - s_positionGovernorPos_fl32;
-            float desiredVel_stepsPerS_fl32 = constrain(errorSteps_fl32 / deltaTime_s_fl32, -maxSpeed_stepsPerS_fl32, maxSpeed_stepsPerS_fl32);
-
-            float desiredAcc_stepsPerS2_fl32 = (desiredVel_stepsPerS_fl32 - s_positionGovernorVel_fl32) / deltaTime_s_fl32;
-            desiredAcc_stepsPerS2_fl32 = constrain(desiredAcc_stepsPerS2_fl32, -maxAccel_stepsPerS2_fl32, maxAccel_stepsPerS2_fl32);
-
-            float accDelta_stepsPerS2_fl32 = desiredAcc_stepsPerS2_fl32 - s_positionGovernorAcc_fl32;
-            float maxAccDelta_stepsPerS2_fl32 = maxJerk_stepsPerS3_fl32 * deltaTime_s_fl32;
-            accDelta_stepsPerS2_fl32 = constrain(accDelta_stepsPerS2_fl32, -maxAccDelta_stepsPerS2_fl32, maxAccDelta_stepsPerS2_fl32);
-            s_positionGovernorAcc_fl32 += accDelta_stepsPerS2_fl32;
-
-            s_positionGovernorVel_fl32 += s_positionGovernorAcc_fl32 * deltaTime_s_fl32;
-            s_positionGovernorVel_fl32 = constrain(s_positionGovernorVel_fl32, -maxSpeed_stepsPerS_fl32, maxSpeed_stepsPerS_fl32);
-
-            s_positionGovernorPos_fl32 += s_positionGovernorVel_fl32 * deltaTime_s_fl32;
-
-            if (((errorSteps_fl32 >= 0.0f) && (s_positionGovernorPos_fl32 > targetPos_fl32)) || ((errorSteps_fl32 <= 0.0f) && (s_positionGovernorPos_fl32 < targetPos_fl32)))
-            {
-              s_positionGovernorPos_fl32 = targetPos_fl32;
-              s_positionGovernorVel_fl32 = 0.0f;
-              s_positionGovernorAcc_fl32 = 0.0f;
-            }
-
-            Position_Next = (int32_t)floorf(s_positionGovernorPos_fl32 + 0.5f);
-            Position_Next = (int32_t)constrain(Position_Next, dap_calculationVariables_st.stepperPosMinEndstop_i32, dap_calculationVariables_st.stepperPosMaxEndstop_i32);
-          }
-        }
-        else
-        {
-          s_positionGovernorInitialized_b = false;
-        }
-#endif
-		
-        		
-        static bool lastDirection_b = true; // Neu hinzufügen oben in der Funktion
-
         if (!moveSlowlyToPosition_b)
         {
+          // compute required speed to reach the target position within the next control cycle, so that the movement appears smooth and without delay.
           int32_t distanceToMove = Position_Next - stepperPosCurrent_i32;
           
           if (distanceToMove != 0) 
@@ -2229,7 +2132,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
             float deltaTime_s_fl32 = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
             float requiredSpeed = abs(distanceToMove) / deltaTime_s_fl32;
             
-            // Minimal überschätzen, damit er das Ziel rechtzeitig erreicht
+            // overwrite speed command slightly to make sure the target position is reached within the control cycle.
             requiredSpeed *= 1.1f; 
 
             if (requiredSpeed > (float)MAXIMUM_STEPPER_SPEED_U32) {
@@ -2237,33 +2140,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
             }
 
             stepper->moveToWithSpeed((int32_t)Position_Next, (uint32_t)abs(requiredSpeed));
-            //stepper->moveToWithSpeed((int32_t)Position_Next, (uint32_t)abs(250000));
-            //stepper->moveTo((int32_t)Position_Next);
-
-
-            /*
-            bool forwardDir = (distanceToMove > 0);
-            
-            // Wenn der Motor nicht läuft oder die Richtung wechseln muss, starte ihn neu
-            if (!stepper->isRunning() || (forwardDir != lastDirection_b)) 
-            {
-                stepper->keepRunningInDir(forwardDir, (uint32_t)requiredSpeed);
-                lastDirection_b = forwardDir;
-            } 
-            else 
-            {
-                // Läuft bereits in die richtige Richtung -> nur live den Speed anpassen (kein Stoppen!)
-                stepper->setSpeedLive((uint32_t)requiredSpeed);
-            }
-                */
-          } 
-          /*else 
-          {
-            // Am Ziel angekommen
-            if (stepper->isRunning()) {
-                stepper->forceStop();
-            }
-          }*/
+          }
         }
         else
         {
