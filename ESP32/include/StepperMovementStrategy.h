@@ -139,7 +139,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
 
   // ground truth position from servo can be obtained via stepper->getServosInternalPositionCorrected()
   // This position gives the true servo position, but the signal might lag 10ms behind, due to the communication delay. 
-  //The stepper->getCurrentPositionFromMin() gives the position based on the step commands, which is more responsive but might deviate from the true position if there is step loss or other issues.
+  // The stepper->getCurrentPositionFromMin() gives the position based on the step commands, which is more responsive but might deviate from the true position if there is step loss or other issues.
 
 
   // read current ESP position and convert to fraction of total travel
@@ -165,7 +165,6 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   float appliedForce_fl32 = humanForceNorm_fl32 - (absForceOffset_fl32 / max(calc_st->forceRange_fl32, 0.001f));
 
   // 2. Read the spring force (target force) from the spline based on current virtual position
-  
   float springForceNorm_fl32 = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(actualPosFraction_fl32, 0.0f, 1.0f));
   //float springForceNorm_fl32 = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(g_admittancePos_fl32, 0.0f, 1.0f));
   if (calc_st->forceRange_fl32 > 0.001f) {
@@ -192,6 +191,8 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   
 
   // Calculate local physical spring stiffness (N/m) based on a small delta around current position
+#ifdef FORCE_CURVE_STIFFNESS_BY_DIFFERENCE
+  
   float springForcePlus_N = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(actualPosFraction_fl32 + 0.01f, 0.0f, 1.0f));
   if (calc_st->forceRange_fl32 > 0.001f) {
       springForcePlus_N = (springForcePlus_N - calc_st->forceMin_fl32) / calc_st->forceRange_fl32 * calc_st->forceRange_fl32 * 9.81f;
@@ -202,9 +203,14 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   if (totalTravel_m > 0.0001f) {
       localStiffness_N_m = max((springForcePlus_N - springForce_N) / (0.01f * totalTravel_m), 1.0f);
   }
+#else
 
   // Alternative: directly compute stiffness from the gradient of the force curve
-  //localStiffness_N_m = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, constrain(actualPosFraction_fl32, 0.0f, 1.0f), false);
+  // units are kg/step, but target is N/m, so we need to convert by multiplying with (steps/m) and (9.81 N/kg)
+  float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, constrain(actualPosFraction_fl32, 0.0f, 1.0f), false);
+  float localStiffness_N_m = localStiffness_kg_step * travelSteps / totalTravel_m * 9.81f;
+#endif
+
 
   // Calculate Critical Damping: c_c = 2 * sqrt(mass * stiffness)
   // We apply a parameterizable damping ratio (zeta).
@@ -260,85 +266,28 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   posStepperNew_i32 = (int32_t)constrain(posStepperNew_i32, calc_st->stepperPosMin_i32, calc_st->stepperPosMax_i32);
 
 
-  float physicalPos_fl32 = stepper->getCurrentPositionFraction();
+  /*float physicalPos_fl32 = stepper->getCurrentPositionFraction();
   float positionError = g_admittancePos_fl32 - physicalPos_fl32;
 
   // If the virtual model is way ahead of the motor, pull the virtual model back 
   // to prevent a "jump" once the motor regains control.
   if (abs(positionError) > 0.05f) { 
       g_admittancePos_fl32 = physicalPos_fl32 + (positionError * 0.1f); // Simple low-pass sync
-  }
+  }*/
+
+  // After the physics integration:
+  float theoreticalPos = stepper->getCurrentPositionFraction();
+  float divergence = theoreticalPos - g_admittancePos_fl32;
+
+  // Apply a tiny correction (e.g., 5% of the error)
+  // This ensures they never drift apart due to floating point errors, 
+  // but keeps the "mass" and "damping" feel intact.
+  g_admittancePos_fl32 += divergence * 0.05f;
 
   return posStepperNew_i32;
 }
 
 
-
-// see https://pidtuner.com
-
-#ifdef USES_ADS1220
-  void measureStepResponse(StepperWithLimits* stepper, const DapCalculationVariables_t* calc_st, const DapConfig_t* config_st, const LoadCellAds1220* loadcell)
-#else
-  void measureStepResponse(StepperWithLimits* stepper, const DapCalculationVariables_t* calc_st, const DapConfig_t* config_st, const LoadCellAds1256* loadcell)
-#endif
-{
-
-  int32_t currentPos = stepper->getCurrentPositionFromMin();
-  int32_t minPos = currentPos - dap_calculationVariables_st.stepperPosRange_fl32 * 0.05f;
-  int32_t maxPos = currentPos + dap_calculationVariables_st.stepperPosRange_fl32 * 0.05f;
-
-  stepper->moveTo(minPos, true);
-
-  ActiveSerial->println("======================================");
-  ActiveSerial->println("Start system identification data:");
-
-  unsigned long initialTime = micros();
-  unsigned long t = micros();
-  bool targetPosHasBeenSet_b = false;
-  float loadcellReading_fl32;
-
-  int32_t targetPos;
-
-  for (uint32_t cycleIdx = 0; cycleIdx < 5; cycleIdx++)
-  {
-    // toogle target position
-    if (cycleIdx % 2 == 0)
-    {
-      targetPos = maxPos;
-    }
-    else
-    {
-      targetPos = minPos;
-    }
-
-    targetPos = (int32_t)constrain(targetPos, dap_calculationVariables_st.stepperPosMin_i32, dap_calculationVariables_st.stepperPosMax_i32);
-
-    // execute move to target position and meaure system response
-    float currentPos_fl32;
-    for (uint32_t sampleIdx_u32 = 0; sampleIdx_u32 < 2000; sampleIdx_u32++)
-    {
-      // get loadcell reading
-      loadcellReading_fl32 = loadcell->readLoadcellWeightInKg();
-
-      // update time
-      t = micros() - initialTime;
-
-      // after some time, set target position
-      if (sampleIdx_u32 == 50)
-      {
-        stepper->moveTo(targetPos, false);
-      }
-
-      // get current position
-      currentPos_fl32 = stepper->getCurrentPositionFraction();
-      loadcellReading_fl32 = (loadcellReading_fl32 - calc_st->forceMin_fl32) / calc_st->forceRange_fl32; 
-  
-    }
-  }
-
-  ActiveSerial->println("======================================");
-  ActiveSerial->println("End system identification data");
-}
 
 
 

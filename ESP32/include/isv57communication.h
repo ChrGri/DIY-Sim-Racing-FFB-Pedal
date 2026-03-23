@@ -7,19 +7,44 @@
 #define NUMBER_OF_ISV57_REGISTERS_TO_READ_IN_CYCLIC_READ 4 // 4 registers to read servo states. Tried 5 but wasn't working.
 
 // servo states register addresses
-#define reg_add_position_given_p 0x0001 // checked
-#define reg_add_position_feedback_p 0x0002 // checked
-#define reg_add_position_error_p 0x0003 // checked
-#define reg_add_command_position_given_p 0x0004 // checked
-#define reg_add_position_relative_error_p 0x0005 // checked
-#define reg_add_velocity_given_rpm 0x0040 // checked: command velocity in rpm, output by the position controller, positive for forward direction and negative for backward direction
-#define reg_add_velocity_feedback_rpm 0x0041 // checked: feedback velocity in rpm, positive for forward direction and negative for backward direction
-#define reg_add_velocity_error_rpm 0x0042 // checked: 
-#define reg_add_velocity_feedback_no_filt_rpm 0x0048 // checked: sime to reg_add_velocity_feedback_rpm, but without filter, so more noisy but also more responsive
-#define reg_add_position_command_velocity_rpm 0x0049 // checked
-#define reg_add_velocity_current_given_percent 0x0080 // checked
-#define reg_add_velocity_current_feedback_percent 0x0081 // checked
-#define reg_add_voltage_0p1V 0x0140 // checked
+#define reg_add_position_given_p 0x0001 // "PositionGiven(p)"
+#define reg_add_position_feedback_p 0x0002 // "PositionFeedback(p)"
+#define reg_add_position_error_p 0x0003 // "PositionError(p)"
+#define reg_add_command_position_given_p 0x0004 // "CommandPositionGiven(p)"
+
+#define reg_add_position_relative_error_p 0x0005 // "PositonRelativeError(p)"
+#define reg_add_velocity_given_rpm 0x0040 // "VelocityGiven(rpm)": command velocity in rpm, output by the position controller, positive for forward direction and negative for backward direction
+#define reg_add_velocity_feedback_rpm 0x0041 // "VelocityFeedback(rpm)": feedback velocity in rpm, positive for forward direction and negative for backward direction
+#define reg_add_velocity_error_rpm 0x0042 // "VelocityError(rpm)": 
+
+#define reg_add_velocity_feedback_no_filt_rpm 0x0048 // "VelocityFeedbackNoFilt(rpm)": sime to reg_add_velocity_feedback_rpm, but without filter, so more noisy but also more responsive
+#define reg_add_position_command_velocity_rpm 0x0049 // "PositionCommandVelocity(rpm)": velocity that the position controller is commanding, in rpm, positive for forward direction and negative for backward direction
+#define reg_add_internal_position_command_velocity_rpm 0x004A // "InternalPositionCommandVelocity(rpm)": internal velocity command of the position controller, in rpm, positive for forward direction and negative for backward direction
+#define reg_add_velocity_current_given_percent 0x0080 // "CurrentGiven(%)": current command in percent, positive for forward direction and negative for backward direction
+
+#define reg_add_velocity_current_feedback_percent 0x0081 // "CurrentFeedback(%)": current feedback in percent, positive for forward direction and negative for backward direction
+#define reg_add_current_complexor_percent 0x0000 // "CurrentComplexor(%)": complexor current in percent, positive for forward direction and negative for backward direction
+#define reg_add_u_axis_current_ampere 0x00C0 // "UAxisCurrent(A)": current in ampere, positive for forward direction and negative for backward direction
+#define reg_add_v_axis_current_ampere 0x00C1 // "VAxisCurrent(A)": current in ampere, positive for forward direction and negative for backward direction
+#define reg_add_w_axis_current_ampere 0x00C2 // "WAxisCurrent(A)": current in ampere, positive for forward direction and negative for backward direction
+
+#define reg_add_voltage_0p1V 0x0140 // "DCBusVoltage(0.1V)": voltage in 0.1V units
+#define reg_add_analog1_0p01V 0x0180 // "Analog1(0.01V)": analog input 1 in 0.01V units
+#define reg_add_analog2_0p01V 0x0181 // "Analog2(0.01V)": analog input 1 in 0.01V units
+#define reg_add_analog3_0p01V 0x0182 // "Analog3(0.01V)": analog input 1 in 0.01V units
+
+#define reg_add_velocity_feedforward_in_rpm 0x0043 // "VelocityFeedForwardIn(rpm)": signal after Pr1.10 but before Pr1.11
+#define reg_add_velocity_feedforward_out_rpm 0x0044 // "VelocityFeedForwardOut(rpm)": signal after Pr1.11
+#define reg_add_velocity_smooth_in_rpm 0x0045 // "VelocitySmoothIn(rpm)": Pr1.03 input signal
+#define reg_add_velocity_smooth_out_rpm 0x0046 // "VelocitySmoothOut(rpm)": Pr1.03 output signal
+
+#define reg_add_internal_text_chunnel1 0x01C0 // "InternalTextChannel1"
+#define reg_add_internal_text_chunnel2 0x01C1 // "InternalTextChannel2"
+#define reg_add_internal_text_chunnel3 0x01C2 // "InternalTextChannel3"
+#define reg_add_internal_text_chunnel4 0x01C3 // "InternalTextChannel4"
+#define reg_add_internal_text_chunnel5 0x01C4 // "InternalTextChannel5"
+#define reg_add_internal_text_chunnel6 0x01C5 // "InternalTextChannel6"
+
 
 // velocity give: asked velocity in rpm, positive for forward direction and negative for backward direction
 // position command velocity: velocity asked for but in encoder units

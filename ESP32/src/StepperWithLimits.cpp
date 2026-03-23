@@ -327,8 +327,6 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st)
 
 			// virtual endstop
 			endPosDetected |= (_stepper->getCurrentPosition() > maxStepsToReachEndPos);
-
-			ActiveSerial->printf("Pos: %d\n", _stepper->getCurrentPosition());
 		}
 		_stepper->forceStop();
 		delay(100);
