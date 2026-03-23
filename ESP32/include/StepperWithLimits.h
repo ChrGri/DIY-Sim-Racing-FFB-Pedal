@@ -77,9 +77,12 @@ public:
 	int32_t getCurrentPosition() const;
 	float getCurrentPositionFraction() const;
 	float getCurrentPositionFractionFromExternalPos(int32_t extPos_i32) const;
-	int32_t getTargetPositionSteps() const;
+		int32_t getTargetPositionSteps() const;
 	int32_t getCurrentSpeedInMilliHz();
 	uint32_t getMaxSpeedInMilliHz();
+	
+	bool isRunning();
+	void keepRunningInDir(bool forwardDir_b, uint32_t speed_u32);
 
 	int32_t getLimitMin() const { return _endstopLimitMin; }
 	int32_t getLimitMax() const { return _endstopLimitMax; }
@@ -118,6 +121,11 @@ public:
 	uint8_t servoStatus=0;
 	uint8_t endstopDetectionThreshold_u8=30;
 
+	void moveToWithSpeed(int32_t targetPos_i32, uint32_t speed_u32);
+
 	
 
 };
+
+	void setDirection(bool forwardDir_b);
+

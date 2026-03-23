@@ -51,11 +51,14 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool
   , ratioOfInertia_u8(ratioOfInertia_arg_u8)
 {
 
+	// initialize pulse generator library
   	_stepper = new FastNonAccelStepper(pinStep, pinDirection, invertMotorDir_b); 
-	endstopDetectionThreshold_u8 = constrain(endstopDetectionThreshold_u8, 25, 50);
+	_stepper->begin();
+	_stepper->setExpectedCycleTimeUs(REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64);
 
-	// pinMode(pinMin, INPUT);
-	// pinMode(pinMax, INPUT);
+	// 
+	endstopDetectionThreshold_u8 = constrain(endstopDetectionThreshold_u8, 25, 50);
+	
 
 	Serial.printf("InvertStepperDir: %d\n", invertMotorDir_b);
 	// _stepper = stepperEngine().stepperConnectToPin(pinStep);	
@@ -268,6 +271,8 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st)
 		ActiveSerial->println("Move to min");
 		// _stepper->forceStopAndNewPosition(0);
 		_stepper->keepRunningBackward(MAXIMUM_STEPPER_SPEED_U32 / 16);
+        _stepper->setSpeedLive((uint32_t)(MAXIMUM_STEPPER_SPEED_U32 / 16) );
+
 		
 		while( (!endPosDetected) && (getLifelineSignal()) ){
 			delay(1);
@@ -281,9 +286,13 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st)
 		ActiveSerial->println("Min endstop reached.");
 		ActiveSerial->printf("Current pos: %d\n", _stepper->getCurrentPosition() );
 		// move slightly away from the block to prevent mechanical hits during normal operation
-		_stepper->moveTo(0, true);
+		_stepper->moveTo(0, true); // this is not working currently
 		_endstopLimitMin = 0;
+
+
 		//delay(1000);
+		//ActiveSerial->printf("Current pos after move to 0: %d\n", _stepper->getCurrentPosition() );
+
 
 		ActiveSerial->println("Moved to pos: 0");
 		ActiveSerial->printf("Current pos: %d\n", _stepper->getCurrentPosition() );
@@ -303,7 +312,10 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st)
 		endPosDetected = false; //abs( isv57.servo_current_percent) > STEPPER_WITH_LIMITS_SENSORLESS_CURRENT_THRESHOLD_IN_PERCENT;
 		
 		// run continously in one direction until endstop is hit
-		_stepper->move(INT32_MAX, false);
+		_stepper->keepRunningForward(MAXIMUM_STEPPER_SPEED_U32 / 16);
+        _stepper->setSpeedLive((uint32_t)(MAXIMUM_STEPPER_SPEED_U32 / 16) );
+
+		
 
 		// if endstop is reached, communication is lost or virtual endstop is hit
 		while( (!endPosDetected) && (getLifelineSignal()) ){
@@ -316,7 +328,7 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st)
 			// virtual endstop
 			endPosDetected |= (_stepper->getCurrentPosition() > maxStepsToReachEndPos);
 
-			//ActiveSerial->printf("Pos: %d\n", _stepper->getCurrentPosition());
+			ActiveSerial->printf("Pos: %d\n", _stepper->getCurrentPosition());
 		}
 		_stepper->forceStop();
 		delay(100);
@@ -447,7 +459,7 @@ uint32_t StepperWithLimits::getMaxSpeedInMilliHz()
 	// return _stepper->getMaxSpeedInMilliHz();
 	// Hz to mHz: 1 Hz = 1000 milli Hz
 	return MAXIMUM_STEPPER_SPEED_U32 * 1000;
-}
+} 
 
 
 
@@ -464,13 +476,13 @@ void StepperWithLimits::correctPos()
 			// tune the current servo position to compesnate the position offset
 			int32_t stepOffset =(int32_t)constrain(servo_offset_compensation_steps_i32, -10, 10);
 
-			if (stepOffset != 0)
+			/*if (stepOffset != 0)
 			{
 				ActiveSerial->print("Position compensation: ");
 				ActiveSerial->print(servo_offset_compensation_steps_i32);
 				ActiveSerial->print(",   ");
 				ActiveSerial->println(stepOffset);
-			}
+			}*/
 
 			// offset = ESPs position - servos position
 			// new ESP pos = ESPs position - offset = ESPs position - ESPs position + servos position = servos position
@@ -1218,4 +1230,15 @@ bool StepperWithLimits::servoIdleAction()
 
 
 
+
+
+bool StepperWithLimits::isRunning() { return _stepper->isRunning(); }
+void StepperWithLimits::keepRunningInDir(bool forwardDir_b, uint32_t speed_u32) { _stepper->keepRunningInDir(forwardDir_b, speed_u32); }
+
+void StepperWithLimits::moveToWithSpeed(int32_t targetPos_i32, uint32_t speed_u32)
+{
+	_stepper->moveToWithSpeed(targetPos_i32, speed_u32);
+}
+
+//void StepperWithLimits::setDirection(bool forwardDir_b) { _stepper->setDirection(forwardDir_b); }
 

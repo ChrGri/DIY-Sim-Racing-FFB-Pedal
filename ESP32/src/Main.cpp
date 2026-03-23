@@ -1962,7 +1962,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       else 
       {
         // Pedal control
-        Position_Next = MoveByPidStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, effect_force_fl32, 0);
+        //Position_Next = MoveByPidStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, effect_force_fl32, 0);
+        Position_Next = MoveByAdmittanceStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, effect_force_fl32, 0);
+        
         if(effectsCalculated_b)
         {
           Position_Next -= effect_pos_fl32;
@@ -2216,35 +2218,52 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 #endif
 		
         		
-                          if (!moveSlowlyToPosition_b)
+        static bool lastDirection_b = true; // Neu hinzufügen oben in der Funktion
+
+        if (!moveSlowlyToPosition_b)
         {
-          // Time-Based Exact Pulse Spacing for maximum stability
+          int32_t distanceToMove = Position_Next - stepperPosCurrent_i32;
           
-          // Calculate how many steps we need to travel in this cycle
-          int32_t distanceToMove = abs(Position_Next - stepperPosCurrent_i32);
-          
-          if (distanceToMove > 0) 
+          if (distanceToMove != 0) 
           {
-            // Calculate exact speed needed to spread pulses over the entire cycle time
             float deltaTime_s_fl32 = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
-            float requiredSpeed = (float)distanceToMove / deltaTime_s_fl32;
+            float requiredSpeed = abs(distanceToMove) / deltaTime_s_fl32;
             
-            // Add a small 10% margin so it reaches the target just BEFORE the next cycle, 
-            // preventing accumulated lag behind the target
+            // Minimal überschätzen, damit er das Ziel rechtzeitig erreicht
             requiredSpeed *= 1.1f; 
 
-            // Clamp max speed to hardware limits
             if (requiredSpeed > (float)MAXIMUM_STEPPER_SPEED_U32) {
                 requiredSpeed = (float)MAXIMUM_STEPPER_SPEED_U32;
             }
 
-            stepper->setSpeedLive((uint32_t)requiredSpeed);
-            stepper->moveTo(Position_Next, false);
+            stepper->moveToWithSpeed((int32_t)Position_Next, (uint32_t)abs(requiredSpeed));
+            //stepper->moveToWithSpeed((int32_t)Position_Next, (uint32_t)abs(250000));
+            //stepper->moveTo((int32_t)Position_Next);
+
+
+            /*
+            bool forwardDir = (distanceToMove > 0);
+            
+            // Wenn der Motor nicht läuft oder die Richtung wechseln muss, starte ihn neu
+            if (!stepper->isRunning() || (forwardDir != lastDirection_b)) 
+            {
+                stepper->keepRunningInDir(forwardDir, (uint32_t)requiredSpeed);
+                lastDirection_b = forwardDir;
+            } 
+            else 
+            {
+                // Läuft bereits in die richtige Richtung -> nur live den Speed anpassen (kein Stoppen!)
+                stepper->setSpeedLive((uint32_t)requiredSpeed);
+            }
+                */
           } 
-          else 
+          /*else 
           {
-            stepper->moveTo(Position_Next, false);
-          }
+            // Am Ziel angekommen
+            if (stepper->isRunning()) {
+                stepper->forceStop();
+            }
+          }*/
         }
         else
         {

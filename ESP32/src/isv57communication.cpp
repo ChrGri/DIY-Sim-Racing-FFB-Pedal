@@ -112,7 +112,6 @@ Isv57Communication::Isv57Communication()
 // send tuned servo parameters
 void Isv57Communication::setupServoStateReading() {
 
-  
   // The iSV57 has four registers (0x0191, 0x0192, 0x0193, 0x0194) in which we can write, which values we want to obtain cyclicly
   // These registers can be obtained by sending e.g. the command: 0x63, 0x03, 0x0191, target_sate, CRC
   // tell the modbus slave, which registers will be read cyclicly
@@ -120,7 +119,10 @@ void Isv57Communication::setupServoStateReading() {
   modbus.writeAndVerifyDeviceParameter(slaveId, 0x0192, reg_add_velocity_current_feedback_percent);
   modbus.writeAndVerifyDeviceParameter(slaveId, 0x0193, reg_add_position_error_p);
   modbus.writeAndVerifyDeviceParameter(slaveId, 0x0194, reg_add_voltage_0p1V);
+  //modbus.writeAndVerifyDeviceParameter(slaveId, 0x0195, reg_add_velocity_feedback_rpm);
 
+
+  //modbus.writeAndVerifyDeviceParameter(slaveId, 0x0193, reg_add_position_feedback_p);
 }
 
 
@@ -467,14 +469,13 @@ int16_t Isv57Communication::getPosFromMin()
 // read servo states
 void Isv57Communication::readServoStates() {
 
-  // initialize with -1 to indicate non-trustworthyness
-  regArray[0] = -1;
-  regArray[1] = -1;
-  regArray[2] = -1;
-  regArray[3] = -1;
+  // initialize with -1 to indicate non-trustworthiness
+  for (uint8_t i = 0; i < NUMBER_OF_ISV57_REGISTERS_TO_READ_IN_CYCLIC_READ; i++) {
+    regArray[i] = -1;
+  }
 
   // read the four registers simultaneously
-  int8_t numberOfRegistersToRead_u8 = 4;
+  int8_t numberOfRegistersToRead_u8 = NUMBER_OF_ISV57_REGISTERS_TO_READ_IN_CYCLIC_READ;
   int bytesReceived_i = modbus.sendRequestAndReceiveResponse(slaveId, 0x03, ref_cyclic_read_0, numberOfRegistersToRead_u8);
   if(bytesReceived_i == (numberOfRegistersToRead_u8*2))
   {
@@ -486,25 +487,31 @@ void Isv57Communication::readServoStates() {
   }
 
   // write to public variables
-  // servo_pos_given_p = regArray[0];
-  // servo_current_percent = regArray[1];
-  // servo_pos_error_p = regArray[2];
-  // servoVoltage0p1V_i16 = regArray[3];
-
   isv57dynamicStates_.servo_pos_given_p = regArray[0];
   isv57dynamicStates_.servo_current_percent = regArray[1];
   isv57dynamicStates_.servo_pos_error_p = regArray[2];
   isv57dynamicStates_.servoVoltage0p1V_i16 = regArray[3];
+  //isv57dynamicStates_.servo_velocity_given_rpm_i16 = regArray[4];
+
+  //isv57dynamicStates_.servo_position_feedback_i16 = regArray[2];
+  
+
   isv57dynamicStates_.lastUpdateTimeInMS_u32 = millis();
 
-  //ActiveSerial->print("Bytes :");
-  //ActiveSerial->println(bytesReceived_i);
+  
   
   
   
   // print registers
-  if (0)
+  // print only every 100ms to avoid flooding the serial monitor, since the servo states are read every 10ms^
+  static uint32_t lastTimePrintedServoStatesInMS_u32 = 0;
+  if (millis() - lastTimePrintedServoStatesInMS_u32 > 200)
   {
+    lastTimePrintedServoStatesInMS_u32 = millis();
+
+    ActiveSerial->print("Bytes :");
+    ActiveSerial->println(bytesReceived_i);
+
     ActiveSerial->print("Pos_given:");
     ActiveSerial->print(isv57dynamicStates_.servo_pos_given_p);
 
@@ -516,6 +523,9 @@ void Isv57Communication::readServoStates() {
 
     ActiveSerial->print(",Voltage:");
     ActiveSerial->print(isv57dynamicStates_.servoVoltage0p1V_i16);
+
+    ActiveSerial->print(",Velocity_given:");
+    ActiveSerial->print(isv57dynamicStates_.servo_velocity_given_rpm_i16);
 
     ActiveSerial->println(" "); 
   }

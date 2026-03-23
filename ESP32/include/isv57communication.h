@@ -4,7 +4,7 @@
 //#include <SoftwareSerial.h>
 #include "Modbus.h"
 
-
+#define NUMBER_OF_ISV57_REGISTERS_TO_READ_IN_CYCLIC_READ 4 // 4 registers to read servo states. Tried 5 but wasn't working.
 
 // servo states register addresses
 #define reg_add_position_given_p 0x0001 // checked
@@ -12,14 +12,27 @@
 #define reg_add_position_error_p 0x0003 // checked
 #define reg_add_command_position_given_p 0x0004 // checked
 #define reg_add_position_relative_error_p 0x0005 // checked
-#define reg_add_velocity_given_rpm 0x0040 // checked
-#define reg_add_velocity_feedback_rpm 0x0041 // checked
-#define reg_add_velocity_error_rpm 0x0042 // checked
-#define reg_add_velocity_feedback_no_filt_rpm 0x0048 // checked
+#define reg_add_velocity_given_rpm 0x0040 // checked: command velocity in rpm, output by the position controller, positive for forward direction and negative for backward direction
+#define reg_add_velocity_feedback_rpm 0x0041 // checked: feedback velocity in rpm, positive for forward direction and negative for backward direction
+#define reg_add_velocity_error_rpm 0x0042 // checked: 
+#define reg_add_velocity_feedback_no_filt_rpm 0x0048 // checked: sime to reg_add_velocity_feedback_rpm, but without filter, so more noisy but also more responsive
 #define reg_add_position_command_velocity_rpm 0x0049 // checked
 #define reg_add_velocity_current_given_percent 0x0080 // checked
 #define reg_add_velocity_current_feedback_percent 0x0081 // checked
 #define reg_add_voltage_0p1V 0x0140 // checked
+
+// velocity give: asked velocity in rpm, positive for forward direction and negative for backward direction
+// position command velocity: velocity asked for but in encoder units
+// velocity smooth in: was always 0, perhaps in velocity mode, but in position mode it is not used, so we can ignore it for now. If we want to use it in the future, we can set it to a value between 0 and 10, where 0 means no smoothing and 10 means maximum smoothing. The iSV57 docu says that the default value is 0, but in the tuned parameters file it is set to 10, so we will set it to 10 for now. We can always change it later if we want to experiment with it.
+// velocity smooth out: --"--
+// velocity feed forward in: signal after Pr1.10 but before Pr1.11
+// velocity feed forward out: signal after Pr1.11
+// velocity feedback no filt: signal before velocity feedback filter Pr1.03, so more noisy but also more responsive, can be used for advanced control algorithms in the future, e.g. for feed forward control or for model predictive control
+// velocity feedback: signal after velocity feedback filter Pr1.03, so less noisy but also less responsive, can be used for advanced control algorithms in the future, e.g. for feed forward control or for model predictive control, but for now we will use the velocity feedback without filter for the control algorithm and the velocity feedback with filter for monitoring and debugging purposes
+// velocity error: 
+// command position give: propably position given to servo, but in encoder units
+// position feedback: propably position feedback from servo, in step units
+// 
 
 
 // DC bus voltage: 0B0AH --> 140 = 8c
@@ -48,6 +61,8 @@ struct isv57dynamicStates {
     int16_t servo_current_percent = 0;
     int16_t servoVoltage0p1V_i16 = 0;
     int16_t estimated_pos_error_i16 = 0;
+    int16_t servo_velocity_given_rpm_i16 = 0;
+    int16_t servo_position_feedback_i16 = 0;
     // int16_t estimated_pos_error_currentStepperPos_i16 = 0;
     unsigned long lastUpdateTimeInMS_u32 = 0;
 };
@@ -80,14 +95,10 @@ class Isv57Communication {
     void applyOfsetToZeroPos(int16_t givenPosOffset_i16);
     int16_t getZeroPos();
     int16_t getPosFromMin();
-    int16_t regArray[4];
+    int16_t regArray[NUMBER_OF_ISV57_REGISTERS_TO_READ_IN_CYCLIC_READ];
 
     int16_t slaveId = 63; 
 
-    // int16_t servo_pos_given_p = 0;
-    // int16_t servo_pos_error_p = 0;
-    // int16_t servo_current_percent = 0;
-    // int16_t servoVoltage0p1V_i16 = 0;
     isv57dynamicStates isv57dynamicStates_;
 
     bool isv57_update_parameter_b=false;
