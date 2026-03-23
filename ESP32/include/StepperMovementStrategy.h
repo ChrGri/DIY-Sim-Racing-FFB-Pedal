@@ -132,6 +132,11 @@ float g_admittanceVel_fl32 = 0.0f;
 int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, StepperWithLimits* stepper, ForceCurveInterpolated* forceCurve, const DapCalculationVariables_t* calc_st, DapConfig_t* config_st, float absForceOffset_fl32, float absPosOffset_fl32)
 {
 
+  // Parameters can be exposed to config later.
+  float virtualMass_kg = 0.7f; // e.g., 2.0 kg of virtual pedal mass
+  float dampingRatio_zeta = 1.3f;  // Damping ratio > 1 for overdamped response, < 1 for underdamped, = 1 for critically damped
+
+
   // ground truth position from servo can be obtained via stepper->getServosInternalPositionCorrected()
   // This position gives the true servo position, but the signal might lag 10ms behind, due to the communication delay. 
   //The stepper->getCurrentPositionFromMin() gives the position based on the step commands, which is more responsive but might deviate from the true position if there is step loss or other issues.
@@ -142,11 +147,11 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
 
   // obtain servos output position from min
   int32_t servosPosFromMin_i32 = ( stepper->getServosInternalPositionCorrected() + stepper->getServosPosError() ) - stepper->getMinPosition(); 
-
-  float actualPosFraction_fl32 = stepper->getCurrentPositionFraction(); 
   float actualServoPosFraction_fl32 = (float)servosPosFromMin_i32 / (float)(stepper->getTravelSteps());
   
-  actualPosFraction_fl32 = actualServoPosFraction_fl32;
+  // set servo position for admittance control
+  float actualPosFraction_fl32 = stepper->getCurrentPositionFraction(); 
+  //actualPosFraction_fl32 = actualServoPosFraction_fl32;
 
   
   // 1. Convert loadcell reading (human force) into normalized percentage [0, 1]
@@ -184,8 +189,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   
   float currentPos_m = g_admittancePos_fl32 * totalTravel_m;
 
-  // Parameters can be exposed to config later.
-  float virtualMass_kg = 0.2f; // e.g., 2.0 kg of virtual pedal mass
+  
 
   // Calculate local physical spring stiffness (N/m) based on a small delta around current position
   float springForcePlus_N = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(actualPosFraction_fl32 + 0.01f, 0.0f, 1.0f));
@@ -204,8 +208,6 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
 
   // Calculate Critical Damping: c_c = 2 * sqrt(mass * stiffness)
   // We apply a parameterizable damping ratio (zeta).
-  // zeta = 1.0 is critically damped (no oscillation, fastest settling without overshoot).
-  float dampingRatio_zeta = 1.5f;  
   float virtualDamping_Ns_m = dampingRatio_zeta * 2.0f * sqrtf(virtualMass_kg * localStiffness_N_m);
 
   float dt = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
@@ -215,7 +217,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   float netForce_N = humanForce_N - springForce_N - (virtualDamping_Ns_m * g_admittanceVel_fl32);
   float acceleration_m_s2 = netForce_N / virtualMass_kg;
 
-    // 4. Integrate acceleration to get physical velocity
+  // 4. Integrate acceleration to get physical velocity
   g_admittanceVel_fl32 += acceleration_m_s2 * dt;
 
   // Protect against mathematical blow-up and clamp velocity to hardware maximum limits
