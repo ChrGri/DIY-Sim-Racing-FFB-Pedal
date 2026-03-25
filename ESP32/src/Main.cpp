@@ -1929,8 +1929,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
       // Due to closed loop frequiency response, the servo might travel less than the input amplitude. 
       // To compensate the attenuation, the input amplitude is scaled by a constant factor, which was identified for 15Hz input frequency and roughly resulted in plausible amplitude range. 
-      effect_force_fl32 *= EFFECT_SCALING_FACTOR_FL32;
-      effect_pos_fl32 *= EFFECT_POSITION_SCALING_FACTOR_FL32;
+      //effect_force_fl32 *= EFFECT_SCALING_FACTOR_FL32;
+      //effect_pos_fl32 *= EFFECT_POSITION_SCALING_FACTOR_FL32;
       
 
 
@@ -1968,8 +1968,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           , &forceCurve
           , &dap_calculationVariables_st
           , &dap_config_pedalUpdateTask_st
-          , effect_force_fl32
-          , 0);
+          , effect_force_fl32 // in units of kg
+          , effect_pos_fl32 // in units of steps
+        ); 
         
         if(effectsCalculated_b)
         {

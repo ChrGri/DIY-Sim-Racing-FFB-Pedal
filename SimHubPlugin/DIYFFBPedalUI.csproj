@@ -531,6 +531,7 @@
     <EmbeddedResource Include="Language\DiyActivePedal.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>DiyActivePedal.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

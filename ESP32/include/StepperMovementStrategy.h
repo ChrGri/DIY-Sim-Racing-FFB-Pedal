@@ -180,7 +180,7 @@ int32_t IRAM_ATTR_FLAG MoveByPidStrategy(float loadCellReadingKg_fl32, StepperWi
 float g_vModelPos_01 = 0.0f;    // Normalized virtual position [0.0 to 1.0]
 float g_vModelVel_mps = 0.0f;   // Physical virtual velocity [meters/second]
 
-int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, StepperWithLimits* stepper, ForceCurveInterpolated* forceCurve, const DapCalculationVariables_t* calc_st, DapConfig_t* config_st, float absForceOffset_fl32, float absPosOffset_fl32)
+int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, StepperWithLimits* stepper, ForceCurveInterpolated* forceCurve, const DapCalculationVariables_t* calc_st, DapConfig_t* config_st, float effectForceOffsetInKg_fl32, float effectPosOffsetInSteps_fl32)
 {
   // --- 1. PHYSICAL PARAMETERS & CONFIGURATION ---
   // Parameters can be exposed to config later.
@@ -213,34 +213,37 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   // actualPosFraction_01: The current command position of the ESP stepper [0.0, 1.0]
   float actualPosFraction_01 = stepper->getCurrentPositionFraction(); 
 
-  // --- 2. FORCE NORMALIZATION (Converting Human Input to SI Newtons) ---
-  // 1. Convert loadcell reading (human force) into normalized percentage [0, 1]
-  float loadCellReadingKgClip_fl32 = constrain(loadCellReadingKg_fl32, calc_st->forceMin_fl32, calc_st->forceMax_fl32);
-  
-  // Add external force effects (ABS, etc.) and convert to Newtons
-  //float appliedForce_01 = humanForceNorm_01 - (absForceOffset_fl32 / max(calc_st->forceRange_fl32, 0.001f));
-  float appliedForce_kg = loadCellReadingKgClip_fl32 + absForceOffset_fl32;
-  float humanForce_N = appliedForce_kg * GRAVITY_N_KG;
-
-  // --- 3. SPRING REACTION (The Force Curve) ---
+  // --- 2. SPRING REACTION (The Force Curve) ---
   // 2. Read the spring force (target force) from the spline based on current physical position
   // We use actualPosFraction_01 here to couple the "feel" to the pedal's real location
   float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(actualPosFraction_01, 0.0f, 1.0f));
   float springForce_N = springForceRaw_kg * GRAVITY_N_KG;
 
-  // --- 4. DYNAMIC STIFFNESS & DAMPING ---
+  // --- 3. DYNAMIC STIFFNESS & DAMPING ---
   // Calculate local physical spring stiffness (N/m) 
   // units are kg/step, convert to N/m: (kg/step) * (steps/m) * (N/kg)
   float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, constrain(actualPosFraction_01, 0.0f, 1.0f), false);
   float localStiffness_N_m = max(localStiffness_kg_step * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG, 1.0f);
 
+
+  // --- 4. FORCE NORMALIZATION (Converting Human Input to SI Newtons) ---
+  // 1. Convert loadcell reading (human force) into normalized percentage [0, 1]
+  float loadCellReadingKgClip_fl32 = constrain(loadCellReadingKg_fl32, calc_st->forceMin_fl32, calc_st->forceMax_fl32);
+  // 2. Apply absolute force offsets (e.g., from ABS vibrations) to the load cell reading
+
+  // --- 5. EFFECT COUPLING (Converting High-Frequency Position Offsets to Force Offsets) ---
+  // convert position offset to force offset using the local stiffness at the current position on the force curve
+  float effectPositionToForceConversion_kg = effectPosOffsetInSteps_fl32 * localStiffness_kg_step;
+  float appliedForce_kg = loadCellReadingKgClip_fl32 + effectForceOffsetInKg_fl32 + effectPositionToForceConversion_kg;
+  float externalForce_N = appliedForce_kg * GRAVITY_N_KG;
+
   // Calculate Critical Damping: c_c = 2 * sqrt(mass * stiffness)
   // Applied damping coefficient in [Newton-seconds / meter]
   float virtualDamping_Ns_m = dampingRatio_zeta * 2.0f * sqrtf(virtualMass_kg * localStiffness_N_m);
 
-  // --- 5. ADMITTANCE PHYSICS MODEL (Mass-Spring-Damper) ---
+  // --- 6. ADMITTANCE PHYSICS MODEL (Mass-Spring-Damper) ---
   // F_net = F_human - F_spring - F_damping = M * a
-  float netForce_N = humanForce_N - springForce_N - (virtualDamping_Ns_m * g_vModelVel_mps);
+  float netForce_N = externalForce_N - springForce_N - (virtualDamping_Ns_m * g_vModelVel_mps);
   float acceleration_mps2 = netForce_N / virtualMass_kg;
 
   // Integrate acceleration to get physical velocity [m/s]
@@ -267,7 +270,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
       g_vModelPos_01 = 0.0f;
   }
 
-  // --- 6. BOUNDARY CONSTRAINTS ---
+  // --- 7. BOUNDARY CONSTRAINTS ---
   // Hard constraint at mechanical boundaries (inelastic collision)
   if (g_vModelPos_01 <= 0.0f) {
       g_vModelPos_01 = 0.0f;
@@ -277,20 +280,20 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
       if (g_vModelVel_mps > 0.0f) g_vModelVel_mps = 0.0f;
   }
 
-  // --- 7. DRIFT CORRECTION (State Synchronization) ---
+  // --- 8. DRIFT CORRECTION (State Synchronization) ---
   // Synchronize the virtual model with the actual stepper command position
   // This prevents the model from diverging due to integration errors or floating point drift.
   float divergence_01 = actualPosFraction_01 - g_vModelPos_01;
   g_vModelPos_01 += divergence_01 * 0.05f; // 5% correction per cycle
 
-  // --- 8. STEP CONVERSION & OUTPUT ---
+  // --- 9. STEP CONVERSION & OUTPUT ---
   // Convert normalized position to stepper integer steps
   float targetPosSteps_fl32 = g_vModelPos_01 * travelSteps_cnt;
   targetPosSteps_fl32 += (float)calc_st->stepperPosMin_i32;
 
   // Apply high-frequency position offsets (ABS vibrations, etc) 
   // Offset is applied after the physics loop to keep the integrator "clean"
-  targetPosSteps_fl32 -= (absPosOffset_fl32 * travelSteps_cnt);
+  //targetPosSteps_fl32 -= (effectPosOffsetInSteps_fl32 * travelSteps_cnt);
 
   int32_t finalTargetPos_i32 = (int32_t)floor(targetPosSteps_fl32);
   
