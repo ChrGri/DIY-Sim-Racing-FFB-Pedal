@@ -1564,7 +1564,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           stepper->configSetPositionCommandSmoothingFactor(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.positionSmoothingFactor_u8);
         #endif
         stepper->configSetProfilingFlag( (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_CYCLE_TIMER_U8) );
-        stepper->configSetRatioOfInertia(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.servoRatioOfInertia_u8);
+        //stepper->configSetRatioOfInertia(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.servoRatioOfInertia_u8);
 
         // reset all servo alarms
         if ( (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_RESET_ALL_SERVO_ALARMS_U8) )

@@ -9,7 +9,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,     // Pr0.01: Control mode
     0,     // Pr0.02: Real-time auto-gain tuning mode
     9,    // Pr0.03: Selection of machine stiffness at real-time...
-    1,    // Pr0.04: Ratio of inertia
+    110,    // Pr0.04: Ratio of inertia. Identified via Stepperonline App (on 26th March 2026)
     0,     // Pr0.05: Command pulse input selection
     0,     // Pr0.06: Motor rotational direction setup
     3,     // Pr0.07: Reserved parameters
@@ -32,7 +32,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,     // Pr0.24: Reserved parameter
     900,   // Pr1.00: 1st position loop gain
     900,   // Pr1.01: 1st velocity loop gain
-    9999,   // Pr1.02: 1st time constant of velocity loop integration
+    10000,   // Pr1.02: 1st time constant of velocity loop integration
     27,    // Pr1.03: 1st filter of velocity detection
     50,   // Pr1.04: 1st torque filter
     175,   // Pr1.05: 2nd position loop gain
@@ -40,10 +40,10 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     10000, // Pr1.07: 2nd time constant of velocity loop
     9,     // Pr1.08: 2nd filter of velocity detection
     50,   // Pr1.09: 2nd torque filter
-    999,   // Pr1.10: Velocity feed forward gain
-    6000,  // Pr1.11: Velocity feed forward filter. Had better velocity error decay with higher values and also less noise.
-    999,     // Pr1.12: Torque feed forward gain
-    6000,     // Pr1.13: Torque feed forward filter
+    1000,   // Pr1.10: Velocity feed forward gain
+    1000,  // Pr1.11: Velocity feed forward filter. Had better velocity error decay with higher values and also less noise.
+    1000,     // Pr1.12: Torque feed forward gain
+    1000,     // Pr1.13: Torque feed forward filter
     1,     // Pr1.14: 2nd gain setup
     0,     // Pr1.15: Control switching mode
     50,    // Pr1.16: Position control switching delay time
@@ -92,7 +92,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,     // Pr2.19: 3rd damping filter
     0,     // Pr2.20: 4th damping frequency
     0,     // Pr2.21: 4th damping filter
-    0,    // Pr2.22: Positional command smoothing filter
+    50,    // Pr2.22: Positional command smoothing filter. Less noise with value >0, since feed forward are smoothed.
     0,     // Pr2.23: Positional command FIR filter
     0,     // Pr2.24: Reserved parameter
     0,     // Pr2.25: Reserved parameter

@@ -803,8 +803,8 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 				/************************************************************/
 				if (true == stepper_cl->updateServoParams_b)
 				{
-					stepper_cl->isv57.setPositionSmoothingFactor(stepper_cl->posCommandSmoothingFactor_u16);
-					stepper_cl->isv57.setRatioOfInertia(stepper_cl->ratioOfInertia_u8);
+					//stepper_cl->isv57.setPositionSmoothingFactor(stepper_cl->posCommandSmoothingFactor_u16);
+					//stepper_cl->isv57.setRatioOfInertia(stepper_cl->ratioOfInertia_u8);
 					stepper_cl->updateServoParams_b = false;
 
 					ActiveSerial->println("Updating Servo parameters.");

@@ -490,14 +490,18 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 
   #define BRAKE_RESISTOR_PIN_U8 35
   
-  #define USB_JOYSTICK
+  #ifndef DEBUG_KEEP_USB_SERIAL_JTAG
+    #define USB_JOYSTICK
+  #endif
   //#define ESPNOW_Enable
   //#define ESPNow_S3
   #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 0
   //#define ESPNow_Pairing_function
   #define PAIRING_GPIO_U8 0
   #define OTA_update
-  #define CONTROLLER_SPECIFIC_VIDPID
+  #ifndef DEBUG_KEEP_USB_SERIAL_JTAG
+    #define CONTROLLER_SPECIFIC_VIDPID
+  #endif
   #define BAUDRATE3M
   #define PEDAL_SOFTWARE_ASSIGNMENT
   // #define ANGLE_SENSOR_GPIO 11 // disabled by default, since to much runtime impact of ADC

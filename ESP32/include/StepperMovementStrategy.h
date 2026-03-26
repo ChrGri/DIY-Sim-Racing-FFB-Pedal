@@ -228,7 +228,8 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
 
   // --- 4. FORCE NORMALIZATION (Converting Human Input to SI Newtons) ---
   // 1. Convert loadcell reading (human force) into normalized percentage [0, 1]
-  float loadCellReadingKgClip_fl32 = constrain(loadCellReadingKg_fl32, calc_st->forceMin_fl32, calc_st->forceMax_fl32);
+  //float loadCellReadingKgClip_fl32 = constrain(loadCellReadingKg_fl32, calc_st->forceMin_fl32, calc_st->forceMax_fl32);
+  float loadCellReadingKgClip_fl32 = loadCellReadingKg_fl32; // do not clip here, since it will limit the acceleration in the model. Let the physics engine handle it. Clipping will be done later to prevent integrator windup.
   // 2. Apply absolute force offsets (e.g., from ABS vibrations) to the load cell reading
 
   // --- 5. EFFECT COUPLING (Converting High-Frequency Position Offsets to Force Offsets) ---

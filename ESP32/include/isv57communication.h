@@ -6,6 +6,10 @@
 
 #define NUMBER_OF_ISV57_REGISTERS_TO_READ_IN_CYCLIC_READ 4 // 4 registers to read servo states. Tried 5 but wasn't working.
 
+
+// registers identified from Stepperonline app vialogic analyzer
+// Info can also be seen here https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/blob/main/StepperParameterization/README_state_decoding 
+
 // servo states register addresses
 #define reg_add_position_given_p 0x0001 // "PositionGiven(p)"
 #define reg_add_position_feedback_p 0x0002 // "PositionFeedback(p)"
