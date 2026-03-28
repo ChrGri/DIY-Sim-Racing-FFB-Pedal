@@ -207,7 +207,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   // travelSteps_cnt: total steps from min to max
   float travelSteps_cnt = (float)(calc_st->stepperPosMax_i32 - calc_st->stepperPosMin_i32);
   
-  // totalTravel_m: physical length of the pedal stroke in meters
+  // totalTravel_m: physical length of the pedal stroke in meters [steps] * [revolutions/step] * [mm/revolution] * [m/mm] = [m]
   float totalTravel_m = travelSteps_cnt * motorRevolutionsPerSteps_fl32 * config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8 * 0.001f;
   
   // actualPosFraction_01: The current command position of the ESP stepper [0.0, 1.0]
@@ -221,7 +221,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
 
   // --- 3. DYNAMIC STIFFNESS & DAMPING ---
   // Calculate local physical spring stiffness (N/m) 
-  // units are kg/step, convert to N/m: (kg/step) * (steps/m) * (N/kg)
+  // units are kg/step, convert to N/m: (kg/step) * (steps/m) * (N/kg) = N/m
   float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, constrain(actualPosFraction_01, 0.0f, 1.0f), false);
   float localStiffness_N_m = max(localStiffness_kg_step * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG, 1.0f);
 
@@ -230,6 +230,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   // 1. Convert loadcell reading (human force) into normalized percentage [0, 1]
   //float loadCellReadingKgClip_fl32 = constrain(loadCellReadingKg_fl32, calc_st->forceMin_fl32, calc_st->forceMax_fl32);
   float loadCellReadingKgClip_fl32 = loadCellReadingKg_fl32; // do not clip here, since it will limit the acceleration in the model. Let the physics engine handle it. Clipping will be done later to prevent integrator windup.
+  
   // 2. Apply absolute force offsets (e.g., from ABS vibrations) to the load cell reading
 
   // --- 5. EFFECT COUPLING (Converting High-Frequency Position Offsets to Force Offsets) ---
@@ -237,6 +238,19 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   float effectPositionToForceConversion_kg = effectPosOffsetInSteps_fl32 * localStiffness_kg_step;
   float appliedForce_kg = loadCellReadingKgClip_fl32 + effectForceOffsetInKg_fl32 + effectPositionToForceConversion_kg;
   float externalForce_N = appliedForce_kg * GRAVITY_N_KG;
+
+  //// print every 1 seconds the effectPositionToForceConversion_kg and effectForceOffsetInKg_fl32 for debugging
+  //static uint64_t lastDebugPrintTimeUs = 0;
+  //if (currentTimeUs - lastDebugPrintTimeUs > 100000) {
+  //  lastDebugPrintTimeUs = currentTimeUs;
+  //  ActiveSerial->print("effectPositionToForceConversion_kg: ");
+  //  ActiveSerial->print(effectPositionToForceConversion_kg, 4);
+  //  ActiveSerial->print(" effectForceOffsetInKg_fl32: ");
+  //  ActiveSerial->print(effectForceOffsetInKg_fl32, 4);
+  //  ActiveSerial->print(" localStiffness_kg_step: ");
+  //  ActiveSerial->print(localStiffness_kg_step, 4);
+  //  ActiveSerial->println();
+  //}
 
   // Calculate Critical Damping: c_c = 2 * sqrt(mass * stiffness)
   // Applied damping coefficient in [Newton-seconds / meter]
