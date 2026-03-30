@@ -339,6 +339,7 @@ void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection,
   // Pr7 register
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+0, tuned_parameters[pr_7_00+0]); // current loop gain
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+1, tuned_parameters[pr_7_00+1]); // current loop integral time
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+11, tuned_parameters[pr_7_00+11]); // Motor Maximum speed
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+28, tuned_parameters[pr_7_00+28]);
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+29, tuned_parameters[pr_7_00+29]);
 
