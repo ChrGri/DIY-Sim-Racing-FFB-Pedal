@@ -71,6 +71,9 @@ public:
 	void moveToPosWithSpeed(int32_t targetPos_ui32, uint32_t speedInHz_u32);
 	void setSpeedLive(uint32_t speedInHz_u32);
 
+	int32_t getHardEndstopMinPosition() const { return _endstopLimitMin; }
+	int32_t getHardEndstopMaxPosition() const { return _endstopLimitMax; }
+	
 	int32_t getCurrentPositionFromMin() const;
 	int32_t getMinPosition() const;
 	void setMinPosition();

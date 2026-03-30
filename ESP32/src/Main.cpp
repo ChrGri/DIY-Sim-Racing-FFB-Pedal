@@ -694,6 +694,13 @@ static void uart_event_task(void *pvParameters) {
 
 void setup()
 {
+
+  #ifdef DEBUG_KEEP_USB_SERIAL_JTAG
+    // For ESP32-S3, the USB Serial is shared with JTAG. To allow debugging via JTAG while also using Serial for output, we can delay the start of Serial until after the debugger has had time to connect.
+    // This is a workaround to ensure that the USB Serial doesn't interfere with JTAG debugging during startup. 
+    delay(5000); // Gibt dem Debugger 5 Sekunden Zeit, sich in Ruhe zu verbinden!
+  #endif
+
   DapConfig_t dap_config_st_local;
   DapConfig_t dap_config_st_eeprom;
 
@@ -978,8 +985,8 @@ void setup()
   loadcell->estimateBiasAndVariance();       // automatically identify sensor noise for KF parameterization
 
 	// find the min & max endstops
-	ActiveSerial->println("Start homing");
-	stepper->findMinMaxSensorless(dap_config_st_local);
+  ActiveSerial->println("Start homing");
+  stepper->findMinMaxSensorless(dap_config_st_local);
   ActiveSerial->print("Min Position is "); ActiveSerial->println(stepper->getLimitMin());
   ActiveSerial->print("Max Position is "); ActiveSerial->println(stepper->getLimitMax());
 
@@ -1472,6 +1479,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
   float effect_force_fl32;
   float effect_pos_fl32;
+  EffectOffsets_t effectOffsets_st;
+  EndstopBehavior_t endstopBehavior_st; 
+  RudderOffsets_t rudderOffsets_st;
   int32_t Position_effect;
   int32_t bpTriggerValue_u8;
   int32_t BP_trigger_min;
@@ -1718,9 +1728,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           ActiveSerial->print("Center offset:");
           ActiveSerial->println(_rudder.offsetFilter_i32);
           ActiveSerial->print("pos min:");
-          ActiveSerial->println(dap_calculationVariables_st.stepperPosMin_i32);
+          ActiveSerial->println(dap_calculationVariables_st.softEndstopMinStepperPos_i32);
           ActiveSerial->print("pos max:");
-          ActiveSerial->println(dap_calculationVariables_st.stepperPosMax_i32);
+          ActiveSerial->println(dap_calculationVariables_st.softEndstopMaxStepperPos_i32);
           ActiveSerial->print("max Force:");
           ActiveSerial->print("max Force:");
           ActiveSerial->print(dap_calculationVariables_st.forceMax_fl32);
@@ -1918,20 +1928,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         effect_pos_fl32 += _RPMOscillation.rpmPositionOffset_i32;
       }
 
-      // add dampening
-      if (dap_calculationVariables_st.dampingPress_fl32  > 0.0001f)
-      {
-        // dampening is proportional to velocity --> D-gain for stability
-        effect_pos_fl32 -= dap_calculationVariables_st.dampingPress_fl32 * changeVelocity * dap_calculationVariables_st.springStiffnesssInv_fl32;
-      }
-
-
-
-      // Due to closed loop frequiency response, the servo might travel less than the input amplitude. 
-      // To compensate the attenuation, the input amplitude is scaled by a constant factor, which was identified for 15Hz input frequency and roughly resulted in plausible amplitude range. 
-      //effect_force_fl32 *= EFFECT_SCALING_FACTOR_FL32;
-      //effect_pos_fl32 *= EFFECT_POSITION_SCALING_FACTOR_FL32;
-      
+      // write the effect offsets into a struct for debug output and potential use in other functions like the effect offset PID
+      effectOffsets_st.forceOffset_kg_fl32 = effect_force_fl32;
+      effectOffsets_st.forceOffset_Steps_fl32 = effect_pos_fl32;
 
 
       // chatter reduction gain, reduce the gain when chatter happened
@@ -1944,7 +1943,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
       
       // compute next position with PID strategy
-      // MPC control strategy for rudder
+      // MPC control strataegy for rudder
       int32_t positionWithoutEffect=0;
       if(dap_calculationVariables_st.rudderStatus_b || dap_calculationVariables_st.helicopterRudderStatus_b)
       {
@@ -1961,21 +1960,17 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       }
       else 
       {
-        // Pedal control
-        //Position_Next = MoveByPidStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, effect_force_fl32, 0);
+        // Pedal control algorithm
         Position_Next = MoveByAdmittanceStrategy(filteredReading
           , stepper
           , &forceCurve
           , &dap_calculationVariables_st
           , &dap_config_pedalUpdateTask_st
-          , effect_force_fl32 // in units of kg
-          , effect_pos_fl32 // in units of steps
+          , effectOffsets_st
+          , endstopBehavior_st
+          , rudderOffsets_st
         ); 
         
-        if(effectsCalculated_b)
-        {
-          Position_Next -= effect_pos_fl32;
-        } 
       }
       // end profiler 4, movement strategy
       profiler_pedalUpdateTask.end(5);
@@ -1983,12 +1978,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // start profiler 6, ...
       profiler_pedalUpdateTask.start(6);
 
-      
-      // clip target position to configured target interval with RPM effect movement in the endstop
-      Position_Next = (int32_t)constrain(Position_Next, dap_calculationVariables_st.stepperPosMinEndstop_i32, dap_calculationVariables_st.stepperPosMaxEndstop_i32);
-      //Position_Next = (int32_t)constrain(Position_Next, dap_calculationVariables_st.stepperPosMin_i32, dap_calculationVariables_st.stepperPosMax_i32);
-
-      
+      // clip target position to hard endstops
+      Position_Next = (int32_t)constrain(Position_Next, stepper->getHardEndstopMinPosition(), stepper->getHardEndstopMaxPosition());
 
       // rudder helper
       Rudder_real_poisiton= 100*((positionWithoutEffect-dap_calculationVariables_st.stepperPosMinDefault_i32) / dap_calculationVariables_st.stepperPosRangeDefault_fl32);
@@ -2162,7 +2153,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       {
         if (1 == dap_config_pedalUpdateTask_st.payloadPedalConfig_st.travelAsJoystickOutput_u8)
         {
-          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue((stepperPosCurrent_i32-dap_calculationVariables_st.stepperPosRange_fl32/2), dap_calculationVariables_st.stepperPosMin_i32, dap_calculationVariables_st.stepperPosMin_i32+dap_calculationVariables_st.stepperPosRange_fl32/2.0f, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.maxGameOutput_u8);
+          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue((stepperPosCurrent_i32-dap_calculationVariables_st.stepperPosRange_fl32/2), dap_calculationVariables_st.softEndstopMinStepperPos_i32, dap_calculationVariables_st.softEndstopMinStepperPos_i32+dap_calculationVariables_st.stepperPosRange_fl32/2.0f, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.maxGameOutput_u8);
         }
         else
         {
@@ -2173,7 +2164,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       {
         if (1 == dap_config_pedalUpdateTask_st.payloadPedalConfig_st.travelAsJoystickOutput_u8)
         {
-          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(stepperPosCurrent_i32, dap_calculationVariables_st.stepperPosMin_i32, dap_calculationVariables_st.stepperPosMax_i32, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.maxGameOutput_u8);
+          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(stepperPosCurrent_i32, dap_calculationVariables_st.softEndstopMinStepperPos_i32, dap_calculationVariables_st.softEndstopMaxStepperPos_i32, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.maxGameOutput_u8);
         }
         else
         {            

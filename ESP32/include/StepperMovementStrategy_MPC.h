@@ -124,7 +124,7 @@ int32_t MoveByForceTargetingStrategy(float loadCellReadingKg_fl32, StepperWithLi
   // d(x_hor) / d(step) = ( d(x_hor) / d(phi) ) * [ d(phi)/d(x) ] * { d(x)/d(step) }
   float dXHorDStep_fl32 = (-dXHorDPhi_fl32) * (-dPhiDX_fl32) * mmPerStep_fl32;
 
-  // ActiveSerial->printf("PosFraction: %f,    pos:%f,    travelRange:%f,    posMin:%d,    posMax:%d\n", stepper->getCurrentPositionFractionFromExternalPos( stepperPos ), stepperPos, stepper->getCurrentTravelRange(),  calc_st->stepperPosMin_i32, calc_st->stepperPosMax_i32 );
+  // ActiveSerial->printf("PosFraction: %f,    pos:%f,    travelRange:%f,    posMin:%d,    posMax:%d\n", stepper->getCurrentPositionFractionFromExternalPos( stepperPos ), stepperPos, stepper->getCurrentTravelRange(),  calc_st->softEndstopMinStepperPos_i32, calc_st->softEndstopMaxStepperPos_i32 );
   // delay(20);
 
   // ActiveSerial->printf("speed: %f,    maxSpeed:%f\n", (float)currentSpeedInMilliHz, (float)maxSpeedInMilliHz);
@@ -269,7 +269,7 @@ int32_t MoveByForceTargetingStrategy(float loadCellReadingKg_fl32, StepperWithLi
   stepperPos_fl32 += stepper->getMinPosition();
 
   // clamp target position to range
-  int32_t posStepperNew = constrain(stepperPos_fl32, calc_st->stepperPosMin_i32, calc_st->stepperPosMax_i32 );
+  int32_t posStepperNew = constrain(stepperPos_fl32, calc_st->softEndstopMinStepperPos_i32, calc_st->softEndstopMaxStepperPos_i32 );
 
   return posStepperNew;
 }

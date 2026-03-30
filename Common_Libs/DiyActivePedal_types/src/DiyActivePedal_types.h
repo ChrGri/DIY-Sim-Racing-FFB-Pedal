@@ -111,8 +111,10 @@ typedef struct DapCalculationVariables
   float rpmMaxFreq_fl32;
   float rpmMinFreq_fl32;
   float rpmAmp_fl32;
-  int32_t stepperPosMin_i32;
-  int32_t stepperPosMax_i32;
+  int32_t softEndstopMinStepperPos_i32; // soft endstop min position in steps
+  int32_t softEndstopMaxStepperPos_i32; // soft endstop max position in steps
+  //int32_t hardEndstopMinStepperPos_i32; // hard endstop min position in steps. This should not be exceeded under any circumstances to avoid hardware damage
+  //int32_t hardEndstopMaxStepperPos_i32; // hard endstop max position in steps. This should not be exceeded under any circumstances to avoid hardware damage
   float stepperPosRange_fl32;
   float startPosRel_fl32;
   float endPosRel_fl32;

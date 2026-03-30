@@ -352,11 +352,12 @@ void IRAM_ATTR_FLAG DapCalculationVariables_t::updateEndstops(int32_t newMinEnds
   stepperPosMaxEndstop_i32 = newMaxEndstop_i32;
   stepperPosEndstopRange_i32 = stepperPosMaxEndstop_i32 - stepperPosMinEndstop_i32;
   
-  stepperPosMin_i32 = stepperPosEndstopRange_i32 * startPosRel_fl32;
-  stepperPosMax_i32 = stepperPosEndstopRange_i32 * endPosRel_fl32;
-  stepperPosMinDefault_i32 = stepperPosMin_i32;
-  stepperPosRange_fl32 = stepperPosMax_i32 - stepperPosMin_i32;
+  softEndstopMinStepperPos_i32 = stepperPosEndstopRange_i32 * startPosRel_fl32;
+  softEndstopMaxStepperPos_i32 = stepperPosEndstopRange_i32 * endPosRel_fl32;
+  stepperPosMinDefault_i32 = softEndstopMinStepperPos_i32;
+  stepperPosRange_fl32 = softEndstopMaxStepperPos_i32 - softEndstopMinStepperPos_i32;
   //currentPedalPositionRatio_fl32=((float)(currentPedalPosition_u32-stepperPosMinDefault_i32))/((float)stepperPosRangeDefault_fl32);
+
 }
 
 void IRAM_ATTR_FLAG DapCalculationVariables_t::updateStiffness()
@@ -374,29 +375,29 @@ void IRAM_ATTR_FLAG DapCalculationVariables_t::updateStiffness()
 
 void DapCalculationVariables_t::stepperPosSetback()
 {
-  stepperPosMin_i32 = stepperPosMinDefault_i32;
-  stepperPosMax_i32 = stepperPosMaxDefault_i32;
+  softEndstopMinStepperPos_i32 = stepperPosMinDefault_i32;
+  softEndstopMaxStepperPos_i32 = stepperPosMaxDefault_i32;
   stepperPosRange_fl32 = stepperPosRangeDefault_fl32;
 }
 
 void DapCalculationVariables_t::updateStepperMinPos(int32_t newMinstop_i32)
 {
-  stepperPosMin_i32 = newMinstop_i32;
+  softEndstopMinStepperPos_i32 = newMinstop_i32;
   
-  stepperPosRange_fl32 = stepperPosMax_i32 - stepperPosMin_i32;
+  stepperPosRange_fl32 = softEndstopMaxStepperPos_i32 - softEndstopMinStepperPos_i32;
 }
 
 void DapCalculationVariables_t::updateStepperMaxPos(int32_t newMaxstop_i32)
 {
   
-  stepperPosMax_i32 = newMaxstop_i32;
-  stepperPosRange_fl32 = stepperPosMax_i32 - stepperPosMin_i32;
+  softEndstopMaxStepperPos_i32 = newMaxstop_i32;
+  stepperPosRange_fl32 = softEndstopMaxStepperPos_i32 - softEndstopMinStepperPos_i32;
 }
 
 void DapCalculationVariables_t::setDefaultPos()
 {
-  stepperPosMinDefault_i32 = stepperPosMin_i32;
-  stepperPosMaxDefault_i32 = stepperPosMax_i32;
+  stepperPosMinDefault_i32 = softEndstopMinStepperPos_i32;
+  stepperPosMaxDefault_i32 = softEndstopMaxStepperPos_i32;
   stepperPosRangeDefault_fl32 = stepperPosRange_fl32;
 }
 
