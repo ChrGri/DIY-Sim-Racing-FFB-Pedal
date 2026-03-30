@@ -85,9 +85,6 @@ void DapConfig_t::initializeDefaults()
   payloadPedalConfig_st.joystickMapMapped09_u8 = 0;
   payloadPedalConfig_st.joystickMapMapped10_u8 = 0;
 
-  payloadPedalConfig_st.dampingPress_u8 = 0;
-  payloadPedalConfig_st.dampingPull_u8 = 0;
-
   payloadPedalConfig_st.absFrequency_u8 = 15;
   payloadPedalConfig_st.absAmplitude_u8 = 0;
   payloadPedalConfig_st.absPattern_u8 = 0;
@@ -140,6 +137,11 @@ void DapConfig_t::initializeDefaults()
   payloadPedalConfig_st.servoRatioOfInertia_u8 = 1;
   payloadPedalConfig_st.configHash_u32 = (uint32_t)175245064 ;
   payloadPedalConfig_st.endstopDetectionThreshold_u8 = 30;
+
+
+  payloadPedalConfig_st.virtualPedalDamping_u8 = 100;
+  payloadPedalConfig_st.virtualPedalMass_u8 = 10;
+
 }
 
 
@@ -298,7 +300,6 @@ void DapCalculationVariables_t::updateFromConfig(DapConfig_t& config_st)
   absFrequency_fl32 = ((float)config_st.payloadPedalConfig_st.absFrequency_u8);
   absAmplitude_fl32 = ((float)config_st.payloadPedalConfig_st.absAmplitude_u8)  *0.001f;//in percent, max 20% of force range
 
-  dampingPress_fl32 = ((float)config_st.payloadPedalConfig_st.dampingPress_u8) * 0.00015f;
   rpmMaxFreq_fl32 = ((float)config_st.payloadPedalConfig_st.rpmMaxFreq_u8);
   rpmMinFreq_fl32 = ((float)config_st.payloadPedalConfig_st.rpmMinFreq_u8);
   rpmAmp_fl32 = ((float)config_st.payloadPedalConfig_st.rpmAmp_u8)  * 0.0002f;//in kg, max 4% of force range

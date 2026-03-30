@@ -84,6 +84,10 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   float dampingRatio_zeta = 1.3f;  // Overdamped (zeta > 1) to ensure stability and "heavy" feel
   const float GRAVITY_N_KG = 9.81f; // Conversion constant for Kg to Newtons
 
+  // Convert virtual mass and damping
+  dampingRatio_zeta = ((float)config_st->payloadPedalConfig_st.virtualPedalDamping_u8) * 0.01f; // convert from percentage to ratio
+  virtualMass_kg = ((float)config_st->payloadPedalConfig_st.virtualPedalMass_u8) * 0.1f; // convert from decagrams to kg (10 decagrams = 1 kg)
+
   // Time step for integration (seconds), but use actual loop time for better performance and stability.
   // But make sure to protect against wrapsound of the timer by using uint64_t and checking for large dt values.
   uint64_t currentTimeUs = esp_timer_get_time();

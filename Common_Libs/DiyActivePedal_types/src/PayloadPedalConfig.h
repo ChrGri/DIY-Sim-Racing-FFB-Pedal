@@ -59,9 +59,6 @@ typedef struct __attribute__((packed)) PayloadPedalConfig
   uint8_t joystickMapMapped08_u8;
   uint8_t joystickMapMapped09_u8;
   uint8_t joystickMapMapped10_u8;
-  // parameter to configure damping
-  uint8_t dampingPress_u8;
-  uint8_t dampingPull_u8;
 
   // configure ABS effect 
   uint8_t absFrequency_u8; // In Hz
@@ -150,5 +147,8 @@ typedef struct __attribute__((packed)) PayloadPedalConfig
   uint8_t servoRatioOfInertia_u8;
   uint32_t configHash_u32;
   uint8_t endstopDetectionThreshold_u8;
+
+  uint8_t virtualPedalMass_u8;
+  uint8_t virtualPedalDamping_u8;
 
 } PayloadPedalConfig_t;

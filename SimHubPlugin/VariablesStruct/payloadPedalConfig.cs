@@ -72,10 +72,6 @@ namespace User.PluginSdkDemo
         public byte joystickMapMapped09;
         public byte joystickMapMapped10;
 
-        // parameter to configure damping
-        public byte dampingPress;
-        public byte dampingPull;
-
         // configure ABS effect 
         public byte absFrequency; // In Hz
         public byte absAmplitude; // In kg/20
@@ -163,6 +159,10 @@ namespace User.PluginSdkDemo
         public byte servoRatioOfInertia_u8;
         public UInt32 configHash_u32;
         public byte endstopDetectionThreshold;
+
+        // virtual pedal parameters
+        public byte virtualPedalMass_u8;
+        public byte virtualPedalDamping_u16;
 
     }
 }

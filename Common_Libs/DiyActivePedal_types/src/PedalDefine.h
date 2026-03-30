@@ -1,5 +1,5 @@
 #pragma once
-#define DAP_VERSION_CONFIG_U8 166U
+#define DAP_VERSION_CONFIG_U8 167U
 
 // define the payload types
 #define DAP_PAYLOAD_TYPE_CONFIG_U8 100U
