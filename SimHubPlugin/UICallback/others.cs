@@ -282,8 +282,6 @@ namespace User.PluginSdkDemo
             dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig09 = 0;
             dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig10 = 0;
 
-            dap_config_st_rudder.payloadPedalConfig_.dampingPress = 0;
-            dap_config_st_rudder.payloadPedalConfig_.dampingPull = 0;
             dap_config_st_rudder.payloadPedalConfig_.absFrequency = 5;
             dap_config_st_rudder.payloadPedalConfig_.absAmplitude = 20;
             dap_config_st_rudder.payloadPedalConfig_.absPattern = 0;
@@ -1173,8 +1171,6 @@ namespace User.PluginSdkDemo
             dap_config_st_rudder.payloadPedalConfig_.relativeTravel09 = Plugin.Settings.rudderTravel[9];
             dap_config_st_rudder.payloadPedalConfig_.relativeTravel10 = Plugin.Settings.rudderTravel[10];
 
-            dap_config_st_rudder.payloadPedalConfig_.dampingPress = Plugin.Settings.rudderDamping;
-            dap_config_st_rudder.payloadPedalConfig_.dampingPull = Plugin.Settings.rudderDamping;
             dap_config_st_rudder.payloadPedalConfig_.maxForce = Plugin.Settings.rudderMaxForce;
             dap_config_st_rudder.payloadPedalConfig_.preloadForce = Plugin.Settings.rudderMinForce;
             dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition = Plugin.Settings.rudderMinTravel;
@@ -1210,7 +1206,6 @@ namespace User.PluginSdkDemo
             Plugin.Settings.rudderTravel[9] = dap_config_st_rudder.payloadPedalConfig_.relativeTravel09;
             Plugin.Settings.rudderTravel[10] = dap_config_st_rudder.payloadPedalConfig_.relativeTravel10;
 
-            Plugin.Settings.rudderDamping = dap_config_st_rudder.payloadPedalConfig_.dampingPress;
             Plugin.Settings.rudderMaxForce = dap_config_st_rudder.payloadPedalConfig_.maxForce;
             Plugin.Settings.rudderMinForce = dap_config_st_rudder.payloadPedalConfig_.preloadForce;
             Plugin.Settings.rudderMinTravel = dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition;

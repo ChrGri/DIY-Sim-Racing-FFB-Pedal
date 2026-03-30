@@ -122,7 +122,6 @@ namespace User.PluginSdkDemo
                     Textbox_Online_Profile_Description.Text += "Preload: " + tmp_config.payloadPedalConfig_.preloadForce + "\n";
                     //Textbox_Online_Profile_Description.Text += "Max force: " + tmp_config.payloadPedalConfig_.maxForce + "\n";
                     Textbox_Online_Profile_Description.Text += "Travel: " + ((float)(tmp_config.payloadPedalConfig_.pedalEndPosition - tmp_config.payloadPedalConfig_.pedalStartPosition) / 100.0f * tmp_config.payloadPedalConfig_.lengthPedal_travel) + "\n";
-                    Textbox_Online_Profile_Description.Text += "Damping: " + tmp_config.payloadPedalConfig_.dampingPress + "\n";
                     switch (tmp_config.payloadPedalConfig_.kf_modelOrder)
                     {
                         case 0:

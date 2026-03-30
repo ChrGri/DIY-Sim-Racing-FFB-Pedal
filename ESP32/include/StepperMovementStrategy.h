@@ -85,8 +85,12 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   const float GRAVITY_N_KG = 9.81f; // Conversion constant for Kg to Newtons
 
   // Convert virtual mass and damping
-  dampingRatio_zeta = ((float)config_st->payloadPedalConfig_st.virtualPedalDamping_u8) * 0.01f; // convert from percentage to ratio
-  virtualMass_kg = ((float)config_st->payloadPedalConfig_st.virtualPedalMass_u8) * 0.1f; // convert from decagrams to kg (10 decagrams = 1 kg)
+  virtualMass_kg = ((float)config_st->payloadPedalConfig_st.virtualPedalMassInPercent_u8) * 0.01f; // convert from percentage to ratio, where 100% means the virtual mass is equal to the physical mass of the pedal faceplate (e.g., 0.5kg)
+  dampingRatio_zeta = ((float)config_st->payloadPedalConfig_st.virtualPedalDampingInPercent_u8) * 0.01f; // convert from percentage to ratio
+  virtualMass_kg = constrain(virtualMass_kg, 0.2f, 5.0f); // limit virtual mass to reasonable range
+  dampingRatio_zeta = constrain(dampingRatio_zeta, 0.5f, 2.0f); // limit damping ratio to reasonable range
+  
+
 
   // Time step for integration (seconds), but use actual loop time for better performance and stability.
   // But make sure to protect against wrapsound of the timer by using uint64_t and checking for large dt values.

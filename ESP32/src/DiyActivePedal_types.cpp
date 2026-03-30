@@ -139,8 +139,8 @@ void DapConfig_t::initializeDefaults()
   payloadPedalConfig_st.endstopDetectionThreshold_u8 = 30;
 
 
-  payloadPedalConfig_st.virtualPedalDamping_u8 = 100;
-  payloadPedalConfig_st.virtualPedalMass_u8 = 10;
+  payloadPedalConfig_st.virtualPedalDampingInPercent_u8 = 100;
+  payloadPedalConfig_st.virtualPedalMassInPercent_u8 = 30;
 
 }
 

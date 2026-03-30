@@ -148,7 +148,7 @@ typedef struct __attribute__((packed)) PayloadPedalConfig
   uint32_t configHash_u32;
   uint8_t endstopDetectionThreshold_u8;
 
-  uint8_t virtualPedalMass_u8;
-  uint8_t virtualPedalDamping_u8;
+  uint8_t virtualPedalMassInPercent_u8;
+  uint8_t virtualPedalDampingInPercent_u8;
 
 } PayloadPedalConfig_t;

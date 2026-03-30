@@ -162,7 +162,7 @@ namespace User.PluginSdkDemo
 
         // virtual pedal parameters
         public byte virtualPedalMass_u8;
-        public byte virtualPedalDamping_u16;
+        public byte virtualPedalDamping_u8;
 
     }
 }

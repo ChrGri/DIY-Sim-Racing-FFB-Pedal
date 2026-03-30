@@ -121,7 +121,7 @@ namespace User.PluginSdkDemo.UIFunction
                 {
                     try
                     {
-                        if (control.Slider_damping != null) control.Slider_damping.SliderValue = (double)(newData.payloadPedalConfig_.dampingPress * (double)control.Slider_damping.TickFrequency);
+                        //if (control.Slider_damping != null) control.Slider_damping.SliderValue = (double)(newData.payloadPedalConfig_.dampingPress * (double)control.Slider_damping.TickFrequency);
                         if (control.Slider_LC_rate != null) control.Slider_LC_rate.SliderValue = newData.payloadPedalConfig_.loadcell_rating * 2;
                         if (control.Slider_maxgame_output != null) control.Slider_maxgame_output.SliderValue = newData.payloadPedalConfig_.maxGameOutput;
                         if (control.Slider_ServoTimeout != null) control.Slider_ServoTimeout.SliderValue = newData.payloadPedalConfig_.servoIdleTimeout;
@@ -276,8 +276,8 @@ namespace User.PluginSdkDemo.UIFunction
         private void Slider_damping_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.dampingPress = (Byte)(e.NewValue / (double)Slider_damping.TickFrequency);
-            tmp.payloadPedalConfig_.dampingPull = (Byte)(e.NewValue / (double)Slider_damping.TickFrequency);
+            //tmp.payloadPedalConfig_.dampingPress = (Byte)(e.NewValue / (double)Slider_damping.TickFrequency);
+            //tmp.payloadPedalConfig_.dampingPull = (Byte)(e.NewValue / (double)Slider_damping.TickFrequency);
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
         }

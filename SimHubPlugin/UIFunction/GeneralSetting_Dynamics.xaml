@@ -25,10 +25,10 @@
                     <Label Content="Pedal Dynamics" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
                 </StackPanel>
                 <StackPanel Width="400" Height="50" Margin="0,0,0,0">
-                    <localUI:SliderWithLabel x:Name="Slider_VirtualPedalMass" SliderLength="400" SliderName="{SLoc DIYFFBPedalPlugin_TextServoSettingSliderServoSmoothness, 'Virtual pedal mass (in 0.1 kg)'}" SliderValue="30" MinValue="0" MaxValue="255" SliderValueChanged="Slider_VirtualPedalMassChanged" ToolTip="Adjust the value to enable servo smoothness filter, the filter may cause pedal oscillation. set 0 as default."/>
+                    <localUI:SliderWithLabel x:Name="Slider_VirtualPedalMass" SliderLength="400" SliderName="{SLoc DIYFFBPedalPlugin_TextServoSettingSliderServoSmoothness, 'Virtual pedal mass'}" SliderValue="0.3" MinValue="0.1" MaxValue="2.55"  TickFrequency="0.01" Unit="kg" SliderValueChanged="Slider_VirtualPedalMassChanged" ToolTip="Increase the value for stiffer pedal. Will increase likelihood of pedal oscillation."/>
                 </StackPanel>
                 <StackPanel Width="400" Height="50">
-                    <localUI:SliderWithLabel x:Name="Slider_VirtualDamping" SliderLength="400" SliderName="{SLoc DIYFFBPedalPlugin_TextServoSettingSliderServoInertia, 'Virtual pedal damping (in %)'}" SliderValue="100" MinValue="0" MaxValue="255" SliderValueChanged="Slider_VirtualPedalDampingChanged" TickFrequency="1" Unit="%" ToolTip="Increase the value for stiffer pedal. Will increase likelihood of pedal oscillation."/>
+                    <localUI:SliderWithLabel x:Name="Slider_VirtualDamping" SliderLength="400" SliderName="{SLoc DIYFFBPedalPlugin_TextServoSettingSliderServoInertia, 'Virtual pedal damping (zeta value)'}" SliderValue="130" MinValue="50" MaxValue="255" SliderValueChanged="Slider_VirtualPedalDampingChanged" TickFrequency="1" Unit="%" ToolTip="Increase the value for stiffer pedal. Will increase likelihood of pedal oscillation."/>
                 </StackPanel>
             </StackPanel>
 

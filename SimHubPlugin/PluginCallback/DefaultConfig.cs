@@ -71,8 +71,6 @@ namespace User.PluginSdkDemo
             DefaultConfig.payloadPedalConfig_.joystickMapOrig08 = 0;
             DefaultConfig.payloadPedalConfig_.joystickMapOrig09 = 0;
             DefaultConfig.payloadPedalConfig_.joystickMapOrig10 = 0;
-            DefaultConfig.payloadPedalConfig_.dampingPress = 0;
-            DefaultConfig.payloadPedalConfig_.dampingPull = 0;
             DefaultConfig.payloadPedalConfig_.absFrequency = 5;
             DefaultConfig.payloadPedalConfig_.absAmplitude = 20;
             DefaultConfig.payloadPedalConfig_.absPattern = 0;
@@ -126,6 +124,10 @@ namespace User.PluginSdkDemo
             DefaultConfig.payloadPedalConfig_.servoRatioOfInertia_u8 = 1;
             DefaultConfig.payloadPedalConfig_.configHash_u32 = 0;
             DefaultConfig.payloadPedalConfig_.endstopDetectionThreshold = 30;
+
+            DefaultConfig.payloadPedalConfig_.virtualPedalMass_u8 = 30;
+            DefaultConfig.payloadPedalConfig_.virtualPedalDamping_u8 = 100;
+
         }
 
     }

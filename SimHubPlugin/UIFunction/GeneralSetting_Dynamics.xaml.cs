@@ -24,7 +24,7 @@ namespace User.PluginSdkDemo.UIFunction
         public GeneralSetting_Dynamics()
         {
             InitializeComponent();
-            dap_config_st= new DAP_config_st();
+            dap_config_st = new DAP_config_st();
             //DataContext = this;
         }
         public static readonly DependencyProperty DAP_Config_Property = DependencyProperty.Register(
@@ -50,6 +50,7 @@ namespace User.PluginSdkDemo.UIFunction
             }
         }
 
+
         private static void OnPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is GeneralSetting_Dynamics control && e.NewValue is DAP_config_st newData)
@@ -58,8 +59,19 @@ namespace User.PluginSdkDemo.UIFunction
                 {
                     try
                     {
-                        if (control.Slider_VirtualPedalMass != null) control.Slider_VirtualPedalMass.SliderValue = newData.payloadPedalConfig_.virtualPedalMass_u8;
-                        if (control.Slider_VirtualDamping != null) control.Slider_VirtualDamping.SliderValue = newData.payloadPedalConfig_.virtualPedalDamping_u16;
+                        
+
+                        if (control.Slider_VirtualPedalMass != null)
+                        {
+                            control.Slider_VirtualPedalMass.SliderValue = (double)newData.payloadPedalConfig_.virtualPedalMass_u8 * (double)control.Slider_VirtualPedalMass.TickFrequency;
+
+                        }
+
+                        if (control.Slider_VirtualDamping != null)
+                        {
+                            control.Slider_VirtualDamping.SliderValue = (double)newData.payloadPedalConfig_.virtualPedalDamping_u8 * (double)control.Slider_VirtualDamping.TickFrequency;
+                        }
+
                     }
                     catch
                     {
@@ -76,17 +88,19 @@ namespace User.PluginSdkDemo.UIFunction
 
         private void Slider_VirtualPedalMassChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            double targetValue_fl64 = e.NewValue / (double)Slider_VirtualPedalMass.TickFrequency;
             var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.virtualPedalMass_u8 = (byte)e.NewValue;
+            tmp.payloadPedalConfig_.virtualPedalMass_u8 = (Byte)(targetValue_fl64);
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
         }
 
         public void Slider_VirtualPedalDampingChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            PosSmoothing_value = e.NewValue;
+
+            double targetValue_fl64 = e.NewValue / (double)Slider_VirtualDamping.TickFrequency;
             var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.virtualPedalDamping_u16 = (byte)PosSmoothing_value;
+            tmp.payloadPedalConfig_.virtualPedalDamping_u8 = (Byte)(targetValue_fl64);
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
         }
