@@ -164,5 +164,9 @@ namespace User.PluginSdkDemo
         public byte virtualPedalMass_u8;
         public byte virtualPedalDamping_u8;
 
+        // endstop parameters
+        public byte endstopStiffness_kg_mm_u8;
+        public byte endstopTravelRange_mm_u8;
+
     }
 }

@@ -193,9 +193,24 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   // Applied damping coefficient in [Newton-seconds / meter]
   float virtualDamping_Ns_m = dampingRatio_zeta * 2.0f * sqrtf(virtualMass_kg * localStiffness_N_m);
 
+  // soft endstop force calculation (if user tries to push beyond the upper limit, we apply a strong spring force pushing back, increasing with the distance beyond the limit)
+  float softEndstopForce_N = 0;
+  if( endstopBehavior_st.travelRange_mm_fl32 > 0.01f ) {
+    if (actualPosFraction_01 > 1.0f) {
+      float softEndstopForce_N_m = endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32 * 1000.0f; // convert from N/mm to N/m
+      float softEndstopDeflection_m = (actualPosFraction_01 - 1.0f) * totalTravel_m;
+      softEndstopForce_N = softEndstopForce_N_m * softEndstopDeflection_m;
+
+      // update virtual damping based on the stiffness of the soft endstop to prevent oscillations when hitting the endstop
+      virtualDamping_Ns_m = dampingRatio_zeta * 2.0f * sqrtf(virtualMass_kg * softEndstopForce_N_m);
+    }
+    upperTravelLimit_01 += endstopBehavior_st.travelRange_mm_fl32 / 1000.0f / totalTravel_m; // allow some extra travel beyond the upper limit for the soft endstop to work. [mm] converted to [m] and then to percentage of total travel
+  }
+
+
   // --- 6. ADMITTANCE PHYSICS MODEL (Mass-Spring-Damper) ---
   // F_net = F_human - F_spring - F_damping = M * a
-  float netForce_N = externalForce_N - springForce_N - (virtualDamping_Ns_m * g_vModelVel_mps);
+  float netForce_N = externalForce_N - springForce_N - softEndstopForce_N- (virtualDamping_Ns_m * g_vModelVel_mps);
   float acceleration_mps2 = netForce_N / virtualMass_kg;
 
   // Integrate acceleration to get physical velocity [m/s]

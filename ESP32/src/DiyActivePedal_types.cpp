@@ -138,9 +138,11 @@ void DapConfig_t::initializeDefaults()
   payloadPedalConfig_st.configHash_u32 = (uint32_t)175245064 ;
   payloadPedalConfig_st.endstopDetectionThreshold_u8 = 30;
 
-
   payloadPedalConfig_st.virtualPedalDampingInPercent_u8 = 100;
   payloadPedalConfig_st.virtualPedalMassInPercent_u8 = 30;
+
+  payloadPedalConfig_st.endstopStiffness_kg_mm_u8 = 50;
+  payloadPedalConfig_st.endstopTravelRange_mm_u8 = 10;
 
 }
 

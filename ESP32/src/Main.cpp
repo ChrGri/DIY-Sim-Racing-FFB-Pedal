@@ -1960,6 +1960,13 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       }
       else 
       {
+
+        endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.endstopStiffness_kg_mm_u8 * 9.81f; 
+        endstopBehavior_st.travelRange_mm_fl32 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.endstopTravelRange_mm_u8;
+
+        endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32 = constrain(endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32, 0.0f, 500.0f); // constrain the stiffness to a max value for safety
+        endstopBehavior_st.travelRange_mm_fl32 = constrain(endstopBehavior_st.travelRange_mm_fl32, 0.0f, 10.0f); // constrain the stiffness to a max value for safety
+        
         // Pedal control algorithm
         Position_Next = MoveByAdmittanceStrategy(filteredReading
           , stepper

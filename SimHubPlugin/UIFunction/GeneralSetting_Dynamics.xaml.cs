@@ -72,6 +72,17 @@ namespace User.PluginSdkDemo.UIFunction
                             control.Slider_VirtualDamping.SliderValue = (double)newData.payloadPedalConfig_.virtualPedalDamping_u8 * (double)control.Slider_VirtualDamping.TickFrequency;
                         }
 
+                        if (control.Slider_SoftEndstopTravelRange != null)
+                        {
+                            control.Slider_SoftEndstopTravelRange.SliderValue = (double)newData.payloadPedalConfig_.endstopTravelRange_mm_u8 * (double)control.Slider_SoftEndstopTravelRange.TickFrequency;
+                        }
+
+                        if (control.Slider_SoftEndstopStiffness != null)
+                        {
+                            control.Slider_SoftEndstopStiffness.SliderValue = (double)newData.payloadPedalConfig_.endstopStiffness_kg_mm_u8 * (double)control.Slider_SoftEndstopStiffness.TickFrequency;
+                        }
+       
+
                     }
                     catch
                     {
@@ -101,6 +112,25 @@ namespace User.PluginSdkDemo.UIFunction
             double targetValue_fl64 = e.NewValue / (double)Slider_VirtualDamping.TickFrequency;
             var tmp = dap_config_st;
             tmp.payloadPedalConfig_.virtualPedalDamping_u8 = (Byte)(targetValue_fl64);
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
+
+
+        public void Slider_SoftEndstopTravelRangeChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            double targetValue_fl64 = e.NewValue / (double)Slider_SoftEndstopTravelRange.TickFrequency;
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.endstopTravelRange_mm_u8 = (Byte)(targetValue_fl64);
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
+
+        public void Slider_SoftEndstopStiffnessChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            double targetValue_fl64 = e.NewValue / (double)Slider_SoftEndstopStiffness.TickFrequency;
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = (Byte)(targetValue_fl64);
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
         }
