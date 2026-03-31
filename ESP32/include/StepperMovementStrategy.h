@@ -94,17 +94,20 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
 
   // Time step for integration (seconds), but use actual loop time for better performance and stability.
   // But make sure to protect against wrapsound of the timer by using uint64_t and checking for large dt values.
-  uint64_t currentTimeUs = esp_timer_get_time();
-  static uint64_t lastTimeUs = 0;
-  if (lastTimeUs == 0) {
-    lastTimeUs = currentTimeUs;
-  }
-  float dt_s = ((float)currentTimeUs - (float)lastTimeUs) * 1e-6f;
-  if (dt_s > 1.0f || dt_s <= 0.0f) {
-    // If the time step is too large (e.g., due to timer wraparound or long loop delay), reset it to a default value to prevent instability.
-    dt_s = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
-  }
-  lastTimeUs = currentTimeUs;
+  //uint64_t currentTimeUs = esp_timer_get_time();
+  //static uint64_t lastTimeUs = 0;
+  //if (lastTimeUs == 0) {
+  //  lastTimeUs = currentTimeUs;
+  //}
+  //float dt_s = ((float)currentTimeUs - (float)lastTimeUs) * 1e-6f;
+  //if (dt_s > 1.0f || dt_s <= 0.0f) {
+  //  // If the time step is too large (e.g., due to timer wraparound or long loop delay), reset it to a default value to prevent instability.
+  //  dt_s = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
+  //}
+  //lastTimeUs = currentTimeUs;
+
+  // dont use dynamic timer due to possible accumulation error --> improved numerical stability
+  float dt_s = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
 
 
   // Calculate total physical travel in meters
@@ -118,16 +121,22 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   float actualPosFraction_01 = stepper->getCurrentPositionFraction(); 
   int32_t actualPosFromHardMinEndstop_steps_i32 = stepper->getCurrentPosition();
 
+  // actual position from servo
+  int32_t actualPosFromHardMinEndstopFromServo_steps_i32 = stepper->getServosInternalPositionCorrected() + stepper->getServosPosError();
+  float actualPosFractionFromServo_01 = (float)(actualPosFromHardMinEndstopFromServo_steps_i32 - stepper->getMinPosition()) / (float)stepper->getTravelSteps();
+
   // --- 2. SPRING REACTION (The Force Curve) ---
   // 2. Read the spring force (target force) from the spline based on current physical position
   // We use actualPosFraction_01 here to couple the "feel" to the pedal's real location
-  float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(actualPosFraction_01, 0.0f, 1.0f));
+  //float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(actualPosFraction_01, 0.0f, 1.0f));
+  float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(g_vModelPos_01, 0.0f, 1.0f));
   float springForce_N = springForceRaw_kg * GRAVITY_N_KG;
 
   // --- 3. DYNAMIC STIFFNESS & DAMPING ---
   // Calculate local physical spring stiffness (N/m) 
   // units are kg/step, convert to N/m: (kg/step) * (steps/m) * (N/kg) = N/m
-  float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, constrain(actualPosFraction_01, 0.0f, 1.0f), false);
+  //float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, constrain(actualPosFraction_01, 0.0f, 1.0f), false);
+  float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, constrain(g_vModelPos_01, 0.0f, 1.0f), false);
   float localStiffness_N_m = max(localStiffness_kg_step * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG, 1.0f);
 
 
@@ -196,9 +205,9 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   // soft endstop force calculation (if user tries to push beyond the upper limit, we apply a strong spring force pushing back, increasing with the distance beyond the limit)
   float softEndstopForce_N = 0;
   if( endstopBehavior_st.travelRange_mm_fl32 > 0.01f ) {
-    if (actualPosFraction_01 > 1.0f) {
+    if (g_vModelPos_01 > 1.0f) {
       float softEndstopForce_N_m = endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32 * 1000.0f; // convert from N/mm to N/m
-      float softEndstopDeflection_m = (actualPosFraction_01 - 1.0f) * totalTravel_m;
+      float softEndstopDeflection_m = (g_vModelPos_01 - 1.0f) * totalTravel_m;
       softEndstopForce_N = softEndstopForce_N_m * softEndstopDeflection_m;
 
       // update virtual damping based on the stiffness of the soft endstop to prevent oscillations when hitting the endstop
@@ -208,9 +217,77 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   }
 
 
+  float lagPenaltyForce_N = 0.0f; // initialize lag penalty force
+  float activeDampingForce_N = 0.0f; // initialize active damping force
+//#define ACTIVE_OSCILATION_COMPENSATION_ENABLED // enable advanced anti-oscillation compensation using servo feedback analysis and virtual coupling
+#ifdef ACTIVE_OSCILATION_COMPENSATION_ENABLED
+  // --- ANTI-OSCILLATION COMPENSATION ---
+  // --- SERVO FEEDBACK ANALYSIS (Anti-Oscillation & Lead Compensation) ---
+  uint32_t currentServoCycle_u32 = stepper->getServoCycleCounter();
+  
+  static uint32_t lastServoCycle_u32 = 0;
+  static float lastServoPos_01 = 0.0f;
+  static float lastRawServoVel_mps = 0.0f;
+  static float filteredServoVel_mps = 0.0f;
+  
+  // Eigener Timer, der die Zeit zwischen zwei Servo-Updates misst
+  static float timeSinceLastServoUpdate_s = 0.0f;
+  timeSinceLastServoUpdate_s += dt_s; // In jedem 300us Loop aufsummieren
+
+  // Nur ableiten, wenn WIRKLICH ein neues Positionspaket vom Servo angekommen ist
+  if (currentServoCycle_u32 != lastServoCycle_u32) {
+      
+      // Sicherheits-Check: Verhindert Division durch Null und filtert den allerersten 
+      // Start-Zyklus sowie extreme Kommunikationsausfälle (>100ms) heraus.
+      if (timeSinceLastServoUpdate_s > 0.001f && timeSinceLastServoUpdate_s < 0.1f) {
+          
+          // Geschwindigkeit = Strecke / Aufsummierte Wartezeit
+          lastRawServoVel_mps = ((actualPosFractionFromServo_01 - lastServoPos_01) / timeSinceLastServoUpdate_s) * totalTravel_m;
+      }
+      
+      // Zustand für das nächste Update speichern
+      lastServoPos_01 = actualPosFractionFromServo_01;
+      lastServoCycle_u32 = currentServoCycle_u32;
+      
+      // Timer für die nächste Messung zurücksetzen!
+      timeSinceLastServoUpdate_s = 0.0f; 
+  }
+
+  // Leichter Tiefpass auf das stufenförmige Hold-Signal
+  filteredServoVel_mps = (filteredServoVel_mps * 0.9f) + (lastRawServoVel_mps * 0.1f);
+
+  // B: VIRTUAL COUPLING (Bremsklotz für Servo-Lag)
+  // Wie weit hängt der physische Servo dem Modell hinterher?
+  float servoLagError_01 = g_vModelPos_01 - actualPosFractionFromServo_01;
+  const float STIFFNESS_PENALTY_N = calc_st->forceRange_fl32 * GRAVITY_N_KG * 0.5f; 
+  lagPenaltyForce_N = servoLagError_01 * STIFFNESS_PENALTY_N;
+
+  // C: DAMPING INJECTION
+  // Nutzt die Geschwindigkeitsdifferenz, um Schwingungen aktiv zu bremsen
+  float velError_mps = g_vModelVel_mps - filteredServoVel_mps;
+  activeDampingForce_N = velError_mps * (virtualDamping_Ns_m * 0.4f);
+#endif
+
   // --- 6. ADMITTANCE PHYSICS MODEL (Mass-Spring-Damper) ---
-  // F_net = F_human - F_spring - F_damping = M * a
-  float netForce_N = externalForce_N - springForce_N - softEndstopForce_N- (virtualDamping_Ns_m * g_vModelVel_mps);
+  // F_net = F_human - F_spring - F_softEndstop - F_damping - F_penalty - F_activeDamping
+  float dampingForce_N = virtualDamping_Ns_m * g_vModelVel_mps;
+  float netForce_N = externalForce_N - springForce_N - softEndstopForce_N - dampingForce_N - lagPenaltyForce_N - activeDampingForce_N;
+
+
+  // --- COULOMB REIBUNG (Anti-Oscillation) ---
+  const float COULOMB_FRICTION_N = 2.5f; // z.B. 2.5 Newton Widerstand
+  if (g_vModelVel_mps > 0.001f) {
+      netForce_N -= COULOMB_FRICTION_N; // Bremst Vorwärtsbewegung
+  } else if (g_vModelVel_mps < -0.001f) {
+      netForce_N += COULOMB_FRICTION_N; // Bremst Rückwärtsbewegung
+  } else {
+      // Wenn das Pedal (fast) still steht, muss die Netto-Kraft größer als die Reibung sein,
+      // um eine Beschleunigung auszulösen (Stiction / Haftreibung)
+      if (abs(netForce_N) < COULOMB_FRICTION_N) {
+          netForce_N = 0.0f; 
+      }
+  }
+
   float acceleration_mps2 = netForce_N / virtualMass_kg;
 
   // Integrate acceleration to get physical velocity [m/s]
@@ -251,7 +328,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   // Synchronize the virtual model with the actual stepper command position
   // This prevents the model from diverging due to integration errors or floating point drift.
   float divergence_01 = actualPosFraction_01 - g_vModelPos_01;
-  g_vModelPos_01 += divergence_01 * 0.05f; // 5% correction per cycle
+  g_vModelPos_01 += divergence_01 * 0.01f; // 1% correction per cycle
 
   // --- 9. STEP CONVERSION & OUTPUT ---
   // Convert normalized position to stepper integer steps

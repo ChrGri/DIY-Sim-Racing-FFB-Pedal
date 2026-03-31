@@ -85,6 +85,7 @@
 
 
 struct isv57dynamicStates {
+    int32_t servo_cycleCounter_u32 = 0;
     int16_t servo_pos_given_p = 0;
     int16_t servo_pos_error_p = 0;
     int16_t servo_current_percent = 0;
@@ -124,6 +125,7 @@ class Isv57Communication {
     void applyOfsetToZeroPos(int16_t givenPosOffset_i16);
     int16_t getZeroPos();
     int16_t getPosFromMin();
+    int32_t getServoCycleCounter();
     int16_t regArray[NUMBER_OF_ISV57_REGISTERS_TO_READ_IN_CYCLIC_READ];
 
     int16_t slaveId = 63; 

@@ -94,6 +94,7 @@ public:
 
 	int32_t getPositionDeviation();
 	int32_t getServosInternalPosition();
+	uint32_t getServoCycleCounter();
 	//int32_t getStepLossCompensation();
 	int32_t getServosVoltage();
 	int32_t getServosCurrent();

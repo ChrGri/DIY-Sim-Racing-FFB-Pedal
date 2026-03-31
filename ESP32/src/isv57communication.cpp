@@ -481,6 +481,10 @@ int16_t Isv57Communication::getPosFromMin()
   return isv57dynamicStates_.servo_pos_given_p - zeroPos;
 }
 
+int32_t Isv57Communication::getServoCycleCounter()
+{
+  return isv57dynamicStates_.servo_cycleCounter_u32;
+}
 
 // read servo states
 void Isv57Communication::readServoStates() {
@@ -513,7 +517,7 @@ void Isv57Communication::readServoStates() {
   
 
   isv57dynamicStates_.lastUpdateTimeInMS_u32 = millis();
-
+  isv57dynamicStates_.servo_cycleCounter_u32++;
   
   
   //#define ENABLE_SERVO_STATE_PRINTING

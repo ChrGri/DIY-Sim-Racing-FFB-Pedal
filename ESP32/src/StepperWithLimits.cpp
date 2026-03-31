@@ -597,6 +597,11 @@ int32_t StepperWithLimits::getServosInternalPositionCorrected()
 }
 
 
+uint32_t StepperWithLimits::getServoCycleCounter()
+{
+	return isv57.isv57dynamicStates_.servo_cycleCounter_u32;
+}
+
 
 int32_t StepperWithLimits::getServosInternalPosition()
 {
