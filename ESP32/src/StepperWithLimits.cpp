@@ -248,7 +248,7 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st)
 		/************************************************************/
 		/* 					min endstop	detection					*/
 		/************************************************************/
-		bool endPosDetected = true; // abs( isv57.servo_current_percent) > STEPPER_WITH_LIMITS_SENSORLESS_CURRENT_THRESHOLD_IN_PERCENT;
+		bool endPosDetected = true; 
 		int32_t setPosition = 0;
 
 		
@@ -309,7 +309,7 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st)
 		float maxRevToReachEndPos = (float)dap_config_st.payloadPedalConfig_st.lengthPedalTravel_i16 / spindlePitch;
 		float maxStepsToReachEndPos = maxRevToReachEndPos * (float)stepsPerMotorRev_u32;
   
-		endPosDetected = false; //abs( isv57.servo_current_percent) > STEPPER_WITH_LIMITS_SENSORLESS_CURRENT_THRESHOLD_IN_PERCENT;
+		endPosDetected = false;
 		
 		// run continously in one direction until endstop is hit
 		_stepper->keepRunningForward(MAXIMUM_STEPPER_SPEED_U32 / 16);
@@ -495,29 +495,13 @@ void StepperWithLimits::correctPos()
 bool StepperWithLimits::getLifelineSignal()
 {
 	bool signal_b = false;
-	// if(s_semaphore_lifelineSignal!=NULL)
-	// {
-	// 	// Take the semaphore and just update the config file, then release the semaphore
-	// 	if(xSemaphoreTake(s_semaphore_lifelineSignal, pdMS_TO_TICKS(1))==pdTRUE)
-	// 	{
-		  signal_b = isv57LifeSignal_b;
-	// 	}
-
-	// }
-
+	signal_b = isv57LifeSignal_b;
 	return signal_b;
 }
 
 void StepperWithLimits::setLifelineSignal()
 {
-	// if(s_semaphore_lifelineSignal!=NULL)
-	// {
-	// 	// Take the semaphore and just update the config file, then release the semaphore
-	// 	if(xSemaphoreTake(s_semaphore_lifelineSignal, pdMS_TO_TICKS(1))==pdTRUE)
-	// 	{
-		  isv57LifeSignal_b = isv57.checkCommunication();
-// 		}
-// 	}
+	isv57LifeSignal_b = isv57.checkCommunication();
 }
 
 
@@ -871,18 +855,36 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 
 					
 
+					
+
+
 					#ifdef BRAKE_RESISTOR_PIN_U8
+    
+						// Statische Variable für den Zeitstempel. -1000 funktioniert hier auch nach dem Cast sauber.
+						static int64_t time_brakeResistorLastHighVoltage = -1000;
 
 						float brakeResistorVoltageOn_inV_fl32 = (s_servoBusVoltageParameterized_fl32 + BRAKE_RESISTOR_UPPER_TRHESHOLD_VOLTAGE);
 						float brakeResistorVoltageOff_inV_fl32 = (s_servoBusVoltageParameterized_fl32 + BRAKE_RESISTOR_LOWER_TRHESHOLD_VOLTAGE);
 						
 						float busVoltage_inV_fl32 = ( (float)stepper_cl->getServosVoltage() ) * 0.1f;
-						int64_t brakeResistorUpTime_i64 = timeNow_isv57SerialCommunicationTask_l - time_brakeResistorLastPassive;
 						
-						if ((busVoltage_inV_fl32 > brakeResistorVoltageOn_inV_fl32 && !stepper_cl->brakeResistorState_b)
-							|| (stepper_cl->brakeResistorState_b && 
-								brakeResistorUpTime_i64 < BRAKE_RESISTOR_DEACTIVATION_TIME_IN_MS &&
-								busVoltage_inV_fl32 > brakeResistorVoltageOff_inV_fl32))
+						// Überlaufsichere Differenzberechnung durch Cast auf uint32_t
+						uint32_t brakeResistorUpTime_u32 = (uint32_t)timeNow_isv57SerialCommunicationTask_l - (uint32_t)time_brakeResistorLastPassive;
+						
+						// 1. Prüfen, ob die Spannungs-Bedingungen erfüllt sind
+						bool voltageConditionMet_b = (busVoltage_inV_fl32 > brakeResistorVoltageOn_inV_fl32 && !stepper_cl->brakeResistorState_b)
+												|| (stepper_cl->brakeResistorState_b && busVoltage_inV_fl32 > brakeResistorVoltageOff_inV_fl32);
+
+						// 2. Zeitstempel aktualisieren, solange die Spannung zu hoch ist
+						if (voltageConditionMet_b) {
+							time_brakeResistorLastHighVoltage = timeNow_isv57SerialCommunicationTask_l;
+						}
+
+						// Überlaufsichere Differenzberechnung für das Nachglühen
+						uint32_t timeSinceLastHighVoltage_u32 = (uint32_t)timeNow_isv57SerialCommunicationTask_l - (uint32_t)time_brakeResistorLastHighVoltage;
+
+						// 3. Schalten: Jetzt sind beide Timer gegen den 50-Tage-Overflow abgesichert
+						if ( (timeSinceLastHighVoltage_u32 <= 30) && (brakeResistorUpTime_u32 < BRAKE_RESISTOR_DEACTIVATION_TIME_IN_MS) )
 						{
 							digitalWrite(BRAKE_RESISTOR_PIN_U8, HIGH); 
 							stepper_cl->brakeResistorState_b = true;
@@ -895,7 +897,6 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 						}
 						
 					#endif
-
 
 					if(semaphore_readServoValues!=NULL)
 					{
@@ -1048,14 +1049,14 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 						if (cond_timeSinceHitMinPositionLargerThanThreshold_2 && (true == stepper_cl->enableCrashDetection_b))
 						{
 							
-							bool servoCurrentLow_b = abs(stepper_cl->isv57.isv57dynamicStates_.servo_current_percent) < 50;//200;
+							bool servoCurrentLow_b = abs( stepper_cl->getServosCurrent() ) < 50;
 							if (!servoCurrentLow_b)
 							{
 
 								// positive current means positive rotation 
 								// bool minBlockCrashDetected_b = false;
 								// bool maxBlockCrashDetected_b = false;
-								if (stepper_cl->isv57.isv57dynamicStates_.servo_current_percent > 0) // if current is positive, the rotation will be positive and thus the sled will move towards the user
+								if (stepper_cl->getServosCurrent() > 0) // if current is positive, the rotation will be positive and thus the sled will move towards the user
 								{
 									// minBlockCrashDetected_b = true; 
 									stepper_cl->isv57.applyOfsetToZeroPos(-500); // bump up a bit to prevent the servo from pushing against the endstop continously
@@ -1075,7 +1076,7 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 								ActiveSerial->print(minBlockCrashDetected_b);
 
 								ActiveSerial->print("curr: ");
-								ActiveSerial->print(isv57.servo_current_percent);
+								ActiveSerial->print(stepper_cl->getServosCurrent());
 								
 								ActiveSerial->print("posError: ");
 								ActiveSerial->print(isv57.servo_pos_error_p);
