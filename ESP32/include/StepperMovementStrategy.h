@@ -290,6 +290,21 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
 
   float acceleration_mps2 = netForce_N / virtualMass_kg;
 
+  // --- NEU: BACK-EMF SCHUTZ (Deceleration Clamping) ---
+  // Rekuperation (Spannungsspitzen) entsteht immer dann, wenn der Motor aktiv abbremst.
+  // Das ist der Fall, wenn Geschwindigkeit und Beschleunigung entgegengesetzte Vorzeichen haben.
+  // Wir kappen diese harte Verzögerung auf ein elektrisch verträgliches Maß.
+  const float MAX_DECEL_MPS2 = 10.0f; // Einstellbar: Max. Bremsverzögerung (z.B. 1 G)
+
+  // 1. Abbremsen der Vorwärtsbewegung (z.B. durch Soft-Endstop)
+  if (g_vModelVel_mps > 0.01f && acceleration_mps2 < -MAX_DECEL_MPS2) {
+      acceleration_mps2 = -MAX_DECEL_MPS2;
+  } 
+  // 2. Abbremsen der Rückwärtsbewegung (z.B. beim Loslassen des Pedals)
+  else if (g_vModelVel_mps < -0.01f && acceleration_mps2 > MAX_DECEL_MPS2) {
+      acceleration_mps2 = MAX_DECEL_MPS2;
+  }
+
   // Integrate acceleration to get physical velocity [m/s]
   g_vModelVel_mps += acceleration_mps2 * dt_s;
 
@@ -314,14 +329,23 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
       g_vModelPos_01 = 0.0f;
   }
 
-  // --- 7. BOUNDARY CONSTRAINTS ---
-  // Hard constraint at mechanical boundaries (inelastic collision)
+  // --- 7. BOUNDARY CONSTRAINTS (Soft Landing) ---
+  // Das "harte Nullen" der Geschwindigkeit bei den Endstops erzeugt massive EMF-Spikes.
+  // Stattdessen bremsen wir das Modell mit der maximal zulässigen Verzögerung ab.
   if (g_vModelPos_01 <= lowerTravelLimit_01) {
       g_vModelPos_01 = lowerTravelLimit_01;
-      if (g_vModelVel_mps < 0.0f) g_vModelVel_mps = 0.0f;
+      if (g_vModelVel_mps < 0.0f) {
+          // Bremsung sanft über Zeit abbauen statt instantan auf 0 zu setzen
+          g_vModelVel_mps += 2.0f * MAX_DECEL_MPS2 * dt_s; 
+          if (g_vModelVel_mps > 0.0f) g_vModelVel_mps = 0.0f;
+      }
   } else if (g_vModelPos_01 >= upperTravelLimit_01) {
       g_vModelPos_01 = upperTravelLimit_01;
-      if (g_vModelVel_mps > 0.0f) g_vModelVel_mps = 0.0f;
+      if (g_vModelVel_mps > 0.0f) {
+          // Bremsung sanft über Zeit abbauen
+          g_vModelVel_mps -= 2.0f * MAX_DECEL_MPS2 * dt_s; 
+          if (g_vModelVel_mps < 0.0f) g_vModelVel_mps = 0.0f;
+      }
   }
 
   // --- 8. DRIFT CORRECTION (State Synchronization) ---
