@@ -290,19 +290,30 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
 
   float acceleration_mps2 = netForce_N / virtualMass_kg;
 
-  // --- NEU: BACK-EMF SCHUTZ (Deceleration Clamping) ---
-  // Rekuperation (Spannungsspitzen) entsteht immer dann, wenn der Motor aktiv abbremst.
-  // Das ist der Fall, wenn Geschwindigkeit und Beschleunigung entgegengesetzte Vorzeichen haben.
-  // Wir kappen diese harte Verzögerung auf ein elektrisch verträgliches Maß.
-  const float MAX_DECEL_MPS2 = 10.0f; // Einstellbar: Max. Bremsverzögerung (z.B. 1 G)
+  // --- NEU: LOAD-DEPENDENT BACK-EMF SCHUTZ  ---
+  // Physik: P_regen = Drehmoment * Geschwindigkeit. 
+  // Hohe Loadcell-Kraft = Hohes Drehmoment. Bremsen unter hohem Drehmoment erzeugt massive EMF!
+  // Daher: Starke Bremsungen nur erlauben, wenn die Last/Kraft gering ist.
+  
+  float footForce_kg = max(0.0f, loadCellReadingKg_fl32); 
 
-  // 1. Abbremsen der Vorwärtsbewegung (z.B. durch Soft-Endstop)
-  if (g_vModelVel_mps > 0.01f && acceleration_mps2 < -MAX_DECEL_MPS2) {
-      acceleration_mps2 = -MAX_DECEL_MPS2;
+  const float DECEL_LOW_FORCE_MPS2  = 10.0f;  // Schnelles Bremsen bei 0kg erlaubt (wenig Drehmoment = wenig EMF)
+  const float DECEL_HIGH_FORCE_MPS2 = 2.0f;  // Strenges Brems-Limit bei viel Last (Schutz vor 65V Spikes!)
+  const float FORCE_THRESHOLD_KG    = 30.0f;  // Kraft, ab der das strengste Limit voll greift
+
+  // Lineare Interpolation (0.0 bei 0kg, 1.0 bei >= 30kg)
+  float decelFactor_01 = constrain(footForce_kg / FORCE_THRESHOLD_KG, 0.0f, 1.0f);
+  
+  // Der dynamische Grenzwert (Startet bei DECEL_LOW_FORCE_MPS2 und sinkt bei steigender Kraft auf DECEL_HIGH_FORCE_MPS2)
+  float dynamicMaxDecel_mps2 = DECEL_LOW_FORCE_MPS2 + decelFactor_01 * (DECEL_HIGH_FORCE_MPS2 - DECEL_LOW_FORCE_MPS2);
+
+  // 1. Abbremsen der Vorwärtsbewegung (z.B. harter Tritt in den Soft-Endstop)
+  if (g_vModelVel_mps > 0.01f && acceleration_mps2 < -dynamicMaxDecel_mps2) {
+      acceleration_mps2 = -dynamicMaxDecel_mps2;
   } 
-  // 2. Abbremsen der Rückwärtsbewegung (z.B. beim Loslassen des Pedals)
-  else if (g_vModelVel_mps < -0.01f && acceleration_mps2 > MAX_DECEL_MPS2) {
-      acceleration_mps2 = MAX_DECEL_MPS2;
+  // 2. Abbremsen der Rückwärtsbewegung (z.B. Pedal schnellt gegen die 0-Position)
+  else if (g_vModelVel_mps < -0.01f && acceleration_mps2 > dynamicMaxDecel_mps2) {
+      acceleration_mps2 = dynamicMaxDecel_mps2;
   }
 
   // Integrate acceleration to get physical velocity [m/s]
