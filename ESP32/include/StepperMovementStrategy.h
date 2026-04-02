@@ -124,6 +124,13 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   // actual position from servo
   int32_t actualPosFromHardMinEndstopFromServo_steps_i32 = stepper->getServosInternalPositionCorrected() + stepper->getServosPosError();
   float actualPosFractionFromServo_01 = (float)(actualPosFromHardMinEndstopFromServo_steps_i32 - stepper->getMinPosition()) / (float)stepper->getTravelSteps();
+  int32_t actualPosErrorFromServo_steps_i32 = stepper->getServosPosError();
+  // check position error to be in valid range, if not, set it to 0 for safety
+  if (abs(actualPosErrorFromServo_steps_i32) > 1000u) {
+    actualPosErrorFromServo_steps_i32 = 0;
+  }
+  float posErrorFromServo_m_fl32 = 0.001f * (float)actualPosErrorFromServo_steps_i32 * motorRevolutionsPerSteps_fl32 * config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8;
+
 
   // --- 2. SPRING REACTION (The Force Curve) ---
   // 2. Read the spring force (target force) from the spline based on current physical position
@@ -219,7 +226,9 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
 
   float lagPenaltyForce_N = 0.0f; // initialize lag penalty force
   float activeDampingForce_N = 0.0f; // initialize active damping force
-//#define ACTIVE_OSCILATION_COMPENSATION_ENABLED // enable advanced anti-oscillation compensation using servo feedback analysis and virtual coupling
+  lagPenaltyForce_N = posErrorFromServo_m_fl32 * localStiffness_N_m; // simple proportional penalty based on the position error from the servo feedback, scaled by the local stiffness. This creates a "virtual coupling" effect that helps to pull the virtual model towards the physical reality, improving stability and reducing oscillations without destroying the inertia and damping dynamics of the system.
+
+  //#define ACTIVE_OSCILATION_COMPENSATION_ENABLED // enable advanced anti-oscillation compensation using servo feedback analysis and virtual coupling
 #ifdef ACTIVE_OSCILATION_COMPENSATION_ENABLED
   // --- ANTI-OSCILLATION COMPENSATION ---
   // --- SERVO FEEDBACK ANALYSIS (Anti-Oscillation & Lead Compensation) ---
