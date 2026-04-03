@@ -227,7 +227,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   float lagPenaltyForce_N = 0.0f; // initialize lag penalty force
   float activeDampingForce_N = 0.0f; // initialize active damping force
   // negative value means servo lags the true position ==> k * (x + delta_x) = true spring force
-  lagPenaltyForce_N = 1.0f * posErrorFromServo_m_fl32 * localStiffness_N_m; // simple proportional penalty based on the position error from the servo feedback, scaled by the local stiffness. This creates a "virtual coupling" effect that helps to pull the virtual model towards the physical reality, improving stability and reducing oscillations without destroying the inertia and damping dynamics of the system.
+  //lagPenaltyForce_N = 1.0f * posErrorFromServo_m_fl32 * localStiffness_N_m; // simple proportional penalty based on the position error from the servo feedback, scaled by the local stiffness. This creates a "virtual coupling" effect that helps to pull the virtual model towards the physical reality, improving stability and reducing oscillations without destroying the inertia and damping dynamics of the system.
 
   //#define ACTIVE_OSCILATION_COMPENSATION_ENABLED // enable advanced anti-oscillation compensation using servo feedback analysis and virtual coupling
 #ifdef ACTIVE_OSCILATION_COMPENSATION_ENABLED
