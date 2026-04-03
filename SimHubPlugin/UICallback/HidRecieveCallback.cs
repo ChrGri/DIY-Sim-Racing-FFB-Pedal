@@ -280,23 +280,23 @@ namespace User.PluginSdkDemo
                                             using (StreamWriter writer = new StreamWriter(filePath, true))
                                             {
                                                 // Write the content to the file
-                                                writer.Write("cycleCtr");
-                                                writer.Write(", time_InUs");
+                                                writer.Write("WriterIdx");
+                                                writer.Write(", servoStateCycleCount_u32");
+                                                writer.Write(", servoPositionTarget_i32");
+                                                writer.Write(", servoPositionFeedback_i32");
+                                                writer.Write(", servoPositionError_i16");
+                                                writer.Write(", servoVoltage_fl32");
+                                                writer.Write(", servoCurrentPercent_i16");
+
+                                                writer.Write(", timeInUs_u32");
                                                 writer.Write(", cycleCount_u32");
-                                                writer.Write(", forceRaw_InKg");
-                                                writer.Write(", forceFiltered_InKg");
-                                                writer.Write(", forceVelocity_InKgPerSec");
-                                                writer.Write(", servoPos_InSteps");
-                                                writer.Write(", servoPosEsp_InSteps");
-                                                writer.Write(", servoPosError_InSteps");
-                                                writer.Write(", servoCurrent_InPercent");
-                                                writer.Write(", servoVoltage_InV");
-                                                writer.Write(", angleSensorOutput");
+                                                writer.Write(", pedalForceRaw_fl32");
+                                                writer.Write(", pedalForceFiltered_fl32");
+                                                writer.Write(", forceVelEst_fl32");
+                                                writer.Write(", targetPosition_i32");
+                                                writer.Write(", currentSpeedInHz_i32");
                                                 writer.Write(", brakeResistorState_b");
-                                                writer.Write(", servoPosEstimated_InSteps");
-                                                writer.Write(", targetPosition_InSteps");
-                                                writer.Write(", currentSpeedInMilliHz_i32");
-                                                //writer.Write(", servoPositionEstimated_stepperPos_i16");
+
                                                 writer.Write("\n");
                                             }
 
@@ -308,7 +308,24 @@ namespace User.PluginSdkDemo
                                             writeCntr++;
 
                                             // Build the entire string in one line using interpolation
-                                            writer.WriteLine($"{writeCntr},{state.timeInUs_u32},{state.cycleCount_u32},{state.pedalForce_raw_fl32},{state.pedalForce_filtered_fl32},{state.forceVel_est_fl32},{state.servoPosition_i32},{state.servoPositionTarget_i32},{state.servo_position_error_i16},{state.servo_current_percent_i16},{state.servo_voltage_0p1V_i16 / 10.0f},{state.angleSensorOutput_ui16},{state.brakeResistorState_b},{state.servoPositionEstimated_i16},{state.targetPosition_i32},{state.currentSpeedInMilliHz_i32}");
+                                            writer.WriteLine(
+                                                $"{writeCntr}" +
+
+                                                $",{state.servoStateCycleCount_u32}" +
+                                                $",{state.servoPositionTarget_i32}" +
+                                                $",{state.servoPositionFeedback_i32}" +
+                                                $",{state.servoPositionError_i16}" +
+                                                $",{state.servoVoltage0p1V_i16 / 10.0f}" +
+                                                $",{state.servoCurrentPercent_i16}" +
+
+                                                $",{state.timeInUs_u32}" +
+                                                $",{state.cycleCount_u32}" +
+                                                $",{state.pedalForceRaw_fl32}" +
+                                                $",{state.pedalForceFiltered_fl32}" +
+                                                $",{state.forceVelEst_fl32}" +
+                                                $",{state.targetPosition_i32}" +
+                                                $",{state.currentSpeedInHz_i32}" +
+                                                $",{state.brakeResistorState_b}");
                                         }
 
 

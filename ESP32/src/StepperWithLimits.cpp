@@ -434,17 +434,16 @@ bool StepperWithLimits::isAtMinPos()
   return isAtMinPos && isNotRunning;
 }
 
-int32_t StepperWithLimits::getCurrentSpeedInMilliHz()
+int32_t StepperWithLimits::getCurrentSpeedInHz()
 {
 	return _stepper->getMaxSpeed();
 	// return MAXIMUM_STEPPER_SPEED * 1000;
 }
 
-uint32_t StepperWithLimits::getMaxSpeedInMilliHz()
+uint32_t StepperWithLimits::getMaxSpeedInHz()
 {
-	// return _stepper->getMaxSpeedInMilliHz();
 	// Hz to mHz: 1 Hz = 1000 milli Hz
-	return MAXIMUM_STEPPER_SPEED_U32 * 1000;
+	return MAXIMUM_STEPPER_SPEED_U32;
 } 
 
 
@@ -531,15 +530,6 @@ int32_t StepperWithLimits::getServosPosError()
 	return isv57.isv57dynamicStates_.servo_pos_error_p;
 }
 
-int32_t StepperWithLimits::getEstimatedPosError()
-{
-	return isv57.isv57dynamicStates_.estimated_pos_error_i16;
-}
-
-// int32_t StepperWithLimits::getEstimatedPosError_getCurrentStepperPos()
-// {
-// 	return isv57.isv57dynamicStates_.estimated_pos_error_currentStepperPos_i16;
-// }
 
 
 
@@ -964,14 +954,6 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 					
 
 					stepper_cl->setServosInternalPositionCorrected(servoPosCorrected_i32);
-					
-					
-					// estimate position offset between ESPs target position and true servo position
-					int16_t estServoOffsetInSteps_i16 = stepper_cl->getServosInternalPositionCorrected() + stepper_cl->getServosPosError() - stepper_cl->getCurrentPosition();
-					estServoOffsetInSteps_i16 = constrain(estServoOffsetInSteps_i16, -MAX_ESTIMATED_SERVO_OFFSET, MAX_ESTIMATED_SERVO_OFFSET );
-					stepper_cl->isv57.isv57dynamicStates_.estimated_pos_error_i16 = estServoOffsetInSteps_i16;
-					// stepper_cl->isv57.isv57dynamicStates_.estimated_pos_error_currentStepperPos_i16 = stepper_cl->getCurrentPosition();
-					
 					
 					
 					int32_t servo_offset_compensation_steps_local_i32;// = 0;

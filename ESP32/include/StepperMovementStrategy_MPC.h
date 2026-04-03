@@ -40,12 +40,6 @@ int32_t MoveByForceTargetingStrategy(float loadCellReadingKg_fl32, StepperWithLi
   // get current stepper position
   float stepperPos_fl32 = stepper->getCurrentPositionFromMin();
 
-  float estimatedServoPosErrorInSteps_fl32 = stepper->getEstimatedPosError();
-  if (0)
-  {
-    stepperPos_fl32 += estimatedServoPosErrorInSteps_fl32;
-  }
-
 
   // float lagedPos;
 
@@ -84,9 +78,9 @@ int32_t MoveByForceTargetingStrategy(float loadCellReadingKg_fl32, StepperWithLi
   }
 
   // get current stepper velocity
-  int32_t currentSpeedInMilliHz = stepper->getCurrentSpeedInMilliHz();
-  uint32_t maxSpeedInMilliHz = stepper->getMaxSpeedInMilliHz();
-  float speedNormalized_fl32 = ( (float)currentSpeedInMilliHz ) / ((float)maxSpeedInMilliHz)  ; // 250000000 --> 250
+  int32_t currentSpeedInHz = stepper->getCurrentSpeedInHz();
+  uint32_t maxSpeedInHz = stepper->getMaxSpeedInHz();
+  float speedNormalized_fl32 = ( (float)currentSpeedInHz ) / ((float)maxSpeedInHz)  ; // 250000000 --> 250
   float speedAbsNormalized_fl32 = constrain( fabsf(speedNormalized_fl32), 0.1f, 1.0f);
   float oneMinusSpeedNormalized_fl32 = 1.0f - speedAbsNormalized_fl32;
   
@@ -132,7 +126,7 @@ int32_t MoveByForceTargetingStrategy(float loadCellReadingKg_fl32, StepperWithLi
 
   // velocity dependent force in kg = (kg*s/step) * (step/s)
   float forceInKgAndSecondPerStep_fl32 = dFTDXHor_fl32 * dXHorDStep_fl32;
-  float velocityDependingForceInKg_fl32 = forceInKgAndSecondPerStep_fl32 * (currentSpeedInMilliHz / 1000.0f);
+  float velocityDependingForceInKg_fl32 = forceInKgAndSecondPerStep_fl32 * currentSpeedInHz;
 
   // acceleration dependent force in kg = (kg*s^2/step) * (step/(s^2))
   float forceInKgAndSecondSquarePerStep_fl32 = dFTtDXHor_fl32 * dXHorDStep_fl32;

@@ -81,8 +81,8 @@ public:
 	float getCurrentPositionFraction() const;
 	float getCurrentPositionFractionFromExternalPos(int32_t extPos_i32) const;
 		int32_t getTargetPositionSteps() const;
-	int32_t getCurrentSpeedInMilliHz();
-	uint32_t getMaxSpeedInMilliHz();
+	int32_t getCurrentSpeedInHz();
+	uint32_t getMaxSpeedInHz();
 	
 	bool isRunning();
 	void keepRunningInDir(bool forwardDir_b, uint32_t speed_u32);
@@ -100,7 +100,6 @@ public:
 	int32_t getServosCurrent();
 	int32_t getServosPos();
 	int32_t getServosPosError();
-	int32_t getEstimatedPosError();
 	//int32_t getEstimatedPosError_getCurrentStepperPos();
 	
 	bool getLifelineSignal();

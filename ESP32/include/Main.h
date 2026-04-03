@@ -465,7 +465,6 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #endif
   #define BAUDRATE3M
   #define PEDAL_SOFTWARE_ASSIGNMENT
-  // #define ANGLE_SENSOR_GPIO 11 // disabled by default, since to much runtime impact of ADC
 #endif
 
 
@@ -508,7 +507,6 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #endif
   #define BAUDRATE3M
   #define PEDAL_SOFTWARE_ASSIGNMENT
-  // #define ANGLE_SENSOR_GPIO 11 // disabled by default, since to much runtime impact of ADC
 #endif
 
 

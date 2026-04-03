@@ -1,33 +1,57 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-0104\\SimHubPlugin\\",
+  "WorkspaceRootPath": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-0104\\simhubplugin\\uielement\\ncalcscripteditor.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|c:\\users\\chris\\onedrive\\desktop\\git\\diy-sim-racing-active-pedal\\simhubplugin\\uicallback\\serialtimer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uicallback\\serialtimer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|c:\\users\\chris\\onedrive\\desktop\\git\\diy-sim-racing-active-pedal\\simhubplugin\\uicallback\\hidrecievecallback.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uicallback\\hidrecievecallback.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|c:\\users\\chris\\onedrive\\desktop\\git\\diy-sim-racing-active-pedal\\simhubplugin\\uicallback\\bridgeserialtimerorig.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uicallback\\bridgeserialtimerorig.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|c:\\users\\chris\\onedrive\\desktop\\git\\diy-sim-racing-active-pedal\\simhubplugin\\uicallback\\bridgeserialtimer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uicallback\\bridgeserialtimer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|c:\\users\\chris\\onedrive\\desktop\\git\\diy-sim-racing-active-pedal\\simhubplugin\\variablesstruct\\payloadpedalstate_extended.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:variablesstruct\\payloadpedalstate_extended.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|c:\\users\\chris\\onedrive\\desktop\\git\\diy-sim-racing-active-pedal\\simhubplugin\\variablesstruct\\constants.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:variablesstruct\\constants.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|c:\\users\\chris\\onedrive\\desktop\\git\\diy-sim-racing-active-pedal\\simhubplugin\\uielement\\ncalcscripteditor.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uielement\\ncalcscripteditor.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-0104\\simhubplugin\\uifunction\\effectstab_custom.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\uifunction\\effectstab_custom.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\effectstab_custom.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-0104\\simhubplugin\\uifunction\\effectstab_custom.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\uifunction\\effectstab_custom.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\effectstab_custom.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-0104\\simhubplugin\\uielement\\ncalcscripteditor.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\uielement\\ncalcscripteditor.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uielement\\ncalcscripteditor.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-0104\\simhubplugin\\language\\diyactivepedal.resx||{FF4D6ACA-9352-4A5F-821E-F4D6EBDCAB11}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\language\\diyactivepedal.resx||{FF4D6ACA-9352-4A5F-821E-F4D6EBDCAB11}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:language\\diyactivepedal.resx||{FF4D6ACA-9352-4A5F-821E-F4D6EBDCAB11}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-0104\\simhubplugin\\diyffbpedal.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\diyffbpedal.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:diyffbpedal.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|x:\\ac mod\\private works\\activepedal\\simhub_plugin\\v90-0104\\simhubplugin\\uifunction\\updatesettingwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\uifunction\\updatesettingwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\updatesettingwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     }
   ],
@@ -38,94 +62,170 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "EffectsTab_Custom.xaml.cs",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-0104\\SimHubPlugin\\UIFunction\\EffectsTab_Custom.xaml.cs",
-              "RelativeDocumentMoniker": "UIFunction\\EffectsTab_Custom.xaml.cs",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-0104\\SimHubPlugin\\UIFunction\\EffectsTab_Custom.xaml.cs",
-              "RelativeToolTip": "UIFunction\\EffectsTab_Custom.xaml.cs",
-              "ViewState": "AgIAAIEBAAAAAAAAAAAiwNUAAAAeAAAAAAAAAA==",
+              "DocumentIndex": 0,
+              "Title": "SerialTImer.cs",
+              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UICallback\\SerialTImer.cs",
+              "RelativeDocumentMoniker": "UICallback\\SerialTImer.cs",
+              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UICallback\\SerialTImer.cs",
+              "RelativeToolTip": "UICallback\\SerialTImer.cs",
+              "ViewState": "AgIAAJABAAAAAAAAAAAawLMBAABfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-13T22:50:51.306Z",
+              "WhenOpened": "2026-04-03T03:48:21.754Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "EffectsTab_Custom.xaml",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-0104\\SimHubPlugin\\UIFunction\\EffectsTab_Custom.xaml",
-              "RelativeDocumentMoniker": "UIFunction\\EffectsTab_Custom.xaml",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-0104\\SimHubPlugin\\UIFunction\\EffectsTab_Custom.xaml",
-              "RelativeToolTip": "UIFunction\\EffectsTab_Custom.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-02-13T22:46:23.071Z",
+              "Title": "HidRecieveCallback.cs",
+              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UICallback\\HidRecieveCallback.cs",
+              "RelativeDocumentMoniker": "UICallback\\HidRecieveCallback.cs",
+              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UICallback\\HidRecieveCallback.cs*",
+              "RelativeToolTip": "UICallback\\HidRecieveCallback.cs*",
+              "ViewState": "AgIAAAYBAAAAAAAAAAAawBwBAAAwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-03T03:48:06.598Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "BridgeSerialTimerOrig.cs",
+              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UICallback\\BridgeSerialTimerOrig.cs",
+              "RelativeDocumentMoniker": "UICallback\\BridgeSerialTimerOrig.cs",
+              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UICallback\\BridgeSerialTimerOrig.cs*",
+              "RelativeToolTip": "UICallback\\BridgeSerialTimerOrig.cs*",
+              "ViewState": "AgIAADsBAAAAAAAAAAAawFEBAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-03T03:47:49.129Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "BridgeSerialTimer.cs",
+              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UICallback\\BridgeSerialTimer.cs",
+              "RelativeDocumentMoniker": "UICallback\\BridgeSerialTimer.cs",
+              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UICallback\\BridgeSerialTimer.cs",
+              "RelativeToolTip": "UICallback\\BridgeSerialTimer.cs",
+              "ViewState": "AgIAADABAAAAAAAAAAAawEYBAAA8AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-03T03:41:45.988Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 5,
-              "Title": "DIYFFBPedal.cs",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-0104\\SimHubPlugin\\DIYFFBPedal.cs",
-              "RelativeDocumentMoniker": "DIYFFBPedal.cs",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-0104\\SimHubPlugin\\DIYFFBPedal.cs",
-              "RelativeToolTip": "DIYFFBPedal.cs",
-              "ViewState": "AgIAACcBAAAAAAAAAAAQwCcBAAANAAAAAAAAAA==",
+              "Title": "constants.cs",
+              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\VariablesStruct\\constants.cs",
+              "RelativeDocumentMoniker": "VariablesStruct\\constants.cs",
+              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\VariablesStruct\\constants.cs",
+              "RelativeToolTip": "VariablesStruct\\constants.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAA6AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-02-13T22:39:34.574Z",
+              "WhenOpened": "2026-04-03T03:40:37.128Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 4,
+              "Title": "payloadPedalState_Extended.cs",
+              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\VariablesStruct\\payloadPedalState_Extended.cs",
+              "RelativeDocumentMoniker": "VariablesStruct\\payloadPedalState_Extended.cs",
+              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\VariablesStruct\\payloadPedalState_Extended.cs",
+              "RelativeToolTip": "VariablesStruct\\payloadPedalState_Extended.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAEwBsAAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-03T03:23:20.897Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "EffectsTab_Custom.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIFunction\\EffectsTab_Custom.xaml.cs",
+              "RelativeDocumentMoniker": "UIFunction\\EffectsTab_Custom.xaml.cs",
+              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIFunction\\EffectsTab_Custom.xaml.cs",
+              "RelativeToolTip": "UIFunction\\EffectsTab_Custom.xaml.cs",
+              "ViewState": "AgIAAIEBAAAAAAAAAAAiwNUAAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-13T22:50:51.306Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "EffectsTab_Custom.xaml",
+              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIFunction\\EffectsTab_Custom.xaml",
+              "RelativeDocumentMoniker": "UIFunction\\EffectsTab_Custom.xaml",
+              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIFunction\\EffectsTab_Custom.xaml",
+              "RelativeToolTip": "UIFunction\\EffectsTab_Custom.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-02-13T22:46:23.071Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "DIYFFBPedal.cs",
+              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\DIYFFBPedal.cs",
+              "RelativeDocumentMoniker": "DIYFFBPedal.cs",
+              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\DIYFFBPedal.cs",
+              "RelativeToolTip": "DIYFFBPedal.cs",
+              "ViewState": "AgIAACcBAAAAAAAAAAAQwCcBAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-02-13T22:39:34.574Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
               "Title": "NcalcScriptEditor.xaml.cs",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-0104\\SimHubPlugin\\UIElement\\NcalcScriptEditor.xaml.cs",
+              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIElement\\NcalcScriptEditor.xaml.cs",
               "RelativeDocumentMoniker": "UIElement\\NcalcScriptEditor.xaml.cs",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-0104\\SimHubPlugin\\UIElement\\NcalcScriptEditor.xaml.cs",
+              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIElement\\NcalcScriptEditor.xaml.cs",
               "RelativeToolTip": "UIElement\\NcalcScriptEditor.xaml.cs",
-              "ViewState": "AgIAABQAAAAAAAAAAAAxwBgAAAAmAAAAAAAAAA==",
+              "ViewState": "AgIAABUAAAAAAAAAAAAAABgAAAAmAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-02-13T22:25:45.103Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 10,
               "Title": "DiyActivePedal.resx",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-0104\\SimHubPlugin\\Language\\DiyActivePedal.resx",
+              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\Language\\DiyActivePedal.resx",
               "RelativeDocumentMoniker": "Language\\DiyActivePedal.resx",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-0104\\SimHubPlugin\\Language\\DiyActivePedal.resx",
+              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\Language\\DiyActivePedal.resx",
               "RelativeToolTip": "Language\\DiyActivePedal.resx",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001005|",
-              "WhenOpened": "2026-02-13T22:21:30.216Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-13T22:21:30.216Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 9,
               "Title": "NcalcScriptEditor.xaml",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-0104\\SimHubPlugin\\UIElement\\NcalcScriptEditor.xaml",
+              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIElement\\NcalcScriptEditor.xaml",
               "RelativeDocumentMoniker": "UIElement\\NcalcScriptEditor.xaml",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-0104\\SimHubPlugin\\UIElement\\NcalcScriptEditor.xaml",
+              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIElement\\NcalcScriptEditor.xaml",
               "RelativeToolTip": "UIElement\\NcalcScriptEditor.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-02-13T22:19:52.346Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-13T22:19:52.346Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 12,
               "Title": "UpdateSettingWindow.xaml",
-              "DocumentMoniker": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-0104\\SimHubPlugin\\UIFunction\\UpdateSettingWindow.xaml",
+              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIFunction\\UpdateSettingWindow.xaml",
               "RelativeDocumentMoniker": "UIFunction\\UpdateSettingWindow.xaml",
-              "ToolTip": "X:\\AC MOD\\private works\\ActivePedal\\simhub_plugin\\V90-0104\\SimHubPlugin\\UIFunction\\UpdateSettingWindow.xaml",
+              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIFunction\\UpdateSettingWindow.xaml",
               "RelativeToolTip": "UIFunction\\UpdateSettingWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-02-13T22:20:30.635Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-02-13T22:20:30.635Z"
             }
           ]
         }

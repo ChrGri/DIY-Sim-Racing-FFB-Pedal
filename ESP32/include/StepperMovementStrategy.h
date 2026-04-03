@@ -126,7 +126,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   float actualPosFractionFromServo_01 = (float)(actualPosFromHardMinEndstopFromServo_steps_i32 - stepper->getMinPosition()) / (float)stepper->getTravelSteps();
   int32_t actualPosErrorFromServo_steps_i32 = stepper->getServosPosError();
   // check position error to be in valid range, if not, set it to 0 for safety
-  if (abs(actualPosErrorFromServo_steps_i32) > 1000u) {
+  if (abs(actualPosErrorFromServo_steps_i32) > 3700u) {
     actualPosErrorFromServo_steps_i32 = 0;
   }
   float posErrorFromServo_m_fl32 = 0.001f * (float)actualPosErrorFromServo_steps_i32 * motorRevolutionsPerSteps_fl32 * config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8;
@@ -226,7 +226,8 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
 
   float lagPenaltyForce_N = 0.0f; // initialize lag penalty force
   float activeDampingForce_N = 0.0f; // initialize active damping force
-  lagPenaltyForce_N = posErrorFromServo_m_fl32 * localStiffness_N_m; // simple proportional penalty based on the position error from the servo feedback, scaled by the local stiffness. This creates a "virtual coupling" effect that helps to pull the virtual model towards the physical reality, improving stability and reducing oscillations without destroying the inertia and damping dynamics of the system.
+  // negative value means servo lags the true position ==> k * (x + delta_x) = true spring force
+  lagPenaltyForce_N = 1.0f * posErrorFromServo_m_fl32 * localStiffness_N_m; // simple proportional penalty based on the position error from the servo feedback, scaled by the local stiffness. This creates a "virtual coupling" effect that helps to pull the virtual model towards the physical reality, improving stability and reducing oscillations without destroying the inertia and damping dynamics of the system.
 
   //#define ACTIVE_OSCILATION_COMPENSATION_ENABLED // enable advanced anti-oscillation compensation using servo feedback analysis and virtual coupling
 #ifdef ACTIVE_OSCILATION_COMPENSATION_ENABLED
@@ -307,7 +308,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   float footForce_kg = max(0.0f, loadCellReadingKg_fl32); 
 
   const float DECEL_LOW_FORCE_MPS2  = 10.0f;  // Schnelles Bremsen bei 0kg erlaubt (wenig Drehmoment = wenig EMF)
-  const float DECEL_HIGH_FORCE_MPS2 = 2.0f;  // Strenges Brems-Limit bei viel Last (Schutz vor 65V Spikes!)
+  const float DECEL_HIGH_FORCE_MPS2 = 5.0f;  // Strenges Brems-Limit bei viel Last (Schutz vor 65V Spikes!)
   const float FORCE_THRESHOLD_KG    = 30.0f;  // Kraft, ab der das strengste Limit voll greift
 
   // Lineare Interpolation (0.0 bei 0kg, 1.0 bei >= 30kg)
@@ -317,13 +318,13 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
   float dynamicMaxDecel_mps2 = DECEL_LOW_FORCE_MPS2 + decelFactor_01 * (DECEL_HIGH_FORCE_MPS2 - DECEL_LOW_FORCE_MPS2);
 
   // 1. Abbremsen der Vorwärtsbewegung (z.B. harter Tritt in den Soft-Endstop)
-  if (g_vModelVel_mps > 0.01f && acceleration_mps2 < -dynamicMaxDecel_mps2) {
+  /*if (g_vModelVel_mps > 0.01f && acceleration_mps2 < -dynamicMaxDecel_mps2) {
       acceleration_mps2 = -dynamicMaxDecel_mps2;
   } 
   // 2. Abbremsen der Rückwärtsbewegung (z.B. Pedal schnellt gegen die 0-Position)
   else if (g_vModelVel_mps < -0.01f && acceleration_mps2 > dynamicMaxDecel_mps2) {
       acceleration_mps2 = dynamicMaxDecel_mps2;
-  }
+  }*/
 
   // Integrate acceleration to get physical velocity [m/s]
   g_vModelVel_mps += acceleration_mps2 * dt_s;
@@ -356,14 +357,14 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(float loadCellReadingKg_fl32, St
       g_vModelPos_01 = lowerTravelLimit_01;
       if (g_vModelVel_mps < 0.0f) {
           // Bremsung sanft über Zeit abbauen statt instantan auf 0 zu setzen
-          g_vModelVel_mps += 2.0f * MAX_DECEL_MPS2 * dt_s; 
+          g_vModelVel_mps += 2.0f * DECEL_LOW_FORCE_MPS2 * dt_s; 
           if (g_vModelVel_mps > 0.0f) g_vModelVel_mps = 0.0f;
       }
   } else if (g_vModelPos_01 >= upperTravelLimit_01) {
       g_vModelPos_01 = upperTravelLimit_01;
       if (g_vModelVel_mps > 0.0f) {
           // Bremsung sanft über Zeit abbauen
-          g_vModelVel_mps -= 2.0f * MAX_DECEL_MPS2 * dt_s; 
+          g_vModelVel_mps -= 2.0f * DECEL_LOW_FORCE_MPS2 * dt_s; 
           if (g_vModelVel_mps < 0.0f) g_vModelVel_mps = 0.0f;
       }
   }

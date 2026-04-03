@@ -90,7 +90,6 @@ struct isv57dynamicStates {
     int16_t servo_pos_error_p = 0;
     int16_t servo_current_percent = 0;
     int16_t servoVoltage0p1V_i16 = 0;
-    int16_t estimated_pos_error_i16 = 0;
     int16_t servo_velocity_given_rpm_i16 = 0;
     int16_t servo_position_feedback_i16 = 0;
     // int16_t estimated_pos_error_currentStepperPos_i16 = 0;

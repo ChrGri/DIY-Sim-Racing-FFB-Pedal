@@ -797,11 +797,6 @@ void setup()
     pinMode(EMERGENCY_PIN_U8,INPUT_PULLUP);
   #endif
 
-  #ifdef ANGLE_SENSOR_GPIO
-
-    pinMode(ANGLE_SENSOR_GPIO, INPUT);
-    pinMode(ANGLE_SENSOR_GPIO_2, INPUT);
-  #endif
   
 
   #ifdef USING_LED
@@ -1510,7 +1505,6 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
   static float changeVelocity = 0.0f;
   static float normalizedPedalReading_fl32 = 0.0f;
   static float stepperPosFraction_fl32 = 0.0f;
-  static uint16_t angleReading_ui16 = 0;
   static bool sendBasicFlag_b = false;
   static bool sendExtendedFlag_b = false;
   static int32_t stepperPosCurrent_i32;
@@ -1764,16 +1758,6 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       }
       profiler_pedalUpdateTask.end(2);
 
-
-
-      
-  #ifdef ANGLE_SENSOR_GPIO
-        angleReading_ui16 = analogRead(ANGLE_SENSOR_GPIO);
-  #endif
-
-      // Get the angle measurement reading
-      // float angleReading = loadcell->getAngleMeasurement();
-    
 
       // start profiler 3, loadcell reading conversion
       profiler_pedalUpdateTask.start(3);
@@ -2324,28 +2308,32 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           dap_state_extended_st_lcl_pedalUpdateTask.payloadFooter_st.enfOfFrame0_u8 =  EOF_BYTE_0_U8; // 170
           dap_state_extended_st_lcl_pedalUpdateTask.payloadFooter_st.enfOfFrame1_u8 =  EOF_BYTE_1_U8; // 86
 
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.pedalTag_u8 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.pedalType_u8;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_STATE_EXTENDED_U8;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
+
+
           // update extended struct 
+          int32_t minPos = 0; //stepper->getMinPosition();
+
+          // Servo states
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoStateCycleCount_u32 = stepper->getServoCycleCounter();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionTarget_i32 = stepper->getServosInternalPositionCorrected();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionFeedback_i32 = stepper->getServosInternalPositionCorrected() + stepper->getServosPosError() - minPos;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionError_i16 = stepper->getServosPosError();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoVoltage0p1V_i16 =  stepper->getServosVoltage();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoCurrentPercent_i16 = stepper->getServosCurrent();
+
+          // ESP states
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.timeInUs_u32 = micros();
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.cycleCount_u32 = cycleCount_u32;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.pedalForceRaw_fl32 =  loadcellReading;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.pedalForceFiltered_fl32 =  filteredReading;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.forceVelEst_fl32 =  changeVelocity;
-
-          int32_t minPos = 0; //stepper->getMinPosition();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPosition_i32 = stepper->getServosInternalPositionCorrected() - minPos;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoVoltage0p1V_i16 =  stepper->getServosVoltage();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoCurrentPercent_i16 = stepper->getServosCurrent();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionError_i16 = stepper->getServosPosError();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionEstimated_i16 = stepper->getEstimatedPosError();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.targetPosition_i32 = Position_Next - minPos;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionTarget_i32 = stepper->getCurrentPosition() - minPos;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.currentSpeedInMilliHz_i32 = stepper->getCurrentSpeedInMilliHz();
-
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.angleSensorOutput_u16 = angleReading_ui16;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.targetPosition_i32 = stepper->getCurrentPosition() - minPos;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.currentSpeedInHz_i32 = stepper->getCurrentSpeedInHz();
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.brakeResistorState_b = stepper->getBrakeResistorState();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.pedalTag_u8 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.pedalType_u8;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_STATE_EXTENDED_U8;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
+
         }
 
 
