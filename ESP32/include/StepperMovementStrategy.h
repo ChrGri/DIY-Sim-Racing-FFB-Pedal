@@ -20,7 +20,7 @@ typedef struct {
 
 
 // --- Global Admittance & Stability Variables ---
-// renamed from g_admittancePos_fl32 and g_admittanceVel_fl32
+// These variables maintain state across control cycles
 float g_vModelPos_01 = 0.0f;    // Normalized virtual position [0.0 to 1.0]
 float g_vModelVel_mps = 0.0f;   // Physical virtual velocity [meters/second]
 float g_oscillationIntensity_01 = 0.0f; // 0.0 = stable, 1.0 = heavy oscillation detected
@@ -77,14 +77,14 @@ float g_oscillationIntensity_01 = 0.0f; // 0.0 = stable, 1.0 = heavy oscillation
  * @return int32_t The next absolute target position in steps for the stepper motor driver.
  */
 int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
-float loadCellReadingKg_fl32
-, StepperWithLimits* stepper
-, ForceCurveInterpolated* forceCurve
-, const DapCalculationVariables_t* calc_st
-, DapConfig_t* config_st
-, EffectOffsets_t effectOffsets_st
-, EndstopBehavior_t endstopBehavior_st
-, RudderOffsets_t rudderOffsets_st)
+  float loadCellReadingKg_fl32, 
+  StepperWithLimits* stepper, 
+  ForceCurveInterpolated* forceCurve, 
+  const DapCalculationVariables_t* calc_st, 
+  DapConfig_t* config_st, 
+  EffectOffsets_t effectOffsets_st, 
+  EndstopBehavior_t endstopBehavior_st, 
+  RudderOffsets_t rudderOffsets_st)
 {
   // --- 1. PHYSICAL PARAMETERS & CONFIGURATION ---
   // Time step for integration (seconds). We use a constant interval for improved numerical stability.
@@ -100,21 +100,25 @@ float loadCellReadingKg_fl32
   dampingRatio_zeta = constrain(dampingRatio_zeta, 0.5f, 5.0f); 
 
 
-  // --- 2. OSCILLATION DETECTION (Active Oscillation Mitigation) ---
+  // --- 2. OSCILLATION DETECTION (Active Oscillation Mitigation - AOM) ---
   // Analyze the Force Rate (dF/dt) to detect high-frequency instability/jitter.
-  // Human input rarely exceeds 200 kg/s jitter. Anything above is likely a limit cycle oscillation.
   static float lastLoadCell_kg = 0.0f;
   float currentForceRate_kgs = (loadCellReadingKg_fl32 - lastLoadCell_kg) / dt_s;
   lastLoadCell_kg = loadCellReadingKg_fl32;
 
   float activity = abs(currentForceRate_kgs);
-  float FORCE_RATE_KG_PER_SECOND_DETECTION_THRESHOLD_FL32 = 400.0f; // <== this value was derived empirically from plots
-  if (activity > FORCE_RATE_KG_PER_SECOND_DETECTION_THRESHOLD_FL32) {
+  
+  // Parameters tuned via offline simulation (Python aom_simulation.py)
+  const float AOM_THRESHOLD_FL32 = 300.0f; // Lowered for earlier detection
+  const float AOM_ATTACK_FL32    = 20.0f;  // Increased for rapid response (4x faster)
+  const float AOM_DECAY_FL32     = 3.0f;   // Decay rate when signal stabilizes
+
+  if (activity > AOM_THRESHOLD_FL32) {
       // High frequency chatter detected: ramp up oscillation intensity quickly
-      g_oscillationIntensity_01 += 5.0f * dt_s; 
+      g_oscillationIntensity_01 += AOM_ATTACK_FL32 * dt_s; 
   } else {
       // Stable signal: allow intensity to decay gradually
-      g_oscillationIntensity_01 -= 2.0f * dt_s; 
+      g_oscillationIntensity_01 -= AOM_DECAY_FL32 * dt_s; 
   }
   g_oscillationIntensity_01 = constrain(g_oscillationIntensity_01, 0.0f, 1.0f);
 
@@ -229,7 +233,7 @@ float loadCellReadingKg_fl32
   // SOFT LEASH: Synchronize the virtual model with the actual stepper command position
   // to prevent divergence due to numerical drift without corrupting second-order dynamics.
   float divergence_01 = actualPosFraction_01 - g_vModelPos_01;
-  g_vModelPos_01 += divergence_01 * 0.0005f; // 0.1% correction per cycle. At 300us, thats 300us / 0.0005 = 600ms/100% 
+  g_vModelPos_01 += divergence_01 * 0.0005f; // 0.05% correction per cycle. 
 
 
   // --- 11. STEP CONVERSION & OUTPUT ---
