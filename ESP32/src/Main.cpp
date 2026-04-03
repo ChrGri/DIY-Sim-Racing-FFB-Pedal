@@ -138,6 +138,13 @@ DapEspPairing_t dap_esppairing_lcl;//sending
 DapActionOta_t dap_action_ota_st;//OTA command(do not check version)
 
 
+/**********************************************************************************************/
+/*                                                                                            */
+/*                         Oscillation detector                                               */
+/*                                                                                            */
+/**********************************************************************************************/
+#include "OscillationDetector.h"
+OscillationDetector oscDetector;
 
 /**********************************************************************************************/
 /*                                                                                            */
@@ -1926,6 +1933,10 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       }
       */
 
+
+      // --- 2. OSCILLATION DETECTION (Active Oscillation Mitigation - AOM) ---
+      // Computes the oscillation intensity based on signal activity and updates the value.
+      oscillationDetectionLevel_fl32 = oscDetector.update(filteredReading);
       
       // compute next position with PID strategy
       // MPC control strataegy for rudder
@@ -1953,7 +1964,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         endstopBehavior_st.travelRange_mm_fl32 = constrain(endstopBehavior_st.travelRange_mm_fl32, 0.0f, 10.0f); // constrain the stiffness to a max value for safety
         
         // Pedal control algorithm
-        Position_Next = MoveByAdmittanceStrategy(filteredReading
+        Position_Next = MoveByAdmittanceStrategy(
+          filteredReading
           , stepper
           , &forceCurve
           , &dap_calculationVariables_st
@@ -1961,7 +1973,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           , effectOffsets_st
           , endstopBehavior_st
           , rudderOffsets_st
-          , &oscillationDetectionLevel_fl32
+          , oscillationDetectionLevel_fl32
         ); 
         
       }

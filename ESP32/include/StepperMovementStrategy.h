@@ -23,8 +23,6 @@ typedef struct {
 // These variables maintain state across control cycles
 float g_vModelPos_01 = 0.0f;    // Normalized virtual position [0.0 to 1.0]
 float g_vModelVel_mps = 0.0f;   // Physical virtual velocity [meters/second]
-float g_oscillationIntensity_01 = 0.0f; // 0.0 = stable, 1.0 = heavy oscillation detected
-
 
 /**
  * @brief Executes the Admittance Control strategy for the active pedal with AOM and Soft Endstops.
@@ -85,7 +83,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   EffectOffsets_t effectOffsets_st, 
   EndstopBehavior_t endstopBehavior_st, 
   RudderOffsets_t rudderOffsets_st,
-  float * oscillationDetectionLevel_pf32)
+  float oscillationDetectionLevel_fl32)
 {
   // --- 1. PHYSICAL PARAMETERS & CONFIGURATION ---
   // Time step for integration (seconds). We use a constant interval for improved numerical stability.
@@ -102,28 +100,9 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
 
   // --- 2. OSCILLATION DETECTION (Active Oscillation Mitigation - AOM) ---
-  // Analyze the Force Rate (dF/dt) to detect high-frequency instability/jitter.
-  static float lastLoadCell_kg = 0.0f;
-  float currentForceRate_kgs = (loadCellReadingKg_fl32 - lastLoadCell_kg) / dt_s;
-  lastLoadCell_kg = loadCellReadingKg_fl32;
-
-  float activity = abs(currentForceRate_kgs);
-  
-  // Parameters tuned via offline simulation and real-world testing to balance responsiveness and stability.
-  const float AOM_THRESHOLD_FL32 = 300.0f; // Lowered for earlier detection
-  const float AOM_ATTACK_FL32    = 20.0f;  // Increased for rapid response (4x faster)
-  const float AOM_DECAY_FL32     = 3.0f;   // Decay rate when signal stabilizes
-
-  if (activity > AOM_THRESHOLD_FL32) {
-      // High frequency chatter detected: ramp up oscillation intensity quickly
-      g_oscillationIntensity_01 += AOM_ATTACK_FL32 * dt_s; 
-  } else {
-      // Stable signal: allow intensity to decay gradually
-      g_oscillationIntensity_01 -= AOM_DECAY_FL32 * dt_s; 
-  }
-  g_oscillationIntensity_01 = constrain(g_oscillationIntensity_01, 0.0f, 1.0f);
-
-  *oscillationDetectionLevel_pf32 = g_oscillationIntensity_01;
+  // The oscillation detection level is computed in the main loop and passed as a parameter.
+  // It is a value between 0.0 (no oscillation) and 1.0 (heavy oscillation detected) that indicates the current intensity of oscillations in the system.
+  float g_oscillationIntensity_01 = constrain(oscillationDetectionLevel_fl32, 0.0f, 1.0f);
 
 
   // --- 3. PHYSICAL GEOMETRY ---
