@@ -6,8 +6,11 @@ public:
     // Constructor with default values tuned for stability
     OscillationDetector(float threshold = 300.0f, float attack = 20.0f, float decay = 3.0f);
 
-    // Main function called in every control loop cycle
+    // Option 1: Calculates the force rate (derivative) internally
     float update(float loadCellReadingKg_fl32);
+
+    // Option 2: Uses an externally provided force rate (e.g., forceVelEst_fl32)
+    float updateWithExternalRate(float forceRate_kgs);
 
     // Getter for the current oscillation intensity without recalculating
     float getIntensity() const;
@@ -28,4 +31,7 @@ private:
     float m_threshold;
     float m_attackRate;
     float m_decayRate;
+
+    // Internal helper function to calculate the attack/decay integration
+    float processIntensity(float activity, float dt_s);
 };

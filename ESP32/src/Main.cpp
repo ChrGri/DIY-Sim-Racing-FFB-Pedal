@@ -1790,23 +1790,27 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       
       // Do the loadcell signal filtering
       float alpha_exp_filter = 1.0f - ( (float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfModelNoise_u8) / 5000.0f;
+      static float lastPedalForce_fl32 = 0.0f;
       // const velocity model denoising filter
       switch (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfModelOrder_u8) {
-        case 0:
+        case 0: // const. velocity Kalman filter
           filteredReading = kalman->filteredValue(pedalForce_fl32, 0.0f, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfModelNoise_u8);
           changeVelocity = kalman->changeVelocity();
           break;
-        case 1:
+        case 1: // const. accel. Kalman filter
           filteredReading = kalman_2nd_order->filteredValue(pedalForce_fl32, 0.0f, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfModelNoise_u8);
           changeVelocity = kalman_2nd_order->changeVelocity();
           break;
-        case 2:
+        case 2: // exponential filter
           filteredReading_exp_filter = filteredReading_exp_filter * alpha_exp_filter + pedalForce_fl32 * (1.0f-alpha_exp_filter);
           filteredReading = filteredReading_exp_filter;
+          changeVelocity = (filteredReading - lastPedalForce_fl32) /  ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 * 1e-6f);
+          lastPedalForce_fl32 = filteredReading;
           break;
-        default:
+        default: // No filter
           filteredReading = pedalForce_fl32;
-          break;
+          changeVelocity = (filteredReading - lastPedalForce_fl32) /  ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 * 1e-6f);
+          lastPedalForce_fl32 = filteredReading;
       }
       //write filter reading into calculation_st
       dap_calculationVariables_st.currentForceReading_fl32=filteredReading;
@@ -1936,8 +1940,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
       // --- 2. OSCILLATION DETECTION (Active Oscillation Mitigation - AOM) ---
       // Computes the oscillation intensity based on signal activity and updates the value.
-      oscillationDetectionLevel_fl32 = oscDetector.update(filteredReading);
-      
+      //oscillationDetectionLevel_fl32 = oscDetector.update(filteredReading);
+      oscillationDetectionLevel_fl32 = oscDetector.updateWithExternalRate(changeVelocity);
+
       // compute next position with PID strategy
       // MPC control strataegy for rudder
       int32_t positionWithoutEffect=0;
