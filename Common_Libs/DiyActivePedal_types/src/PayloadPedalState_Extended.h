@@ -20,4 +20,6 @@ typedef struct __attribute__((packed)) PayloadPedalStateExtended
   int32_t targetPosition_i32;
   int32_t currentSpeedInHz_i32;
   uint8_t brakeResistorState_b;
+  uint8_t oscillationMonitorValue_u8;
+
 } PayloadPedalStateExtended_t;

@@ -1509,6 +1509,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
   static bool sendExtendedFlag_b = false;
   static int32_t stepperPosCurrent_i32;
   static uint32_t cycleCount_u32 = 0;
+  static float oscillationDetectionLevel_fl32 = 0.0f;
 
   for (;;)
   {
@@ -1960,6 +1961,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           , effectOffsets_st
           , endstopBehavior_st
           , rudderOffsets_st
+          , &oscillationDetectionLevel_fl32
         ); 
         
       }
@@ -2333,7 +2335,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.targetPosition_i32 = stepper->getCurrentPosition() - minPos;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.currentSpeedInHz_i32 = stepper->getCurrentSpeedInHz();
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.brakeResistorState_b = stepper->getBrakeResistorState();
-
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.oscillationMonitorValue_u8 = (oscillationDetectionLevel_fl32 * 255.0f);
         }
 
 

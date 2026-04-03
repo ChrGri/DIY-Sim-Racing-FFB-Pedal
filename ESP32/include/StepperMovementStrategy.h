@@ -84,7 +84,8 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   DapConfig_t* config_st, 
   EffectOffsets_t effectOffsets_st, 
   EndstopBehavior_t endstopBehavior_st, 
-  RudderOffsets_t rudderOffsets_st)
+  RudderOffsets_t rudderOffsets_st,
+  float * oscillationDetectionLevel_pf32)
 {
   // --- 1. PHYSICAL PARAMETERS & CONFIGURATION ---
   // Time step for integration (seconds). We use a constant interval for improved numerical stability.
@@ -121,6 +122,8 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       g_oscillationIntensity_01 -= AOM_DECAY_FL32 * dt_s; 
   }
   g_oscillationIntensity_01 = constrain(g_oscillationIntensity_01, 0.0f, 1.0f);
+
+  *oscillationDetectionLevel_pf32 = g_oscillationIntensity_01;
 
 
   // --- 3. PHYSICAL GEOMETRY ---

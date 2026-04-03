@@ -27,5 +27,6 @@ namespace User.PluginSdkDemo
         public Int32 targetPosition_i32;
         public Int32 currentSpeedInHz_i32;
         public byte brakeResistorState_b;
+        public byte oscillationMonitorValue_u8;
     };
 }

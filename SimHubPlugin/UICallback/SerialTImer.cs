@@ -434,6 +434,7 @@ namespace User.PluginSdkDemo
                                                         writer.Write(", targetPosition_i32");
                                                         writer.Write(", currentSpeedInHz_i32");
                                                         writer.Write(", brakeResistorState_b");
+                                                        writer.Write(", oscillationMonitorValue_u8");
 
                                                         writer.Write("\n");
                                                     }
@@ -462,7 +463,8 @@ namespace User.PluginSdkDemo
                                                         $",{state.forceVelEst_fl32}" +
                                                         $",{state.targetPosition_i32}" +
                                                         $",{state.currentSpeedInHz_i32}" +
-                                                        $",{state.brakeResistorState_b}");
+                                                        $",{state.brakeResistorState_b}" +
+                                                        $",{state.oscillationMonitorValue_u8}");
                                                 }
 
 
