@@ -109,7 +109,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   float activity = abs(currentForceRate_kgs);
   
-  // Parameters tuned via offline simulation (Python aom_simulation.py)
+  // Parameters tuned via offline simulation and real-world testing to balance responsiveness and stability.
   const float AOM_THRESHOLD_FL32 = 300.0f; // Lowered for earlier detection
   const float AOM_ATTACK_FL32    = 20.0f;  // Increased for rapid response (4x faster)
   const float AOM_DECAY_FL32     = 3.0f;   // Decay rate when signal stabilizes
@@ -195,10 +195,13 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float dampingMultiplier = 1.0f + (g_oscillationIntensity_01 * 8.0f);
   float activeDamping_Ns_m = baseDamping_Ns_m * dampingMultiplier;
 
+  // convert position offset to force offset using the local stiffness at the current position on the force curve
+  float effectPositionToForceConversion_kg = effectOffsets_st.forceOffset_Steps_fl32 * localStiffness_kg_step;
+  float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32 + effectPositionToForceConversion_kg;
 
   // --- 8. INTEGRATION (MASS-SPRING-DAMPER-ENDSTOP) ---
   // F_net = F_human - F_spring - F_softEndstop - F_damping
-  float externalForce_N = (loadCellReadingKg_fl32 + effectOffsets_st.forceOffset_kg_fl32) * GRAVITY_N_KG;
+  float externalForce_N = (loadCellReadingKg_fl32 + effectForceOffset_fl32) * GRAVITY_N_KG;
   float dampingForce_N = activeDamping_Ns_m * g_vModelVel_mps;
   float netForce_N = externalForce_N - springForce_N - softEndstopForce_N - dampingForce_N;
   
@@ -231,7 +234,14 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   g_vModelPos_01 = (totalTravel_m > 0.0001f) ? (currentPos_m / totalTravel_m) : 0.0f;
 
   // Apply boundary constraints (including dynamic expansion for effects and endstops)
-  g_vModelPos_01 = constrain(g_vModelPos_01, lowerTravelLimit_01, upperTravelLimit_01);
+  // Hard constraint at mechanical boundaries (inelastic collision)
+  if (g_vModelPos_01 <= lowerTravelLimit_01) {
+      g_vModelPos_01 = lowerTravelLimit_01;
+      if (g_vModelVel_mps < 0.0f) g_vModelVel_mps = 0.0f;
+  } else if (g_vModelPos_01 >= upperTravelLimit_01) {
+      g_vModelPos_01 = upperTravelLimit_01;
+      if (g_vModelVel_mps > 0.0f) g_vModelVel_mps = 0.0f;
+  }
   
   // SOFT LEASH: Synchronize the virtual model with the actual stepper command position
   // to prevent divergence due to numerical drift without corrupting second-order dynamics.
