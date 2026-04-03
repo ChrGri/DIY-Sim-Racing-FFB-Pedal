@@ -192,6 +192,30 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   // Update virtual acceleration and velocity
   float acceleration_mps2 = netForce_N / virtualMass_kg;
+
+  // =========================================================
+  // NEU: Prädiktive EMF-Reduktion (Regenerative Power Clamping)
+  // =========================================================
+  // Wenn Beschleunigung und Geschwindigkeit entgegengesetzt sind, bremst das System (Generator-Modus).
+  if ((acceleration_mps2 > 0.0f && g_vModelVel_mps < 0.0f) || 
+      (acceleration_mps2 < 0.0f && g_vModelVel_mps > 0.0f)) {
+      
+      // Mechanische Bremsleistung P = |m * a * v| (in Watt)
+      float predictedRegenPower_W = fabsf((virtualMass_kg * acceleration_mps2) * g_vModelVel_mps);
+      
+      // Max. erlaubte Rückleistung (Tuning-Parameter! Startwert 20-30W für iSV57 an 36V)
+      const float MAX_REGEN_POWER_W = 1.0f; 
+
+      if (predictedRegenPower_W > MAX_REGEN_POWER_W) {
+          // Beschleunigung kappen, um den Peak sanft abzuschneiden
+          float powerScale = MAX_REGEN_POWER_W / predictedRegenPower_W;
+          acceleration_mps2 *= powerScale;
+      }
+  }
+  // =========================================================
+
+
+
   g_vModelVel_mps += acceleration_mps2 * dt_s;
 
 
