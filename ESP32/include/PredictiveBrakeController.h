@@ -4,38 +4,41 @@
 #include <math.h>
 
 /**
- * @brief Prädiktiver Bremswiderstands-Regler (Time-To-Impact & Foot Dynamics Observer)
- * 100% Timer-Rollover-sicher (Unsigned Delta Logic), thermischer Lockout & Schmitt-Hysterese.
+ * @brief Predictive brake resistor controller (Time-To-Impact & Foot Dynamics Observer)
+ * 100% timer-rollover safe (Unsigned Delta Logic), thermal lockout & Schmitt hysteresis.
  */
 class PredictiveBrakeController {
 private:
-    // --- 1. Tuning Parameter (Prädiktion) ---
+    // --- 1. Tuning Parameters (Prediction) ---
     const float FOOT_ESCAPE_RATE_KG_S = -100.0f; 
     const float TTZ_WARNING_S = 0.025f; 
     const int32_t MIN_SPEED_HZ = 30000; 
     const uint32_t HOLD_TIME_US = 30000; 
 
-    // --- 2. Hysterese Parameter (Reaktiver Überspannungsschutz) ---
+    // --- 2. Hysteresis Parameters (Reactive Overvoltage Protection) ---
     const float BRAKE_RESISTOR_UPPER_THRESHOLD_VOLTAGE = 4.0f;
     const float BRAKE_RESISTOR_LOWER_THRESHOLD_VOLTAGE = 1.0f;
+    
+    // NEW: No longer 'const', allowing the value to be set externally.
+    // Default value is 38.0V (for a 36V power supply).
     float voltageThreshold_V_fl32 = 38.0f; 
 
-    // --- 3. Sicherheits-Parameter (Thermischer Schutz) ---
+    // --- 3. Safety Parameters (Thermal Protection) ---
     const uint32_t MAX_CONTINUOUS_ON_TIME_US = 500000; 
     const uint32_t THERMAL_COOLDOWN_TIME_US = 1000000; 
 
-    // --- Interne Statusvariablen (Prädiktion & Hysterese) ---
+    // --- Internal State Variables (Prediction & Hysteresis) ---
     float prev_error_fl32 = 0.0f;
     uint32_t prev_time_us_u32 = 0;
     bool is_initialized_b = false;
     
-    // NEU: Rollover-sichere Timer-Variablen
+    // Rollover-safe timer variables
     bool is_timer_active_b = false;
     uint32_t timer_start_time_us_u32 = 0;
     
     bool is_voltage_fallback_active_b = false; 
 
-    // --- Interne Statusvariablen (Thermischer Schutz) ---
+    // --- Internal State Variables (Thermal Protection) ---
     bool is_hardware_active_b = false;
     uint32_t active_start_time_us_u32 = 0;
     bool is_in_lockout_b = false;
@@ -44,7 +47,15 @@ private:
 public:
     PredictiveBrakeController() {}
 
+    // =========================================================
+    // Setter function for the voltage limit
+    // =========================================================
+    /**
+     * @brief Sets the reactive overvoltage threshold base value.
+     * @param threshold_V The new threshold in Volts (e.g., 38.0f for 36V power supplies)
+     */
     void setVoltageThreshold(float threshold_V) {
+        // Optional: A sanity check to prevent accidentally setting it to 5V or 1000V.
         if (threshold_V > 37.0f && threshold_V < 80.0f) {
             voltageThreshold_V_fl32 = threshold_V; 
         }
@@ -76,7 +87,7 @@ public:
         float dt_s_fl32 = (float)dt_us_u32 * 1e-6f;
         float current_error_fl32 = (float)servoPositionError_i16;
 
-        // --- 1. Time-To-Zero (TTZ) Berechnung ---
+        // --- 1. Time-To-Zero (TTZ) Calculation ---
         float d_error_fl32 = (current_error_fl32 - prev_error_fl32) / dt_s_fl32;
         float ttz_s_fl32 = 999.0f;
         
@@ -88,31 +99,31 @@ public:
         bool foot_is_escaping_b = (forceVelEst_fl32 < FOOT_ESCAPE_RATE_KG_S);
         bool high_kinetic_energy_b = (abs(currentSpeedInHz_i32) > MIN_SPEED_HZ);
 
-        // --- 3. Der Scharfschützen-Trigger ---
+        // --- 3. The Precision Trigger ("Sniper Trigger") ---
         bool trigger_b = foot_is_escaping_b && high_kinetic_energy_b && (ttz_s_fl32 < TTZ_WARNING_S);
 
-        // --- 4. Rollover-sichere Timer-Logik ---
+        // --- 4. Rollover-Safe Timer Logic ---
         if (trigger_b) {
             is_timer_active_b = true;
-            timer_start_time_us_u32 = currentTimeUs_u32; // Einfach Startzeit neu setzen
+            timer_start_time_us_u32 = currentTimeUs_u32; // Simply reset the start time
         }
 
         prev_error_fl32 = current_error_fl32;
         prev_time_us_u32 = currentTimeUs_u32;
 
-        // --- 5. Logische Auswertung ---
+        // --- 5. Logical Evaluation ---
         bool logical_activate_b = false;
         
-        // 5a. Prädiktiver Timer auswerten (100% überlaufsicher)
+        // 5a. Evaluate predictive timer (100% rollover-safe)
         if (is_timer_active_b) {
             if ((currentTimeUs_u32 - timer_start_time_us_u32) <= HOLD_TIME_US) {
                 logical_activate_b = true;
             } else {
-                is_timer_active_b = false; // Timer ist abgelaufen
+                is_timer_active_b = false; // Timer has expired
             }
         }
         
-        // 5b. Reaktive Hysterese
+        // 5b. Reactive Hysteresis
         float upperLimit_V = voltageThreshold_V_fl32 + BRAKE_RESISTOR_UPPER_THRESHOLD_VOLTAGE;
         float lowerLimit_V = voltageThreshold_V_fl32 + BRAKE_RESISTOR_LOWER_THRESHOLD_VOLTAGE;
 
@@ -127,7 +138,7 @@ public:
         }
 
         // =========================================================
-        // 6. THERMISCHER ÜBERLASTSCHUTZ (Ebenfalls überlaufsicher)
+        // 6. THERMAL OVERLOAD PROTECTION (Also rollover-safe)
         // =========================================================
         if (is_in_lockout_b) {
             if ((currentTimeUs_u32 - lockout_start_time_us_u32) > THERMAL_COOLDOWN_TIME_US) {
@@ -143,14 +154,14 @@ public:
                 active_start_time_us_u32 = currentTimeUs_u32;
             } else {
                 if ((currentTimeUs_u32 - active_start_time_us_u32) > MAX_CONTINUOUS_ON_TIME_US) {
-                    // NOTABSCHALTUNG!
+                    // EMERGENCY SHUTDOWN!
                     is_hardware_active_b = false;
                     logical_activate_b = false;       
                     
                     is_in_lockout_b = true;           
                     lockout_start_time_us_u32 = currentTimeUs_u32;
                     
-                    // Alle internen Trigger hart zurücksetzen!
+                    // Hard reset of all internal triggers!
                     is_voltage_fallback_active_b = false; 
                     is_timer_active_b = false; 
                 }
