@@ -848,7 +848,7 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 					
 
 
-					#ifdef BRAKE_RESISTOR_PIN_U8
+					/*#ifdef BRAKE_RESISTOR_PIN_U8
     
 						// Statische Variable für den Zeitstempel. -1000 funktioniert hier auch nach dem Cast sauber.
 						static int64_t time_brakeResistorLastHighVoltage = -1000;
@@ -886,7 +886,7 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 							time_brakeResistorLastPassive = timeNow_isv57SerialCommunicationTask_l;
 						}
 						
-					#endif
+					#endif*/
 
 					if(semaphore_readServoValues!=NULL)
 					{
@@ -1214,5 +1214,10 @@ void StepperWithLimits::moveToWithSpeed(int32_t targetPos_i32, uint32_t speed_u3
 	_stepper->moveToWithSpeed(targetPos_i32, speed_u32);
 }
 
+
+float StepperWithLimits::getBrakeResistorActivationVoltage(void)
+{
+	return s_servoBusVoltageParameterized_fl32;
+}
 //void StepperWithLimits::setDirection(bool forwardDir_b) { _stepper->setDirection(forwardDir_b); }
 

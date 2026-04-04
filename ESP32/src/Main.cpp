@@ -148,6 +148,14 @@ OscillationDetector oscDetector;
 
 /**********************************************************************************************/
 /*                                                                                            */
+/*                         Predictive Brake Controller                                        */
+/*                                                                                            */
+/**********************************************************************************************/
+#include "PredictiveBrakeController.h"
+PredictiveBrakeController brakeController;
+
+/**********************************************************************************************/
+/*                                                                                            */
 /*                         iterpolation  definitions                                          */
 /*                                                                                            */
 /**********************************************************************************************/
@@ -1304,6 +1312,11 @@ xTaskCreatePinnedToCore(
       //delay(3000);
   #endif
   
+  // set brake resistor voltage
+  float servoOperationVoltageInVolt_fl32 = stepper->getBrakeResistorActivationVoltage();
+  brakeController.setVoltageThreshold(servoOperationVoltageInVolt_fl32);
+
+
   Buzzer.InitializedSound((int)dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
 
 }
@@ -1938,6 +1951,24 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       */
 
 
+      // --- Predictive Brake Resistor Activator ---
+      uint32_t current_time_us = micros();
+      bool brake_state = brakeController.Update(
+          stepper->getServosPosError(),
+          changeVelocity,
+          stepper->getCurrentSpeedInHz(),
+          ( (float)stepper->getServosVoltage() ) * 0.1f,
+          current_time_us
+      );
+      #ifdef BRAKE_RESISTOR_PIN_U8
+        if (brake_state) {
+            digitalWrite(BRAKE_RESISTOR_PIN_U8, HIGH);
+        } else {
+            digitalWrite(BRAKE_RESISTOR_PIN_U8, LOW);
+        }
+      #endif
+
+      
       // --- 2. OSCILLATION DETECTION (Active Oscillation Mitigation - AOM) ---
       // Computes the oscillation intensity based on signal activity and updates the value.
       //oscillationDetectionLevel_fl32 = oscDetector.update(filteredReading);
@@ -2351,7 +2382,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.forceVelEst_fl32 =  changeVelocity;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.targetPosition_i32 = stepper->getCurrentPosition() - minPos;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.currentSpeedInHz_i32 = stepper->getCurrentSpeedInHz();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.brakeResistorState_b = stepper->getBrakeResistorState();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.brakeResistorState_b = brake_state * 255;//stepper->getBrakeResistorState();
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.oscillationMonitorValue_u8 = (oscillationDetectionLevel_fl32 * 255.0f);
         }
 

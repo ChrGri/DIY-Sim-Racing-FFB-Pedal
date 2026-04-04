@@ -172,6 +172,24 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   
   // AOM BOOST: If oscillation is detected, inject massive damping to freeze the system and bleed energy.
   float dampingMultiplier = 1.0f + (g_oscillationIntensity_01 * 8.0f);
+
+  // =========================================================
+  // NEU: Tracking-Error abhängige Dämpfung (Trajectory Shaping) to reduce EMF spikes. It was observed, that voltage spikes occur at tracking error zero crossings. 
+  // It was assumed, that the servo could not keep up with its target position, then overhoots, producing large EMF. To reduce the lag, we increase the virtual damping so servo can keep up.
+  // =========================================================
+  // actualPosFraction_01 ist die reale Position, g_vModelPos_01 die Soll-Position.
+  float trackingError_01 = fabsf(g_vModelPos_01 - actualPosFraction_01);
+  int32_t actualServoTrackingError_i32 = stepper->getServosPosError();
+  trackingError_01 = fabsf(actualServoTrackingError_i32 / travelSteps_cnt);
+
+  // Wenn der Motor mehr als 0.5% hinterherhinkt, erhöhen wir dynamisch die Dämpfung 
+  // des Modells. Das Modell wartet quasi auf den Motor.
+  if (trackingError_01 > 0.005f) {
+      // Tuning: Der Multiplikator (hier 20.0f) bestimmt, wie stark das Modell abbremst.
+      dampingMultiplier += (trackingError_01 * 20.0f); 
+  }
+  // =========================================================
+
   float activeDamping_Ns_m = baseDamping_Ns_m * dampingMultiplier;
 
   // convert position offset to force offset using the local stiffness at the current position on the force curve
@@ -192,6 +210,11 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   // Update virtual acceleration and velocity
   float acceleration_mps2 = netForce_N / virtualMass_kg;
+
+  // NEU: Hartes Clamping der Beschleunigung, um Limit Cycles (Hunting) zu verhindern.
+  // Tuning-Tipp: Starte mit 50.0f (ca. 5G) und gehe tiefer, falls es noch schwingt.
+  const float MAX_ACCEL_MPS2 = 50.0f; 
+  acceleration_mps2 = constrain(acceleration_mps2, -MAX_ACCEL_MPS2, MAX_ACCEL_MPS2);
 
   // =========================================================
   // NEU: Prädiktive EMF-Reduktion (Regenerative Power Clamping)

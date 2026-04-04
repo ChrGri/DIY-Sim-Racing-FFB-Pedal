@@ -126,7 +126,7 @@ public:
 
 	void moveToWithSpeed(int32_t targetPos_i32, uint32_t speed_u32);
 
-	
+	float getBrakeResistorActivationVoltage(void);
 
 };
 
