@@ -2004,6 +2004,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32 = constrain(endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32, 0.0f, 500.0f); // constrain the stiffness to a max value for safety
         endstopBehavior_st.travelRange_mm_fl32 = constrain(endstopBehavior_st.travelRange_mm_fl32, 0.0f, 10.0f); // constrain the stiffness to a max value for safety
         
+
+        AdmittanceDebugState_t tmp;
         // Pedal control algorithm
         Position_Next = MoveByAdmittanceStrategy(
           filteredReading
@@ -2015,6 +2017,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           , endstopBehavior_st
           , rudderOffsets_st
           , oscillationDetectionLevel_fl32
+          , &tmp
         ); 
         
       }
