@@ -100,7 +100,9 @@ public:
 	int32_t getServosCurrent();
 	int32_t getServosPos();
 	int32_t getServosPosError();
+	uint32_t getServoCycleTimestamp();
 	//int32_t getEstimatedPosError_getCurrentStepperPos();
+	int32_t getServosPosErrorChangeRateInStepsPerSecond();
 	
 	bool getLifelineSignal();
 	

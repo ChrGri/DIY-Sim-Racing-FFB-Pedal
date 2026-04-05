@@ -69,14 +69,15 @@ public:
         is_in_lockout_b = false;
     }
 
-    bool Update(int16_t servoPositionError_i16, 
-                float forceVelEst_fl32, 
-                int32_t currentSpeedInHz_i32, 
-                float servoVoltage_fl32,
-                uint32_t currentTimeUs_u32) 
+    bool Update(int32_t servoPositionError_i32
+                , float servoPositionErrorChangeRateInStepsPerSecond_fl32
+                , float forceVelEst_fl32
+                , int32_t currentSpeedInHz_i32
+                , float servoVoltage_fl32
+                , uint32_t currentTimeUs_u32) 
     {
         if (!is_initialized_b) {
-            prev_error_fl32 = (float)servoPositionError_i16;
+            prev_error_fl32 = (float)servoPositionError_i32;
             prev_time_us_u32 = currentTimeUs_u32;
             is_initialized_b = true;
             return false;
@@ -85,10 +86,11 @@ public:
         uint32_t dt_us_u32 = currentTimeUs_u32 - prev_time_us_u32;
         if (dt_us_u32 == 0) dt_us_u32 = 1000; 
         float dt_s_fl32 = (float)dt_us_u32 * 1e-6f;
-        float current_error_fl32 = (float)servoPositionError_i16;
+        float current_error_fl32 = (float)servoPositionError_i32;
 
         // --- 1. Time-To-Zero (TTZ) Calculation ---
-        float d_error_fl32 = (current_error_fl32 - prev_error_fl32) / dt_s_fl32;
+        //float d_error_fl32 = (current_error_fl32 - prev_error_fl32) / dt_s_fl32;
+        float d_error_fl32 = servoPositionErrorChangeRateInStepsPerSecond_fl32;
         float ttz_s_fl32 = 999.0f;
         
         if ((current_error_fl32 * d_error_fl32) < 0.0f) {

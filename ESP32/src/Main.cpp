@@ -1954,11 +1954,12 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // --- Predictive Brake Resistor Activator ---
       uint32_t current_time_us = micros();
       bool brake_state = brakeController.Update(
-          stepper->getServosPosError(),
-          changeVelocity,
-          stepper->getCurrentSpeedInHz(),
-          ( (float)stepper->getServosVoltage() ) * 0.1f,
-          current_time_us
+          stepper->getServosPosError()
+          , stepper->getServosPosErrorChangeRateInStepsPerSecond()
+          , changeVelocity
+          , stepper->getCurrentSpeedInHz()
+          , ( (float)stepper->getServosVoltage() ) * 0.1f
+          , current_time_us
       );
       #ifdef BRAKE_RESISTOR_PIN_U8
         if (brake_state) {

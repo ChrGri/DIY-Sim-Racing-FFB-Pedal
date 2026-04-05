@@ -486,6 +486,12 @@ int32_t Isv57Communication::getServoCycleCounter()
   return isv57dynamicStates_.servo_cycleCounter_u32;
 }
 
+uint32_t Isv57Communication::getServoCycleTimestamp()
+{
+  return isv57dynamicStates_.lastUpdateTimeInMS_u32;
+}
+
+
 // read servo states
 void Isv57Communication::readServoStates() {
 
@@ -504,20 +510,18 @@ void Isv57Communication::readServoStates() {
     { 
       regArray[regIdx] = modbus.convertRxBufferToInt16(regIdx);
     }
+
+    // write to public variables
+    isv57dynamicStates_.servo_pos_given_p = regArray[0];
+    isv57dynamicStates_.servo_current_percent = regArray[1];
+    isv57dynamicStates_.servo_pos_error_p = regArray[2];
+    isv57dynamicStates_.servoVoltage0p1V_i16 = regArray[3];
+
+    isv57dynamicStates_.lastUpdateTimeInMS_u32 = millis();
+    isv57dynamicStates_.servo_cycleCounter_u32++;
   }
 
-  // write to public variables
-  isv57dynamicStates_.servo_pos_given_p = regArray[0];
-  isv57dynamicStates_.servo_current_percent = regArray[1];
-  isv57dynamicStates_.servo_pos_error_p = regArray[2];
-  isv57dynamicStates_.servoVoltage0p1V_i16 = regArray[3];
-  //isv57dynamicStates_.servo_velocity_given_rpm_i16 = regArray[4];
-
-  //isv57dynamicStates_.servo_position_feedback_i16 = regArray[2];
   
-
-  isv57dynamicStates_.lastUpdateTimeInMS_u32 = millis();
-  isv57dynamicStates_.servo_cycleCounter_u32++;
   
   
   //#define ENABLE_SERVO_STATE_PRINTING

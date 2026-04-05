@@ -125,6 +125,7 @@ class Isv57Communication {
     int16_t getZeroPos();
     int16_t getPosFromMin();
     int32_t getServoCycleCounter();
+    uint32_t getServoCycleTimestamp();
     int16_t regArray[NUMBER_OF_ISV57_REGISTERS_TO_READ_IN_CYCLIC_READ];
 
     int16_t slaveId = 63; 

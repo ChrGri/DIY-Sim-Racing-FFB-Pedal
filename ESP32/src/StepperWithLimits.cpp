@@ -37,6 +37,11 @@ static bool s_printProfilingFlag_b = false;
 
 bool setServoToSleep_b = false;
 
+static int32_t lastTrackingError_i32 = 0;
+static float trackingErrorChangeInStepsPerS_fl32 = 0;
+static uint32_t servoLastStateCycleCounter_u32 = 0u;
+static uint32_t servoLastTimeStampInMs_u32 = 0u;
+
 #define BRAKE_RESISTOR_UPPER_TRHESHOLD_VOLTAGE 4.0f
 #define BRAKE_RESISTOR_LOWER_TRHESHOLD_VOLTAGE 1.0f
 
@@ -530,6 +535,16 @@ int32_t StepperWithLimits::getServosPosError()
 	return isv57.isv57dynamicStates_.servo_pos_error_p;
 }
 
+uint32_t StepperWithLimits::getServoCycleTimestamp()
+{
+	return isv57.isv57dynamicStates_.lastUpdateTimeInMS_u32;
+}
+
+int32_t StepperWithLimits::getServosPosErrorChangeRateInStepsPerSecond()
+{
+	return trackingErrorChangeInStepsPerS_fl32;
+}
+
 
 
 
@@ -954,6 +969,32 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 					
 
 					stepper_cl->setServosInternalPositionCorrected(servoPosCorrected_i32);
+
+
+					/*  Compute tracking error change, needed for Predictive Brake Resistor activation */
+					// compute tracking error change rate
+					// Check if cycle counter increased ==> valid tracking error change can be computed 
+					uint32_t servoCurrentStateCycleCounter_u32 = stepper_cl->getServoCycleCounter();
+					if (servoCurrentStateCycleCounter_u32 == (servoLastStateCycleCounter_u32 + 1u) )
+					{
+
+						uint32_t servoCurrentTimeStampInMs_u32 = stepper_cl->getServoCycleTimestamp();
+						float timeStampDiffInMs_fl32 = (servoCurrentTimeStampInMs_u32 - servoLastTimeStampInMs_u32);
+						servoLastTimeStampInMs_u32 = servoCurrentTimeStampInMs_u32;
+
+						// compute the tracking error change
+						int32_t currentTrackingError_i32 = stepper_cl->getServosPosError();
+						trackingErrorChangeInStepsPerS_fl32 = (currentTrackingError_i32 - lastTrackingError_i32) / (timeStampDiffInMs_fl32 * 1e-3f);
+						lastTrackingError_i32 = currentTrackingError_i32;
+					}
+					else
+					{
+						// fallback to zero
+						trackingErrorChangeInStepsPerS_fl32 = 0u;
+					}
+					servoLastStateCycleCounter_u32 = servoCurrentStateCycleCounter_u32;
+
+
 					
 					
 					int32_t servo_offset_compensation_steps_local_i32;// = 0;
