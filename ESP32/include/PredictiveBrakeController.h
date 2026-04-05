@@ -11,7 +11,7 @@ class PredictiveBrakeController {
 private:
     // --- 1. Tuning Parameters (Prediction) ---
     const float FOOT_ESCAPE_RATE_KG_S = -100.0f; 
-    const float TTZ_WARNING_S = 0.025f; 
+    const float TTZ_WARNING_S = 0.04f; 
     const int32_t MIN_SPEED_HZ = 30000; 
     const uint32_t HOLD_TIME_US = 30000; 
 
@@ -101,8 +101,13 @@ public:
         bool foot_is_escaping_b = (forceVelEst_fl32 < FOOT_ESCAPE_RATE_KG_S);
         bool high_kinetic_energy_b = (abs(currentSpeedInHz_i32) > MIN_SPEED_HZ);
 
+        bool foot_is_dynamic_b = ( fabsf(forceVelEst_fl32) > fabsf(FOOT_ESCAPE_RATE_KG_S) );
+        foot_is_escaping_b = foot_is_dynamic_b;
+
+        bool errorWasLarge_b = servoPositionError_i32 < -100;
+
         // --- 3. The Precision Trigger ("Sniper Trigger") ---
-        bool trigger_b = foot_is_escaping_b && high_kinetic_energy_b && (ttz_s_fl32 < TTZ_WARNING_S);
+        bool trigger_b = foot_is_escaping_b && high_kinetic_energy_b && (ttz_s_fl32 < TTZ_WARNING_S) && errorWasLarge_b;
 
         // --- 4. Rollover-Safe Timer Logic ---
         if (trigger_b) {
