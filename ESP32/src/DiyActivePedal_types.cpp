@@ -85,9 +85,6 @@ void DapConfig_t::initializeDefaults()
   payloadPedalConfig_st.joystickMapMapped09_u8 = 0;
   payloadPedalConfig_st.joystickMapMapped10_u8 = 0;
 
-  payloadPedalConfig_st.dampingPress_u8 = 0;
-  payloadPedalConfig_st.dampingPull_u8 = 0;
-
   payloadPedalConfig_st.absFrequency_u8 = 15;
   payloadPedalConfig_st.absAmplitude_u8 = 0;
   payloadPedalConfig_st.absPattern_u8 = 0;
@@ -140,6 +137,13 @@ void DapConfig_t::initializeDefaults()
   payloadPedalConfig_st.servoRatioOfInertia_u8 = 1;
   payloadPedalConfig_st.configHash_u32 = (uint32_t)175245064 ;
   payloadPedalConfig_st.endstopDetectionThreshold_u8 = 30;
+
+  payloadPedalConfig_st.virtualPedalDampingInPercent_u8 = 100;
+  payloadPedalConfig_st.virtualPedalMassInPercent_u8 = 30;
+
+  payloadPedalConfig_st.endstopStiffness_kg_mm_u8 = 50;
+  payloadPedalConfig_st.endstopTravelRange_mm_u8 = 10;
+
 }
 
 
@@ -298,7 +302,6 @@ void DapCalculationVariables_t::updateFromConfig(DapConfig_t& config_st)
   absFrequency_fl32 = ((float)config_st.payloadPedalConfig_st.absFrequency_u8);
   absAmplitude_fl32 = ((float)config_st.payloadPedalConfig_st.absAmplitude_u8)  *0.001f;//in percent, max 20% of force range
 
-  dampingPress_fl32 = ((float)config_st.payloadPedalConfig_st.dampingPress_u8) * 0.00015f;
   rpmMaxFreq_fl32 = ((float)config_st.payloadPedalConfig_st.rpmMaxFreq_u8);
   rpmMinFreq_fl32 = ((float)config_st.payloadPedalConfig_st.rpmMinFreq_u8);
   rpmAmp_fl32 = ((float)config_st.payloadPedalConfig_st.rpmAmp_u8)  * 0.0002f;//in kg, max 4% of force range
@@ -352,11 +355,12 @@ void IRAM_ATTR_FLAG DapCalculationVariables_t::updateEndstops(int32_t newMinEnds
   stepperPosMaxEndstop_i32 = newMaxEndstop_i32;
   stepperPosEndstopRange_i32 = stepperPosMaxEndstop_i32 - stepperPosMinEndstop_i32;
   
-  stepperPosMin_i32 = stepperPosEndstopRange_i32 * startPosRel_fl32;
-  stepperPosMax_i32 = stepperPosEndstopRange_i32 * endPosRel_fl32;
-  stepperPosMinDefault_i32 = stepperPosMin_i32;
-  stepperPosRange_fl32 = stepperPosMax_i32 - stepperPosMin_i32;
+  softEndstopMinStepperPos_i32 = stepperPosEndstopRange_i32 * startPosRel_fl32;
+  softEndstopMaxStepperPos_i32 = stepperPosEndstopRange_i32 * endPosRel_fl32;
+  stepperPosMinDefault_i32 = softEndstopMinStepperPos_i32;
+  stepperPosRange_fl32 = softEndstopMaxStepperPos_i32 - softEndstopMinStepperPos_i32;
   //currentPedalPositionRatio_fl32=((float)(currentPedalPosition_u32-stepperPosMinDefault_i32))/((float)stepperPosRangeDefault_fl32);
+
 }
 
 void IRAM_ATTR_FLAG DapCalculationVariables_t::updateStiffness()
@@ -374,29 +378,29 @@ void IRAM_ATTR_FLAG DapCalculationVariables_t::updateStiffness()
 
 void DapCalculationVariables_t::stepperPosSetback()
 {
-  stepperPosMin_i32 = stepperPosMinDefault_i32;
-  stepperPosMax_i32 = stepperPosMaxDefault_i32;
+  softEndstopMinStepperPos_i32 = stepperPosMinDefault_i32;
+  softEndstopMaxStepperPos_i32 = stepperPosMaxDefault_i32;
   stepperPosRange_fl32 = stepperPosRangeDefault_fl32;
 }
 
 void DapCalculationVariables_t::updateStepperMinPos(int32_t newMinstop_i32)
 {
-  stepperPosMin_i32 = newMinstop_i32;
+  softEndstopMinStepperPos_i32 = newMinstop_i32;
   
-  stepperPosRange_fl32 = stepperPosMax_i32 - stepperPosMin_i32;
+  stepperPosRange_fl32 = softEndstopMaxStepperPos_i32 - softEndstopMinStepperPos_i32;
 }
 
 void DapCalculationVariables_t::updateStepperMaxPos(int32_t newMaxstop_i32)
 {
   
-  stepperPosMax_i32 = newMaxstop_i32;
-  stepperPosRange_fl32 = stepperPosMax_i32 - stepperPosMin_i32;
+  softEndstopMaxStepperPos_i32 = newMaxstop_i32;
+  stepperPosRange_fl32 = softEndstopMaxStepperPos_i32 - softEndstopMinStepperPos_i32;
 }
 
 void DapCalculationVariables_t::setDefaultPos()
 {
-  stepperPosMinDefault_i32 = stepperPosMin_i32;
-  stepperPosMaxDefault_i32 = stepperPosMax_i32;
+  stepperPosMinDefault_i32 = softEndstopMinStepperPos_i32;
+  stepperPosMaxDefault_i32 = softEndstopMaxStepperPos_i32;
   stepperPosRangeDefault_fl32 = stepperPosRange_fl32;
 }
 

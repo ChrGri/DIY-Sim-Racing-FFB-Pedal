@@ -112,7 +112,6 @@ Isv57Communication::Isv57Communication()
 // send tuned servo parameters
 void Isv57Communication::setupServoStateReading() {
 
-  
   // The iSV57 has four registers (0x0191, 0x0192, 0x0193, 0x0194) in which we can write, which values we want to obtain cyclicly
   // These registers can be obtained by sending e.g. the command: 0x63, 0x03, 0x0191, target_sate, CRC
   // tell the modbus slave, which registers will be read cyclicly
@@ -120,7 +119,10 @@ void Isv57Communication::setupServoStateReading() {
   modbus.writeAndVerifyDeviceParameter(slaveId, 0x0192, reg_add_velocity_current_feedback_percent);
   modbus.writeAndVerifyDeviceParameter(slaveId, 0x0193, reg_add_position_error_p);
   modbus.writeAndVerifyDeviceParameter(slaveId, 0x0194, reg_add_voltage_0p1V);
+  //modbus.writeAndVerifyDeviceParameter(slaveId, 0x0195, reg_add_velocity_feedback_rpm);
 
+
+  //modbus.writeAndVerifyDeviceParameter(slaveId, 0x0193, reg_add_position_feedback_p);
 }
 
 
@@ -242,11 +244,17 @@ void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection,
 
 
   // Pr0 register
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+0, tuned_parameters[pr_0_00+0]); // control mode #
+  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+0, tuned_parameters[pr_0_00+0]); // control mode
+
+  // according to the iSV2 manual chapter 5.6, the model following control (MFC) parameter should be larger then Pr1.01, velocity loop gain
+  float mfcLowerLimit_fl32 = tuned_parameters[pr_1_00+1] ;
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+0, (int32_t)mfcLowerLimit_fl32);
+
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+1, tuned_parameters[pr_0_00+1]); // control mode #
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+2, tuned_parameters[pr_0_00+2]); // deactivate auto gain
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+3, tuned_parameters[pr_0_00+3]); // machine stiffness
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+4, ratioOfInertia_u32 ); // ratio of inertia
+  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+4, ratioOfInertia_u32 ); // ratio of inertia
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+4, tuned_parameters[pr_0_00+3] ); // ratio of inertia
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+6, tuned_parameters[pr_0_00+6]); // motor command direction
   //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+6, commandRotationDirection); // Command Pulse Rotational Direction
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+8, (long)stepsPerMotorRev_u32); // microsteps
@@ -264,12 +272,21 @@ void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection,
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+1, tuned_parameters[pr_1_00+1]); // 1st velocity loop gain
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+2, tuned_parameters[pr_1_00+2]); // 1st time constant of velocity loop
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+3, tuned_parameters[pr_1_00+3]); // 1st filter of velocity detection
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+4, tuned_parameters[pr_1_00+4]); // 1st torque filter
+  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+4, tuned_parameters[pr_1_00+4]); // 1st torque filter
+
+  // according to the iSV2 manual, the upper limit of the velocity loop gain is determined by the formula: upperLimit = 1000000 / (2 * pi * velocity loop gain * 4), where the velocity loop gain is determined by Pr1.01, so I want to make sure that the velocity loop gain is not set higher than this limit, otherwise the servo will be unstable. The factor 4 is a safety factor to make sure that we are well below the upper limit.
+  float upperLimit_fl32 = 1000000.0f / (2.0f * PI_FL32 * tuned_parameters[pr_1_00+1] * 4.0f);
+  upperLimit_fl32 = 20.0f;
+  upperLimit_fl32 = constrain(upperLimit_fl32, 0, 2500.0f);
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+4, upperLimit_fl32);
+
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+10, tuned_parameters[pr_1_00+10]); // velocity feed forward gain
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+11, tuned_parameters[pr_1_00+11]); // velocity feed forward filter
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+12, tuned_parameters[pr_1_00+12]); // torque feed forward gain
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+13, tuned_parameters[pr_1_00+13]); // torque feed forward filter
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+15, tuned_parameters[pr_1_00+15]); // control switching mode
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+28, tuned_parameters[pr_1_00+28]); // 1st position loop integral time
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+29, tuned_parameters[pr_1_00+29]); // 1st position loop differential time
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+33, tuned_parameters[pr_1_00+33]); // speed given filter
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+35, tuned_parameters[pr_1_00+35]); // position command filter
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+36, tuned_parameters[pr_1_00+36]); // encoder feedback
@@ -315,13 +332,14 @@ void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection,
   
   // Pr6 register
   // retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_6_00+17, 1); // lock front panel
-
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_6_00+11, tuned_parameters[pr_6_00+11]); // current response time. Default was 100%. Reducing value causes less noise
 
   //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_5_00+32, 300); // command pulse input maximum setup
 
   // Pr7 register
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+0, tuned_parameters[pr_7_00+0]);
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+1, tuned_parameters[pr_7_00+1]);
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+0, tuned_parameters[pr_7_00+0]); // current loop gain
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+1, tuned_parameters[pr_7_00+1]); // current loop integral time
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+11, tuned_parameters[pr_7_00+11]); // Motor Maximum speed
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+28, tuned_parameters[pr_7_00+28]);
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+29, tuned_parameters[pr_7_00+29]);
 
@@ -463,18 +481,27 @@ int16_t Isv57Communication::getPosFromMin()
   return isv57dynamicStates_.servo_pos_given_p - zeroPos;
 }
 
+int32_t Isv57Communication::getServoCycleCounter()
+{
+  return isv57dynamicStates_.servo_cycleCounter_u32;
+}
+
+uint32_t Isv57Communication::getServoCycleTimestamp()
+{
+  return isv57dynamicStates_.lastUpdateTimeInMS_u32;
+}
+
 
 // read servo states
 void Isv57Communication::readServoStates() {
 
-  // initialize with -1 to indicate non-trustworthyness
-  regArray[0] = -1;
-  regArray[1] = -1;
-  regArray[2] = -1;
-  regArray[3] = -1;
+  // initialize with -1 to indicate non-trustworthiness
+  for (uint8_t i = 0; i < NUMBER_OF_ISV57_REGISTERS_TO_READ_IN_CYCLIC_READ; i++) {
+    regArray[i] = -1;
+  }
 
   // read the four registers simultaneously
-  int8_t numberOfRegistersToRead_u8 = 4;
+  int8_t numberOfRegistersToRead_u8 = NUMBER_OF_ISV57_REGISTERS_TO_READ_IN_CYCLIC_READ;
   int bytesReceived_i = modbus.sendRequestAndReceiveResponse(slaveId, 0x03, ref_cyclic_read_0, numberOfRegistersToRead_u8);
   if(bytesReceived_i == (numberOfRegistersToRead_u8*2))
   {
@@ -483,28 +510,32 @@ void Isv57Communication::readServoStates() {
     { 
       regArray[regIdx] = modbus.convertRxBufferToInt16(regIdx);
     }
+
+    // write to public variables
+    isv57dynamicStates_.servo_pos_given_p = regArray[0];
+    isv57dynamicStates_.servo_current_percent = regArray[1];
+    isv57dynamicStates_.servo_pos_error_p = regArray[2];
+    isv57dynamicStates_.servoVoltage0p1V_i16 = regArray[3];
+
+    isv57dynamicStates_.lastUpdateTimeInMS_u32 = millis();
+    isv57dynamicStates_.servo_cycleCounter_u32++;
   }
 
-  // write to public variables
-  // servo_pos_given_p = regArray[0];
-  // servo_current_percent = regArray[1];
-  // servo_pos_error_p = regArray[2];
-  // servoVoltage0p1V_i16 = regArray[3];
-
-  isv57dynamicStates_.servo_pos_given_p = regArray[0];
-  isv57dynamicStates_.servo_current_percent = regArray[1];
-  isv57dynamicStates_.servo_pos_error_p = regArray[2];
-  isv57dynamicStates_.servoVoltage0p1V_i16 = regArray[3];
-  isv57dynamicStates_.lastUpdateTimeInMS_u32 = millis();
-
-  //ActiveSerial->print("Bytes :");
-  //ActiveSerial->println(bytesReceived_i);
   
   
   
+  //#define ENABLE_SERVO_STATE_PRINTING
+  #ifdef ENABLE_SERVO_STATE_PRINTING
   // print registers
-  if (0)
+  // print only every 100ms to avoid flooding the serial monitor, since the servo states are read every 10ms^
+  static uint32_t lastTimePrintedServoStatesInMS_u32 = 0;
+  if (millis() - lastTimePrintedServoStatesInMS_u32 > 200)
   {
+    lastTimePrintedServoStatesInMS_u32 = millis();
+
+    ActiveSerial->print("Bytes :");
+    ActiveSerial->println(bytesReceived_i);
+
     ActiveSerial->print("Pos_given:");
     ActiveSerial->print(isv57dynamicStates_.servo_pos_given_p);
 
@@ -517,8 +548,12 @@ void Isv57Communication::readServoStates() {
     ActiveSerial->print(",Voltage:");
     ActiveSerial->print(isv57dynamicStates_.servoVoltage0p1V_i16);
 
+    ActiveSerial->print(",Velocity_given:");
+    ActiveSerial->print(isv57dynamicStates_.servo_velocity_given_rpm_i16);
+
     ActiveSerial->println(" "); 
   }
+  #endif
   
 }
 

@@ -66,20 +66,11 @@ public:
       float absTimeSeconds_fl32 = absTimeMillis_i32 * 0.001f;
 
       // abs amplitude
-      float absAmp_fl32 = 0.0f;
-      switch (absForceOrTarvelBit_u8)
-      {
-        case 0:
-          absAmp_fl32 = calcVars_st->absAmplitude_fl32* calcVars_st->forceRange_fl32; 
-          break;
-        case 1:
-          absAmp_fl32 = calcVars_st->stepperPosRange_fl32 * calcVars_st->absAmplitude_fl32; // since absAmplitude_u8 is given in percent, needs to be scaled to from intervall [0%, 100%] to intervall [0, 1]
-          break;
-        default:
-          break;
-      }
+      float absAmp_fl32 = calcVars_st->absAmplitude_fl32; // amplitude is given in interal [0, 1] already, so no need to scale it.
+      float absAmplForce_fl32 = absAmp_fl32 * calcVars_st->forceRange_fl32; 
+      float absAmplPosition_fl32 = absAmp_fl32 * calcVars_st->stepperPosRange_fl32; 
 
-
+      // compute the oscillation offset based on the selected pattern
       float sineArgInDeg_fl32;
       switch (absPattern_u8)
       {
@@ -100,19 +91,25 @@ public:
           break;
       }
       
+      // apply the computed oscillation offset to either force or position based on the configuration bit
       switch (absForceOrTarvelBit_u8)
       {
         case 0:
-          absOscillationForceOffset_fl32 = absAmp_fl32 * absForceOffsetLocal_fl32;
+          absOscillationForceOffset_fl32 = absAmplForce_fl32 * absForceOffsetLocal_fl32;
           absOscillationPositionOffset_fl32 = 0.0f;
           break;
         case 1:
           absOscillationForceOffset_fl32 = 0.0f;
-          absOscillationPositionOffset_fl32 = absAmp_fl32 * absForceOffsetLocal_fl32;
+          absOscillationPositionOffset_fl32 = absAmplPosition_fl32 * absForceOffsetLocal_fl32;
           break;
         default:
+          absOscillationForceOffset_fl32 = 0.0f;
+          absOscillationPositionOffset_fl32 = 0.0f; 
           break;
       }
+
+      //absOscillationForceOffset_fl32 = absAmplForce_fl32 * absForceOffsetLocal_fl32;
+      //absOscillationPositionOffset_fl32 = absAmplPosition_fl32 * absForceOffsetLocal_fl32;
       
     }
 

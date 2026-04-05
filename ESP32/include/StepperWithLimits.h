@@ -66,19 +66,26 @@ public:
 	void correctPos();
 	void findMinMaxSensorless(DapConfig_t dap_config_st);
 	void forceStop();
-	int8_t moveTo(int32_t position, bool blocking = false);
+		int8_t moveTo(int32_t position, bool blocking = false);
 	void moveSlowlyToPos(int32_t targetPos_ui32);
 	void moveToPosWithSpeed(int32_t targetPos_ui32, uint32_t speedInHz_u32);
+	void setSpeedLive(uint32_t speedInHz_u32);
 
+	int32_t getHardEndstopMinPosition() const { return _endstopLimitMin; }
+	int32_t getHardEndstopMaxPosition() const { return _endstopLimitMax; }
+	
 	int32_t getCurrentPositionFromMin() const;
 	int32_t getMinPosition() const;
 	void setMinPosition();
 	int32_t getCurrentPosition() const;
 	float getCurrentPositionFraction() const;
 	float getCurrentPositionFractionFromExternalPos(int32_t extPos_i32) const;
-	int32_t getTargetPositionSteps() const;
-	int32_t getCurrentSpeedInMilliHz();
-	uint32_t getMaxSpeedInMilliHz();
+		int32_t getTargetPositionSteps() const;
+	int32_t getCurrentSpeedInHz();
+	uint32_t getMaxSpeedInHz();
+	
+	bool isRunning();
+	void keepRunningInDir(bool forwardDir_b, uint32_t speed_u32);
 
 	int32_t getLimitMin() const { return _endstopLimitMin; }
 	int32_t getLimitMax() const { return _endstopLimitMax; }
@@ -87,13 +94,15 @@ public:
 
 	int32_t getPositionDeviation();
 	int32_t getServosInternalPosition();
+	uint32_t getServoCycleCounter();
 	//int32_t getStepLossCompensation();
 	int32_t getServosVoltage();
 	int32_t getServosCurrent();
 	int32_t getServosPos();
 	int32_t getServosPosError();
-	int32_t getEstimatedPosError();
+	uint32_t getServoCycleTimestamp();
 	//int32_t getEstimatedPosError_getCurrentStepperPos();
+	int32_t getServosPosErrorChangeRateInStepsPerSecond();
 	
 	bool getLifelineSignal();
 	
@@ -117,6 +126,11 @@ public:
 	uint8_t servoStatus=0;
 	uint8_t endstopDetectionThreshold_u8=30;
 
-	
+	void moveToWithSpeed(int32_t targetPos_i32, uint32_t speed_u32);
+
+	float getBrakeResistorActivationVoltage(void);
 
 };
+
+	void setDirection(bool forwardDir_b);
+

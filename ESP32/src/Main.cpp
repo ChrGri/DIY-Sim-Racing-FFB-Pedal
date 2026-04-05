@@ -138,6 +138,21 @@ DapEspPairing_t dap_esppairing_lcl;//sending
 DapActionOta_t dap_action_ota_st;//OTA command(do not check version)
 
 
+/**********************************************************************************************/
+/*                                                                                            */
+/*                         Oscillation detector                                               */
+/*                                                                                            */
+/**********************************************************************************************/
+#include "OscillationDetector.h"
+OscillationDetector oscDetector;
+
+/**********************************************************************************************/
+/*                                                                                            */
+/*                         Predictive Brake Controller                                        */
+/*                                                                                            */
+/**********************************************************************************************/
+#include "PredictiveBrakeController.h"
+PredictiveBrakeController brakeController;
 
 /**********************************************************************************************/
 /*                                                                                            */
@@ -694,6 +709,13 @@ static void uart_event_task(void *pvParameters) {
 
 void setup()
 {
+
+  #ifdef DEBUG_KEEP_USB_SERIAL_JTAG
+    // For ESP32-S3, the USB Serial is shared with JTAG. To allow debugging via JTAG while also using Serial for output, we can delay the start of Serial until after the debugger has had time to connect.
+    // This is a workaround to ensure that the USB Serial doesn't interfere with JTAG debugging during startup. 
+    delay(5000); // Gibt dem Debugger 5 Sekunden Zeit, sich in Ruhe zu verbinden!
+  #endif
+
   DapConfig_t dap_config_st_local;
   DapConfig_t dap_config_st_eeprom;
 
@@ -790,11 +812,6 @@ void setup()
     pinMode(EMERGENCY_PIN_U8,INPUT_PULLUP);
   #endif
 
-  #ifdef ANGLE_SENSOR_GPIO
-
-    pinMode(ANGLE_SENSOR_GPIO, INPUT);
-    pinMode(ANGLE_SENSOR_GPIO_2, INPUT);
-  #endif
   
 
   #ifdef USING_LED
@@ -978,8 +995,8 @@ void setup()
   loadcell->estimateBiasAndVariance();       // automatically identify sensor noise for KF parameterization
 
 	// find the min & max endstops
-	ActiveSerial->println("Start homing");
-	stepper->findMinMaxSensorless(dap_config_st_local);
+  ActiveSerial->println("Start homing");
+  stepper->findMinMaxSensorless(dap_config_st_local);
   ActiveSerial->print("Min Position is "); ActiveSerial->println(stepper->getLimitMin());
   ActiveSerial->print("Max Position is "); ActiveSerial->println(stepper->getLimitMax());
 
@@ -1299,6 +1316,11 @@ xTaskCreatePinnedToCore(
       //delay(3000);
   #endif
   
+  // set brake resistor voltage
+  float servoOperationVoltageInVolt_fl32 = stepper->getBrakeResistorActivationVoltage();
+  brakeController.setVoltageThreshold(servoOperationVoltageInVolt_fl32);
+
+
   Buzzer.InitializedSound((int)dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
 
 }
@@ -1476,6 +1498,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
   float effect_force_fl32;
   float effect_pos_fl32;
+  EffectOffsets_t effectOffsets_st;
+  EndstopBehavior_t endstopBehavior_st; 
+  RudderOffsets_t rudderOffsets_st;
   int32_t Position_effect;
   int32_t bpTriggerValue_u8;
   int32_t BP_trigger_min;
@@ -1504,11 +1529,11 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
   static float changeVelocity = 0.0f;
   static float normalizedPedalReading_fl32 = 0.0f;
   static float stepperPosFraction_fl32 = 0.0f;
-  static uint16_t angleReading_ui16 = 0;
   static bool sendBasicFlag_b = false;
   static bool sendExtendedFlag_b = false;
   static int32_t stepperPosCurrent_i32;
   static uint32_t cycleCount_u32 = 0;
+  static float oscillationDetectionLevel_fl32 = 0.0f;
 
   for (;;)
   {
@@ -1568,7 +1593,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           stepper->configSetPositionCommandSmoothingFactor(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.positionSmoothingFactor_u8);
         #endif
         stepper->configSetProfilingFlag( (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_CYCLE_TIMER_U8) );
-        stepper->configSetRatioOfInertia(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.servoRatioOfInertia_u8);
+        //stepper->configSetRatioOfInertia(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.servoRatioOfInertia_u8);
 
         // reset all servo alarms
         if ( (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_RESET_ALL_SERVO_ALARMS_U8) )
@@ -1722,9 +1747,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           ActiveSerial->print("Center offset:");
           ActiveSerial->println(_rudder.offsetFilter_i32);
           ActiveSerial->print("pos min:");
-          ActiveSerial->println(dap_calculationVariables_st.stepperPosMin_i32);
+          ActiveSerial->println(dap_calculationVariables_st.softEndstopMinStepperPos_i32);
           ActiveSerial->print("pos max:");
-          ActiveSerial->println(dap_calculationVariables_st.stepperPosMax_i32);
+          ActiveSerial->println(dap_calculationVariables_st.softEndstopMaxStepperPos_i32);
           ActiveSerial->print("max Force:");
           ActiveSerial->print("max Force:");
           ActiveSerial->print(dap_calculationVariables_st.forceMax_fl32);
@@ -1759,16 +1784,6 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       profiler_pedalUpdateTask.end(2);
 
 
-
-      
-  #ifdef ANGLE_SENSOR_GPIO
-        angleReading_ui16 = analogRead(ANGLE_SENSOR_GPIO);
-  #endif
-
-      // Get the angle measurement reading
-      // float angleReading = loadcell->getAngleMeasurement();
-    
-
       // start profiler 3, loadcell reading conversion
       profiler_pedalUpdateTask.start(3);
 
@@ -1792,23 +1807,27 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       
       // Do the loadcell signal filtering
       float alpha_exp_filter = 1.0f - ( (float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfModelNoise_u8) / 5000.0f;
+      static float lastPedalForce_fl32 = 0.0f;
       // const velocity model denoising filter
       switch (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfModelOrder_u8) {
-        case 0:
+        case 0: // const. velocity Kalman filter
           filteredReading = kalman->filteredValue(pedalForce_fl32, 0.0f, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfModelNoise_u8);
           changeVelocity = kalman->changeVelocity();
           break;
-        case 1:
+        case 1: // const. accel. Kalman filter
           filteredReading = kalman_2nd_order->filteredValue(pedalForce_fl32, 0.0f, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfModelNoise_u8);
           changeVelocity = kalman_2nd_order->changeVelocity();
           break;
-        case 2:
+        case 2: // exponential filter
           filteredReading_exp_filter = filteredReading_exp_filter * alpha_exp_filter + pedalForce_fl32 * (1.0f-alpha_exp_filter);
           filteredReading = filteredReading_exp_filter;
+          changeVelocity = (filteredReading - lastPedalForce_fl32) /  ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 * 1e-6f);
+          lastPedalForce_fl32 = filteredReading;
           break;
-        default:
+        default: // No filter
           filteredReading = pedalForce_fl32;
-          break;
+          changeVelocity = (filteredReading - lastPedalForce_fl32) /  ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 * 1e-6f);
+          lastPedalForce_fl32 = filteredReading;
       }
       //write filter reading into calculation_st
       dap_calculationVariables_st.currentForceReading_fl32=filteredReading;
@@ -1922,20 +1941,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         effect_pos_fl32 += _RPMOscillation.rpmPositionOffset_i32;
       }
 
-      // add dampening
-      if (dap_calculationVariables_st.dampingPress_fl32  > 0.0001f)
-      {
-        // dampening is proportional to velocity --> D-gain for stability
-        effect_pos_fl32 -= dap_calculationVariables_st.dampingPress_fl32 * changeVelocity * dap_calculationVariables_st.springStiffnesssInv_fl32;
-      }
-
-
-
-      // Due to closed loop frequiency response, the servo might travel less than the input amplitude. 
-      // To compensate the attenuation, the input amplitude is scaled by a constant factor, which was identified for 15Hz input frequency and roughly resulted in plausible amplitude range. 
-      effect_force_fl32 *= EFFECT_SCALING_FACTOR_FL32;
-      effect_pos_fl32 *= EFFECT_POSITION_SCALING_FACTOR_FL32;
-      
+      // write the effect offsets into a struct for debug output and potential use in other functions like the effect offset PID
+      effectOffsets_st.forceOffset_kg_fl32 = effect_force_fl32;
+      effectOffsets_st.forceOffset_Steps_fl32 = effect_pos_fl32;
 
 
       // chatter reduction gain, reduce the gain when chatter happened
@@ -1946,9 +1954,33 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       }
       */
 
+
+      // --- Predictive Brake Resistor Activator ---
+      uint32_t current_time_us = micros();
+      bool brake_state = brakeController.Update(
+          stepper->getServosPosError()
+          , stepper->getServosPosErrorChangeRateInStepsPerSecond()
+          , changeVelocity
+          , stepper->getCurrentSpeedInHz()
+          , ( (float)stepper->getServosVoltage() ) * 0.1f
+          , current_time_us
+      );
+      #ifdef BRAKE_RESISTOR_PIN_U8
+        if (brake_state) {
+            digitalWrite(BRAKE_RESISTOR_PIN_U8, HIGH);
+        } else {
+            digitalWrite(BRAKE_RESISTOR_PIN_U8, LOW);
+        }
+      #endif
+
       
+      // --- 2. OSCILLATION DETECTION (Active Oscillation Mitigation - AOM) ---
+      // Computes the oscillation intensity based on signal activity and updates the value.
+      //oscillationDetectionLevel_fl32 = oscDetector.update(filteredReading);
+      oscillationDetectionLevel_fl32 = oscDetector.updateWithExternalRate(changeVelocity);
+
       // compute next position with PID strategy
-      // MPC control strategy for rudder
+      // MPC control strataegy for rudder
       int32_t positionWithoutEffect=0;
       if(dap_calculationVariables_st.rudderStatus_b || dap_calculationVariables_st.helicopterRudderStatus_b)
       {
@@ -1965,12 +1997,26 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       }
       else 
       {
-        // Pedal control
-        Position_Next = MoveByPidStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, effect_force_fl32, 0);
-        if(effectsCalculated_b)
-        {
-          Position_Next -= effect_pos_fl32;
-        } 
+
+        endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.endstopStiffness_kg_mm_u8 * 9.81f; 
+        endstopBehavior_st.travelRange_mm_fl32 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.endstopTravelRange_mm_u8;
+
+        endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32 = constrain(endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32, 0.0f, 500.0f); // constrain the stiffness to a max value for safety
+        endstopBehavior_st.travelRange_mm_fl32 = constrain(endstopBehavior_st.travelRange_mm_fl32, 0.0f, 10.0f); // constrain the stiffness to a max value for safety
+        
+        // Pedal control algorithm
+        Position_Next = MoveByAdmittanceStrategy(
+          filteredReading
+          , stepper
+          , &forceCurve
+          , &dap_calculationVariables_st
+          , &dap_config_pedalUpdateTask_st
+          , effectOffsets_st
+          , endstopBehavior_st
+          , rudderOffsets_st
+          , oscillationDetectionLevel_fl32
+        ); 
+        
       }
       // end profiler 4, movement strategy
       profiler_pedalUpdateTask.end(5);
@@ -1978,12 +2024,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // start profiler 6, ...
       profiler_pedalUpdateTask.start(6);
 
-      
-      // clip target position to configured target interval with RPM effect movement in the endstop
-      Position_Next = (int32_t)constrain(Position_Next, dap_calculationVariables_st.stepperPosMinEndstop_i32, dap_calculationVariables_st.stepperPosMaxEndstop_i32);
-      //Position_Next = (int32_t)constrain(Position_Next, dap_calculationVariables_st.stepperPosMin_i32, dap_calculationVariables_st.stepperPosMax_i32);
-
-      
+      // clip target position to hard endstops
+      Position_Next = (int32_t)constrain(Position_Next, stepper->getHardEndstopMinPosition(), stepper->getHardEndstopMaxPosition());
 
       // rudder helper
       Rudder_real_poisiton= 100*((positionWithoutEffect-dap_calculationVariables_st.stepperPosMinDefault_i32) / dap_calculationVariables_st.stepperPosRangeDefault_fl32);
@@ -2118,110 +2160,25 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // Move to new position
       if (doMovement_b)
       {
-		  
-
-#ifdef S_CURVE_POSITION_SHAPING
-        static bool s_positionGovernorInitialized_b = false;
-        static float s_positionGovernorPos_fl32 = 0.0f;
-        static float s_positionGovernorVel_fl32 = 0.0f;
-        static float s_positionGovernorAcc_fl32 = 0.0f;
-
-        // --- Jerk-limited position command shaping ("S-curve-ish" governor) ---
-        // Purpose:
-        //   Limit discontinuities in the commanded position/velocity/acceleration that would
-        //   otherwise excite the (aggressive) servo inner PID and create audible/feelable jitter.
-        //
-        // We maintain an internal trajectory state (x_g, v_g, a_g) and drive it toward the
-        // instantaneous command x_cmd (= Position_Next), subject to limits.
-        //
-        // Constraints:
-        //   |v_g| <= v_max
-        //   |a_g| <= a_max
-        //   |j_g| <= j_max   where j_g := da_g/dt
-        //
-        // Parameterization (simple, monotonic mapping from "smoothing time" T):
-        //   a_max = v_max / T
-        //   j_max = a_max / T = v_max / T^2
-        //
-        // Discrete-time update each control tick (dt):
-        //   e      = x_cmd - x_g
-        //   v_des  = clamp(e/dt,  ±v_max)
-        //   a_des  = clamp((v_des - v_g)/dt, ±a_max)
-        //   a_g   += clamp(a_des - a_g, ±j_max*dt)
-        //   v_g   += a_g * dt
-        //   x_g   += v_g * dt
-        //
-        // Finally, we round x_g back to integer steps for the stepper command.
-
-        bool isPedalControlStrategy_b = !(dap_calculationVariables_st.rudderStatus_b || dap_calculationVariables_st.helicopterRudderStatus_b);
-        bool enablePositionGovernor_b = isPedalControlStrategy_b && (0u != dap_config_pedalUpdateTask_st.payloadPedalConfig_st.positionSmoothingFactor_u8);
-
-        if (moveSlowlyToPosition_b)
-        {
-          s_positionGovernorInitialized_b = false;
-        }
-
-        if (enablePositionGovernor_b && (!moveSlowlyToPosition_b))
-        {
-          float deltaTime_s_fl32 = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
-          float smoothingTime_s_fl32 = ((float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st.positionSmoothingFactor_u8) * 1e-4f;
-
-          if ((deltaTime_s_fl32 > 0.0f) && (smoothingTime_s_fl32 > 0.0f))
-          {
-            if (!s_positionGovernorInitialized_b)
-            {
-              s_positionGovernorPos_fl32 = (float)stepper->getTargetPositionSteps();
-              s_positionGovernorVel_fl32 = 0.0f;
-              s_positionGovernorAcc_fl32 = 0.0f;
-              s_positionGovernorInitialized_b = true;
-            }
-
-            float maxSpeed_stepsPerS_fl32 = (float)stepper->getCurrentSpeedInMilliHz();
-            if (maxSpeed_stepsPerS_fl32 < 1.0f)
-            {
-              maxSpeed_stepsPerS_fl32 = (float)MAXIMUM_STEPPER_SPEED_U32;
-            }
-
-            float maxAccel_stepsPerS2_fl32 = maxSpeed_stepsPerS_fl32 / smoothingTime_s_fl32;
-            float maxJerk_stepsPerS3_fl32 = maxAccel_stepsPerS2_fl32 / smoothingTime_s_fl32;
-
-            float targetPos_fl32 = (float)Position_Next;
-            float errorSteps_fl32 = targetPos_fl32 - s_positionGovernorPos_fl32;
-            float desiredVel_stepsPerS_fl32 = constrain(errorSteps_fl32 / deltaTime_s_fl32, -maxSpeed_stepsPerS_fl32, maxSpeed_stepsPerS_fl32);
-
-            float desiredAcc_stepsPerS2_fl32 = (desiredVel_stepsPerS_fl32 - s_positionGovernorVel_fl32) / deltaTime_s_fl32;
-            desiredAcc_stepsPerS2_fl32 = constrain(desiredAcc_stepsPerS2_fl32, -maxAccel_stepsPerS2_fl32, maxAccel_stepsPerS2_fl32);
-
-            float accDelta_stepsPerS2_fl32 = desiredAcc_stepsPerS2_fl32 - s_positionGovernorAcc_fl32;
-            float maxAccDelta_stepsPerS2_fl32 = maxJerk_stepsPerS3_fl32 * deltaTime_s_fl32;
-            accDelta_stepsPerS2_fl32 = constrain(accDelta_stepsPerS2_fl32, -maxAccDelta_stepsPerS2_fl32, maxAccDelta_stepsPerS2_fl32);
-            s_positionGovernorAcc_fl32 += accDelta_stepsPerS2_fl32;
-
-            s_positionGovernorVel_fl32 += s_positionGovernorAcc_fl32 * deltaTime_s_fl32;
-            s_positionGovernorVel_fl32 = constrain(s_positionGovernorVel_fl32, -maxSpeed_stepsPerS_fl32, maxSpeed_stepsPerS_fl32);
-
-            s_positionGovernorPos_fl32 += s_positionGovernorVel_fl32 * deltaTime_s_fl32;
-
-            if (((errorSteps_fl32 >= 0.0f) && (s_positionGovernorPos_fl32 > targetPos_fl32)) || ((errorSteps_fl32 <= 0.0f) && (s_positionGovernorPos_fl32 < targetPos_fl32)))
-            {
-              s_positionGovernorPos_fl32 = targetPos_fl32;
-              s_positionGovernorVel_fl32 = 0.0f;
-              s_positionGovernorAcc_fl32 = 0.0f;
-            }
-
-            Position_Next = (int32_t)floorf(s_positionGovernorPos_fl32 + 0.5f);
-            Position_Next = (int32_t)constrain(Position_Next, dap_calculationVariables_st.stepperPosMinEndstop_i32, dap_calculationVariables_st.stepperPosMaxEndstop_i32);
-          }
-        }
-        else
-        {
-          s_positionGovernorInitialized_b = false;
-        }
-#endif
-		
         if (!moveSlowlyToPosition_b)
         {
-          stepper->moveTo(Position_Next, false);
+          // compute required speed to reach the target position within the next control cycle, so that the movement appears smooth and without delay.
+          int32_t distanceToMove = Position_Next - stepperPosCurrent_i32;
+          
+          if (distanceToMove != 0) 
+          {
+            float deltaTime_s_fl32 = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
+            float requiredSpeed = abs(distanceToMove) / deltaTime_s_fl32;
+            
+            // overwrite speed command slightly to make sure the target position is reached within the control cycle.
+            requiredSpeed *= 1.1f; 
+
+            if (requiredSpeed > (float)MAXIMUM_STEPPER_SPEED_U32) {
+                requiredSpeed = (float)MAXIMUM_STEPPER_SPEED_U32;
+            }
+
+            stepper->moveToWithSpeed((int32_t)Position_Next, (uint32_t)abs(requiredSpeed));
+          }
         }
         else
         {
@@ -2242,7 +2199,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       {
         if (1 == dap_config_pedalUpdateTask_st.payloadPedalConfig_st.travelAsJoystickOutput_u8)
         {
-          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue((stepperPosCurrent_i32-dap_calculationVariables_st.stepperPosRange_fl32/2), dap_calculationVariables_st.stepperPosMin_i32, dap_calculationVariables_st.stepperPosMin_i32+dap_calculationVariables_st.stepperPosRange_fl32/2.0f, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.maxGameOutput_u8);
+          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue((stepperPosCurrent_i32-dap_calculationVariables_st.stepperPosRange_fl32/2), dap_calculationVariables_st.softEndstopMinStepperPos_i32, dap_calculationVariables_st.softEndstopMinStepperPos_i32+dap_calculationVariables_st.stepperPosRange_fl32/2.0f, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.maxGameOutput_u8);
         }
         else
         {
@@ -2253,7 +2210,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       {
         if (1 == dap_config_pedalUpdateTask_st.payloadPedalConfig_st.travelAsJoystickOutput_u8)
         {
-          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(stepperPosCurrent_i32, dap_calculationVariables_st.stepperPosMin_i32, dap_calculationVariables_st.stepperPosMax_i32, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.maxGameOutput_u8);
+          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(stepperPosCurrent_i32, dap_calculationVariables_st.softEndstopMinStepperPos_i32, dap_calculationVariables_st.softEndstopMaxStepperPos_i32, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.maxGameOutput_u8);
         }
         else
         {            
@@ -2406,28 +2363,32 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           dap_state_extended_st_lcl_pedalUpdateTask.payloadFooter_st.enfOfFrame0_u8 =  EOF_BYTE_0_U8; // 170
           dap_state_extended_st_lcl_pedalUpdateTask.payloadFooter_st.enfOfFrame1_u8 =  EOF_BYTE_1_U8; // 86
 
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.pedalTag_u8 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.pedalType_u8;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_STATE_EXTENDED_U8;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
+
+
           // update extended struct 
+          int32_t minPos = 0; //stepper->getMinPosition();
+
+          // Servo states
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoStateCycleCount_u32 = stepper->getServoCycleCounter();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionTarget_i32 = stepper->getServosInternalPositionCorrected();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionFeedback_i32 = stepper->getServosInternalPositionCorrected() + stepper->getServosPosError() - minPos;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionError_i16 = stepper->getServosPosError();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoVoltage0p1V_i16 =  stepper->getServosVoltage();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoCurrentPercent_i16 = stepper->getServosCurrent();
+
+          // ESP states
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.timeInUs_u32 = micros();
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.cycleCount_u32 = cycleCount_u32;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.pedalForceRaw_fl32 =  loadcellReading;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.pedalForceFiltered_fl32 =  filteredReading;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.forceVelEst_fl32 =  changeVelocity;
-
-          int32_t minPos = 0; //stepper->getMinPosition();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPosition_i32 = stepper->getServosInternalPositionCorrected() - minPos;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoVoltage0p1V_i16 =  stepper->getServosVoltage();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoCurrentPercent_i16 = stepper->getServosCurrent();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionError_i16 = stepper->getServosPosError();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionEstimated_i16 = stepper->getEstimatedPosError();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.targetPosition_i32 = Position_Next - minPos;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionTarget_i32 = stepper->getCurrentPosition() - minPos;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.currentSpeedInMilliHz_i32 = stepper->getCurrentSpeedInMilliHz();
-
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.angleSensorOutput_u16 = angleReading_ui16;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.brakeResistorState_b = stepper->getBrakeResistorState();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.pedalTag_u8 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.pedalType_u8;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_STATE_EXTENDED_U8;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.targetPosition_i32 = stepper->getCurrentPosition() - minPos;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.currentSpeedInHz_i32 = stepper->getCurrentSpeedInHz();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.brakeResistorState_b = brake_state * 255;//stepper->getBrakeResistorState();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.oscillationMonitorValue_u8 = (oscillationDetectionLevel_fl32 * 255.0f);
         }
 
 
