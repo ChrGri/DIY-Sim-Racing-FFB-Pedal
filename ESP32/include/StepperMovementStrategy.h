@@ -123,11 +123,12 @@ static inline float CalcSoftEndstopForce(
 /**
  * @brief Admittance Oscillation Detector (Landi et al.)
  * Compares theoretical admittance force with actual measured force to identify external disturbances.
+ * Uses the exact non-linear spring and endstop reaction force to avoid bias errors.
  * @param debugState_st Optional pointer to output internal physical states for telemetry.
  */
 static inline bool DetectAdmittanceOscillation(
     float externalForce_N, float actualPosFraction_01, float totalTravel_m, 
-    float currentStiffness_N_m, float baseDamping_Ns_m, float currentMass_kg, float dt_s,
+    float totalSpringReaction_N, float baseDamping_Ns_m, float currentMass_kg, float dt_s,
     AdmittanceDebugState_t* debugState_st)
 {
     float physicalPos_m = actualPosFraction_01 * totalTravel_m;
@@ -160,9 +161,11 @@ static inline bool DetectAdmittanceOscillation(
 
     // Expected force based on nominal admittance model (Eq. 2)
     // If the system is stable, the measured external force should perfectly match the physics model.
+    // We use totalSpringReaction_N instead of (Stiffness * Pos) to perfectly account for 
+    // spline biases and soft endstop forces.
     float expectedForce_N = (currentMass_kg * physicalAcc_mps2) + 
                             (baseDamping_Ns_m * physicalVel_mps) + 
-                            (currentStiffness_N_m * physicalPos_m);
+                            totalSpringReaction_N;
     
     float psi_raw = fabsf(externalForce_N - expectedForce_N);
 
@@ -430,7 +433,10 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // --- 8. ADMITTANCE OSCILLATION DETECTOR (Landi et al.) ---
   // We calculate base damping with un-adapted mass for the physics ideal-model reference
   float idealBaseDamping_Ns_m = dampingRatio_zeta * 2.0f * sqrtf(virtualMass_kg * currentStiffness_N_m);
-  bool isOscillating = DetectAdmittanceOscillation(externalForce_N, actualPosFraction_01, totalTravel_m, currentStiffness_N_m, idealBaseDamping_Ns_m, virtualMass_kg, dt_s, debugState_st);
+  
+  // Use the exact restoring force (spline + endstop) instead of linear stiffness assumption
+  float totalSpringReaction_N = springForce_N + softEndstopForce_N;
+  bool isOscillating = DetectAdmittanceOscillation(externalForce_N, actualPosFraction_01, totalTravel_m, totalSpringReaction_N, idealBaseDamping_Ns_m, virtualMass_kg, dt_s, debugState_st);
 
   // --- 9. ENERGY TANK & PASSIVE PARAMETER ADAPTATION ---
   AdaptMassViaEnergyTank(isOscillating, g_oscillationIntensity_01, g_vModelVel_mps, dt_s, virtualMass_kg, virtualMass_kg);
