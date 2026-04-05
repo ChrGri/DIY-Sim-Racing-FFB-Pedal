@@ -268,6 +268,15 @@ namespace User.PluginSdkDemo.Language {
         }
         
         /// <summary>
+        ///   查詢類似 Dynamics 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TabTextDynamics {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TabTextDynamics", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Filter 的當地語系化字串。
         /// </summary>
         internal static string DIYFFBPedalPlugin_TabTextFilter {
@@ -471,6 +480,42 @@ namespace User.PluginSdkDemo.Language {
         internal static string DIYFFBPedalPlugin_TextDelete {
             get {
                 return ResourceManager.GetString("DIYFFBPedalPlugin_TextDelete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Endstop Stiffness 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextDynamicsSettingSliderEndstopStiffness {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextDynamicsSettingSliderEndstopStiffness", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Endstop Travel 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextDynamicsSettingSliderEndstopTravel {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextDynamicsSettingSliderEndstopTravel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Virtual Pedal Damping (zeta value) 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextDynamicsSettingSliderVirtualPedalDamping {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextDynamicsSettingSliderVirtualPedalDamping", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Virtual Pedal Mass 的當地語系化字串。
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextDynamicsSettingSliderVirtualPedalMass {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextDynamicsSettingSliderVirtualPedalMass", resourceCulture);
             }
         }
         

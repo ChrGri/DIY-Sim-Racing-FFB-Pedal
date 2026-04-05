@@ -127,6 +127,8 @@ namespace User.PluginSdkDemo
 
             DefaultConfig.payloadPedalConfig_.virtualPedalMass_u8 = 30;
             DefaultConfig.payloadPedalConfig_.virtualPedalDamping_u8 = 100;
+            DefaultConfig.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = 10;
+            DefaultConfig.payloadPedalConfig_.endstopTravelRange_mm_u8 = 0;
 
         }
 

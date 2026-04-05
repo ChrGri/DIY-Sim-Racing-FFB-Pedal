@@ -290,6 +290,11 @@ namespace User.PluginSdkDemo
                     {
                         config.payloadPedalConfig_.pedalEndPosition = 95;
                     }
+                    if (config.payloadPedalConfig_.endstopStiffness_kg_mm_u8 == 0) config.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = 10;
+                    if (config.payloadPedalConfig_.endstopTravelRange_mm_u8 == 0) config.payloadPedalConfig_.endstopTravelRange_mm_u8 = 0;
+                    if (config.payloadPedalConfig_.virtualPedalMass_u8 == 0 ) config.payloadPedalConfig_.virtualPedalMass_u8 = 30;
+                    if (config.payloadPedalConfig_.virtualPedalDamping_u8 == 0) config.payloadPedalConfig_.virtualPedalDamping_u8 = 100;
+
                     config.payloadPedalConfig_.configHash_u32 = hash;
 
                 }
