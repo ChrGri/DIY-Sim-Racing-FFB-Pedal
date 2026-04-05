@@ -14,6 +14,7 @@ private:
     const float TTZ_WARNING_S = 0.04f; 
     const int32_t MIN_SPEED_HZ = 30000; 
     const uint32_t HOLD_TIME_US = 30000; 
+    const int32_t ERROR_WAS_LARGE_TRHESHOLD_STEPS_I32 = -100; 
 
     // --- 2. Hysteresis Parameters (Reactive Overvoltage Protection) ---
     const float BRAKE_RESISTOR_UPPER_THRESHOLD_VOLTAGE = 4.0f;
@@ -98,16 +99,16 @@ public:
         }
 
         // --- 2. Foot Dynamics & Kinetic Checks ---
-        bool foot_is_escaping_b = (forceVelEst_fl32 < FOOT_ESCAPE_RATE_KG_S);
+        //bool foot_is_escaping_b = (forceVelEst_fl32 < FOOT_ESCAPE_RATE_KG_S);
         bool high_kinetic_energy_b = (abs(currentSpeedInHz_i32) > MIN_SPEED_HZ);
 
+        // overwerite foot escaping value. Sometimes positive values have been seen here too. 
         bool foot_is_dynamic_b = ( fabsf(forceVelEst_fl32) > fabsf(FOOT_ESCAPE_RATE_KG_S) );
-        foot_is_escaping_b = foot_is_dynamic_b;
 
-        bool errorWasLarge_b = servoPositionError_i32 < -100;
+        bool errorWasLarge_b = (prev_error_fl32 < ERROR_WAS_LARGE_TRHESHOLD_STEPS_I32) || (current_error_fl32 < ERROR_WAS_LARGE_TRHESHOLD_STEPS_I32);
 
         // --- 3. The Precision Trigger ("Sniper Trigger") ---
-        bool trigger_b = foot_is_escaping_b && high_kinetic_energy_b && (ttz_s_fl32 < TTZ_WARNING_S) && errorWasLarge_b;
+        bool trigger_b = foot_is_dynamic_b && high_kinetic_energy_b && (ttz_s_fl32 < TTZ_WARNING_S) && errorWasLarge_b;
 
         // --- 4. Rollover-Safe Timer Logic ---
         if (trigger_b) {

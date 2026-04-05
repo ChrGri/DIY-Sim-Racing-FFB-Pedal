@@ -174,18 +174,20 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float dampingMultiplier = 1.0f + (g_oscillationIntensity_01 * 8.0f);
 
   // =========================================================
-  // NEU: Tracking-Error abhängige Dämpfung (Trajectory Shaping) to reduce EMF spikes. It was observed, that voltage spikes occur at tracking error zero crossings. 
-  // It was assumed, that the servo could not keep up with its target position, then overhoots, producing large EMF. To reduce the lag, we increase the virtual damping so servo can keep up.
+  // Tracking-Error abhängige Dämpfung (Trajectory Shaping) to reduce EMF spikes. 
+  // It was observed, that voltage spikes occur at tracking error zero crossings. 
+  // It was assumed, that the servo could not keep up with its target position, then overhoots, producing large EMF. 
+  // To reduce the lag, we increase the virtual damping so servo can keep up.
   // =========================================================
-  // actualPosFraction_01 ist die reale Position, g_vModelPos_01 die Soll-Position.
+  // actualPosFraction_01 is the reale position, g_vModelPos_01 the target-position.
   float trackingError_01 = fabsf(g_vModelPos_01 - actualPosFraction_01);
   int32_t actualServoTrackingError_i32 = stepper->getServosPosError();
   trackingError_01 = fabsf(actualServoTrackingError_i32 / travelSteps_cnt);
 
-  // Wenn der Motor mehr als 0.5% hinterherhinkt, erhöhen wir dynamisch die Dämpfung 
-  // des Modells. Das Modell wartet quasi auf den Motor.
+  // If tracking errors exceed 0.5%, the models damping is dynamically increased propotional
+  // so that the servo can catch up.
   if (trackingError_01 > 0.005f) {
-      // Tuning: Der Multiplikator (hier 20.0f) bestimmt, wie stark das Modell abbremst.
+      // Tuning: the multiplier (here 20.0f) determines how much thw model deccelerates.
       dampingMultiplier += (trackingError_01 * 20.0f); 
   }
   // =========================================================
@@ -216,29 +218,33 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   const float MAX_ACCEL_MPS2 = 50.0f; 
   acceleration_mps2 = constrain(acceleration_mps2, -MAX_ACCEL_MPS2, MAX_ACCEL_MPS2);
 
-  // =========================================================
-  // NEU: Prädiktive EMF-Reduktion (Regenerative Power Clamping)
-  // =========================================================
-  // Wenn Beschleunigung und Geschwindigkeit entgegengesetzt sind, bremst das System (Generator-Modus).
+  // ===========================================================
+  // Predictive Back-EMF Reduction (Regenerative Power Clamping)
+  // ===========================================================
+  // When the motor works against the external force while moving, it regenerates energy.
   if ((acceleration_mps2 > 0.0f && g_vModelVel_mps < 0.0f) || 
       (acceleration_mps2 < 0.0f && g_vModelVel_mps > 0.0f)) {
       
-      // Mechanische Bremsleistung P = |m * a * v| (in Watt)
-      float predictedRegenPower_W = fabsf((virtualMass_kg * acceleration_mps2) * g_vModelVel_mps);
+      // Calculate the actual mechanical force the motor is exerting.
+      // Sum of forces on virtual mass: m*a = F_ext - F_motor -> F_motor = F_ext - m*a
+      float motorForce_N = externalForce_N - (virtualMass_kg * acceleration_mps2);
       
-      // Max. erlaubte Rückleistung (Tuning-Parameter! Startwert 20-30W für iSV57 an 36V)
-      const float MAX_REGEN_POWER_W = 1.0f; 
+      // Mechanical power P = |F_motor * v| (in Watts).
+      float predictedRegenPower_W = fabsf(motorForce_N * g_vModelVel_mps);
+      
+      // Max allowed regenerative power (Tuning parameter! Suggested 20-30W for iSV57 at 36V)
+      const float MAX_REGEN_POWER_W = 20.0f; 
 
       if (predictedRegenPower_W > MAX_REGEN_POWER_W) {
-          // Beschleunigung kappen, um den Peak sanft abzuschneiden
+          // Softly scale the acceleration magnitude to stay within power limits.
+          // This avoids the 'direction reversal' artifacts of hard re-calculation.
           float powerScale = MAX_REGEN_POWER_W / predictedRegenPower_W;
           acceleration_mps2 *= powerScale;
       }
   }
   // =========================================================
 
-
-
+  // Update velocity
   g_vModelVel_mps += acceleration_mps2 * dt_s;
 
 
