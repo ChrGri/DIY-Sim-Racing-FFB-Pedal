@@ -173,6 +173,12 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // AOM BOOST: If oscillation is detected, inject massive damping to freeze the system and bleed energy.
   float dampingMultiplier = 1.0f + (g_oscillationIntensity_01 * 8.0f);
 
+  
+
+  // convert position offset to force offset using the local stiffness at the current position on the force curve
+  float effectPositionToForceConversion_kg = effectOffsets_st.forceOffset_Steps_fl32 * localStiffness_kg_step;
+  float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32 + effectPositionToForceConversion_kg;
+
   // =========================================================
   // Tracking-Error abhängige Dämpfung (Trajectory Shaping) to reduce EMF spikes. 
   // It was observed, that voltage spikes occur at tracking error zero crossings. 
@@ -186,17 +192,16 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   // If tracking errors exceed 0.5%, the models damping is dynamically increased propotional
   // so that the servo can catch up.
-  if (trackingError_01 > 0.005f) {
-      // Tuning: the multiplier (here 20.0f) determines how much thw model deccelerates.
-      dampingMultiplier += (trackingError_01 * 20.0f); 
+  if (effectForceOffset_fl32 == 0.0f) // disable dampening in case of applied effects
+  {
+    if (trackingError_01 > 0.005f) {
+        // Tuning: the multiplier (here 20.0f) determines how much thw model deccelerates.
+        dampingMultiplier += (trackingError_01 * 20.0f); 
+    }
   }
   // =========================================================
 
   float activeDamping_Ns_m = baseDamping_Ns_m * dampingMultiplier;
-
-  // convert position offset to force offset using the local stiffness at the current position on the force curve
-  float effectPositionToForceConversion_kg = effectOffsets_st.forceOffset_Steps_fl32 * localStiffness_kg_step;
-  float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32 + effectPositionToForceConversion_kg;
 
   // --- 8. INTEGRATION (MASS-SPRING-DAMPER-ENDSTOP) ---
   // F_net = F_human - F_spring - F_softEndstop - F_damping
