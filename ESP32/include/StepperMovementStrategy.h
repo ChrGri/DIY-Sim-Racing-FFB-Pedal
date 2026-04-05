@@ -126,6 +126,11 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float localStiffness_N_m = max(localStiffness_kg_step * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG, 1.0f);
 
 
+  // convert position offset to force offset using the local stiffness at the current position on the force curve
+  float effectPositionToForceConversion_kg = effectOffsets_st.forceOffset_Steps_fl32 * localStiffness_kg_step;
+  float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32 + effectPositionToForceConversion_kg;
+
+
   // --- 5. DYNAMIC TRAVEL LIMITS (Including Effect Offsets) ---
   // High-frequency effects (like ABS) can push the pedal slightly beyond the soft limits.
   // We calculate the required limit expansion based on local stiffness.
@@ -141,9 +146,10 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   if (travelSteps_cnt > 0.0f) {
     float ext_A = additionalTravelSteps_StepOffset / travelSteps_cnt;
     float ext_B = additionalTravelSteps_ForceOffset / travelSteps_cnt;
-    
-    lowerTravelLimit_01 = min(0.0f, min(ext_A, ext_B));
-    upperTravelLimit_01 = 1.0f + max(0.0f, max(ext_A, ext_B));
+    float ext_steps = ext_A + ext_B;
+
+    lowerTravelLimit_01 = min(0.0f, ext_steps);
+    upperTravelLimit_01 = 1.0f + max(0.0f, ext_steps);
   }
 
 
@@ -175,9 +181,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   
 
-  // convert position offset to force offset using the local stiffness at the current position on the force curve
-  float effectPositionToForceConversion_kg = effectOffsets_st.forceOffset_Steps_fl32 * localStiffness_kg_step;
-  float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32 + effectPositionToForceConversion_kg;
+  
 
   // =========================================================
   // Tracking-Error abhängige Dämpfung (Trajectory Shaping) to reduce EMF spikes. 
