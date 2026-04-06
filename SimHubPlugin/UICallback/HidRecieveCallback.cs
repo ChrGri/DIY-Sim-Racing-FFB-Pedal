@@ -298,6 +298,10 @@ namespace User.PluginSdkDemo
                                                 writer.Write(", brakeResistorState_b");
                                                 writer.Write(", oscillationMonitorValue_u8");
 
+                                                writer.Write(", admittance_expectedForce_N");
+                                                writer.Write(", admittance_isOscillating");
+                                                writer.Write(", admittance_admittancePsi_N");
+
                                                 writer.Write("\n");
                                             }
 
@@ -327,7 +331,10 @@ namespace User.PluginSdkDemo
                                                 $",{state.targetPosition_i32}" +
                                                 $",{state.currentSpeedInHz_i32}" +
                                                 $",{state.brakeResistorState_b}" +
-                                                $",{state.oscillationMonitorValue_u8}");
+                                                $",{state.oscillationMonitorValue_u8}" +
+                                                $",{state.admittance_expectedForce_N}" +
+                                                $",{state.admittance_isOscillating}" +
+                                                $",{state.admittance_admittancePsi_N}");
                                         }
 
 

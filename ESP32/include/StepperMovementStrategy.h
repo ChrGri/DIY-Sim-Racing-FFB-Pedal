@@ -60,9 +60,13 @@ float g_lastActiveDamping_Ns_m = 0.0f;  // Track previous frame's damping for po
 #define PSI_BUFFER_SIZE 30
 float g_psiBuffer[PSI_BUFFER_SIZE] = {0};
 uint8_t g_psiBufferIdx = 0;
-float g_prevPhysicalVel_mps = 0.0f;
 float g_prevPhysicalPos_m = 0.0f;
 bool g_isPsiInitialized = false;
+
+// NEW: Filter states for physical kinematics to suppress numerical derivation noise
+float g_filteredPhysicalVel_mps = 0.0f;
+float g_filteredPhysicalAcc_mps2 = 0.0f;
+float g_prevFilteredPhysicalVel_mps = 0.0f;
 
 // =========================================================
 // HELPER SUB-FUNCTIONS FOR ENCAPSULATION
@@ -124,18 +128,21 @@ static inline float CalcSoftEndstopForce(
  * @brief Admittance Oscillation Detector (Landi et al.)
  * Compares theoretical admittance force with actual measured force to identify external disturbances.
  * Uses the exact non-linear spring and endstop reaction force to avoid bias errors.
+ * Uses EMA filtering to suppress massive noise spikes from digital stepper derivation.
  * @param debugState_st Optional pointer to output internal physical states for telemetry.
  */
 static inline bool DetectAdmittanceOscillation(
     float externalForce_N, float actualPosFraction_01, float totalTravel_m, 
     float totalSpringReaction_N, float baseDamping_Ns_m, float currentMass_kg, float dt_s,
-    AdmittanceDebugState_t* debugState_st)
+    AdmittanceDebugState_t* debugState_st, float maxForceInKg_fl32)
 {
     float physicalPos_m = actualPosFraction_01 * totalTravel_m;
     
     if (!g_isPsiInitialized) {
         g_prevPhysicalPos_m = physicalPos_m;
-        g_prevPhysicalVel_mps = 0.0f;
+        g_filteredPhysicalVel_mps = 0.0f;
+        g_filteredPhysicalAcc_mps2 = 0.0f;
+        g_prevFilteredPhysicalVel_mps = 0.0f;
         g_isPsiInitialized = true;
         
         if (debugState_st != nullptr) {
@@ -153,19 +160,41 @@ static inline bool DetectAdmittanceOscillation(
         return false;
     }
 
-    float physicalVel_mps = (physicalPos_m - g_prevPhysicalPos_m) / dt_s;
-    float physicalAcc_mps2 = (physicalVel_mps - g_prevPhysicalVel_mps) / dt_s;
-    
+    // 1. Raw Derivation
+    float rawPhysicalVel_mps = (physicalPos_m - g_prevPhysicalPos_m) / dt_s;
     g_prevPhysicalPos_m = physicalPos_m;
-    g_prevPhysicalVel_mps = physicalVel_mps;
+
+    // 2. Low-Pass Filter Velocity (EMA, Alpha ~0.15 for smooth but responsive tracking)
+    const float ALPHA_VEL = 0.15f; 
+    g_filteredPhysicalVel_mps = (ALPHA_VEL * rawPhysicalVel_mps) + ((1.0f - ALPHA_VEL) * g_filteredPhysicalVel_mps);
+
+    // 3. Raw Acceleration from Filtered Velocity
+    float rawPhysicalAcc_mps2 = (g_filteredPhysicalVel_mps - g_prevFilteredPhysicalVel_mps) / dt_s;
+    g_prevFilteredPhysicalVel_mps = g_filteredPhysicalVel_mps;
+
+    // 4. Low-Pass Filter Acceleration (EMA, Alpha ~0.05 to suppress extreme derivation noise)
+    const float ALPHA_ACC = 0.05f; 
+    g_filteredPhysicalAcc_mps2 = (ALPHA_ACC * rawPhysicalAcc_mps2) + ((1.0f - ALPHA_ACC) * g_filteredPhysicalAcc_mps2);
 
     // Expected force based on nominal admittance model (Eq. 2)
     // If the system is stable, the measured external force should perfectly match the physics model.
     // We use totalSpringReaction_N instead of (Stiffness * Pos) to perfectly account for 
     // spline biases and soft endstop forces.
-    float expectedForce_N = (currentMass_kg * physicalAcc_mps2) + 
-                            (baseDamping_Ns_m * physicalVel_mps) + 
+    float expectedForce_N = (currentMass_kg * g_filteredPhysicalAcc_mps2) + 
+                            (baseDamping_Ns_m * g_filteredPhysicalVel_mps) + 
                             totalSpringReaction_N;
+    
+    // =========================================================
+    // NEW: ENDSTOP MASKING (Detector Suppression)
+    // The mechanical realities near the limits (bouncing against hard stops, 
+    // extreme elastomer compression) deviate heavily from the ideal mathematical model.
+    // To prevent the Energy Tank from draining due to false-positive limit-cycle 
+    // detections, we force the expected force to equal the external force near the limits.
+    // This effectively sets Psi to 0.0 in these zones.
+    // =========================================================
+    if (actualPosFraction_01 > 0.95f || actualPosFraction_01 < 0.05f) {
+        expectedForce_N = externalForce_N;
+    }
     
     float psi_raw = fabsf(externalForce_N - expectedForce_N);
 
@@ -184,12 +213,13 @@ static inline bool DetectAdmittanceOscillation(
         debugState_st->admittancePsi_N = psi_smoothed;
         debugState_st->expectedForce_N = expectedForce_N;
         debugState_st->physicalPos_m = physicalPos_m;
-        debugState_st->physicalVel_mps = physicalVel_mps;
-        debugState_st->physicalAcc_mps2 = physicalAcc_mps2;
+        debugState_st->physicalVel_mps = g_filteredPhysicalVel_mps;
+        debugState_st->physicalAcc_mps2 = g_filteredPhysicalAcc_mps2;
     }
 
     // Threshold detection (e.g., 30 Newtons)
-    const float EPSILON_THRESHOLD_N = 30.0f; 
+    const float GRAVITY_N_KG = 9.81f;
+    const float EPSILON_THRESHOLD_N = maxForceInKg_fl32 * 2;// GRAVITY_N_KG / 2; // empirically determined
     return (psi_smoothed > EPSILON_THRESHOLD_N);
 }
 
@@ -436,7 +466,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   
   // Use the exact restoring force (spline + endstop) instead of linear stiffness assumption
   float totalSpringReaction_N = springForce_N + softEndstopForce_N;
-  bool isOscillating = DetectAdmittanceOscillation(externalForce_N, actualPosFraction_01, totalTravel_m, totalSpringReaction_N, idealBaseDamping_Ns_m, virtualMass_kg, dt_s, debugState_st);
+  bool isOscillating = DetectAdmittanceOscillation(externalForce_N, actualPosFraction_01, totalTravel_m, totalSpringReaction_N, idealBaseDamping_Ns_m, virtualMass_kg, dt_s, debugState_st, config_st->payloadPedalConfig_st.maxForce_fl32);
 
   // --- 9. ENERGY TANK & PASSIVE PARAMETER ADAPTATION ---
   AdaptMassViaEnergyTank(isOscillating, g_oscillationIntensity_01, g_vModelVel_mps, dt_s, virtualMass_kg, virtualMass_kg);

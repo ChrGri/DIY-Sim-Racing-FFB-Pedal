@@ -1535,6 +1535,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
   static uint32_t cycleCount_u32 = 0;
   static float oscillationDetectionLevel_fl32 = 0.0f;
 
+  AdmittanceDebugState_t admittanceDebugInfo_st;
+
   for (;;)
   {
 
@@ -2005,7 +2007,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         endstopBehavior_st.travelRange_mm_fl32 = constrain(endstopBehavior_st.travelRange_mm_fl32, 0.0f, 10.0f); // constrain the stiffness to a max value for safety
         
 
-        AdmittanceDebugState_t tmp;
+        
         // Pedal control algorithm
         Position_Next = MoveByAdmittanceStrategy(
           filteredReading
@@ -2017,7 +2019,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           , endstopBehavior_st
           , rudderOffsets_st
           , oscillationDetectionLevel_fl32
-          , &tmp
+          , &admittanceDebugInfo_st
         ); 
         
       }
@@ -2174,7 +2176,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
             float requiredSpeed = abs(distanceToMove) / deltaTime_s_fl32;
             
             // overwrite speed command slightly to make sure the target position is reached within the control cycle.
-            requiredSpeed *= 1.1f; 
+            //requiredSpeed *= 1.1f; 
 
             if (requiredSpeed > (float)MAXIMUM_STEPPER_SPEED_U32) {
                 requiredSpeed = (float)MAXIMUM_STEPPER_SPEED_U32;
@@ -2392,6 +2394,14 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.currentSpeedInHz_i32 = stepper->getCurrentSpeedInHz();
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.brakeResistorState_b = brake_state * 255;//stepper->getBrakeResistorState();
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.oscillationMonitorValue_u8 = (oscillationDetectionLevel_fl32 * 255.0f);
+        
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_expectedForce_N = admittanceDebugInfo_st.expectedForce_N;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_isOscillating = admittanceDebugInfo_st.isOscillating;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_admittancePsi_N = admittanceDebugInfo_st.admittancePsi_N;
+
+
+
+        
         }
 
 
