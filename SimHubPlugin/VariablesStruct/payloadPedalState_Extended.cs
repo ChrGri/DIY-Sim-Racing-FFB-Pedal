@@ -32,6 +32,8 @@ namespace User.PluginSdkDemo
         public float admittance_expectedForce_N;
         public byte admittance_isOscillating;
         public float admittance_admittancePsi_N;
+        public float admittance_virtualMass_kg;
+        public float admittance_virtualDamping_Ns_m;
 
 
 

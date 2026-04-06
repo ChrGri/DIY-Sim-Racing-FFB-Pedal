@@ -343,6 +343,8 @@ namespace User.PluginSdkDemo
                                                             writer.Write(", admittance_expectedForce_N");
                                                             writer.Write(", admittance_isOscillating");
                                                             writer.Write(", admittance_admittancePsi_N");
+                                                            writer.Write(", admittance_virtualMass_kg");
+                                                            writer.Write(", admittance_virtualDamping_Ns_m");
 
                                                             writer.Write("\n");
                                                         }
@@ -382,7 +384,10 @@ namespace User.PluginSdkDemo
                                                         $",{state.oscillationMonitorValue_u8}" +
                                                         $",{state.admittance_expectedForce_N}" +
                                                         $",{state.admittance_isOscillating}" +
-                                                        $",{state.admittance_admittancePsi_N}");
+                                                        $",{state.admittance_admittancePsi_N}" + 
+                                                        $",{state.admittance_virtualMass_kg}" +
+                                                        $",{state.admittance_virtualDamping_Ns_m}"
+                                                        );
 
                                                 }
 

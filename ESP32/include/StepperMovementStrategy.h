@@ -494,11 +494,24 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   );
 
   // --- 9. ENERGY TANK & PASSIVE PARAMETER ADAPTATION ---
-  AdaptMassViaEnergyTank(isOscillating, g_oscillationIntensity_01, g_vModelVel_mps, dt_s, virtualMass_kg, virtualMass_kg);
+  AdaptMassViaEnergyTank(isOscillating
+    , g_oscillationIntensity_01
+    , g_vModelVel_mps
+    , dt_s
+    , virtualMass_kg
+    , virtualMass_kg);
 
   // --- 10. DYNAMIC ADAPTIVE DAMPING ---
   // (Re-calculate active damping with the new adapted mass)
-  float activeDamping_Ns_m = CalcActiveDamping(dampingRatio_zeta, virtualMass_kg, currentStiffness_N_m, g_oscillationIntensity_01, g_vModelPos_01, actualPosFraction_01, stepper->getServosPosError(), travelSteps_cnt, effectForceOffset_fl32);
+  float activeDamping_Ns_m = CalcActiveDamping(dampingRatio_zeta
+    , virtualMass_kg
+    , currentStiffness_N_m
+    , g_oscillationIntensity_01
+    , g_vModelPos_01
+    , actualPosFraction_01
+    , stepper->getServosPosError()
+    , travelSteps_cnt
+    , effectForceOffset_fl32);
   g_lastActiveDamping_Ns_m = activeDamping_Ns_m;
 
   // --- 11. INTEGRATION (MASS-SPRING-DAMPER-ENDSTOP) ---
@@ -520,7 +533,9 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   acceleration_mps2 = constrain(acceleration_mps2, -MAX_ACCEL_MPS2, MAX_ACCEL_MPS2);
 
   // Predictive EMF Reduction (Regenerative Power Clamping)
-  ApplyRegenPowerClamping(virtualMass_kg, g_vModelVel_mps, acceleration_mps2);
+  ApplyRegenPowerClamping(virtualMass_kg
+    , g_vModelVel_mps
+    , acceleration_mps2);
 
   // Velocity Integration
   g_vModelVel_mps += acceleration_mps2 * dt_s;

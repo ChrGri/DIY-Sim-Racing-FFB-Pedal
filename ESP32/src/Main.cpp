@@ -2398,8 +2398,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_expectedForce_N = admittanceDebugInfo_st.expectedForce_N;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_isOscillating = admittanceDebugInfo_st.isOscillating;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_admittancePsi_N = admittanceDebugInfo_st.admittancePsi_N;
-
-
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_virtualMass_kg = admittanceDebugInfo_st.activeVirtualMass_kg + admittanceDebugInfo_st.massAdaptationOffset_kg;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_virtualDamping_Ns_m = admittanceDebugInfo_st.activeDamping_Ns_m;
+          
 
         
         }
