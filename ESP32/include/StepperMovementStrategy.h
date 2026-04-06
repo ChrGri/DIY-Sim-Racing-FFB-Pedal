@@ -125,16 +125,17 @@ static inline float CalcSoftEndstopForce(
 }
 
 /**
- * @brief Admittance Oscillation Detector (Landi et al.)
+ * @brief Admittance Oscillation Detector (Landi et al.) with Passivity Theory (Power Flow)
  * Compares theoretical admittance force with actual measured force to identify external disturbances.
- * Uses the exact non-linear spring and endstop reaction force to avoid bias errors.
  * Uses EMA filtering to suppress massive noise spikes from digital stepper derivation.
+ * Actively attenuates detection using mechanical power flow to prevent false positives.
+ * @param maxPedalForce_kg The configured max force from the GUI to scale the dynamic threshold.
  * @param debugState_st Optional pointer to output internal physical states for telemetry.
  */
 static inline bool DetectAdmittanceOscillation(
     float externalForce_N, float actualPosFraction_01, float totalTravel_m, 
     float totalSpringReaction_N, float baseDamping_Ns_m, float currentMass_kg, float dt_s,
-    AdmittanceDebugState_t* debugState_st, float maxForceInKg_fl32)
+    float maxPedalForce_kg, AdmittanceDebugState_t* debugState_st)
 {
     float physicalPos_m = actualPosFraction_01 * totalTravel_m;
     
@@ -177,7 +178,6 @@ static inline bool DetectAdmittanceOscillation(
     g_filteredPhysicalAcc_mps2 = (ALPHA_ACC * rawPhysicalAcc_mps2) + ((1.0f - ALPHA_ACC) * g_filteredPhysicalAcc_mps2);
 
     // Expected force based on nominal admittance model (Eq. 2)
-    // If the system is stable, the measured external force should perfectly match the physics model.
     // We use totalSpringReaction_N instead of (Stiffness * Pos) to perfectly account for 
     // spline biases and soft endstop forces.
     float expectedForce_N = (currentMass_kg * g_filteredPhysicalAcc_mps2) + 
@@ -185,18 +185,33 @@ static inline bool DetectAdmittanceOscillation(
                             totalSpringReaction_N;
     
     // =========================================================
-    // NEW: ENDSTOP MASKING (Detector Suppression)
-    // The mechanical realities near the limits (bouncing against hard stops, 
-    // extreme elastomer compression) deviate heavily from the ideal mathematical model.
-    // To prevent the Energy Tank from draining due to false-positive limit-cycle 
-    // detections, we force the expected force to equal the external force near the limits.
-    // This effectively sets Psi to 0.0 in these zones.
+    // ENDSTOP MASKING (Detector Suppression)
     // =========================================================
     if (actualPosFraction_01 > 0.95f || actualPosFraction_01 < 0.05f) {
         expectedForce_N = externalForce_N;
     }
     
     float psi_raw = fabsf(externalForce_N - expectedForce_N);
+
+    // =========================================================
+    // NEW: PASSIVITY THEORY (POWER FLOW GATING)
+    // =========================================================
+    // Calculate mechanical power P = F * v. 
+    // If the pedal pushes the foot back (F > 0, v < 0), power flows into the user.
+    float mechanical_power_W = externalForce_N * g_filteredPhysicalVel_mps;
+    float power_to_user_W = 0.0f;
+    if (mechanical_power_W < 0.0f) {
+        power_to_user_W = -mechanical_power_W;
+    }
+
+    // Power weight is clamped strictly between [0.0, 1.0].
+    // We use a base weight of 0.1 so the detector isn't completely blind during normal operation,
+    // but it rapidly opens up to 1.0 when the pedal starts exerting work on the user (instability).
+    const float POWER_PENALTY_FACTOR = 0.1f; // Reaches 1.0 at ~9 Watts of reverse power
+    float power_weight = constrain(0.1f + (power_to_user_W * POWER_PENALTY_FACTOR), 0.0f, 1.0f);
+    
+    // Attenuate the raw Psi deviation based on the power flow
+    psi_raw *= power_weight;
 
     // Moving average to prevent false positives
     g_psiBuffer[g_psiBufferIdx] = psi_raw;
@@ -217,9 +232,13 @@ static inline bool DetectAdmittanceOscillation(
         debugState_st->physicalAcc_mps2 = g_filteredPhysicalAcc_mps2;
     }
 
-    // Threshold detection (e.g., 30 Newtons)
+    // =========================================================
+    // DYNAMIC THRESHOLD (Based on Configured Max Force)
+    // =========================================================
+    // Convert configured max kg to Newtons and multiply by 2 as requested.
     const float GRAVITY_N_KG = 9.81f;
-    const float EPSILON_THRESHOLD_N = maxForceInKg_fl32 * 2;// GRAVITY_N_KG / 2; // empirically determined
+    float EPSILON_THRESHOLD_N = 15.0f; //2.0f * (maxPedalForce_kg * GRAVITY_N_KG); 
+    
     return (psi_smoothed > EPSILON_THRESHOLD_N);
 }
 
@@ -466,7 +485,13 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   
   // Use the exact restoring force (spline + endstop) instead of linear stiffness assumption
   float totalSpringReaction_N = springForce_N + softEndstopForce_N;
-  bool isOscillating = DetectAdmittanceOscillation(externalForce_N, actualPosFraction_01, totalTravel_m, totalSpringReaction_N, idealBaseDamping_Ns_m, virtualMass_kg, dt_s, debugState_st, config_st->payloadPedalConfig_st.maxForce_fl32);
+  
+  // NEW: Call the detector with max force from config to calculate dynamic threshold
+  bool isOscillating = DetectAdmittanceOscillation(
+      externalForce_N, actualPosFraction_01, totalTravel_m, 
+      totalSpringReaction_N, idealBaseDamping_Ns_m, virtualMass_kg, 
+      dt_s, config_st->payloadPedalConfig_st.maxForce_fl32, debugState_st
+  );
 
   // --- 9. ENERGY TANK & PASSIVE PARAMETER ADAPTATION ---
   AdaptMassViaEnergyTank(isOscillating, g_oscillationIntensity_01, g_vModelVel_mps, dt_s, virtualMass_kg, virtualMass_kg);
