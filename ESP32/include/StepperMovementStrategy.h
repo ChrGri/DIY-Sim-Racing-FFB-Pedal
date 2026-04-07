@@ -135,7 +135,7 @@ static inline float CalcSoftEndstopForce(
 static inline bool DetectAdmittanceOscillation(
     float externalForce_N, float actualPosFraction_01, float totalTravel_m, 
     float totalSpringReaction_N, float baseDamping_Ns_m, float currentMass_kg, float dt_s,
-    float maxPedalForce_kg, AdmittanceDebugState_t* debugState_st)
+    float maxPedalForce_kg, AdmittanceDebugState_t* debugState_st, bool hasActiveEffect)
 {
     float physicalPos_m = actualPosFraction_01 * totalTravel_m;
     
@@ -213,6 +213,12 @@ static inline bool DetectAdmittanceOscillation(
     // Attenuate the raw Psi deviation based on the power flow
     psi_raw *= power_weight;
 
+    // reset when effects are active, since model probably doesnt catch that properly
+    if( hasActiveEffect )
+    {
+        psi_raw = 0.0f;
+    }
+
     // Moving average to prevent false positives
     g_psiBuffer[g_psiBufferIdx] = psi_raw;
     g_psiBufferIdx = (g_psiBufferIdx + 1) % PSI_BUFFER_SIZE;
@@ -248,8 +254,15 @@ static inline bool DetectAdmittanceOscillation(
  */
 static inline void AdaptMassViaEnergyTank(
     bool isOscillating, float oscillationIntensity_01, float vModelVel_mps, float dt_s, 
-    float baseMass_kg, float& virtualMass_kg)
+    float baseMass_kg, float& virtualMass_kg, bool hasActiveEffect)
 {
+
+    // Wenn ein Effekt aktiv ist, Adaption einfrieren (Masse bleibt wie sie ist)
+    if (hasActiveEffect) {
+        virtualMass_kg = baseMass_kg + g_massAdaptationOffset_kg;
+        return;
+    }
+
     // Tuning Parameters for the Energy Tank
     const float T_MAX_J = 5.0f;               // Maximum energy the tank can store (Joules)
     const float T_DELTA_J = 0.1f;             // Minimum energy reserve required (Joules)
@@ -306,28 +319,35 @@ static inline float CalcActiveDamping(
     // Calculate Base Damping based on mass and current stiffness: c_c = 2 * sqrt(m * k)
     float baseDamping_Ns_m = dampingRatio_zeta * 2.0f * sqrtf(virtualMass_kg * currentStiffness_N_m);
     
-    // AOM BOOST: If oscillation is detected, inject massive damping to freeze the system and bleed energy.
-    float dampingMultiplier = 1.0f + (oscillationIntensity_01 * 8.0f);
+    float dampingMultiplier = 1.0f;
 
-    // =========================================================
-    // NEW: Tracking-Error dependent damping (Trajectory Shaping) to reduce EMF spikes. 
-    // It was observed that voltage spikes occur at tracking error zero crossings. 
-    // It was assumed that the servo could not keep up with its target position, then overshoots, 
-    // producing large EMF. To reduce the lag, we increase the virtual damping so the servo can keep up.
-    // =========================================================
-    // actualPosFraction_01 is the physical position, vModelPos_01 is the target model position.
-    float trackingError_01 = fabsf(vModelPos_01 - actualPosFraction_01);
-    if (travelSteps_cnt > 0.0001f) {
-        trackingError_01 = fabsf((float)actualServoTrackingError_i32 / travelSteps_cnt);
-    }
-
-    // If tracking errors exceed 0.5%, the models damping is dynamically increased proportional
-    // so that the servo can catch up.
-    if (effectForceOffset_fl32 == 0.0f) // disable dampening in case of applied effects
+    // NEU: Dämpfung NUR adaptieren (AOM & Tracking Error), wenn KEIN Effekt aktiv ist
+    if (effectForceOffset_fl32 == 0.0f) 
     {
-        if (trackingError_01 > 0.005f) {
-            // Tuning: the multiplier (here 20.0f) determines how much the model decelerates.
-            dampingMultiplier += (trackingError_01 * 20.0f); 
+
+        // AOM BOOST: If oscillation is detected, inject massive damping to freeze the system and bleed energy.
+        dampingMultiplier = 1.0f + (oscillationIntensity_01 * 8.0f);
+
+        // =========================================================
+        // NEW: Tracking-Error dependent damping (Trajectory Shaping) to reduce EMF spikes. 
+        // It was observed that voltage spikes occur at tracking error zero crossings. 
+        // It was assumed that the servo could not keep up with its target position, then overshoots, 
+        // producing large EMF. To reduce the lag, we increase the virtual damping so the servo can keep up.
+        // =========================================================
+        // actualPosFraction_01 is the physical position, vModelPos_01 is the target model position.
+        float trackingError_01 = fabsf(vModelPos_01 - actualPosFraction_01);
+        if (travelSteps_cnt > 0.0001f) {
+            trackingError_01 = fabsf((float)actualServoTrackingError_i32 / travelSteps_cnt);
+        }
+
+        // If tracking errors exceed 0.5%, the models damping is dynamically increased proportional
+        // so that the servo can catch up.
+        if (effectForceOffset_fl32 == 0.0f) // disable dampening in case of applied effects
+        {
+            if (trackingError_01 > 0.005f) {
+                // Tuning: the multiplier (here 20.0f) determines how much the model decelerates.
+                dampingMultiplier += (trackingError_01 * 20.0f); 
+            }
         }
     }
 
@@ -486,11 +506,13 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Use the exact restoring force (spline + endstop) instead of linear stiffness assumption
   float totalSpringReaction_N = springForce_N + softEndstopForce_N;
   
+  bool hasActiveEffect = effectForceOffset_fl32 != 0.0f;
+
   // NEW: Call the detector with max force from config to calculate dynamic threshold
   bool isOscillating = DetectAdmittanceOscillation(
       externalForce_N, actualPosFraction_01, totalTravel_m, 
       totalSpringReaction_N, idealBaseDamping_Ns_m, virtualMass_kg, 
-      dt_s, config_st->payloadPedalConfig_st.maxForce_fl32, debugState_st
+      dt_s, config_st->payloadPedalConfig_st.maxForce_fl32, debugState_st, hasActiveEffect
   );
 
   // --- 9. ENERGY TANK & PASSIVE PARAMETER ADAPTATION ---
@@ -499,7 +521,8 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
     , g_vModelVel_mps
     , dt_s
     , virtualMass_kg
-    , virtualMass_kg);
+    , virtualMass_kg
+    , hasActiveEffect);
 
   // --- 10. DYNAMIC ADAPTIVE DAMPING ---
   // (Re-calculate active damping with the new adapted mass)
