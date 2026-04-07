@@ -458,33 +458,37 @@ uint32_t StepperWithLimits::getMaxSpeedInHz()
 /************************************************************/
 void StepperWithLimits::correctPos()
 {
-	if(semaphore_resetServoPos!=NULL)
-	{
-		// Take the semaphore and just update the config file, then release the semaphore
-		if(xSemaphoreTake(semaphore_resetServoPos, (TickType_t)1)==pdTRUE)
-		{
-			// tune the current servo position to compesnate the position offset
-			int32_t stepOffset =(int32_t)constrain(servo_offset_compensation_steps_i32, -10, 10);
 
-			/*if (stepOffset != 0)
+	if( _stepper->isRunning() == false)
+	{
+		if(semaphore_resetServoPos!=NULL)
 			{
-				ActiveSerial->print("Position compensation: ");
-				ActiveSerial->print(servo_offset_compensation_steps_i32);
-				ActiveSerial->print(",   ");
-				ActiveSerial->println(stepOffset);
-			}*/
+				// Take the semaphore and just update the config file, then release the semaphore
+				if(xSemaphoreTake(semaphore_resetServoPos, (TickType_t)1)==pdTRUE)
+				{
+					// tune the current servo position to compesnate the position offset
+					int32_t stepOffset =(int32_t)constrain(servo_offset_compensation_steps_i32, -50, 50);
 
-			// offset = ESPs position - servos position
-			// new ESP pos = ESPs position - offset = ESPs position - ESPs position + servos position = servos position
-			
-			_stepper->setCurrentPosition(_stepper->getCurrentPosition() - stepOffset);
-			servo_offset_compensation_steps_i32 = 0; // reset lost step variable to prevent overcompensation
-			xSemaphoreGive(semaphore_resetServoPos);
-		}
-	}
-	else
-	{
-		semaphore_resetServoPos = xSemaphoreCreateMutex();
+					if (stepOffset != 0)
+					{
+						ActiveSerial->print("Position compensation: ");
+						ActiveSerial->print(servo_offset_compensation_steps_i32);
+						ActiveSerial->print(",   ");
+						ActiveSerial->println(stepOffset);
+					}
+
+					// offset = ESPs position - servos position
+					// new ESP pos = ESPs position - offset = ESPs position - ESPs position + servos position = servos position
+					
+					_stepper->setCurrentPosition(_stepper->getCurrentPosition() - stepOffset);
+					servo_offset_compensation_steps_i32 = 0; // reset lost step variable to prevent overcompensation
+					xSemaphoreGive(semaphore_resetServoPos);
+				}
+			}
+			else
+			{
+				semaphore_resetServoPos = xSemaphoreCreateMutex();
+			}
 	}
 }
 

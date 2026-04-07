@@ -237,7 +237,7 @@ static inline bool DetectAdmittanceOscillation(
     // =========================================================
     // Convert configured max kg to Newtons and multiply by 2 as requested.
     const float GRAVITY_N_KG = 9.81f;
-    float EPSILON_THRESHOLD_N = 15.0f; //2.0f * (maxPedalForce_kg * GRAVITY_N_KG); 
+    float EPSILON_THRESHOLD_N = 2.0f * maxPedalForce_kg; //15.0f; //2.0f * (maxPedalForce_kg * GRAVITY_N_KG); 
     
     return (psi_smoothed > EPSILON_THRESHOLD_N);
 }
