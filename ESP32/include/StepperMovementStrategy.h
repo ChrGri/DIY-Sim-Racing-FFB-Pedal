@@ -466,7 +466,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // --- 5. EFFECT OFFSETS & TOTAL FORCE ---
   // convert position offset to force offset using the local stiffness at the current position on the force curve
   float effectPositionToForceConversion_kg = effectOffsets_st.forceOffset_Steps_fl32 * localStiffness_kg_step;
-  float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32 + effectPositionToForceConversion_kg;
+  float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32;// + effectPositionToForceConversion_kg;
   float externalForce_N = (loadCellReadingKg_fl32 + effectForceOffset_fl32) * GRAVITY_N_KG;
 
   // --- 6. DYNAMIC TRAVEL LIMITS ---
@@ -485,9 +485,9 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Use the exact restoring force (spline + endstop) instead of linear stiffness assumption
   float totalSpringReaction_N = springForce_N + softEndstopForce_N;
   
-  bool hasActiveEffect = effectForceOffset_fl32 != 0.0f;
+  bool hasActiveEffect = (effectOffsets_st.forceOffset_kg_fl32 != 0.0f) && (effectOffsets_st.forceOffset_Steps_fl32 != 0);
 
-  // NEW: Call the detector with max force from config to calculate dynamic threshold
+  // Call the detector with max force from config to calculate dynamic threshold
   bool isOscillating = DetectAdmittanceOscillation(
       externalForce_N, actualPosFraction_01, totalTravel_m, 
       totalSpringReaction_N, idealBaseDamping_Ns_m, virtualMass_kg, 
@@ -592,6 +592,9 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Convert normalized virtual position back to absolute stepper steps
   float targetPosSteps_fl32 = (g_vModelPos_01 * travelSteps_cnt) + (float)calc_st->softEndstopMinStepperPos_i32;
   int32_t finalTargetPos_i32 = (int32_t)floor(targetPosSteps_fl32);
+
+  // Bypass effect position offset
+  targetPosSteps_fl32 += effectOffsets_st.forceOffset_Steps_fl32;
   
   // Final safety clamp to hard hardware limits
   return (int32_t)constrain(finalTargetPos_i32, stepper->getHardEndstopMinPosition(), stepper->getHardEndstopMaxPosition());
