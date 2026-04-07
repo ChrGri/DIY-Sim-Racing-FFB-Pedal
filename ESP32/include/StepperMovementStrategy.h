@@ -249,58 +249,37 @@ static inline bool DetectAdmittanceOscillation(
 }
 
 /**
- * @brief Energy Tank & Passive Parameter Adaptation (Landi et al.)
- * Safely increases virtual mass using dissipated energy to suppress oscillations.
+ * @brief Position-gated Parameter Adaptation
+ * Increases virtual mass during oscillations and only releases it when the pedal is near an endstop.
  */
-static inline void AdaptMassViaEnergyTank(
-    bool isOscillating, float oscillationIntensity_01, float vModelVel_mps, float dt_s, 
-    float baseMass_kg, float& virtualMass_kg, bool hasActiveEffect)
+static inline void AdaptVirtualMass(
+    bool isOscillating, float oscillationIntensity_01, float dt_s, 
+    float baseMass_kg, float& virtualMass_kg, bool hasActiveEffect, float actualPosFraction_01)
 {
-
-    // Wenn ein Effekt aktiv ist, Adaption einfrieren (Masse bleibt wie sie ist)
+    // Freeze adaptation if an effect is active
     if (hasActiveEffect) {
         virtualMass_kg = baseMass_kg + g_massAdaptationOffset_kg;
         return;
     }
 
-    // Tuning Parameters for the Energy Tank
-    const float T_MAX_J = 5.0f;               // Maximum energy the tank can store (Joules)
-    const float T_DELTA_J = 0.1f;             // Minimum energy reserve required (Joules)
     const float M_MAX_KG = 2.5f;              // Maximum allowed virtual mass during oscillation (kg)
     const float M_INCREASE_RATE_KG_S = 15.0f; // How fast mass increases when unstable
-    const float M_DECREASE_RATE_KG_S = 2.0f;  // Forgetting factor (recovery speed)
+    const float M_DECREASE_RATE_KG_S = 3.0f;  // How fast mass recovers when near endstop
 
-    // 1. Fill the tank with dissipated energy from the PREVIOUS frame's damping (P_D = D * v^2)
-    float P_D_W = g_lastActiveDamping_Ns_m * (vModelVel_mps * vModelVel_mps);
-    if (g_tankEnergy_J < T_MAX_J) {
-        g_tankEnergy_J += P_D_W * dt_s;
-        if (g_tankEnergy_J > T_MAX_J) g_tankEnergy_J = T_MAX_J;
-    }
-
-    // 2. Parameter Adaptation Logic
+    // 1. Ramp up mass during oscillation
     if (isOscillating || oscillationIntensity_01 > 0.15f) {
-        // Scale the mass increase. If triggered by Landi detector, use full rate, otherwise scale.
         float intensity = isOscillating ? 1.0f : oscillationIntensity_01;
-        float desired_M_dot = M_INCREASE_RATE_KG_S * intensity; 
-        
-        // Power required to increase inertia (P_M = 0.5 * v^2 * M_dot)
-        float P_M_required_W = 0.5f * (vModelVel_mps * vModelVel_mps) * desired_M_dot;
-        float energy_required_J = P_M_required_W * dt_s;
-
-        // Check passivity condition: Do we have enough energy in the tank?
-        if ((g_tankEnergy_J - energy_required_J) >= T_DELTA_J && (baseMass_kg + g_massAdaptationOffset_kg) < M_MAX_KG) {
-            g_tankEnergy_J -= energy_required_J;                  // Consume energy
-            g_massAdaptationOffset_kg += desired_M_dot * dt_s;    // Inject virtual mass
-        }
-    } else {
-        // System is stable: Recover back to base parameters (Forgetting factor)
-        if (g_massAdaptationOffset_kg > 0.0f) {
-            g_massAdaptationOffset_kg -= M_DECREASE_RATE_KG_S * dt_s;
-            if (g_massAdaptationOffset_kg < 0.0f) g_massAdaptationOffset_kg = 0.0f;
-        }
+        g_massAdaptationOffset_kg += M_INCREASE_RATE_KG_S * intensity * dt_s;
+    } 
+    // 2. Reduce mass ONLY when the pedal is safely near an endstop (< 5% or > 95%)
+    else if (actualPosFraction_01 < 0.05f || actualPosFraction_01 > 0.95f) {
+        g_massAdaptationOffset_kg -= M_DECREASE_RATE_KG_S * dt_s;
     }
 
-    // Prevent adapted mass from exceeding maximum limit
+    // Clamp values safely
+    if (g_massAdaptationOffset_kg < 0.0f) {
+        g_massAdaptationOffset_kg = 0.0f;
+    }
     if ((baseMass_kg + g_massAdaptationOffset_kg) > M_MAX_KG) {
         g_massAdaptationOffset_kg = M_MAX_KG - baseMass_kg;
     }
@@ -515,14 +494,14 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       dt_s, config_st->payloadPedalConfig_st.maxForce_fl32, debugState_st, hasActiveEffect
   );
 
-  // --- 9. ENERGY TANK & PASSIVE PARAMETER ADAPTATION ---
-  AdaptMassViaEnergyTank(isOscillating
+    // --- 9. PASSIVE PARAMETER ADAPTATION (Position Gated) ---
+  AdaptVirtualMass(isOscillating
     , g_oscillationIntensity_01
-    , g_vModelVel_mps
     , dt_s
     , virtualMass_kg
     , virtualMass_kg
-    , hasActiveEffect);
+    , hasActiveEffect
+    , actualPosFraction_01);
 
   // --- 10. DYNAMIC ADAPTIVE DAMPING ---
   // (Re-calculate active damping with the new adapted mass)
