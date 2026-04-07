@@ -25,14 +25,14 @@
                     <Label Content="Pedal Dynamics" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
                 </StackPanel>
                 <StackPanel Width="400" Height="50" Margin="0,0,0,0">
-                    <localUI:SliderWithLabel x:Name="Slider_VirtualPedalMass" SliderLength="400" SliderName="{SLoc DIYFFBPedalPlugin_TextServoSettingSliderServoSmoothness, 'Virtual pedal mass'}" SliderValue="0.3" MinValue="0.1" MaxValue="2.55"  TickFrequency="0.01" Unit="kg" SliderValueChanged="Slider_VirtualPedalMassChanged" ToolTip="Increase the value for stiffer pedal. Will increase likelihood of pedal oscillation."/>
+                    <localUI:SliderWithLabel x:Name="Slider_VirtualPedalMass" SliderLength="400" SliderName="{SLoc DIYFFBPedalPlugin_TextDynamicsSettingSliderVirtualPedalMass, 'Virtual Pedal Mass'}" SliderValue="0.3" MinValue="0.1" MaxValue="2.55"  TickFrequency="0.01" Unit="kg" SliderValueChanged="Slider_VirtualPedalMassChanged" ToolTip="Increase the value for stiffer pedal. Will increase likelihood of pedal oscillation."/>
                 </StackPanel>
                 <StackPanel Width="400" Height="50">
-                    <localUI:SliderWithLabel x:Name="Slider_VirtualDamping" SliderLength="400" SliderName="{SLoc DIYFFBPedalPlugin_TextServoSettingSliderServoInertia, 'Virtual pedal damping (zeta value)'}" SliderValue="130" MinValue="50" MaxValue="255" SliderValueChanged="Slider_VirtualPedalDampingChanged" TickFrequency="1" Unit="%" ToolTip="Increase the value for stiffer pedal. Will increase likelihood of pedal oscillation."/>
+                    <localUI:SliderWithLabel x:Name="Slider_VirtualDamping" SliderLength="400" SliderName="{SLoc DIYFFBPedalPlugin_TextDynamicsSettingSliderVirtualPedalDamping, 'Virtual Pedal Damping (zeta value)'}" SliderValue="130" MinValue="50" MaxValue="255" SliderValueChanged="Slider_VirtualPedalDampingChanged" TickFrequency="1" Unit="%" ToolTip="Increase the value for stiffer pedal. Will increase likelihood of pedal oscillation."/>
                 </StackPanel>
                 <StackPanel Height="40" Width="540" HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal">
-                <localUI:SliderWithLabel x:Name="Slider_SoftEndstopTravelRange" SliderLength="190" SliderName="{SLoc DIYFFBPedalPlugin_TextGeneralSettingDampingFactor, 'Endstop travel'}" TickFrequency="0.1" Unit="mm" Width="200" Height="40" MinValue="0" MaxValue="10" SliderValueChanged="Slider_SoftEndstopTravelRangeChanged" Margin="70,0,0,0"/>
-                <localUI:SliderWithLabel x:Name="Slider_SoftEndstopStiffness" SliderLength="190" SliderName="{SLoc DIYFFBPedalPlugin_TextGeneralSettingDampingFactor, Endstop stiffness}" TickFrequency="1" Unit="kg/mm" Width="200" Height="40" MinValue="10" MaxValue="200" SliderValueChanged="Slider_SoftEndstopStiffnessChanged"/>
+                    <localUI:SliderWithLabel x:Name="Slider_SoftEndstopTravelRange" SliderLength="190" SliderName="{SLoc DIYFFBPedalPlugin_TextDynamicsSettingSliderEndstopTravel, 'Endstop Travel'}" TickFrequency="0.1" Unit="mm" Width="200" Height="40" MinValue="0" MaxValue="10" SliderValueChanged="Slider_SoftEndstopTravelRangeChanged" Margin="70,0,0,0"/>
+                    <localUI:SliderWithLabel x:Name="Slider_SoftEndstopStiffness" SliderLength="190" SliderName="{SLoc DIYFFBPedalPlugin_TextDynamicsSettingSliderEndstopStiffness, 'Endstop Stiffness'}" TickFrequency="1" Unit="kg/mm" Width="200" Height="40" MinValue="10" MaxValue="200" SliderValueChanged="Slider_SoftEndstopStiffnessChanged"/>
                 </StackPanel>
 
 

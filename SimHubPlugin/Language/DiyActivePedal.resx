@@ -186,6 +186,9 @@
   <data name="DIYFFBPedalPlugin_TabItemCustom4" xml:space="preserve">
     <value>CUSTOM4</value>
   </data>
+  <data name="DIYFFBPedalPlugin_TabTextDynamics" xml:space="preserve">
+    <value>Dynamics</value>
+  </data>
   <data name="DIYFFBPedalPlugin_TabTextFilter" xml:space="preserve">
     <value>Filter</value>
   </data>
@@ -254,6 +257,18 @@
   </data>
   <data name="DIYFFBPedalPlugin_TextDelete" xml:space="preserve">
     <value>Delete</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderEndstopStiffness" xml:space="preserve">
+    <value>Endstop Stiffness</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderEndstopTravel" xml:space="preserve">
+    <value>Endstop Travel</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderVirtualPedalDamping" xml:space="preserve">
+    <value>Virtual Pedal Damping (zeta value)</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderVirtualPedalMass" xml:space="preserve">
+    <value>Virtual Pedal Mass</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectABSEffectApply" xml:space="preserve">
     <value>Effect Apply By:</value>
