@@ -467,15 +467,16 @@ void StepperWithLimits::correctPos()
 				if(xSemaphoreTake(semaphore_resetServoPos, (TickType_t)1)==pdTRUE)
 				{
 					// tune the current servo position to compesnate the position offset
-					int32_t stepOffset =(int32_t)constrain(servo_offset_compensation_steps_i32, -50, 50);
+					int32_t maxStepsToRecoverPerCall_i32 = 1;
+					int32_t stepOffset =(int32_t)constrain(servo_offset_compensation_steps_i32, -maxStepsToRecoverPerCall_i32, maxStepsToRecoverPerCall_i32);
 
-					if (stepOffset != 0)
+					/*if (stepOffset != 0)
 					{
 						ActiveSerial->print("Position compensation: ");
 						ActiveSerial->print(servo_offset_compensation_steps_i32);
 						ActiveSerial->print(",   ");
 						ActiveSerial->println(stepOffset);
-					}
+					}*/
 
 					// offset = ESPs position - servos position
 					// new ESP pos = ESPs position - offset = ESPs position - ESPs position + servos position = servos position
@@ -1069,6 +1070,68 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 
 					// calculate zero position offset
 
+					// step loss recovery
+					/*stepper_cl->isRunning();
+
+					// compute the time difference since last servo position change
+					timeNow_l = millis();
+					timeDiff = timeNow_l - timeSinceLastServoPosChange_l;
+
+					// if time between last servo position is larger than a threshold, detect servo standstill 
+					if ( (timeDiff > TIME_SINCE_SERVO_POS_CHANGE_TO_DETECT_STANDSTILL_IN_MS) 
+						&& (timeNow_l > 0) )
+					{
+						cond_timeSinceHitMinPositionLargerThanThreshold_1 = true;
+					}
+					else
+					{
+						cond_timeSinceHitMinPositionLargerThanThreshold_1 = false;
+					}
+
+					// check if pulse generator hasnt been active for more than 10ms
+					{
+
+					}*/
+
+
+
+
+					//if (cond_timeSinceHitMinPositionLargerThanThreshold_1)
+					{
+						if (true == stepper_cl->enableSteplossRecov_b)
+						{
+							// calculate encoder offset
+							// movement to the back will reduce encoder value
+
+							servo_offset_compensation_steps_local_i32 = espPos_i32 - servoPosCorrected_i32;
+							// if (false == stepper_cl->invertMotorDir_global_b)
+							// {
+							// 	servo_offset_compensation_steps_local_i32 *= -1;
+							// }
+						}
+						else
+						{
+							servo_offset_compensation_steps_local_i32 = 0;
+						}
+
+						if(semaphore_resetServoPos!=NULL)
+						{
+							// Take the semaphore and just update the config file, then release the semaphore
+							if(xSemaphoreTake(semaphore_resetServoPos, (TickType_t)1)==pdTRUE)
+							{
+								stepper_cl->servo_offset_compensation_steps_i32 = servo_offset_compensation_steps_local_i32;
+
+								
+								xSemaphoreGive(semaphore_resetServoPos);
+							}
+						}
+						else
+						{
+							semaphore_resetServoPos = xSemaphoreCreateMutex();
+						}
+					}
+
+
 					if (cond_stepperIsAtMinPos)
 					{
 						// When the servo turned off during driving, the servo loses its zero position and the correction might not be valid anymore. If still applied, the servo will somehow srive against the block
@@ -1117,41 +1180,7 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 						}
 
 
-						// step loss recovery
-						if (cond_timeSinceHitMinPositionLargerThanThreshold_1)
-						{
-							if (true == stepper_cl->enableSteplossRecov_b)
-							{
-								// calculate encoder offset
-								// movement to the back will reduce encoder value
-
-								servo_offset_compensation_steps_local_i32 = espPos_i32 - servoPosCorrected_i32;
-								// if (false == stepper_cl->invertMotorDir_global_b)
-								// {
-								// 	servo_offset_compensation_steps_local_i32 *= -1;
-								// }
-							}
-							else
-							{
-								servo_offset_compensation_steps_local_i32 = 0;
-							}
-
-							if(semaphore_resetServoPos!=NULL)
-							{
-								// Take the semaphore and just update the config file, then release the semaphore
-								if(xSemaphoreTake(semaphore_resetServoPos, (TickType_t)1)==pdTRUE)
-								{
-									stepper_cl->servo_offset_compensation_steps_i32 = servo_offset_compensation_steps_local_i32;
-
-									
-									xSemaphoreGive(semaphore_resetServoPos);
-								}
-							}
-							else
-							{
-								semaphore_resetServoPos = xSemaphoreCreateMutex();
-							}
-						}
+						
 						
 
 

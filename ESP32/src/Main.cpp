@@ -2136,7 +2136,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // stepper->configSteplossRecovAndCrashDetection(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.stepLossFunctionFlags_u8);
       if( (stepper->getLifelineSignal()==true) && (stepper->servoStatus==SERVO_CONNECTED) )
       {
-        if (stepper->isAtMinPos())
+        //if (stepper->isAtMinPos())
         {
           #if defined(OTA_update_ESP32) || defined(OTA_update)
             if(g_OTA_status==false)
