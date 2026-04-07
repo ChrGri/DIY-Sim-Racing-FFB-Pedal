@@ -467,7 +467,7 @@ void StepperWithLimits::correctPos()
 				if(xSemaphoreTake(semaphore_resetServoPos, (TickType_t)1)==pdTRUE)
 				{
 					// tune the current servo position to compesnate the position offset
-					int32_t maxStepsToRecoverPerCall_i32 = 1;
+					int32_t maxStepsToRecoverPerCall_i32 = 2;
 					int32_t stepOffset =(int32_t)constrain(servo_offset_compensation_steps_i32, -maxStepsToRecoverPerCall_i32, maxStepsToRecoverPerCall_i32);
 
 					/*if (stepOffset != 0)
@@ -1068,35 +1068,8 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters)
 					
 					// ActiveSerial->printf("Cond1: %d,    Cond2: %d,    Cond3: %d,    servoPos: %d\n", cond_stepperIsAtMinPos, cond_timeSinceHitMinPositionLargerThanThreshold_1, cond_timeSinceHitMinPositionLargerThanThreshold_2, servoPos_now_i16);
 
-					// calculate zero position offset
-
-					// step loss recovery
-					/*stepper_cl->isRunning();
-
-					// compute the time difference since last servo position change
-					timeNow_l = millis();
-					timeDiff = timeNow_l - timeSinceLastServoPosChange_l;
-
-					// if time between last servo position is larger than a threshold, detect servo standstill 
-					if ( (timeDiff > TIME_SINCE_SERVO_POS_CHANGE_TO_DETECT_STANDSTILL_IN_MS) 
-						&& (timeNow_l > 0) )
-					{
-						cond_timeSinceHitMinPositionLargerThanThreshold_1 = true;
-					}
-					else
-					{
-						cond_timeSinceHitMinPositionLargerThanThreshold_1 = false;
-					}
-
-					// check if pulse generator hasnt been active for more than 10ms
-					{
-
-					}*/
-
-
-
-
 					//if (cond_timeSinceHitMinPositionLargerThanThreshold_1)
+					if(stepper_cl->isv57.isv57dynamicStates_.servo_receivedPacketIsValid_b)
 					{
 						if (true == stepper_cl->enableSteplossRecov_b)
 						{

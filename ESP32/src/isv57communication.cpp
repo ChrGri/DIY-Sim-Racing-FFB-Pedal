@@ -503,6 +503,9 @@ void Isv57Communication::readServoStates() {
   // read the four registers simultaneously
   int8_t numberOfRegistersToRead_u8 = NUMBER_OF_ISV57_REGISTERS_TO_READ_IN_CYCLIC_READ;
   int bytesReceived_i = modbus.sendRequestAndReceiveResponse(slaveId, 0x03, ref_cyclic_read_0, numberOfRegistersToRead_u8);
+
+  isv57dynamicStates_.servo_receivedPacketIsValid_b = false;
+
   if(bytesReceived_i == (numberOfRegistersToRead_u8*2))
   {
     modbus.getRawRxBuffer(raw,  len);
@@ -519,6 +522,15 @@ void Isv57Communication::readServoStates() {
 
     isv57dynamicStates_.lastUpdateTimeInMS_u32 = millis();
     isv57dynamicStates_.servo_cycleCounter_u32++;
+    isv57dynamicStates_.servo_receivedPacketIsValid_b = true;
+
+
+    // check if signals are in valid ranges
+    if((isv57dynamicStates_.servoVoltage0p1V_i16 < 50) )
+    {
+      isv57dynamicStates_.servo_receivedPacketIsValid_b = false;
+    }
+    
   }
 
   

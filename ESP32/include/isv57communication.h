@@ -94,6 +94,7 @@ struct isv57dynamicStates {
     int16_t servo_position_feedback_i16 = 0;
     // int16_t estimated_pos_error_currentStepperPos_i16 = 0;
     unsigned long lastUpdateTimeInMS_u32 = 0;
+    bool servo_receivedPacketIsValid_b = false;
 };
 
 class Isv57Communication {
