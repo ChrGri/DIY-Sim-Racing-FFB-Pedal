@@ -248,13 +248,20 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st)
 
 
 
-
+		float spindlePitch = max( dap_config_st.payloadPedalConfig_st.spindlePitch_mmPerRev_u8, (uint8_t)1 );
 
 		/************************************************************/
 		/* 					min endstop	detection					*/
 		/************************************************************/
 		bool endPosDetected = true; 
 		int32_t setPosition = 0;
+
+		// 10cm travel range. Target sweep 2s ==> 5cm/s
+		// 5cm/s / spindlePitch ==> 5cm/s / 0.5cm/rev = 10rev/s
+		// 10rev/s * 3710 steps/rev = 37100 steps/s
+		float endstopApproachingSpeedInMmPerSecond_fl32 = 50.0f;
+		float endstopApproachingSpeed_fl32 = endstopApproachingSpeedInMmPerSecond_fl32 / spindlePitch * stepsPerMotorRev_u32;
+		endstopApproachingSpeed_fl32 = constrain(endstopApproachingSpeed_fl32, 10000, MAXIMUM_STEPPER_SPEED_U32 * 0.2f);
 
 		
 		// wait some time to check if signal stabilized
@@ -270,13 +277,13 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st)
 		}
 			
 		// reduce speed and acceleration
-		_stepper->setMaxSpeed(MAXIMUM_STEPPER_SPEED_U32 / 16);
+		_stepper->setMaxSpeed(endstopApproachingSpeed_fl32);
 
 		// run continously in one direction until endstop is hit
 		ActiveSerial->println("Move to min");
 		// _stepper->forceStopAndNewPosition(0);
-		_stepper->keepRunningBackward(MAXIMUM_STEPPER_SPEED_U32 / 16);
-        _stepper->setSpeedLive((uint32_t)(MAXIMUM_STEPPER_SPEED_U32 / 16) );
+		_stepper->keepRunningBackward(endstopApproachingSpeed_fl32);
+        _stepper->setSpeedLive(endstopApproachingSpeed_fl32 );
 
 		
 		while( (!endPosDetected) && (getLifelineSignal()) ){
@@ -310,15 +317,17 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st)
 		/* 					max endstop	detection					*/
 		/************************************************************/
 		// calculate max steps for endstop limit
-		float spindlePitch = max( dap_config_st.payloadPedalConfig_st.spindlePitch_mmPerRev_u8, (uint8_t)1 );
+		
 		float maxRevToReachEndPos = (float)dap_config_st.payloadPedalConfig_st.lengthPedalTravel_i16 / spindlePitch;
 		float maxStepsToReachEndPos = maxRevToReachEndPos * (float)stepsPerMotorRev_u32;
   
 		endPosDetected = false;
 		
 		// run continously in one direction until endstop is hit
-		_stepper->keepRunningForward(MAXIMUM_STEPPER_SPEED_U32 / 16);
-        _stepper->setSpeedLive((uint32_t)(MAXIMUM_STEPPER_SPEED_U32 / 16) );
+		_stepper->keepRunningForward(endstopApproachingSpeed_fl32);
+        _stepper->setSpeedLive(endstopApproachingSpeed_fl32 );
+
+		
 
 		
 
@@ -340,10 +349,9 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st)
 		ActiveSerial->printf("Max endstop reached: %d\n", _endstopLimitMax);
 		
 		// move slowly to min position
-		moveSlowlyToPos(0);
+		//moveSlowlyToPos(0);
+		moveToPosWithSpeed(0, endstopApproachingSpeed_fl32);
 		
-		// increase speed back to normal
-		//_stepper->setMaxSpeed(MAXIMUM_STEPPER_SPEED_U32);
 	}	
 }
 

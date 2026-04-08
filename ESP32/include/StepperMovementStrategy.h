@@ -449,8 +449,10 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float travelSteps_cnt = (float)(calc_st->softEndstopMaxStepperPos_i32 - calc_st->softEndstopMinStepperPos_i32);
   
   // totalTravel_m: physical length of the pedal stroke in meters
-  float totalTravel_m = travelSteps_cnt * motorRevolutionsPerSteps_fl32 * config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8 * 0.001f;
+  float motorRevolutionsPerSteps_lcl_fl32 = 1.0f / dap_calculationVariables_st.stepsPerMotorRevolution_u32;
+  float totalTravel_m = travelSteps_cnt * motorRevolutionsPerSteps_lcl_fl32 * config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8 * 0.001f;
   
+
   // actualPosFraction_01: The current command position of the ESP stepper [0.0, 1.0]
   float actualPosFraction_01 = stepper->getCurrentPositionFraction();
 
