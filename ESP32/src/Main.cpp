@@ -1942,7 +1942,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         effect_pos_fl32 += customVibration4_.customVibrationOffset_fl32;
         effect_pos_fl32 += _RPMOscillation.rpmPositionOffset_i32;
       }
-
+      effect_pos_fl32 *= EFFECT_POSITION_SCALING_FACTOR_FL32;
       // write the effect offsets into a struct for debug output and potential use in other functions like the effect offset PID
       effectOffsets_st.forceOffset_kg_fl32 = effect_force_fl32;
       effectOffsets_st.forceOffset_Steps_fl32 = effect_pos_fl32;
