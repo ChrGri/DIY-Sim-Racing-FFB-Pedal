@@ -310,6 +310,18 @@ void IRAM_ATTR StepperWithLimits::correctPos() {
         int32_t maxStepsToRecoverPerCall_i32 = 2;
         int32_t stepOffset = (int32_t)constrain(servo_offset_compensation_steps_i32, -maxStepsToRecoverPerCall_i32, maxStepsToRecoverPerCall_i32);
         
+
+        /*if (stepOffset != 0)
+        {
+            ActiveSerial->print("Position compensation: ");
+            ActiveSerial->print(servo_offset_compensation_steps_i32);
+            ActiveSerial->print(",   ");
+            ActiveSerial->println(stepOffset);
+        }*/
+
+        // offset = ESPs position - servos position
+        // new ESP pos = ESPs position - offset = ESPs position - ESPs position + servos position = servos position
+        
         _stepper->setCurrentPosition(_stepper->getCurrentPosition() - stepOffset);
         servo_offset_compensation_steps_i32 = 0; // Prevent overcompensation
     }
