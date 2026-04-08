@@ -430,15 +430,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   AdmittanceDebugState_t* debugState_st = nullptr)
 {
 
-  float rudderCenter = 0.0f; 
-  if (rudderOffsets_st.isRudderMode) 
-  { 
-    rudderCenter = rudderOffsets_st.centerPosition_01 + rudderOffsets_st.trimOffset_01;
-  }
-  else
-  {
-    rudderCenter = 0.0f;
-  }
+  
 
 
   // --- 1. PHYSICAL PARAMETERS & CONFIGURATION ---
@@ -454,12 +446,26 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   virtualMass_kg = constrain(virtualMass_kg, 0.2f, 5.0f);
   dampingRatio_zeta = constrain(dampingRatio_zeta, 0.5f, 5.0f); 
 
-  // --- 2. OSCILLATION DETECTION (Active Oscillation Mitigation - AOM) ---
+
+
+  // --- 2. RUDDER CONFIG ---
+  float rudderForce_N = 0.0f;
+  if (rudderOffsets_st.isRudderMode) 
+  { 
+    float rudderCenter = rudderOffsets_st.centerPosition_01 + rudderOffsets_st.trimOffset_01;
+
+    float rudderForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(rudderCenter, 0.0f, 1.0f));
+    rudderForce_N = rudderForceRaw_kg * GRAVITY_N_KG;
+
+  }
+
+
+  // --- 3. OSCILLATION DETECTION (Active Oscillation Mitigation - AOM) ---
   // The oscillation detection level is computed in the main loop and passed as a parameter.
   // It is a value between 0.0 (no oscillation) and 1.0 (heavy oscillation detected) that indicates the current intensity of oscillations in the system.
   float g_oscillationIntensity_01 = constrain(oscillationDetectionLevel_fl32, 0.0f, 1.0f);
 
-  // --- 3. PHYSICAL GEOMETRY ---
+  // --- 4. PHYSICAL GEOMETRY ---
   // travelSteps_cnt: total steps from min to max soft endstop
   float travelSteps_cnt = (float)(calc_st->softEndstopMaxStepperPos_i32 - calc_st->softEndstopMinStepperPos_i32);
   
@@ -467,58 +473,43 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float motorRevolutionsPerSteps_lcl_fl32 = 1.0f / dap_calculationVariables_st.stepsPerMotorRevolution_u32;
   float totalTravel_m = travelSteps_cnt * motorRevolutionsPerSteps_lcl_fl32 * config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8 * 0.001f;
   
-
   // actualPosFraction_01: The current command position of the ESP stepper [0.0, 1.0]
   float actualPosFraction_01 = stepper->getCurrentPositionFraction();
 
-  // --- 4. SPRING REACTION & LOCAL STIFFNESS ---
-  float displacement = g_vModelPos_01 - rudderCenter;
-  float absDisplacement = fabsf(displacement);
-
-  // Deadzone for rudder
-  if (absDisplacement < rudderOffsets_st.deadzone_01) {
-      absDisplacement = 0.0f;
-  } else {
-      absDisplacement -= rudderOffsets_st.deadzone_01;
-  }
+  // --- 5. SPRING REACTION & LOCAL STIFFNESS ---
+  float displacement = g_vModelPos_01;
 
   // Read the spring force from the spline based on current virtual position (ground truth)
-  float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(absDisplacement, 0.0f, 1.0f));
+  float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(displacement, 0.0f, 1.0f));
   float springForce_N = springForceRaw_kg * GRAVITY_N_KG;
 
-  // Sign flip, if pos < center ==> force must be negative
+  // Subtract rudder spring force
   if ( rudderOffsets_st.isRudderMode )
   {
-    if (displacement > 0) {
-        springForce_N = springForce_N; 
-    } 
-    else {
-        springForce_N = -springForce_N; 
-    }
-
+    springForce_N -= rudderForce_N;
   }
   
 
   // Calculate local physical spring stiffness (N/m) for dynamic damping tuning
-  float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, constrain(absDisplacement, 0.0f, 1.0f), false);
+  float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, constrain(displacement, 0.0f, 1.0f), false);
   float localStiffness_N_m = max(localStiffness_kg_step * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG, 1.0f);
 
-  // --- 5. EFFECT OFFSETS & TOTAL FORCE ---
+  // --- 6. EFFECT OFFSETS & TOTAL FORCE ---
   // convert position offset to force offset using the local stiffness at the current position on the force curve
   float effectPositionToForceConversion_kg = effectOffsets_st.forceOffset_Steps_fl32 * localStiffness_kg_step;
   float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32;// + effectPositionToForceConversion_kg;
   float externalForce_N = (loadCellReadingKg_fl32 + effectForceOffset_fl32) * GRAVITY_N_KG;
 
-  // --- 6. DYNAMIC TRAVEL LIMITS ---
+  // --- 7. DYNAMIC TRAVEL LIMITS ---
   float lowerTravelLimit_01 = 0.0f;
   float upperTravelLimit_01 = 1.0f;
   CalcDynamicTravelLimits(travelSteps_cnt, localStiffness_kg_step, effectOffsets_st, lowerTravelLimit_01, upperTravelLimit_01);
 
-  // --- 7. SOFT ENDSTOP CALCULATION ---
+  // --- 8. SOFT ENDSTOP CALCULATION ---
   float currentStiffness_N_m = localStiffness_N_m;
   float softEndstopForce_N = CalcSoftEndstopForce(g_vModelPos_01, totalTravel_m, endstopBehavior_st, currentStiffness_N_m, upperTravelLimit_01);
 
-  // --- 8. ADMITTANCE OSCILLATION DETECTOR (Landi et al.) ---
+  // --- 9. ADMITTANCE OSCILLATION DETECTOR (Landi et al.) ---
   // We calculate base damping with un-adapted mass for the physics ideal-model reference
   float idealBaseDamping_Ns_m = dampingRatio_zeta * 2.0f * sqrtf(virtualMass_kg * currentStiffness_N_m);
   
@@ -534,7 +525,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       dt_s, config_st->payloadPedalConfig_st.maxForce_fl32, debugState_st, hasActiveEffect
   );
 
-    // --- 9. PASSIVE PARAMETER ADAPTATION (Position Gated) ---
+    // --- 10. PASSIVE PARAMETER ADAPTATION (Position Gated) ---
   AdaptVirtualMass(isOscillating
     , g_oscillationIntensity_01
     , dt_s
@@ -543,7 +534,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
     , hasActiveEffect
     , actualPosFraction_01);
 
-  // --- 10. DYNAMIC ADAPTIVE DAMPING ---
+  // --- 11. DYNAMIC ADAPTIVE DAMPING ---
   // (Re-calculate active damping with the new adapted mass)
   float activeDamping_Ns_m = CalcActiveDamping(dampingRatio_zeta
     , virtualMass_kg
@@ -556,7 +547,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
     , effectForceOffset_fl32);
   g_lastActiveDamping_Ns_m = activeDamping_Ns_m;
 
-  // --- 11. INTEGRATION (MASS-SPRING-DAMPER-ENDSTOP) ---
+  // --- 12. INTEGRATION (MASS-SPRING-DAMPER-ENDSTOP) ---
   // F_net = F_human - F_spring - F_softEndstop - F_damping
   float dampingForce_N = activeDamping_Ns_m * g_vModelVel_mps;
   float netForce_N = externalForce_N - springForce_N - softEndstopForce_N - dampingForce_N;
@@ -582,7 +573,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Velocity Integration
   g_vModelVel_mps += acceleration_mps2 * dt_s;
 
-  // --- 12. VELOCITY CHOKING (STABILITY PROTECTION) ---
+  // --- 13. VELOCITY CHOKING (STABILITY PROTECTION) ---
   // Limit the movement speed if the system becomes unstable.
   float velocityLimit_01 = 1.0f - (g_oscillationIntensity_01 * 0.7f); // Up to 70% speed reduction
   
@@ -593,7 +584,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float dynamicSpeedLimit = maxPhysicalVel_mps * velocityLimit_01;
   g_vModelVel_mps = constrain(g_vModelVel_mps, -dynamicSpeedLimit, dynamicSpeedLimit);
 
-  // --- 13. POSITION INTEGRATION, BOUNDARY CONSTRAINTS & DRIFT CORRECTION ---
+  // --- 14. POSITION INTEGRATION, BOUNDARY CONSTRAINTS & DRIFT CORRECTION ---
   // Update virtual position based on velocity
   float currentPos_m = (g_vModelPos_01 * totalTravel_m) + (g_vModelVel_mps * dt_s);
   g_vModelPos_01 = (totalTravel_m > 0.0001f) ? (currentPos_m / totalTravel_m) : 0.0f;
@@ -628,7 +619,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       debugState_st->virtualAcc_mps2 = acceleration_mps2;
   }
 
-  // --- 14. STEP CONVERSION & OUTPUT ---
+  // --- 15. STEP CONVERSION & OUTPUT ---
   // Convert normalized virtual position back to absolute stepper steps
   float targetPosSteps_fl32 = (g_vModelPos_01 * travelSteps_cnt) + (float)calc_st->softEndstopMinStepperPos_i32;
 
