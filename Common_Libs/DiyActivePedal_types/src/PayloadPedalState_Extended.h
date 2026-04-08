@@ -22,4 +22,10 @@ typedef struct __attribute__((packed)) PayloadPedalStateExtended
   uint8_t brakeResistorState_b;
   uint8_t oscillationMonitorValue_u8;
 
+  float admittance_expectedForce_N;
+  uint8_t admittance_isOscillating;
+  float admittance_admittancePsi_N;
+  float admittance_virtualMass_kg;
+  float admittance_virtualDamping_Ns_m;
+
 } PayloadPedalStateExtended_t;

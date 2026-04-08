@@ -28,5 +28,14 @@ namespace User.PluginSdkDemo
         public Int32 currentSpeedInHz_i32;
         public byte brakeResistorState_b;
         public byte oscillationMonitorValue_u8;
+
+        public float admittance_expectedForce_N;
+        public byte admittance_isOscillating;
+        public float admittance_admittancePsi_N;
+        public float admittance_virtualMass_kg;
+        public float admittance_virtualDamping_Ns_m;
+
+
+
     };
 }
