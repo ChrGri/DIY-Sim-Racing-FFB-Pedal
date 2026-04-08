@@ -591,11 +591,11 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // --- 14. STEP CONVERSION & OUTPUT ---
   // Convert normalized virtual position back to absolute stepper steps
   float targetPosSteps_fl32 = (g_vModelPos_01 * travelSteps_cnt) + (float)calc_st->softEndstopMinStepperPos_i32;
-  int32_t finalTargetPos_i32 = (int32_t)floor(targetPosSteps_fl32);
 
   // Bypass effect position offset
   targetPosSteps_fl32 += effectOffsets_st.forceOffset_Steps_fl32;
-  
+
   // Final safety clamp to hard hardware limits
+  int32_t finalTargetPos_i32 = (int32_t)floor(targetPosSteps_fl32);
   return (int32_t)constrain(finalTargetPos_i32, stepper->getHardEndstopMinPosition(), stepper->getHardEndstopMaxPosition());
 }
