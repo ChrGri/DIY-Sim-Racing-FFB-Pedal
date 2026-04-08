@@ -15,11 +15,14 @@ typedef struct {
 } EffectOffsets_t;
 
 typedef struct {
-  float positionOffset_Steps_fl32;
+  bool isRudderMode;
+  float centerPosition_01;     // nomally 0.5 so alignment in center 
+  float trimOffset_01;         // dynamical displacement the 0-force psoition
+  float deadzone_01;           // small region without force around center
 } RudderOffsets_t;
 
 // =========================================================
-// NEW: DEBUG & TELEMETRY STRUCT
+// DEBUG & TELEMETRY STRUCT
 // =========================================================
 /**
  * @brief Struct to export internal physics and stability states for debugging and tuning.
@@ -426,6 +429,18 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float oscillationDetectionLevel_fl32,
   AdmittanceDebugState_t* debugState_st = nullptr)
 {
+
+  float rudderCenter = 0.0f; 
+  if (rudderOffsets_st.isRudderMode) 
+  { 
+    rudderCenter = rudderOffsets_st.centerPosition_01 + rudderOffsets_st.trimOffset_01;
+  }
+  else
+  {
+    rudderCenter = 0.0f;
+  }
+
+
   // --- 1. PHYSICAL PARAMETERS & CONFIGURATION ---
   // Time step for integration (seconds). We use a constant interval for improved numerical stability.
   float dt_s = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
@@ -457,12 +472,35 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float actualPosFraction_01 = stepper->getCurrentPositionFraction();
 
   // --- 4. SPRING REACTION & LOCAL STIFFNESS ---
+  float displacement = g_vModelPos_01 - rudderCenter;
+  float absDisplacement = fabsf(displacement);
+
+  // Deadzone for rudder
+  if (absDisplacement < rudderOffsets_st.deadzone_01) {
+      absDisplacement = 0.0f;
+  } else {
+      absDisplacement -= rudderOffsets_st.deadzone_01;
+  }
+
   // Read the spring force from the spline based on current virtual position (ground truth)
-  float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(g_vModelPos_01, 0.0f, 1.0f));
+  float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(absDisplacement, 0.0f, 1.0f));
   float springForce_N = springForceRaw_kg * GRAVITY_N_KG;
 
+  // Sign flip, if pos < center ==> force must be negative
+  if ( rudderOffsets_st.isRudderMode )
+  {
+    if (displacement > 0) {
+        springForce_N = springForce_N; 
+    } 
+    else {
+        springForce_N = -springForce_N; 
+    }
+
+  }
+  
+
   // Calculate local physical spring stiffness (N/m) for dynamic damping tuning
-  float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, constrain(g_vModelPos_01, 0.0f, 1.0f), false);
+  float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, constrain(absDisplacement, 0.0f, 1.0f), false);
   float localStiffness_N_m = max(localStiffness_kg_step * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG, 1.0f);
 
   // --- 5. EFFECT OFFSETS & TOTAL FORCE ---

@@ -2007,7 +2007,12 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         endstopBehavior_st.travelRange_mm_fl32 = constrain(endstopBehavior_st.travelRange_mm_fl32, 0.0f, 10.0f); // constrain the stiffness to a max value for safety
         
 
-        
+        // rudder variables
+        rudderOffsets_st.isRudderMode = false;
+        rudderOffsets_st.centerPosition_01 = 0.0f;
+        rudderOffsets_st.deadzone_01 = 0.0f;
+        rudderOffsets_st.trimOffset_01 = 0.0f;
+
         // Pedal control algorithm
         Position_Next = MoveByAdmittanceStrategy(
           filteredReading
