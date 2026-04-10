@@ -504,7 +504,7 @@ void IRAM_ATTR_FLAG loadcellReadingTask( void * pvParameters )
 
 
 // === Scheduler config ===
-#define BASE_TICK_US 300   // base tick in microseconds
+#define BASE_TICK_US REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64   // base tick in microseconds
 #define MAX_TASKS    10     // maximum tasks in scheduler
 
 

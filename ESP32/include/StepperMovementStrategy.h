@@ -59,8 +59,10 @@ float g_tankEnergy_J = 2.0f;    // Energy tank level for passive parameter adapt
 float g_massAdaptationOffset_kg = 0.0f; // Dynamic mass offset from Energy Tank framework
 float g_lastActiveDamping_Ns_m = 0.0f;  // Track previous frame's damping for power calculation
 
+
 // Oscillation Detector State (Landi et al.)
-#define PSI_BUFFER_SIZE 30
+#define TARGET_PSI_WINDOW_US 9000 // Timewindow for oscillation-smootginh: 9 ms
+#define PSI_BUFFER_SIZE ((TARGET_PSI_WINDOW_US + (REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 / 2)) / REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64)
 float g_psiBuffer[PSI_BUFFER_SIZE] = {0};
 uint8_t g_psiBufferIdx = 0;
 float g_prevPhysicalPos_m = 0.0f;
@@ -164,12 +166,20 @@ static inline bool DetectAdmittanceOscillation(
         return false;
     }
 
+    // Gewünschte Glättungs-Zeitkonstanten in Sekunden (unabhängig von der Hz-Zahl!)
+    const float TAU_VEL = 0.002f; // 2 ms Glättung für Geschwindigkeit
+    const float TAU_ACC = 0.006f; // 6 ms Glättung für Beschleunigung
+
+    // Alpha berechnet sich nun dynamisch anhand der Schleifenzeit:
+    float static ALPHA_VEL = 1.0f - expf(-dt_s / TAU_VEL); 
+    float static ALPHA_ACC = 1.0f - expf(-dt_s / TAU_ACC);
+
     // 1. Raw Derivation
     float rawPhysicalVel_mps = (physicalPos_m - g_prevPhysicalPos_m) / dt_s;
     g_prevPhysicalPos_m = physicalPos_m;
 
     // 2. Low-Pass Filter Velocity (EMA, Alpha ~0.15 for smooth but responsive tracking)
-    const float ALPHA_VEL = 0.15f; 
+    //const float ALPHA_VEL = 0.15f; 
     g_filteredPhysicalVel_mps = (ALPHA_VEL * rawPhysicalVel_mps) + ((1.0f - ALPHA_VEL) * g_filteredPhysicalVel_mps);
 
     // 3. Raw Acceleration from Filtered Velocity
@@ -177,7 +187,7 @@ static inline bool DetectAdmittanceOscillation(
     g_prevFilteredPhysicalVel_mps = g_filteredPhysicalVel_mps;
 
     // 4. Low-Pass Filter Acceleration (EMA, Alpha ~0.05 to suppress extreme derivation noise)
-    const float ALPHA_ACC = 0.05f; 
+    //const float ALPHA_ACC = 0.05f; 
     g_filteredPhysicalAcc_mps2 = (ALPHA_ACC * rawPhysicalAcc_mps2) + ((1.0f - ALPHA_ACC) * g_filteredPhysicalAcc_mps2);
 
     // Expected force based on nominal admittance model (Eq. 2)
@@ -221,6 +231,8 @@ static inline bool DetectAdmittanceOscillation(
     {
         psi_raw = 0.0f;
     }
+
+    psi_raw = 0.0f;
 
     // Moving average to prevent false positives
     g_psiBuffer[g_psiBufferIdx] = psi_raw;
@@ -432,6 +444,21 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   
 
+  // Time step for integration (seconds), but use actual loop time for better performance and stability.
+  // But make sure to protect against wrapsound of the timer by using uint64_t and checking for large dt values.
+  /*uint64_t currentTimeUs = esp_timer_get_time();
+  static uint64_t lastTimeUs = 0;
+  if (lastTimeUs == 0) {
+    lastTimeUs = currentTimeUs;
+  }
+  float dt_s = ((float)currentTimeUs - (float)lastTimeUs) * 1e-6f;
+  if (dt_s > 1.0f || dt_s <= 0.0f) {
+    // If the time step is too large (e.g., due to timer wraparound or long loop delay), reset it to a default value to prevent instability.
+    dt_s = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
+  }
+  lastTimeUs = currentTimeUs;
+  */
+
 
   // --- 1. PHYSICAL PARAMETERS & CONFIGURATION ---
   // Time step for integration (seconds). We use a constant interval for improved numerical stability.
@@ -602,7 +629,8 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // SOFT LEASH: Synchronize the virtual model with the actual stepper command position
   // to prevent divergence due to numerical drift without corrupting second-order dynamics.
   float divergence_01 = actualPosFraction_01 - g_vModelPos_01;
-  g_vModelPos_01 += divergence_01 * 0.0005f; // 0.05% correction per cycle. 
+  const float LEASH_RATE = 1.5f;
+  g_vModelPos_01 += divergence_01 * (LEASH_RATE * dt_s); // 0.05% correction per cycle. 
 
   // =========================================================
   // POPULATE REMAINDER OF DEBUG TELEMETRY STRUCT

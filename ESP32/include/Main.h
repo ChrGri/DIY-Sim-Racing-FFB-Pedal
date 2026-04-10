@@ -554,7 +554,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 #ifdef RUN_IN_CACHE
   #define REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 (int64_t)600
 #else
-  #define REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 (int64_t)300
+  #define REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 (int64_t)300 // multiple of loadcell reading task to reduce clock-jitter
 #endif
 
 #define REPETITION_INTERVAL_JOYSTICKOUTPUT_TASK_IN_US_I64 (int64_t)10000
