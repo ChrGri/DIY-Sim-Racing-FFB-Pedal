@@ -232,8 +232,6 @@ static inline bool DetectAdmittanceOscillation(
         psi_raw = 0.0f;
     }
 
-    psi_raw = 0.0f;
-
     // Moving average to prevent false positives
     g_psiBuffer[g_psiBufferIdx] = psi_raw;
     g_psiBufferIdx = (g_psiBufferIdx + 1) % PSI_BUFFER_SIZE;
@@ -586,7 +584,75 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   }
 
   // Update virtual acceleration
-  float acceleration_mps2 = netForce_N / virtualMass_kg;
+  // Update virtual acceleration
+  float acceleration_mps2 = 0.0f;
+  bool use_backwards_euler = true;
+  
+  if(use_backwards_euler)
+  {
+    // We calculate the net force WITHOUT damping. 
+    // Damping will be handled implicitly in the algebraic derivation below.
+    float netForce_without_damping_N = externalForce_N - springForce_N - softEndstopForce_N;
+
+    // Minimal Coulomb Friction to prevent micro-hunting (jitter) around the rest position
+    if (fabsf(g_vModelVel_mps) > 0.001f) {
+        netForce_without_damping_N -= (g_vModelVel_mps > 0 ? FRICTION_N : -FRICTION_N);
+    }
+
+    // =========================================================
+    // IMPLICIT EULER (BACKWARD EULER) MATHEMATICS
+    // =========================================================
+    // Derivation of the unconditionally stable velocity formula:
+    //
+    // 1. Newton's second law: 
+    //    M * a = F_net
+    //
+    // 2. Implicit Euler requires calculating forces at the END of the timestep (future state):
+    //    a = (v_new - v_old) / dt
+    //    F_damping_new = C * v_new
+    //    F_spring_new  = F_spring_old + (K * v_new * dt)
+    //
+    // 3. Substitute into Newton's law:
+    //    M * (v_new - v_old) / dt = F_ext - F_spring_new - F_damping_new
+    //    M * (v_new - v_old) / dt = F_ext - (F_spring_old + K * v_new * dt) - (C * v_new)
+    //
+    // 4. Let F_basis = F_ext - F_spring_old (this is 'netForce_without_damping_N').
+    //    Multiply the entire equation by 'dt' to clear the fraction:
+    //    M * v_new - M * v_old = F_basis * dt - K * v_new * dt^2 - C * v_new * dt
+    //
+    // 5. Group all terms containing 'v_new' on the left side:
+    //    M * v_new + C * v_new * dt + K * v_new * dt^2 = M * v_old + F_basis * dt
+    //
+    // 6. Factor out 'v_new' and divide to solve for 'v_new':
+    //    v_new * (M + C * dt + K * dt^2) = M * v_old + F_basis * dt
+    //    v_new = (M * v_old + F_basis * dt) / (M + C * dt + K * dt^2)
+    // =========================================================
+    
+    // Denominator of the derived equation: (M + C*dt + K*dt^2)
+    // Notice how K*dt^2 prevents division by near-zero when the virtual mass is very small.
+    float implicit_denominator = virtualMass_kg + 
+                                 (activeDamping_Ns_m * dt_s) + 
+                                 (currentStiffness_N_m * dt_s * dt_s);
+  
+    // Numerator of the derived equation: (M*v_old) + (F_basis * dt)
+    float implicit_numerator = (virtualMass_kg * g_vModelVel_mps) + 
+                               (netForce_without_damping_N * dt_s);
+  
+    // 1. Calculate the NEW velocity directly and stably
+    float new_vModelVel_mps = implicit_numerator / implicit_denominator;
+  
+    // 2. Reconstruct the effective acceleration for this time step.
+    // We reverse-engineer the acceleration so we don't have to rewrite 
+    // subsequent safety features (like Regen-Power-Clamping or Hard-Limits).
+    acceleration_mps2 = (new_vModelVel_mps - g_vModelVel_mps) / dt_s;
+  }
+  else
+  {
+    // Explicit Forward Euler (legacy, prone to instability with small masses)
+    acceleration_mps2 = netForce_N / virtualMass_kg;
+  }
+  
+  
 
   // Hard Clamping of acceleration to prevent limit cycles (Hunting)
   const float MAX_ACCEL_MPS2 = 50.0f; 
