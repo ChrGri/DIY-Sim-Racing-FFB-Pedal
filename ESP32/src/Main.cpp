@@ -1669,7 +1669,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       profiler_pedalUpdateTask.start(0);
       
 
-
+      uint32_t cycleCallTimeInUs_u32 = micros();
       cycleCount_u32++;
 
       // get current position
@@ -2390,7 +2390,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoCurrentPercent_i16 = stepper->getServosCurrent();
 
           // ESP states
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.timeInUs_u32 = micros();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.timeInUs_u32 = cycleCallTimeInUs_u32;//micros();
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.cycleCount_u32 = cycleCount_u32;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.pedalForceRaw_fl32 =  loadcellReading;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.pedalForceFiltered_fl32 =  filteredReading;

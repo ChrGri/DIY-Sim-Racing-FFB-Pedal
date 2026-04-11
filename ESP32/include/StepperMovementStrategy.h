@@ -583,74 +583,188 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       netForce_N -= (g_vModelVel_mps > 0 ? FRICTION_N : -FRICTION_N);
   }
 
-  // Update virtual acceleration
+  
+
+
+
+
+  // =========================================================
+  // Integration approaches (Start)
+  // =========================================================
   // Update virtual acceleration
   float acceleration_mps2 = 0.0f;
-  bool use_backwards_euler = true;
   
-  if(use_backwards_euler)
+  // 0 = Explicit Euler (Legacy)
+  // 1 = Implicit Backward Euler
+  // 2 = Tustin (Bilinear Transform)
+  int integration_method = 2; 
+  
+  switch(integration_method)
   {
-    // We calculate the net force WITHOUT damping. 
-    // Damping will be handled implicitly in the algebraic derivation below.
-    float netForce_without_damping_N = externalForce_N - springForce_N - softEndstopForce_N;
+    case 1: // IMPLICIT EULER
+    {
+      // We calculate the net force WITHOUT damping. 
+      // Damping will be handled implicitly in the algebraic derivation below.
+      float netForce_without_damping_N = externalForce_N - springForce_N - softEndstopForce_N;
 
-    // Minimal Coulomb Friction to prevent micro-hunting (jitter) around the rest position
-    if (fabsf(g_vModelVel_mps) > 0.001f) {
-        netForce_without_damping_N -= (g_vModelVel_mps > 0 ? FRICTION_N : -FRICTION_N);
+      // Minimal Coulomb Friction to prevent micro-hunting (jitter) around the rest position
+      if (fabsf(g_vModelVel_mps) > 0.001f) {
+          netForce_without_damping_N -= (g_vModelVel_mps > 0 ? FRICTION_N : -FRICTION_N);
+      }
+
+      // =========================================================
+      // IMPLICIT EULER (BACKWARD EULER) MATHEMATICS
+      // =========================================================
+      // Derivation of the unconditionally stable velocity formula:
+      //
+      // 1. Newton's second law: 
+      //    M * a = F_net
+      //
+      // 2. Implicit Euler requires calculating forces at the END of the timestep (future state):
+      //    a = (v_new - v_old) / dt
+      //    F_damping_new = C * v_new
+      //    F_spring_new  = F_spring_old + (K * v_new * dt)
+      //
+      // 3. Substitute into Newton's law:
+      //    M * (v_new - v_old) / dt = F_ext - F_spring_new - F_damping_new
+      //    M * (v_new - v_old) / dt = F_ext - (F_spring_old + K * v_new * dt) - (C * v_new)
+      //
+      // 4. Let F_basis = F_ext - F_spring_old (this is 'netForce_without_damping_N').
+      //    Multiply the entire equation by 'dt' to clear the fraction:
+      //    M * v_new - M * v_old = F_basis * dt - K * v_new * dt^2 - C * v_new * dt
+      //
+      // 5. Group all terms containing 'v_new' on the left side:
+      //    M * v_new + C * v_new * dt + K * v_new * dt^2 = M * v_old + F_basis * dt
+      //
+      // 6. Factor out 'v_new' and divide to solve for 'v_new':
+      //    v_new * (M + C * dt + K * dt^2) = M * v_old + F_basis * dt
+      //    v_new = (M * v_old + F_basis * dt) / (M + C * dt + K * dt^2)
+      // =========================================================
+      
+      // Denominator of the derived equation: (M + C*dt + K*dt^2)
+      // Notice how K*dt^2 prevents division by near-zero when the virtual mass is very small.
+      float implicit_denominator = virtualMass_kg + 
+                                   (activeDamping_Ns_m * dt_s) + 
+                                   (currentStiffness_N_m * dt_s * dt_s);
+  
+      // Numerator of the derived equation: (M*v_old) + (F_basis * dt)
+      float implicit_numerator = (virtualMass_kg * g_vModelVel_mps) + 
+                                 (netForce_without_damping_N * dt_s);
+  
+      // 1. Calculate the NEW velocity directly and stably
+      float new_vModelVel_mps = g_vModelVel_mps;
+      if(fabsf(implicit_denominator) > 1e-5)
+      {
+          new_vModelVel_mps = implicit_numerator / implicit_denominator;
+      }
+  
+      // 2. Reconstruct the effective acceleration for this time step.
+      // We reverse-engineer the acceleration so we don't have to rewrite 
+      // subsequent safety features (like Regen-Power-Clamping or Hard-Limits).
+      acceleration_mps2 = (new_vModelVel_mps - g_vModelVel_mps) / dt_s;
+      
+      break;
     }
 
-    // =========================================================
-    // IMPLICIT EULER (BACKWARD EULER) MATHEMATICS
-    // =========================================================
-    // Derivation of the unconditionally stable velocity formula:
-    //
-    // 1. Newton's second law: 
-    //    M * a = F_net
-    //
-    // 2. Implicit Euler requires calculating forces at the END of the timestep (future state):
-    //    a = (v_new - v_old) / dt
-    //    F_damping_new = C * v_new
-    //    F_spring_new  = F_spring_old + (K * v_new * dt)
-    //
-    // 3. Substitute into Newton's law:
-    //    M * (v_new - v_old) / dt = F_ext - F_spring_new - F_damping_new
-    //    M * (v_new - v_old) / dt = F_ext - (F_spring_old + K * v_new * dt) - (C * v_new)
-    //
-    // 4. Let F_basis = F_ext - F_spring_old (this is 'netForce_without_damping_N').
-    //    Multiply the entire equation by 'dt' to clear the fraction:
-    //    M * v_new - M * v_old = F_basis * dt - K * v_new * dt^2 - C * v_new * dt
-    //
-    // 5. Group all terms containing 'v_new' on the left side:
-    //    M * v_new + C * v_new * dt + K * v_new * dt^2 = M * v_old + F_basis * dt
-    //
-    // 6. Factor out 'v_new' and divide to solve for 'v_new':
-    //    v_new * (M + C * dt + K * dt^2) = M * v_old + F_basis * dt
-    //    v_new = (M * v_old + F_basis * dt) / (M + C * dt + K * dt^2)
-    // =========================================================
-    
-    // Denominator of the derived equation: (M + C*dt + K*dt^2)
-    // Notice how K*dt^2 prevents division by near-zero when the virtual mass is very small.
-    float implicit_denominator = virtualMass_kg + 
-                                 (activeDamping_Ns_m * dt_s) + 
-                                 (currentStiffness_N_m * dt_s * dt_s);
+    case 2: // TUSTIN (BILINEAR TRANSFORM)
+    {
+      // We calculate the net force WITHOUT damping. 
+      // Damping will be mathematically modeled perfectly within the IIR filter.
+      float netForce_without_damping_N = externalForce_N - springForce_N - softEndstopForce_N;
+
+      // Minimal Coulomb Friction to prevent micro-hunting (jitter) around the rest position
+      if (fabsf(g_vModelVel_mps) > 0.001f) {
+          netForce_without_damping_N -= (g_vModelVel_mps > 0 ? FRICTION_N : -FRICTION_N);
+      }
+
+      // =========================================================
+      // TUSTIN (BILINEAR TRANSFORM) MATHEMATICS
+      // =========================================================
+      // Derivation of the discrete IIR Filter for a Mass-Damper system:
+      // We treat the spring as an external force to keep the non-linear
+      // splines intact. Our continuous system is: M*a + C*v = F_netto
+      //
+      // 1. Laplace Transform (S-Domain) to find the transfer function:
+      //    M * s * V(s) + C * V(s) = F(s)
+      //    H(s) = V(s) / F(s) = 1 / (M * s + C)
+      //
+      // 2. Tustin Substitution (Mapping S-Domain to Z-Domain):
+      //    s ≈ (2 / dt) * (1 - z^-1) / (1 + z^-1)
+      //    Let c = 2 / dt.
+      //
+      // 3. Substitute 's' into H(s):
+      //    H(z) = 1 / ( M * c * [(1 - z^-1)/(1 + z^-1)] + C )
+      //    Multiply numerator and denominator by (1 + z^-1):
+      //    H(z) = (1 + z^-1) / ( M * c * (1 - z^-1) + C * (1 + z^-1) )
+      //
+      // 4. Group by z^-1 to form the difference equation denominator:
+      //    H(z) = (1 + z^-1) / ( (M*c + C) + (C - M*c)*z^-1 )
+      //
+      // 5. Define IIR Filter Coefficients (a1, b0, b1):
+      //    A0 = M*c + C
+      //    A1 = C - M*c
+      //    b0 = 1 / A0,  b1 = 1 / A0,  a1 = A1 / A0
+      //
+      // 6. Final Time-Domain Difference Equation:
+      //    v_new = b0 * F_netto_new + b1 * F_netto_old - a1 * v_old
+      // =========================================================
+
+      // Static variable to store the previous force for the IIR filter (z^-1 delay)
+      // Note: If you instantiate this class multiple times (e.g. clutch + brake), 
+      // you should move this variable into the class header or calculation struct!
+      static float g_lastNetForceTustin_N = 0.0f;
+
+      // Calculate the Tustin constant 'c'
+      float c_tustin = 2.0f / dt_s;
   
-    // Numerator of the derived equation: (M*v_old) + (F_basis * dt)
-    float implicit_numerator = (virtualMass_kg * g_vModelVel_mps) + 
-                               (netForce_without_damping_N * dt_s);
+      // Calculate denominator terms A0 and A1
+      float A0 = (virtualMass_kg * c_tustin) + activeDamping_Ns_m;
+      float A1 = activeDamping_Ns_m - (virtualMass_kg * c_tustin);
   
-    // 1. Calculate the NEW velocity directly and stably
-    float new_vModelVel_mps = implicit_numerator / implicit_denominator;
-  
-    // 2. Reconstruct the effective acceleration for this time step.
-    // We reverse-engineer the acceleration so we don't have to rewrite 
-    // subsequent safety features (like Regen-Power-Clamping or Hard-Limits).
-    acceleration_mps2 = (new_vModelVel_mps - g_vModelVel_mps) / dt_s;
+      // Calculate final IIR filter coefficients
+      // Safeguard against division by zero just in case
+      float new_vModelVel_mps = g_vModelVel_mps;
+      if (fabsf(A0) > 1e-5) 
+      {
+          float b0 = 1.0f / A0;
+          float b1 = 1.0f / A0;
+          float a1 = A1 / A0;
+
+          // Compute the new ideal velocity using the difference equation
+          new_vModelVel_mps = (b0 * netForce_without_damping_N) + 
+                              (b1 * g_lastNetForceTustin_N) - 
+                              (a1 * g_vModelVel_mps);
+      }
+
+      // Store the current net force for the next integration cycle (z^-1)
+      g_lastNetForceTustin_N = netForce_without_damping_N;
+
+      // Reconstruct the effective acceleration for this time step.
+      // This is necessary so the existing limits (Regen clamping, hard max accel) 
+      // can operate unmodified on the Tustin output.
+      acceleration_mps2 = (new_vModelVel_mps - g_vModelVel_mps) / dt_s;
+
+      break;
+    }
+
+    case 0: // EXPLICIT EULER
+    default:
+    {
+      // Explicit Forward Euler (legacy, prone to instability with small masses)
+      acceleration_mps2 = netForce_N / virtualMass_kg;
+      break;
+    }
   }
-  else
-  {
-    // Explicit Forward Euler (legacy, prone to instability with small masses)
-    acceleration_mps2 = netForce_N / virtualMass_kg;
-  }
+
+  // =========================================================
+  // Integration approaches (End)
+  // =========================================================
+
+
+
+
+
+
   
   
 
