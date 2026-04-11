@@ -532,22 +532,49 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // actualPosFraction_01: The current command position of the ESP stepper [0.0, 1.0]
   float actualPosFraction_01 = stepper->getCurrentPositionFraction();
 
-  // --- 5. SPRING REACTION & LOCAL STIFFNESS ---
-  float displacement = g_vModelPos_01;
+  // --- 5. ELASTOMER PHYSICS & SPRING REACTION (Hunt-Crossley Model) ---
+  float displacement_01 = constrain(g_vModelPos_01, 0.0f, 1.0f);
 
-  // Read the spring force from the spline based on current virtual position (ground truth)
-  float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(displacement, 0.0f, 1.0f));
-  float springForce_N = springForceRaw_kg * GRAVITY_N_KG;
+  // 1. Static force from the Cubic Spline (represents the non-linear stiffness of the rubber)
+  float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, displacement_01);
+  float staticSpringForce_N = springForceRaw_kg * GRAVITY_N_KG;
 
-  // Subtract rudder spring force
-  if ( rudderOffsets_st.isRudderMode )
-  {
-    springForce_N -= rudderForce_N;
+  // Subtract rudder spring force (if active)
+  if (rudderOffsets_st.isRudderMode) {
+      staticSpringForce_N -= rudderForce_N;
   }
-  
 
-  // Calculate local physical spring stiffness (N/m) for dynamic damping tuning
-  float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, constrain(displacement, 0.0f, 1.0f), false);
+  // =========================================================
+  // VISCOELASTIC ELASTOMER HYSTERESIS (Hunt-Crossley Model)
+  // =========================================================
+  // Pure rubber exhibits internal friction, causing energy dissipation (heat).
+  // This damping is both position-dependent AND velocity-dependent: F_hyst = C * x * v.
+  // 
+  // Tuning parameter: How "sticky/viscous" should the rubber feel?
+  // 0.0 = Pure steel spring (instant rebound).
+  // 1500.0 - 3000.0 = Hard PU elastomer (absorbs energy, excellent for trail braking).
+  // TODO: Consider moving this constant to payloadPedalConfig_st for GUI tuning!
+  const float ELASTOMER_VISCOSITY_COEFFICIENT = 0.0f; 
+
+  // Calculate the dynamic hysteresis force.
+  // Compression (v > 0): Force increases (pedal feels stiffer to push).
+  // Release (v < 0): Force decreases (pedal "sticks" slightly to the foot, easing release).
+  float elastomerHysteresis_N = ELASTOMER_VISCOSITY_COEFFICIENT * displacement_01 * g_vModelVel_mps;
+
+  // Combine static spline force with dynamic hysteresis
+  float springForce_N = staticSpringForce_N + elastomerHysteresis_N;
+
+  // Safety constraint: An elastomer cannot pull the pedal towards the driver, 
+  // it can only push (F >= 0). If the release speed is very high, hysteresis 
+  // might become overly negative, so we clamp it at zero.
+  if (springForce_N < 0.0f) {
+      springForce_N = 0.0f;
+  }
+  // =========================================================
+
+  // Calculate local physical spring stiffness (N/m) for dynamic damping tuning (AOM and Tustin).
+  // We strictly use the gradient of the static spline here to ensure controller stability.
+  float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, displacement_01, false);
   float localStiffness_N_m = max(localStiffness_kg_step * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG, 1.0f);
 
   // --- 6. EFFECT OFFSETS & TOTAL FORCE ---
