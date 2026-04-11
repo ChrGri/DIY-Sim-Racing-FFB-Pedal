@@ -132,10 +132,19 @@ static inline float CalcSoftEndstopForce(
 /**
  * @brief Admittance Oscillation Detector (Landi et al.) with Passivity Theory (Power Flow)
  * Compares theoretical admittance force with actual measured force to identify external disturbances.
- * Uses EMA filtering to suppress massive noise spikes from digital stepper derivation.
+ * Uses time-dependent EMA filtering to suppress massive noise spikes from digital stepper derivation.
  * Actively attenuates detection using mechanical power flow to prevent false positives.
+ * @param externalForce_N The raw force applied by the user in Newtons.
+ * @param actualPosFraction_01 Current position of the stepper motor [0.0 to 1.0].
+ * @param totalTravel_m Total physical travel of the pedal in meters.
+ * @param totalSpringReaction_N Total force from splines and soft endstops.
+ * @param baseDamping_Ns_m Ideal base damping calculated for the current mass.
+ * @param currentMass_kg Current active virtual mass of the admittance model.
+ * @param dt_s Delta time of the current integration step in seconds.
  * @param maxPedalForce_kg The configured max force from the GUI to scale the dynamic threshold.
  * @param debugState_st Optional pointer to output internal physical states for telemetry.
+ * @param hasActiveEffect Flag indicating if vibration/ABS effects are currently active.
+ * @return true if an unstable limit cycle (oscillation) is detected, false otherwise.
  */
 static inline bool DetectAdmittanceOscillation(
     float externalForce_N, float actualPosFraction_01, float totalTravel_m, 
@@ -144,11 +153,19 @@ static inline bool DetectAdmittanceOscillation(
 {
     float physicalPos_m = actualPosFraction_01 * totalTravel_m;
     
+    // Static filter states for the DSP envelope and high-pass filters
+    static float s_psi_lowpass = 0.0f;
+    static float s_power_envelope_W = 0.0f;
+
     if (!g_isPsiInitialized) {
         g_prevPhysicalPos_m = physicalPos_m;
         g_filteredPhysicalVel_mps = 0.0f;
         g_filteredPhysicalAcc_mps2 = 0.0f;
         g_prevFilteredPhysicalVel_mps = 0.0f;
+        
+        s_psi_lowpass = 0.0f;
+        s_power_envelope_W = 0.0f;
+        
         g_isPsiInitialized = true;
         
         if (debugState_st != nullptr) {
@@ -161,38 +178,37 @@ static inline bool DetectAdmittanceOscillation(
         return false;
     }
 
+    // Safety check to prevent division by zero or negative time steps
     if (dt_s < 0.0001f) {
         if (debugState_st != nullptr) debugState_st->admittancePsi_N = 0.0f;
         return false;
     }
 
-    // Gewünschte Glättungs-Zeitkonstanten in Sekunden (unabhängig von der Hz-Zahl!)
-    const float TAU_VEL = 0.002f; // 2 ms Glättung für Geschwindigkeit
-    const float TAU_ACC = 0.006f; // 6 ms Glättung für Beschleunigung
+    // Desired smoothing time constants in seconds (independent of the loop rate!)
+    const float TAU_VEL = 0.002f; // 2 ms smoothing for velocity
+    const float TAU_ACC = 0.006f; // 6 ms smoothing for acceleration
 
-    // Alpha berechnet sich nun dynamisch anhand der Schleifenzeit:
-    float static ALPHA_VEL = 1.0f - expf(-dt_s / TAU_VEL); 
-    float static ALPHA_ACC = 1.0f - expf(-dt_s / TAU_ACC);
+    // Calculate alpha dynamically based on the exact loop time (dt_s):
+    float ALPHA_VEL = 1.0f - expf(-dt_s / TAU_VEL); 
+    float ALPHA_ACC = 1.0f - expf(-dt_s / TAU_ACC);
 
-    // 1. Raw Derivation
+    // 1. Raw Derivation of physical position
     float rawPhysicalVel_mps = (physicalPos_m - g_prevPhysicalPos_m) / dt_s;
     g_prevPhysicalPos_m = physicalPos_m;
 
-    // 2. Low-Pass Filter Velocity (EMA, Alpha ~0.15 for smooth but responsive tracking)
-    //const float ALPHA_VEL = 0.15f; 
+    // 2. Low-Pass Filter Velocity (EMA)
     g_filteredPhysicalVel_mps = (ALPHA_VEL * rawPhysicalVel_mps) + ((1.0f - ALPHA_VEL) * g_filteredPhysicalVel_mps);
 
     // 3. Raw Acceleration from Filtered Velocity
     float rawPhysicalAcc_mps2 = (g_filteredPhysicalVel_mps - g_prevFilteredPhysicalVel_mps) / dt_s;
     g_prevFilteredPhysicalVel_mps = g_filteredPhysicalVel_mps;
 
-    // 4. Low-Pass Filter Acceleration (EMA, Alpha ~0.05 to suppress extreme derivation noise)
-    //const float ALPHA_ACC = 0.05f; 
+    // 4. Low-Pass Filter Acceleration (EMA to suppress extreme stepper derivation noise)
     g_filteredPhysicalAcc_mps2 = (ALPHA_ACC * rawPhysicalAcc_mps2) + ((1.0f - ALPHA_ACC) * g_filteredPhysicalAcc_mps2);
 
-    // Expected force based on nominal admittance model (Eq. 2)
+    // Expected force based on nominal admittance model (Eq. 2 from Landi et al.)
     // We use totalSpringReaction_N instead of (Stiffness * Pos) to perfectly account for 
-    // spline biases and soft endstop forces.
+    // non-linear spline biases and soft endstop forces.
     float expectedForce_N = (currentMass_kg * g_filteredPhysicalAcc_mps2) + 
                             (baseDamping_Ns_m * g_filteredPhysicalVel_mps) + 
                             totalSpringReaction_N;
@@ -200,51 +216,65 @@ static inline bool DetectAdmittanceOscillation(
     // =========================================================
     // ENDSTOP MASKING (Detector Suppression)
     // =========================================================
+    // Suppress detection near the physical limits to avoid false positives from hard stops
     if (actualPosFraction_01 > 0.95f || actualPosFraction_01 < 0.05f) {
         expectedForce_N = externalForce_N;
     }
     
+    // 1. Calculate the absolute error (deviation from the ideal admittance model)
     float psi_raw = fabsf(externalForce_N - expectedForce_N);
 
-    // =========================================================
-    // NEW: PASSIVITY THEORY (POWER FLOW GATING)
-    // =========================================================
-    // Calculate mechanical power P = F * v. 
-    // If the pedal pushes the foot back (F > 0, v < 0), power flows into the user.
-    float mechanical_power_W = externalForce_N * g_filteredPhysicalVel_mps;
-    float power_to_user_W = 0.0f;
-    if (mechanical_power_W < 0.0f) {
-        power_to_user_W = -mechanical_power_W;
-    }
-
-    // Power weight is clamped strictly between [0.0, 1.0].
-    // We use a base weight of 0.1 so the detector isn't completely blind during normal operation,
-    // but it rapidly opens up to 1.0 when the pedal starts exerting work on the user (instability).
-    const float POWER_PENALTY_FACTOR = 0.1f; // Reaches 1.0 at ~9 Watts of reverse power
-    float power_weight = constrain(0.1f + (power_to_user_W * POWER_PENALTY_FACTOR), 0.0f, 1.0f);
-    
-    // Attenuate the raw Psi deviation based on the power flow
-    psi_raw *= power_weight;
-
-    // reset when effects are active, since model probably doesnt catch that properly
+    // Reset when effects are active, since the rigid admittance model 
+    // cannot properly track high-frequency injected vibrations.
     if( hasActiveEffect )
     {
         psi_raw = 0.0f;
     }
 
-    // Moving average to prevent false positives
-    g_psiBuffer[g_psiBufferIdx] = psi_raw;
-    g_psiBufferIdx = (g_psiBufferIdx + 1) % PSI_BUFFER_SIZE;
+    // =========================================================
+    // DSP HIGH-PASS FILTER (AC-COUPLING) TO PREVENT FALSE POSITIVES
+    // =========================================================
+    // We separate slow deviations (normal human braking, < 3Hz) 
+    // from fast deviations (high-frequency limit cycles/judder).
     
-    float psi_sum = 0.0f;
-    for (int i = 0; i < PSI_BUFFER_SIZE; i++) {
-        psi_sum += g_psiBuffer[i];
+    // 50ms time constant (~3 Hz Cutoff). Everything slower ends up in the low-pass.
+    float alpha_hp = 1.0f - expf(-dt_s / 0.05f); 
+    s_psi_lowpass = (alpha_hp * psi_raw) + ((1.0f - alpha_hp) * s_psi_lowpass);
+    
+    // The high-pass is simply the original signal minus the slow components
+    float psi_high_freq = fabsf(psi_raw - s_psi_lowpass);
+
+
+    // =========================================================
+    // ENVELOPE FOLLOWER FOR PASSIVITY THEORY (POWER FLOW)
+    // =========================================================
+    // Calculate mechanical power P = F * v. 
+    // If the pedal pushes the foot back (F > 0, v < 0), power flows into the user.
+    float mechanical_power_W = externalForce_N * g_filteredPhysicalVel_mps;
+    float power_to_user_W = (mechanical_power_W < 0.0f) ? -mechanical_power_W : 0.0f;
+
+    // Envelope logic: 
+    // - If power increases, we react IMMEDIATELY (Instant Attack = 0)
+    // - If power drops (zero-crossing), the curve decays very slowly (Release)
+    if (power_to_user_W > s_power_envelope_W) {
+        s_power_envelope_W = power_to_user_W; // Instant Attack
+    } else {
+        // 100ms Release time constant: Smooths over the 0-Watt pulsing of the oscillation perfectly
+        float release_alpha = 1.0f - expf(-dt_s / 0.100f); 
+        s_power_envelope_W = s_power_envelope_W - (s_power_envelope_W * release_alpha); 
     }
-    float psi_smoothed = psi_sum / (float)PSI_BUFFER_SIZE;
+
+    // Convert the envelope into a continuous weight [0.0 to 1.0].
+    // If reverse power reaches ~1.5W, we open the gate completely (1.0).
+    // Base-Weight is 0.0. The detector is completely silent during stable operation.
+    float power_weight = constrain(s_power_envelope_W / 1.5f, 0.0f, 1.0f);
     
+    // Attenuate the high-frequency Psi deviation based on the power flow envelope
+    float psi_final = psi_high_freq * power_weight;
+
     // Output the internal physical values for telemetry
     if (debugState_st != nullptr) {
-        debugState_st->admittancePsi_N = psi_smoothed;
+        debugState_st->admittancePsi_N = psi_final;
         debugState_st->expectedForce_N = expectedForce_N;
         debugState_st->physicalPos_m = physicalPos_m;
         debugState_st->physicalVel_mps = g_filteredPhysicalVel_mps;
@@ -252,13 +282,14 @@ static inline bool DetectAdmittanceOscillation(
     }
 
     // =========================================================
-    // DYNAMIC THRESHOLD (Based on Configured Max Force)
+    // DYNAMIC THRESHOLD TUNING
     // =========================================================
-    // Convert configured max kg to Newtons and multiply by 2 as requested.
-    const float GRAVITY_N_KG = 9.81f;
-    float EPSILON_THRESHOLD_N = 2.0f * maxPedalForce_kg; //15.0f; //2.0f * (maxPedalForce_kg * GRAVITY_N_KG); 
+    // Since we eliminated false positives (via High-Pass) and zero-crossing pulses 
+    // (via Envelope), the psi_final signal is extremely clean.
+    // We can use a static, much lower threshold (e.g., 25 Newtons).
+    const float EPSILON_THRESHOLD_N = 25.0f; 
     
-    return (psi_smoothed > EPSILON_THRESHOLD_N);
+    return (psi_final > EPSILON_THRESHOLD_N);
 }
 
 /**
