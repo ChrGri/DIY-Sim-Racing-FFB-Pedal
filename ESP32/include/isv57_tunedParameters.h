@@ -140,7 +140,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     3584,  // Pr4.07: Input selection SI8
     0x0303, // Pr4.08: Input selection SI9
     0,     // Pr4.09: Input selection SI10
-    0x8181,  // Pr4.10: Output selection SO1 81: No ALARM ==> 2.4Ohm, ALARM ==> inf Ohm.    Connect A: NO. Connect B: NC
+    0x101, //0x8181,  // Pr4.10: Output selection SO1 81: No ALARM ==> 2.4Ohm, ALARM ==> inf Ohm.    Connect A: NO. Connect B: NC
     0,     // Pr4.11: Output selection SO2
     0,     // Pr4.12: Output selection SO3
     0,     // Pr4.13: Output selection SO4

@@ -3,10 +3,6 @@
   "WorkspaceRootPath": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|c:\\users\\chris\\onedrive\\desktop\\git\\diy-sim-racing-active-pedal\\simhubplugin\\uifunction\\generalsetting_dynamics.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\generalsetting_dynamics.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|c:\\users\\chris\\onedrive\\desktop\\git\\diy-sim-racing-active-pedal\\simhubplugin\\uifunction\\generalsetting_dynamics.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\generalsetting_dynamics.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
@@ -17,6 +13,10 @@
     {
       "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|c:\\users\\chris\\onedrive\\desktop\\git\\diy-sim-racing-active-pedal\\simhubplugin\\language\\diyactivepedal.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:language\\diyactivepedal.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|c:\\users\\chris\\onedrive\\desktop\\git\\diy-sim-racing-active-pedal\\simhubplugin\\uifunction\\generalsetting_dynamics.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|solutionrelative:uifunction\\generalsetting_dynamics.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{833040C9-FE5E-4CCF-B21D-71979E049B6B}|DIYFFBPedalUI.csproj|c:\\users\\chris\\onedrive\\desktop\\git\\diy-sim-racing-active-pedal\\simhubplugin\\uifunction\\generalsetting_servo.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
@@ -110,7 +110,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 8,
           "Children": [
             {
               "$type": "Bookmark",
@@ -118,52 +118,15 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "DiyActivePedal.resx",
-              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\Language\\DiyActivePedal.resx",
-              "RelativeDocumentMoniker": "Language\\DiyActivePedal.resx",
-              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\Language\\DiyActivePedal.resx",
-              "RelativeToolTip": "Language\\DiyActivePedal.resx",
-              "ViewState": "AgIAAPIAAAAAAAAAAAD4vxkBAABPAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001005|",
-              "WhenOpened": "2026-04-13T02:31:01.72Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
               "Title": "GeneralSetting_Dynamics.xaml.cs",
               "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIFunction\\GeneralSetting_Dynamics.xaml.cs",
               "RelativeDocumentMoniker": "UIFunction\\GeneralSetting_Dynamics.xaml.cs",
               "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIFunction\\GeneralSetting_Dynamics.xaml.cs",
               "RelativeToolTip": "UIFunction\\GeneralSetting_Dynamics.xaml.cs",
-              "ViewState": "AgIAAIAAAAAAAAAAAAAewI8AAABvAAAAAAAAAA==",
+              "ViewState": "AgIAAIAAAAAAAAAAAAAewJ4AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-13T02:27:21.768Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "GeneralSetting_Dynamics.xaml",
-              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIFunction\\GeneralSetting_Dynamics.xaml",
-              "RelativeDocumentMoniker": "UIFunction\\GeneralSetting_Dynamics.xaml",
-              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIFunction\\GeneralSetting_Dynamics.xaml",
-              "RelativeToolTip": "UIFunction\\GeneralSetting_Dynamics.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-04-13T02:22:12.408Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "GeneralSetting_Servo.xaml",
-              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIFunction\\GeneralSetting_Servo.xaml",
-              "RelativeDocumentMoniker": "UIFunction\\GeneralSetting_Servo.xaml",
-              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIFunction\\GeneralSetting_Servo.xaml",
-              "RelativeToolTip": "UIFunction\\GeneralSetting_Servo.xaml",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-04-13T02:17:24.283Z",
               "EditorCaption": ""
             },
             {
@@ -217,15 +180,52 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 2,
               "Title": "DiyActivePedal.Designer.cs",
               "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\Language\\DiyActivePedal.Designer.cs",
               "RelativeDocumentMoniker": "Language\\DiyActivePedal.Designer.cs",
               "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\Language\\DiyActivePedal.Designer.cs",
               "RelativeToolTip": "Language\\DiyActivePedal.Designer.cs",
-              "ViewState": "AgIAAOUBAAAAAAAAAAAewAsCAAAWAAAAAAAAAA==",
+              "ViewState": "AgIAAOEBAAAAAAAAAAAiwPwBAAAyAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-04-13T02:16:20.376Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "DiyActivePedal.resx",
+              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\Language\\DiyActivePedal.resx",
+              "RelativeDocumentMoniker": "Language\\DiyActivePedal.resx",
+              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\Language\\DiyActivePedal.resx",
+              "RelativeToolTip": "Language\\DiyActivePedal.resx",
+              "ViewState": "AgIAAO8AAAAAAAAAAAAEwA0BAAAOAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001005|",
+              "WhenOpened": "2026-04-13T02:31:01.72Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "GeneralSetting_Dynamics.xaml",
+              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIFunction\\GeneralSetting_Dynamics.xaml",
+              "RelativeDocumentMoniker": "UIFunction\\GeneralSetting_Dynamics.xaml",
+              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIFunction\\GeneralSetting_Dynamics.xaml",
+              "RelativeToolTip": "UIFunction\\GeneralSetting_Dynamics.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-04-13T02:22:12.408Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "GeneralSetting_Servo.xaml",
+              "DocumentMoniker": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIFunction\\GeneralSetting_Servo.xaml",
+              "RelativeDocumentMoniker": "UIFunction\\GeneralSetting_Servo.xaml",
+              "ToolTip": "C:\\Users\\chris\\OneDrive\\Desktop\\GIT\\DIY-Sim-Racing-Active-Pedal\\SimHubPlugin\\UIFunction\\GeneralSetting_Servo.xaml",
+              "RelativeToolTip": "UIFunction\\GeneralSetting_Servo.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2026-04-13T02:17:24.283Z",
               "EditorCaption": ""
             },
             {
