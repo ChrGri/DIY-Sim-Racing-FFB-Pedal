@@ -234,7 +234,7 @@ void DapCalculationVariables_t::updateFromConfig(DapConfig_t& config_st)
     force_y_afl32[index_i32] = force_afl32[index_i32];
   }
   
-  cubic_st.interpolate1D(travel_x_afl32, force_y_afl32, config_st.payloadPedalConfig_st.quantityOfControl_u8 - 1, config_st.payloadPedalConfig_st.quantityOfControl_u8 - 1);
+  cubic_st.interpolate1D(travel_x_afl32, force_y_afl32, config_st.payloadPedalConfig_st.quantityOfControl_u8, config_st.payloadPedalConfig_st.quantityOfControl_u8);
   interpolatorA_pfl32 = cubic_st.result_st.a_afl32;
   interpolatorB_pfl32 = cubic_st.result_st.b_afl32;
   /*
