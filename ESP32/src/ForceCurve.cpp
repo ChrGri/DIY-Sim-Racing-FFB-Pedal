@@ -147,10 +147,10 @@ float ForceCurveInterpolated::EvalForceGradientCubicSpline(const DapConfig_t* co
     yOrig[i]=calc_st->force_afl32[i];
   }
 
-
-
-  float deltaXOrig_fl32 = 100.0f; // total horizontal range [0,100]
-  float dx_fl32 = deltaXOrig_fl32 / numberOfSplineSegments_fl32; // spline segment horizontal range
+  
+  // Calculate true dynamic dx_fl32 based on the actual spacing of the control points
+  float dx_fl32 = calc_st->travel_afl32[splineSegment_u8 + 1] - calc_st->travel_afl32[splineSegment_u8];
+  
   float t_fl32 = (splineSegment_fl32 - (float)splineSegment_u8); // relative position in spline segment [0, 1]
   float dy_fl32 =0.0f;
   
@@ -159,6 +159,33 @@ float ForceCurveInterpolated::EvalForceGradientCubicSpline(const DapConfig_t* co
   float yPrime_fl32 = 0.0f;
   if (fabsf(dx_fl32) > 0)
   {
+    /**********************************************************************************************
+     * MATHEMATICAL DERIVATION: SPLINE GRADIENT CALCULATION
+     * * 1. The Local Polynomial (Segment Equation)
+     * The cubic spline interpolates a segment between points (x0, y0) and (x1, y1)
+     * using a normalized local parameter 't', where t is in the range [0, 1].
+     * * y(t) = (1 - t)*y0 + t*y1 + t*(1 - t) * [a*(1 - t) + b*t]
+     * * 2. The Derivative with respect to 't' (Product Rule)
+     * We need the rate of change with respect to t (dy/dt). We apply the product 
+     * rule (u'v + uv') to the last term of the equation:
+     * * Let u = t*(1 - t) = (t - t^2)       =>  u' = (1 - 2t)
+     * Let v = [a*(1 - t) + b*t]           =>  v' = (b - a)
+     * * dy/dt = -y0 + y1 + u'v + uv'
+     * dy/dt = (y1 - y0) + (1 - 2t)*[a*(1 - t) + b*t] + t*(1 - t)*(b - a)
+     * * 3. The Derivative with respect to 'x' (Chain Rule)
+     * We want the physical gradient dy/dx, not dy/dt. We find this using the 
+     * chain rule: dy/dx = (dy/dt) * (dt/dx).
+     * * Since t is the fractional position within the segment:
+     * t = (x - x0) / (x1 - x0) = (x - x0) / dx
+     * Therefore, dt/dx = 1 / dx
+     * * Giving us our final gradient equation for the segment:
+     * dy/dx = [ (y1 - y0) + (1 - 2t)*[a*(1 - t) + b*t] + t*(1 - t)*(b - a) ] / dx
+     * * 4. Normalization to Physical Axis Scaling
+     * The spline mathematical evaluation operates strictly in percentages [0, 100].
+     * To convert the resulting gradient from (dY% / dX%) to (dForce / dPos), 
+     * we scale by the physical ranges of those axes:
+     * * dForce/dPos = (dy% / dx%) * (Force_Range / Pos_Range)
+     **********************************************************************************************/
       yPrime_fl32 = dy_fl32 / dx_fl32 + (1.0f - 2.0f * t_fl32) * (a_fl32 * (1.0f - t_fl32) + b_fl32 * t_fl32) / dx_fl32 + t_fl32 * (1.0f - t_fl32) * (b_fl32 - a_fl32) / dx_fl32;
   }
   // when the spline was identified, x and y were givin in the unit of percent --> 0-100
