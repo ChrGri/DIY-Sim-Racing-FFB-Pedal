@@ -21,6 +21,14 @@ typedef struct {
   float deadzone_01;           // small region without force around center
 } RudderOffsets_t;
 
+
+/**
+ * @brief Selection of the physical model for elastomer hysteresis simulation.
+ */
+typedef enum {
+    ELASTOMER_MODEL_HUNT_CROSSLEY = 0,       // Position-dependent damping (Standard)
+    ELASTOMER_MODEL_STRESS_PROPORTIONAL = 1  // Force-dependent damping (Heusinkveld/Stacked style)
+} ElastomerModel_t;
 // =========================================================
 // DEBUG & TELEMETRY STRUCT
 // =========================================================
@@ -332,13 +340,13 @@ static inline void AdaptVirtualMass(
 }
 
 /**
- * @brief Calculates active damping including AOM Boost, Tracking Error Trajectory Shaping, and Elastomer Hysteresis.
+ * @brief Calculates active damping including AOM Boost, Trajectory Shaping, and Elastomer Hysteresis.
  */
 static inline float CalcActiveDamping(
     float dampingRatio_zeta, float virtualMass_kg, float currentStiffness_N_m,
     float oscillationIntensity_01, float vModelPos_01, float actualPosFraction_01,
     int32_t actualServoTrackingError_i32, float travelSteps_cnt, float effectForceOffset_fl32,
-    uint8_t dampingProgression_u8) 
+    uint8_t dampingProgression_u8, float springForce_N, float vModelVel_mps, uint8_t elastomerModelSelection, float maxPedalForce_kg) 
 {
     // Calculate Base Damping based on mass and current stiffness: c_c = 2 * sqrt(m * k)
     float criticalDamping_Ns_m = 2.0f * sqrtf(virtualMass_kg * currentStiffness_N_m);
@@ -346,7 +354,7 @@ static inline float CalcActiveDamping(
     
     float dampingMultiplier = 1.0f;
 
-    // Adaptive damping (AOM & Tracking Error) only when, when no effect is applied
+    // Adaptive damping (AOM & Tracking Error) only when no effect is applied
     if (effectForceOffset_fl32 == 0.0f) 
     {
         // AOM BOOST: If oscillation is detected, inject massive damping to freeze the system and bleed energy.
@@ -375,22 +383,64 @@ static inline float CalcActiveDamping(
     float totalDamping_Ns_m = baseDamping_Ns_m * dampingMultiplier;
 
     // =========================================================
-    // ELASTOMER HYSTERESIS (Hunt-Crossley Model)
+    // ELASTOMER HYSTERESIS MODELS (Selectable via Switch)
     // =========================================================
     // Normalize the GUI parameter from [0, 100] to [0.0, 1.0].
     // Squared ratio provides finer control at the lower end (steel spring -> soft rubber).
     float progressionRatio = (float)constrain( dampingProgression_u8, 0, 100 ) / 100.0f;
     float progression_01 = progressionRatio * progressionRatio; 
+    
+    float elastomerDamping_Ns_m = 0.0f;
 
-    // Max Elastomer Multiplier defines how many times the critical damping 
-    // is added at 100% slider value and full pedal compression (displacement = 1.0).
-    // 1.2x - 1.5x is the sweet spot for heavy polyurethane elastomers.
-    const float MAX_ELASTOMER_MULTIPLIER = 1.5f; 
-    float ELASTOMER_VISCOSITY_COEFFICIENT = progression_01 * (MAX_ELASTOMER_MULTIPLIER * criticalDamping_Ns_m);
+    switch(elastomerModelSelection) 
+    {
+        case ELASTOMER_MODEL_STRESS_PROPORTIONAL: 
+        {
+            // ADVANCED STACKED ELASTOMER HYSTERESIS (Heusinkveld-style)
+            // Instead of using pure displacement (x), we use the actual spring force (Stress)
+            // to scale the friction. This perfectly mimics a multi-stage elastomer stack
+            // separated by metal washers.
+            
+            // =========================================================
+            // DYNAMIC SCALING BASED ON MAXIMUM FORCE
+            // =========================================================
+            // We define "Heavy Load" as 50% of the maximum configured pedal force.
+            // For a 50kg pedal, the reference is 25kg (~245N).
+            float referenceLoad_N = (maxPedalForce_kg * 9.81f) * 0.5f;
+            
+            // Fallback in case maxForce in the GUI is extremely small or 0
+            if (referenceLoad_N < 10.0f) referenceLoad_N = 100.0f; 
 
-    // Calculate equivalent elastomer damping: C_eq = C_elastomer * x
-    float displacement_01 = constrain(vModelPos_01, 0.0f, 1.0f);
-    float elastomerDamping_Ns_m = ELASTOMER_VISCOSITY_COEFFICIENT * displacement_01;
+            // Now scales perfectly with the user's specific force curve and max force!
+            float forceLoad_01 = constrain(springForce_N / referenceLoad_N, 0.0f, 2.0f);
+
+            // REBOUND ASYMMETRY: Real elastomers return faster than they compress.
+            // We reduce the hysteresis during release (v < 0) for a snappier feel.
+            float reboundFactor = (vModelVel_mps < 0.0f) ? 0.7f : 1.0f;
+
+            const float MAX_ELASTOMER_MULTIPLIER = 1.5f; 
+            float ELASTOMER_VISCOSITY_COEFFICIENT = progression_01 * (MAX_ELASTOMER_MULTIPLIER * criticalDamping_Ns_m);
+
+            // Resulting Elastomer Damping: Damping follows the force curve's shape!
+            elastomerDamping_Ns_m = ELASTOMER_VISCOSITY_COEFFICIENT * forceLoad_01 * reboundFactor;
+            break;
+        }
+
+        case ELASTOMER_MODEL_HUNT_CROSSLEY: 
+        default:
+        {
+            // ELASTOMER HYSTERESIS (Standard Hunt-Crossley Model)
+            // Max Elastomer Multiplier defines how many times the critical damping 
+            // is added at 100% slider value and full pedal compression (displacement = 1.0).
+            const float MAX_ELASTOMER_MULTIPLIER = 1.5f; 
+            float ELASTOMER_VISCOSITY_COEFFICIENT = progression_01 * (MAX_ELASTOMER_MULTIPLIER * criticalDamping_Ns_m);
+
+            // Calculate equivalent elastomer damping based on linear displacement: C_eq = C_elastomer * x
+            float displacement_01 = constrain(vModelPos_01, 0.0f, 1.0f);
+            elastomerDamping_Ns_m = ELASTOMER_VISCOSITY_COEFFICIENT * displacement_01;
+            break;
+        }
+    }
 
     // Add Elastomer Hysteresis to the global system damping
     return totalDamping_Ns_m + elastomerDamping_Ns_m;
@@ -654,9 +704,11 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
     , stepper->getServosPosError()
     , travelSteps_cnt
     , effectForceOffset_fl32
-    , config_st->payloadPedalConfig_st.dampingProgression_u8);
-
-
+    , config_st->payloadPedalConfig_st.dampingProgression_u8
+    , springForce_N
+    , g_vModelVel_mps
+    , ELASTOMER_MODEL_HUNT_CROSSLEY//ELASTOMER_MODEL_STRESS_PROPORTIONAL // Defaulting to the new advanced model
+    , config_st->payloadPedalConfig_st.maxForce_fl32); 
 
   g_lastActiveDamping_Ns_m = activeDamping_Ns_m;
 
