@@ -26,16 +26,12 @@ C:\Program Files (x86)\SimHub\DiyActivePedal.dll.config
 C:\Program Files (x86)\SimHub\DiyActivePedal.dll
 C:\Program Files (x86)\SimHub\DiyActivePedal.pdb
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DIYFFBPedalUI.csproj.AssemblyReference.cache
-C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\OnlineProfile.g.cs
-C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\SerialMonitor.g.cs
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DIYFFBPedalControlUI.g.cs
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIElement\CheckboxWithLabel.g.cs
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIElement\SliderWithLabel.g.cs
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\GeneratedInternalTypeHelper.g.cs
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DiyActivePedal_MarkupCompile.cache
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DiyActivePedal_MarkupCompile.lref
-C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\OnlineProfile.baml
-C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\SerialMonitor.baml
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DIYFFBPedalControlUI.baml
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIElement\CheckboxWithLabel.baml
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIElement\SliderWithLabel.baml
@@ -43,7 +39,6 @@ C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\User.PluginSdkDemo.Properties.Resources.resources
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DIYFFBPedalUI.csproj.GenerateResource.cache
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DIYFFBPedalUI.csproj.CoreCompileInputs.cache
-C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DIYFFBPedalUI.csproj.CopyComplete
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DiyActivePedal.dll
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DiyActivePedal.pdb
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V88-0309-separateUseControl\SimHubPlugin\obj\Release\DIYFFBPedalUI.csproj.AssemblyReference.cache
@@ -257,7 +252,6 @@ C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\SettingSection_System.g.cs
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\SystemSetting_License.g.cs
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\SystemSetting_OTA.g.cs
-C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\SystemSetting_Profiles.g.cs
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\EffectsTab_RPMRudder.baml
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\EffectsTab_RudderACC.baml
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\GeneralSetting_RudderSetting.baml
@@ -267,7 +261,6 @@ C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\SettingSection_System.baml
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\SystemSetting_License.baml
 C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\SystemSetting_OTA.baml
-C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\SystemSetting_Profiles.baml
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V90-0501\SimHubPlugin\obj\Release\DIYFFBPedalUI.csproj.AssemblyReference.cache
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V90-0501\SimHubPlugin\obj\Release\OnlineProfile.g.cs
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V90-0501\SimHubPlugin\obj\Release\SerialMonitor.g.cs
@@ -2565,3 +2558,25 @@ X:\AC MOD\private works\ActivePedal\simhub_plugin\V90-0104\SimHubPlugin\obj\Rele
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V90-0104\SimHubPlugin\obj\Release\DIYFFBPe.469A4AA0.Up2Date
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V90-0104\SimHubPlugin\obj\Release\DiyActivePedal.dll
 X:\AC MOD\private works\ActivePedal\simhub_plugin\V90-0104\SimHubPlugin\obj\Release\DiyActivePedal.pdb
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIElement\ConfigPreviewWindow.g.cs
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIElement\NcalcScriptEditor.g.cs
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIElement\NameInputWindow.g.cs
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\EffectsTab_Custom.g.cs
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\GeneralSetting_Dynamics.g.cs
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\Listbox_PedalConfig.g.cs
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\OnlineProfile.g.cs
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\SerialMonitor.g.cs
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\SystemSetting_ProfilesNew.g.cs
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\SystemSetting_Shortcut.g.cs
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIElement\ConfigPreviewWindow.baml
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIElement\NcalcScriptEditor.baml
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIElement\NameInputWindow.baml
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\EffectsTab_Custom.baml
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\GeneralSetting_Dynamics.baml
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\Listbox_PedalConfig.baml
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\OnlineProfile.baml
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\SerialMonitor.baml
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\SystemSetting_ProfilesNew.baml
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\UIFunction\SystemSetting_Shortcut.baml
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\User.PluginSdkDemo.Language.DiyActivePedal.resources
+C:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-Active-Pedal\SimHubPlugin\obj\Release\DIYFFBPe.469A4AA0.Up2Date

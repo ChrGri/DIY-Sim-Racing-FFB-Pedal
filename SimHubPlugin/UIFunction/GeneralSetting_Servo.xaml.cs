@@ -66,8 +66,6 @@ namespace User.PluginSdkDemo.UIFunction
                 {
                     try
                     {
-                        if (control.Slider_ServoRatioOfInertia != null) control.Slider_ServoRatioOfInertia.SliderValue = newData.payloadPedalConfig_.servoRatioOfInertia_u8;
-                        if (control.Slider_PositionFilter != null) control.Slider_PositionFilter.SliderValue = newData.payloadPedalConfig_.positionSmoothingFactor_u8;
                         if (control.Slider_ServoEndstopDetecionThreshold != null) control.Slider_ServoEndstopDetecionThreshold.SliderValue = newData.payloadPedalConfig_.endstopDetectionThreshold;
                     }
                     catch
@@ -83,22 +81,6 @@ namespace User.PluginSdkDemo.UIFunction
         protected void ConfigChangedEvent(DAP_config_st newValue)
         {
             ConfigChanged?.Invoke(this, newValue);
-        }
-        private void Slider_ServoRatioOfInertia_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.servoRatioOfInertia_u8 = (byte)e.NewValue;
-            dap_config_st = tmp;
-            ConfigChangedEvent(dap_config_st);
-        }
-
-        public void PosFilterValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            PosSmoothing_value = e.NewValue;
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.positionSmoothingFactor_u8 = (byte)PosSmoothing_value;
-            dap_config_st = tmp;
-            ConfigChangedEvent(dap_config_st);
         }
 
         private void Slider_ServoEndstopDetecionThreshold_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)

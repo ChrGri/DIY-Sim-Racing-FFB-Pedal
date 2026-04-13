@@ -267,6 +267,9 @@
   <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderVirtualPedalDamping" xml:space="preserve">
     <value>Virtual Pedal Damping (zeta value)</value>
   </data>
+  <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderPedalProgression" xml:space="preserve">
+    <value>Damping progression</value>
+  </data>
   <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderVirtualPedalMass" xml:space="preserve">
     <value>Virtual Pedal Mass</value>
   </data>

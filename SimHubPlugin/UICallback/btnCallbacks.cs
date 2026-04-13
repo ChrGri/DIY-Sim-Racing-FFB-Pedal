@@ -210,8 +210,6 @@ namespace User.PluginSdkDemo
                         dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalEndPosition = max_pos;
                         dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.kf_modelNoise = tmp_config.payloadPedalConfig_.kf_modelNoise;
                         dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.kf_modelOrder = tmp_config.payloadPedalConfig_.kf_modelOrder;
-                        dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.positionSmoothingFactor_u8 = tmp_config.payloadPedalConfig_.positionSmoothingFactor_u8;
-                        dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.servoRatioOfInertia_u8 = tmp_config.payloadPedalConfig_.servoRatioOfInertia_u8;
 
                         if (tmp_config.payloadPedalConfig_.quantityOfControl < 6) tmp_config.payloadPedalConfig_.quantityOfControl = 6;
                         dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.quantityOfControl = tmp_config.payloadPedalConfig_.quantityOfControl;

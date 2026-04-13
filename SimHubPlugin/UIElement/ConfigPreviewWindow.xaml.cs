@@ -72,7 +72,6 @@ namespace User.PluginSdkDemo
                     break;
             }
             Textbox_Online_Profile_Description.Content += "KF :" + tmp_config.payloadPedalConfig_.kf_modelNoise + "\n";
-            Textbox_Online_Profile_Description.Content += "Serrvo smoothing :" + tmp_config.payloadPedalConfig_.positionSmoothingFactor_u8 + "\n";
 
         }
         private void Update_ForceCurve()

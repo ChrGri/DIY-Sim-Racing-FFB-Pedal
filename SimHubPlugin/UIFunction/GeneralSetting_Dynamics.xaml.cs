@@ -72,6 +72,11 @@ namespace User.PluginSdkDemo.UIFunction
                             control.Slider_VirtualDamping.SliderValue = (double)newData.payloadPedalConfig_.virtualPedalDamping_u8 * (double)control.Slider_VirtualDamping.TickFrequency;
                         }
 
+                        if (control.Slider_DampingProgression != null)
+                        {
+                            control.Slider_DampingProgression.SliderValue = (double)newData.payloadPedalConfig_.dampingProgression_u8 * (double)control.Slider_DampingProgression.TickFrequency;
+                        }
+
                         if (control.Slider_SoftEndstopTravelRange != null)
                         {
                             control.Slider_SoftEndstopTravelRange.SliderValue = (double)newData.payloadPedalConfig_.endstopTravelRange_mm_u8 * (double)control.Slider_SoftEndstopTravelRange.TickFrequency;
@@ -116,6 +121,16 @@ namespace User.PluginSdkDemo.UIFunction
             ConfigChangedEvent(dap_config_st);
         }
 
+        public void Slider_DampingProgressionChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+
+            double targetValue_fl64 = e.NewValue / (double)Slider_DampingProgression.TickFrequency;
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.dampingProgression_u8 = (Byte)(targetValue_fl64);
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
+
 
         public void Slider_SoftEndstopTravelRangeChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
@@ -133,6 +148,11 @@ namespace User.PluginSdkDemo.UIFunction
             tmp.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = (Byte)(targetValue_fl64);
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
+        }
+
+        private void Slider_DampingProgression_Loaded(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

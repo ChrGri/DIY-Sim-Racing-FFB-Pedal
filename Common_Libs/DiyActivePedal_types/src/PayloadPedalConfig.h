@@ -142,9 +142,7 @@ typedef struct __attribute__((packed)) PayloadPedalConfig
   uint8_t kfJoystick_u8;
   uint8_t kfModelNoiseJoystick_u8;
   uint8_t servoIdleTimeout_u8;
-  uint8_t positionSmoothingFactor_u8;
   uint8_t minForceForEffects_u8;
-  uint8_t servoRatioOfInertia_u8;
   uint32_t configHash_u32;
   uint8_t endstopDetectionThreshold_u8;
 
@@ -154,5 +152,8 @@ typedef struct __attribute__((packed)) PayloadPedalConfig
   // endstop parameters
   uint8_t endstopStiffness_kg_mm_u8;
   uint8_t endstopTravelRange_mm_u8;
+
+  // elastomere or spring behavior
+  uint8_t dampingProgression_u8;
 
 } PayloadPedalConfig_t;

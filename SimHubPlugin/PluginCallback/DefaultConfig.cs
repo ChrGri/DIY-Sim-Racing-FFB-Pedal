@@ -119,9 +119,7 @@ namespace User.PluginSdkDemo
             DefaultConfig.payloadPedalConfig_.stepLossFunctionFlags_u8 = 0b11;
             DefaultConfig.payloadPedalConfig_.kf_modelNoise_joystick = 1;
             DefaultConfig.payloadPedalConfig_.kf_Joystick_u8 = 0;
-            DefaultConfig.payloadPedalConfig_.positionSmoothingFactor_u8 = 0;
             DefaultConfig.payloadPedalConfig_.minForceForEffects = 0;
-            DefaultConfig.payloadPedalConfig_.servoRatioOfInertia_u8 = 1;
             DefaultConfig.payloadPedalConfig_.configHash_u32 = 0;
             DefaultConfig.payloadPedalConfig_.endstopDetectionThreshold = 30;
 
@@ -129,6 +127,7 @@ namespace User.PluginSdkDemo
             DefaultConfig.payloadPedalConfig_.virtualPedalDamping_u8 = 100;
             DefaultConfig.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = 10;
             DefaultConfig.payloadPedalConfig_.endstopTravelRange_mm_u8 = 0;
+            DefaultConfig.payloadPedalConfig_.dampingProgression_u8 = 0;
 
         }
 

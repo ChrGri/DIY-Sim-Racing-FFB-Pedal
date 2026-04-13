@@ -138,7 +138,6 @@ namespace User.PluginSdkDemo
                             break;
                     }
                     Textbox_Online_Profile_Description.Text += "KF :" + tmp_config.payloadPedalConfig_.kf_modelNoise + "\n";
-                    Textbox_Online_Profile_Description.Text += "Serrvo smoothing :" + tmp_config.payloadPedalConfig_.positionSmoothingFactor_u8 + "\n";
 
 
                 }

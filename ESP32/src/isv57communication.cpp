@@ -214,14 +214,9 @@ bool Isv57Communication::setPositionSmoothingFactor(uint16_t posSmoothingFactor_
   return modbus.writeAndVerifyDeviceParameter(slaveId, pr_2_00+22, posSmoothingFactor_u16); // positional command smoothing factor in 0.1ms
 }
 
-bool Isv57Communication::setRatioOfInertia(uint8_t ratiOfInertia_u8)
-{
-  return modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+4, ratiOfInertia_u8); // positional command smoothing factor in 0.1ms
-}
-
 
 // send tuned servo parameters
-void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection, uint32_t stepsPerMotorRev_u32, uint32_t ratioOfInertia_u32) {
+void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection, uint32_t stepsPerMotorRev_u32) {
   
   bool retValue_b = false;
 
@@ -253,7 +248,6 @@ void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection,
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+1, tuned_parameters[pr_0_00+1]); // control mode #
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+2, tuned_parameters[pr_0_00+2]); // deactivate auto gain
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+3, tuned_parameters[pr_0_00+3]); // machine stiffness
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+4, ratioOfInertia_u32 ); // ratio of inertia
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+4, tuned_parameters[pr_0_00+3] ); // ratio of inertia
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+6, tuned_parameters[pr_0_00+6]); // motor command direction
   //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+6, commandRotationDirection); // Command Pulse Rotational Direction
@@ -292,7 +286,7 @@ void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection,
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+36, tuned_parameters[pr_1_00+36]); // encoder feedback
   //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+37, 1052); // special function register
   //uint16_t special_function_flags = 0x4 | 0x8 | 0x10 | 0x40 | 0x400;
-  uint16_t special_function_flags = 0x4 | 0x8 | 0x10 | 0x400;
+  uint16_t special_function_flags = 0x4 | 0x8 | 0x10 | 0x20| 0x400;
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+37, tuned_parameters[pr_1_00+37]); // special function register
   // see https://www.oyostepper.com/images/upload/File/ISV57T-180.pdf
   // 0x01: =0: Enablespeedfeed-forwardfiltering; =1:Disablespeed feed-forward filtering
@@ -324,6 +318,8 @@ void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection,
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_3_00+13, tuned_parameters[pr_3_00+13]); // time setup deceleration
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_3_00+24, tuned_parameters[pr_3_00+24]); // maximum rpm
   
+  // Pr4 register
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_4_00+10, tuned_parameters[pr_4_00+10]); // Alarm port signal
 
   // Pr5 register
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_5_00+13, tuned_parameters[pr_5_00+13]); // overspeed level

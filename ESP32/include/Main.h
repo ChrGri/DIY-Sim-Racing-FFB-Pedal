@@ -507,6 +507,8 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #endif
   #define BAUDRATE3M
   #define PEDAL_SOFTWARE_ASSIGNMENT
+
+  #define ALM_PORT_GPIO 11
 #endif
 
 

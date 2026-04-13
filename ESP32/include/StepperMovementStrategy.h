@@ -332,27 +332,28 @@ static inline void AdaptVirtualMass(
 }
 
 /**
- * @brief Calculates active damping including AOM Boost and Tracking Error Trajectory Shaping
+ * @brief Calculates active damping including AOM Boost, Tracking Error Trajectory Shaping, and Elastomer Hysteresis.
  */
 static inline float CalcActiveDamping(
     float dampingRatio_zeta, float virtualMass_kg, float currentStiffness_N_m,
     float oscillationIntensity_01, float vModelPos_01, float actualPosFraction_01,
-    int32_t actualServoTrackingError_i32, float travelSteps_cnt, float effectForceOffset_fl32)
+    int32_t actualServoTrackingError_i32, float travelSteps_cnt, float effectForceOffset_fl32,
+    uint8_t dampingProgression_u8) 
 {
     // Calculate Base Damping based on mass and current stiffness: c_c = 2 * sqrt(m * k)
-    float baseDamping_Ns_m = dampingRatio_zeta * 2.0f * sqrtf(virtualMass_kg * currentStiffness_N_m);
+    float criticalDamping_Ns_m = 2.0f * sqrtf(virtualMass_kg * currentStiffness_N_m);
+    float baseDamping_Ns_m = dampingRatio_zeta * criticalDamping_Ns_m;
     
     float dampingMultiplier = 1.0f;
 
-    // NEU: Dämpfung NUR adaptieren (AOM & Tracking Error), wenn KEIN Effekt aktiv ist
+    // Adaptive damping (AOM & Tracking Error) only when, when no effect is applied
     if (effectForceOffset_fl32 == 0.0f) 
     {
-
         // AOM BOOST: If oscillation is detected, inject massive damping to freeze the system and bleed energy.
         dampingMultiplier = 1.0f + (oscillationIntensity_01 * 8.0f);
 
         // =========================================================
-        // NEW: Tracking-Error dependent damping (Trajectory Shaping) to reduce EMF spikes. 
+        // Tracking-Error dependent damping (Trajectory Shaping) to reduce EMF spikes. 
         // It was observed that voltage spikes occur at tracking error zero crossings. 
         // It was assumed that the servo could not keep up with its target position, then overshoots, 
         // producing large EMF. To reduce the lag, we increase the virtual damping so the servo can keep up.
@@ -365,16 +366,34 @@ static inline float CalcActiveDamping(
 
         // If tracking errors exceed 0.5%, the models damping is dynamically increased proportional
         // so that the servo can catch up.
-        if (effectForceOffset_fl32 == 0.0f) // disable dampening in case of applied effects
-        {
-            if (trackingError_01 > 0.005f) {
-                // Tuning: the multiplier (here 20.0f) determines how much the model decelerates.
-                dampingMultiplier += (trackingError_01 * 20.0f); 
-            }
+        if (trackingError_01 > 0.005f) {
+            // Tuning: the multiplier (here 20.0f) determines how much the model decelerates.
+            dampingMultiplier += (trackingError_01 * 20.0f); 
         }
     }
 
-    return baseDamping_Ns_m * dampingMultiplier;
+    float totalDamping_Ns_m = baseDamping_Ns_m * dampingMultiplier;
+
+    // =========================================================
+    // ELASTOMER HYSTERESIS (Hunt-Crossley Model)
+    // =========================================================
+    // Normalize the GUI parameter from [0, 100] to [0.0, 1.0].
+    // Squared ratio provides finer control at the lower end (steel spring -> soft rubber).
+    float progressionRatio = (float)constrain( dampingProgression_u8, 0, 100 ) / 100.0f;
+    float progression_01 = progressionRatio * progressionRatio; 
+
+    // Max Elastomer Multiplier defines how many times the critical damping 
+    // is added at 100% slider value and full pedal compression (displacement = 1.0).
+    // 1.2x - 1.5x is the sweet spot for heavy polyurethane elastomers.
+    const float MAX_ELASTOMER_MULTIPLIER = 1.5f; 
+    float ELASTOMER_VISCOSITY_COEFFICIENT = progression_01 * (MAX_ELASTOMER_MULTIPLIER * criticalDamping_Ns_m);
+
+    // Calculate equivalent elastomer damping: C_eq = C_elastomer * x
+    float displacement_01 = constrain(vModelPos_01, 0.0f, 1.0f);
+    float elastomerDamping_Ns_m = ELASTOMER_VISCOSITY_COEFFICIENT * displacement_01;
+
+    // Add Elastomer Hysteresis to the global system damping
+    return totalDamping_Ns_m + elastomerDamping_Ns_m;
 }
 
 /**
@@ -535,7 +554,7 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // --- 5. ELASTOMER PHYSICS & SPRING REACTION (Hunt-Crossley Model) ---
   float displacement_01 = constrain(g_vModelPos_01, 0.0f, 1.0f);
 
-  // 1. Static force from the Cubic Spline (represents the non-linear stiffness of the rubber)
+  // 1. Static force from the Cubic Spline (Non-linear stiffness)
   float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, displacement_01);
   float staticSpringForce_N = springForceRaw_kg * GRAVITY_N_KG;
 
@@ -544,29 +563,10 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       staticSpringForce_N -= rudderForce_N;
   }
 
-  // =========================================================
-  // VISCOELASTIC ELASTOMER HYSTERESIS (Hunt-Crossley Model)
-  // =========================================================
-  // Pure rubber exhibits internal friction, causing energy dissipation (heat).
-  // This damping is both position-dependent AND velocity-dependent: F_hyst = C * x * v.
-  // 
-  // Tuning parameter: How "sticky/viscous" should the rubber feel?
-  // 0.0 = Pure steel spring (instant rebound).
-  // 1500.0 - 3000.0 = Hard PU elastomer (absorbs energy, excellent for trail braking).
-  // TODO: Consider moving this constant to payloadPedalConfig_st for GUI tuning!
-  const float ELASTOMER_VISCOSITY_COEFFICIENT = 0.0f; 
+  // The spring force is purely static from the spline now (hysteresis is handled via damping)
+  float springForce_N = staticSpringForce_N;
 
-  // Calculate the dynamic hysteresis force.
-  // Compression (v > 0): Force increases (pedal feels stiffer to push).
-  // Release (v < 0): Force decreases (pedal "sticks" slightly to the foot, easing release).
-  float elastomerHysteresis_N = ELASTOMER_VISCOSITY_COEFFICIENT * displacement_01 * g_vModelVel_mps;
-
-  // Combine static spline force with dynamic hysteresis
-  float springForce_N = staticSpringForce_N + elastomerHysteresis_N;
-
-  // Safety constraint: An elastomer cannot pull the pedal towards the driver, 
-  // it can only push (F >= 0). If the release speed is very high, hysteresis 
-  // might become overly negative, so we clamp it at zero.
+  // Ensure springForce_N is not negative just in case rudder offsets push it below 0
   if (springForce_N < 0.0f) {
       springForce_N = 0.0f;
   }
@@ -576,6 +576,32 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // We strictly use the gradient of the static spline here to ensure controller stability.
   float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, displacement_01, false);
   float localStiffness_N_m = max(localStiffness_kg_step * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG, 1.0f);
+
+  // =========================================================
+  // 3. VISCOELASTIC ELASTOMER HYSTERESIS (Hunt-Crossley model)
+  // =========================================================
+  // Normalize the GUI parameter from [0, 100] to [0.0, 1.0].
+  // We square it (ratio * ratio) so the slider provides much finer control 
+  // at the lower end, where small damping changes are felt the most.
+  float progressionRatio = (float)constrain( config_st->payloadPedalConfig_st.dampingProgression_u8, 0, 100) ;
+  float progression_01 = progressionRatio * progressionRatio; 
+
+  // Calculate the critical damping of the system at this exact position: C_c = 2 * sqrt(m * k)
+  // This brilliantly scales the rubber friction to the user's chosen mass and local spline stiffness!
+  float localCriticalDamping_Ns_m = 2.0f * sqrtf(virtualMass_kg * localStiffness_N_m);
+
+  // Tuning parameter: How many times the critical damping can the elastomer add 
+  // at 100% slider value and full pedal compression?
+  // 4.0x is a great sweet spot for simulating extremely heavy, dense elastomers.
+  const float MAX_ELASTOMER_MULTIPLIER = 4.0f; 
+
+  // Final elastomer viscosity coefficient
+  float ELASTOMER_VISCOSITY_COEFFICIENT = progression_01 * (MAX_ELASTOMER_MULTIPLIER * localCriticalDamping_Ns_m);
+
+  // Calculate equivalent damping: C_eq = C_elastomer * x
+  // This will be perfectly integrated by the Tustin solver later.
+  float elastomerDamping_Ns_m = ELASTOMER_VISCOSITY_COEFFICIENT * displacement_01;
+  // =========================================================
 
   // --- 6. EFFECT OFFSETS & TOTAL FORCE ---
   // convert position offset to force offset using the local stiffness at the current position on the force curve
@@ -627,7 +653,11 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
     , actualPosFraction_01
     , stepper->getServosPosError()
     , travelSteps_cnt
-    , effectForceOffset_fl32);
+    , effectForceOffset_fl32
+    , config_st->payloadPedalConfig_st.dampingProgression_u8);
+
+
+
   g_lastActiveDamping_Ns_m = activeDamping_Ns_m;
 
   // --- 12. INTEGRATION (MASS-SPRING-DAMPER-ENDSTOP) ---
@@ -640,11 +670,6 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   if (fabsf(g_vModelVel_mps) > 0.001f) {
       netForce_N -= (g_vModelVel_mps > 0 ? FRICTION_N : -FRICTION_N);
   }
-
-  
-
-
-
 
   // =========================================================
   // Integration approaches (Start)
@@ -817,14 +842,6 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // =========================================================
   // Integration approaches (End)
   // =========================================================
-
-
-
-
-
-
-  
-  
 
   // Hard Clamping of acceleration to prevent limit cycles (Hunting)
   const float MAX_ACCEL_MPS2 = 50.0f; 

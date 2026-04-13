@@ -69,11 +69,10 @@ public:
 // ==============================================================================
 // Constructor & Initialization
 // ==============================================================================
-StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool invertMotorDir_b, uint32_t stepsPerMotorRev_arg_u32, uint8_t ratioOfInertia_arg_u8, uint8_t _endstopDetectionThreshold)
+StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool invertMotorDir_b, uint32_t stepsPerMotorRev_arg_u32, uint8_t _endstopDetectionThreshold)
   :  _endstopLimitMin(0), _endstopLimitMax(0),
      _posMin(0), _posMax(0),
-     stepsPerMotorRev_u32(stepsPerMotorRev_arg_u32),
-     ratioOfInertia_u8(ratioOfInertia_arg_u8)
+     stepsPerMotorRev_u32(stepsPerMotorRev_arg_u32)
 {
     // 1. Initialize pulse generator library for high-frequency step output
     _stepper = new FastNonAccelStepper(pinStep, pinDirection, invertMotorDir_b); 
@@ -90,6 +89,59 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool
         gpio_set_level((gpio_num_t)SERVO_POWER_PIN, 1);
         delay(500); // Give the servo processor time to boot
     #endif
+
+
+#ifdef ALM_PORT_GPIO
+    // ==============================================================================
+    // Wait for Servo Ready (SRDY) Signal on GPIO ALM_PORT_GPIO
+    // ==============================================================================
+    pinMode(ALM_PORT_GPIO, INPUT_PULLUP); 
+    
+    if (ActiveSerial) ActiveSerial->println("Waiting for stable Servo ready signal...");
+    
+    uint32_t srdyWaitStart = millis();      // Globaler Timeout-Zähler
+    uint32_t readyStableStartTime = 0;      // Zähler für die Entprellung
+    bool isStableReady = false;
+    bool forceProceed_b = false;
+    
+    while (!isStableReady && !forceProceed_b) {
+        if (digitalRead(ALM_PORT_GPIO) == LOW) {
+            // Signal ist auf "Ready". Prüfen, ob der Timer schon läuft.
+            if (readyStableStartTime == 0) {
+                readyStableStartTime = millis(); // Timer starten
+            } 
+            // Prüfen, ob die 500ms ununterbrochen erreicht wurden
+            else if (millis() - readyStableStartTime >= 500) {
+                isStableReady = true; // Erfolgreich entprellt!
+            }
+        } else {
+            // Signal ist wieder HIGH ("Not Ready" oder prellen). Timer zurücksetzen!
+            readyStableStartTime = 0;
+        }
+
+        delay(10); // Dem Watchdog und dem System Zeit geben
+        
+        // Failsafe-Timeout (z.B. 5 Sekunden insgesamt für den Bootvorgang)
+        if (millis() - srdyWaitStart > 5000) { 
+            //if (ActiveSerial) ActiveSerial->println("CRITICAL: Timeout waiting for stable SRDY! Restarting ESP.");
+            //delay(100);
+            //ESP.restart();
+            forceProceed_b = true;
+        }
+    }
+
+
+    if (isStableReady)
+    {
+        if (ActiveSerial) ActiveSerial->println("Stable servo ready signal detected");
+    }
+    else
+    {
+        if (ActiveSerial) ActiveSerial->println("Stable servo ready signal not detected. Procedding anyway, since servo parameters might not have been flashed yet.");
+    }
+    
+    // ==============================================================================
+#endif
 
     // 3. Attempt to discover the Modbus Slave ID of the connected iSV57 servo
     bool isv57slaveIdFound_b = isv57.findServosSlaveId();
@@ -116,7 +168,7 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool
         // Prepare the telemetry read structure and push tuned parameters
         isv57.setupServoStateReading();
         invertMotorDir_global_b = invertMotorDir_b;
-        isv57.sendTunedServoParameters(invertMotorDir_global_b, stepsPerMotorRev_u32, ratioOfInertia_u8);
+        isv57.sendTunedServoParameters(invertMotorDir_global_b, stepsPerMotorRev_u32);
 
         // Clear axis state and enable the motor
         delay(30);
@@ -365,21 +417,6 @@ void StepperWithLimits::configSteplossRecovAndCrashDetection(uint8_t flags_u8) {
     enableCrashDetection_b = (flags_u8 >> 1) & 1;
 }
 
-// Updates the servo's internal PI-loop smoothing factor if it has changed
-void StepperWithLimits::configSetPositionCommandSmoothingFactor(uint8_t posCommandSmoothingFactorArg_u8) {
-    if (posCommandSmoothingFactor_u16 != (uint16_t)posCommandSmoothingFactorArg_u8) {
-        posCommandSmoothingFactor_u16 = constrain((uint16_t)posCommandSmoothingFactorArg_u8, 0, 255);
-        updateServoParams_b = true; // Triggers the task to send new params via Modbus
-    }
-}
-
-// Updates the servo's internal inertia ratio parameter if it has changed
-void StepperWithLimits::configSetRatioOfInertia(uint8_t ratioOfInertia_arg_u8) {
-    if (ratioOfInertia_u8 != (uint8_t)ratioOfInertia_arg_u8) {
-        ratioOfInertia_u8 = constrain((uint8_t)ratioOfInertia_arg_u8, 1, 255);
-        updateServoParams_b = true; // Triggers the task to send new params via Modbus
-    }
-}
 
 // ==============================================================================
 // Refactored Sub-Routines for the FreeRTOS Orchestrator Task

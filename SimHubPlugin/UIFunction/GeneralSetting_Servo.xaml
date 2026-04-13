@@ -25,12 +25,6 @@
                 <StackPanel Height="20" Width="540" Orientation="Horizontal">
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextServoSettingTittle, 'Servo Settings'}" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
                 </StackPanel>
-                <StackPanel Width="400" Height="50" Margin="0,0,0,0">
-                    <localUI:SliderWithLabel x:Name="Slider_PositionFilter" SliderLength="400" SliderName="{SLoc DIYFFBPedalPlugin_TextServoSettingSliderServoSmoothness, 'Servo position smoothing factor  (Pr2.22)'}" SliderValue="0" MinValue="0" MaxValue="50" SliderValueChanged="PosFilterValueChanged" ToolTip="Adjust the value to enable servo smoothness filter, the filter may cause pedal oscillation. set 0 as default."/>
-                </StackPanel>
-                <StackPanel Width="400" Height="50">
-                    <localUI:SliderWithLabel x:Name="Slider_ServoRatioOfInertia" SliderLength="400" SliderName="{SLoc DIYFFBPedalPlugin_TextServoSettingSliderServoInertia, 'Ratio of Inertia (Pr0.04)'}" SliderValue="1" MinValue="1" MaxValue="200" SliderValueChanged="Slider_ServoRatioOfInertia_SliderValueChanged" TickFrequency="1" Unit="%" ToolTip="Increase the value for stiffer pedal. Will increase likelihood of pedal oscillation."/>
-                </StackPanel>
                 <StackPanel Width="400" Height="50">
                     <localUI:SliderWithLabel x:Name="Slider_ServoEndstopDetecionThreshold" SliderLength="400" SliderName="{SLoc DIYFFBPedalPlugin_TextServoSettingSliderEndstopCurrent, 'Endstop Detection Threshold'}" SliderValue="30" MinValue="25" MaxValue="50" SliderValueChanged="Slider_ServoEndstopDetecionThreshold_SliderValueChanged" TickFrequency="1" Unit="%" ToolTip="Increase the value if homing not get full travel. It will take effect after set the config as default and a pedal restart."/>
                 </StackPanel>

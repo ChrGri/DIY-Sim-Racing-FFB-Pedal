@@ -318,7 +318,7 @@ namespace User.PluginSdkDemo
             dap_config_st_rudder.payloadPedalConfig_.kf_modelNoise = 30;
             dap_config_st_rudder.payloadPedalConfig_.kf_modelOrder = 2;
 
-            dap_config_st_rudder.payloadPedalConfig_.positionSmoothingFactor_u8 = 0;
+            
 
             dap_config_st_rudder.payloadPedalConfig_.loadcell_rating = 100;
 
@@ -341,6 +341,7 @@ namespace User.PluginSdkDemo
             dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8 = 100;
             dap_config_st_rudder.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = 10;
             dap_config_st_rudder.payloadPedalConfig_.endstopTravelRange_mm_u8 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = 0;
         }
         public byte[] getBytesPayload(payloadPedalConfig aux)
         {
@@ -1062,7 +1063,6 @@ namespace User.PluginSdkDemo
                     dap_config_st_rudder.payloadPedalConfig_.invertMotorDirection_u8 = dap_config_st[i].payloadPedalConfig_.invertMotorDirection_u8;
                     dap_config_st_rudder.payloadPedalConfig_.loadcell_rating = dap_config_st[i].payloadPedalConfig_.loadcell_rating;
                     dap_config_st_rudder.payloadPedalConfig_.stepLossFunctionFlags_u8 = dap_config_st[i].payloadPedalConfig_.stepLossFunctionFlags_u8;
-                    dap_config_st_rudder.payloadPedalConfig_.positionSmoothingFactor_u8 = dap_config_st[i].payloadPedalConfig_.positionSmoothingFactor_u8;
                     //dap_config_st_rudder.payloadPedalConfig_.Simulate_ABS_trigger = 0;
                     dap_config_st_rudder.payloadPedalConfig_.Simulate_ABS_value = dap_config_st[i].payloadPedalConfig_.Simulate_ABS_value;
                     Sendconfig_Rudder(i);

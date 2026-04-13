@@ -49,7 +49,6 @@ private:
     bool enableCrashDetection_b = true;            // Toggles endstop crash detection
 
     uint16_t posCommandSmoothingFactor_u16 = 0;    // Smoothing parameter for the iSV57 internal trajectory generator
-    uint8_t ratioOfInertia_u8 = 1;                 // Inertia ratio parameter for the iSV57 PI-Loop
 
     bool logAllServoParams = false;                // Trigger flag to dump all servo registers to serial
     bool clearAllServoAlarms_b = false;            // Trigger flag to clear servo fault states
@@ -88,7 +87,7 @@ public:
     uint8_t endstopDetectionThreshold_u8 = 30;     // Current threshold (in percent) to detect a physical block
 
     // Constructor
-    StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool invertMotorDir_b, uint32_t stepsPerMotorRev_arg_u32, uint8_t ratioOfInertia_arg_u8, uint8_t _endstopDetectionThreshold);
+    StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool invertMotorDir_b, uint32_t stepsPerMotorRev_arg_u32, uint8_t _endstopDetectionThreshold);
     
     // Core validity check
     bool hasValidStepper() const { return NULL != _stepper; }
@@ -147,8 +146,6 @@ public:
     
     // --- Configuration Triggers ---
     void configSteplossRecovAndCrashDetection(uint8_t flags_u8);
-    void configSetPositionCommandSmoothingFactor(uint8_t posCommandSmoothingFactorArg_u8);
-    void configSetRatioOfInertia(uint8_t ratioOfInertia_arg_u8);
     void printAllServoParameters();
     void clearAllServoAlarms();
     void resetServoParametersToFactoryValues();

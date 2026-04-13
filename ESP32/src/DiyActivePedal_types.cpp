@@ -134,7 +134,6 @@ void DapConfig_t::initializeDefaults()
   payloadPedalConfig_st.kfJoystick_u8 = 0;
   payloadPedalConfig_st.servoIdleTimeout_u8 = 0;
   payloadPedalConfig_st.minForceForEffects_u8 = 0;
-  payloadPedalConfig_st.servoRatioOfInertia_u8 = 1;
   payloadPedalConfig_st.configHash_u32 = (uint32_t)175245064 ;
   payloadPedalConfig_st.endstopDetectionThreshold_u8 = 30;
 

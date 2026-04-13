@@ -6,7 +6,6 @@
 #include "esp_timer.h" // Include the header for the high-resolution timer
 #include "esp_partition.h"
 
-//#define S_CURVE_POSITION_SHAPING
 
 #define ESTIMATE_LOADCELL_VARIANCE_B
 //#define PRINT_SERVO_STATES
@@ -977,7 +976,7 @@ void setup()
   #endif
 
   bool invMotorDir = dap_config_st_local.payloadPedalConfig_st.invertMotorDirection_u8 > 0;
-  stepper = new StepperWithLimits(STEP_PIN_STEPPER_U8, DIR_PIN_STEPPER_U8, invMotorDir, dap_calculationVariables_st.stepsPerMotorRevolution_u32, dap_config_st_local.payloadPedalConfig_st.servoRatioOfInertia_u8, dap_config_st_local.payloadPedalConfig_st.endstopDetectionThreshold_u8); 
+  stepper = new StepperWithLimits(STEP_PIN_STEPPER_U8, DIR_PIN_STEPPER_U8, invMotorDir, dap_calculationVariables_st.stepsPerMotorRevolution_u32, dap_config_st_local.payloadPedalConfig_st.endstopDetectionThreshold_u8); 
 
   motorRevolutionsPerSteps_fl32 = 1.0f / ( (float)dap_calculationVariables_st.stepsPerMotorRevolution_u32 );
   // ActiveSerial->printf("Steps per motor revolution: %d\n", dap_calculationVariables_st.stepsPerMotorRevolution_u32);
@@ -1587,15 +1586,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
         // enable/disable step loss recovery and crash
         stepper->configSteplossRecovAndCrashDetection(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.stepLossFunctionFlags_u8);
-
-        // set position command smoothing
-        #ifdef S_CURVE_POSITION_SHAPING
-          stepper->configSetPositionCommandSmoothingFactor(0); // no additional smoothing, since S-curve already shapes the position command
-        #else
-          stepper->configSetPositionCommandSmoothingFactor(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.positionSmoothingFactor_u8);
-        #endif
         stepper->configSetProfilingFlag( (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_CYCLE_TIMER_U8) );
-        //stepper->configSetRatioOfInertia(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.servoRatioOfInertia_u8);
 
         // reset all servo alarms
         if ( (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_RESET_ALL_SERVO_ALARMS_U8) )

@@ -152,11 +152,7 @@ namespace User.PluginSdkDemo
         public byte kf_Joystick_u8;
         public byte kf_modelNoise_joystick;
         public byte servoIdleTimeout;
-
-        public byte positionSmoothingFactor_u8;
         public byte minForceForEffects;
-
-        public byte servoRatioOfInertia_u8;
         public UInt32 configHash_u32;
         public byte endstopDetectionThreshold;
 
@@ -168,5 +164,7 @@ namespace User.PluginSdkDemo
         public byte endstopStiffness_kg_mm_u8;
         public byte endstopTravelRange_mm_u8;
 
+        // elastomere or spring behavior
+        public byte  dampingProgression_u8;
     }
 }
