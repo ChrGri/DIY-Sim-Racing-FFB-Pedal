@@ -343,6 +343,7 @@
     <Compile Include="VariablesStruct\payloadPedalConfig.cs" />
     <Compile Include="VariablesStruct\payloadPedalState_Basic.cs" />
     <Compile Include="VariablesStruct\payloadPedalState_Extended.cs" />
+    <Compile Include="VariablesStruct\PedalStatus.cs" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="Properties\DesignTimeResources.xaml" Condition="'$(DesignTime)'=='true' OR ('$(SolutionPath)'!='' AND Exists('$(SolutionPath)') AND '$(BuildingInsideVisualStudio)'!='true' AND '$(BuildingInsideExpressionBlend)'!='true')">
@@ -563,5 +564,3 @@
   </Target>
   -->
 </Project>
-
-
