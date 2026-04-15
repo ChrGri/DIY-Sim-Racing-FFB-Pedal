@@ -103,7 +103,7 @@ namespace User.PluginSdkDemo
         public DAP_config_st[] BufferConfig_st = new DAP_config_st[3] { new DAP_config_st(), new DAP_config_st(), new DAP_config_st() };
         public int ConfigSendInterval_ms = 100;
         public DateTime[] ConfigBufferGet_lastTime = new DateTime[3] { DateTime.Now, DateTime.Now, DateTime.Now };
-        public PedalStatus PedalStatus = new PedalStatus();
+        public PedalStatus PedalStatusInstance = new PedalStatus();
         //public vJoyInterfaceWrap.vJoy joystick;
 
         //effect trigger timer
@@ -1308,17 +1308,7 @@ namespace User.PluginSdkDemo
             pluginManager.SetPropertyValue("PedalErrorCode", this.GetType(), PedalErrorCode);
             pluginManager.SetPropertyValue("FlightRudder_G", this.GetType(), Rudder_G_last_value);
             pluginManager.SetPropertyValue("FlightRudder_Wind_Force", this.GetType(), Rudder_Wind_Force_last_value);
-            for (int i = 0; i < 3; i++)
-            {
-                string tmp = "PedalStatus.PedalForceInPercent_" + PedalConstStrings.PedalID[i];
-                pluginManager.SetPropertyValue(tmp, this.GetType(), PedalStatus.PedalForceInPercent[i]);
-                tmp = "PedalStatus.MaxForce_" + PedalConstStrings.PedalID[i];
-                pluginManager.SetPropertyValue(tmp, this.GetType(), PedalStatus.PedalMaxForce[i]);
-                tmp = "PedalStatus.MinForce_" + PedalConstStrings.PedalID[i];
-                pluginManager.SetPropertyValue(tmp, this.GetType(), PedalStatus.PedalMinForce[i]);
-                tmp = "PedalStatus.ConnectionStatus_" + PedalConstStrings.PedalID[i];
-                pluginManager.SetPropertyValue(tmp, this.GetType(), PedalStatus.PedalConnectionStatus[i]);
-            }
+            PedalStatusInstance.UpdatePluginProperties(pluginManager, PedalStatusInstance, this);
             this.AttachDelegate("CustomEffectTirggerReading1", () => CV1_value);
             this.AttachDelegate("CustomEffectTirggerReading2", () => CV2_value);
             this.AttachDelegate("WheelSlipEffectReading", () => WS_value);
@@ -1444,17 +1434,8 @@ namespace User.PluginSdkDemo
             pluginManager.AddProperty("PedalErrorCode", this.GetType(), PedalErrorCode);
             pluginManager.AddProperty("FlightRudder_G", this.GetType(), Rudder_G_last_value);
             pluginManager.AddProperty("FlightRudder_Wind_Force", this.GetType(), Rudder_Wind_Force_last_value);
-            for (int i = 0; i < 3; i++)
-            { 
-                string tmp = "PedalStatus.PedalForceInPercent_"+PedalConstStrings.PedalID[i];
-                pluginManager.AddProperty(tmp, this.GetType(), PedalStatus.PedalForceInPercent[i]);
-                tmp = "PedalStatus.MaxForce_" + PedalConstStrings.PedalID[i];
-                pluginManager.AddProperty(tmp, this.GetType(), PedalStatus.PedalMaxForce[i]);
-                tmp = "PedalStatus.MinForce_" + PedalConstStrings.PedalID[i];
-                pluginManager.AddProperty(tmp, this.GetType(), PedalStatus.PedalMinForce[i]);
-                tmp = "PedalStatus.ConnectionStatus_" + PedalConstStrings.PedalID[i];
-                pluginManager.AddProperty(tmp, this.GetType(), PedalStatus.PedalConnectionStatus[i]);
-            }
+            PedalStatusInstance.AddPluginProperties(pluginManager, PedalStatusInstance, this);
+
             ProfileServicePlugin = new ProfileService(this);
             ConfigService = new ConfigListService(this);
             BridgeHidService = new HidDeviceController(Constants.VendorId, Constants.BridgePid, Constants.TargetUsagePage);

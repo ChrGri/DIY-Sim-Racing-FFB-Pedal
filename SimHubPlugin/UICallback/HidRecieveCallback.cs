@@ -189,14 +189,17 @@ namespace User.PluginSdkDemo
                                     TextBox_serialMonitor_bridge.Text = temp_str;
 
                                 }
+
+                                //update Pedal status
+                                double valueMax_u16 = 65535;
+                                Plugin.PedalStatusInstance.PedalForceInPercent[pedalSelected] = (int)((double)pedalState_read_st.payloadPedalBasicState_.pedalForce_u16 / (double)valueMax_u16 * 100.0d);
+                                Plugin.PedalStatusInstance.PedalMaxForce[pedalSelected] = dap_config_st[pedalSelected].payloadPedalConfig_.maxForce;
+                                Plugin.PedalStatusInstance.PedalMinForce[pedalSelected] = dap_config_st[pedalSelected].payloadPedalConfig_.preloadForce;
                                 if ((pedalStateHasAlreadyBeenUpdated_b == false) && (indexOfSelectedPedal_u == pedalSelected))
                                 {
+                                    double control_rect_value_max = 65535;
                                     pedalStateHasAlreadyBeenUpdated_b = true;
                                     PedalForceTravel_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16, pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
-
-
-                                    double control_rect_value_max = 65535;
-
                                     if (Plugin.Settings.advanced_b)
                                     {
                                         int round_x = (int)(100 * pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16 / control_rect_value_max) - 1;

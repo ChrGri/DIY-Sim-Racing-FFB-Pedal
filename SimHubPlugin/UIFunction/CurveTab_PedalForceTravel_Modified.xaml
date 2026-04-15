@@ -76,11 +76,9 @@
                         <Rectangle x:Name="rect_SABS" Width="400" Height="40" Fill="#4C8B0000" Canvas.Left="0" Canvas.Top="0" />
                         <Rectangle x:Name="rect_SABS_Control" Width="400" Height="6" Fill="#998B0000" Canvas.Left="0" Canvas.Top="37" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="rect_SABS_Control_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp"/>
                         <Rectangle x:Name="rect_BP_Control" Width="32" Height="200" Fill="#990954CE" Canvas.Left="200" Canvas.Top="0" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="rect_BP_Control_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp"/>
-                        <Ellipse x:Name="rect_State" Width="15" Height="15" Canvas.Left="25" Canvas.Top="76" Opacity="0.5" Fill="#CCEF0707" StrokeThickness="0" >
-                            <Ellipse.Effect>
-                                <BlurEffect KernelType="Gaussian" RenderingBias="Quality" Radius="7"/>
-                            </Ellipse.Effect>
-                        </Ellipse>
+                        <Ellipse x:Name="rect_State" Width="10" Height="10" Canvas.Left="25" Canvas.Top="76" Stroke="#CCEF0707" StrokeThickness="2" />
+                        <Line x:Name="StatusLineXBar" X1="0" Y1="0" X2="0" Y2="0" Stroke="#CCEF0707"/>
+                        <Line x:Name="StatusLineYBar" X1="0" Y1="0" X2="0" Y2="0" Stroke="#CCEF0707"/>
                         <TextBlock x:Name="text_state" Width="20" Height="10" Foreground="#7FFFFFFF" Text="10%" FontSize="8" FontFamily="Arial"/>
                         <TextBlock x:Name="text_BP" Text="BitePoint:" Width="120" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Left="235" Canvas.Top="187" FontSize="8" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top">
                             <TextBlock.RenderTransform>

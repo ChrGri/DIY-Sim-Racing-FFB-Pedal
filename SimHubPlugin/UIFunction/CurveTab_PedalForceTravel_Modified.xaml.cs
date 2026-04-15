@@ -706,10 +706,32 @@ namespace User.PluginSdkDemo.UIFunction
 
                 Canvas.SetLeft(text_state, Canvas.GetLeft(rect_State) /*+ rect_State.Width*/);
                 Canvas.SetTop(text_state, Canvas.GetTop(rect_State) - rect_State.Height);
+                //update the line
+                
+                StatusLineXBar.X1 = Canvas.GetLeft(rect_State) + 0.5 * rect_State.Width;
+                StatusLineXBar.Y1 = mainCanvas.Height;
+                StatusLineXBar.X2 = Canvas.GetLeft(rect_State) + 0.5 * rect_State.Width;
+                StatusLineXBar.Y2 = Canvas.GetTop(rect_State)+ rect_State.Height;
+                
+                StatusLineYBar.X1 = 0;
+                StatusLineYBar.Y1 = Canvas.GetTop(rect_State) + 0.5 * rect_State.Height;
+                StatusLineYBar.X2 = Canvas.GetLeft(rect_State);
+                StatusLineYBar.Y2 = Canvas.GetTop(rect_State) + 0.5 * rect_State.Height;
                 text_state.Text = Math.Round(pedalForce_u16 / control_rect_value_max * 100) + "%";
                 int round_x = (int)(100 * pedalPosition_u16 / control_rect_value_max) - 1;
                 int x_showed = round_x + 1;
-
+                if (x_showed == 0)
+                {
+                    rect_State.Visibility = Visibility.Hidden;
+                    StatusLineXBar.Visibility = Visibility.Hidden;
+                    StatusLineYBar.Visibility = Visibility.Hidden;
+                }
+                else
+                {
+                    rect_State.Visibility = Visibility.Visible;
+                    StatusLineXBar.Visibility = Visibility.Visible;
+                    StatusLineYBar.Visibility = Visibility.Visible;
+                }
                 calculation.current_pedal_travel_state = x_showed;
                 calculation.pedal_state_in_ratio = (byte)calculation.current_pedal_travel_state;
             }
@@ -724,8 +746,31 @@ namespace User.PluginSdkDemo.UIFunction
                 Canvas.SetTop(rect_State, calculation.Force_curve_Y[round_x] - rect_State.Height / 2);
                 Canvas.SetLeft(text_state, Canvas.GetLeft(rect_State) /*+ rect_State.Width*/);
                 Canvas.SetTop(text_state, Canvas.GetTop(rect_State) - rect_State.Height);
+                //update the line
+
+                StatusLineXBar.X1 = Canvas.GetLeft(rect_State) + 0.5 * rect_State.Width;
+                StatusLineXBar.Y1 = mainCanvas.Height;
+                StatusLineXBar.X2 = Canvas.GetLeft(rect_State) + 0.5 * rect_State.Width;
+                StatusLineXBar.Y2 = Canvas.GetTop(rect_State) + rect_State.Height;
+
+                StatusLineYBar.X1 = 0;
+                StatusLineYBar.Y1 = Canvas.GetTop(rect_State) + 0.5 * rect_State.Height;
+                StatusLineYBar.X2 = Canvas.GetLeft(rect_State);
+                StatusLineYBar.Y2 = Canvas.GetTop(rect_State) + 0.5 * rect_State.Height;
                 text_state.Text = x_showed + "%";
-                
+                if (x_showed == 0)
+                {
+                    rect_State.Visibility = Visibility.Hidden;
+                    StatusLineXBar.Visibility = Visibility.Hidden;
+                    StatusLineYBar.Visibility = Visibility.Hidden;
+                }
+                else
+                {
+                    rect_State.Visibility = Visibility.Visible;
+                    StatusLineXBar.Visibility = Visibility.Visible;
+                    StatusLineYBar.Visibility = Visibility.Visible;
+                }
+
             }
         }
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -9,14 +10,14 @@ namespace User.PluginSdkDemo
 {
     public class PedalStatus : INotifyPropertyChanged
     {
-        public int[] PedalForceInPercent { get; set; }
+        public double[] PedalForceInPercent { get; set; }
         public double[] PedalMaxForce { get; set; }
         public double[] PedalMinForce { get; set; }
         public string[] PedalConnectionStatus { get; set; }
 
-        public PedalStatus() 
+        public PedalStatus()
         {
-            PedalForceInPercent = new int[3] { 0, 0, 0 };
+            PedalForceInPercent = new double[3] { 0.0d, 0.0d, 0.0d };
             PedalMaxForce = new double[3] { 0, 0, 0 };
             PedalMinForce = new double[3] { 0, 0, 0 };
             PedalConnectionStatus = new string[3] { "Disconnected", "Disconnected", "Disconnected" };
@@ -27,5 +28,55 @@ namespace User.PluginSdkDemo
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+        public void UpdatePluginProperties(dynamic pluginManager, PedalStatus instance, DIY_FFB_Pedal Name)
+        {
+            PropertyInfo[] properties = instance.GetType().GetProperties();
+
+            foreach (PropertyInfo prop in properties)
+            {
+                if (prop.PropertyType.IsArray)
+                {
+                    Array arrayValue = (Array)prop.GetValue(this);
+
+                    if (arrayValue != null && arrayValue.Length==3)
+                    {
+                        for (int i = 0; i < 3; i++)
+                        {
+                            string tmp = $"PedalStatus.{prop.Name}_{PedalConstStrings.PedalID[i]}";
+
+                            object itemValue = arrayValue.GetValue(i);
+                            pluginManager.SetPropertyValue(tmp, Name.GetType(), itemValue);
+                        }
+                    }
+                }
+            }
+        }
+        public void AddPluginProperties(dynamic pluginManager, PedalStatus instance, DIY_FFB_Pedal Name)
+        {
+            PropertyInfo[] properties = instance.GetType().GetProperties();
+
+            foreach (PropertyInfo prop in properties)
+            {
+                if (prop.PropertyType.IsArray)
+                {
+                    Array arrayValue = (Array)prop.GetValue(this);
+
+                    if (arrayValue != null && arrayValue.Length == 3)
+                    {
+                        for (int i = 0; i < 3; i++)
+                        {
+                            string tmp = $"PedalStatus.{prop.Name}_{PedalConstStrings.PedalID[i]}";
+
+                            object itemValue = arrayValue.GetValue(i);
+                            pluginManager.AddProperty(tmp, Name.GetType(), itemValue);
+                        }
+                    }
+                }
+            }
+        }
     }
+    
+    
 }
+
+   
