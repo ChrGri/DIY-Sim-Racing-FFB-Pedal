@@ -2161,7 +2161,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       #endif
 
       // Move to new position
-      if (doMovement_b)
+#if 1
+ if (doMovement_b)
       {
         if (!moveSlowlyToPosition_b)
         {
@@ -2196,6 +2197,73 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           stepper->moveSlowlyToPos(Position_Next);
         }
       }
+#else
+
+      if (doMovement_b)
+      {
+        if (!moveSlowlyToPosition_b)
+        {
+          int32_t distanceToMove = Position_Next - stepperPosCurrent_i32;
+          
+          // NEU: Statische Variablen, um Timer-Starvation zu verhindern
+          static int32_t s_lastCommandedTarget_i32 = -1;
+          static uint32_t s_lastCommandedSpeed_u32 = 0;
+          
+          if (distanceToMove != 0) 
+          {
+            float requiredSpeed = 0.0f;
+
+            if (dap_calculationVariables_st.rudderStatus_b || dap_calculationVariables_st.helicopterRudderStatus_b)
+            {
+                // FALLBACK für Rudder: Ursprüngliches Verhalten (1-Cycle-Step)
+                float deltaTime_s_fl32 = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
+                requiredSpeed = abs(distanceToMove) / deltaTime_s_fl32;
+            }
+            else
+            {
+                // ADMITTANZ-MODUS: Glatte Feedforward-Geschwindigkeit aus dem Physikmodell
+                float metersToStepsFactor = 1.0f / (motorRevolutionsPerSteps_fl32 * dap_config_pedalUpdateTask_st.payloadPedalConfig_st.spindlePitch_mmPerRev_u8 * 0.001f);
+                float feedforwardSpeedHz = fabsf(admittanceStates_st.virtualVel_mps) * metersToStepsFactor;
+                
+                // Leichter P-Regler, um Integer-Rundungsverluste aufzuholen
+                float correctionSpeedHz = fabsf((float)distanceToMove) * 200.0f; 
+                
+                requiredSpeed = feedforwardSpeedHz + 0.0f * correctionSpeedHz;
+                
+                // Minimalgeschwindigkeit, damit der Timer nicht ins Unendliche streckt
+                if (requiredSpeed < 50.0f) {
+                    requiredSpeed = 50.0f; 
+                }
+            }
+            
+            uint32_t finalSpeed_u32 = (uint32_t)requiredSpeed;
+            if (finalSpeed_u32 > MAXIMUM_STEPPER_SPEED_U32) {
+                finalSpeed_u32 = MAXIMUM_STEPPER_SPEED_U32;
+            }
+
+            // CRITICAL FIX: Timer-Starvation verhindern!
+            if (Position_Next != s_lastCommandedTarget_i32) {
+                // Neues Ziel -> Kommando senden (Hardware-Timer darf resettet werden)
+                stepper->moveToWithSpeed((int32_t)Position_Next, finalSpeed_u32);
+                s_lastCommandedTarget_i32 = Position_Next;
+                s_lastCommandedSpeed_u32 = finalSpeed_u32;
+            } else {
+                // Ziel bleibt gleich, Schritt ist gerade in Ausführung. 
+                // Nur die Frequenz live anpassen, OHNE den Timer abzuwürgen!
+                if (abs((int32_t)finalSpeed_u32 - (int32_t)s_lastCommandedSpeed_u32) > 50) {
+                    stepper->setSpeedLive(finalSpeed_u32);
+                    s_lastCommandedSpeed_u32 = finalSpeed_u32;
+                }
+            }
+          }
+        }
+        else
+        {
+          moveSlowlyToPosition_b = false;
+          stepper->moveSlowlyToPos(Position_Next);
+        }
+      }
+#endif
     
       // compute controller output
       dap_calculationVariables_st.stepperPosSetback();
