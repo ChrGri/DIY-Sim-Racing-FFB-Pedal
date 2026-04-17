@@ -1535,7 +1535,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
   static float oscillationDetectionLevel_fl32 = 0.0f;
 
   AdmittanceDebugState_t admittanceDebugInfo_st;
-
+  AdmittanceStates_t admittanceStates_st;
+  
   for (;;)
   {
 
@@ -2016,6 +2017,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           , rudderOffsets_st
           , oscillationDetectionLevel_fl32
           , &admittanceDebugInfo_st
+          , &admittanceStates_st
         ); 
         
       }
@@ -2165,6 +2167,13 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         {
           // compute required speed to reach the target position within the next control cycle, so that the movement appears smooth and without delay.
           int32_t distanceToMove = Position_Next - stepperPosCurrent_i32;
+
+          // prevent very small movements, since it will induce pulse frequency 
+          // of 1 / (REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 * 1e-6) Hz = 4000Hz with sign flips
+          if (abs(distanceToMove) < 3)
+          {
+            distanceToMove = 0;
+          }
           
           if (distanceToMove != 0) 
           {

@@ -22,6 +22,12 @@ typedef struct {
 } RudderOffsets_t;
 
 
+typedef struct {
+  float physicalPos_m;   
+  float virtualVel_mps;
+  float virtualAcc_mps2;
+} AdmittanceStates_t;
+
 /**
  * @brief Selection of the physical model for elastomer hysteresis simulation.
  */
@@ -537,7 +543,8 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   EndstopBehavior_t endstopBehavior_st, 
   RudderOffsets_t rudderOffsets_st,
   float oscillationDetectionLevel_fl32,
-  AdmittanceDebugState_t* debugState_st = nullptr)
+  AdmittanceDebugState_t* debugState_st = nullptr,
+  AdmittanceStates_t *admittanceStates_pst = nullptr)
 {
 
   
@@ -963,5 +970,10 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   // Final safety clamp to hard hardware limits
   int32_t finalTargetPos_i32 = (int32_t)floor(targetPosSteps_fl32);
-  return (int32_t)constrain(finalTargetPos_i32, stepper->getHardEndstopMinPosition(), stepper->getHardEndstopMaxPosition());
+  finalTargetPos_i32 = (int32_t)constrain(finalTargetPos_i32, stepper->getHardEndstopMinPosition(), stepper->getHardEndstopMaxPosition());
+
+  if (admittanceStates_pst != nullptr) {
+    admittanceStates_pst->virtualVel_mps = g_vModelVel_mps;
+  }
+  return finalTargetPos_i32;
 }
