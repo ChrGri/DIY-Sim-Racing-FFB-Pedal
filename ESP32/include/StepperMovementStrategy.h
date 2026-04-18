@@ -533,7 +533,7 @@ static inline void ApplyRegenPowerClamping(
  * @param debugState_st Optional pointer to a struct to output internal variables for debugging. Default is nullptr.
  * @return int32_t The next absolute target position in steps for the stepper motor driver.
  */
-int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
+float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float loadCellReadingKg_fl32, 
   StepperWithLimits* stepper, 
   ForceCurveInterpolated* forceCurve, 
@@ -969,11 +969,13 @@ int32_t IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   targetPosSteps_fl32 += effectOffsets_st.forceOffset_Steps_fl32;
 
   // Final safety clamp to hard hardware limits
-  int32_t finalTargetPos_i32 = (int32_t)floor(targetPosSteps_fl32);
-  finalTargetPos_i32 = (int32_t)constrain(finalTargetPos_i32, stepper->getHardEndstopMinPosition(), stepper->getHardEndstopMaxPosition());
+  float finalTargetPos_fl32 = targetPosSteps_fl32;
+  finalTargetPos_fl32 = constrain(finalTargetPos_fl32, stepper->getHardEndstopMinPosition(), stepper->getHardEndstopMaxPosition());
 
   if (admittanceStates_pst != nullptr) {
+    admittanceStates_pst->physicalPos_m = g_vModelPos_01 * totalTravel_m;
     admittanceStates_pst->virtualVel_mps = g_vModelVel_mps;
+    admittanceStates_pst->virtualAcc_mps2 = acceleration_mps2;
   }
-  return finalTargetPos_i32;
+  return finalTargetPos_fl32;
 }

@@ -346,6 +346,10 @@ namespace User.PluginSdkDemo
                                                             writer.Write(", admittance_virtualMass_kg");
                                                             writer.Write(", admittance_virtualDamping_Ns_m");
 
+                                                            writer.Write(", admittance_virtualPosition_m");
+                                                            writer.Write(", admittance_virtualVelocity_mps");
+                                                            writer.Write(", admittance_virtualAcceleration_mps2");
+
                                                             writer.Write("\n");
                                                         }
 
@@ -386,7 +390,10 @@ namespace User.PluginSdkDemo
                                                         $",{state.admittance_isOscillating}" +
                                                         $",{state.admittance_admittancePsi_N}" + 
                                                         $",{state.admittance_virtualMass_kg}" +
-                                                        $",{state.admittance_virtualDamping_Ns_m}"
+                                                        $",{state.admittance_virtualDamping_Ns_m}" +
+                                                        $",{state.admittance_virtualPosition_m}" +
+                                                        $",{state.admittance_virtualVelocity_mps}" +
+                                                        $",{state.admittance_virtualAcceleration_mps2}"
                                                         );
 
                                                 }

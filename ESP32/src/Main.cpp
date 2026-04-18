@@ -1902,6 +1902,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       
 
       int32_t Position_Next = 0;
+      float Position_Next_fl32 = 0.0f;
 
       // Adding effects
       effect_pos_fl32 = 0.0f;
@@ -2006,7 +2007,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         rudderOffsets_st.trimOffset_01 = 0.0f;
 
         // Pedal control algorithm
-        Position_Next = MoveByAdmittanceStrategy(
+        Position_Next_fl32 = MoveByAdmittanceStrategy(
           filteredReading
           , stepper
           , &forceCurve
@@ -2028,8 +2029,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       profiler_pedalUpdateTask.start(6);
 
       // clip target position to hard endstops
-      Position_Next = (int32_t)constrain(Position_Next, stepper->getHardEndstopMinPosition(), stepper->getHardEndstopMaxPosition());
-
+      Position_Next_fl32 = constrain(Position_Next_fl32, stepper->getHardEndstopMinPosition(), stepper->getHardEndstopMaxPosition());
+      Position_Next = Position_Next_fl32;
+      
       // rudder helper
       Rudder_real_poisiton= 100*((positionWithoutEffect-dap_calculationVariables_st.stepperPosMinDefault_i32) / dap_calculationVariables_st.stepperPosRangeDefault_fl32);
 
@@ -2161,98 +2163,44 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       #endif
 
       // Move to new position
-#if 1
- if (doMovement_b)
-      {
-        if (!moveSlowlyToPosition_b)
-        {
-          // compute required speed to reach the target position within the next control cycle, so that the movement appears smooth and without delay.
-          int32_t distanceToMove = Position_Next - stepperPosCurrent_i32;
-
-          // prevent very small movements, since it will induce pulse frequency 
-          // of 1 / (REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 * 1e-6) Hz = 4000Hz with sign flips
-          if (abs(distanceToMove) < 3)
-          {
-            distanceToMove = 0;
-          }
-          
-          if (distanceToMove != 0) 
-          {
-            float deltaTime_s_fl32 = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
-            float requiredSpeed = abs(distanceToMove) / deltaTime_s_fl32;
-            
-            // overwrite speed command slightly to make sure the target position is reached within the control cycle.
-            //requiredSpeed *= 1.1f; 
-
-            if (requiredSpeed > (float)MAXIMUM_STEPPER_SPEED_U32) {
-                requiredSpeed = (float)MAXIMUM_STEPPER_SPEED_U32;
-            }
-
-            stepper->moveToWithSpeed((int32_t)Position_Next, (uint32_t)abs(requiredSpeed));
-          }
-        }
-        else
-        {
-          moveSlowlyToPosition_b = false;
-          stepper->moveSlowlyToPos(Position_Next);
-        }
-      }
-#else
-
       if (doMovement_b)
       {
         if (!moveSlowlyToPosition_b)
         {
-          int32_t distanceToMove = Position_Next - stepperPosCurrent_i32;
-          
-          // NEU: Statische Variablen, um Timer-Starvation zu verhindern
+          static float Position_Last_fl32 = 0.0f;
           static int32_t s_lastCommandedTarget_i32 = -1;
           static uint32_t s_lastCommandedSpeed_u32 = 0;
+
+          // compute required speed to reach the target position within the next control cycle, so that the movement appears smooth and without delay.
+          // float distanceToMove = Position_Next_fl32 - (float)stepperPosCurrent_i32;
+          float distanceToMove = Position_Next_fl32 - Position_Last_fl32;
+          Position_Last_fl32 = Position_Next_fl32;
+
+          // prevent very small movements, since it will induce pulse frequency 
+          // of 1 / (REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 * 1e-6) Hz = 4000Hz with sign flips
+          float distanceToMoveAbs_fl32 = fabsf(distanceToMove);
           
-          if (distanceToMove != 0) 
+          if (distanceToMoveAbs_fl32 != 0) 
           {
-            float requiredSpeed = 0.0f;
-
-            if (dap_calculationVariables_st.rudderStatus_b || dap_calculationVariables_st.helicopterRudderStatus_b)
-            {
-                // FALLBACK für Rudder: Ursprüngliches Verhalten (1-Cycle-Step)
-                float deltaTime_s_fl32 = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
-                requiredSpeed = abs(distanceToMove) / deltaTime_s_fl32;
-            }
-            else
-            {
-                // ADMITTANZ-MODUS: Glatte Feedforward-Geschwindigkeit aus dem Physikmodell
-                float metersToStepsFactor = 1.0f / (motorRevolutionsPerSteps_fl32 * dap_config_pedalUpdateTask_st.payloadPedalConfig_st.spindlePitch_mmPerRev_u8 * 0.001f);
-                float feedforwardSpeedHz = fabsf(admittanceStates_st.virtualVel_mps) * metersToStepsFactor;
-                
-                // Leichter P-Regler, um Integer-Rundungsverluste aufzuholen
-                float correctionSpeedHz = fabsf((float)distanceToMove) * 200.0f; 
-                
-                requiredSpeed = feedforwardSpeedHz + 0.0f * correctionSpeedHz;
-                
-                // Minimalgeschwindigkeit, damit der Timer nicht ins Unendliche streckt
-                if (requiredSpeed < 50.0f) {
-                    requiredSpeed = 50.0f; 
-                }
-            }
+            float deltaTime_s_fl32 = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
+            float requiredSpeed = distanceToMoveAbs_fl32 / deltaTime_s_fl32;
             
-            uint32_t finalSpeed_u32 = (uint32_t)requiredSpeed;
-            if (finalSpeed_u32 > MAXIMUM_STEPPER_SPEED_U32) {
-                finalSpeed_u32 = MAXIMUM_STEPPER_SPEED_U32;
+            if (requiredSpeed > (float)MAXIMUM_STEPPER_SPEED_U32) {
+                requiredSpeed = (float)MAXIMUM_STEPPER_SPEED_U32;
             }
 
-            // CRITICAL FIX: Timer-Starvation verhindern!
-            if (Position_Next != s_lastCommandedTarget_i32) {
-                // Neues Ziel -> Kommando senden (Hardware-Timer darf resettet werden)
-                stepper->moveToWithSpeed((int32_t)Position_Next, finalSpeed_u32);
-                s_lastCommandedTarget_i32 = Position_Next;
-                s_lastCommandedSpeed_u32 = finalSpeed_u32;
+            // CRITICAL FIX: Prevent Timer Starvation!
+            if ((int32_t)Position_Next_fl32 != s_lastCommandedTarget_i32) {
+                // Target changed as integer -> Send new command (Hardware-Timer gets reset)
+                stepper->moveToWithSpeed((int32_t)Position_Next_fl32, requiredSpeed);
+                s_lastCommandedTarget_i32 = (int32_t)Position_Next_fl32;
+                s_lastCommandedSpeed_u32 = requiredSpeed;
             } else {
-                // Ziel bleibt gleich, Schritt ist gerade in Ausführung. 
-                // Nur die Frequenz live anpassen, OHNE den Timer abzuwürgen!
-                if (abs((int32_t)finalSpeed_u32 - (int32_t)s_lastCommandedSpeed_u32) > 50) {
-                    stepper->setSpeedLive(finalSpeed_u32);
-                    s_lastCommandedSpeed_u32 = finalSpeed_u32;
+                // Target integer remains the same, stepper is currently executing the pulse.
+                // Update PWM frequency LIVE without stopping the hardware timer!
+                if (abs((int32_t)requiredSpeed - (int32_t)s_lastCommandedSpeed_u32) > 50) {
+                    stepper->setSpeedLive(requiredSpeed);
+                    s_lastCommandedSpeed_u32 = requiredSpeed;
                 }
             }
           }
@@ -2263,7 +2211,6 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           stepper->moveSlowlyToPos(Position_Next);
         }
       }
-#endif
     
       // compute controller output
       dap_calculationVariables_st.stepperPosSetback();
@@ -2474,6 +2421,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_virtualMass_kg = admittanceDebugInfo_st.activeVirtualMass_kg + admittanceDebugInfo_st.massAdaptationOffset_kg;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_virtualDamping_Ns_m = admittanceDebugInfo_st.activeDamping_Ns_m;
           
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_virtualPosition_m = admittanceStates_st.physicalPos_m;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_virtualVelocity_mps = admittanceStates_st.virtualVel_mps;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_virtualAcceleration_mps2 = admittanceStates_st.virtualAcc_mps2;
 
         
         }

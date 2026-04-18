@@ -35,6 +35,10 @@ namespace User.PluginSdkDemo
         public float admittance_virtualMass_kg;
         public float admittance_virtualDamping_Ns_m;
 
+        public float admittance_virtualPosition_m;
+        public float admittance_virtualVelocity_mps;
+        public float admittance_virtualAcceleration_mps2;
+
 
 
     };

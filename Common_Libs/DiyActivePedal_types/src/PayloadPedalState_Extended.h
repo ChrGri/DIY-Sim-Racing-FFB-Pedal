@@ -28,4 +28,8 @@ typedef struct __attribute__((packed)) PayloadPedalStateExtended
   float admittance_virtualMass_kg;
   float admittance_virtualDamping_Ns_m;
 
+  float admittance_virtualPosition_m;
+  float admittance_virtualVelocity_mps;
+  float admittance_virtualAcceleration_mps2;
+
 } PayloadPedalStateExtended_t;
