@@ -51,8 +51,18 @@ public:
     if (timeSinceTrigger_fl32 > s_absActiveTimePerTriggerMillis_i32)
     {
       absTimeMillis_i32 = 0;
-      absOscillationForceOffset_fl32 = 0.0f;
-      absOscillationPositionOffset_fl32 = 0.0f;
+      
+      // --- DECAY LOGIC (Max 10 steps) ---
+      float posDecayStep = 10;
+
+      // Decay Position Offset towards 0
+      if (absOscillationPositionOffset_fl32 > posDecayStep) {
+        absOscillationPositionOffset_fl32 -= posDecayStep;
+      } else if (absOscillationPositionOffset_fl32 < -posDecayStep) {
+        absOscillationPositionOffset_fl32 += posDecayStep;
+      } else {
+        absOscillationPositionOffset_fl32 = 0.0f;
+      }
     }
     else
     {
