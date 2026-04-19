@@ -319,7 +319,7 @@ void DapCalculationVariables_t::updateFromConfig(DapConfig_t& config_st)
   pedalType_u8 = config_st.payloadPedalConfig_st.pedalType_u8;
 
   // calculate steps per motor revolution
-  float helper_fl32 = MAXIMUM_STEPPER_SPEED_U32 / (s_maximumStepperRpm_u32 / s_secondsPerMinute_u32);
+  float helper_fl32 = (float)MAXIMUM_STEPPER_SPEED_U32 / ((float)s_maximumStepperRpm_u32 / (float)s_secondsPerMinute_u32);
   helper_fl32 = floor(helper_fl32 / 10.0f) * 10.0f;
   helper_fl32 = constrain(helper_fl32, 2000.0f, 10000.0f);
   stepsPerMotorRevolution_u32 = helper_fl32;
