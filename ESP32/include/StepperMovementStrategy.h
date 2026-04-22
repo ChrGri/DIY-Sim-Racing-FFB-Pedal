@@ -311,7 +311,7 @@ static inline bool DetectAdmittanceOscillation(
  * Increases virtual mass during oscillations and only releases it when the pedal is near an endstop.
  */
 static inline void AdaptVirtualMass(
-    bool isOscillating, float oscillationIntensity_01, float dt_s, 
+    bool isOscillating, float dt_s, 
     float baseMass_kg, float& virtualMass_kg, bool hasActiveEffect, float actualPosFraction_01)
 {
     // Freeze adaptation if an effect is active
@@ -325,8 +325,8 @@ static inline void AdaptVirtualMass(
     const float M_DECREASE_RATE_KG_S = 3.0f;  // How fast mass recovers when near endstop
 
     // 1. Ramp up mass during oscillation
-    if (isOscillating || oscillationIntensity_01 > 0.15f) {
-        float intensity = isOscillating ? 1.0f : oscillationIntensity_01;
+    if (isOscillating) {
+        float intensity = 1.0f;
         g_massAdaptationOffset_kg += M_INCREASE_RATE_KG_S * intensity * dt_s;
     } 
     // 2. Reduce mass ONLY when the pedal is safely near an endstop (< 5% or > 95%)
@@ -350,7 +350,7 @@ static inline void AdaptVirtualMass(
  */
 static inline float CalcActiveDamping(
     float dampingRatio_zeta, float virtualMass_kg, float currentStiffness_N_m,
-    float oscillationIntensity_01, float vModelPos_01, float actualPosFraction_01,
+    float vModelPos_01, float actualPosFraction_01,
     int32_t actualServoTrackingError_i32, float travelSteps_cnt, float effectForceOffset_fl32,
     uint8_t dampingProgression_u8, float springForce_N, float vModelVel_mps, uint8_t elastomerModelSelection, float maxPedalForce_kg) 
 {
@@ -363,8 +363,6 @@ static inline float CalcActiveDamping(
     // Adaptive damping (AOM & Tracking Error) only when no effect is applied
     if (effectForceOffset_fl32 == 0.0f) 
     {
-        // AOM BOOST: If oscillation is detected, inject massive damping to freeze the system and bleed energy.
-        dampingMultiplier = 1.0f + (oscillationIntensity_01 * 8.0f);
 
         // =========================================================
         // Tracking-Error dependent damping (Trajectory Shaping) to reduce EMF spikes. 
@@ -385,6 +383,7 @@ static inline float CalcActiveDamping(
             dampingMultiplier += (trackingError_01 * 20.0f); 
         }
     }
+    
 
     float totalDamping_Ns_m = baseDamping_Ns_m * dampingMultiplier;
 
@@ -529,7 +528,6 @@ static inline void ApplyRegenPowerClamping(
  * @param effectOffsets_st High-frequency offsets (ABS vibrations, etc.).
  * @param endstopBehavior_st Configuration for the soft endstop feel.
  * @param rudderOffsets_st Rudder specific offset parameters.
- * @param oscillationDetectionLevel_fl32 Level of oscillation detected (0.0 to 1.0).
  * @param debugState_st Optional pointer to a struct to output internal variables for debugging. Default is nullptr.
  * @return int32_t The next absolute target position in steps for the stepper motor driver.
  */
@@ -542,7 +540,6 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   EffectOffsets_t effectOffsets_st, 
   EndstopBehavior_t endstopBehavior_st, 
   RudderOffsets_t rudderOffsets_st,
-  float oscillationDetectionLevel_fl32,
   AdmittanceDebugState_t* debugState_st = nullptr,
   AdmittanceStates_t *admittanceStates_pst = nullptr)
 {
@@ -590,12 +587,6 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
     rudderForce_N = rudderForceRaw_kg * GRAVITY_N_KG;
 
   }
-
-
-  // --- 3. OSCILLATION DETECTION (Active Oscillation Mitigation - AOM) ---
-  // The oscillation detection level is computed in the main loop and passed as a parameter.
-  // It is a value between 0.0 (no oscillation) and 1.0 (heavy oscillation detected) that indicates the current intensity of oscillations in the system.
-  float g_oscillationIntensity_01 = constrain(oscillationDetectionLevel_fl32, 0.0f, 1.0f);
 
   // --- 4. PHYSICAL GEOMETRY ---
   // travelSteps_cnt: total steps from min to max soft endstop
@@ -693,7 +684,6 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
     // --- 10. PASSIVE PARAMETER ADAPTATION (Position Gated) ---
   AdaptVirtualMass(isOscillating
-    , g_oscillationIntensity_01
     , dt_s
     , virtualMass_kg
     , virtualMass_kg
@@ -705,7 +695,6 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float activeDamping_Ns_m = CalcActiveDamping(dampingRatio_zeta
     , virtualMass_kg
     , currentStiffness_N_m
-    , g_oscillationIntensity_01
     , g_vModelPos_01
     , actualPosFraction_01
     , stepper->getServosPosError()
@@ -916,7 +905,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   // --- 13. VELOCITY CHOKING (STABILITY PROTECTION) ---
   // Limit the movement speed if the system becomes unstable.
-  float velocityLimit_01 = 1.0f - (g_oscillationIntensity_01 * 0.7f); // Up to 70% speed reduction
+  float velocityLimit_01 = 1.0f; // Up to 70% speed reduction
   
   float maxPhysicalVel_mps = 0.8f; 
   if (calc_st->stepsPerMotorRevolution_u32 > 0) {

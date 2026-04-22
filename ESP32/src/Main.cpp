@@ -137,13 +137,6 @@ DapEspPairing_t dap_esppairing_lcl;//sending
 DapActionOta_t dap_action_ota_st;//OTA command(do not check version)
 
 
-/**********************************************************************************************/
-/*                                                                                            */
-/*                         Oscillation detector                                               */
-/*                                                                                            */
-/**********************************************************************************************/
-#include "OscillationDetector.h"
-OscillationDetector oscDetector;
 
 /**********************************************************************************************/
 /*                                                                                            */
@@ -1532,7 +1525,6 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
   static bool sendExtendedFlag_b = false;
   static int32_t stepperPosCurrent_i32;
   static uint32_t cycleCount_u32 = 0;
-  static float oscillationDetectionLevel_fl32 = 0.0f;
 
   AdmittanceDebugState_t admittanceDebugInfo_st;
   AdmittanceStates_t admittanceStates_st;
@@ -1969,11 +1961,6 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       #endif
 
       
-      // --- 2. OSCILLATION DETECTION (Active Oscillation Mitigation - AOM) ---
-      // Computes the oscillation intensity based on signal activity and updates the value.
-      //oscillationDetectionLevel_fl32 = oscDetector.update(filteredReading);
-      oscillationDetectionLevel_fl32 = oscDetector.updateWithExternalRate(changeVelocity);
-
       // compute next position with PID strategy
       // MPC control strataegy for rudder
       int32_t positionWithoutEffect=0;
@@ -2016,7 +2003,6 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           , effectOffsets_st
           , endstopBehavior_st
           , rudderOffsets_st
-          , oscillationDetectionLevel_fl32
           , &admittanceDebugInfo_st
           , &admittanceStates_st
         ); 
@@ -2413,7 +2399,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.targetPosition_i32 = stepper->getCurrentPosition() - minPos;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.currentSpeedInHz_i32 = stepper->getCurrentSpeedInHz();
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.brakeResistorState_b = brake_state * 255;//stepper->getBrakeResistorState();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.oscillationMonitorValue_u8 = (oscillationDetectionLevel_fl32 * 255.0f);
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.oscillationMonitorValue_u8 = 0.0f;
         
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_expectedForce_N = admittanceDebugInfo_st.expectedForce_N;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_isOscillating = admittanceDebugInfo_st.isOscillating;
