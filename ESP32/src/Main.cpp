@@ -2177,6 +2177,21 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           {
             float deltaTime_s_fl32 = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
             float requiredSpeed = distanceToMoveAbs_fl32 / deltaTime_s_fl32;
+
+
+            // Catch-up propotional speed gain
+            // Hardware distance (integer steps) for fallback and step-loss checks
+            int32_t hardwareDistance_i32 = (int32_t)Position_Next_fl32 - stepper->getCurrentPosition();
+
+            float catchUpSpeedHz = 0.0f;
+            if (abs(hardwareDistance_i32) > 1) 
+            {
+                float catchUpKp = 40.0f; 
+                catchUpSpeedHz = (float)(abs(hardwareDistance_i32) - 1) * catchUpKp; 
+            }
+
+            // total speed
+            requiredSpeed = requiredSpeed + catchUpSpeedHz;
             
             if (requiredSpeed > (float)MAXIMUM_STEPPER_SPEED_U32) {
                 requiredSpeed = (float)MAXIMUM_STEPPER_SPEED_U32;
