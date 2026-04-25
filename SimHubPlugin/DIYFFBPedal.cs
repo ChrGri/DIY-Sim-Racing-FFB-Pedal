@@ -893,7 +893,7 @@ namespace User.PluginSdkDemo
                 {
                     game_running_index = 0;
                     clear_action = true;
-                    ProfileServicePlugin.ClearAutoSwitchStatus();//clear auto profile switch status
+                    if(!data.GamePaused && !data.GameInMenu && !data.GameReplay) ProfileServicePlugin.ClearAutoSwitchStatus();//clear auto profile switch status
                 }
             }
 
