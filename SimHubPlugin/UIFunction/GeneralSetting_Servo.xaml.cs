@@ -58,22 +58,19 @@ namespace User.PluginSdkDemo.UIFunction
 
         private static void OnPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            
             if (d is GeneralSetting_Servo control && e.NewValue is DAP_config_st newData)
             {
-                //control.UpdateLabelContent();
                 if (control != null)
                 {
                     try
                     {
                         if (control.Slider_ServoEndstopDetecionThreshold != null) control.Slider_ServoEndstopDetecionThreshold.SliderValue = newData.payloadPedalConfig_.endstopDetectionThreshold;
+                        if (control.Slider_ServoTimeout != null) control.Slider_ServoTimeout.SliderValue = newData.payloadPedalConfig_.servoIdleTimeout;
                     }
                     catch
                     {
-
                     }
                 }
-
             }
         }
 
@@ -87,6 +84,14 @@ namespace User.PluginSdkDemo.UIFunction
         {
             var tmp = dap_config_st;
             tmp.payloadPedalConfig_.endstopDetectionThreshold = (byte)e.NewValue;
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
+
+        private void Slider_ServoTimeoutValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.servoIdleTimeout = (byte)e.NewValue;
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
         }

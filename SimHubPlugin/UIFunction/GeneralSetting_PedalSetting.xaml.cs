@@ -123,7 +123,6 @@ namespace User.PluginSdkDemo.UIFunction
                     {
                         if (control.Slider_LC_rate != null) control.Slider_LC_rate.SliderValue = newData.payloadPedalConfig_.loadcell_rating * 2;
                         if (control.Slider_maxgame_output != null) control.Slider_maxgame_output.SliderValue = newData.payloadPedalConfig_.maxGameOutput;
-                        if (control.Slider_ServoTimeout != null) control.Slider_ServoTimeout.SliderValue = newData.payloadPedalConfig_.servoIdleTimeout;
                     }
                     catch (Exception caughtEx)
                     {
@@ -335,14 +334,6 @@ namespace User.PluginSdkDemo.UIFunction
         {
             var tmp = dap_config_st;
             tmp.payloadPedalConfig_.invertMotorDirection_u8 = (byte)0;
-            dap_config_st = tmp;
-            ConfigChangedEvent(dap_config_st);
-        }
-
-        private void Slider_ServoTimeoutValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.servoIdleTimeout = (Byte)(e.NewValue);
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
         }
