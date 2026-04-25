@@ -2186,7 +2186,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
             float catchUpSpeedHz = 0.0f;
             if (abs(hardwareDistance_i32) > 1) 
             {
-                float catchUpKp = 40.0f; 
+                float catchUpKp = 0.0f; 
                 catchUpSpeedHz = (float)(abs(hardwareDistance_i32) - 1) * catchUpKp; 
             }
 
