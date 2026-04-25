@@ -25,12 +25,12 @@
                 <StackPanel Height="20" Width="540" Orientation="Horizontal">
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextServoSettingTittle, 'Servo Settings'}" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
                 </StackPanel>
-                <StackPanel Width="400" Height="50">
-                    <localUI:SliderWithLabel x:Name="Slider_ServoEndstopDetecionThreshold" SliderLength="400" SliderName="{SLoc DIYFFBPedalPlugin_TextServoSettingSliderEndstopCurrent, 'Endstop Detection Threshold'}" SliderValue="30" MinValue="25" MaxValue="50" SliderValueChanged="Slider_ServoEndstopDetecionThreshold_SliderValueChanged" TickFrequency="1" Unit="%" ToolTip="Increase the value if homing not get full travel. It will take effect after set the config as default and a pedal restart."/>
-                </StackPanel>
                 <StackPanel Height="40" Width="540" HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal">
-                    <localUI:SliderWithLabel x:Name="Slider_ServoTimeout" SliderLength="190" SliderName="{SLoc DIYFFBPedalPlugin_TextGeneralSettingServoIdleTimeout, 'Servo Idle Timeout'}" TickFrequency="1" Unit="mins" Width="200" Height="40" MaxValue="50" SliderValueChanged="Slider_ServoTimeoutValueChanged" Margin="70,0,0,0" ToolTip="Only work with PCBA v2, set to 0 to turn off the function"/>
+                    <localUI:SliderWithLabel x:Name="Slider_ServoEndstopDetecionThreshold" SliderLength="190" SliderName="{SLoc DIYFFBPedalPlugin_TextServoSettingSliderEndstopCurrent, 'Endstop Detection Threshold'}" Width="200" Height="40" SliderValue="30" MinValue="25" MaxValue="50" SliderValueChanged="Slider_ServoEndstopDetecionThreshold_SliderValueChanged" TickFrequency="1" Unit="%" Margin="70,0,0,0" ToolTip="Increase the value if homing not get full travel. It will take effect after set the config as default and a pedal restart."/>
+                    <localUI:SliderWithLabel x:Name="Slider_ServoTimeout" SliderLength="190" SliderName="{SLoc DIYFFBPedalPlugin_TextGeneralSettingServoIdleTimeout, 'Servo Idle Timeout'}" TickFrequency="1" Unit="mins" Width="200" Height="40" MaxValue="50" SliderValueChanged="Slider_ServoTimeoutValueChanged" Margin="10,0,0,0" ToolTip="Only work with PCBA v2, set to 0 to turn off the function"/>
                 </StackPanel>
+
+                
             </StackPanel>
 
         </Border>

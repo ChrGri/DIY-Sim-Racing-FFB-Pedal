@@ -533,6 +533,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <Content Include=".gitignore" />
     <Content Include="sdkmenuicon.png" />
   </ItemGroup>
   <ItemGroup>
