@@ -906,14 +906,6 @@ namespace User.PluginSdkDemo.Language {
             }
         }
         
-        /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Damping Factor ähnelt.
-        /// </summary>
-        internal static string DIYFFBPedalPlugin_TextGeneralSettingDampingFactor {
-            get {
-                return ResourceManager.GetString("DIYFFBPedalPlugin_TextGeneralSettingDampingFactor", resourceCulture);
-            }
-        }
         
         /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Joystick output from travel ähnelt.
