@@ -702,11 +702,18 @@ static void uart_event_task(void *pvParameters) {
 void setup()
 {
 
+  
+
   #ifdef DEBUG_KEEP_USB_SERIAL_JTAG
     // For ESP32-S3, the USB Serial is shared with JTAG. To allow debugging via JTAG while also using Serial for output, we can delay the start of Serial until after the debugger has had time to connect.
     // This is a workaround to ensure that the USB Serial doesn't interfere with JTAG debugging during startup. 
     delay(5000); // Gibt dem Debugger 5 Sekunden Zeit, sich in Ruhe zu verbinden!
   #endif
+
+  // stabilize RS232 pins, so servo doesnt go into alarm on startup
+  pinMode(ISV57_TXPIN, OUTPUT);
+  digitalWrite(ISV57_TXPIN, HIGH); // HIGH ist der Idle-State für UART
+
 
   DapConfig_t dap_config_st_local;
   DapConfig_t dap_config_st_eeprom;
