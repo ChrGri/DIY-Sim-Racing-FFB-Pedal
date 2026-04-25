@@ -116,8 +116,8 @@ void DapConfig_t::initializeDefaults()
 
   payloadPedalConfig_st.maxGameOutput_u8 = 100;
 
-  payloadPedalConfig_st.kfModelNoise_u8 = 128;
-  payloadPedalConfig_st.kfModelOrder_u8 = 1;
+  payloadPedalConfig_st.kfModelNoise_u8 = 255;
+  payloadPedalConfig_st.kfModelOrder_u8 = 0;
 
   payloadPedalConfig_st.debugFlags0_u8 = 0;
 
@@ -138,7 +138,7 @@ void DapConfig_t::initializeDefaults()
   payloadPedalConfig_st.endstopDetectionThreshold_u8 = 30;
 
   payloadPedalConfig_st.virtualPedalDampingInPercent_u8 = 100;
-  payloadPedalConfig_st.virtualPedalMassInPercent_u8 = 30;
+  payloadPedalConfig_st.virtualPedalMassInPercent_u8 = 60;
 
   payloadPedalConfig_st.endstopStiffness_kg_mm_u8 = 50;
   payloadPedalConfig_st.endstopTravelRange_mm_u8 = 10;

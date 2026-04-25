@@ -103,7 +103,7 @@ namespace User.PluginSdkDemo
             DefaultConfig.payloadPedalConfig_.CV_amp_2 = 0;
             DefaultConfig.payloadPedalConfig_.CV_freq_2 = 10;
             DefaultConfig.payloadPedalConfig_.maxGameOutput = 100;
-            DefaultConfig.payloadPedalConfig_.kf_modelNoise = 90;
+            DefaultConfig.payloadPedalConfig_.kf_modelNoise = 255;
             DefaultConfig.payloadPedalConfig_.kf_modelOrder = 0;
 
 
@@ -123,7 +123,7 @@ namespace User.PluginSdkDemo
             DefaultConfig.payloadPedalConfig_.configHash_u32 = 0;
             DefaultConfig.payloadPedalConfig_.endstopDetectionThreshold = 30;
 
-            DefaultConfig.payloadPedalConfig_.virtualPedalMass_u8 = 30;
+            DefaultConfig.payloadPedalConfig_.virtualPedalMass_u8 = 60;
             DefaultConfig.payloadPedalConfig_.virtualPedalDamping_u8 = 100;
             DefaultConfig.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = 10;
             DefaultConfig.payloadPedalConfig_.endstopTravelRange_mm_u8 = 0;
