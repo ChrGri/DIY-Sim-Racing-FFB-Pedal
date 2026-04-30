@@ -1303,8 +1303,8 @@ void joystickUpdateTask( void * pvParameters )
             SetControllerOutputValueAccelerator(pedal_cluth_value);
             SetControllerOutputValueBrake(pedal_brake_value);
             SetControllerOutputValueThrottle(pedal_throttle_value);
-            SetControllerOutputValueRudder(JOYSTICK_MIN_VALUE);
-            SetControllerOutputValueRudder_brake(JOYSTICK_MIN_VALUE, JOYSTICK_MIN_VALUE);
+            SetControllerOutputValueRudder(JOYSTICK_CENTER);
+            SetControllerOutputValueRudder_brake(JOYSTICK_CENTER, JOYSTICK_CENTER);
           }
           if (pedal_status == 1)
           {
@@ -1319,7 +1319,7 @@ void joystickUpdateTask( void * pvParameters )
             }
             else
             {
-              SetControllerOutputValueRudder((int16_t)(0.5f * JOYSTICK_RANGE+JOYSTICK_MIN_VALUE));
+              SetControllerOutputValueRudder((int16_t)(JOYSTICK_CENTER));
             }
             SetControllerOutputValueRudder_brake(JOYSTICK_MIN_VALUE, JOYSTICK_MIN_VALUE);
           }
@@ -1328,7 +1328,7 @@ void joystickUpdateTask( void * pvParameters )
             SetControllerOutputValueAccelerator(JOYSTICK_MIN_VALUE);
             SetControllerOutputValueBrake(JOYSTICK_MIN_VALUE);
             SetControllerOutputValueThrottle(JOYSTICK_MIN_VALUE);
-            SetControllerOutputValueRudder((int16_t)(0.5f * JOYSTICK_RANGE+JOYSTICK_MIN_VALUE));
+            SetControllerOutputValueRudder((int16_t)(JOYSTICK_CENTER));
             // int16_t filter_brake=0;
             // int16_t filter_throttle=0;
             if (dap_bridge_state_st.payloadBridgeState_st.pedalAvailability_au8[0] == 1)
