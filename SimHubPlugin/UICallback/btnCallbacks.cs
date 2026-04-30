@@ -1279,19 +1279,23 @@ namespace User.PluginSdkDemo
             if (sideWindow.ShowDialog() == true)
             {
                 string downloadUrl;
+                string rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyActivePedal.resx";
                 string MSG_tmp = "Plugin will update from ";
                 switch (Plugin.Settings.updateChannel)
                 {
                     case 0:
                         downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyActivePedal.dll";
+                        rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyActivePedal.resx";
                         MSG_tmp += "Stable release channel. ";
                         break;
                     case 1:
                         downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/DevBuild/plugin/DiyActivePedal.dll";
+                        rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/DevBuild/plugin/DiyActivePedal.resx";
                         MSG_tmp += "Dev-Build channel. ";
                         break;
                     default:
                         downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyActivePedal.dll";
+                        rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyActivePedal.resx";
                         MSG_tmp += "Mainline release channel. ";
                         break;
                 }
@@ -1309,14 +1313,17 @@ namespace User.PluginSdkDemo
                     string exeName = "SimHubWPF.exe";
                     string exePath = targetPath + exeName;
                     string targetDllPath = targetPath + "DiyActivePedal.dll";
-
-
-                    string psScript = $@"
+                    string rsexTargetPath = targetPath + "languages\\DiyActivePedal.rsex";
+                    string psScript2 = $@"
                 $processName = 'SimHubWPF'
                 $downloadUrl = '{downloadUrl}'
                 $targetDllPath = '{targetDllPath}'
+                $rsexUrl = '{rsexDownloadUrl}'
+                $rsexTargetPath = '{rsexTargetPath}'
                 $exePath = '{exePath}'
                 $tempPath = $env:TEMP + '\plugin_temp.dll'
+                $tempRsexPath = $env:TEMP + '\plugin_temp.rsex'
+
                 Write-Host 'Closing Simhub...'
                 $procs = Get-Process -Name $processName -ErrorAction SilentlyContinue
                 foreach ($proc in $procs) {{
@@ -1325,26 +1332,33 @@ namespace User.PluginSdkDemo
                 }}
                 Start-Sleep -Seconds 2
 
-                Write-Host 'Download new Plugin...'
+                Write-Host 'Download new files...'
                 Invoke-WebRequest -Uri $downloadUrl -OutFile $tempPath -UseBasicParsing
+                Invoke-WebRequest -Uri $rsexUrl -OutFile $tempRsexPath -UseBasicParsing
 
                 Write-Host 'Backup .dll file...'
                 if (Test-Path $targetDllPath) {{
                     Copy-Item -Path $targetDllPath -Destination ($targetDllPath + '.bak') -Force
                 }}
-                Write-Host 'Copy plugin to folder...'
+
+                Write-Host 'Preparing Language folder...'
+                $langDir = Split-Path -Path $rsexTargetPath
+                if (!(Test-Path $langDir)) {{
+                    New-Item -ItemType Directory -Path $langDir -Force
+                }}
+
+                Write-Host 'Copying files to target folders...'
                 Copy-Item -Path $tempPath -Destination $targetDllPath -Force
+                Copy-Item -Path $tempRsexPath -Destination $rsexTargetPath -Force
+
                 Write-Host 'Restart Simhub...'
                 Start-Process -FilePath $exePath
                 ";
-
-
-                    string escapedScript = psScript.Replace("\"", "`\"").Replace("`r", "").Replace("`n", "; ");
-
+                    string escapedScript2 = psScript2.Replace("\"", "`\"").Replace("`r", "").Replace("`n", "; ");
                     var psi = new ProcessStartInfo
                     {
                         FileName = "powershell.exe",
-                        Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{escapedScript}\"",
+                        Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{escapedScript2}\"",
                         Verb = "runas", // force run with admin
                         UseShellExecute = true
                     };
@@ -1355,7 +1369,8 @@ namespace User.PluginSdkDemo
                     }
                     catch (Exception ex)
                     {
-
+                        MSG_tmp = "The update not completed, please try again";
+                        result = System.Windows.MessageBox.Show(MSG_tmp, "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);
                     }
                 }
             }
