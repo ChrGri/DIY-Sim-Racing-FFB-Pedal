@@ -2178,16 +2178,24 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
             float deltaTime_s_fl32 = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
             float requiredSpeed = distanceToMoveAbs_fl32 / deltaTime_s_fl32;
 
+            // slightly overspeed to make sure pulses reach in time
+            // requiredSpeed *= 1.1f;
 
             // Catch-up propotional speed gain
             // Hardware distance (integer steps) for fallback and step-loss checks
-            int32_t hardwareDistance_i32 = (int32_t)Position_Next_fl32 - stepper->getCurrentPosition();
+            int32_t hardwareDistance_i32 = (int32_t)Position_Last_fl32 - stepper->getCurrentPosition();
 
             float catchUpSpeedHz = 0.0f;
-            if (abs(hardwareDistance_i32) > 1) 
+
+            // add catchup speed only near standstill & near min endstop
+            float targetPosFraction_fl32 = stepper->getCurrentPositionFractionFromExternalPos(Position_Next_fl32 - stepper->getMinPosition() );
+            if ( (fabsf(requiredSpeed) < 10) && (targetPosFraction_fl32 <= 0.05f) )
             {
-                float catchUpKp = 0.0f; 
-                catchUpSpeedHz = (float)(abs(hardwareDistance_i32) - 1) * catchUpKp; 
+              if (abs(hardwareDistance_i32) > 1) 
+              {
+                  float catchUpKp = 400.0f; 
+                  catchUpSpeedHz = (float)(abs(hardwareDistance_i32) - 1) * catchUpKp; 
+              }
             }
 
             // total speed
@@ -2197,20 +2205,10 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
                 requiredSpeed = (float)MAXIMUM_STEPPER_SPEED_U32;
             }
 
-            // CRITICAL FIX: Prevent Timer Starvation!
-            if ((int32_t)Position_Next_fl32 != s_lastCommandedTarget_i32) {
-                // Target changed as integer -> Send new command (Hardware-Timer gets reset)
-                stepper->moveToWithSpeed((int32_t)Position_Next_fl32, requiredSpeed);
-                s_lastCommandedTarget_i32 = (int32_t)Position_Next_fl32;
-                s_lastCommandedSpeed_u32 = requiredSpeed;
-            } else {
-                // Target integer remains the same, stepper is currently executing the pulse.
-                // Update PWM frequency LIVE without stopping the hardware timer!
-                if (abs((int32_t)requiredSpeed - (int32_t)s_lastCommandedSpeed_u32) > 50) {
-                    stepper->setSpeedLive(requiredSpeed);
-                    s_lastCommandedSpeed_u32 = requiredSpeed;
-                }
-            }
+            stepper->moveToWithSpeed((int32_t)Position_Next_fl32, requiredSpeed);
+            s_lastCommandedTarget_i32 = (int32_t)Position_Next_fl32;
+            s_lastCommandedSpeed_u32 = requiredSpeed;
+  
           }
         }
         else
