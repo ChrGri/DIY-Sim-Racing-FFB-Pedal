@@ -1313,7 +1313,7 @@ namespace User.PluginSdkDemo
                     string exeName = "SimHubWPF.exe";
                     string exePath = targetPath + exeName;
                     string targetDllPath = targetPath + "DiyActivePedal.dll";
-                    string rsexTargetPath = targetPath + "languages\\DiyActivePedal.rsex";
+                    string rsexTargetPath = targetPath + "languages\\DiyActivePedal.resx";
                     string psScript2 = $@"
                 $processName = 'SimHubWPF'
                 $downloadUrl = '{downloadUrl}'
