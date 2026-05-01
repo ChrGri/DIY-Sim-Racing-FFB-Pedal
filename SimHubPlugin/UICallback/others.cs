@@ -337,11 +337,11 @@ namespace User.PluginSdkDemo
             dap_config_st_rudder.payloadPedalConfig_.debug_flags_0 = 0;
             dap_config_st_rudder.payloadPedalConfig_.minForceForEffects = 0;
             dap_config_st_rudder.payloadPedalConfig_.configHash_u32 = 393938365;
-            dap_config_st_rudder.payloadPedalConfig_.virtualPedalMass_u8 = 60;
-            dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8 = 100;
+            dap_config_st_rudder.payloadPedalConfig_.virtualPedalMass_u8 = 150;
+            dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8 = 200;
             dap_config_st_rudder.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = 10;
             dap_config_st_rudder.payloadPedalConfig_.endstopTravelRange_mm_u8 = 0;
-            dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = 10;
         }
         public byte[] getBytesPayload(payloadPedalConfig aux)
         {
