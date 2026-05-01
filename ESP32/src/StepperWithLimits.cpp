@@ -508,29 +508,27 @@ void IRAM_ATTR StepperWithLimits::readAndFormatServoPosition() {
 
 // Resolves 16-bit integer overflows from the servo's absolute encoder
 // by tracking wraps and aligning to the ESP32's internal 32-bit position tracker.
+// Tests: https://colab.research.google.com/github/ChrGri/DIY-Sim-Racing-FFB-Pedal/blob/develop/Validation/TestsServoPosition/UnitTestUnwrapping.ipynb
 void IRAM_ATTR StepperWithLimits::unwrapServoPosition() {
     int32_t servoPosCorrected_i32 = getServosInternalPosition();
     int32_t espPos_i32 = getCurrentPosition();
 
-    for (uint8_t wrapIndex_u8 = 0; wrapIndex_u8 < MAX_WRAP_ITERATIONS; wrapIndex_u8++) {
-        bool posCorrectedInLoop = false;
-        int32_t posDiff = espPos_i32 - servoPosCorrected_i32;
+    int32_t posDiff = espPos_i32 - servoPosCorrected_i32;
 
-        // If diff > 32767, the servo value wrapped over the positive boundary (e.g. 32767 -> -32768)
-        if (posDiff > ENCODER_OVERFLOW_THRESHOLD) {
-            servoPosCorrected_i32 += ENCODER_WRAP_VALUE;
-            posCorrectedInLoop = true;
-        } 
-        // If diff < -32768, the servo value wrapped over the negative boundary
-        else if (posDiff < ENCODER_UNDERFLOW_THRESHOLD) {
-            servoPosCorrected_i32 -= ENCODER_WRAP_VALUE;
-            posCorrectedInLoop = true;
-        }
-
-        // Break early if fully aligned
-        if (!posCorrectedInLoop) break;
+    // determine number of wraps based on the difference between the ESP's position and the servo's reported position.
+    int32_t wraps = 0;
+    if (posDiff > ENCODER_OVERFLOW_THRESHOLD) { // > 32767
+        // Offset +32768 fits perfectly for the positive branch
+        wraps = (posDiff + 32768) / ENCODER_WRAP_VALUE; 
+        
+    } else if (posDiff < ENCODER_UNDERFLOW_THRESHOLD) { // < -32768
+        // Offset -32767 compensates for C++ integer division (truncation towards zero) 
+        // and the asymmetric boundary of the two's complement!
+        wraps = (posDiff - 32767) / ENCODER_WRAP_VALUE; 
     }
-    
+
+    // correct the servo position by adding the wrap offset, which aligns the 16-bit encoder reading with the ESP's 32-bit position tracking.
+    servoPosCorrected_i32 += wraps * ENCODER_WRAP_VALUE;
     setServosInternalPositionCorrected(servoPosCorrected_i32);
 }
 
