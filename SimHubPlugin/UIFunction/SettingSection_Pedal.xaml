@@ -37,7 +37,7 @@
                 </StackPanel>
                 <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
                     <styles:SHToggleButton x:Name="dump_pedal_response_to_file" Content="" Checked="dump_pedal_response_to_file_Checked" Unchecked="dump_pedal_response_to_file_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Dump pedal realtime status to file, it should be off when not in use" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                    <Label Content="{SLoc DIYFFBPedalPlugin_TextLogPedalStates, 'Log Pedal States'}" Height="20" Width="80" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextLogPedalStates, 'Capture pedal trace'}" Height="20" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                     <TextBlock 
                        Height="11"
                        VerticalAlignment="Center"
