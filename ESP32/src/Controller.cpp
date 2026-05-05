@@ -31,10 +31,12 @@ uint16_t IRAM_ATTR_FLAG NormalizeControllerOutputValue(float value, float minVal
 #define JOYSTICK_AXIS_MINIMUM_U16 0U
 #define JOYSTICK_AXIS_MAXIMUM_U16 65535U
 
+uint16_t pedalType_u16 = 0U; // 0=Clutch, 1=Brake, 2=Throttle
+
 Joystick_ joystick_(JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_JOYSTICK,
                     0, 0,                 // Button Count, Hat Switch Count
                     false, false, false,  // no X and no Y, no Z Axis
-                    true, false, false,  //  Rx, no Ry, no Rz
+                    true, true, true,  //  Rx, no Ry, no Rz
                     false, false,         // No rudder or throttle
                     false, false, false);  // No accelerator, brake, or steering;
 
@@ -42,6 +44,8 @@ void SetupController_USB(uint8_t pedal_ID)
 {
   int pid_i32;
   char *apName_pc;
+
+  pedalType_u16 = pedal_ID;
 
   switch (pedal_ID)
   {
@@ -67,12 +71,16 @@ void SetupController_USB(uint8_t pedal_ID)
   int vid_i32 = 0x303A;
   joystick_.setVidPidProductVendorDescriptor(vid_i32, pid_i32, apName_pc, "OpenSource");
   joystick_.setRxAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
+  joystick_.setRyAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
+  joystick_.setRzAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
   joystick_.begin();
 }
 
 void SetupController()
 {
   joystick_.setRxAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
+  joystick_.setRyAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
+  joystick_.setRzAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
   joystick_.begin();
 }
 
@@ -92,7 +100,23 @@ void SetControllerOutputValue(uint16_t value)
 
   usb_hid.sendReport(0, &hid_report, sizeof(hid_report));
   */
-  joystick_.setRxAxis(value);
+
+  switch (pedalType_u16)
+  {
+    case 0:
+      joystick_.setRxAxis(value);
+      break;
+    case 1:
+      joystick_.setRyAxis(value);
+      break;
+    case 2:
+      joystick_.setRzAxis(value);
+      break;
+    default:
+      joystick_.setRxAxis(value);
+      break;
+  }
+
   joystick_.sendState();
 }
 
