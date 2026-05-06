@@ -240,8 +240,8 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st) {
         bool endPosDetected = true; 
         int32_t setPosition = 0;
         
-        // Target sweep speed: 5cm/s
-        float endstopApproachingSpeedInMmPerSecond_fl32 = 50.0f;
+        // Target sweep speed: 2.5cm/s
+        float endstopApproachingSpeedInMmPerSecond_fl32 = 25.0f;
         float endstopApproachingSpeed_fl32 = endstopApproachingSpeedInMmPerSecond_fl32 / spindlePitch * stepsPerMotorRev_u32;
         endstopApproachingSpeed_fl32 = constrain(endstopApproachingSpeed_fl32, 10000, MAXIMUM_STEPPER_SPEED_U32 * 0.2f);
 
