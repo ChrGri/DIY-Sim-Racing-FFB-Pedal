@@ -501,6 +501,14 @@ namespace User.PluginSdkDemo
 
 
         }
+		
+		
+		private void btn_USB_Flash_Click(object sender, RoutedEventArgs e)
+		{
+			// Open the new flasher window and pass the plugin reference to handle serial port locks
+			var flasherWindow = new User.PluginSdkDemo.UIFunction.FirmwareFlasherWindow(Plugin);
+			flasherWindow.ShowDialog();
+		}
 
 
     }

@@ -653,6 +653,12 @@
                                                         <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnBridgeDebug, 'Bridge Debug'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
+                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_USB_Flash_Click" ToolTip="USB Flash" Margin="5,0,5,0">
+                                                    <StackPanel>
+                                                        <Image Width="30" Height="30" Source="{StaticResource Monitor}" />
+                                                        <Label Content="USB Flash" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
                                             </StackPanel>
                                             
 
