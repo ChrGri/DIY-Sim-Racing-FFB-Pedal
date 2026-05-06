@@ -15,9 +15,9 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Margin="0,5,0,10">
-                    <Label Content="Firmware:" Width="80" Foreground="White" VerticalAlignment="Center"/>
-                    <TextBox x:Name="TxtBinPath" Width="240" Height="25" IsReadOnly="True" Background="#333" Foreground="White"/>
-                    <styles:SHButtonPrimary Content="Browse..." Width="70" Height="25" Margin="5,0,0,0" Click="BtnBrowse_Click"/>
+                    <Label Content="Hardware:" Width="80" Foreground="White" VerticalAlignment="Center"/>
+                    <!-- The DisplayMemberPath shows the friendly name, SelectedValuePath holds the folder name -->
+                    <ComboBox x:Name="CboFirmware" Width="240" Height="25" DisplayMemberPath="Key" SelectedValuePath="Value"/>
                 </StackPanel>
 
                 <styles:SHButtonPrimary x:Name="BtnFlash" Content="Flash Firmware" Height="30" Click="BtnFlash_Click"/>

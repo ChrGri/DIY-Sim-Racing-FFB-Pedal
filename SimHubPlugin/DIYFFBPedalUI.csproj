@@ -541,7 +541,7 @@
   <ItemGroup>
     <Content Include=".gitignore" />
     <EmbeddedResource Include="Resources\esptool.exe" />
-    <Content Include="sdkmenuicon.png" />
+	<Content Include="sdkmenuicon.png" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Language\DiyActivePedal.resx">
@@ -558,7 +558,9 @@
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Resources\Firmware\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy /y $(ProjectDir)obj\Release\DiyActivePedal.dll  $(ProjectDir)bin 
@@ -571,4 +573,10 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+<Target Name="EmbedDynamicFirmware" BeforeTargets="BeforeBuild">
+	<Exec Command="$(ProjectDir)..\copy_firmwares.bat" WorkingDirectory="$(ProjectDir).." />
+	<ItemGroup>
+		<EmbeddedResource Include="Resources\Firmware\**\*.*" />
+	</ItemGroup>
+</Target>
 </Project>

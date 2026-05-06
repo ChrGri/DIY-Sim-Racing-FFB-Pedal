@@ -1,8 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Ports;
+using System.Reflection;
 using System.Windows;
-using Microsoft.Win32;
 
 namespace User.PluginSdkDemo.UIFunction
 {
@@ -16,10 +17,10 @@ namespace User.PluginSdkDemo.UIFunction
             InitializeComponent();
             _plugin = plugin;
             _flasher = new EspFlasher();
-            
-            _flasher.OnOutputReceived += (s, msg) => 
+
+            _flasher.OnOutputReceived += (s, msg) =>
             {
-                Dispatcher.Invoke(() => 
+                Dispatcher.Invoke(() =>
                 {
                     TxtLog.AppendText(msg + Environment.NewLine);
                     TxtLog.ScrollToEnd();
@@ -27,6 +28,52 @@ namespace User.PluginSdkDemo.UIFunction
             };
 
             RefreshPorts();
+            PopulateFirmwareDropdown();
+        }
+
+        private void PopulateFirmwareDropdown()
+        {
+            var firmwareOptions = new Dictionary<string, string>();
+
+            // The path to the manifest inside the DLL
+            string manifestResourceName = "User.PluginSdkDemo.Resources.Firmware.manifest.txt";
+            var assembly = Assembly.GetExecutingAssembly();
+
+            try
+            {
+                using (Stream stream = assembly.GetManifestResourceStream(manifestResourceName))
+                {
+                    if (stream != null)
+                    {
+                        using (StreamReader reader = new StreamReader(stream))
+                        {
+                            string line;
+                            while ((line = reader.ReadLine()) != null)
+                            {
+                                line = line.Trim();
+                                if (!string.IsNullOrEmpty(line))
+                                {
+                                    // Create a clean display name for the UI. 
+                                    // E.g., "esp32s3usbotg_pcbV6" becomes "esp32s3usbotg pcbV6"
+                                    string displayName = line.Replace("_", " ");
+                                    firmwareOptions.Add(displayName, line);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        TxtLog.AppendText("Warning: manifest.txt not found in embedded resources. Did you run the batch script?\n");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                TxtLog.AppendText($"Error reading firmware manifest: {ex.Message}\n");
+            }
+
+            CboFirmware.ItemsSource = firmwareOptions;
+            if (CboFirmware.Items.Count > 0) CboFirmware.SelectedIndex = 0;
         }
 
         private void BtnRefreshCom_Click(object sender, RoutedEventArgs e) => RefreshPorts();
@@ -41,70 +88,87 @@ namespace User.PluginSdkDemo.UIFunction
             if (CboComPorts.Items.Count > 0) CboComPorts.SelectedIndex = 0;
         }
 
-        private void BtnBrowse_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Extracts an embedded binary from the DLL to the Windows Temp folder
+        /// </summary>
+        private string ExtractFirmwareResource(string boardFolder, string fileName)
         {
-            OpenFileDialog ofd = new OpenFileDialog
-            {
-                Filter = "Firmware File (firmware.bin)|firmware.bin|All Binary Files (*.bin)|*.bin",
-                Title = "Select firmware.bin"
-            };
+            // The resource path format: [Namespace].[Folders].[Filename]
+            string resourceName = $"User.PluginSdkDemo.Resources.Firmware.{boardFolder}.{fileName}";
 
-            if (ofd.ShowDialog() == true)
+            // Create a specific temp folder for this board to avoid overlaps
+            string tempDir = Path.Combine(Path.GetTempPath(), "SimHub_DIY_Pedal_Flasher", boardFolder);
+            Directory.CreateDirectory(tempDir);
+
+            string outPath = Path.Combine(tempDir, fileName);
+
+            var assembly = Assembly.GetExecutingAssembly();
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
             {
-                TxtBinPath.Text = ofd.FileName;
+                if (stream == null)
+                {
+                    throw new FileNotFoundException($"Could not find embedded resource: {resourceName}. Please check folder names and Build Action.");
+                }
+
+                using (FileStream fs = new FileStream(outPath, FileMode.Create, FileAccess.Write))
+                {
+                    stream.CopyTo(fs);
+                }
             }
+
+            return outPath;
         }
 
         private async void BtnFlash_Click(object sender, RoutedEventArgs e)
         {
-            if (CboComPorts.SelectedItem == null || string.IsNullOrWhiteSpace(TxtBinPath.Text))
+            if (CboComPorts.SelectedItem == null || CboFirmware.SelectedItem == null)
             {
-                MessageBox.Show("Select a COM port and the firmware.bin file.");
-                return;
-            }
-
-            string firmwarePath = TxtBinPath.Text;
-            string directory = Path.GetDirectoryName(firmwarePath);
-
-            // Auto-resolve all required files
-            string bootloaderPath = Path.Combine(directory, "bootloader.bin");
-            string partitionsPath = Path.Combine(directory, "partitions.bin");
-            string bootAppPath = Path.Combine(directory, "boot_app0.bin");
-
-            if (!File.Exists(bootloaderPath) || !File.Exists(partitionsPath) || !File.Exists(bootAppPath))
-            {
-                MessageBox.Show("Missing files! Ensure 'bootloader.bin', 'partitions.bin', and 'boot_app0.bin' are in the same folder as 'firmware.bin'.",
-                                "Files Missing", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("Please select a COM port and Hardware version.");
                 return;
             }
 
             string port = CboComPorts.SelectedItem.ToString();
+            string selectedBoardFolder = CboFirmware.SelectedValue.ToString();
 
             ForceDisconnectSerial(port);
 
             BtnFlash.IsEnabled = false;
             TxtLog.Clear();
+            TxtLog.AppendText($"Preparing to flash {selectedBoardFolder}...\n");
 
-            // Pass all four paths to the flasher
-            bool success = await _flasher.FlashFirmwareAsync(port, bootloaderPath, partitionsPath, bootAppPath, firmwarePath);
-
-            if (success)
+            try
             {
-                MessageBox.Show("Firmware updated successfully!",
-                                "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            else
-            {
-                MessageBox.Show("Flashing Failed. Check the log for details.",
-                                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+                // 1. Extract all 4 files from the embedded resources dynamically
+                string bootloaderPath = ExtractFirmwareResource(selectedBoardFolder, "bootloader.bin");
+                string partitionsPath = ExtractFirmwareResource(selectedBoardFolder, "partitions.bin");
+                string bootAppPath = ExtractFirmwareResource(selectedBoardFolder, "boot_app0.bin");
+                string firmwarePath = ExtractFirmwareResource(selectedBoardFolder, "firmware.bin");
 
-            BtnFlash.IsEnabled = true;
+                // 2. Pass them to the flasher
+                bool success = await _flasher.FlashFirmwareAsync(port, bootloaderPath, partitionsPath, bootAppPath, firmwarePath);
+
+                if (success)
+                {
+                    MessageBox.Show("Firmware updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show("Flashing Failed. Check the log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error extracting firmware: {ex.Message}", "Extraction Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                TxtLog.AppendText($"\nERROR: {ex.Message}\n");
+            }
+            finally
+            {
+                BtnFlash.IsEnabled = true;
+            }
         }
 
         private void ForceDisconnectSerial(string targetPort)
         {
-            // Iterate through the plugin's serial ports and close them if they match the target
             for (int i = 0; i < 3; i++)
             {
                 if (_plugin._serialPort[i].IsOpen && _plugin._serialPort[i].PortName.Equals(targetPort, StringComparison.OrdinalIgnoreCase))
@@ -113,8 +177,7 @@ namespace User.PluginSdkDemo.UIFunction
                     try { _plugin._serialPort[i].Close(); } catch { }
                 }
             }
-            
-            // Also check the ESP Now sync port
+
             if (_plugin.ESPsync_serialPort.IsOpen && _plugin.ESPsync_serialPort.PortName.Equals(targetPort, StringComparison.OrdinalIgnoreCase))
             {
                 try { _plugin.ESPsync_serialPort.Close(); } catch { }
