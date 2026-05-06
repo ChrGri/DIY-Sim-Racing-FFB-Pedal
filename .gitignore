@@ -23,6 +23,7 @@ obj/
 ## Compiled & generated files
 *.dll
 *.exe
+!SimHubPlugin/Resources/esptool.exe
 *.pdb
 *.cache
 *.ilk
