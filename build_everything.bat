@@ -52,6 +52,9 @@ if not defined MSBUILD_PATH (
 :: -----------------------------------------------------
 echo === Step 1: Building ESP32 Environments ===
 if exist "ESP32\platformio.ini" (
+    echo Cleaning ESP32\.pio folder...
+    if exist "ESP32\.pio" rmdir /s /q "ESP32\.pio"
+    
     cd ESP32
     call !PIO_CMD! run
     cd ..
@@ -65,6 +68,9 @@ echo.
 :: -----------------------------------------------------
 echo === Step 2: Building ESP32_master Environments ===
 if exist "ESP32_master\platformio.ini" (
+    echo Cleaning ESP32_master\.pio folder...
+    if exist "ESP32_master\.pio" rmdir /s /q "ESP32_master\.pio"
+    
     cd ESP32_master
     call !PIO_CMD! run
     cd ..
@@ -77,11 +83,13 @@ echo.
 :: Step 3: Build SimHub Plugin DLL
 :: -----------------------------------------------------
 echo === Step 3: Compiling SimHub Plugin DLL ===
-:: Note: This will automatically trigger copy_firmwares.bat because of our MSBuild Target!
-if exist "SimHubPlugin" (
-    "!MSBUILD_PATH!" "SimHubPlugin" -p:Configuration=Release -t:Rebuild
+
+:: Prüfen, ob die Projektdatei existiert, bevor wir MSBuild aufrufen
+if exist "SimHubPlugin\DIYFFBPedalUI.csproj" (
+    "%MSBUILD_PATH%" "SimHubPlugin\DIYFFBPedalUI.csproj" -p:Configuration=Release -t:Rebuild
 ) else (
-    echo [ERROR] SimHubPlugin folder not found.
+    echo [ERROR] Die Datei "SimHubPlugin\DIYFFBPedalUI.csproj" wurde nicht gefunden.
+    echo Bitte den genauen Dateinamen der .csproj Datei im Skript ueberpruefen!
 )
 
 echo.
