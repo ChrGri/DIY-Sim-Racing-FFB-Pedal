@@ -63,7 +63,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: DiyActivePedal-DLL
-          path: SimHubPlugin/bin/Release/DiyActivePedal.dll
+          # Das ** durchsucht alle Unterordner (findet es also in obj/Release/ ODER bin/Release/)
+          path: SimHubPlugin/**/DiyActivePedal.dll
 
       # Macht NUR ein echtes Release, wenn der Branch "main" ist
       - name: Create Public Release
@@ -72,6 +73,9 @@ jobs:
         with:
           tag_name: Build_${{ steps.date.outputs.date }}
           name: Official Release ${{ steps.date.outputs.date }}
-          files: SimHubPlugin/bin/Release/DiyActivePedal.dll
+          # Beide Pfade angeben, GitHub greift sich einfach den, wo die Datei liegt
+          files: |
+            SimHubPlugin/obj/Release/DiyActivePedal.dll
+            SimHubPlugin/bin/Release/DiyActivePedal.dll
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
