@@ -46,7 +46,7 @@ jobs:
           Write-Host "Installation abgeschlossen!"
 
       - name: Restore NuGet Packages
-        run: nuget restore "SimHubPlugin/User.PluginSdkDemo.sln"
+        run: nuget restore "SimHubPlugin/DiyFfbPedal.sln"
 
       # --- 4. Ausführen deines Master Batch Skripts ---
       - name: Run Master Build Script
