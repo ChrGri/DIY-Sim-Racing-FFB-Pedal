@@ -32,18 +32,25 @@ jobs:
       # --- 3. SimHub Referenzen vorbereiten ---
       - name: Download & Extract SimHub Requirements
         run: | 
-          aria2c -j1 -o innounp050.rar "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/refs/heads/develop/Helper/innounp050.rar"
+          # Nur noch SimHub herunterladen (kein altes innounp mehr nötig!)
           aria2c -j1 -o SimHub.zip "https://github.com/SHWotever/SimHub/releases/download/9.11.12/SimHub.9.11.12.zip"
-          7z x innounp050.rar
           7z x SimHub.zip
-          mkdir "C:\Program Files (x86)\SimHub\"
           
-          # Suche die exakte .exe Datei und speichere den Namen in einer Variable
+          # Modernes innoextract über Chocolatey installieren (dauert nur wenige Sekunden)
+          choco install innoextract -y
+          
+          # Installer finden
           $installer = Get-ChildItem -Filter SimHubSetup_*.exe | Select-Object -First 1
           Write-Host "Gefundener Installer: $($installer.Name)"
           
-          # Führe innounp mit dem echten, gefundenen Dateinamen aus
-          .\innounp.exe -v -x -b -e -d"C:\Program Files (x86)\SimHub\" $installer.Name
+          # Mit innoextract entpacken
+          innoextract $installer.Name -d "C:\Program Files (x86)\SimHub\"
+          
+          # innoextract packt die Dateien standardmäßig in einen Unterordner "app". 
+          # Wir verschieben sie eine Ebene nach oben, damit MSBuild sie sofort findet.
+          if (Test-Path "C:\Program Files (x86)\SimHub\app") {
+              Move-Item -Path "C:\Program Files (x86)\SimHub\app\*" -Destination "C:\Program Files (x86)\SimHub\" -Force
+          }
 
       - name: Restore NuGet Packages
         run: nuget restore "SimHubPlugin/User.PluginSdkDemo.sln"
