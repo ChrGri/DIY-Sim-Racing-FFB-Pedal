@@ -31,14 +31,19 @@ jobs:
 
       # --- 3. SimHub Referenzen vorbereiten ---
       - name: Download & Extract SimHub Requirements
-        shell: cmd 
         run: | 
           aria2c -j1 -o innounp050.rar "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/refs/heads/develop/Helper/innounp050.rar"
           aria2c -j1 -o SimHub.zip "https://github.com/SHWotever/SimHub/releases/download/9.11.12/SimHub.9.11.12.zip"
           7z x innounp050.rar
           7z x SimHub.zip
           mkdir "C:\Program Files (x86)\SimHub\"
-          innounp.exe -v -x -b -e -d"C:\Program Files (x86)\SimHub\" SimHubSetup_*.exe
+          
+          # Suche die exakte .exe Datei und speichere den Namen in einer Variable
+          $installer = Get-ChildItem -Filter SimHubSetup_*.exe | Select-Object -First 1
+          Write-Host "Gefundener Installer: $($installer.Name)"
+          
+          # Führe innounp mit dem echten, gefundenen Dateinamen aus
+          .\innounp.exe -v -x -b -e -d"C:\Program Files (x86)\SimHub\" $installer.Name
 
       - name: Restore NuGet Packages
         run: nuget restore "SimHubPlugin/User.PluginSdkDemo.sln"
