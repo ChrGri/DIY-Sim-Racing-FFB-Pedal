@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
@@ -19,10 +19,13 @@ namespace User.PluginSdkDemo
                 Plugin.Settings.table_selected = (uint)MyTab.SelectedIndex;                
                 Plugin._calculations.Update_CV1_textbox = true;
                 Plugin._calculations.Update_CV2_textbox = true;
+                Plugin._calculations.Update_CV3_textbox = true;
+                Plugin._calculations.Update_CV4_textbox = true;
                 Plugin._calculations.OTASettingUpdate_b = true;
                 PedalTabChange = true;
                 PedalTabChange_last = DateTime.Now;
                 updateTheGuiFromConfig();
+                Plugin.ConfigService.RefreshConfigList();
             }
         }
 
@@ -33,12 +36,6 @@ namespace User.PluginSdkDemo
 
         private void Function_Tab_seleciton_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (Function_Tab_seleciton.SelectedIndex == 2)
-            {
-                //Update_Profile_Checkbox_b = true;
-                Plugin._calculations.Update_Profile_Checkbox_b = true;
-                updateTheGuiFromConfig();
-            }
         }
 
 
@@ -49,6 +46,8 @@ namespace User.PluginSdkDemo
                 //Update_CV_textbox = true;
                 Plugin._calculations.Update_CV1_textbox = true;
                 Plugin._calculations.Update_CV2_textbox = true;
+                Plugin._calculations.Update_CV3_textbox = true;
+                Plugin._calculations.Update_CV4_textbox = true;
                 Plugin._calculations.OTASettingUpdate_b = true;
                 updateTheGuiFromConfig();
             }

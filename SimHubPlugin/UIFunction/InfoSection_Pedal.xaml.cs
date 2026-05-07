@@ -12,8 +12,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-
-namespace User.PluginSdkDemo.UIFunction
+using WoteverLocalization;
+namespace DiyFfbPedal.UIFunction
 {
     /// <summary>
     /// InfoSection_Pedal.xaml 的互動邏輯
@@ -89,48 +89,16 @@ namespace User.PluginSdkDemo.UIFunction
         {
             if (calculation != null)
             {
-                calculation.PedalStatusString = "Waiting...";
-                if (calculation.PedalSerialAvailability[Settings.table_selected])
+
+                if (Settings.Pedal_ESPNow_Sync_flag[Settings.table_selected])
                 {
-                    calculation.PedalStatusString = "Usb Connected";
+                    calculation.PedalStatusString = PedalConstStrings.WirelessConnectState[(int)calculation.pedalWirelessStatus[Settings.table_selected]];
                 }
                 else
                 {
-                    if (Settings.auto_connect_flag[Settings.table_selected] == 1)
-                    {
-                        calculation.PedalStatusString = calculation.PedalConnetingString;
-                    }
+                    calculation.PedalStatusString = PedalConstStrings.ConnectState[(int)calculation.pedalSerialStatus[Settings.table_selected]];
                 }
-                if (Settings.Pedal_ESPNow_Sync_flag[Settings.table_selected])
-                {
-                    for (int pedalIDX = 0; pedalIDX < 3; pedalIDX++)
-                    {
-                        if (calculation.PedalAvailability[pedalIDX] && Settings.table_selected == pedalIDX)
-                        {
-                            calculation.PedalStatusString = "Wireless";
-                            
-                        }
-                    }
-
-                }
-                switch (calculation.ServoStatus[Settings.table_selected])
-                {
-                    case (byte)enumServoStatus.Off:
-                        calculation.PedalStatusString += "\nOff";
-                        break;
-                    case (byte)enumServoStatus.On:
-                        calculation.PedalStatusString += "\nOn";
-                        break;
-                    case (byte)enumServoStatus.Idle:
-                        calculation.PedalStatusString += "\nIdle";
-                        break;
-                    case (byte)enumServoStatus.ForceStop:
-                        calculation.PedalStatusString += "\nForceStop";
-                        break;
-                    default:
-                        calculation.PedalStatusString += "\n";
-                        break;
-                }
+                calculation.PedalStatusString += "\n" + PedalConstStrings.ServoStatus[(int)calculation.ServoStatus[Settings.table_selected]];
                 calculation.PedalStatusString += "\n" + Constants.pedalConfigPayload_version + "\n" + Constants.pluginVersion;
                 if (calculation.PedalFirmwareVersion[Settings.table_selected, 2] != 0)
                 {
@@ -151,12 +119,13 @@ namespace User.PluginSdkDemo.UIFunction
 
 
             }
-            if(info_label!=null) info_label.Content = "Connection:\nServo State:\nDAP Version:\nPlugin Version:\nPedal Version:";
+
+            if(info_label!=null) info_label.Content = SLoc.GetValue("DIYFFBPedalPlugin_TextLabelConnection","Connection")+":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelServoState", "Servo State") +":\n"+ SLoc.GetValue("DIYFFBPedalPlugin_TextLabelDAPVersion", "DAP Version") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelPluginVersion", "Plugin Version") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelPedalVersion", "Pedal Version") + ":\n";
             if (info_label_2 != null) info_label_2.Content = calculation.PedalStatusString;
 
 
             if(rssibar!=null) rssibar.updateRSSI(calculation.rssi[Settings.table_selected]);
-            if (Label_RSSI != null && calculation.rssi[Settings.table_selected] < -20 && calculation.rssi[Settings.table_selected] > -100 && calculation.PedalAvailability[Settings.table_selected])
+            if (Label_RSSI != null && calculation.rssi[Settings.table_selected] < -20 && calculation.rssi[Settings.table_selected] > -100 && calculation.pedalWirelessStatus[Settings.table_selected]==WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY)
             {
                 if (calculation.BridgeSerialAvailability)
                 {

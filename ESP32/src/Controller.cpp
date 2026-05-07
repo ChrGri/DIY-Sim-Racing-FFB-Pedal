@@ -1,6 +1,8 @@
 #include "Controller.h"
+#include <math.h>
 
-uint16_t IRAM_ATTR_FLAG NormalizeControllerOutputValue(float value, float minVal, float maxVal, float maxGameOutput) {
+uint16_t IRAM_ATTR_FLAG NormalizeControllerOutputValue(float value, float minVal, float maxVal, float maxGameOutput_u8)
+{
   float valRange_fl32 = (maxVal - minVal);
   float deadzoneCorrection_fl32 = 0.005f * valRange_fl32;
 
@@ -8,13 +10,14 @@ uint16_t IRAM_ATTR_FLAG NormalizeControllerOutputValue(float value, float minVal
   float corrected_max_value_fl32 = maxVal - deadzoneCorrection_fl32;
   float corrected_valRange_fl32 = (corrected_max_value_fl32 - corrected_min_value_fl32);
   
-  if (abs(corrected_valRange_fl32) < 0.0000001f) {
-    return JOYSTICK_MIN_VALUE;   // avoid div-by-zero
+  if (fabsf(corrected_valRange_fl32) < 0.0000001f)
+  {
+    return s_JOYSTICK_MIN_VALUE_U16;   // avoid div-by-zero
   }
 
   float fractional_fl32 = (value - corrected_min_value_fl32) / corrected_valRange_fl32;
-  float controller_fl32 = JOYSTICK_MIN_VALUE + (fractional_fl32 * JOYSTICK_RANGE);
-  uint16_t controller_u16 = constrain(controller_fl32, JOYSTICK_MIN_VALUE, (maxGameOutput * 0.01f) * JOYSTICK_MAX_VALUE);
+  float controller_fl32 = s_JOYSTICK_MIN_VALUE_U16 + (fractional_fl32 * s_JOYSTICK_RANGE_U16);
+  uint16_t controller_u16 = constrain(controller_fl32, s_JOYSTICK_MIN_VALUE_U16, (maxGameOutput_u8 * 0.01f) * s_JOYSTICK_MAX_VALUE_U16);
   return controller_u16;
 }
 
@@ -22,128 +25,73 @@ uint16_t IRAM_ATTR_FLAG NormalizeControllerOutputValue(float value, float minVal
 #ifdef USB_JOYSTICK
 
 #include <string>
-#include "Adafruit_TinyUSB.h"
+//#include "Adafruit_TinyUSB.h"
+#include "Joystick_ESP32S2.h"
 
+#define JOYSTICK_AXIS_MINIMUM_U16 0U
+#define JOYSTICK_AXIS_MAXIMUM_U16 65535U
 
-#define JOYSTICK_AXIS_MINIMUM 0
-#define JOYSTICK_AXIS_MAXIMUM 65535
+uint16_t pedalType_u16 = 0U; // 0=Clutch, 1=Brake, 2=Throttle
 
+Joystick_ joystick_(JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_JOYSTICK,
+                    0, 0,                 // Button Count, Hat Switch Count
+                    false, false, false,  // no X and no Y, no Z Axis
+                    true, true, true,  //  Rx, no Ry, no Rz
+                    false, false,         // No rudder or throttle
+                    false, false, false);  // No accelerator, brake, or steering;
 
-// HID Report Descriptor for Racing Pedal (Brake only)
-const uint8_t desc_hid_report[] = {
-    0x05, 0x01,        // Usage Page (Generic Desktop Controls)
-    0x09, 0x05,        // Usage (0x04: Joystick, 0x05: Gamepad)
-    0xA1, 0x01,        // Collection (Application)
-
-    0x05, 0x02,        //   Usage Page (Simulation Controls)
-    0x09, 0xC5,        //   Usage (Brake)  <-- special "pedal" usage
-    0x15, 0x00,        //   Logical Minimum (0)
-    0x27, 0xFF, 0xFF, 0x00, 0x00,  //   0x25: 1byte logical max; 0x26: 2byte logical max; 0x27: 4byte logical max;  Logical Maximum (65535)
-    0x75, 0x10,        //   Report Size (16 bits)
-    0x95, 0x01,        //   Report Count (1)
-    0x81, 0x02,        //   Input (Data,Var,Abs)  <-- absolute, not relative
-
-    0xC0               // End Collection
-};
-
-
-// USB HID object
-Adafruit_USBD_HID usb_hid;
-
-// Report payload for the two axes
-typedef struct {
-  uint8_t brake_lowerByte;
-  uint8_t brake_higherByte;
-} hid_report_t;
-
-hid_report_t hid_report = {0,0};
-
-
-
-void SetupController_USB(uint8_t pedal_ID) 
+void SetupController_USB(uint8_t pedal_ID)
 {
-  int PID;
-  char *APname;
-  switch(pedal_ID)
+  int pid_i32;
+  char *apName_pc;
+
+  pedalType_u16 = pedal_ID;
+
+  switch (pedal_ID)
   {
     case 0:
-      PID=0x8214;
-      APname="FFB_Pedal_Clutch";
+      pid_i32 = 0x8332;
+      apName_pc = "FFB_Pedal_Clutch";
       break;
     case 1:
-      PID=0x8215;
-      APname="FFB_Pedal_Brake";
+      pid_i32 = 0x8333;
+      apName_pc = "FFB_Pedal_Brake";
       break;
     case 2:
-      PID=0x8216;
-      APname="FFB_Pedal_Throttle";
+      pid_i32 = 0x8334;
+      apName_pc = "FFB_Pedal_Throttle";
       break;
     default:
-      PID=0x8217;
-      APname="FFB_Pedal_NOASSIGNMENT";
+      pid_i32 = 0x8332;
+      apName_pc = "FFB_Pedal_NOASSIGNMENT";
       break;
 
   }
 
-    // Set VID and PID
-  TinyUSBDevice.setID(0x3035, PID);
-  TinyUSBDevice.setProductDescriptor(APname);
-  TinyUSBDevice.setManufacturerDescriptor("OpenSource");
-
-  // Manual begin() is required on core without built-in support e.g. mbed rp2040
-  if (!TinyUSBDevice.isInitialized()) {
-    TinyUSBDevice.begin(0);
-  }
-
-  // Setup HID
-  usb_hid.setPollInterval(10); // time in ms
-  usb_hid.setReportDescriptor(desc_hid_report, sizeof(desc_hid_report));
-  usb_hid.begin();
-
-  // If already enumerated, additional class driverr begin() e.g msc, hid, midi won't take effect until re-enumeration
-  if (TinyUSBDevice.mounted()) {
-    TinyUSBDevice.detach();
-    delay(10);
-    TinyUSBDevice.attach();
-  }
+  int vid_i32 = 0x303A;
+  joystick_.setVidPidProductVendorDescriptor(vid_i32, pid_i32, apName_pc, "OpenSource");
+  joystick_.setRxAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
+  joystick_.setRyAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
+  joystick_.setRzAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
+  joystick_.begin();
 }
 
-void SetupController() 
+void SetupController()
 {
-
-  // Manual begin() is required on core without built-in support e.g. mbed rp2040
-  if (!TinyUSBDevice.isInitialized()) {
-    TinyUSBDevice.begin(0);
-  }
-
-  // Setup HID
-  usb_hid.setPollInterval(10); // time in ms
-  usb_hid.setReportDescriptor(desc_hid_report, sizeof(desc_hid_report));
-  usb_hid.begin();
-
-  // If already enumerated, additional class driverr begin() e.g msc, hid, midi won't take effect until re-enumeration
-  if (TinyUSBDevice.mounted()) {
-    TinyUSBDevice.detach();
-    delay(10);
-    TinyUSBDevice.attach();
-  }
+  joystick_.setRxAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
+  joystick_.setRyAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
+  joystick_.setRzAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
+  joystick_.begin();
 }
 
-bool IsControllerReady() { 
-  bool returnValue_b = true;
-  if (!TinyUSBDevice.mounted()) {
-    returnValue_b = false;
-  }
-  if (!usb_hid.ready())
-  {
-    returnValue_b = false;
-  }
-
-  return returnValue_b;
+bool IsControllerReady()
+{
+  return joystick_.IsReady();
 }
 
-void SetControllerOutputValue(uint16_t value) {
-  
+void SetControllerOutputValue(uint16_t value)
+{
+  /*  
   uint8_t highByte = (uint8_t)(value >> 8);
 	uint8_t lowByte = (uint8_t)(value & 0x00FF);
 
@@ -151,6 +99,25 @@ void SetControllerOutputValue(uint16_t value) {
   hid_report.brake_higherByte = highByte;
 
   usb_hid.sendReport(0, &hid_report, sizeof(hid_report));
+  */
+
+  switch (pedalType_u16)
+  {
+    case 0:
+      joystick_.setRxAxis(value);
+      break;
+    case 1:
+      joystick_.setRyAxis(value);
+      break;
+    case 2:
+      joystick_.setRzAxis(value);
+      break;
+    default:
+      joystick_.setRxAxis(value);
+      break;
+  }
+
+  joystick_.sendState();
 }
 
 

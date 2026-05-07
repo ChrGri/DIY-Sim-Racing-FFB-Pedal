@@ -98,9 +98,9 @@ bool sendMessageToMaster(int32_t controllerValue)
   Joystick_Data.cycleCnt_u64++;
   Joystick_Data.timeSinceBoot_i64 = esp_timer_get_time() / 1000;
   Joystick_Data.controllerValue_i32 = controllerValue;
-  if(dap_calculationVariables_st.Rudder_status)
+  if(dap_calculationVariables_st.rudderStatus_b)
   {
-    if(dap_calculationVariables_st.rudder_brake_status)
+    if(dap_calculationVariables_st.rudderBrakeStatus_b)
     {
       Joystick_Data.pedal_status=2;
     }

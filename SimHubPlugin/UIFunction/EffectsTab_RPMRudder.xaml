@@ -1,17 +1,17 @@
-﻿<UserControl x:Class="User.PluginSdkDemo.UIFunction.EffectsTab_RPMRudder"
+<UserControl x:Class="DiyFfbPedal.UIFunction.EffectsTab_RPMRudder"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:User.PluginSdkDemo.UIFunction"
-             xmlns:localUI="clr-namespace:User.PluginSdkDemo.UIElement"
+             xmlns:local="clr-namespace:DiyFfbPedal.UIFunction"
+             xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
              d:DesignHeight="190" d:DesignWidth="540">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/DiyActivePedal;component/UIStyles/DefaultStyles.xaml"/>
+                <ResourceDictionary Source="/DiyFfbPedal;component/UIStyles/DefaultStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
@@ -20,12 +20,12 @@
             <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540">
                 <StackPanel Height="20" Width="540" Orientation="Horizontal">
                     <styles:SHToggleButton x:Name="checkbox_enable_RPM_rudder" Content="" Checked="checkbox_enable_RPM_rudder_Checked" Unchecked="checkbox_enable_RPM_rudder_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="60,0,0,0" ToolTip="Enable for RPM/Spped rumble, the trigger was save in local, no need sned config to Pedal"/>
-                    <Label Content="Engine RPM Rumble Effect" Height="15" Width="300" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="4,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectRudderEngineTittle, 'Engine RPM Rumble Effect'}" Height="15" Width="300" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="4,0,0,0"/>
                 </StackPanel>
-                <localUI:SliderWithLabel x:Name="Slider_RPM_AMP_rudder" Width="400" Height="40" SliderLength="400" TickFrequency="0.02" MaxValue="4" SliderName="Effect Amplitude" Unit="%" SliderValueChanged="Slider_RPM_AMP_rudder_SliderValueChanged"/>
+                <localUI:SliderWithLabel x:Name="Slider_RPM_AMP_rudder" Width="400" Height="40" SliderLength="400" TickFrequency="0.02" MaxValue="4" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectEngineAmp, 'Effect Amplitude'}" Unit="%" SliderValueChanged="Slider_RPM_AMP_rudder_SliderValueChanged"/>
                 <StackPanel Width="400" Height="50">
                     <StackPanel Width="400" Height="12" Orientation="Horizontal">
-                        <Label x:Name="label_RPM_freq_rudder"  Width="250" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Effect Frequency:" Height="12" Padding="0,0,0,0"/>
+                        <Label x:Name="label_RPM_freq_rudder"  Width="250" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="{SLoc DIYFFBPedalPlugin_TextEffectEngineFreq, 'Effect Frequency:'}" Height="12" Padding="0,0,0,0"/>
                     </StackPanel>
                     <StackPanel Width="400" Height="12" Orientation="Horizontal">
                         <Label x:Name="label_RPM_freq_min_rudder"  Width="50" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="MIN:" Height="12" Padding="0,0,0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>

@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace User.PluginSdkDemo.UIFunction
+namespace DiyFfbPedal.UIFunction
 {
     /// <summary>
     /// EffectsTab_Custom2.xaml 的互動邏輯
@@ -179,7 +179,7 @@ namespace User.PluginSdkDemo.UIFunction
                 try
                 {
                     string var1 = "";
-                    var1 = Plugin.Ncalc_reading(textBox_CV2_string.Text.ToString());
+                    if (Plugin != null)  var1 = Plugin.Ncalc_reading(textBox_CV2_string.Text.ToString());
                     Label_NCALC_CUS2.Content = var1;
                 }
                 catch { }

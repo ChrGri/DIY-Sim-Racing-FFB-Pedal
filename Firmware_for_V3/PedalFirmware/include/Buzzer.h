@@ -30,17 +30,17 @@ public:
         // stop the tone playing:
         noTone(buzzer_pin);
     }
-    void play_melody_tone(int* melody, int melody_size, double* noteDurations)
+    void play_melody_tone(int* melody, int melody_size, float* noteDurations)
     {
         // iterate over the notes of the melody:
         for (int thisNote = 0; thisNote < melody_size; thisNote++) {
             // to calculate the note duration, take one second divided by the note type.
             //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
-            double noteDuration = 1000 / noteDurations[thisNote];
+            float noteDuration = 1000.0f / noteDurations[thisNote];
             tone(buzzer_pin, melody[thisNote], noteDuration);
             // to distinguish the notes, set a minimum time between them.
             // the note's duration + 30% seems to work well:
-            double pauseBetweenNotes = noteDuration * 1.3;
+            float pauseBetweenNotes = noteDuration * 1.3f;
             delay(pauseBetweenNotes);
             // stop the tone playing:
             noTone(buzzer_pin);
@@ -56,7 +56,7 @@ public:
 
 
 
-    void single_beep_ledc_fade(int sound_Hz, int duration, double cycle)
+    void single_beep_ledc_fade(int sound_Hz, int duration, float cycle)
     {
         int step_quantity=80;
         int duration_steps = (duration/step_quantity);
@@ -64,7 +64,7 @@ public:
         int volume_step=255/step_quantity;
         for(int i=0;i<step_quantity;i++)
         {
-            volume=(i+1)*volume_step*sin(PI*cycle*(double)((double)(i+1)/(double)step_quantity));
+            volume=(i+1)*volume_step*sin(PI*cycle*((float)(i+1)/(float)step_quantity));
             tone_buzzer(sound_Hz,duration_steps,volume);
         }
         noTone_buzzer();

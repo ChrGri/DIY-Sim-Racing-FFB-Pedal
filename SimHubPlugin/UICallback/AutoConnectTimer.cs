@@ -5,134 +5,114 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
         private uint count_timmer_count = 0;
         private string Toast_tmp;
+        private WirelessConnectStateEnum[] pedalWirelessStatusLast = new WirelessConnectStateEnum[3] { WirelessConnectStateEnum.PEDAL_DISCONNECT, WirelessConnectStateEnum.PEDAL_DISCONNECT, WirelessConnectStateEnum.PEDAL_DISCONNECT };
+        private ConnectStateEnum[] pedalSerialStatusLast = new ConnectStateEnum[3] { ConnectStateEnum.PEDAL_DISCONNECT, ConnectStateEnum.PEDAL_DISCONNECT, ConnectStateEnum.PEDAL_DISCONNECT };
         public void connection_timmer_tick(object sender, EventArgs e)
         {
             //simhub action for debug
             Simhub_action_update();
-            string tmp = "Connecting";
-            int count_connection = ((int)count_timmer_count) % 4;
+           
 
-            switch (count_connection)
+            for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
             {
-                case 0:
-                    break;
-                case 1:
-                    tmp = tmp + ".";
-                    break;
-                case 2:
-                    tmp = tmp + "..";
-                    break;
-                case 3:
-                    tmp = tmp + "...";
-                    break;
-            }
-            info_text_connection = tmp;
-            system_info_text_connection = tmp;
-            Plugin._calculations.PedalConnetingString = tmp;
-            Plugin._calculations.BridgeConnetingString = tmp;
-            for (uint pedal_idex = 0; pedal_idex < 3; pedal_idex++)
-            {
-                if (Pedal_wireless_connection_update_b[pedal_idex])
+                if (Plugin._calculations.pedalWirelessStatus[pedalIdx] == WirelessConnectStateEnum.PEDAL_GET_BASIC_PACKETS_OVER_ESPNOW)
                 {
-                    Pedal_wireless_connection_update_b[pedal_idex] = false;
-                    if (Plugin.Settings.reading_config == 1)
-                    {
-                        Reading_config_auto(pedal_idex);
-                    }
+                    Reading_config_auto(pedalIdx);
+                    
                 }
+                if (Plugin._calculations.pedalSerialStatus[pedalIdx] == ConnectStateEnum.PEDAL_GET_BASIC_PACKETS && !Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalIdx])
+                {
+                    Reading_config_auto(pedalIdx);
+                    
+                }
+                
+                
             }
+
 
 
 
             count_timmer_count++;
             if (count_timmer_count > 1)
             {
-                if (Plugin.Settings.Pedal_ESPNow_auto_connect_flag)
+                
+                if (Plugin.BridgeHidService.IsConnected)
                 {
+                    if ((Plugin._calculations.bridgeConnectionStatus == BridgeConnectStateEnum.BRIDGE_DISCONNECT))
+                    {
+                        Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT;
+                        for (uint i = 0; i < 3; i++)
+                        {
+                            if (Plugin._calculations.pedalWirelessStatus[(uint)i] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
+                            {
+                                Plugin._calculations.pedalWirelessStatus[(uint)i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
+                            }
+
+                        }
+                        //ToastNotification("Pedal Wireless Bridge", "Connection initialized");
+                        //updateTheGuiFromConfig();
+                    }
+
+                }
+                
+                
+                if (Plugin.Settings.IsBridgeAutoConnect)
+                {
+
                     if (Plugin.PortExists(Plugin.Settings.ESPNow_port))
                     {
-                        if (Plugin.ESPsync_serialPort.IsOpen == false)
+                        if (OpenBridgeSerialConnection())
                         {
-                            Plugin.ESPsync_serialPort.PortName = Plugin.Settings.ESPNow_port;
-                            try
+                            if (!Plugin.BridgeHidService.IsConnected)
                             {
-                                // serial port settings
-                                Plugin.ESPsync_serialPort.Handshake = Handshake.None;
-                                Plugin.ESPsync_serialPort.Parity = Parity.None;
-                                //_serialPort[pedalIdx].StopBits = StopBits.None;
-                                Plugin.ESPsync_serialPort.ReadTimeout = 2000;
-                                Plugin.ESPsync_serialPort.WriteTimeout = 500;
-                                Plugin.ESPsync_serialPort.BaudRate = Bridge_baudrate;
-                                // https://stackoverflow.com/questions/7178655/serialport-encoding-how-do-i-get-8-bit-ascii
-                                Plugin.ESPsync_serialPort.Encoding = System.Text.Encoding.GetEncoding(28591);
-                                Plugin.ESPsync_serialPort.NewLine = "\r\n";
-                                Plugin.ESPsync_serialPort.ReadBufferSize = 40960;
-                                try
+                                Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT;
+                                for (uint i = 0; i < 3; i++)
                                 {
-                                    Plugin.ESPsync_serialPort.Open();
-                                    System.Threading.Thread.Sleep(200);
-                                    // ESP32 S3
-                                    /*
-                                    if (Plugin.Settings.Using_CDC_bridge)
+                                    if (Plugin._calculations.pedalWirelessStatus[(uint)i] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
                                     {
-                                        Plugin.ESPsync_serialPort.RtsEnable = false;
-                                        Plugin.ESPsync_serialPort.DtrEnable = true;
+                                        Plugin._calculations.pedalWirelessStatus[(uint)i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
                                     }
-                                    */
-                                    //SystemSounds.Beep.Play();
-                                    Plugin.Sync_esp_connection_flag = true;
-                                    btn_connect_espnow_port.Content = "Disconnect";
-                                    ESP_host_serial_timer = new System.Windows.Forms.Timer();
-                                    ESP_host_serial_timer.Tick += new EventHandler(timerCallback_serial_esphost_orig);
-                                    ESP_host_serial_timer.Tag = 3;
-                                    ESP_host_serial_timer.Interval = 8; // in miliseconds
-                                    ESP_host_serial_timer.Start();
-                                    System.Threading.Thread.Sleep(100);
-                                    ToastNotification("Pedal Wireless Bridge", "Connected");
-                                    updateTheGuiFromConfig();
+
                                 }
-                                catch (Exception ex)
-                                {
-                                    TextBox2.Text = ex.Message;
-                                    //Serial_connect_status[3] = false;
-                                }
+                                ToastNotification("Pedal Wireless Bridge", "Connection initialized");
+                                updateTheGuiFromConfig();
                             }
-                            catch (Exception ex)
-                            {
-                                TextBox2.Text = ex.Message;
-                            }
+                            
+
+                            btn_connect_espnow_port.Content = "Disconnect";
+
                         }
                     }
                     else
                     {
+                        /*
                         if (Plugin.Sync_esp_connection_flag)
                         {
                             Plugin.Sync_esp_connection_flag = false;
-                            dap_bridge_state_st.payloadBridgeState_.Pedal_availability_0 = 0;
-                            dap_bridge_state_st.payloadBridgeState_.Pedal_availability_1 = 0;
-                            dap_bridge_state_st.payloadBridgeState_.Pedal_availability_2 = 0;
-                            for (int i = 0; i < 3; i++)
-                            {
-                                Plugin.PedalConfigRead_b[i] = false;
-                                
-                            }
-
                         }
+                        */
 
-                        btn_connect_espnow_port.Content = "Connect";
+
                         if (ESP_host_serial_timer != null)
                         {
                             ESP_host_serial_timer.Stop();
                             ESP_host_serial_timer.Dispose();
-                            updateTheGuiFromConfig();
-                        }
 
+                        }
+                        btn_connect_espnow_port.Content = "Connect";
+                        if (Plugin._calculations.bridgeConnectionStatus != BridgeConnectStateEnum.BRIDGE_DISCONNECT)
+                        {
+                            updateTheGuiFromConfig();
+                            Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_DISCONNECT;
+                            for (int i = 0; i < 3; i++) Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+
+                        }
                     }
 
                 }
@@ -150,7 +130,7 @@ namespace User.PluginSdkDemo
                                 {
                                     //UpdateSerialPortList_click();
                                     openSerialAndAddReadCallback(pedalIdx);
-                                    //Plugin.Settings.autoconnectComPortNames[pedalIdx] = Plugin._serialPort[pedalIdx].PortName;
+                                    /*
                                     System.Threading.Thread.Sleep(200);
                                     if (Serial_connect_status[pedalIdx])
                                     {
@@ -172,11 +152,13 @@ namespace User.PluginSdkDemo
                                                 Toast_tmp = "Throttle Pedal:" + Plugin.Settings.autoconnectComPortNames[pedalIdx];
                                                 break;
                                         }
+                                        Toast_tmp = PedalConstStrings.PedalID[pedalIdx] + " Connected";
                                         ToastNotification(Toast_tmp, "Connected");
                                         updateTheGuiFromConfig();
                                         //System.Threading.Thread.Sleep(2000);
                                         //ToastNotificationManager.History.Clear("FFB Pedal Dashboard");
                                     }
+                                    */
 
 
 
@@ -186,8 +168,6 @@ namespace User.PluginSdkDemo
                             {
                                 Plugin.connectSerialPort[pedalIdx] = false;
                                 Plugin.Settings.connect_status[pedalIdx] = 0;
-                                Plugin.PedalConfigRead_b[pedalIdx] = false;
-                                Plugin._calculations.PedalSerialAvailability[pedalIdx] = false;
                                 Plugin._calculations.ServoStatus[pedalIdx] = 0;
                                 updateTheGuiFromConfig();
                             }
@@ -198,14 +178,142 @@ namespace User.PluginSdkDemo
                         }
                     }
                 }
-
-
             }
             if (count_timmer_count > 200)
             {
                 count_timmer_count = 2;
             }
+            // game config auto switch
+            bool gameProfileChanged = false;
+            for (int i = 0; i < 3; i++)
+            {
+                if (Plugin.ProfileServicePlugin.GamePofileConfigChange_b[i]
+                    && (Plugin._calculations.pedalWirelessStatus[i] == WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY ||
+                    Plugin._calculations.pedalSerialStatus[i] == ConnectStateEnum.PEDAL_IS_READY))
+                {
+                    Plugin.SendConfigWithoutSaveToEEPROM(Plugin.ProfileServicePlugin.ConfigBuffer[i], (byte)i);
+                    Plugin._calculations.ConfigEditing[i] = Plugin.ConfigService.ConfigList.FirstOrDefault(item => item.FullPath == Plugin.ProfileServicePlugin.GameConfigPathBuffer[i]).FileName;
+                    Plugin.ProfileServicePlugin.GamePofileConfigChange_b[i] = false;
+                    if (!Plugin.ProfileServicePlugin.GamePofileConfigChange_b[0] && !Plugin.ProfileServicePlugin.GamePofileConfigChange_b[1] && !Plugin.ProfileServicePlugin.GamePofileConfigChange_b[2])
+                    {
+                        gameProfileChanged = true;
+                    }
+                }
+            }
+            if(gameProfileChanged)
+            {
+                ToastNotification("Pedal Profile Switch", $"Profile switched to: {Plugin.ProfileServicePlugin.CurrentGameProfile} according to the game: {Plugin.currentGame}");
+            }
+
+
             updateTheGuiFromConfig();
+            string tmpPedalStatusChange = "";
+            bool pedalConnectedToast = false;
+            
+            for (int i = 0; i < 3; i++)
+            {
+                if (pedalWirelessStatusLast[i] != WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY && Plugin._calculations.pedalWirelessStatus[i] == WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY)
+                {
+                    pedalConnectedToast = true;
+                    tmpPedalStatusChange += PedalConstStrings.PedalID[i] + " ";
+                }
+                if (pedalSerialStatusLast[i] != ConnectStateEnum.PEDAL_IS_READY && Plugin._calculations.pedalSerialStatus[i] == ConnectStateEnum.PEDAL_IS_READY)
+                {
+                    pedalConnectedToast = true;
+                    tmpPedalStatusChange += PedalConstStrings.PedalID[i] + " ";
+                }
+            }
+            if (pedalConnectedToast)
+            {
+                tmpPedalStatusChange += "Connected";
+                ToastNotification("Pedal connection status", tmpPedalStatusChange);
+            }
+            tmpPedalStatusChange = "";
+            pedalConnectedToast = false;
+            for (int i = 0; i < 3; i++)
+            {    
+                if (pedalSerialStatusLast[i] == ConnectStateEnum.PEDAL_IS_READY && Plugin._calculations.pedalSerialStatus[i] == ConnectStateEnum.PEDAL_DISCONNECT)
+                {
+                    pedalConnectedToast = true;
+                    tmpPedalStatusChange += PedalConstStrings.PedalID[i] + " ";
+                }
+                pedalWirelessStatusLast[i] = Plugin._calculations.pedalWirelessStatus[i];
+                pedalSerialStatusLast[i] = Plugin._calculations.pedalSerialStatus[i];
+            }
+            if (pedalConnectedToast)
+            {
+                tmpPedalStatusChange += "Disconnected";
+                ToastNotification("Pedal connection status", tmpPedalStatusChange);
+            }
+
+
+
+            TimeSpan diff_bridge = DateTime.Now - Plugin._calculations.bridgeConnetionlastTime;
+            if (diff_bridge.TotalMilliseconds > BridgeDisconnectTimeOutInMs && Plugin._calculations.bridgeConnectionStatus == BridgeConnectStateEnum.BRIDGE_IS_READY)
+            {
+                if (Plugin.PortExists(Plugin.ESPsync_serialPort.PortName))
+                {
+                    Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
+                    }
+                }
+                else
+                {
+                    Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_DISCONNECT;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                    }
+
+                }
+                updateTheGuiFromConfig();
+
+                ToastNotification("Wireless Connection", "Bridge disconnected");
+
+            }
+            bool toastPedalStatusChange = false;
+            string tmpStringPedalStatusChange = "";
+            for (int i = 0; i < 3; i++)
+            {
+
+                if (Plugin._calculations.pedalWirelessStatus[i] == WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY)
+                {
+                    TimeSpan diff = DateTime.Now - Plugin._calculations.pedalWirelessConnetionlastTime[i];
+                    if (diff.TotalMilliseconds > 1000)
+                    {
+                        if (Plugin._calculations.bridgeConnectionStatus == BridgeConnectStateEnum.BRIDGE_IS_READY || Plugin.PortExists(Plugin.ESPsync_serialPort.PortName))
+                        {
+                            Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
+                        }
+                        else
+                        {
+                            Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                        }
+                        toastPedalStatusChange = true;
+                        tmpStringPedalStatusChange += PedalConstStrings.PedalID[i] + " ";
+
+                    }
+                }
+            }
+            //prevent config read be sent back to pedal
+            for (int i = 0; i < 3; i++)
+            {
+                TimeSpan diff_configPreviewLock = DateTime.Now - Plugin._calculations.configPreviewLockLast[i];
+                if (diff_configPreviewLock.TotalMilliseconds > 500 && Plugin._calculations.configPreviewLock[i])
+                {
+                    Plugin._calculations.configPreviewLock[i] = false;
+                }
+            }
+ 
+
+            if (toastPedalStatusChange)
+            {
+                updateTheGuiFromConfig();
+                tmpStringPedalStatusChange += "disconnected";
+                ToastNotification("Wireless Connection", tmpStringPedalStatusChange);
+            }
 
         }
     }

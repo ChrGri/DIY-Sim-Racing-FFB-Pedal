@@ -56,9 +56,10 @@ using System.Media;
 using System.Windows.Threading;
 using System.Net.Http;
 using System.Threading.Tasks;
-using static User.PluginSdkDemo.DIY_FFB_Pedal;
-using User.PluginSdkDemo.UIFunction;
+using static DiyFfbPedal.DIY_FFB_Pedal;
+using DiyFfbPedal.UIFunction;
 using Windows.UI.ViewManagement;
+using WoteverLocalization;
 
 
 
@@ -67,7 +68,7 @@ using Windows.UI.ViewManagement;
 
 
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     /// <summary>
     /// Logique d'interaction pour SettingsControlDemo.xaml
@@ -125,6 +126,8 @@ namespace User.PluginSdkDemo
         DateTime PedalTabChange_last = DateTime.Now;
         //public byte[,] PedalFirmwareVersion = new byte[3, 3] { { 0, 0, 0}, { 0, 0, 0 }, { 0, 0, 0 } };
         public bool PedalTabChange = false;
+        private bool firstAssignPlugin = true;
+        private bool manualDisconnect_b = false;
 
 
         public enum PedalAvailability        
@@ -139,17 +142,13 @@ namespace User.PluginSdkDemo
             ThreePedalConnect
         }
         
-        
-        
+
+
         unsafe public DIYFFBPedalControlUI()
         {
             
             DAP_config_set_default_rudder();
-            for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
-            {
-                DAP_config_set_default(pedalIdx);
-                
-            }
+
             for (uint i = 0; i < 30; i++)
             {
                 _basic_wifi_info.WIFI_PASS[i] = 0;
@@ -159,7 +158,7 @@ namespace User.PluginSdkDemo
             
             //setting drawing color with Simhub theme workaround
             //SolidColorBrush buttonBackground_ = btn_update.Background as SolidColorBrush;
-            SolidColorBrush buttonBackground_ = btn_SendConfig.Background as SolidColorBrush;
+            SolidColorBrush buttonBackground_ = btn_pedal_connect.Background as SolidColorBrush;
             
 
             Color color = Color.FromArgb(150, buttonBackground_.Color.R, buttonBackground_.Color.G, buttonBackground_.Color.B);
@@ -180,6 +179,7 @@ namespace User.PluginSdkDemo
             color_RSSI_4 = new SolidColorBrush(Color.FromArgb(255, buttonBackground_.Color.R, buttonBackground_.Color.G, buttonBackground_.Color.B));
             Red_Warning = new SolidColorBrush(Color.FromArgb(255, 244, 67, 67));
             White_Default = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+            this.DataContext = this;
             CheckForUpdateAsync();
         }
 
@@ -198,7 +198,11 @@ namespace User.PluginSdkDemo
             
             indexOfSelectedPedal_u = plugin.Settings.table_selected;
             MyTab.SelectedIndex = (int)indexOfSelectedPedal_u;
+            for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
+            {
+                DAP_config_set_default(pedalIdx);
 
+            }
 
             //auto connection with timmer
             if (connect_timer != null)
@@ -212,7 +216,8 @@ namespace User.PluginSdkDemo
             connect_timer.Interval = 5000; // in miliseconds try connect every 5s
             connect_timer.Start();
             System.Threading.Thread.Sleep(50);
-
+            Plugin.BridgeHidService.OnDataReceived += HidRecieveCallback;
+            updateTheGuiFromConfig();
         }
 
 
@@ -253,7 +258,8 @@ namespace User.PluginSdkDemo
             // 2. Your logic to get the updated list of items.
             //    For example, querying for available serial ports.
             var updatedPortList = GetAvailableSerialPorts(); // This is your custom method.
-
+            //Plugin.comportList.Clear();
+            //Plugin.comportList = updatedPortList;
             //UpdateSerialPortList_click();
 
             // 3. Assign the new list to the ComboBox's ItemsSource.
@@ -469,44 +475,40 @@ namespace User.PluginSdkDemo
             }
         }
 
-        private void SystemProfile_Tab_btn_send_profile_Click_event(object sender, EventArgs e)
-        {
-            Sendconfigtopedal_shortcut();
-            
-        }
 
-        private void SystemProfile_Tab_btn_apply_profile_Click_event(object sender, EventArgs e)
-        {
-            Profile_change((uint)Plugin._calculations.profile_index);
-            Parsefile((uint)Plugin._calculations.profile_index);
-        }
+
 
         private void SystemLicense_Tab_btn_test_Click_event(object sender, EventArgs e)
         {
+            //uint hash =Plugin.ConfigService.ConfigHashMap.Fnv1aHash("RudderConfig");
             ToastNotification("Debug", "Print All parameter and available com portin Serial log");
-            
             //readRudderSettingToConfig();
             //PrintUnknownStructParameters(dap_config_st_rudder.payloadPedalConfig_);
             if (_serial_monitor_window != null)
             {
+                //_serial_monitor_window.TextBox_SerialMonitor.Text += "\n\nDefaultConfig Hash:" + hash+"\n";
                 PrintUnknownStructParameters(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_);
+                UpdateSerialPortList_click();
                 _serial_monitor_window.TextBox_SerialMonitor.Text += "\nCom port count: " + Plugin.comportList.Count;
                 foreach (var items in Plugin.comportList)
                 {              
-                    _serial_monitor_window.TextBox_SerialMonitor.Text += "\ndevice name:" + items.DeviceName + "\nVID:" + items.Vid + " PID:" + items.Pid;
+                    _serial_monitor_window.TextBox_SerialMonitor.Text += "\ndevice name:" + items.DeviceName + "\nVID:" + items.Vid + " PID:" + items.Pid+"\n";
                 }
+                
+                    
             }
-            /*
-            ConfigUpdateWIndow sideWindow = new ConfigUpdateWIndow(Plugin);
-            double screenWidth = SystemParameters.PrimaryScreenWidth;
-            double screenHeight = SystemParameters.PrimaryScreenHeight;
-            sideWindow.Left = screenWidth / 2 - sideWindow.Width / 2;
-            sideWindow.Top = screenHeight / 2 - sideWindow.Height / 2;
-            sideWindow.Show();
-            */
+            
 
 
         }
+		
+		
+		private void btn_USB_Flash_Click(object sender, RoutedEventArgs e)
+		{
+			// Open the new flasher window and pass the plugin reference to handle serial port locks
+			var flasherWindow = new DiyFfbPedal.UIFunction.FirmwareFlasherWindow(Plugin);
+			flasherWindow.ShowDialog();
+		}
 
 
     }

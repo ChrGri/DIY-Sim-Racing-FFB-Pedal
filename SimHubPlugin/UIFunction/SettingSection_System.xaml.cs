@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace User.PluginSdkDemo.UIFunction
+namespace DiyFfbPedal.UIFunction
 {
     public partial class SettingSection_System : UserControl
     {
@@ -102,10 +102,24 @@ namespace User.PluginSdkDemo.UIFunction
             {
                 if (Settings != null)
                 {
-                    if (CheckBox_Pedal_ESPNow_autoconnect != null) CheckBox_Pedal_ESPNow_autoconnect.IsChecked = (Settings.Pedal_ESPNow_auto_connect_flag);
+                    if (CheckBox_FanatecOrPico!=null)
+                    {
+                        CheckBox_FanatecOrPico.IsChecked = Settings.IsFanatecAndPicoSupport;
+                        if (Settings.IsFanatecAndPicoSupport)
+                        {
+                            CheckBox_Pedal_ESPNow_autoconnect.IsEnabled = true;
+                        }
+                        else
+                        {
+                            CheckBox_Pedal_ESPNow_autoconnect.IsEnabled = false;
+                            CheckBox_Pedal_ESPNow_autoconnect.IsChecked = false;
+                        }
+                    }
+                    if (CheckBox_Pedal_ESPNow_autoconnect != null) CheckBox_Pedal_ESPNow_autoconnect.IsChecked = (Settings.IsBridgeAutoConnect);
                     //if (CheckBox_using_CDC_for_bridge!=null) CheckBox_using_CDC_for_bridge.IsChecked = Settings.Using_CDC_bridge;
                     if (Debug_check != null) Debug_check.IsChecked = Settings.advanced_b;
-                    if(Label_vjoy_order!=null) Label_vjoy_order.Content = Settings.vjoy_order;
+                    if (CheckBox_ProfileAutoChange != null) CheckBox_ProfileAutoChange.IsChecked = Settings.profileAutoChange;
+                    if (Label_vjoy_order!=null) Label_vjoy_order.Content = Settings.vjoy_order;
                 }
 
             }
@@ -176,13 +190,13 @@ namespace User.PluginSdkDemo.UIFunction
 
         private void CheckBox_Pedal_ESPNow_autoconnect_Checked(object sender, RoutedEventArgs e)
         {
-            Settings.Pedal_ESPNow_auto_connect_flag = true;
+            Settings.IsBridgeAutoConnect = true;
             SettingsChangedEvent(Settings);
         }
 
         private void CheckBox_Pedal_ESPNow_autoconnect_Unchecked(object sender, RoutedEventArgs e)
         {
-            Settings.Pedal_ESPNow_auto_connect_flag = false;
+            Settings.IsBridgeAutoConnect = false;
             SettingsChangedEvent(Settings);
         }
 
@@ -382,6 +396,34 @@ namespace User.PluginSdkDemo.UIFunction
         { 
             _joystick = _vJoy;
             isVjoyAsigned = true;
+        }
+
+        private void CheckBox_ProfileAutoChange_Checked(object sender, RoutedEventArgs e)
+        {
+            Settings.profileAutoChange = true;
+            SettingsChangedEvent(Settings);
+        }
+
+        private void CheckBox_ProfileAutoChange_Unchecked(object sender, RoutedEventArgs e)
+        {
+            Settings.profileAutoChange = false;
+            SettingsChangedEvent(Settings);
+        }
+
+        private void CheckBox_FanatecOrPico_Checked(object sender, RoutedEventArgs e)
+        {
+            Settings.IsFanatecAndPicoSupport = true;
+            CheckBox_Pedal_ESPNow_autoconnect.IsEnabled = true;
+            SettingsChangedEvent(Settings);
+        }
+
+        private void CheckBox_FanatecOrPico_Unchecked(object sender, RoutedEventArgs e)
+        {
+            Settings.IsFanatecAndPicoSupport = false;
+            CheckBox_Pedal_ESPNow_autoconnect.IsChecked = false;
+            Settings.IsBridgeAutoConnect = false;
+            CheckBox_Pedal_ESPNow_autoconnect.IsEnabled = false;
+            SettingsChangedEvent(Settings);
         }
     }
 }

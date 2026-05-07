@@ -1,0 +1,117 @@
+<UserControl x:Class="DiyFfbPedal.UIFunction.Listbox_PedalConfig"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DiyFfbPedal.UIFunction"
+             xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
+             xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
+             xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+             d:DesignHeight="130" d:DesignWidth="160">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/DiyFfbPedal;component/UIStyles/DefaultStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <Style TargetType="{x:Type MenuItem}">
+
+                <Setter Property="Padding" Value="10, 3, 10, 3"/>
+
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type MenuItem}">
+                            <Border x:Name="Border" BorderBrush="{TemplateBinding BorderBrush}" 
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Background="{TemplateBinding Background}"
+                            SnapsToDevicePixels="True">
+                                <Grid>
+                                    <ContentPresenter Margin="{TemplateBinding Padding}" 
+                                              ContentSource="Header" 
+                                              RecognizesAccessKey="True"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                </Grid>
+                            </Border>
+
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsHighlighted" Value="True">
+                                    <Setter TargetName="Border" Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="CustomContextMenuSeparator" TargetType="{x:Type Separator}">
+                <Setter Property="Margin" Value="5, 1, 5, 1"/>
+                
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type Separator}">
+                            <Border Height="2" 
+                            Margin="{TemplateBinding Margin}"
+                            
+                            HorizontalAlignment="Stretch" 
+                            SnapsToDevicePixels="True" Background="{DynamicResource AccentColorBrush3}"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+        
+    </UserControl.Resources>
+    <Grid>
+        <StackPanel>
+            <Label Content="{SLoc DIYFFBPedalPlugin_TextConfigListTittle, 'Config List'}" Height="15" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left"/>
+            <ListBox Name="ConfigListBox" Height="115" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="10" FontFamily="Arial" Width="160" ItemsSource="{Binding ItemList}">
+                <ListBox.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListAddNewConfig, 'Add new Config'}" Command="{Binding AddNewConfigCommand}" FontFamily="Arial" FontSize="10"/>
+                    </ContextMenu>
+                </ListBox.ContextMenu>
+
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="{x:Type ListBoxItem}">
+
+                        <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListBox}}, Path=DataContext}"/>
+
+                        <Setter Property="ContextMenu">
+                            <Setter.Value>
+                                <ContextMenu>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListPreview, 'Preview'}" Command="{Binding PlacementTarget.Tag.PreviewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextApply, 'Apply'}" Command="{Binding PlacementTarget.Tag.ApplyConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListSetAsStartup, 'Set as Startup'}" Command="{Binding PlacementTarget.Tag.SetDefaultConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextRefreshList, 'Refresh List'}" Command="{Binding PlacementTarget.Tag.RefreshListCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextOverwrite, 'Overwrite'}" Command="{Binding PlacementTarget.Tag.OverwriteConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListSaveAs, 'Save as New Config'}" Command="{Binding PlacementTarget.Tag.SaveAsNewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListAddNewConfig, 'Add new Config'}" Command="{Binding PlacementTarget.Tag.AddNewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListReset, 'Reset Active Config'}" Command="{Binding PlacementTarget.Tag.ResetEditingConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextRename, 'Rename'}" Command="{Binding PlacementTarget.Tag.RenameConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextDelete, 'Delete'}" Command="{Binding PlacementTarget.Tag.DeleteConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                </ContextMenu>
+                            </Setter.Value>
+                        </Setter>
+
+                    </Style>
+                </ListBox.ItemContainerStyle>
+
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock>
+                            <TextBlock.Text>
+                                <Binding Path="ListName"/>
+                            </TextBlock.Text>
+                        </TextBlock>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </StackPanel>
+    </Grid>
+</UserControl>

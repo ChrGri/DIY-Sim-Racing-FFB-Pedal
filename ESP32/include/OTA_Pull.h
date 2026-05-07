@@ -6,33 +6,18 @@
 //#define JSON_URL_dev "https://raw.githubusercontent.com/tcfshcrw/playground/main/OTA_test_repo/GH2/Version.json"
 #define OTA_JSON_URL_MAIN   "https://raw.githubusercontent.com/gilphilbert/pedal-flasher/main/json/main/Version_ControlBoard.json"
 #define OTA_JSON_URL_TEST "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/TestBuild/json/Version_ControlBoard.json"
-bool OTA_enable_b =false;
-bool OTA_status =false;
-bool beepForOtaProgress = false;
-bool OTA_enable_start=false;
-/*
-struct DAP_otaWifiInfo_st
-{ 
-    uint8_t payloadType;
-    uint8_t device_ID;
-    uint8_t wifi_action;
-    uint8_t mode_select;
-    uint8_t SSID_Length;
-    uint8_t PASS_Length;
-    uint8_t WIFI_SSID[30];
-    uint8_t WIFI_PASS[30];
-};
-*/
-
-//DAP_otaWifiInfo_st _dap_OtaWifiInfo_st;
-char* SSID;
-char* PASS;
+bool g_OTA_enable_b =false;
+bool g_OTA_status =false;
+bool g_beepForOtaProgress = false;
+bool g_OTA_enable_start=false;
+char* g_SSID;
+char* g_PASS;
 
 void wifi_initialized(char* Wifi_SSID, char* Wifi_PASS)
 {
-    ActiveSerial->print("SSID: ");
+	ActiveSerial->print("SSID: ");
     ActiveSerial->print(Wifi_SSID);
-    ActiveSerial->print(" PASS: ");
+	ActiveSerial->print(" PASS: ");
     ActiveSerial->println(Wifi_PASS);
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
@@ -42,7 +27,7 @@ void wifi_initialized(char* Wifi_SSID, char* Wifi_PASS)
 
     // Display connection progress
     ActiveSerial->print("Connecting to WiFi:");
-    ActiveSerial->print(WiFi.SSID());
+	ActiveSerial->print(WiFi.SSID());
 	ActiveSerial->print(" ");
     // Wait until WiFi is connected
     while (WiFi.status() != WL_CONNECTED) {
@@ -117,8 +102,8 @@ void OTAcallback(int offset, int totalLength)
 	float progressBeepTolerance= 0.1f;
     ActiveSerial->printf("Updating: %d of %d, (%0.0f %)\n",offset, totalLength, progressInPrecent);
 	//call beep callback
-	if(fmod(progressInPrecent,10.0f)<=progressBeepTolerance && beepForOtaProgress==false && progressInPrecent>1.0f)
+	if(fmod(progressInPrecent,10.0f)<=progressBeepTolerance && g_beepForOtaProgress==false && progressInPrecent>1.0f)
 	{
-		beepForOtaProgress=true;
+		g_beepForOtaProgress=true;
 	}
 }

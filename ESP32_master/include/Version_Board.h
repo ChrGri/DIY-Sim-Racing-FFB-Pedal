@@ -1,19 +1,25 @@
 
-#define BRIDGE_FIRMWARE_VERSION "0.90.22"
+#pragma once
+#include "Arduino.h"
+#define BRIDGE_FIRMWARE_VERSION "0.90.31"
 #if PCB_VERSION==5
-	#define BRIDGE_BOARD   "Bridge_FANATEC"
+	#define BRIDGE_BOARD "Bridge_FANATEC"
 #endif
 #if PCB_VERSION==6
-	#define BRIDGE_BOARD    "DevKit"
+    #ifdef LOW_TX_POWER
+	    #define BRIDGE_BOARD "DevKit_with_low_TX_power"
+    #else
+        #define BRIDGE_BOARD "DevKit"
+    #endif
 #endif
 #if PCB_VERSION==7
-	#define BRIDGE_BOARD   "Gilphilbert_Dongle"
+	#define BRIDGE_BOARD "Gilphilbert_Dongle"
 #endif
 #if PCB_VERSION==8
-	#define BRIDGE_BOARD   "Bridge_with_external_Joystick"
+	#define BRIDGE_BOARD "Bridge_with_external_Joystick"
 #endif
 #if PCB_VERSION==9
-	#define BRIDGE_BOARD   "ESP32-C6 devkit"
+	#define BRIDGE_BOARD "ESP32-C6 devkit"
 #endif
 void parse_version(char *version, uint8_t *major, uint8_t *minor, uint8_t *patch) {
     int imajor, iminor, ipatch;

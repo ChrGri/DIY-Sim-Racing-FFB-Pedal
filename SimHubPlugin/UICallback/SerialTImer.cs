@@ -14,7 +14,7 @@ using Newtonsoft.Json.Linq;
 
 
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
@@ -403,43 +403,52 @@ namespace User.PluginSdkDemo
                                             {
                                                 // Specify the path to the file
                                                 string currentDirectory = Directory.GetCurrentDirectory();
-                                                string filePath = currentDirectory + "\\PluginsData\\Common" + "\\DiyFfbPedalStateLog_" + indexOfSelectedPedal_u.ToString() + ".txt";
-
+                                                //string filePath = currentDirectory + "\\PluginsData\\Common" + "\\DiyFfbPedalStateLog_" + indexOfSelectedPedal_u.ToString() + ".txt";
+                                                string filePath = Plugin.logFolderPath + "\\DiyFfbPedalStateLog_" + PedalConstStrings.PedalID[pedalSelected] + "_Wired" + Plugin._calculations.logDateTime + ".txt";
 
                                                 // delete file 
                                                 if (true == Plugin._calculations.dumpPedalToResponseFile_clearFile[indexOfSelectedPedal_u])
                                                 {
                                                     Plugin._calculations.dumpPedalToResponseFile_clearFile[indexOfSelectedPedal_u] = false;
-                                                    File.Delete(filePath);
-
-                                                    // write header
-                                                    if (!File.Exists(filePath))
+                                                    File.Delete(filePath);  
+                                                }
+                                                // write header
+                                                if (!File.Exists(filePath))
+                                                {
+                                                    using (StreamWriter writer = new StreamWriter(filePath, true))
                                                     {
-                                                        using (StreamWriter writer = new StreamWriter(filePath, true))
-                                                        {
-                                                            // Write the content to the file
-                                                            writer.Write("cycleCtr");
-                                                            writer.Write(", time_InUs");
-                                                            writer.Write(", cycleCount_u32");
-                                                            writer.Write(", forceRaw_InKg");
-                                                            writer.Write(", forceFiltered_InKg");
-                                                            writer.Write(", forceVelocity_InKgPerSec");
-                                                            writer.Write(", servoPos_InSteps");
-                                                            writer.Write(", servoPosEsp_InSteps");
-                                                            writer.Write(", servoPosError_InSteps");
-                                                            writer.Write(", servoCurrent_InPercent");
-                                                            writer.Write(", servoVoltage_InV");
-                                                            writer.Write(", angleSensorOutput");
-                                                            writer.Write(", brakeResistorState_b");
-                                                            writer.Write(", servoPosEstimated_InSteps");
-                                                            writer.Write(", targetPosition_InSteps");
-                                                            writer.Write(", currentSpeedInMilliHz_i32");
-                                                            //writer.Write(", servoPositionEstimated_stepperPos_i16");
-                                                            writer.Write("\n");
-                                                        }
+                                                        // Write the content to the file
+                                                        writer.Write("WriterIdx");
+                                                        writer.Write(", servoStateCycleCount_u32");
+                                                        writer.Write(", servoPositionTarget_i32");
+                                                        writer.Write(", servoPositionFeedback_i32");
+                                                        writer.Write(", servoPositionError_i16");
+                                                        writer.Write(", servoVoltage_fl32");
+                                                        writer.Write(", servoCurrentPercent_i16");
+
+                                                        writer.Write(", timeInUs_u32");
+                                                        writer.Write(", cycleCount_u32");
+                                                        writer.Write(", pedalForceRaw_fl32");
+                                                        writer.Write(", pedalForceFiltered_fl32");
+                                                        writer.Write(", forceVelEst_fl32");
+                                                        writer.Write(", targetPosition_i32");
+                                                        writer.Write(", currentSpeedInHz_i32");
+                                                        writer.Write(", brakeResistorState_b");
+                                                        writer.Write(", oscillationMonitorValue_u8");
+
+                                                        writer.Write(", admittance_expectedForce_N");
+                                                        writer.Write(", admittance_isOscillating");
+                                                        writer.Write(", admittance_admittancePsi_N");
+                                                        writer.Write(", admittance_virtualMass_kg");
+                                                        writer.Write(", admittance_virtualDamping_Ns_m");
+
+                                                        writer.Write(", admittance_virtualPosition_m");
+                                                        writer.Write(", admittance_virtualVelocity_mps");
+                                                        writer.Write(", admittance_virtualAcceleration_mps2");
+
+                                                        writer.Write("\n");
                                                     }
                                                 }
-
 
                                                 using (StreamWriter writer = new StreamWriter(filePath, true))
                                                 {
@@ -447,7 +456,35 @@ namespace User.PluginSdkDemo
                                                     writeCntr++;
 
                                                     // Build the entire string in one line using interpolation
-                                                    writer.WriteLine($"{writeCntr},{state.timeInUs_u32},{state.cycleCount_u32},{state.pedalForce_raw_fl32},{state.pedalForce_filtered_fl32},{state.forceVel_est_fl32},{state.servoPosition_i16},{state.servoPositionTarget_i16},{state.servo_position_error_i16},{state.servo_current_percent_i16},{state.servo_voltage_0p1V_i16 / 10.0f},{state.angleSensorOutput_ui16},{state.brakeResistorState_b},{state.servoPositionEstimated_i16},{state.targetPosition_i16},{state.currentSpeedInMilliHz_i32}");
+                                                    writer.WriteLine(
+                                                        $"{writeCntr}" +
+
+                                                        $",{state.servoStateCycleCount_u32}" +
+                                                        $",{state.servoPositionTarget_i32}" +
+                                                        $",{state.servoPositionFeedback_i32}" +
+                                                        $",{state.servoPositionError_i16}" +
+                                                        $",{state.servoVoltage0p1V_i16 / 10.0f}" +
+                                                        $",{state.servoCurrentPercent_i16}" +
+
+                                                        $",{state.timeInUs_u32}" +
+                                                        $",{state.cycleCount_u32}" +
+                                                        $",{state.pedalForceRaw_fl32}" +
+                                                        $",{state.pedalForceFiltered_fl32}" +
+                                                        $",{state.forceVelEst_fl32}" +
+                                                        $",{state.targetPosition_i32}" +
+                                                        $",{state.currentSpeedInHz_i32}" +
+                                                        $",{state.brakeResistorState_b}" +
+                                                        $",{state.oscillationMonitorValue_u8}" +
+                                                        $",{state.admittance_expectedForce_N}" +
+                                                        $",{state.admittance_isOscillating}" +
+                                                        $",{state.admittance_admittancePsi_N}" +
+                                                        $",{state.admittance_virtualMass_kg}" +
+                                                        $",{state.admittance_virtualDamping_Ns_m}" +
+                                                        $",{state.admittance_virtualPosition_m}" +
+                                                        $",{state.admittance_virtualVelocity_mps}" +
+                                                        $",{state.admittance_virtualAcceleration_mps2}"
+                                                        );
+
                                                 }
 
 
@@ -508,7 +545,12 @@ namespace User.PluginSdkDemo
 
                                         bufferByteAssignedToStruct.AsSpan(srcBufferOffset_0, sizeof(DAP_state_basic_st)).Fill(true);
                                         lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + sizeof(DAP_state_basic_st));
-
+                                        if (Plugin._calculations.pedalSerialStatus[pedalSelected] == ConnectStateEnum.PEDAL_ENTRY_CONNECT
+                                            || Plugin._calculations.pedalSerialStatus[pedalSelected] == ConnectStateEnum.PEDAL_DISCONNECT)
+                                        {
+                                            Plugin._calculations.pedalSerialStatus[pedalSelected] = ConnectStateEnum.PEDAL_GET_BASIC_PACKETS;
+                                        }
+                                        Plugin._calculations.pedalSerialConnetionlastTime[pedalSelected]=DateTime.Now;
                                         // write vJoy data
                                         Pedal_position_reading[pedalSelected] = pedalState_read_st.payloadPedalBasicState_.joystickOutput_u16;
                                         //if (Plugin.Rudder_enable_flag == false)
@@ -553,15 +595,20 @@ namespace User.PluginSdkDemo
 
                                         Plugin._calculations.ServoStatus[pedalSelected] = pedalState_read_st.payloadPedalBasicState_.servoStatus;
 
-
+                                        //update Pedal status
+                                        double valueMax_u16 = 65535;
+                                        Plugin.PedalStatusInstance.PedalForceInPercent[pedalSelected] = ((double)pedalState_read_st.payloadPedalBasicState_.pedalForce_u16 / (double)valueMax_u16 * 100.0d);
+                                        Plugin.PedalStatusInstance.PedalMaxForce[pedalSelected] = (int)dap_config_st[pedalSelected].payloadPedalConfig_.maxForce;
+                                        Plugin.PedalStatusInstance.PedalMinForce[pedalSelected] = (int)dap_config_st[pedalSelected].payloadPedalConfig_.preloadForce;
+                                        Plugin.PedalStatusInstance.UpdatePedalStatus();
 
                                         // GUI update
                                         if ((pedalStateHasAlreadyBeenUpdated_b == false) && (indexOfSelectedPedal_u == pedalSelected))
                                         {
                                             //TextBox_debugOutput.Text = "Pedal pos: " + pedalState_read_st.payloadPedalState_.pedalPosition_u16;
                                             //TextBox_debugOutput.Text += "Pedal force: " + pedalState_read_st.payloadPedalState_.pedalForce_u16;
-                                            //TextBox_debugOutput.Text += ",  Servo pos targe: " + pedalState_read_st.payloadPedalState_.servoPosition_i16;
-                                            //TextBox_debugOutput.Text += ",  Servo pos: " + pedalState_read_st.payloadPedalState_.servoPosition_i16;
+                                            //TextBox_debugOutput.Text += ",  Servo pos targe: " + pedalState_read_st.payloadPedalState_.servoPosition_i32;
+                                            //TextBox_debugOutput.Text += ",  Servo pos: " + pedalState_read_st.payloadPedalState_.servoPosition_i32;
 
                                             PedalForceTravel_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16, pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
 
@@ -621,7 +668,7 @@ namespace User.PluginSdkDemo
                                 int destBuffLength = srcBufferOffset_1 - srcBufferOffset_0;
 
                                 // decode into config struct
-                                if ((waiting_for_pedal_config[pedalSelected]) && (destBuffLength == sizeof(DAP_config_st)))
+                                if (destBuffLength == sizeof(DAP_config_st))
                                 {
 
                                     // parse byte array as config struct
@@ -650,10 +697,36 @@ namespace User.PluginSdkDemo
 
                                         bufferByteAssignedToStruct.AsSpan(srcBufferOffset_0, sizeof(DAP_config_st)).Fill(true);
                                         lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + sizeof(DAP_config_st));
-
+                                        TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config payload check: " + check_payload_config_b + "\n";
+                                        TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload expected:" + Constants.pedalConfigPayload_type + " Payload get:" + pedalConfig_read_st.payloadHeader_.payloadType + "\n";
+                                        TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config crc check: " + check_crc_config_b + "\n";
+                                        TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " CRC expected" + Plugin.checksumCalc(p_config, sizeof(payloadHeader) + sizeof(payloadPedalConfig)) + " CRC Get:" + pedalConfig_read_st.payloadFooter_.checkSum + "\n";
+                                        if (Plugin._calculations.pedalSerialStatus[pedalSelected] == ConnectStateEnum.PEDAL_GET_BASIC_PACKETS)
+                                        {
+                                            Plugin._calculations.pedalSerialStatus[pedalSelected] = ConnectStateEnum.PEDAL_IS_READY;
+                                        }
+                                        Plugin._calculations.configPreviewLock[pedalSelected] = true;
+                                        Plugin._calculations.configPreviewLockLast[pedalSelected] = DateTime.Now;
+                                        //Plugin._calculations.pedalSerialConnetionlastTime[pedalSelected] = DateTime.Now;
                                         waiting_for_pedal_config[pedalSelected] = false;
                                         dap_config_st[pedalSelected] = pedalConfig_read_st;
-                                        Plugin.PedalConfigRead_b[pedalSelected] = true;
+                                        if (pedalConfig_read_st.payloadPedalConfig_.configHash_u32 == (uint)175245064)
+                                        {
+                                            // if pedal return DefaultConfig, clear the default setting and ask re send a default config in
+                                            Plugin.Settings.DefaultConfig[pedalSelected] = "";
+                                            Plugin._calculations.ConfigEditing[pedalSelected] = "";
+                                            ToastNotification($"No Startup Config found in {PedalConstStrings.PedalID[pedalSelected]}", $"{PedalConstStrings.PedalID[pedalSelected]}: Please Set a Config as Startup");
+
+                                        }
+                                        else
+                                        {
+                                            Plugin._calculations.ConfigEditing[pedalSelected] = Plugin.ConfigService.ConfigHashMap.GetFileName(pedalConfig_read_st.payloadPedalConfig_.configHash_u32);
+                                        }
+
+                                        Plugin._calculations.IsModifiedConfigNotSave[Plugin.Settings.table_selected] = false;
+                                        Plugin._calculations.IsApplyingConfig = true;
+                                        Plugin._calculations.configApplyLockLast = DateTime.Now;
+                                        Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                                         updateTheGuiFromConfig();
 
                                         continue;
@@ -665,6 +738,10 @@ namespace User.PluginSdkDemo
 
                                         TextBox2.Text = "Payload config test 1: " + check_payload_config_b;
                                         TextBox2.Text += "Payload config test 2: " + check_crc_config_b;
+                                        TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config payload check: " + check_payload_config_b + "\n";
+                                        TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload expected:" + Constants.pedalConfigPayload_type + " Payload get:" + pedalConfig_read_st.payloadHeader_.payloadType + "\n";
+                                        TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config crc check: " + check_crc_config_b + "\n";
+                                        TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " CRC expected" + Plugin.checksumCalc(p_config, sizeof(payloadHeader) + sizeof(payloadPedalConfig)) + " CRC Get:" + pedalConfig_read_st.payloadFooter_.checkSum + "\n";
                                     }
 
                                 }
@@ -802,6 +879,28 @@ namespace User.PluginSdkDemo
                     }
 
                 }
+            }
+            if (Plugin._calculations.pedalSerialStatus[pedalSelected] == ConnectStateEnum.PEDAL_IS_READY)
+            {
+                TimeSpan diff = DateTime.Now - Plugin._calculations.pedalSerialConnetionlastTime[pedalSelected];
+                if (diff.TotalMilliseconds > 1000)
+                {
+                    if (Plugin.PortExists(Plugin._serialPort[pedalSelected].PortName))
+                    {
+                        Plugin._calculations.pedalSerialStatus[pedalSelected] = ConnectStateEnum.PEDAL_ENTRY_CONNECT;
+                    }
+                    else
+                    {
+                        Plugin._calculations.pedalSerialStatus[pedalSelected] = ConnectStateEnum.PEDAL_DISCONNECT;
+                    }
+                        
+                }
+            }
+            //prevent config read be sent back to pedal
+            TimeSpan diff_configPreviewLock = DateTime.Now - Plugin._calculations.configPreviewLockLast[pedalSelected];
+            if (diff_configPreviewLock.TotalMilliseconds > 500 && Plugin._calculations.configPreviewLock[pedalSelected])
+            {
+                Plugin._calculations.configPreviewLock[pedalSelected] = false;
             }
         }
     }

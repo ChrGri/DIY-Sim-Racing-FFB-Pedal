@@ -12,9 +12,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using User.PluginSdkDemo.UIElement;
+using DiyFfbPedal.UIElement;
 
-namespace User.PluginSdkDemo.UIFunction
+namespace DiyFfbPedal.UIFunction
 {
     /// <summary>
     /// KFTab.xaml 的互動邏輯

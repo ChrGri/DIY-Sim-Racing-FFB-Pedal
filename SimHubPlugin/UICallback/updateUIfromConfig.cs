@@ -6,9 +6,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
-using User.PluginSdkDemo.UIFunction;
+using DiyFfbPedal.UIFunction;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
@@ -18,7 +18,7 @@ namespace User.PluginSdkDemo
             //check the port availability
             if (Plugin != null)
             {
-                if (Plugin.ESPsync_serialPort.IsOpen)
+                if (Plugin.ESPsync_serialPort.IsOpen || Plugin.BridgeHidService.IsConnected)
                 {
                     Plugin._calculations.BridgeSerialConnectionStatus = true;
                     Plugin._calculations.BridgeSerialAvailability = true;
@@ -32,7 +32,7 @@ namespace User.PluginSdkDemo
                     {
                         if (Plugin.Settings.Pedal_ESPNow_Sync_flag[i])
                         {
-                            Plugin._calculations.PedalAvailability[i] = false;
+                            //Plugin._calculations.PedalAvailability[i] = false;
                             Plugin._calculations.PedalFirmwareVersion[i, 2] = 0;
                             Plugin._calculations.ServoStatus[i] = 0;
                         }
@@ -41,12 +41,12 @@ namespace User.PluginSdkDemo
                 }
                 for (int i = 0; i < 3; i++)
                 {
-                    Plugin._calculations.PedalSerialAvailability[i] = Plugin._serialPort[indexOfSelectedPedal_u].IsOpen;
                     if (!Plugin.Settings.Pedal_ESPNow_Sync_flag[i])
                     {
                         if (!Plugin._serialPort[indexOfSelectedPedal_u].IsOpen)
                         {
                             Plugin._calculations.ServoStatus[i] = 0;
+                            Plugin._calculations.PedalFirmwareVersion[i, 2] = 0;
                         }
                     }
                 }
@@ -73,12 +73,13 @@ namespace User.PluginSdkDemo
                 EffectsGFroce_Tab.dap_config_st = tmp_struct;
                 EffectsWheelSlip_Tab.dap_config_st = tmp_struct;
                 EffectsRoadImpact_Tab.dap_config_st = tmp_struct;
-                EffectsCustom1_tab.dap_config_st = tmp_struct;
-                EffectsCustom2_Tab.dap_config_st = tmp_struct;
+                EffectsCustom_tab.dap_config_st = tmp_struct;
+                //EffectsCustom2_Tab.dap_config_st = tmp_struct;
                 PedalForceTravel_Tab.dap_config_st = tmp_struct;
                 PedalJoystick_Tab.dap_config_st= tmp_struct;
                 GlobalEffects_Tab.dap_config_st=tmp_struct;
                 Servo_Tab.dap_config_st = tmp_struct;
+                Dynamics_Tab.dap_config_st = tmp_struct;
                 PedalKinematics_Tab.dap_config_st = tmp_struct;
                 PedalSettingsSection.dap_config_st = tmp_struct;
                 var tmp_rudder = dap_config_st_rudder;
@@ -93,8 +94,8 @@ namespace User.PluginSdkDemo
                 EffectsGFroce_Tab.Settings = Plugin.Settings;
                 EffectsWheelSlip_Tab.Settings = Plugin.Settings;
                 EffectsRoadImpact_Tab.Settings = Plugin.Settings;
-                EffectsCustom1_tab.Settings = Plugin.Settings;
-                EffectsCustom2_Tab.Settings = Plugin.Settings;
+                EffectsCustom_tab.Settings = Plugin.Settings;
+                //EffectsCustom_Tab.Settings = Plugin.Settings;
 
                 PedalForceTravel_Tab.Settings = Plugin.Settings;
                 PedalKinematics_Tab.Settings = Plugin.Settings;
@@ -103,35 +104,39 @@ namespace User.PluginSdkDemo
                 CurveRudderForce_Tab.Settings = Plugin.Settings;
                 EffectRudderACC_Tab.Settings = Plugin.Settings;
                 RudderSetting_Tab.Settings = Plugin.Settings;
-                SystemProfile_Tab.Settings = Plugin.Settings;
                 //SettingOTA_Tab.Settings = Plugin.Settings;
                 SystemLicense_Tab.Settings = Plugin.Settings;
                 SystemSetting_Section.Settings = Plugin.Settings;
                 SystemInfo.Settings = Plugin.Settings;
                 PedalInfo.Settings = Plugin.Settings;
-                RudderSettingSection.Settings = Plugin.Settings;
 
 
                 EffectsABS_Tab.calculation = Plugin._calculations;
                 EffectsBitePoint_Tab.calculation = Plugin._calculations;
-                EffectsCustom1_tab.calculation = Plugin._calculations;
-                EffectsCustom2_Tab.calculation = Plugin._calculations;
+                EffectsCustom_tab.calculation = Plugin._calculations;
+                //EffectsCustom2_Tab.calculation = Plugin._calculations;
                 Misc_Tab.calculation = Plugin._calculations;
                 PedalForceTravel_Tab.calculation = Plugin._calculations;
                 PedalSettingsSection.calculation = Plugin._calculations;
                 CurveRudderForce_Tab.calculation = Plugin._calculations;
-                SystemProfile_Tab.calculation = Plugin._calculations;
+
                 //SettingOTA_Tab.calculation = Plugin._calculations;
                 SystemInfo.calculation = Plugin._calculations;
                 PedalInfo.calculation = Plugin._calculations;
                 RudderInfo.calculation = Plugin._calculations;
-                RudderSettingSection.calculation = Plugin._calculations;
-                EffectsCustom1_tab.Plugin = Plugin;
-                EffectsCustom2_Tab.Plugin = Plugin;
+                if (firstAssignPlugin)
+                {
+                    EffectsCustom_tab.Plugin = Plugin;
+                    //EffectsCustom2_Tab.Plugin = Plugin;
+                    Listbox_PedalConfig.Plugin = Plugin;
+                    SystemProfile_TabNew.Plugin = Plugin;
+                    SystemShortcut_Tab.Plugin = Plugin;
+                    firstAssignPlugin = false;
+                }
 
 
-                btn_SendConfig.Content = Plugin._calculations.btn_SendConfig_Content;
-                btn_SendConfig.ToolTip = Plugin._calculations.btn_SendConfig_tooltip;
+                //btn_SendConfig.Content = Plugin._calculations.btn_SendConfig_Content;
+                //btn_SendConfig.ToolTip = Plugin._calculations.btn_SendConfig_tooltip;
                 if (!SystemSetting_Section.isVjoyAsigned)
                 {
                     SystemSetting_Section.asignVjoyJoystickPtr(Plugin._calculations._joystick);
@@ -152,7 +157,7 @@ namespace User.PluginSdkDemo
                     btn_Assignment.IsEnabled = false;
                 }
 
-                if (Plugin.Sync_esp_connection_flag)
+                if (Plugin.ESPsync_serialPort.IsOpen)
                 {
                     btn_connect_espnow_port.Content = "Disconnect";
                 }
@@ -194,12 +199,12 @@ namespace User.PluginSdkDemo
             {
                 if (Plugin._calculations.Rudder_status)
                 {
-                    btn_rudder_initialize.Content = "Disable Rudder";
+                    btn_rudder_initialize.Content = "Disable";
                     //text_rudder_log.Visibility= Visibility.Visible;
                 }
                 else
                 {
-                    btn_rudder_initialize.Content = "Enable Rudder";
+                    btn_rudder_initialize.Content = "Enable";
                     //text_rudder_log.Visibility = Visibility.Hidden;
                 }
             }

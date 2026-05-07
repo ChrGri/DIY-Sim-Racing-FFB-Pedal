@@ -5,10 +5,11 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     //[StructLayout(LayoutKind.Sequential, Pack = 1)]
     //[Serializable]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     unsafe public struct payloadPedalState_Basic
     {
         public UInt16 pedalPosition_u16;

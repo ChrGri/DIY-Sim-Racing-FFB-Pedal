@@ -7,11 +7,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Runtime.CompilerServices;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
+        
         unsafe public void timerCallback_serial_esphost(object sender, EventArgs e)
         {
 
@@ -320,23 +322,34 @@ namespace User.PluginSdkDemo
                                                         using (StreamWriter writer = new StreamWriter(filePath, true))
                                                         {
                                                             // Write the content to the file
-                                                            writer.Write("cycleCtr");
-                                                            writer.Write(", time_InUs");
+                                                            writer.Write("WriterIdx");
+                                                            writer.Write(", servoStateCycleCount_u32");
+                                                            writer.Write(", servoPositionTarget_i32");
+                                                            writer.Write(", servoPositionFeedback_i32");
+                                                            writer.Write(", servoPositionError_i16");
+                                                            writer.Write(", servoVoltage_fl32");
+                                                            writer.Write(", servoCurrentPercent_i16");
+
+                                                            writer.Write(", timeInUs_u32");
                                                             writer.Write(", cycleCount_u32");
-                                                            writer.Write(", forceRaw_InKg");
-                                                            writer.Write(", forceFiltered_InKg");
-                                                            writer.Write(", forceVelocity_InKgPerSec");
-                                                            writer.Write(", servoPos_InSteps");
-                                                            writer.Write(", servoPosEsp_InSteps");
-                                                            writer.Write(", servoPosError_InSteps");
-                                                            writer.Write(", servoCurrent_InPercent");
-                                                            writer.Write(", servoVoltage_InV");
-                                                            writer.Write(", angleSensorOutput");
+                                                            writer.Write(", pedalForceRaw_fl32");
+                                                            writer.Write(", pedalForceFiltered_fl32");
+                                                            writer.Write(", forceVelEst_fl32");
+                                                            writer.Write(", targetPosition_i32");
+                                                            writer.Write(", currentSpeedInHz_i32");
                                                             writer.Write(", brakeResistorState_b");
-                                                            writer.Write(", servoPosEstimated_InSteps");
-                                                            writer.Write(", targetPosition_InSteps");
-                                                            writer.Write(", currentSpeedInMilliHz_i32");
-                                                            //writer.Write(", servoPositionEstimated_stepperPos_i16");
+                                                            writer.Write(", oscillationMonitorValue_u8");
+
+                                                            writer.Write(", admittance_expectedForce_N");
+                                                            writer.Write(", admittance_isOscillating");
+                                                            writer.Write(", admittance_admittancePsi_N");
+                                                            writer.Write(", admittance_virtualMass_kg");
+                                                            writer.Write(", admittance_virtualDamping_Ns_m");
+
+                                                            writer.Write(", admittance_virtualPosition_m");
+                                                            writer.Write(", admittance_virtualVelocity_mps");
+                                                            writer.Write(", admittance_virtualAcceleration_mps2");
+
                                                             writer.Write("\n");
                                                         }
 
@@ -353,7 +366,36 @@ namespace User.PluginSdkDemo
                                                     writeCntr++;
 
                                                     // Build the entire string in one line using interpolation
-                                                    writer.WriteLine($"{writeCntr},{state.timeInUs_u32},{state.cycleCount_u32},{state.pedalForce_raw_fl32},{state.pedalForce_filtered_fl32},{state.forceVel_est_fl32},{state.servoPosition_i16},{state.servoPositionTarget_i16},{state.servo_position_error_i16},{state.servo_current_percent_i16},{state.servo_voltage_0p1V_i16 / 10.0f},{state.angleSensorOutput_ui16},{state.brakeResistorState_b},{state.servoPositionEstimated_i16},{state.targetPosition_i16},{state.currentSpeedInMilliHz_i32}");
+
+                                                    writer.WriteLine(
+                                                        $"{writeCntr}" +
+
+                                                        $",{state.servoStateCycleCount_u32}" +
+                                                        $",{state.servoPositionTarget_i32}" +
+                                                        $",{state.servoPositionFeedback_i32}" +
+                                                        $",{state.servoPositionError_i16}" +
+                                                        $",{state.servoVoltage0p1V_i16 / 10.0f}" +
+                                                        $",{state.servoCurrentPercent_i16}" +
+
+                                                        $",{state.timeInUs_u32}" +
+                                                        $",{state.cycleCount_u32}" +
+                                                        $",{state.pedalForceRaw_fl32}" +
+                                                        $",{state.pedalForceFiltered_fl32}" +
+                                                        $",{state.forceVelEst_fl32}" +
+                                                        $",{state.targetPosition_i32}" +
+                                                        $",{state.currentSpeedInHz_i32}" +
+                                                        $",{state.brakeResistorState_b}" +
+                                                        $",{state.oscillationMonitorValue_u8}" +
+                                                        $",{state.admittance_expectedForce_N}" +
+                                                        $",{state.admittance_isOscillating}" +
+                                                        $",{state.admittance_admittancePsi_N}" + 
+                                                        $",{state.admittance_virtualMass_kg}" +
+                                                        $",{state.admittance_virtualDamping_Ns_m}" +
+                                                        $",{state.admittance_virtualPosition_m}" +
+                                                        $",{state.admittance_virtualVelocity_mps}" +
+                                                        $",{state.admittance_virtualAcceleration_mps2}"
+                                                        );
+
                                                 }
 
 
@@ -467,8 +509,8 @@ namespace User.PluginSdkDemo
                                         {
                                             //TextBox_debugOutput.Text = "Pedal pos: " + pedalState_read_st.payloadPedalState_.pedalPosition_u16;
                                             //TextBox_debugOutput.Text += "Pedal force: " + pedalState_read_st.payloadPedalState_.pedalForce_u16;
-                                            //TextBox_debugOutput.Text += ",  Servo pos targe: " + pedalState_read_st.payloadPedalState_.servoPosition_i16;
-                                            //TextBox_debugOutput.Text += ",  Servo pos: " + pedalState_read_st.payloadPedalState_.servoPosition_i16;
+                                            //TextBox_debugOutput.Text += ",  Servo pos targe: " + pedalState_read_st.payloadPedalState_.servoPosition_i32;
+                                            //TextBox_debugOutput.Text += ",  Servo pos: " + pedalState_read_st.payloadPedalState_.servoPosition_i32;
 
                                             PedalForceTravel_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16, pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
 
@@ -561,7 +603,6 @@ namespace User.PluginSdkDemo
                                         {
                                             waiting_for_pedal_config[pedalSelectedFromPacket_u16] = false;
                                             dap_config_st[pedalSelectedFromPacket_u16] = pedalConfig_read_st;
-                                            Plugin.PedalConfigRead_b[pedalSelectedFromPacket_u16] = true;
                                             updateTheGuiFromConfig();
                                         }
 
@@ -650,9 +691,9 @@ namespace User.PluginSdkDemo
                                         string connection_tmp = "";
                                         bool wireless_connection_update = false;
                                         //fill the status into _calculations
-                                        Plugin._calculations.PedalAvailability[0] = bridge_state.payloadBridgeState_.Pedal_availability_0 == 1;
-                                        Plugin._calculations.PedalAvailability[1] = bridge_state.payloadBridgeState_.Pedal_availability_1 == 1;
-                                        Plugin._calculations.PedalAvailability[2] = bridge_state.payloadBridgeState_.Pedal_availability_2 == 1;
+                                        //Plugin._calculations.PedalAvailability[0] = bridge_state.payloadBridgeState_.Pedal_availability_0 == 1;
+                                        //Plugin._calculations.PedalAvailability[1] = bridge_state.payloadBridgeState_.Pedal_availability_1 == 1;
+                                        //Plugin._calculations.PedalAvailability[2] = bridge_state.payloadBridgeState_.Pedal_availability_2 == 1;
                                         //check wireless pedal connection, if status change make toast notification
                                         if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_0 != bridge_state.payloadBridgeState_.Pedal_availability_0)
                                         {
@@ -670,8 +711,7 @@ namespace User.PluginSdkDemo
                                                 ///ToastNotification("Wireless Clutch", "Disconnected");
                                                 connection_tmp += "Clutch Disconnected";
                                                 wireless_connection_update = true;
-                                                Plugin.PedalConfigRead_b[0] = false;
-                                                Plugin._calculations.PedalAvailability[0] = false;
+                                                //Plugin._calculations.PedalAvailability[0] = false;
                                             }
                                             dap_bridge_state_st.payloadBridgeState_.Pedal_availability_0 = bridge_state.payloadBridgeState_.Pedal_availability_0;
                                             //updateTheGuiFromConfig();
@@ -695,8 +735,7 @@ namespace User.PluginSdkDemo
                                                 //ToastNotification("Wireless Brake", "Disconnected");
                                                 connection_tmp += " Brake Disconnected";
                                                 wireless_connection_update = true;
-                                                Plugin.PedalConfigRead_b[1] = false;
-                                                Plugin._calculations.PedalAvailability[1] = false;
+                                                //Plugin._calculations.PedalAvailability[1] = false;
                                             }
                                             dap_bridge_state_st.payloadBridgeState_.Pedal_availability_1 = bridge_state.payloadBridgeState_.Pedal_availability_1;
 
@@ -719,8 +758,7 @@ namespace User.PluginSdkDemo
                                                 //ToastNotification("Wireless Throttle", "Disconnected");
                                                 connection_tmp += " Throttle Disconnected";
                                                 wireless_connection_update = true;
-                                                Plugin.PedalConfigRead_b[2] = false;
-                                                Plugin._calculations.PedalAvailability[2] = false;
+                                                //Plugin._calculations.PedalAvailability[2] = false;
                                             }
                                             dap_bridge_state_st.payloadBridgeState_.Pedal_availability_2 = bridge_state.payloadBridgeState_.Pedal_availability_2;
 

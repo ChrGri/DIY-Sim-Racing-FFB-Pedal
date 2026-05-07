@@ -14,7 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace User.PluginSdkDemo.UIFunction
+namespace DiyFfbPedal.UIFunction
 {
     /// <summary>
     /// SystemSetting_License.xaml 的互動邏輯

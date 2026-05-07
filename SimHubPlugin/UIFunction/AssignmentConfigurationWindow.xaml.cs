@@ -13,7 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace User.PluginSdkDemo.UIFunction
+namespace DiyFfbPedal.UIFunction
 {
     /// <summary>
     /// AssignmentConfigurationWindow.xaml 的互動邏輯
@@ -62,7 +62,7 @@ namespace User.PluginSdkDemo.UIFunction
                 item.Id = _unassignedPedalId[i];
                 _unassignedPedalList.Add(item);
             }
-            if (_plugin._calculations.PedalAvailability[_plugin.Settings.table_selected])
+            if (_plugin._calculations.pedalWirelessStatus[Plugin.Settings.table_selected]==WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY)
             {
                 Btn_Assign.IsEnabled = false;
                 Btn_Beep.IsEnabled = false;

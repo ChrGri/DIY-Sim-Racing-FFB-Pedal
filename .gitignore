@@ -1,38 +1,46 @@
-
 Arduino/Esp32/Main/Main.ino
 Arduino/libs/FastAccelStepper
-SimHubPlugin/.vs/User.PluginSdkDemo/FileContentIndex/51b0f4c9-3a59-4ce4-afb7-e0dd7d618cbe.vsidx
-SimHubPlugin/.vs/User.PluginSdkDemo/FileContentIndex/5a03c863-2ff9-4703-a4c1-fbda4d44719d.vsidx
-SimHubPlugin/.vs/User.PluginSdkDemo/FileContentIndex/70144db1-2064-4b66-afc1-c9fd7d4f1301.vsidx
-SimHubPlugin/.vs/User.PluginSdkDemo/FileContentIndex/834d44d5-ae0c-4db3-a6ec-2c59b84e31a2.vsidx
-SimHubPlugin/.vs/User.PluginSdkDemo/FileContentIndex/98aed20e-6245-4d21-9457-5ab10d481aa7.vsidx
-SimHubPlugin/.vs/User.PluginSdkDemo/FileContentIndex/9b465e12-30f6-491b-8562-a44e5a3d48c0.vsidx
-SimHubPlugin/.vs/User.PluginSdkDemo/FileContentIndex/b4357aa4-82b1-4979-8361-d08779ada052.vsidx
-SimHubPlugin/.vs/User.PluginSdkDemo/FileContentIndex/c909b491-575f-45a4-87c3-bf98394ff39b.vsidx
-SimHubPlugin/.vs/User.PluginSdkDemo/v17/.suo
-SimHubPlugin/bin/DiyActivePedal.dll
-SimHubPlugin/bin/DiyActivePedal.pdb
-SimHubPlugin/DataPluginDemo.cs
-SimHubPlugin/obj/Debug/DiyActivePedal.dll
-SimHubPlugin/obj/Debug/DiyActivePedal.pdb
-SimHubPlugin/obj/Debug/User.PluginSdkDemo.Properties.Resources.resources
-SimHubPlugin/obj/Release/DiyActivePedal.dll
-SimHubPlugin/obj/Release/DiyActivePedal.pdb
-SimHubPlugin/SettingsControlDemo.xaml.cs
-/Firmware_for_V3/SimHubPlugin/obj
-/Firmware_for_V3/SimHubPlugin/.vs
 
-
-
-## Visual Studio temporary files & caches
+## Visual Studio
 .vs/
+*.suo
+*.user
 *.vsidx
 *.VC.db
 *.VC.VC.opendb
-*.pdb
+*.backup.json
+DocumentLayout.json
+DocumentLayout.backup.json
 *.ipch
 *.aps
 *.ncb
 *.lock
 
-SimHubPlugin/obj/
+## Build output
+bin/
+obj/
+
+## Compiled & generated files
+*.dll
+*.exe
+!SimHubPlugin/Resources/esptool.exe
+*.pdb
+*.cache
+*.ilk
+*.g.cs
+*.g.i.cs
+*.g.resources
+*.baml
+*.Up2Date
+*.lref
+*.FileListAbsolute.txt
+
+## NuGet
+packages/
+*.nupkg
+
+## Misc
+SimHubPlugin/DataPluginDemo.cs
+SimHubPlugin/SettingsControlDemo.xaml.cs
+/Firmware_for_V3/SimHubPlugin/obj
+/Firmware_for_V3/SimHubPlugin/.vs

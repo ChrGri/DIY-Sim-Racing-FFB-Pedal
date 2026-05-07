@@ -14,10 +14,10 @@ class Rudder{
   int32_t dead_zone_upper;
   int32_t dead_zone_lower;
   int32_t dead_zone;
-  int32_t sync_pedal_position;
-  int32_t current_pedal_position;
+  int32_t syncPedalPosition_i32;
+  int32_t currentPedalPosition_i32;
   float endpos_travel;
-  float force_range;  
+  float forceRange_f;
   float force_offset_raw;
   float force_offset_filter;
   float force_center_offset;
@@ -32,14 +32,14 @@ class Rudder{
   }
   void offset_calculate(DAP_calculationVariables_st* calcVars_st)
   {
-    current_pedal_position=calcVars_st->current_pedal_position;
-    position_ratio_sync=calcVars_st->Sync_pedal_position_ratio;
+    currentPedalPosition_i32=calcVars_st->currentPedalPosition_u32;
+    position_ratio_sync=calcVars_st->syncPedalPositionRatio_f;
     endpos_travel=(float)calcVars_st->stepperPosRange;
-    position_ratio_current=((float)(current_pedal_position-calcVars_st->stepperPosMin))/endpos_travel;    
+    position_ratio_current=((float)(currentPedalPosition_i32-calcVars_st->stepperPosMin))/endpos_travel;    
     dead_zone=20;
     Center_offset=calcVars_st->stepperPosMin+ calcVars_st->stepperPosRange/2.0f;
     float center_deadzone = 0.51f;
-    if(calcVars_st->Rudder_status)
+    if(calcVars_st->rudderStatus_b)
     {
       if(position_ratio_sync>center_deadzone)
       {
@@ -50,14 +50,14 @@ class Rudder{
       {
         offset_raw=0;
       }
-      if(calcVars_st->rudder_brake_status)
+      if(calcVars_st->rudderBrakeStatus_b)
       {
         offset_raw=0;
       }
       offset_filter=(int32_t)kalman_rudder->filteredValue(offset_raw+Center_offset,0.0f,1);
       //offset_filter=averagefilter_rudder.process(offset_raw+Center_offset);
       //cap offset filter to prevent over the endstop value
-      offset_filter=constrain(offset_filter,calcVars_st->stepperPosMin_default,calcVars_st->stepperPosMax_default);
+      offset_filter=constrain(offset_filter,calcVars_st->stepperPosMinDefault,calcVars_st->stepperPosMaxDefault);
     }
     else
     {
@@ -71,32 +71,32 @@ class Rudder{
     Center_offset=calcVars_st->stepperPosRange/2.0f;
     dead_zone_upper=Center_offset+dead_zone/2.0f;
     dead_zone_lower=Center_offset-dead_zone/2.0f;
-    sync_pedal_position=calcVars_st->sync_pedal_position;
-    current_pedal_position=calcVars_st->current_pedal_position;
+    syncPedalPosition_i32=calcVars_st->syncPedalPosition_u32;
+    currentPedalPosition_i32=calcVars_st->currentPedalPosition_u32;
     stepper_range=calcVars_st->stepperPosRange;
-    force_range=calcVars_st->Force_Range;
-    force_center_offset=force_range/2+calcVars_st->Force_Min;
+    forceRange_f = calcVars_st->forceRange_f;
+    force_center_offset = forceRange_f / 2 + calcVars_st->forceMin_f;
     endpos_travel=(float)calcVars_st->stepperPosRange;
-    //endpos_travel=((float)(calcVars_st->current_pedal_position-calcVars_st->stepperPosMin))/((float)calcVars_st->stepperPosRange);
-    position_ratio_sync=calcVars_st->Sync_pedal_position_ratio;
-    position_ratio_current=((float)(current_pedal_position-calcVars_st->stepperPosMin))/endpos_travel;
+    //endpos_travel=((float)(calcVars_st->currentPedalPosition_u32-calcVars_st->stepperPosMin))/((float)calcVars_st->stepperPosRange);
+    position_ratio_sync=calcVars_st->syncPedalPositionRatio_f;
+    position_ratio_current=((float)(currentPedalPosition_i32-calcVars_st->stepperPosMin))/endpos_travel;
     
 
     float center_deadzone = 0.51f;
-    if(calcVars_st->Rudder_status)
+    if(calcVars_st->rudderStatus_b)
     {
       
         
         if(position_ratio_sync>center_deadzone)
         {
-          force_offset_raw=(float)(-1.0f*(position_ratio_sync-0.50f)*force_range);
+          force_offset_raw = (float)(-1.0f * (position_ratio_sync - 0.50f) * forceRange_f);
           
         }
         else
         {
           force_offset_raw=0.0f;
         }
-        if(calcVars_st->rudder_brake_status)
+        if(calcVars_st->rudderBrakeStatus_b)
         {
           force_offset_raw=0.0f;
         }
@@ -123,7 +123,7 @@ class Rudder_G_Force{
     stepperPosMax=(float)calcVars_st->stepperPosMax;
     stepper_range=(float)calcVars_st->stepperPosRange;
     float Amp_max=0.3*stepper_range;
-    if(calcVars_st->Rudder_status)
+    if(calcVars_st->rudderStatus_b)
     {
       float offset= Amp_max*((float)G_value)/100.0f;
       //offset=constrain(offset,0,Amp_max);
@@ -146,10 +146,10 @@ class helicoptersRudder{
   int32_t dead_zone_upper;
   int32_t dead_zone_lower;
   int32_t dead_zone;
-  int32_t sync_pedal_position;
-  int32_t current_pedal_position;
+  int32_t syncPedalPosition_i32;
+  int32_t currentPedalPosition_i32;
   float endpos_travel;
-  float force_range;  
+  float forceRange_f;
   float force_offset_raw;
   float force_offset_filter;
   float force_center_offset;
@@ -159,7 +159,7 @@ class helicoptersRudder{
   float pedalPreload;
   float offsetLast;
   int debug_count=0;
-  float deadzoneTolerance=0.01;
+  float deadzoneTolerance = 0.01f;
   float position_ratio_last;
   unsigned long debugPrintLast=0;
   KalmanFilter* kalman_rudder = NULL;
@@ -170,21 +170,21 @@ class helicoptersRudder{
   }
   void offset_calculate(DAP_calculationVariables_st* calcVars_st)
   {
-    current_pedal_position=calcVars_st->current_pedal_position;
-    position_ratio_sync=calcVars_st->Sync_pedal_position_ratio;
+    currentPedalPosition_i32=calcVars_st->currentPedalPosition_u32;
+    position_ratio_sync=calcVars_st->syncPedalPositionRatio_f;
     endpos_travel=(float)calcVars_st->stepperPosRange;
     currentForceReading=(float)calcVars_st->currentForceReading;
-    pedalPreload=(float)calcVars_st->Force_Min;
-    position_ratio_current=((float)(current_pedal_position-calcVars_st->stepperPosMin))/endpos_travel;    
+    pedalPreload=(float)calcVars_st->forceMin_f;
+    position_ratio_current=((float)(currentPedalPosition_i32-calcVars_st->stepperPosMin))/endpos_travel;    
     dead_zone=20;
     Center_offset=calcVars_st->stepperPosMin+ calcVars_st->stepperPosRange/2.0f;
     float center_deadzone = 0.51f;
-    if(calcVars_st->helicopterRudderStatus)
+    if(calcVars_st->helicopterRudderStatus_b)
     {
       //no press status
       if(currentForceReading<pedalPreload)
       {
-        if(calcVars_st->isHelicopterRudderInitialized)
+        if(calcVars_st->isHelicopterRudderInitialized_b)
         {
           if(abs((1-position_ratio_sync)-position_ratio_last)>deadzoneTolerance)
           {
@@ -222,7 +222,7 @@ class helicoptersRudder{
       //offset_filter=(int32_t)kalman_rudder->filteredValue(offset_raw+Center_offset,0.0f,1);
       offset_filter=averagefilter_helirudder.process(offset_raw+Center_offset);
       //cap offset filter to prevent over the endstop value
-      offset_filter=constrain(offset_filter,calcVars_st->stepperPosMin_default,calcVars_st->stepperPosMax_default);
+      offset_filter=constrain(offset_filter,calcVars_st->stepperPosMinDefault,calcVars_st->stepperPosMaxDefault);
     }
     else
     {

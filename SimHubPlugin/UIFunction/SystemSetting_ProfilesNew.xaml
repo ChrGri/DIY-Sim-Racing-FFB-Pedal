@@ -1,0 +1,202 @@
+<UserControl x:Class="DiyFfbPedal.UIFunction.SystemSetting_ProfilesNew"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DiyFfbPedal.UIFunction"
+             xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
+             xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
+             xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+             d:DesignHeight="183" d:DesignWidth="540">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/DiyFfbPedal;component/UIStyles/DefaultStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <Style TargetType="{x:Type MenuItem}">
+
+                <Setter Property="Padding" Value="10, 3, 10, 3"/>
+
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type MenuItem}">
+                            <Border x:Name="Border" BorderBrush="{TemplateBinding BorderBrush}" 
+                 BorderThickness="{TemplateBinding BorderThickness}"
+                 Background="{TemplateBinding Background}"
+                 SnapsToDevicePixels="True">
+                                <Grid>
+                                    <ContentPresenter Margin="{TemplateBinding Padding}" 
+                                   ContentSource="Header" 
+                                   RecognizesAccessKey="True"
+                                   HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                   VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                </Grid>
+                            </Border>
+
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsHighlighted" Value="True">
+                                    <Setter TargetName="Border" Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="CustomContextMenuSeparator" TargetType="{x:Type Separator}">
+                <Setter Property="Margin" Value="5, 1, 5, 1"/>
+
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type Separator}">
+                            <Border Height="2" 
+                 Margin="{TemplateBinding Margin}"
+                 
+                 HorizontalAlignment="Stretch" 
+                 SnapsToDevicePixels="True" Background="{DynamicResource AccentColorBrush3}"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Border Background="#7F4E4E4E" Height="177" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
+            <StackPanel Orientation="Horizontal">
+                <StackPanel>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextProfileListTittle, 'Profile List'}" Height="20" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="5,0,0,0"/>
+                    <ListBox Name="ProfileListBox" Height="150" VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="10" FontFamily="Arial" Width="150" ItemsSource="{Binding ItemList}" Margin="5,0,5,0" BorderBrush="{DynamicResource DisabledMenuItemGlyphPanel}">
+                        <ListBox.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextProfileListAddNewProfile, 'Add new Profile'}" Command="{Binding AddNewProfileCommand}" FontFamily="Arial" FontSize="10"/>
+                            </ContextMenu>
+                        </ListBox.ContextMenu>
+
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="{x:Type ListBoxItem}">
+
+                                <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListBox}}, Path=DataContext}"/>
+
+                                <Setter Property="ContextMenu">
+                                    <Setter.Value>
+                                        <ContextMenu>
+                                            <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextRead, 'Read'}" Command="{Binding PlacementTarget.Tag.ReadProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                            <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextApply, 'Apply'}" Command="{Binding PlacementTarget.Tag.ApplyProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                            <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
+                                            <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextOverwrite, 'Overwrite'}" Command="{Binding PlacementTarget.Tag.OverwriteProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                            <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextProfileListSaveAs, 'Save as New Profile'}" Command="{Binding PlacementTarget.Tag.SaveAsNewProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                            <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextRename, 'Rename'}" Command="{Binding PlacementTarget.Tag.RenameProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                            <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
+                                            <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextProfileListAddNewProfile, 'Add new Profile'}" Command="{Binding PlacementTarget.Tag.AddNewProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                            <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextRefreshList, 'Refresh List'}" Command="{Binding PlacementTarget.Tag.RefreshListCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                            <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
+                                            <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextDelete, 'Delete'}" Command="{Binding PlacementTarget.Tag.DeleteProfileCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                        </ContextMenu>
+                                    </Setter.Value>
+                                </Setter>
+
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock>
+                                    <TextBlock.Text>
+                                        <Binding Path="ListName"/>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+                <StackPanel Orientation="Vertical">
+
+                    <Label Content="{Binding CurrentProfileName}" Height="20" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" FontSize="14"/>
+                    <StackPanel Orientation="Horizontal" ToolTip="Please populate the string value for Car ID. You can retrieve this string value from the following properties: DataCorePlugin.GameData.CarId." >
+                        <Label Content="{SLoc DIYFFBPedalPlugin_TextProfileListGameOrCar, 'Game or Car ID:'}" Height="25" Width="90" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="0,5,0,5"/>
+                        <TextBox Text="{Binding tmpProfile.BindGameOrCar, Mode=TwoWay}" Height="20" MinHeight="20" Width="200" FontFamily="Arial" FontSize="10" VerticalContentAlignment="Center" BorderThickness="0,0,0,0" Margin="5,0,0,0" />
+                        <styles:SHButtonPrimary x:Name="Btn_ClearCarName" Click="Btn_ClearCarName_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdClutch, 'Clutch'}" Height="20" Width="90" HorizontalAlignment="Left" FontFamily="Arial Black" VerticalContentAlignment="Center" FontSize="10" Padding="0,5,0,5"/>
+                            <ComboBox ItemsSource="{Binding ConfigList}"
+                                  DisplayMemberPath="ListNameOrig"  
+                                  SelectedValuePath="FullPath"    
+                                  SelectedValue="{Binding tmpProfile.ConfigPath[0], Mode=TwoWay}"
+                                  Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0"/>
+                        </StackPanel>
+                        <styles:SHButtonPrimary x:Name="Btn_ClearClutch" Click="Btn_ClearClutch_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                        <CheckBox Content="TC  " IsChecked="{Binding tmpProfile.Effects[0][0]}" Padding="1,0,0,0" FontSize="9" FontFamily="Arial" Height="18"/>
+                        <CheckBox Content="RPM" IsChecked="{Binding tmpProfile.Effects[0][1]}" Margin="4,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="B.P" IsChecked="{Binding tmpProfile.Effects[0][2]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial" IsEnabled="False"/>
+                        <CheckBox Content="G-F" IsChecked="{Binding tmpProfile.Effects[0][3]}" Margin="3,0,0,0" Padding="1,0,0,0" IsEnabled="False" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="W.S" IsChecked="{Binding tmpProfile.Effects[0][4]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="IMP" IsChecked="{Binding tmpProfile.Effects[0][5]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-1" IsChecked="{Binding tmpProfile.Effects[0][6]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-2" IsChecked="{Binding tmpProfile.Effects[0][7]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-3" IsChecked="{Binding tmpProfile.Effects[0][8]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-4" IsChecked="{Binding tmpProfile.Effects[0][9]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                            <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdBrake, 'Brake'}" Height="20" Width="90" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" Padding="0,5,0,5"/>
+                            <ComboBox ItemsSource="{Binding ConfigList}"
+                                  DisplayMemberPath="ListNameOrig"  
+                                  SelectedValuePath="FullPath"    
+                                  SelectedValue="{Binding tmpProfile.ConfigPath[1], Mode=TwoWay}"
+                                  Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0"/>
+                        </StackPanel>
+                        <styles:SHButtonPrimary x:Name="Btn_ClearBrake" Click="Btn_ClearBrake_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                        <CheckBox Content="ABS" IsChecked="{Binding tmpProfile.Effects[1][0]}" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="RPM" IsChecked="{Binding tmpProfile.Effects[1][1]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="B.P" IsChecked="{Binding tmpProfile.Effects[1][2]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial" IsEnabled="False"/>
+                        <CheckBox Content="G-F" IsChecked="{Binding tmpProfile.Effects[1][3]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="W.S" IsChecked="{Binding tmpProfile.Effects[1][4]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="IMP" IsChecked="{Binding tmpProfile.Effects[1][5]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-1" IsChecked="{Binding tmpProfile.Effects[1][6]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-2" IsChecked="{Binding tmpProfile.Effects[1][7]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-3" IsChecked="{Binding tmpProfile.Effects[1][8]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-4" IsChecked="{Binding tmpProfile.Effects[1][9]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdThrottle, 'Throttle'}" Height="20" Width="90" HorizontalAlignment="Left" FontFamily="Arial Black" FontSize="10" VerticalContentAlignment="Center" Padding="0,5,0,5"/>
+                            <ComboBox ItemsSource="{Binding ConfigList}"
+                                  DisplayMemberPath="ListNameOrig"  
+                                  SelectedValuePath="FullPath"    
+                                  SelectedValue="{Binding tmpProfile.ConfigPath[2], Mode=TwoWay}"
+                                  Width="200" Margin="5,0,0,0" HorizontalAlignment="Left" Height="20" MinHeight="20" VerticalAlignment="Center" Padding="0,0,0,0" BorderThickness="0,0,0,0" BorderBrush="{x:Null}"/>
+                        </StackPanel>
+                        <styles:SHButtonPrimary x:Name="Btn_ClearThrottle" Click="Btn_ClearThrottle_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="40,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                        <CheckBox Content="TC  " IsChecked="{Binding tmpProfile.Effects[2][0]}" Padding="1,0,0,0" FontSize="10"/>
+                        <CheckBox Content="RPM" IsChecked="{Binding tmpProfile.Effects[2][1]}" Margin="4,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="B.P" IsChecked="{Binding tmpProfile.Effects[2][2]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial" IsEnabled="False"/>
+                        <CheckBox Content="G-F" IsChecked="{Binding tmpProfile.Effects[2][3]}" Margin="3,0,0,0" Padding="1,0,0,0" IsEnabled="False" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="W.S" IsChecked="{Binding tmpProfile.Effects[2][4]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="IMP" IsChecked="{Binding tmpProfile.Effects[2][5]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-1" IsChecked="{Binding tmpProfile.Effects[2][6]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-2" IsChecked="{Binding tmpProfile.Effects[2][7]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-3" IsChecked="{Binding tmpProfile.Effects[2][8]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                        <CheckBox Content="C-4" IsChecked="{Binding tmpProfile.Effects[2][9]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

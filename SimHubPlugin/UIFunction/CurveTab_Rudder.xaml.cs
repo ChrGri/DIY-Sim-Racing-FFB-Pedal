@@ -17,7 +17,7 @@ using System.Windows.Shapes;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 
 
-namespace User.PluginSdkDemo.UIFunction
+namespace DiyFfbPedal.UIFunction
 {
     /// <summary>
     /// CurveTab_Rudder.xaml 的互動邏輯

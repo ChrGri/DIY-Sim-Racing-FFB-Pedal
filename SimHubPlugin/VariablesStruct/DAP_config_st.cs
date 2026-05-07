@@ -5,10 +5,10 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     //[StructLayout(LayoutKind.Sequential, Pack = 1)]
-    
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct DAP_config_st
     {
         public payloadHeader payloadHeader_;

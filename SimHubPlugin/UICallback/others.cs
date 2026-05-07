@@ -2,10 +2,12 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Media;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -13,18 +15,38 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Forms;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using Windows.UI.Notifications;
-using static User.PluginSdkDemo.ComPortHelper;
+using static DiyFfbPedal.ComPortHelper;
+using Button = System.Windows.Controls.Button;
+using Cursors = System.Windows.Input.Cursors;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
-        private void ToastNotification(string message1, string message2)
+        public void ToastNotification(string message1, string message2)
         {
+            System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    ToastWithCustumizedWindow(message1, message2);
+                }
+                catch (Exception ex)
+                {
+                    SimHub.Logging.Current.Error($"Toast error: {ex.Message}");
+                }
+            }));
 
+        }
+
+        public void ToastWithToastmanager(string message1, string message2)
+        {
             var xml = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText02);
             var text = xml.GetElementsByTagName("text");
             text[0].AppendChild(xml.CreateTextNode(message1));
@@ -33,9 +55,109 @@ namespace User.PluginSdkDemo
             toast.ExpirationTime = DateTime.Now.AddMilliseconds(500);
             toast.Tag = "Pedal_notification";
             ToastNotificationManager.CreateToastNotifier("FFB Pedal Dashboard").Show(toast);
+        }
 
+        public void ToastWithPowerShell(string title, string message)
+        {
+            string script = $"$ErrorActionPreference = 'SilentlyContinue'; " +
+                    $"[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null; " +
+                    $"$template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02); " +
+                    $"$textNodes = $template.GetElementsByTagName('text'); " +
+                    $"$textNodes.Item(0).AppendChild($template.CreateTextNode('{title}')) > $null; " +
+                    $"$textNodes.Item(1).AppendChild($template.CreateTextNode('{message}')) > $null; " +
+                    $"$toast = [Windows.UI.Notifications.ToastNotification]::new($template); " +
+                    $"[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('DIY FFB Pedal').Show($toast);";
 
+            ProcessStartInfo psi = new ProcessStartInfo
+            {
+                FileName = "powershell",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{script}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            Process.Start(psi);
+        }
 
+        public void ToastWithCustumizedWindow(string title, string message)
+        {
+            Grid mainGrid = new Grid();
+            StackPanel container = new StackPanel
+            {
+                Margin = new Thickness(15, 10, 25, 10) 
+            };
+
+            TextBlock titleLabel = new TextBlock
+            {
+                Text = title,
+                FontWeight = FontWeights.Bold,
+                FontSize = 16,
+                Foreground = Brushes.White,
+                FontFamily = new FontFamily("Arial"), 
+                Margin = new Thickness(0, 0, 0, 5)
+            };
+
+            TextBlock messageLabel = new TextBlock
+            {
+                Text = message,
+                FontSize = 14,
+                Foreground = Brushes.LightGray,
+                FontFamily = new FontFamily("Arial"),
+                TextWrapping = TextWrapping.Wrap
+            };
+
+            container.Children.Add(titleLabel);
+            container.Children.Add(messageLabel);
+            mainGrid.Children.Add(container);
+            System.Windows.Controls.Button closeButton = new Button
+            {
+                Content = "×",
+                FontSize = 18,
+                Foreground = Brushes.Gray,
+                Background = Brushes.Transparent,
+                BorderBrush = Brushes.Transparent,
+                VerticalAlignment = VerticalAlignment.Top,
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
+                Margin = new Thickness(0, 0, 0, 0),
+                Padding = new Thickness(0),
+                Width = 25,
+                Height = 25,
+                Cursor = Cursors.Hand
+            };
+            Window toast = null; 
+            closeButton.Click += (s, e) => toast?.Close();
+            closeButton.MouseEnter += (s, e) => closeButton.Foreground = Brushes.White;
+            closeButton.MouseLeave += (s, e) => closeButton.Foreground = Brushes.Gray;
+            mainGrid.Children.Add(closeButton);
+            toast = new Window
+            {
+                Width = 350,
+                Height = 100,
+                WindowStyle = WindowStyle.None,
+                AllowsTransparency = true,
+                Background = Brushes.Transparent,
+                Topmost = true,
+                ShowInTaskbar = false,
+            };
+
+            toast.Content = new Border
+            {
+                Background = new SolidColorBrush(Color.FromArgb(235, 48, 48, 48)),
+                CornerRadius = new CornerRadius(5),
+                BorderBrush = Brushes.Gray,
+                BorderThickness = new Thickness(1),
+                Child = mainGrid 
+            };
+
+            var area = SystemParameters.WorkArea;
+            toast.Left = area.Right - toast.Width - 3;
+            toast.Top = area.Bottom - toast.Height - 3;
+
+            toast.Show();
+            System.Media.SystemSounds.Beep.Play();
+            Task.Delay(3500).ContinueWith(_ => {
+                try { toast.Dispatcher.Invoke(() => toast.Close()); }
+                catch {  }
+            });
         }
 
         private void UpdateSerialPortList_click()
@@ -83,122 +205,14 @@ namespace User.PluginSdkDemo
 
         public void DAP_config_set_default(uint pedalIdx)
         {
-            //dumpPedalToResponseFile[pedalIdx] = false;
-            //dumpPedalToResponseFile_clearFile[pedalIdx] = false;
-            dap_config_st[pedalIdx].payloadHeader_.payloadType = (byte)Constants.pedalConfigPayload_type;
-            dap_config_st[pedalIdx].payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
-            dap_config_st[pedalIdx].payloadPedalConfig_.pedalStartPosition = 35;
-            dap_config_st[pedalIdx].payloadPedalConfig_.pedalEndPosition = 80;
-            dap_config_st[pedalIdx].payloadPedalConfig_.maxForce = 50;
-            dap_config_st[pedalIdx].payloadPedalConfig_.preloadForce = 0;
-            /*
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce_p000 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce_p020 = 20;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce_p040 = 40;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce_p060 = 60;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce_p080 = 80;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce_p100 = 100;
-            */
-            dap_config_st[pedalIdx].payloadPedalConfig_.quantityOfControl = 6;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce00 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce01 = 20;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce02 = 40;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce03 = 60;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce04 = 80;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce05 = 100;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce06 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce07 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce08 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce09 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeForce10 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel00 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel01 = 20;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel02 = 40;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel03 = 60;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel04 = 80;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel05 = 100;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel06 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel07 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel08 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel09 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.relativeTravel10 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.numOfJoystickMapControl = 6;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped00 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped01 = 20;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped02 = 40;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped03 = 60;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped04 = 80;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped05 = 100;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped06 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped07 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped08 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped09 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapMapped10 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig00 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig01 = 20;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig02 = 40;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig03 = 60;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig04 = 80;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig05 = 100;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig06 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig07 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig08 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig09 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.joystickMapOrig10 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.dampingPress = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.dampingPull = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.absFrequency = 5;
-            dap_config_st[pedalIdx].payloadPedalConfig_.absAmplitude = 20;
-            dap_config_st[pedalIdx].payloadPedalConfig_.absPattern = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.absForceOrTarvelBit = 0;
-
-            dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_a = 205;
-            dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_b = 220;
-            dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_d = 60;
-            dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_c_horizontal = 215;
-            dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_c_vertical = 60;
-            dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_travel = 100;
-
-            dap_config_st[pedalIdx].payloadPedalConfig_.Simulate_ABS_trigger = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.Simulate_ABS_value = 80;
-            dap_config_st[pedalIdx].payloadPedalConfig_.RPM_max_freq = 40;
-            dap_config_st[pedalIdx].payloadPedalConfig_.RPM_min_freq = 10;
-            dap_config_st[pedalIdx].payloadPedalConfig_.RPM_AMP = 30;
-            dap_config_st[pedalIdx].payloadPedalConfig_.BP_trigger_value = 50;
-            dap_config_st[pedalIdx].payloadPedalConfig_.BP_amp = 1;
-            dap_config_st[pedalIdx].payloadPedalConfig_.BP_freq = 15;
-            dap_config_st[pedalIdx].payloadPedalConfig_.BP_trigger = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.G_multi = 50;
-            dap_config_st[pedalIdx].payloadPedalConfig_.G_window = 10;
-            dap_config_st[pedalIdx].payloadPedalConfig_.WS_amp = 1;
-            dap_config_st[pedalIdx].payloadPedalConfig_.WS_freq = 15;
-            dap_config_st[pedalIdx].payloadPedalConfig_.Impact_multi = 50;
-            dap_config_st[pedalIdx].payloadPedalConfig_.Impact_window = 60;
-            dap_config_st[pedalIdx].payloadPedalConfig_.CV_amp_1 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.CV_freq_1 = 10;
-            dap_config_st[pedalIdx].payloadPedalConfig_.CV_amp_2 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.CV_freq_2 = 10;
-            dap_config_st[pedalIdx].payloadPedalConfig_.maxGameOutput = 100;
-            dap_config_st[pedalIdx].payloadPedalConfig_.kf_modelNoise = 90;
-            dap_config_st[pedalIdx].payloadPedalConfig_.kf_modelOrder = 0;
+            if ((Plugin!=null))
+            {
+                dap_config_st[pedalIdx] = Plugin.DefaultConfig;
+                dap_config_st[pedalIdx].payloadPedalConfig_.pedal_type = (byte)pedalIdx;
+                dap_config_st[pedalIdx].payloadHeader_.PedalTag = (byte)pedalIdx;
+            }
 
 
-            dap_config_st[pedalIdx].payloadPedalConfig_.loadcell_rating = 150;
-
-            dap_config_st[pedalIdx].payloadPedalConfig_.travelAsJoystickOutput_u8 = 0;
-
-            dap_config_st[pedalIdx].payloadPedalConfig_.invertLoadcellReading_u8 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.invertMotorDirection_u8 = 0;
-
-            dap_config_st[pedalIdx].payloadPedalConfig_.spindlePitch_mmPerRev_u8 = 5;
-            dap_config_st[pedalIdx].payloadPedalConfig_.pedal_type = (byte)pedalIdx;
-            //dap_config_st[pedalIdx].payloadPedalConfig_.OTA_flag = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.stepLossFunctionFlags_u8 = 0b11;
-            dap_config_st[pedalIdx].payloadPedalConfig_.kf_modelNoise_joystick = 1;
-            dap_config_st[pedalIdx].payloadPedalConfig_.kf_Joystick_u8 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.positionSmoothingFactor_u8 = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.minForceForEffects = 0;
-            dap_config_st[pedalIdx].payloadPedalConfig_.servoRatioOfInertia_u8 = 1;
         }
 
         public void DAP_config_set_default_rudder()
@@ -268,8 +282,6 @@ namespace User.PluginSdkDemo
             dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig09 = 0;
             dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig10 = 0;
 
-            dap_config_st_rudder.payloadPedalConfig_.dampingPress = 0;
-            dap_config_st_rudder.payloadPedalConfig_.dampingPull = 0;
             dap_config_st_rudder.payloadPedalConfig_.absFrequency = 5;
             dap_config_st_rudder.payloadPedalConfig_.absAmplitude = 20;
             dap_config_st_rudder.payloadPedalConfig_.absPattern = 0;
@@ -306,7 +318,7 @@ namespace User.PluginSdkDemo
             dap_config_st_rudder.payloadPedalConfig_.kf_modelNoise = 30;
             dap_config_st_rudder.payloadPedalConfig_.kf_modelOrder = 2;
 
-            dap_config_st_rudder.payloadPedalConfig_.positionSmoothingFactor_u8 = 0;
+            
 
             dap_config_st_rudder.payloadPedalConfig_.loadcell_rating = 100;
 
@@ -324,6 +336,12 @@ namespace User.PluginSdkDemo
             dap_config_st_rudder.payloadPedalConfig_.servoIdleTimeout = 0;
             dap_config_st_rudder.payloadPedalConfig_.debug_flags_0 = 0;
             dap_config_st_rudder.payloadPedalConfig_.minForceForEffects = 0;
+            dap_config_st_rudder.payloadPedalConfig_.configHash_u32 = 393938365;
+            dap_config_st_rudder.payloadPedalConfig_.virtualPedalMass_u8 = 150;
+            dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8 = 200;
+            dap_config_st_rudder.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = 10;
+            dap_config_st_rudder.payloadPedalConfig_.endstopTravelRange_mm_u8 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = 10;
         }
         public byte[] getBytesPayload(payloadPedalConfig aux)
         {
@@ -376,7 +394,21 @@ namespace User.PluginSdkDemo
 
             return aux;
         }
+        public Dap_hidmessage_st getHidMessageFromBytes(byte[] myBuffer)
+        {
+            Dap_hidmessage_st aux;
 
+            // see https://stackoverflow.com/questions/31045358/how-do-i-copy-bytes-into-a-struct-variable-in-c
+            int size = Marshal.SizeOf(typeof(Dap_hidmessage_st));
+            IntPtr ptr = Marshal.AllocHGlobal(size);
+
+            Marshal.Copy(myBuffer, 0, ptr, size);
+
+            aux = (Dap_hidmessage_st)Marshal.PtrToStructure(ptr, typeof(Dap_hidmessage_st));
+            Marshal.FreeHGlobal(ptr);
+
+            return aux;
+        }
 
         public DAP_state_basic_st getStateFromBytes(byte[] myBuffer)
         {
@@ -428,41 +460,61 @@ namespace User.PluginSdkDemo
         {
             if (Plugin != null)
             {
-                if (Plugin.Settings.LivePreview[indexOfSelectedPedal_u] && Plugin.PedalConfigRead_b[indexOfSelectedPedal_u])
+                DateTime ConfigLiveSending_now = DateTime.Now;
+                TimeSpan diff = ConfigLiveSending_now - ConfigLiveSending_last;
+                int millisceonds = (int)diff.TotalMilliseconds;
+                bool live_preview_b = true;
+
+                if (PedalTabChange)
                 {
-                    DateTime ConfigLiveSending_now = DateTime.Now;
-                    TimeSpan diff = ConfigLiveSending_now - ConfigLiveSending_last;
-                    int millisceonds = (int)diff.TotalMilliseconds;
-                    bool live_preview_b = true;
-
-                    if (PedalTabChange)
+                    diff = ConfigLiveSending_now - PedalTabChange_last;
+                    int millseconds_pedaltabchange = (int)diff.TotalMilliseconds;
+                    if (millseconds_pedaltabchange > 100)
                     {
-                        diff = ConfigLiveSending_now - PedalTabChange_last;
-                        int millseconds_pedaltabchange = (int)diff.TotalMilliseconds;
-                        if (millseconds_pedaltabchange > 100)
-                        {
-                            PedalTabChange = false;
-                            PedalTabChange_last = DateTime.Now;
+                        PedalTabChange = false;
+                        PedalTabChange_last = DateTime.Now;
 
-                        }
-                        else
-                        {
-                            live_preview_b = false;
-                        }
                     }
-                    float time_interval = 1000.0f / Plugin.Settings.Pedal_action_fps[indexOfSelectedPedal_u];
-
-                    if (millisceonds > time_interval && live_preview_b)
+                    else
                     {
-                        //live_preview_b = true;
-                        Plugin.SendConfigWithoutSaveToEEPROM(dap_config_st[indexOfSelectedPedal_u], (byte)indexOfSelectedPedal_u);
-                        ConfigLiveSending_last = DateTime.Now;
+                        live_preview_b = false;
                     }
+                }
+                if (Plugin._calculations.pedalWirelessStatus[Plugin.Settings.table_selected] == WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY || Plugin._calculations.pedalSerialStatus[Plugin.Settings.table_selected] == ConnectStateEnum.PEDAL_IS_READY)
+                {
 
-
-
-
-
+                }
+                else
+                {
+                    live_preview_b = false;
+                }
+                if (Plugin._calculations.IsApplyingConfig)
+                {
+                    TimeSpan lockDiff = DateTime.Now - Plugin._calculations.configApplyLockLast;
+                    if (lockDiff.TotalMilliseconds > 1000)
+                    {
+                        Plugin._calculations.IsApplyingConfig = false;
+                    }
+                }
+                float time_interval = 1000.0f / Plugin.Settings.Pedal_action_fps[indexOfSelectedPedal_u];
+                if (!Plugin._calculations.IsApplyingConfig && live_preview_b && !Plugin._calculations.configPreviewLock[indexOfSelectedPedal_u])
+                {
+                    Plugin._calculations.IsModifiedConfigNotSave[Plugin.Settings.table_selected] = true;
+                    Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
+                }
+                /*
+                if (millisceonds > time_interval && live_preview_b && !Plugin._calculations.configPreviewLock[indexOfSelectedPedal_u])
+                {
+                    //live_preview_b = true;
+                    Plugin.SendConfigWithoutSaveToEEPROM(dap_config_st[indexOfSelectedPedal_u], (byte)indexOfSelectedPedal_u);
+                    ConfigLiveSending_last = DateTime.Now;
+                }
+                */
+                if (live_preview_b && !Plugin._calculations.configPreviewLock[indexOfSelectedPedal_u])
+                {
+                    Plugin.BufferConfig_st[Plugin.Settings.table_selected] = dap_config_st[indexOfSelectedPedal_u];
+                    Plugin.IsGetConfigSendRequest[Plugin.Settings.table_selected] = true;
+                    Plugin.ConfigBufferGet_lastTime[Plugin.Settings.table_selected] = DateTime.Now;
                 }
             }
 
@@ -492,7 +544,7 @@ namespace User.PluginSdkDemo
             dap_config_st[pedalIdx].payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             dap_config_st[pedalIdx].payloadHeader_.payloadType = (byte)Constants.pedalConfigPayload_type;
             dap_config_st[pedalIdx].payloadHeader_.PedalTag = (byte)pedalIdx;
-            dap_config_st[pedalIdx].payloadHeader_.storeToEeprom = 1;
+            dap_config_st[pedalIdx].payloadHeader_.storeToEeprom = 0;
             dap_config_st[pedalIdx].payloadPedalConfig_.pedal_type = (byte)pedalIdx;
             dap_config_st[pedalIdx].payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
             dap_config_st[pedalIdx].payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
@@ -591,24 +643,14 @@ namespace User.PluginSdkDemo
 
 
         }
-        unsafe public void Sendconfigtopedal_shortcut()
-        {
-
-            for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
-            {
-                if (Plugin.Settings.file_enable_check[profile_select, pedalIdx] == 1)
-                {
-                    Sendconfig(pedalIdx);
-                    //TextBox_debugOutput.Text = "config was sent to pedal";
-                }
-            }
-
-        }
         unsafe public void Reading_config_auto(uint i)
         {
             // compute checksum
-            DAP_action_st tmp;
+            DAP_action_st tmp = default;
             tmp.payloadPedalAction_.returnPedalConfig_u8 = 1;
+            waiting_for_pedal_config[i] = true;
+            Plugin.SendPedalAction(tmp, (byte)i);
+            /*
             tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
             tmp.payloadHeader_.PedalTag = (byte)i;
@@ -623,7 +665,7 @@ namespace User.PluginSdkDemo
             byte[] newBuffer = new byte[length];
             newBuffer = Plugin.getBytes_Action(tmp);
             // tell the plugin that we expect config data
-            waiting_for_pedal_config[i] = true;
+            
             if (Plugin.Settings.Pedal_ESPNow_Sync_flag[i])
             {
                 if (Plugin.ESPsync_serialPort.IsOpen)
@@ -664,6 +706,7 @@ namespace User.PluginSdkDemo
                     }
                 }
             }
+            */
 
         }
 
@@ -748,15 +791,6 @@ namespace User.PluginSdkDemo
 
                 // https://stackoverflow.com/questions/7178655/serialport-encoding-how-do-i-get-8-bit-ascii
                 Plugin._serialPort[pedalIdx].Encoding = System.Text.Encoding.GetEncoding(28591);
-
-                // regular ESP
-                //Plugin._serialPort[pedalIdx].DtrEnable = false;
-
-                // ESP32 S3
-                //Plugin._serialPort[pedalIdx].RtsEnable = false;
-                //Plugin._serialPort[pedalIdx].DtrEnable = true;
-
-
                 Plugin._serialPort[pedalIdx].NewLine = "\r\n";
                 Plugin._serialPort[pedalIdx].ReadBufferSize = 10000;
                 if (Plugin.Settings.auto_connect_flag[pedalIdx] == 1 & Plugin.Settings.connect_flag[pedalIdx] == 1)
@@ -821,7 +855,7 @@ namespace User.PluginSdkDemo
                         pedal_serial_read_timer[pedalIdx].Start();
                         System.Threading.Thread.Sleep(100);
                         Serial_connect_status[pedalIdx] = true;
-                        Plugin._calculations.PedalSerialAvailability[pedalIdx] = true;
+                        Plugin._calculations.pedalSerialStatus[pedalIdx] = ConnectStateEnum.PEDAL_ENTRY_CONNECT;
                     }
                     catch (Exception ex)
                     {
@@ -836,7 +870,6 @@ namespace User.PluginSdkDemo
                     Plugin.Settings.connect_status[pedalIdx] = 0;
                     Plugin.connectSerialPort[pedalIdx] = false;
                     Serial_connect_status[pedalIdx] = false;
-                    Plugin._calculations.PedalSerialAvailability[pedalIdx] = false;
                 }
             }
             catch (Exception ex)
@@ -856,8 +889,16 @@ namespace User.PluginSdkDemo
                 pedal_serial_read_timer[pedalIdx].Stop();
                 pedal_serial_read_timer[pedalIdx].Dispose();
             }
-            connect_timer.Dispose();
-            connect_timer.Stop();
+            if (manualDisconnect_b)
+            {
+                manualDisconnect_b = false;
+            }
+            else
+            {
+                connect_timer.Dispose();
+                connect_timer.Stop();
+            }
+
             if (ESP_host_serial_timer != null)
             {
                 ESP_host_serial_timer.Stop();
@@ -881,13 +922,14 @@ namespace User.PluginSdkDemo
                 Plugin._serialPort[pedalIdx].DiscardOutBuffer();
                 Plugin._serialPort[pedalIdx].Close();
                 Plugin.Settings.connect_status[pedalIdx] = 0;
+                Plugin._calculations.pedalSerialStatus[pedalIdx] = ConnectStateEnum.PEDAL_DISCONNECT;
             }
             if (Plugin.ESPsync_serialPort.IsOpen)
             {
                 Plugin.ESPsync_serialPort.DiscardInBuffer();
                 Plugin.ESPsync_serialPort.DiscardOutBuffer();
                 Plugin.ESPsync_serialPort.Close();
-                Plugin.Sync_esp_connection_flag = false;
+                //Plugin.Sync_esp_connection_flag = false;
             }
         }
         static List<int> FindAllOccurrences(byte[] source, byte[] sequence, int maxLength)
@@ -948,7 +990,6 @@ namespace User.PluginSdkDemo
         {
             if (Plugin.Page_update_flag == true)
             {
-                Profile_change(Plugin._calculations.profile_index);
                 Plugin.Page_update_flag = false;
                 MyTab.SelectedIndex = (int)Plugin.Settings.table_selected;
                 Plugin.pedal_select_update_flag = false;
@@ -968,192 +1009,10 @@ namespace User.PluginSdkDemo
                 updateTheGuiFromConfig();
             }
 
-            if (Plugin.sendconfig_flag == 1)
-            {
-                Sendconfigtopedal_shortcut();
-                Plugin.sendconfig_flag = 0;
-            }
         }
 
-        void Parsefile(uint profile_index)
-        {
-            // https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/deserialization
-
-
-            // c# code to iterate over all fields of struct and set values from json file
-            for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
-            {
-                if (Plugin.Settings.file_enable_check[profile_select, pedalIdx] == 1)
-                {
-                    payloadPedalConfig payloadPedalConfig_fromJson_st = dap_config_st[pedalIdx].payloadPedalConfig_;
-                    // Read the entire JSON file
-                    string jsonString = File.ReadAllText(Plugin.Settings.Pedal_file_string[profile_index, pedalIdx]);
-                    // Parse all of the JSON.
-                    //JsonNode forecastNode = JsonNode.Parse(jsonString);
-                    dynamic data = JsonConvert.DeserializeObject(jsonString);
-                    //var s = default(payloadPedalConfig);
-                    Object obj = payloadPedalConfig_fromJson_st;// s;
-                    FieldInfo[] fi = payloadPedalConfig_fromJson_st.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
-                    // Iterate over each field and print its name and value
-                    foreach (var field in fi)
-                    {
-
-                        if (data["payloadPedalConfig_"][field.Name] != null)
-                        //if (forecastNode["payloadPedalConfig_"][field.Name] != null)
-                        {
-                            try
-                            {
-                                if (field.FieldType == typeof(float))
-                                {
-                                    //float value = forecastNode["payloadPedalConfig_"][field.Name].GetValue<float>();
-                                    float value = (float)data["payloadPedalConfig_"][field.Name];
-                                    field.SetValue(obj, value);
-                                }
-
-                                if (field.FieldType == typeof(byte))
-                                {
-                                    //byte value = forecastNode["payloadPedalConfig_"][field.Name].GetValue<byte>();
-                                    byte value = (byte)data["payloadPedalConfig_"][field.Name];
-                                    field.SetValue(obj, value);
-                                }
-                                if (field.FieldType == typeof(Int16))
-                                {
-                                    //byte value = forecastNode["payloadPedalConfig_"][field.Name].GetValue<byte>();
-                                    Int16 value = (Int16)data["payloadPedalConfig_"][field.Name];
-                                    field.SetValue(obj, value);
-                                }
-
-                            }
-                            catch (Exception)
-                            {
-
-                            }
-
-                        }
-                    }
-
-                    // set values in global structure
-                    dap_config_st[pedalIdx].payloadPedalConfig_ = (payloadPedalConfig)obj;// payloadPedalConfig_fromJson_st;
-                    if (dap_config_st[pedalIdx].payloadPedalConfig_.spindlePitch_mmPerRev_u8 == 0)
-                    {
-                        dap_config_st[pedalIdx].payloadPedalConfig_.spindlePitch_mmPerRev_u8 = 5;
-                    }
-                    if (dap_config_st[pedalIdx].payloadPedalConfig_.kf_modelNoise == 0)
-                    {
-                        dap_config_st[pedalIdx].payloadPedalConfig_.kf_modelNoise = 5;
-                    }
-                    dap_config_st[pedalIdx].payloadPedalConfig_.pedal_type = (byte)pedalIdx;
-
-                }
-
-            }
-
-
-
-            updateTheGuiFromConfig();
-        }
-        public void Profile_change(uint profile_index)
-        {
-            profile_select = profile_index;
-            //ProfileTab.SelectedIndex = (int)profile_index;
-            //if (Plugin.Settings.file_enable_check[profile_select])
-            Parsefile(profile_index);
-            string tmp;
-            switch (profile_index)
-            {
-                case 0:
-                    tmp = "A:" + Plugin.Settings.Profile_name[profile_index];
-                    break;
-                case 1:
-                    tmp = "B:" + Plugin.Settings.Profile_name[profile_index];
-                    break;
-                case 2:
-                    tmp = "C:" + Plugin.Settings.Profile_name[profile_index];
-                    break;
-                case 3:
-                    tmp = "D:" + Plugin.Settings.Profile_name[profile_index];
-                    break;
-                case 4:
-                    tmp = "E:" + Plugin.Settings.Profile_name[profile_index];
-                    break;
-                case 5:
-                    tmp = "F:" + Plugin.Settings.Profile_name[profile_index];
-                    break;
-                default:
-                    tmp = "No Profile";
-                    break;
-            }
-            Plugin._calculations.current_profile = tmp;
-            for (int j = 0; j < 3; j++)
-            {
-                for (int k = 0; k < 8; k++)
-                {
-                    if (Plugin.Settings.Effect_status_prolife[profile_select, j, k])
-                    {
-                        switch (k)
-                        {
-                            case 0:
-                                Plugin.Settings.ABS_enable_flag[j] = 1;
-                                break;
-                            case 1:
-                                Plugin.Settings.RPM_enable_flag[j] = 1;
-                                break;
-                            case 2:
-                                //Plugin.Settings. = 1;
-                                break;
-                            case 3:
-                                Plugin.Settings.G_force_enable_flag[j] = 1;
-                                break;
-                            case 4:
-                                Plugin.Settings.WS_enable_flag[j] = 1;
-                                break;
-                            case 5:
-                                Plugin.Settings.Road_impact_enable_flag[j] = 1;
-                                break;
-                            case 6:
-                                Plugin.Settings.CV1_enable_flag[j] = true;
-                                break;
-                            case 7:
-                                Plugin.Settings.CV2_enable_flag[j] = true;
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        switch (k)
-                        {
-                            case 0:
-                                Plugin.Settings.ABS_enable_flag[j] = 0;
-                                break;
-                            case 1:
-                                Plugin.Settings.RPM_enable_flag[j] = 0;
-                                break;
-                            case 2:
-                                //Plugin.Settings. = 1;
-                                break;
-                            case 3:
-                                Plugin.Settings.G_force_enable_flag[j] = 0;
-                                break;
-                            case 4:
-                                Plugin.Settings.WS_enable_flag[j] = 0;
-                                break;
-                            case 5:
-                                Plugin.Settings.Road_impact_enable_flag[j] = 0;
-                                break;
-                            case 6:
-                                Plugin.Settings.CV1_enable_flag[j] = false;
-                                break;
-                            case 7:
-                                Plugin.Settings.CV2_enable_flag[j] = false;
-                                break;
-                        }
-                    }
-
-                }
-            }
-            //effect profile change
-
-        }
+        
+        
 
         public void DelayCall(int msec, Action fn)
         {
@@ -1204,7 +1063,6 @@ namespace User.PluginSdkDemo
                     dap_config_st_rudder.payloadPedalConfig_.invertMotorDirection_u8 = dap_config_st[i].payloadPedalConfig_.invertMotorDirection_u8;
                     dap_config_st_rudder.payloadPedalConfig_.loadcell_rating = dap_config_st[i].payloadPedalConfig_.loadcell_rating;
                     dap_config_st_rudder.payloadPedalConfig_.stepLossFunctionFlags_u8 = dap_config_st[i].payloadPedalConfig_.stepLossFunctionFlags_u8;
-                    dap_config_st_rudder.payloadPedalConfig_.positionSmoothingFactor_u8 = dap_config_st[i].payloadPedalConfig_.positionSmoothingFactor_u8;
                     //dap_config_st_rudder.payloadPedalConfig_.Simulate_ABS_trigger = 0;
                     dap_config_st_rudder.payloadPedalConfig_.Simulate_ABS_value = dap_config_st[i].payloadPedalConfig_.Simulate_ABS_value;
                     Sendconfig_Rudder(i);
@@ -1317,8 +1175,6 @@ namespace User.PluginSdkDemo
             dap_config_st_rudder.payloadPedalConfig_.relativeTravel09 = Plugin.Settings.rudderTravel[9];
             dap_config_st_rudder.payloadPedalConfig_.relativeTravel10 = Plugin.Settings.rudderTravel[10];
 
-            dap_config_st_rudder.payloadPedalConfig_.dampingPress = Plugin.Settings.rudderDamping;
-            dap_config_st_rudder.payloadPedalConfig_.dampingPull = Plugin.Settings.rudderDamping;
             dap_config_st_rudder.payloadPedalConfig_.maxForce = Plugin.Settings.rudderMaxForce;
             dap_config_st_rudder.payloadPedalConfig_.preloadForce = Plugin.Settings.rudderMinForce;
             dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition = Plugin.Settings.rudderMinTravel;
@@ -1354,7 +1210,6 @@ namespace User.PluginSdkDemo
             Plugin.Settings.rudderTravel[9] = dap_config_st_rudder.payloadPedalConfig_.relativeTravel09;
             Plugin.Settings.rudderTravel[10] = dap_config_st_rudder.payloadPedalConfig_.relativeTravel10;
 
-            Plugin.Settings.rudderDamping = dap_config_st_rudder.payloadPedalConfig_.dampingPress;
             Plugin.Settings.rudderMaxForce = dap_config_st_rudder.payloadPedalConfig_.maxForce;
             Plugin.Settings.rudderMinForce = dap_config_st_rudder.payloadPedalConfig_.preloadForce;
             Plugin.Settings.rudderMinTravel = dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition;
@@ -1362,6 +1217,46 @@ namespace User.PluginSdkDemo
             Plugin.Settings.rudderRPMMaxFrequency = dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq;
             Plugin.Settings.rudderRPMMinFrequency = dap_config_st_rudder.payloadPedalConfig_.RPM_min_freq;
             Plugin.Settings.rudderRPMAmp = dap_config_st_rudder.payloadPedalConfig_.RPM_AMP;
+        }
+
+        public bool OpenBridgeSerialConnection()
+        {
+            bool status = false;
+            if (Plugin.ESPsync_serialPort.IsOpen == false)
+            {
+                Plugin.ESPsync_serialPort.PortName = Plugin.Settings.ESPNow_port;
+                try
+                {
+                    // serial port settings
+                    Plugin.ESPsync_serialPort.Handshake = Handshake.None;
+                    Plugin.ESPsync_serialPort.Parity = Parity.None;
+                    //_serialPort[pedalIdx].StopBits = StopBits.None;
+                    Plugin.ESPsync_serialPort.ReadTimeout = 2000;
+                    Plugin.ESPsync_serialPort.WriteTimeout = 500;
+                    Plugin.ESPsync_serialPort.BaudRate = Bridge_baudrate;
+                    // https://stackoverflow.com/questions/7178655/serialport-encoding-how-do-i-get-8-bit-ascii
+                    Plugin.ESPsync_serialPort.Encoding = System.Text.Encoding.GetEncoding(28591);
+                    Plugin.ESPsync_serialPort.NewLine = "\r\n";
+                    Plugin.ESPsync_serialPort.ReadBufferSize = 40960;
+                    Plugin.ESPsync_serialPort.Open();
+                    System.Threading.Thread.Sleep(200);
+                    //Plugin.Sync_esp_connection_flag = true;
+                    // add timer
+                    ESP_host_serial_timer = new System.Windows.Forms.Timer();
+                    ESP_host_serial_timer.Tick += new EventHandler(timerCallback_serial_esphost_orig);
+                    ESP_host_serial_timer.Tag = 3;
+                    ESP_host_serial_timer.Interval = 8; // in miliseconds
+                    ESP_host_serial_timer.Start();
+                    status = true;
+                    System.Threading.Thread.Sleep(100);
+                }
+                catch (Exception ex)
+                {
+                    TextBox2.Text = ex.Message;
+                }
+            }
+            
+            return status;
         }
     }
 }

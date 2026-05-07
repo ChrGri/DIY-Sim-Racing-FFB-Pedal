@@ -8,20 +8,33 @@
 
 
 /*  Uses ADS1256 */
-class LoadCell_ADS1220 {
+class LoadCellAds1220 
+{
 private:
-  float _zeroPoint = 0.0f;
-  float _varianceEstimate = 0.0f;
-  float _standardDeviationEstimate = 0.0f;
+  float zeroPoint_fl32 = 0.0f;
+  float varianceEstimate_fl32 = 0.0f;
+  float standardDeviationEstimate_fl32 = 0.0f;
 
 public:
-  LoadCell_ADS1220();
-  float getReadingKg() const;
+  LoadCellAds1220();
+  float readLoadcellWeightInKg() const;
   void setLoadcellRating(uint8_t loadcellRating_u8) const;
   void estimateBiasAndVariance();
-  float getVarianceEstimate() const { return _varianceEstimate; }
-  float getShiftingEstimate() const { return _zeroPoint; }
-  float getSTDEstimate() const { return _standardDeviationEstimate; }
+  
+  float getVarianceEstimate() const 
+  { 
+      return varianceEstimate_fl32; 
+  }
+  
+  float getBiasEstimate() const 
+  { 
+      return zeroPoint_fl32; 
+  }
+
+  float getStandardDeviationEstimate() const 
+  { 
+      return standardDeviationEstimate_fl32; 
+  }
 
 };
 

@@ -6,10 +6,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Data;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     //[StructLayout(LayoutKind.Sequential, Pack = 1)]
-    
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     unsafe public struct payloadPedalConfig
     {
         // configure pedal start and endpoint
@@ -23,14 +23,6 @@ namespace User.PluginSdkDemo
 
         // design force vs travel curve
         // In percent
-        /*
-        public byte relativeForce_p000;
-        public byte relativeForce_p020;
-        public byte relativeForce_p040;
-        public byte relativeForce_p060;
-        public byte relativeForce_p080;
-        public byte relativeForce_p100;
-        */
         public byte quantityOfControl;
         public byte relativeForce00;
         public byte relativeForce01;
@@ -80,10 +72,6 @@ namespace User.PluginSdkDemo
         public byte joystickMapMapped09;
         public byte joystickMapMapped10;
 
-        // parameter to configure damping
-        public byte dampingPress;
-        public byte dampingPull;
-
         // configure ABS effect 
         public byte absFrequency; // In Hz
         public byte absAmplitude; // In kg/20
@@ -122,7 +110,12 @@ namespace User.PluginSdkDemo
         //Custom Vibration 2
         public byte CV_amp_2;
         public byte CV_freq_2;
-
+        //Custom Vibration 3
+        public byte CV_amp_3;
+        public byte CV_freq_3;
+        //Custom Vibration 4
+        public byte CV_amp_4;
+        public byte CV_freq_4;
         public byte maxGameOutput;
 
         // Kalman filter model noise
@@ -159,11 +152,19 @@ namespace User.PluginSdkDemo
         public byte kf_Joystick_u8;
         public byte kf_modelNoise_joystick;
         public byte servoIdleTimeout;
-
-        public byte positionSmoothingFactor_u8;
         public byte minForceForEffects;
+        public UInt32 configHash_u32;
+        public byte endstopDetectionThreshold;
 
-        public byte servoRatioOfInertia_u8;
+        // virtual pedal parameters
+        public byte virtualPedalMass_u8;
+        public byte virtualPedalDamping_u8;
 
+        // endstop parameters
+        public byte endstopStiffness_kg_mm_u8;
+        public byte endstopTravelRange_mm_u8;
+
+        // elastomere or spring behavior
+        public byte  dampingProgression_u8;
     }
 }

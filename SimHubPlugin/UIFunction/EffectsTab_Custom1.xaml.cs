@@ -14,7 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace User.PluginSdkDemo.UIFunction
+namespace DiyFfbPedal.UIFunction
 {
     /// <summary>
     /// EffectsTab_Custom1.xaml 的互動邏輯
@@ -202,7 +202,8 @@ namespace User.PluginSdkDemo.UIFunction
         private void textBox_CV1_string_TextChanged(object sender, TextChangedEventArgs e)
         {
             string var1 = "";
-            var1 = Plugin.Ncalc_reading(textBox_CV1_string.Text.ToString());
+
+            if(Plugin!=null) var1 = Plugin.Ncalc_reading(textBox_CV1_string.Text.ToString());
             Label_NCALC_CUS1.Content = var1;
         }
         

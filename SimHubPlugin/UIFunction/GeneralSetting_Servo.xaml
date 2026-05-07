@@ -1,11 +1,11 @@
-﻿<UserControl x:Class="User.PluginSdkDemo.UIFunction.GeneralSetting_Servo"
+<UserControl x:Class="DiyFfbPedal.UIFunction.GeneralSetting_Servo"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:User.PluginSdkDemo.UIFunction"
-             xmlns:localUI="clr-namespace:User.PluginSdkDemo.UIElement"
-             xmlns:localFunction="clr-namespace:User.PluginSdkDemo.UIFunction"
+             xmlns:local="clr-namespace:DiyFfbPedal.UIFunction"
+             xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
+             xmlns:localFunction="clr-namespace:DiyFfbPedal.UIFunction"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:ui="clr-namespace:SimHub.Plugins.UI;assembly=SimHub.Plugins" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
@@ -14,7 +14,7 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/DiyActivePedal;component/UIStyles/DefaultStyles.xaml"/>
+                <ResourceDictionary Source="/DiyFfbPedal;component/UIStyles/DefaultStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
@@ -23,15 +23,14 @@
             
             <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540">
                 <StackPanel Height="20" Width="540" Orientation="Horizontal">
-                    <Label Content="Servo settings" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextServoSettingTittle, 'Servo Settings'}" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
                 </StackPanel>
-                <StackPanel Width="400" Height="50" Margin="0,0,0,0">
-                    <Label  Width="400" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Servo position smoothing factor  (Pr2.22)" Height="10" Padding="0,0,0,0"/>
-                    <localUI:SliderWithLabel x:Name="Slider_PositionFilter" SliderLength="400" SliderName="value" SliderValue="20" MinValue="0" MaxValue="50" SliderValueChanged="PosFilterValueChanged"/>
+                <StackPanel Height="40" Width="540" HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal">
+                    <localUI:SliderWithLabel x:Name="Slider_ServoEndstopDetecionThreshold" SliderLength="190" SliderName="{SLoc DIYFFBPedalPlugin_TextServoSettingSliderEndstopCurrent, 'Endstop Detection Threshold'}" Width="200" Height="40" SliderValue="30" MinValue="25" MaxValue="50" SliderValueChanged="Slider_ServoEndstopDetecionThreshold_SliderValueChanged" TickFrequency="1" Unit="%" Margin="70,0,0,0" ToolTip="Increase the value if homing not get full travel. It will take effect after set the config as default and a pedal restart."/>
+                    <localUI:SliderWithLabel x:Name="Slider_ServoTimeout" SliderLength="190" SliderName="{SLoc DIYFFBPedalPlugin_TextGeneralSettingServoIdleTimeout, 'Servo Idle Timeout'}" TickFrequency="1" Unit="mins" Width="200" Height="40" MaxValue="50" SliderValueChanged="Slider_ServoTimeoutValueChanged" Margin="10,0,0,0" ToolTip="Only work with PCBA v2, set to 0 to turn off the function"/>
                 </StackPanel>
-                <StackPanel Width="400" Height="50">
-                    <localUI:SliderWithLabel x:Name="Slider_ServoRatioOfInertia" SliderLength="400" SliderName="Ratio of Inertia (Pr0.04)" SliderValue="1" MinValue="1" MaxValue="200" SliderValueChanged="Slider_ServoRatioOfInertia_SliderValueChanged" TickFrequency="1" Unit="%" ToolTip="Increase the value for stiffer pedal. Will increase likelihood of pedal oscillation."/>
-                </StackPanel>
+
+                
             </StackPanel>
 
         </Border>

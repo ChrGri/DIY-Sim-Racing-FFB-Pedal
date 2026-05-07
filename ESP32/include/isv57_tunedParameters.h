@@ -7,9 +7,9 @@
 const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     1,     // Pr0.00: Reserved parameters
     0,     // Pr0.01: Control mode
-    1,     // Pr0.02: Real-time auto-gain tuning mode
+    0,     // Pr0.02: Real-time auto-gain tuning mode
     9,    // Pr0.03: Selection of machine stiffness at real-time...
-    1,    // Pr0.04: Ratio of inertia
+    110,    // Pr0.04: Ratio of inertia. Identified via Stepperonline App (on 26th March 2026)
     0,     // Pr0.05: Command pulse input selection
     0,     // Pr0.06: Motor rotational direction setup
     3,     // Pr0.07: Reserved parameters
@@ -30,20 +30,20 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     -729,  // Pr0.22: Reserved parameter
     0,     // Pr0.23: Reserved parameter
     0,     // Pr0.24: Reserved parameter
-    250,   // Pr1.00: 1st position loop gain
-    100,   // Pr1.01: 1st velocity loop gain
+    900,   // Pr1.00: 1st position loop gain
+    900,   // Pr1.01: 1st velocity loop gain
     10000,   // Pr1.02: 1st time constant of velocity loop integration
-    15,    // Pr1.03: 1st filter of velocity detection
-    100,   // Pr1.04: 1st torque filter
-    100,   // Pr1.05: 2nd position loop gain
-    140,   // Pr1.06: 2nd velocity loop gain
+    27,    // Pr1.03: 1st filter of velocity detection
+    50,   // Pr1.04: 1st torque filter
+    175,   // Pr1.05: 2nd position loop gain
+    110,   // Pr1.06: 2nd velocity loop gain
     10000, // Pr1.07: 2nd time constant of velocity loop
-    8,     // Pr1.08: 2nd filter of velocity detection
-    200,   // Pr1.09: 2nd torque filter
-    0,   // Pr1.10: Velocity feed forward gain
-    6400,  // Pr1.11: Velocity feed forward filter
-    500,     // Pr1.12: Torque feed forward gain
-    0,     // Pr1.13: Torque feed forward filter
+    9,     // Pr1.08: 2nd filter of velocity detection
+    50,   // Pr1.09: 2nd torque filter
+    1000,   // Pr1.10: Velocity feed forward gain
+    1000,  // Pr1.11: Velocity feed forward filter. Had better velocity error decay with higher values and also less noise.
+    1000,     // Pr1.12: Torque feed forward gain
+    1000,     // Pr1.13: Torque feed forward filter
     1,     // Pr1.14: 2nd gain setup
     0,     // Pr1.15: Control switching mode
     50,    // Pr1.16: Position control switching delay time
@@ -92,7 +92,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,     // Pr2.19: 3rd damping filter
     0,     // Pr2.20: 4th damping frequency
     0,     // Pr2.21: 4th damping filter
-    0,    // Pr2.22: Positional command smoothing filter
+    50,    // Pr2.22: Positional command smoothing filter. Less noise with value >0, since feed forward are smoothed.
     0,     // Pr2.23: Positional command FIR filter
     0,     // Pr2.24: Reserved parameter
     0,     // Pr2.25: Reserved parameter
@@ -140,7 +140,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     3584,  // Pr4.07: Input selection SI8
     0x0303, // Pr4.08: Input selection SI9
     0,     // Pr4.09: Input selection SI10
-    4369,  // Pr4.10: Output selection SO1
+    0x101, //0x8181,  // Pr4.10: Output selection SO1 81: No ALARM ==> 2.4Ohm, ALARM ==> inf Ohm.    Connect A: NO. Connect B: NC
     0,     // Pr4.11: Output selection SO2
     0,     // Pr4.12: Output selection SO3
     0,     // Pr4.13: Output selection SO4
@@ -231,7 +231,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,     // Pr6.08: Positive direction torque compensation val...
     0,     // Pr6.09: Negative direction torque compensation v...
     0,     // Pr6.10: Function expansion setup
-    100,   // Pr6.11: Current response setup
+    50,   // Pr6.11: Current response setup
     25,    // Pr6.12: Encoder zero correction torque limiter set
     0,     // Pr6.13: 2nd inertia ratio
     200,   // Pr6.14: Emergency stop time at alarm
@@ -260,8 +260,8 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,     // Pr6.37: Oscillation detection level
     0,     // Pr6.38: Alarm mask setup
     0,     // Pr6.39: Reserved parameter
-    200,   // Pr7.00: Current loop gain
-    260,   // Pr7.01: Current loop integral time
+    500,   // Pr7.00: Current loop gain
+    50,   // Pr7.01: Current loop integral time
     106,   // Pr7.02: Motor rotor initial position Angle compensa...
     0,     // Pr7.03: Reserved parameter
     360,   // Pr7.04: Motor rated voltage

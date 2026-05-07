@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -16,10 +16,10 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Header;
 
-namespace User.PluginSdkDemo.UIFunction
+namespace DiyFfbPedal.UIFunction
 {
     /// <summary>
-    /// ConfigUpdateWIndow.xaml 的互動邏輯
+    /// ConfigUpdateWIndow.xaml ?????
     /// </summary>
 
     

@@ -7,236 +7,236 @@ MovingAverageFilter averagefilter_rudder(200);
 MovingAverageFilter averagefilter_rudder_force(50);
 class Rudder{
   public:
-  int32_t Center_offset;
-  int32_t offset_raw;
-  int32_t offset_filter;
-  int32_t stepper_range;
-  int32_t dead_zone_upper;
-  int32_t dead_zone_lower;
-  int32_t dead_zone;
-  int32_t sync_pedal_position;
-  int32_t current_pedal_position;
-  float endpos_travel;
-  float force_range;  
-  float force_offset_raw;
-  float force_offset_filter;
-  float force_center_offset;
-  float position_ratio_sync;
-  float position_ratio_current;
-  int debug_count=0;
-  KalmanFilter_1st_order* kalman_rudder = NULL;
+  int32_t centerOffset_i32;
+  int32_t offsetRaw_i32;
+  int32_t offsetFilter_i32;
+  int32_t stepperRange_i32;
+  int32_t deadZoneUpper_i32;
+  int32_t deadZoneLower_i32;
+  int32_t deadZone_i32;
+  int32_t syncPedalPosition_i32;
+  int32_t currentPedalPosition_i32;
+  float endPosTravel_fl32;
+  float forceRange_fl32;
+  float forceOffsetRaw_fl32;
+  float forceOffsetFilter_fl32;
+  float forceCenterOffset_fl32;
+  float positionRatioSync_fl32;
+  float positionRatioCurrent_fl32;
+  int debugCount_i32=0;
+  KalmanFilter1stOrder* kalman_rudder = NULL;
   //bool IsReady = false;
   Rudder()
   {
-    kalman_rudder=new KalmanFilter_1st_order(3.0f);
+    kalman_rudder=new KalmanFilter1stOrder(3.0f);
   }
-  void offset_calculate(DAP_calculationVariables_st* calcVars_st)
+  void offsetCalculate(DapCalculationVariables_t* calcVars_st)
   {
-    current_pedal_position=calcVars_st->current_pedal_position;
-    position_ratio_sync=calcVars_st->Sync_pedal_position_ratio;
-    endpos_travel=(float)calcVars_st->stepperPosRange;
-    position_ratio_current=((float)(current_pedal_position-calcVars_st->stepperPosMin))/endpos_travel;    
-    dead_zone=20;
-    Center_offset=calcVars_st->stepperPosMin+ calcVars_st->stepperPosRange/2.0f;
-    float center_deadzone = 0.51f;
-    if(calcVars_st->Rudder_status)
+    currentPedalPosition_i32=calcVars_st->currentPedalPosition_u32;
+    positionRatioSync_fl32=calcVars_st->syncPedalPositionRatio_fl32;
+    endPosTravel_fl32=(float)calcVars_st->stepperPosRange_fl32;
+    positionRatioCurrent_fl32=((float)(currentPedalPosition_i32-calcVars_st->softEndstopMinStepperPos_i32))/endPosTravel_fl32;
+    deadZone_i32=20;
+    centerOffset_i32=calcVars_st->softEndstopMinStepperPos_i32+ calcVars_st->stepperPosRange_fl32/2.0f;
+    float centerDeadzone_fl32 = 0.51f;
+    if(calcVars_st->rudderStatus_b)
     {
-      if(position_ratio_sync>center_deadzone)
+      if(positionRatioSync_fl32>centerDeadzone_fl32)
       {
-        offset_raw=(int32_t)(-1*(position_ratio_sync-0.50f)*endpos_travel);
+        offsetRaw_i32=(int32_t)(-1*(positionRatioSync_fl32-0.50f)*endPosTravel_fl32);
           
       }
       else
       {
-        offset_raw=0;
+        offsetRaw_i32=0;
       }
-      if(calcVars_st->rudder_brake_status)
+      if(calcVars_st->rudderBrakeStatus_b)
       {
-        offset_raw=0;
+        offsetRaw_i32=0;
       }
-      offset_filter=(int32_t)kalman_rudder->filteredValue(offset_raw+Center_offset,0.0f,1);
+      offsetFilter_i32=(int32_t)kalman_rudder->filteredValue(offsetRaw_i32+centerOffset_i32,0.0f,1);
       //offset_filter=averagefilter_rudder.process(offset_raw+Center_offset);
       //cap offset filter to prevent over the endstop value
-      offset_filter=constrain(offset_filter,calcVars_st->stepperPosMin_default,calcVars_st->stepperPosMax_default);
+      offsetFilter_i32=constrain(offsetFilter_i32,calcVars_st->stepperPosMinDefault_i32,calcVars_st->stepperPosMaxDefault_i32);
     }
     else
     {
-      offset_filter=calcVars_st->stepperPosMin;
+      offsetFilter_i32=calcVars_st->softEndstopMinStepperPos_i32;
     }
 
   }
-  void force_offset_calculate(DAP_calculationVariables_st* calcVars_st)
+  void forceOffsetCalculate(DapCalculationVariables_t* calcVars_st)
   {
-    dead_zone=20;
-    Center_offset=calcVars_st->stepperPosRange/2.0f;
-    dead_zone_upper=Center_offset+dead_zone/2.0f;
-    dead_zone_lower=Center_offset-dead_zone/2.0f;
-    sync_pedal_position=calcVars_st->sync_pedal_position;
-    current_pedal_position=calcVars_st->current_pedal_position;
-    stepper_range=calcVars_st->stepperPosRange;
-    force_range=calcVars_st->Force_Range;
-    force_center_offset=force_range/2+calcVars_st->Force_Min;
-    endpos_travel=(float)calcVars_st->stepperPosRange;
-    //endpos_travel=((float)(calcVars_st->current_pedal_position-calcVars_st->stepperPosMin))/((float)calcVars_st->stepperPosRange);
-    position_ratio_sync=calcVars_st->Sync_pedal_position_ratio;
-    position_ratio_current=((float)(current_pedal_position-calcVars_st->stepperPosMin))/endpos_travel;
+    deadZone_i32=20;
+    centerOffset_i32=calcVars_st->stepperPosRange_fl32/2.0f;
+    deadZoneUpper_i32=centerOffset_i32+deadZone_i32/2.0f;
+    deadZoneLower_i32=centerOffset_i32-deadZone_i32/2.0f;
+    syncPedalPosition_i32=calcVars_st->syncPedalPosition_u32;
+    currentPedalPosition_i32=calcVars_st->currentPedalPosition_u32;
+    stepperRange_i32=calcVars_st->stepperPosRange_fl32;
+    forceRange_fl32 = calcVars_st->forceRange_fl32;
+    forceCenterOffset_fl32 = forceRange_fl32 / 2 + calcVars_st->forceMin_fl32;
+    endPosTravel_fl32=(float)calcVars_st->stepperPosRange_fl32;
+    //endpos_travel=((float)(calcVars_st->currentPedalPosition_u32-calcVars_st->softEndstopMinStepperPos_i32))/((float)calcVars_st->stepperPosRange_fl32);
+    positionRatioSync_fl32=calcVars_st->syncPedalPositionRatio_fl32;
+    positionRatioCurrent_fl32=((float)(currentPedalPosition_i32-calcVars_st->softEndstopMinStepperPos_i32))/endPosTravel_fl32;
     
 
-    float center_deadzone = 0.51f;
-    if(calcVars_st->Rudder_status)
+    float centerDeadzone_fl32 = 0.51f;
+    if(calcVars_st->rudderStatus_b)
     {
       
         
-        if(position_ratio_sync>center_deadzone)
+        if(positionRatioSync_fl32>centerDeadzone_fl32)
         {
-          force_offset_raw=(float)(-1.0f*(position_ratio_sync-0.50f)*force_range);
+          forceOffsetRaw_fl32 = (float)(-1.0f * (positionRatioSync_fl32 - 0.50f) * forceRange_fl32);
           
         }
         else
         {
-          force_offset_raw=0.0f;
+          forceOffsetRaw_fl32=0.0f;
         }
-        if(calcVars_st->rudder_brake_status)
+        if(calcVars_st->rudderBrakeStatus_b)
         {
-          force_offset_raw=0.0f;
+          forceOffsetRaw_fl32=0.0f;
         }
      
-      force_offset_filter=averagefilter_rudder_force.process(force_offset_raw+force_center_offset);
+      forceOffsetFilter_fl32=averagefilter_rudder_force.process(forceOffsetRaw_fl32+forceCenterOffset_fl32);
     }
     else
     {
-      force_offset_filter=0;
+      forceOffsetFilter_fl32=0;
     }
   }
 };
 //Rudder impact
 MovingAverageFilter Averagefilter_Rudder_G_Offset(50);
-class Rudder_G_Force{
+class RudderGForce{
   public:
-  int32_t offset_raw;
-  long offset_filter;
-  float stepper_range;
-  uint8_t G_value;
-  long stepperPosMax;
-  void offset_calculate(DAP_calculationVariables_st* calcVars_st)
+  int32_t offsetRaw_i32;
+  long offsetFilter_l;
+  float stepperRange_fl32;
+  uint8_t gValue_u8;
+  long stepperPosMax_l;
+  void offsetCalculate(DapCalculationVariables_t* calcVars_st)
   {
-    stepperPosMax=(float)calcVars_st->stepperPosMax;
-    stepper_range=(float)calcVars_st->stepperPosRange;
-    float Amp_max=0.3f*stepper_range;
-    if(calcVars_st->Rudder_status)
+    stepperPosMax_l=(float)calcVars_st->softEndstopMaxStepperPos_i32;
+    stepperRange_fl32=(float)calcVars_st->stepperPosRange_fl32;
+    float ampMax_fl32=0.3f*stepperRange_fl32;
+    if(calcVars_st->rudderStatus_b)
     {
-      float offset= Amp_max*((float)G_value)/100.0f;
+      float offset_fl32= ampMax_fl32*((float)gValue_u8)/100.0f;
       //offset=constrain(offset,0,Amp_max);
-      offset_filter=Averagefilter_Rudder_G_Offset.process((stepperPosMax-(int32_t)offset));
+      offsetFilter_l=Averagefilter_Rudder_G_Offset.process((stepperPosMax_l-(int32_t)offset_fl32));
     }
     else
     {
-      offset_filter=calcVars_st->stepperPosMax;
+      offsetFilter_l=calcVars_st->softEndstopMaxStepperPos_i32;
     }
 
   }
 };
 MovingAverageFilter averagefilter_helirudder(200);
-class helicoptersRudder{
+class HelicoptersRudder{
   public:
-  int32_t Center_offset;
-  int32_t offset_raw;
-  int32_t offset_filter;
-  int32_t stepper_range;
-  int32_t dead_zone_upper;
-  int32_t dead_zone_lower;
-  int32_t dead_zone;
-  int32_t sync_pedal_position;
-  int32_t current_pedal_position;
-  float endpos_travel;
-  float force_range;  
-  float force_offset_raw;
-  float force_offset_filter;
-  float force_center_offset;
-  float position_ratio_sync;
-  float position_ratio_current;
-  float currentForceReading;
-  float pedalPreload;
-  float offsetLast;
-  int debug_count=0;
-  float deadzoneTolerance=0.01f;
-  float position_ratio_last;
+  int32_t centerOffset_i32;
+  int32_t offsetRaw_i32;
+  int32_t offsetFilter_i32;
+  int32_t stepperRange_i32;
+  int32_t deadZoneUpper_i32;
+  int32_t deadZoneLower_i32;
+  int32_t deadZone_i32;
+  int32_t syncPedalPosition_i32;
+  int32_t currentPedalPosition_i32;
+  float endPosTravel_fl32;
+  float forceRange_fl32;
+  float forceOffsetRaw_fl32;
+  float forceOffsetFilter_fl32;
+  float forceCenterOffset_fl32;
+  float positionRatioSync_fl32;
+  float positionRatioCurrent_fl32;
+  float currentForceReading_fl32;
+  float pedalPreload_fl32;
+  float offsetLast_fl32;
+  int debugCount_i32=0;
+  float deadzoneTolerance_fl32=0.01f;
+  float positionRatioLast_fl32;
   unsigned long debugPrintLast=0;
-  KalmanFilter_1st_order* kalman_rudder = NULL;
+  KalmanFilter1stOrder* kalman_rudder = NULL;
   //bool IsReady = false;
-  helicoptersRudder()
+  HelicoptersRudder()
   {
-    kalman_rudder=new KalmanFilter_1st_order(3.0f);
+    kalman_rudder=new KalmanFilter1stOrder(3.0f);
   }
-  void offset_calculate(DAP_calculationVariables_st* calcVars_st)
+  void offsetCalculate(DapCalculationVariables_t* calcVars_st)
   {
-    current_pedal_position=calcVars_st->current_pedal_position;
-    position_ratio_sync=calcVars_st->Sync_pedal_position_ratio;
-    endpos_travel=(float)calcVars_st->stepperPosRange;
-    currentForceReading=(float)calcVars_st->currentForceReading;
-    pedalPreload=(float)calcVars_st->Force_Min;
-    position_ratio_current=((float)(current_pedal_position-calcVars_st->stepperPosMin))/endpos_travel;    
-    dead_zone=20;
-    Center_offset=calcVars_st->stepperPosMin+ calcVars_st->stepperPosRange/2.0f;
-    float center_deadzone = 0.51f;
-    if(calcVars_st->helicopterRudderStatus)
+    currentPedalPosition_i32=calcVars_st->currentPedalPosition_u32;
+    positionRatioSync_fl32=calcVars_st->syncPedalPositionRatio_fl32;
+    endPosTravel_fl32=(float)calcVars_st->stepperPosRange_fl32;
+    currentForceReading_fl32=(float)calcVars_st->currentForceReading_fl32;
+    pedalPreload_fl32=(float)calcVars_st->forceMin_fl32;
+    positionRatioCurrent_fl32=((float)(currentPedalPosition_i32-calcVars_st->softEndstopMinStepperPos_i32))/endPosTravel_fl32;
+    deadZone_i32=20;
+    centerOffset_i32=calcVars_st->softEndstopMinStepperPos_i32+ calcVars_st->stepperPosRange_fl32/2.0f;
+    float centerDeadzone_fl32 = 0.51f;
+    if(calcVars_st->helicopterRudderStatus_b)
     {
       //no press status
-      if(currentForceReading<pedalPreload)
+      if(currentForceReading_fl32<pedalPreload_fl32)
       {
-        if(calcVars_st->isHelicopterRudderInitialized)
+        if(calcVars_st->isHelicopterRudderInitialized_b)
         {
-          if(abs((1-position_ratio_sync)-position_ratio_last)>deadzoneTolerance)
+          if(abs((1-positionRatioSync_fl32)-positionRatioLast_fl32)>deadzoneTolerance_fl32)
           {
-            offset_raw=(int32_t)(-1*(position_ratio_sync-0.50f)*endpos_travel);
-            offsetLast=offset_raw;
-            position_ratio_last=constrain((1-position_ratio_sync),0,1);
+            offsetRaw_i32=(int32_t)(-1*(positionRatioSync_fl32-0.50f)*endPosTravel_fl32);
+            offsetLast_fl32=offsetRaw_i32;
+            positionRatioLast_fl32=constrain((1-positionRatioSync_fl32),0,1);
           }
           else
           {
-            offset_raw=offsetLast;
+            offsetRaw_i32=offsetLast_fl32;
           }  
         }
         else
         {
-          offset_raw=0;
+          offsetRaw_i32=0;
         }
 
       }
       else
       {
-        if((position_ratio_current-position_ratio_last)>deadzoneTolerance)
+        if((positionRatioCurrent_fl32-positionRatioLast_fl32)>deadzoneTolerance_fl32)
         {
-          position_ratio_last=position_ratio_current;
-          offset_raw=0;
-          offsetLast=(int32_t)((position_ratio_current-0.5f)*endpos_travel);
+          positionRatioLast_fl32=positionRatioCurrent_fl32;
+          offsetRaw_i32=0;
+          offsetLast_fl32=(int32_t)((positionRatioCurrent_fl32-0.5f)*endPosTravel_fl32);
         }
         else
         {
-          offset_raw=(int32_t)((position_ratio_last-0.5f)*endpos_travel);
-          offsetLast=offset_raw;
+          offsetRaw_i32=(int32_t)((positionRatioLast_fl32-0.5f)*endPosTravel_fl32);
+          offsetLast_fl32=offsetRaw_i32;
         }
 
 
       }
       //offset_filter=(int32_t)kalman_rudder->filteredValue(offset_raw+Center_offset,0.0f,1);
-      offset_filter=averagefilter_helirudder.process(offset_raw+Center_offset);
+      offsetFilter_i32=averagefilter_helirudder.process(offsetRaw_i32+centerOffset_i32);
       //cap offset filter to prevent over the endstop value
-      offset_filter=constrain(offset_filter,calcVars_st->stepperPosMin_default,calcVars_st->stepperPosMax_default);
+      offsetFilter_i32=constrain(offsetFilter_i32,calcVars_st->stepperPosMinDefault_i32,calcVars_st->stepperPosMaxDefault_i32);
     }
     else
     {
-      offset_filter=calcVars_st->stepperPosMin;
+      offsetFilter_i32=calcVars_st->softEndstopMinStepperPos_i32;
     }
     /*
     if(debugPrintLast-millis()>200)
     {
       ActiveSerial->print("Current Force=");
-      ActiveSerial->println(currentForceReading);
+      ActiveSerial->println(currentForceReading_fl32);
       ActiveSerial->print("offset_filter=");
       ActiveSerial->println(offset_filter);
       ActiveSerial->print("offset_Last=");
-      ActiveSerial->println(offsetLast);
+      ActiveSerial->println(offsetLast_fl32);
       ActiveSerial->print("position_ratio_Last=");
       ActiveSerial->println(position_ratio_last);
       ActiveSerial->print("position_ratio_sync=");

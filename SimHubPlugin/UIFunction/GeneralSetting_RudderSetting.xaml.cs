@@ -14,7 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace User.PluginSdkDemo.UIFunction
+namespace DiyFfbPedal.UIFunction
 {
     /// <summary>
     /// GeneralSetting_RudderSetting.xaml 的互動邏輯
@@ -143,13 +143,6 @@ namespace User.PluginSdkDemo.UIFunction
 
         private void Slider_damping_rudder_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            /*
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.dampingPress = (Byte)((double)e.NewValue / (double)Slider_damping_rudder.TickFrequency);
-            tmp.payloadPedalConfig_.dampingPull = (Byte)((double)e.NewValue / (double)Slider_damping_rudder.TickFrequency);
-            dap_config_st = tmp;
-            ConfigChangedEvent(dap_config_st);
-            */
             Settings.rudderDamping= (byte)((double)e.NewValue / (double)Slider_damping_rudder.TickFrequency);
         }
     }

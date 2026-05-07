@@ -1,100 +1,108 @@
 #include "CubicInterpolatorFloat.h"
 #include <math.h>
 
-void Cubic::Interpolate1D(const float *xs, const float *ys, int inputCount, int outputCount)
+void Cubic::interpolate1D(const float *xs_pfl32, const float *ys_pfl32, int32_t inputCount_i32, int32_t outputCount_i32)
 {
     //Result result;
-    float inputDistances[MAX_POINTS] = {0};
+    float inputDistances_afl32[MAX_POINTS_U32] = {0};
 
-    for (int i = 1; i < inputCount; i++)
+    for (int32_t inputSampleIndex_i32 = 1; inputSampleIndex_i32 < inputCount_i32; inputSampleIndex_i32++)
     {
-        float dx = xs[i] - xs[i - 1];
-        inputDistances[i] = inputDistances[i - 1] + fabsf(dx);
+        float dx_fl32 = xs_pfl32[inputSampleIndex_i32] - xs_pfl32[inputSampleIndex_i32 - 1];
+        inputDistances_afl32[inputSampleIndex_i32] = inputDistances_afl32[inputSampleIndex_i32 - 1] + fabsf(dx_fl32);
     }
 
-    float meanDistance = inputDistances[inputCount - 1] / (outputCount - 1);
-    for (int i = 0; i < outputCount; i++)
+    float meanDistance_fl32 = inputDistances_afl32[inputCount_i32 - 1] / (outputCount_i32 - 1);
+    for (int32_t outputSampleIndex_i32 = 0; outputSampleIndex_i32 < outputCount_i32; outputSampleIndex_i32++)
     {
-        _result.evenDistances[i] = i * meanDistance;
+        result_st.evenDistances_afl32[outputSampleIndex_i32] = outputSampleIndex_i32 * meanDistance_fl32;
     }
 
-    FitMatrix(xs, ys, inputCount, _result.a, _result.b);
-    Interpolate(xs, ys, inputCount, _result.evenDistances, outputCount, _result.a, _result.b, _result.yInterp);
-    //_result=result;
-    _result.count = outputCount;
+    fitMatrix(xs_pfl32, ys_pfl32, inputCount_i32, result_st.a_afl32, result_st.b_afl32);
+    interpolate(xs_pfl32, ys_pfl32, inputCount_i32, result_st.evenDistances_afl32, outputCount_i32, result_st.a_afl32, result_st.b_afl32, result_st.yInterp_afl32);
+    //result_st=result;
+    result_st.count_i32 = outputCount_i32;
     //return result;
 }
 
-void Cubic::FitMatrix(const float *x, const float *y, int n, float *a, float *b)
+void Cubic::fitMatrix(const float *x_pfl32, const float *y_pfl32, int32_t numPoints_i32, float *a_pfl32, float *b_pfl32)
 {
-    float r[MAX_POINTS] = {0}, A[MAX_POINTS] = {0}, B[MAX_POINTS] = {0}, C[MAX_POINTS] = {0};
-    float dx1, dx2, dy1, dy2;
+    float r_afl32[MAX_POINTS_U32] = {0}, matrixA_afl32[MAX_POINTS_U32] = {0}, matrixB_afl32[MAX_POINTS_U32] = {0}, matrixC_afl32[MAX_POINTS_U32] = {0};
+    float dx1_fl32, dx2_fl32, dy1_fl32, dy2_fl32;
 
-    dx1 = x[1] - x[0];
-    C[0] = 1.0f / dx1;
-    B[0] = 2.0f * C[0];
-    r[0] = 3.0f * (y[1] - y[0]) / (dx1 * dx1);
+    dx1_fl32 = x_pfl32[1] - x_pfl32[0];
+    matrixC_afl32[0] = 1.0f / dx1_fl32;
+    matrixB_afl32[0] = 2.0f * matrixC_afl32[0];
+    r_afl32[0] = 3.0f * (y_pfl32[1] - y_pfl32[0]) / (dx1_fl32 * dx1_fl32);
 
-    for (int i = 1; i < n - 1; i++)
+    for (int32_t matrixIndex_i32 = 1; matrixIndex_i32 < numPoints_i32 - 1; matrixIndex_i32++)
     {
-        dx1 = x[i] - x[i - 1];
-        dx2 = x[i + 1] - x[i];
-        A[i] = 1.0f / dx1;
-        C[i] = 1.0f / dx2;
-        B[i] = 2.0f * (A[i] + C[i]);
-        dy1 = y[i] - y[i - 1];
-        dy2 = y[i + 1] - y[i];
-        r[i] = 3.0f * (dy1 / (dx1 * dx1) + dy2 / (dx2 * dx2));
+        dx1_fl32 = x_pfl32[matrixIndex_i32] - x_pfl32[matrixIndex_i32 - 1];
+        dx2_fl32 = x_pfl32[matrixIndex_i32 + 1] - x_pfl32[matrixIndex_i32];
+        matrixA_afl32[matrixIndex_i32] = 1.0f / dx1_fl32;
+        matrixC_afl32[matrixIndex_i32] = 1.0f / dx2_fl32;
+        matrixB_afl32[matrixIndex_i32] = 2.0f * (matrixA_afl32[matrixIndex_i32] + matrixC_afl32[matrixIndex_i32]);
+        dy1_fl32 = y_pfl32[matrixIndex_i32] - y_pfl32[matrixIndex_i32 - 1];
+        dy2_fl32 = y_pfl32[matrixIndex_i32 + 1] - y_pfl32[matrixIndex_i32];
+        r_afl32[matrixIndex_i32] = 3.0f * (dy1_fl32 / (dx1_fl32 * dx1_fl32) + dy2_fl32 / (dx2_fl32 * dx2_fl32));
     }
 
-    dx1 = x[n - 1] - x[n - 2];
-    dy1 = y[n - 1] - y[n - 2];
-    A[n - 1] = 1.0f / dx1;
-    B[n - 1] = 2.0f * A[n - 1];
-    r[n - 1] = 3.0f * (dy1 / (dx1 * dx1));
+    dx1_fl32 = x_pfl32[numPoints_i32 - 1] - x_pfl32[numPoints_i32 - 2];
+    dy1_fl32 = y_pfl32[numPoints_i32 - 1] - y_pfl32[numPoints_i32 - 2];
+    matrixA_afl32[numPoints_i32 - 1] = 1.0f / dx1_fl32;
+    matrixB_afl32[numPoints_i32 - 1] = 2.0f * matrixA_afl32[numPoints_i32 - 1];
+    r_afl32[numPoints_i32 - 1] = 3.0f * (dy1_fl32 / (dx1_fl32 * dx1_fl32));
 
-    float cPrime[MAX_POINTS] = {0};
-    float dPrime[MAX_POINTS] = {0};
-    float k[MAX_POINTS] = {0};
+    float cPrime_afl32[MAX_POINTS_U32] = {0};
+    float dPrime_afl32[MAX_POINTS_U32] = {0};
+    float k_afl32[MAX_POINTS_U32] = {0};
 
-    cPrime[0] = C[0] / B[0];
-    for (int i = 1; i < n; i++)
-        cPrime[i] = C[i] / (B[i] - cPrime[i - 1] * A[i]);
-
-    dPrime[0] = r[0] / B[0];
-    for (int i = 1; i < n; i++)
-        dPrime[i] = (r[i] - dPrime[i - 1] * A[i]) / (B[i] - cPrime[i - 1] * A[i]);
-
-    k[n - 1] = dPrime[n - 1];
-    for (int i = n - 2; i >= 0; i--)
-        k[i] = dPrime[i] - cPrime[i] * k[i + 1];
-
-    for (int i = 1; i < n; i++)
+    cPrime_afl32[0] = matrixC_afl32[0] / matrixB_afl32[0];
+    for (int32_t forwardIndex_i32 = 1; forwardIndex_i32 < numPoints_i32; forwardIndex_i32++)
     {
-        dx1 = x[i] - x[i - 1];
-        dy1 = y[i] - y[i - 1];
-        a[i - 1] = k[i - 1] * dx1 - dy1;
-        b[i - 1] = -k[i] * dx1 + dy1;
+        cPrime_afl32[forwardIndex_i32] = matrixC_afl32[forwardIndex_i32] / (matrixB_afl32[forwardIndex_i32] - cPrime_afl32[forwardIndex_i32 - 1] * matrixA_afl32[forwardIndex_i32]);
+    }
+
+    dPrime_afl32[0] = r_afl32[0] / matrixB_afl32[0];
+    for (int32_t forwardIndex_i32 = 1; forwardIndex_i32 < numPoints_i32; forwardIndex_i32++)
+    {
+        dPrime_afl32[forwardIndex_i32] = (r_afl32[forwardIndex_i32] - dPrime_afl32[forwardIndex_i32 - 1] * matrixA_afl32[forwardIndex_i32]) / (matrixB_afl32[forwardIndex_i32] - cPrime_afl32[forwardIndex_i32 - 1] * matrixA_afl32[forwardIndex_i32]);
+    }
+
+    k_afl32[numPoints_i32 - 1] = dPrime_afl32[numPoints_i32 - 1];
+    for (int32_t backSubIndex_i32 = numPoints_i32 - 2; backSubIndex_i32 >= 0; backSubIndex_i32--)
+    {
+        k_afl32[backSubIndex_i32] = dPrime_afl32[backSubIndex_i32] - cPrime_afl32[backSubIndex_i32] * k_afl32[backSubIndex_i32 + 1];
+    }
+
+    for (int32_t segmentIndex_i32 = 1; segmentIndex_i32 < numPoints_i32; segmentIndex_i32++)
+    {
+        dx1_fl32 = x_pfl32[segmentIndex_i32] - x_pfl32[segmentIndex_i32 - 1];
+        dy1_fl32 = y_pfl32[segmentIndex_i32] - y_pfl32[segmentIndex_i32 - 1];
+        a_pfl32[segmentIndex_i32 - 1] = k_afl32[segmentIndex_i32 - 1] * dx1_fl32 - dy1_fl32;
+        b_pfl32[segmentIndex_i32 - 1] = -k_afl32[segmentIndex_i32] * dx1_fl32 + dy1_fl32;
     }
 }
 
-void Cubic::Interpolate(const float *xOrig, const float *yOrig, int nOrig,
-                        const float *xInterp, int nInterp,
-                        const float *a, const float *b,
-                        float *yInterp)
+void Cubic::interpolate(const float *xOrig_pfl32, const float *yOrig_pfl32, int32_t nOrig_i32,
+                        const float *xInterp_pfl32, int32_t nInterp_i32,
+                        const float *a_pfl32, const float *b_pfl32,
+                        float *yInterp_pfl32)
 {
-    for (int i = 0; i < nInterp; i++)
+    for (int32_t interpIndex_i32 = 0; interpIndex_i32 < nInterp_i32; interpIndex_i32++)
     {
-        int j;
-        for (j = 0; j < nOrig - 2; j++)
+        int32_t segmentIndex_i32;
+        for (segmentIndex_i32 = 0; segmentIndex_i32 < nOrig_i32 - 2; segmentIndex_i32++)
         {
-            if (xInterp[i] <= xOrig[j + 1])
+            if (xInterp_pfl32[interpIndex_i32] <= xOrig_pfl32[segmentIndex_i32 + 1])
+            {
                 break;
+            }
         }
 
-        float dx = xOrig[j + 1] - xOrig[j];
-        float t = (xInterp[i] - xOrig[j]) / dx;
-        yInterp[i] = (1.0f - t) * yOrig[j] + t * yOrig[j + 1] +
-                     t * (1.0f - t) * (a[j] * (1.0f - t) + b[j] * t);
+        float dx_fl32 = xOrig_pfl32[segmentIndex_i32 + 1] - xOrig_pfl32[segmentIndex_i32];
+        float t_fl32 = (xInterp_pfl32[interpIndex_i32] - xOrig_pfl32[segmentIndex_i32]) / dx_fl32;
+        yInterp_pfl32[interpIndex_i32] = (1.0f - t_fl32) * yOrig_pfl32[segmentIndex_i32] + t_fl32 * yOrig_pfl32[segmentIndex_i32 + 1] +
+                     t_fl32 * (1.0f - t_fl32) * (a_pfl32[segmentIndex_i32] * (1.0f - t_fl32) + b_pfl32[segmentIndex_i32] * t_fl32);
     }
 }

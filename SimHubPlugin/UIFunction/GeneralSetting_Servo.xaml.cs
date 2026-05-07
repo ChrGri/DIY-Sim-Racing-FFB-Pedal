@@ -12,9 +12,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using User.PluginSdkDemo.UIElement;
+using DiyFfbPedal.UIElement;
 
-namespace User.PluginSdkDemo.UIFunction
+namespace DiyFfbPedal.UIFunction
 {
     /// <summary>
     /// KFTab.xaml 的互動邏輯
@@ -58,23 +58,19 @@ namespace User.PluginSdkDemo.UIFunction
 
         private static void OnPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            
             if (d is GeneralSetting_Servo control && e.NewValue is DAP_config_st newData)
             {
-                //control.UpdateLabelContent();
                 if (control != null)
                 {
                     try
                     {
-                        if (control.Slider_ServoRatioOfInertia != null) control.Slider_ServoRatioOfInertia.SliderValue = newData.payloadPedalConfig_.servoRatioOfInertia_u8;
-                        if (control.Slider_PositionFilter != null) control.Slider_PositionFilter.SliderValue = newData.payloadPedalConfig_.positionSmoothingFactor_u8;
+                        if (control.Slider_ServoEndstopDetecionThreshold != null) control.Slider_ServoEndstopDetecionThreshold.SliderValue = newData.payloadPedalConfig_.endstopDetectionThreshold;
+                        if (control.Slider_ServoTimeout != null) control.Slider_ServoTimeout.SliderValue = newData.payloadPedalConfig_.servoIdleTimeout;
                     }
                     catch
                     {
-
                     }
                 }
-
             }
         }
 
@@ -83,19 +79,19 @@ namespace User.PluginSdkDemo.UIFunction
         {
             ConfigChanged?.Invoke(this, newValue);
         }
-        private void Slider_ServoRatioOfInertia_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+
+        private void Slider_ServoEndstopDetecionThreshold_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.servoRatioOfInertia_u8 = (byte)e.NewValue;
+            tmp.payloadPedalConfig_.endstopDetectionThreshold = (byte)e.NewValue;
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
         }
 
-        public void PosFilterValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void Slider_ServoTimeoutValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            PosSmoothing_value = e.NewValue;
             var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.positionSmoothingFactor_u8 = (byte)PosSmoothing_value;
+            tmp.payloadPedalConfig_.servoIdleTimeout = (byte)e.NewValue;
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
         }

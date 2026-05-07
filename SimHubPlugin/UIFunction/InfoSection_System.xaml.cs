@@ -13,8 +13,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using WoteverCommon;
+using WoteverLocalization;
 
-namespace User.PluginSdkDemo.UIFunction
+namespace DiyFfbPedal.UIFunction
 {
     /// <summary>
     /// InfoSection_System.xaml 的互動邏輯
@@ -89,21 +90,11 @@ namespace User.PluginSdkDemo.UIFunction
         }
         private void updateUI()
         { 
-            if(info_label_system!=null) info_label_system.Content= "Bridge:\nDAP Version:\nPlugin Version:\nBridge Verison:";
+            if(info_label_system!=null) info_label_system.Content= SLoc.GetValue("DIYFFBPedalPlugin_TextBridgeId", "Bridge") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelDAPVersion", "DAP Version") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelPluginVersion", "Plugin Version") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelBridgeVersion", "Bridge Version") + ":\n";
             if (calculation != null)
             {
                 calculation.SystemStatusString = "Waiting...";
-                if (calculation.BridgeSerialAvailability)
-                {
-                    calculation.SystemStatusString = "Connected";
-                }
-                else
-                {
-                    if (Settings.Pedal_ESPNow_auto_connect_flag)
-                    {
-                        calculation.SystemStatusString = calculation.BridgeConnetingString;
-                    }
-                }
+                calculation.SystemStatusString = PedalConstStrings.BridgeConnectState[(int)calculation.bridgeConnectionStatus];
                 calculation.SystemStatusString += "\n" + Constants.pedalConfigPayload_version + "\n" + Constants.pluginVersion;
                 if (calculation.BridgeFirmwareVersion[2] != 0)
                 {

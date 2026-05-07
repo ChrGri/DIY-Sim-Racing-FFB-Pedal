@@ -1,3 +1,9 @@
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/6828f954-1b4f-4f7d-a388-92cbb616dd6a" alt="DIY Sim Racing FFB Pedal Banner" width="100%">
+</p>
+
+
 [![Arduino Build](https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/actions/workflows/arduino.yml/badge.svg?branch=main)](https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/actions/workflows/arduino.yml)
 [![Doxygen Action](https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/actions/workflows/main.yml/badge.svg)](https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/actions/workflows/main.yml)
 [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]

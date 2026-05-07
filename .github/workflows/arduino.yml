@@ -357,7 +357,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: | 
           aria2c -j1 -o innounp050.rar "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/refs/heads/develop/Helper/innounp050.rar"
-          aria2c -j1 -o SimHub.8.01.2.zip "https://github.com/SHWotever/SimHub/releases/download/9.1.22/SimHub.9.01.22.zip"
+          aria2c -j1 -o SimHub.8.01.2.zip "https://github.com/SHWotever/SimHub/releases/download/9.11.0/SimHub.9.11.0.zip"
       
       - name: Extract Requirements # Used to extract the SimHub DLLs
         run: | 

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Input;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public class RelayCommand : ICommand
     {
@@ -46,12 +46,12 @@ namespace User.PluginSdkDemo
             
             if (isCurrent)
             {
-                result += " (Current)";
+                result += " (Active)";
             }
             
             else if (isDefault)
             {
-                result += " (Default)";
+                result += " (Startup)";
             }
 
             return result;
@@ -75,7 +75,7 @@ namespace User.PluginSdkDemo
                 OnPropertyChanged();
             }
         }
-
+        public string ListNameOrig { get; set; }
         public string FileName { get; set; }
         public string FullPath { get; set; }
         private bool _isDefault;

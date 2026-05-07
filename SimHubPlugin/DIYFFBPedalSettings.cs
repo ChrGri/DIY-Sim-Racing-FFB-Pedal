@@ -1,7 +1,7 @@
 ﻿using System.Linq.Expressions;
 using System.Windows.Media.Converters;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     /// <summary>
     /// Settings class, make sure it can be correctly serialized using JSON.net
@@ -15,7 +15,6 @@ namespace User.PluginSdkDemo
         public string[] selectedComPortNames = { "COM1", "COM1", "COM1" };
         public string[] autoconnectComPortNames = { "NA", "NA", "NA" };
         public string[] selectedJsonFileNames = { "1", "2", "3" };
-        public int reading_config = 0;
         public int[] connect_status = new int[3] { 0, 0, 0 };
         public uint[] connect_flag = new uint[3] { 0, 0, 0 };
         public uint RPM_effect_type = 0;
@@ -29,8 +28,6 @@ namespace User.PluginSdkDemo
         public int[] Road_impact_enable_flag = new int[3] { 0, 0, 0 };
         public int vjoy_output_flag = 0;
         public uint vjoy_order = 1;
-        public string[,] Pedal_file_string = new string[6, 3] { { "NA", "NA", "NA" }, { "NA", "NA", "NA" }, { "NA", "NA", "NA" }, { "NA", "NA", "NA" }, { "NA", "NA", "NA" }, { "NA", "NA", "NA" } };
-        public int[,] file_enable_check = new int[6, 3] { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
         public string WSeffect_bind = "";
         public string Road_impact_bind = "";
         public int WS_trigger = 30;
@@ -45,9 +42,16 @@ namespace User.PluginSdkDemo
         public bool[] CV2_enable_flag = new bool[3] { false, false, false };
         public int[] CV2_trigger = new int[3] { 0, 0, 0 };
         public string[] CV2_bindings = new string[3] { "", "", "" };
+        public bool[] CV3_enable_flag = new bool[3] { false, false, false };
+        public int[] CV3_trigger = new int[3] { 0, 0, 0 };
+        public string[] CV3_bindings = new string[3] { "", "", "" };
+        public bool[] CV4_enable_flag = new bool[3] { false, false, false };
+        public int[] CV4_trigger = new int[3] { 0, 0, 0 };
+        public string[] CV4_bindings = new string[3] { "", "", "" };
         public string ESPNow_port = "";
         public bool[] Pedal_ESPNow_Sync_flag = new bool[3] { false, false, false };
-        public bool Pedal_ESPNow_auto_connect_flag = false;
+        public bool IsBridgeAutoConnect = false;
+        public bool IsFanatecAndPicoSupport = false;
         public bool Serial_auto_clean = false; //clean serial monitor
         public bool Serial_auto_clean_bridge = false; //clean serial monitor bridge
         public bool Using_CDC_bridge = false;
@@ -56,10 +60,8 @@ namespace User.PluginSdkDemo
         public bool Rudder_ACC_effect_b = false;
         public bool Rudder_ACC_WindForce = false;
         public bool advanced_b = false;
-        public bool[,,] Effect_status_prolife = new bool[6, 3, 8] { { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } }, { { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false }, { false, false, false, false, false, false, false, false } } };
         public string SSID_string = "";
         public string PASS_string = "";
-        public bool[] LivePreview = new bool[3] { false, false, false };
         public float rudderMaxForce = 10;
         public float rudderMinForce = 1;
         public byte rudderMaxTravel = 95;
@@ -71,8 +73,12 @@ namespace User.PluginSdkDemo
         public byte rudderRPMAmp = 1;
         public byte rudderRPMMaxFrequency = 40;
         public byte rudderRPMMinFrequency = 15;
-        public uint rudderMode = 0;
+        public uint rudderMode { get; set; } = 0;
         public int updateChannel = 0;
+        public string[] DefaultConfig = new string[3] { string.Empty, string.Empty, string.Empty };
+        public bool profileAutoChange = false;
+        public string[] ProfileShortcut { get; set; } = new string[6] { string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty };
+        public string[] ProfileShortcutName { get; set; } = new string[6] { string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty };
 
     }
         

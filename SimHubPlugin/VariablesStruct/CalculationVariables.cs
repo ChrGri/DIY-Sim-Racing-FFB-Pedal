@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public class CalculationVariables : INotifyPropertyChanged
     {
@@ -18,6 +18,8 @@ namespace User.PluginSdkDemo
         public bool IsUIRefreshNeeded { get; set; }
         public bool Update_CV1_textbox { get; set; }
         public bool Update_CV2_textbox { get; set; }
+        public bool Update_CV3_textbox { get; set; }
+        public bool Update_CV4_textbox { get; set; }
 
         public double[] Force_curve_Y = new double[101];
 
@@ -25,6 +27,8 @@ namespace User.PluginSdkDemo
         public byte pedal_state_in_ratio { get; set; }
         public bool isDragging { get; set; }
         public int unassignedPedalCount { get; set; }
+        public bool[] IsModifiedConfigNotSave { get; set; } = new bool[3] { false, false, false };
+        public bool IsApplyingConfig { get; set; } = false;
         public Point offset;
 
         public SolidColorBrush lightcolor;
@@ -35,16 +39,14 @@ namespace User.PluginSdkDemo
         public string btn_SendConfig_tooltip;
         public bool[] dumpPedalToResponseFile_clearFile;
         public bool[] dumpPedalToResponseFile;
-        public bool Update_Profile_Checkbox_b;
         public string current_profile = "NA";
-        public uint profile_index;
         public bool ForceUpdate_b;
         public uint UpdateChannel;
         public uint _rssi_value;
         public byte[,] PedalFirmwareVersion;
         public byte[] BridgeFirmwareVersion;
-        public bool[] PedalAvailability;//wireless
-        public bool[] PedalSerialAvailability;
+        //public bool[] PedalAvailability;//wireless
+        //public bool[] PedalSerialAvailability;
         public bool Rudder_status;
         public bool BridgeSerialAvailability;
         public bool OTASettingUpdate_b;
@@ -62,6 +64,20 @@ namespace User.PluginSdkDemo
         public bool IsTestBuild = false;
         public bool IsOtaUploadFromPlatformIO = false;
         public byte[][] unassignedPedalMacaddress;
+        public BridgeConnectStateEnum bridgeConnectionStatus= BridgeConnectStateEnum.BRIDGE_DISCONNECT;
+        public WirelessConnectStateEnum[] pedalWirelessStatus = new WirelessConnectStateEnum[3] { WirelessConnectStateEnum.PEDAL_DISCONNECT, WirelessConnectStateEnum.PEDAL_DISCONNECT, WirelessConnectStateEnum.PEDAL_DISCONNECT};
+        public ConnectStateEnum[] pedalSerialStatus = new ConnectStateEnum[3] { ConnectStateEnum.PEDAL_DISCONNECT, ConnectStateEnum.PEDAL_DISCONNECT, ConnectStateEnum.PEDAL_DISCONNECT };
+        public DateTime[] pedalWirelessConnetionlastTime = new DateTime[3];
+        public DateTime[] pedalSerialConnetionlastTime = new DateTime[3];
+        public DateTime bridgeConnetionlastTime = DateTime.Now;
+        public bool[] configPreviewLock = new bool[3] { false, false, false};
+        public DateTime[] configPreviewLockLast = new DateTime[3];
+        public DateTime configApplyLockLast = DateTime.Now;
+        public string[] ConfigEditing = new string[3] { string.Empty, string.Empty, string.Empty};
+        public string ProfileEditing = string.Empty;
+        public string ProfileSelected = string.Empty;
+        public int ProfileIndex = -1;
+        public string logDateTime =  string.Empty;
         public uint RSSI_Value
         {
             get => _rssi_value;
@@ -125,8 +141,6 @@ namespace User.PluginSdkDemo
             btn_SendConfig_tooltip = "Send Config to Pedal and save in storage";
             dumpPedalToResponseFile_clearFile = new bool[3] { false, false, false };
             dumpPedalToResponseFile = new bool[3] { false, false, false };
-            Update_Profile_Checkbox_b = false;
-            profile_index = 0;
             ForceUpdate_b = false;
             UpdateChannel = 0;
             _rssi_value = 0;
@@ -135,8 +149,8 @@ namespace User.PluginSdkDemo
             _pedalStatusString = "";
             PedalFirmwareVersion = new byte[3, 3] { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
             BridgeFirmwareVersion = new byte[3] { 0, 0, 0 };
-            PedalAvailability = new bool[3] { false, false, false };
-            PedalSerialAvailability = new bool[3] { false, false, false };
+            //PedalAvailability = new bool[3] { false, false, false };
+            //PedalSerialAvailability = new bool[3] { false, false, false };
             Rudder_status = false;
             BridgeSerialAvailability = false;
             _pedalConnectingString = "";
@@ -155,6 +169,7 @@ namespace User.PluginSdkDemo
             {
                 unassignedPedalMacaddress[i]=new byte[6] { 0, 0, 0, 0, 0, 0};
             }
+            
 
         }
         public event PropertyChangedEventHandler PropertyChanged;

@@ -12,11 +12,15 @@ using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
 using System;
 using System.Collections.Generic;
 using System.IO.Ports;
+using System.Linq;
 using System.Media;
+using System.Net.Configuration;
 using System.Runtime;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Windows.UI.Notifications;
@@ -27,11 +31,11 @@ using IPlugin = SimHub.Plugins.IPlugin;
 
 
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     [PluginDescription("The Plugin was for FFB pedal, To tune the pedal parameters and communicates with the pedal over USB.")]
     [PluginAuthor("OpenSource")]
-    [PluginName("DIY active pedal plugin")]
+    [PluginName("DIY FFB pedal plugin")]
     public partial class DIY_FFB_Pedal : IPlugin, IDataPlugin, IWPFSettingsV2
     {
         public CalculationVariables _calculations;
@@ -70,7 +74,7 @@ namespace User.PluginSdkDemo
         public bool Rudder_brake_enable_flag = false;
         public bool Rudder_brake_status = false;
         public byte pedal_state_in_ratio = 0;
-        public bool Sync_esp_connection_flag=false;
+        //public bool Sync_esp_connection_flag=false;
         public byte PedalErrorCode = 0;
         public byte PedalErrorIndex = 0;
         public byte[] random_pedal_action_interval=new byte[3] { 50,51,53};
@@ -84,13 +88,24 @@ namespace User.PluginSdkDemo
         public byte[] Rudder_Pedal_idx = new byte[2] { 1, 2 };
         public string Current_Game = "";
         public byte TrackSurfaceCondition = 0;
-        public bool[] PedalConfigRead_b = new bool[3] { false, false, false };
+        //public bool[] PedalConfigRead_b = new bool[3] { false, false, false };
         public bool[] isCdcSerial = new bool[3] { false, false, false };
         public List<VidPidResult> comportList = new List<VidPidResult>();
         private const float actionIntervalTolerance = 0.5f;
-        bool flightRpmEffectsStatus_last = false;
-        bool flightGforceEffects_last = false;
+        public bool flightRpmEffectsStatus_last = false;
+        public bool flightGforceEffects_last = false;
+        public bool IsGameChanged = true;
+        public ProfileService ProfileServicePlugin;
+        public ConfigListService ConfigService;
+        public HidDeviceController BridgeHidService;
+        public string currentGame= null;
+        public bool[] IsGetConfigSendRequest = new bool[3] { false, false, false };
+        public DAP_config_st[] BufferConfig_st = new DAP_config_st[3] { new DAP_config_st(), new DAP_config_st(), new DAP_config_st() };
+        public int ConfigSendInterval_ms = 100;
+        public DateTime[] ConfigBufferGet_lastTime = new DateTime[3] { DateTime.Now, DateTime.Now, DateTime.Now };
+        public PedalStatus PedalStatusInstance = new PedalStatus();
         //public vJoyInterfaceWrap.vJoy joystick;
+
         //effect trigger timer
         DateTime[] Action_currentTime = new DateTime[3];
         DateTime[] Action_lastTime = new DateTime[3];
@@ -136,7 +151,7 @@ namespace User.PluginSdkDemo
         public bool[] connectSerialPort = { false, false, false };
 
 
-        public DIYFFBPedalSettings Settings;
+        public DIYFFBPedalSettings Settings { get; set; }
 
 
 
@@ -250,6 +265,19 @@ namespace User.PluginSdkDemo
             return myBuffer;
         }
 
+        public byte[] getBytes_HidMessage(Dap_hidmessage_st aux)
+        {
+            int length = Marshal.SizeOf(aux);
+            IntPtr ptr = Marshal.AllocHGlobal(length);
+            byte[] myBuffer = new byte[length];
+
+            Marshal.StructureToPtr(aux, ptr, true);
+            Marshal.Copy(ptr, myBuffer, 0, length);
+            Marshal.FreeHGlobal(ptr);
+
+            return myBuffer;
+        }
+
         public byte[] getBytes_Action_Ota(DAP_action_ota_st aux)
         {
             int length = Marshal.SizeOf(aux);
@@ -264,7 +292,7 @@ namespace User.PluginSdkDemo
         }
         public string Ncalc_reading(String expression)
         {
-            string value = "";
+            string value = "Error";
             try
             {
                 NCalc.Expression exp = new NCalc.Expression(expression);
@@ -291,140 +319,7 @@ namespace User.PluginSdkDemo
             return value;
         }
 
-        unsafe public void SendPedalAction(DAP_action_st action_tmp, Byte PedalID)
-        {
-            
-            action_tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
-            action_tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
-            action_tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
-            action_tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
-            action_tmp.payloadHeader_.PedalTag = PedalID;
-            DAP_action_st* v = &action_tmp;
-            byte* p = (byte*)v;
-            action_tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
-            int length = sizeof(DAP_action_st);
-            byte[] newBuffer = new byte[length];
-            newBuffer = getBytes_Action(action_tmp);
-            try
-            {
-                if (Settings.Pedal_ESPNow_Sync_flag[PedalID])
-                {
-                    if (ESPsync_serialPort.IsOpen)
-                    {
-                        ESPsync_serialPort.DiscardInBuffer();
-                        ESPsync_serialPort.DiscardOutBuffer();
-                        // send query command
-                        ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
-                    }
-                }
-                else
-                {
-                    
-                    if (_serialPort[PedalID].IsOpen)
-                    {
-                        
-                        // clear inbuffer 
-                        _serialPort[PedalID].DiscardInBuffer();
-                        _serialPort[PedalID].DiscardOutBuffer();
-                        // send data
-                        _serialPort[PedalID].Write(newBuffer, 0, newBuffer.Length);
-                    }
-                }
-            }
-            catch (Exception caughtEx)
-            {
-                string errorMessage = caughtEx.Message;
-                SimHub.Logging.Current.Error("FFB_Pedal_Action_Sending_error:"+errorMessage);
-            }
-
-        }
-        unsafe public void SendPedalActionWireless(DAP_action_st action_tmp, Byte PedalID)
-        {
-
-            action_tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
-            action_tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
-            action_tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
-            action_tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
-            action_tmp.payloadHeader_.PedalTag = PedalID;
-            action_tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
-            action_tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
-            DAP_action_st* v = &action_tmp;
-            byte* p = (byte*)v;
-            action_tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
-            int length = sizeof(DAP_action_st);
-            byte[] newBuffer = new byte[length];
-            newBuffer = getBytes_Action(action_tmp);
-            try
-            {
-                if (ESPsync_serialPort.IsOpen)
-                {
-                    ESPsync_serialPort.DiscardInBuffer();
-                    ESPsync_serialPort.DiscardOutBuffer();
-                    ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
-                }
-            }
-            catch (Exception caughtEx)
-            {
-                string errorMessage = caughtEx.Message;
-                SimHub.Logging.Current.Error("FFB_Pedal_Action_Sending_Wireless_error:" + errorMessage);
-            }
-
-        }
-
-        unsafe public void SendConfig(DAP_config_st tmp, byte PedalIDX)
-        {
-            int length = sizeof(DAP_config_st);
-            //int val = this.dap_config_st[indexOfSelectedPedal_u].payloadHeader_.checkSum;
-            //string msg = "CRC value: " + val.ToString();
-            byte[] newBuffer = new byte[length];
-            newBuffer = getBytesConfig(tmp);
-            if (Settings.Pedal_ESPNow_Sync_flag[PedalIDX])
-            {
-                if (ESPsync_serialPort.IsOpen)
-                {
-                    try
-                    {
-                        ESPsync_serialPort.DiscardInBuffer();
-                        ESPsync_serialPort.DiscardOutBuffer();
-                        // send data
-                        ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
-                        //Plugin._serialPort[indexOfSelectedPedal_u].Write("\n");
-                        System.Threading.Thread.Sleep(100);
-                    }
-                    catch (Exception caughtEx)
-                    {
-                        string errorMessage = caughtEx.Message;
-                        SimHub.Logging.Current.Error("FFB_Pedal_Config_Sending_error:" + errorMessage);
-                    }
-                }
-            }
-            else
-            {
-                if (_serialPort[PedalIDX].IsOpen)
-                {
-
-                    // clear inbuffer 
-                    _serialPort[PedalIDX].DiscardInBuffer();
-                    _serialPort[PedalIDX].DiscardOutBuffer();
-                    // send data
-                    _serialPort[PedalIDX].Write(newBuffer, 0, newBuffer.Length);
-                }
-            }
-        }
-
-        unsafe public void SendConfigWithoutSaveToEEPROM(DAP_config_st tmp, byte PedalIDX)
-        {
-            tmp.payloadHeader_.storeToEeprom = 0;
-            tmp.payloadHeader_.PedalTag=PedalIDX;
-            tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
-            tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
-            tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
-            tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
-            DAP_config_st* v = &tmp;
-            byte* p = (byte*)v;
-            tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
-            SendConfig(tmp, PedalIDX);
-        }
+        
         unsafe public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
 			
@@ -437,6 +332,8 @@ namespace User.PluginSdkDemo
             byte Road_impact_value = 0;
             double CV1_value = 0;
             double CV2_value = 0;
+            double CV3_value = 0;
+            double CV4_value = 0;
             double MSFS_RPM_Value_Simhub = 0;
             double RUDDER_DEFLECTION_Simhub = 0;
             double RELATIVE_WIND_VELOCITY_BODY_Z_Simhub = 0;
@@ -468,7 +365,21 @@ namespace User.PluginSdkDemo
             // Send ABS signal when triggered by the game
             if (data.GameRunning)
             {
-                Current_Game=(string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame");
+                Current_Game = data.GameName;//(string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame");
+                currentGame = data.GameName;
+                if (Settings.profileAutoChange)
+                {
+                    if (PedalConstStrings.AutoProfileSwitchGameList.Contains(Current_Game) && IsGameChanged)
+                    {
+                        //set default game profile first;
+                        ProfileServicePlugin.ApplyProfileAutoForGame(data.GameName);
+                        IsGameChanged = false;
+                    }
+                    //overwrite with car profile
+                    ProfileServicePlugin.ApplyProfileAutoForCar(data.NewData.CarId);
+
+                }
+                
                 //load surface condition
                 TrackSurfaceCondition = 0;
                 if (Current_Game == "IRacing")
@@ -623,7 +534,7 @@ namespace User.PluginSdkDemo
 
             bool update_flag = false;
 
-            if (data.GameRunning)
+            if (data.GameRunning && data.NewData!=data.OldData)
             {
                 // Send ABS trigger signal via serial
                 for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
@@ -653,8 +564,9 @@ namespace User.PluginSdkDemo
 
                     if (Settings.RPM_enable_flag[pedalIdx] == 1)
                     {
-                        if (Math.Abs(RPM_value - rpm_last_value[pedalIdx]) > 3)
+                        if (Math.Abs(RPM_value - rpm_last_value[pedalIdx]) > 3 )
                         {
+                            //update rpm value every frame when HID bridge is connected
                             tmp.payloadPedalAction_.RPM_u8 = (Byte)RPM_value;
                             update_flag = true;
                             rpm_last_value[pedalIdx] = (Byte)RPM_value;
@@ -816,8 +728,70 @@ namespace User.PluginSdkDemo
                             CV2_value = 0;
                             SimHub.Logging.Current.Error("CV2 Reading error:"+ caughtEx);
                         }
+                    }
+                    if (Settings.CV3_enable_flag[pedalIdx] == true)
+                    {
 
+                        //CV2_value = Convert.ToByte(pluginManager.GetPropertyValue(Settings.CV2_bindings[pedalIdx]));
+                        try
+                        {
+                            string temp_string = Ncalc_reading(Settings.CV3_bindings[pedalIdx]);
+                            if (temp_string != "Error")
+                            {
+                                CV3_value = Convert.ToDouble(temp_string);
+                            }
+                            else
+                            {
+                                CV3_value = 0;
+                                SimHub.Logging.Current.Error("CV3 Reading error");
+                            }
+                            if (CV3_value > Byte.MaxValue)
+                            {
+                                SimHub.Logging.Current.Error("CV3 value exceed limit");
+                            }
+                            if (CV3_value > (Settings.CV2_trigger[pedalIdx]))
+                            {
+                                tmp.payloadPedalAction_.Trigger_CV_3 = 1;
+                                update_flag = true;
+                            }
+                        }
+                        catch (Exception caughtEx)
+                        {
+                            CV3_value = 0;
+                            SimHub.Logging.Current.Error("CV3 Reading error:" + caughtEx);
+                        }
+                    }
+                    if (Settings.CV4_enable_flag[pedalIdx] == true)
+                    {
 
+                        //CV4_value = Convert.ToByte(pluginManager.GetPropertyValue(Settings.CV2_bindings[pedalIdx]));
+                        try
+                        {
+                            string temp_string = Ncalc_reading(Settings.CV4_bindings[pedalIdx]);
+                            if (temp_string != "Error")
+                            {
+                                CV4_value = Convert.ToDouble(temp_string);
+                            }
+                            else
+                            {
+                                CV4_value = 0;
+                                SimHub.Logging.Current.Error("CV4 Reading error");
+                            }
+                            if (CV4_value > Byte.MaxValue)
+                            {
+                                SimHub.Logging.Current.Error("CV4 value exceed limit");
+                            }
+                            if (CV4_value > (Settings.CV2_trigger[pedalIdx]))
+                            {
+                                tmp.payloadPedalAction_.Trigger_CV_3 = 1;
+                                update_flag = true;
+                            }
+                        }
+                        catch (Exception caughtEx)
+                        {
+                            CV4_value = 0;
+                            SimHub.Logging.Current.Error("CV4 Reading error:" + caughtEx);
+                        }
                     }
                     //ABS/TC function
                     if (pedalIdx == 1)
@@ -845,13 +819,14 @@ namespace User.PluginSdkDemo
                         }
                     }
                     // check the update interval
-                    if (update_flag)
+                    // if connect with HID bridge, ignore the fps limit, update all the time.
+                    if (update_flag && !BridgeHidService.IsConnected)
                     {
                         Action_currentTime[pedalIdx] = DateTime.Now;
                         TimeSpan diff_action = Action_currentTime[pedalIdx] - Action_lastTime[pedalIdx];
                         int millisceonds_action = (int)diff_action.TotalMilliseconds;
                         float time_interval= (1000.0f / Settings.Pedal_action_fps[pedalIdx])-actionIntervalTolerance;
-                        if (millisceonds_action <= time_interval)
+                        if (millisceonds_action <= time_interval )
                         {
                             update_flag = false;
                         }
@@ -917,7 +892,8 @@ namespace User.PluginSdkDemo
                 if (game_running_index == 1)
                 {
                     game_running_index = 0;
-                    clear_action = true;   
+                    clear_action = true;
+                    if(!data.GamePaused && !data.GameInMenu && !data.GameReplay) ProfileServicePlugin.ClearAutoSwitchStatus();//clear auto profile switch status
                 }
             }
 
@@ -928,6 +904,7 @@ namespace User.PluginSdkDemo
             {
                 sendAbsSignal_local_b = true;
                 sendTcSignal_local_b = true;
+                
                 DAP_action_st tmp;
                 tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
                 tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
@@ -943,16 +920,31 @@ namespace User.PluginSdkDemo
 
                 for (uint PIDX = 1; PIDX < 3; PIDX++)
                 {
-                    tmp.payloadHeader_.PedalTag = (byte)PIDX;
-                    tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
-                    tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
-                    tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
-                    tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
+                    bool update_b = false;
+                    TimeSpan diff_action =  DateTime.Now - Action_lastTime[PIDX];
+                    int millisceonds_action = (int)diff_action.TotalMilliseconds;
+                    float time_interval = (1000.0f / Settings.Pedal_action_fps[PIDX]) - actionIntervalTolerance;
+                    if ( millisceonds_action> 30)
+                    {
+                        Action_lastTime[PIDX] = DateTime.Now;
+                        update_b = true;
+                    }
 
-                    DAP_action_st* v = &tmp;
-                    byte* p = (byte*)v;
-                    tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
-                    SendPedalAction(tmp, (byte)PIDX);
+                    if (update_b)
+                    {
+                        tmp.payloadHeader_.PedalTag = (byte)PIDX;
+                        tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
+                        tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
+                        tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
+                        tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
+
+                        DAP_action_st* v = &tmp;
+                        byte* p = (byte*)v;
+                        tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
+                        SendPedalAction(tmp, (byte)PIDX);
+                        Task.Delay(2);
+                    }
+
                 }
                     
 
@@ -1292,8 +1284,12 @@ namespace User.PluginSdkDemo
                 clear_action = false;
             }
 
+            //config sending queue function
+            if (data.GameRunning) ConfigSendInterval_ms = 100;
+            else ConfigSendInterval_ms = 30;
+            ConfigSendingQueue();
             
-            this.AttachDelegate("CurrentProfile", () => _calculations.current_profile);
+            this.AttachDelegate("CurrentProfile", () => _calculations.ProfileSelected);
             pluginManager.SetPropertyValue("SelectedPedal", this.GetType(), current_pedal);
             pluginManager.SetPropertyValue("Action", this.GetType(), current_action);
             pluginManager.SetPropertyValue("ABS_effect_status", this.GetType(), Settings.ABS_enable_flag[Settings.table_selected]);
@@ -1303,7 +1299,7 @@ namespace User.PluginSdkDemo
             pluginManager.SetPropertyValue("RoadImpact_effect_status", this.GetType(), Settings.Road_impact_enable_flag[Settings.table_selected]);
             pluginManager.SetPropertyValue("Overlay_display", this.GetType(), overlay_display);
             pluginManager.SetPropertyValue("Theme_color", this.GetType(), simhub_theme_color);
-            pluginManager.SetPropertyValue("ProfileIndex", this.GetType(), _calculations.profile_index);
+            pluginManager.SetPropertyValue("ProfileIndex", this.GetType(), _calculations.ProfileIndex);
             pluginManager.SetPropertyValue("debugvalue", this.GetType(), debug_value);
             pluginManager.SetPropertyValue("rudder_status", this.GetType(), Rudder_status);
             pluginManager.SetPropertyValue("rudder_brake_status", this.GetType(), Rudder_brake_status);
@@ -1312,6 +1308,7 @@ namespace User.PluginSdkDemo
             pluginManager.SetPropertyValue("PedalErrorCode", this.GetType(), PedalErrorCode);
             pluginManager.SetPropertyValue("FlightRudder_G", this.GetType(), Rudder_G_last_value);
             pluginManager.SetPropertyValue("FlightRudder_Wind_Force", this.GetType(), Rudder_Wind_Force_last_value);
+            PedalStatusInstance.UpdatePluginProperties(pluginManager, PedalStatusInstance, this);
             this.AttachDelegate("CustomEffectTirggerReading1", () => CV1_value);
             this.AttachDelegate("CustomEffectTirggerReading2", () => CV2_value);
             this.AttachDelegate("WheelSlipEffectReading", () => WS_value);
@@ -1336,10 +1333,25 @@ namespace User.PluginSdkDemo
         /// </summary>
         /// <param name="pluginManager"></param>
         public void End(PluginManager pluginManager)
-        {           
+        {
+            //disable rudder once rudder is in aciton
+            if (Rudder_status)
+            {
+                if (wpfHandle != null)
+                {
+                    try
+                    {
+                        PedalRestartAction();
+                    }
+                    catch (Exception caughtEx)
+                    {
+                    }
+                }
+
+            }
             // Save settings
             this.SaveCommonSettings("GeneralSettings", Settings);
-
+            BridgeHidService.Dispose();
             // close serial communication
             if (wpfHandle != null)
             {
@@ -1365,11 +1377,12 @@ namespace User.PluginSdkDemo
                     wpfHandle.closeSerialAndStopReadCallback(pedalIdx);
                 }
             }
-            
+            /*
             if (ToastNotificationManager.History.GetHistory("Pedal_notification").Count != 0)
             {
                 ToastNotificationManager.History.Remove("Pedal_notification");
             }
+            */
             
 
         }
@@ -1396,14 +1409,14 @@ namespace User.PluginSdkDemo
 
             pluginHandle = pluginManager;
             _calculations = new CalculationVariables();
-            SimHub.Logging.Current.Info("Starting DIY active pedal plugin");
+            SimHub.Logging.Current.Info("Starting DIY FFB pedal plugin");
 
             // Load settings
             Settings = this.ReadCommonSettings<DIYFFBPedalSettings>("GeneralSettings", () => new DIYFFBPedalSettings());
             Simhub_version = (String)pluginManager.GetPropertyValue("DataCorePlugin.SimHubVersion");
             // Declare a property available in the property list, this gets evaluated "on demand" (when shown or used in formulas)
             //this.AttachDelegate("CurrentDateTime", () => DateTime.Now);
-            pluginManager.AddProperty("ProfileIndex", this.GetType(), _calculations.profile_index);
+            pluginManager.AddProperty("ProfileIndex", this.GetType(), _calculations.ProfileIndex);
             pluginManager.AddProperty("SelectedPedal", this.GetType(), current_pedal);
             pluginManager.AddProperty("Action", this.GetType(), current_action);
             pluginManager.AddProperty("ABS_effect_status", this.GetType(), Settings.ABS_enable_flag[Settings.table_selected]);
@@ -1421,11 +1434,19 @@ namespace User.PluginSdkDemo
             pluginManager.AddProperty("PedalErrorCode", this.GetType(), PedalErrorCode);
             pluginManager.AddProperty("FlightRudder_G", this.GetType(), Rudder_G_last_value);
             pluginManager.AddProperty("FlightRudder_Wind_Force", this.GetType(), Rudder_Wind_Force_last_value);
+            PedalStatusInstance.AddPluginProperties(pluginManager, PedalStatusInstance, this);
+
+            ProfileServicePlugin = new ProfileService(this);
+            ConfigService = new ConfigListService(this);
+            BridgeHidService = new HidDeviceController(Constants.VendorId, Constants.BridgePid, Constants.TargetUsagePage);
             EnsureFolderExistsAndProcess();
-            for (uint pedali=0; pedali < 3; pedali++)
+            DefaultConfigInitializing();
+            DefaultProfile = new DAP_system_profile_cls();
+
+            for (uint pedali = 0; pedali < 3; pedali++)
             {
                 Action_currentTime[pedali] = new DateTime();
-                Action_currentTime[pedali]=DateTime.Now;
+                Action_currentTime[pedali] = DateTime.Now;
                 Action_lastTime[pedali] = new DateTime();
                 Action_lastTime[pedali] = DateTime.Now;
             }
@@ -1433,7 +1454,7 @@ namespace User.PluginSdkDemo
             //get version length
             int Version_text_length = Simhub_version.Length;
             //if (Simhub_version[Version_text_length - 2] == 'b')
-            if(Simhub_version.Contains("b"))
+            if (Simhub_version.Contains("b"))
             {
                 Version_Check_Simhub_MSFS = false;
             }
@@ -1452,92 +1473,111 @@ namespace User.PluginSdkDemo
                 }
             }
 
-            
+
             Version_Check_Simhub_MSFS = true;
-            this.AddAction("ChangeSlotA", (a, b) =>
-            {
-                _calculations.profile_index = 0;
-                Page_update_flag = true;
-                SimHub.Logging.Current.Info("SlotA");
-                _calculations.current_profile = "Slot A";
-                current_action= "Slot A";
-            });
 
-            this.AddAction("ChangeSlotB", (a, b) =>
+            this.AddAction("ApplyProfile", (a, b) =>
             {
+                var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == _calculations.ProfileSelected);
+                if (foundItem != null) ProfileServicePlugin.ApplyProfile(foundItem.FullPath);
+                _calculations.ProfileEditing = _calculations.ProfileSelected;
+                wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
+                SimHub.Logging.Current.Info("Apply Profile");
+                current_action = "Apply Profile";
+            });
+            for (int i = 0; i < 6; i++)
+            {
+                int index = i;
+                if (Settings.ProfileShortcutName[index] != string.Empty)
+                {
+                    this.AddAction(Settings.ProfileShortcutName[index], (a, b) =>
+                    {
+                        var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == Settings.ProfileShortcut[index]);
+                        if (foundItem != null)
+                        {
+                            _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
+                            ProfileServicePlugin.ApplyProfile(foundItem.FullPath);
+                            _calculations.ProfileEditing = foundItem.FileName;
+                            _calculations.ProfileSelected = _calculations.ProfileEditing;
+                            wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(foundItem.FullPath);
+                            wpfHandle.ToastNotification("Profile:"+ foundItem.FileName,"Applied");
+                        }
 
-                _calculations.profile_index = 1;
-                Page_update_flag = true;
-                SimHub.Logging.Current.Info("SlotB");
-                _calculations.current_profile = "Slot B";
-                current_action = "Slot B";
-            });
+                        SimHub.Logging.Current.Info("Apply" + Settings.ProfileShortcutName[index]);
+                        current_action = "Apply" + Settings.ProfileShortcutName[index];
+                    });
+                }
+            }
 
-            this.AddAction("ChangeSlotC", (a, b) =>
-            {
-                _calculations.profile_index = 2;
-                Page_update_flag = true;
-                SimHub.Logging.Current.Info("SlotC");
-                _calculations.current_profile = "Slot C";
-                current_action = "Slot C";
-            });
-
-            this.AddAction("ChangeSlotD", (a, b) =>
-            {
-                _calculations.profile_index = 3;
-                Page_update_flag = true;
-                SimHub.Logging.Current.Info("SlotD");
-                _calculations.current_profile = "Slot D";
-                current_action = "Slot D";
-            });
-            this.AddAction("ChangeSlotE", (a, b) =>
-            {
-                _calculations.profile_index = 4;
-                Page_update_flag = true;
-                SimHub.Logging.Current.Info("SlotE");
-                _calculations.current_profile = "Slot E";
-                current_action = "Slot E";
-            });
-            this.AddAction("ChangeSlotF", (a, b) =>
-            {
-                _calculations.profile_index = 5;
-                Page_update_flag = true;
-                SimHub.Logging.Current.Info("SlotF");
-                _calculations.current_profile = "Slot F";
-                current_action = "Slot F";
-            });
-            this.AddAction("SendConfigToPedal", (a, b) =>
-            {
-                sendconfig_flag =1;
-                SimHub.Logging.Current.Info("SendConfig");
-                current_action = "Send Config to Pedal";
-            });
 
             this.AddAction("PreviousProfile", (a, b) =>
             {
-                if (_calculations.profile_index == 0)
+                if(ProfileServicePlugin.ProfileList.Count() > 0)
                 {
-                    _calculations.profile_index = 5;
-                }
-                else
-                {
-                    _calculations.profile_index--;
-                }
-                
+                    if (_calculations.ProfileIndex == -1)
+                    {
+                        if (_calculations.ProfileEditing != string.Empty)
+                        {
+                            var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == _calculations.ProfileEditing);
+                            _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
 
-                Page_update_flag = true;
+                        }
+                        else
+                        {
+                            _calculations.ProfileIndex = 0;
+
+                        }
+                    }
+                    else
+                    {
+                        var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == _calculations.ProfileEditing);
+                        _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
+                        if (_calculations.ProfileIndex == 0)
+                        {
+                            _calculations.ProfileIndex = ProfileServicePlugin.ProfileList.Count()-1;
+                        }
+                        else
+                        {
+                            _calculations.ProfileIndex--;
+                        }
+                    }
+                    //ApplyProfile(ProfileList[_calculations.ProfileIndex].FullPath);
+                    _calculations.ProfileEditing = ProfileServicePlugin.ProfileList[_calculations.ProfileIndex].FileName;
+                    _calculations.ProfileSelected = _calculations.ProfileEditing;
+                }
                 SimHub.Logging.Current.Info("PreviousProfile");
                 current_action = "Previous Profile";
             });
 
             this.AddAction("NextProfile", (a, b) =>
             {
-                _calculations.profile_index++;
-                if (_calculations.profile_index > 5)
+                if (ProfileServicePlugin.ProfileList.Count() > 0)
                 {
-                    _calculations.profile_index = 0;
+                    if (_calculations.ProfileIndex == -1)
+                    {
+                        if (_calculations.ProfileEditing != string.Empty)
+                        {
+                            var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == _calculations.ProfileEditing);
+                            _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
+
+                        }
+                        else
+                        {
+                            _calculations.ProfileIndex = 0;
+
+                        }
+                    }
+                    else
+                    {
+                        var foundItem = this.ProfileServicePlugin.ProfileList.FirstOrDefault(item => item.FileName == _calculations.ProfileEditing);
+                        _calculations.ProfileIndex = this.ProfileServicePlugin.ProfileList.IndexOf(foundItem);
+                        _calculations.ProfileIndex++;
+                        if (_calculations.ProfileIndex > ProfileServicePlugin.ProfileList.Count - 1) _calculations.ProfileIndex = 0;
+                    }
+                    //ApplyProfile(ProfileList[_calculations.ProfileIndex].FullPath);
+                    _calculations.ProfileEditing = ProfileServicePlugin.ProfileList[_calculations.ProfileIndex].FileName;
+                    _calculations.ProfileSelected = _calculations.ProfileEditing;
                 }
-                Page_update_flag = true;
                 SimHub.Logging.Current.Info("NextProfile");
                 current_action = "Next Profile";
             });
@@ -1599,7 +1639,7 @@ namespace User.PluginSdkDemo
                 }
                 Page_update_flag = true;
             });
-            this.AddAction("Gforce_toggle", (a, b) =>
+            this.AddAction("GforceToggle", (a, b) =>
             {
                 if (Settings.table_selected == 1)
                 {
@@ -1673,20 +1713,20 @@ namespace User.PluginSdkDemo
                 SimHub.Logging.Current.Info("Rudder Brake");
 
             });
-            
-            /*
-            this.AddAction("Rudder", (a, b) =>
+            this.AddAction("Log Pedal State", (a, b) =>
             {
-
-                Rudder_enable_flag=true;
-                SimHub.Logging.Current.Info("Rudder action");
+                if (!_calculations.dumpPedalToResponseFile[Settings.table_selected])
+                {
+                    _calculations.dumpPedalToResponseFile[Settings.table_selected] = true;
+                }
+                else
+                {
+                    _calculations.dumpPedalToResponseFile[Settings.table_selected] = false;
+                }
+                wpfHandle.ToastNotification("Log Pedal State:"+ _calculations.dumpPedalToResponseFile[Settings.table_selected], "Pedal:" + Settings.table_selected);
+                SimHub.Logging.Current.Info("Log pedal state for pedal: " + Settings.table_selected);
 
             });
-            */
-
-            //Settings.selectedJsonIndexLast[0]
-            //SimHub.Logging.Current.Info("Diy active pedas plugin - Test 1");
-            //SimHub.Logging.Current.Info("Diy active pedas plugin - COM port: " + Settings.selectedComPortNames[0]);
 
 
 

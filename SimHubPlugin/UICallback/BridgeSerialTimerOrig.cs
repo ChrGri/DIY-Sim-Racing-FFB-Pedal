@@ -8,10 +8,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
+        static Int32 BridgeDisconnectTimeOutInMs = 5000;
         unsafe public void timerCallback_serial_esphost_orig(object sender, EventArgs e)
         {
 
@@ -143,27 +144,6 @@ namespace User.PluginSdkDemo
                                     check_payload_state_b = true;
                                 }
                                 Pedal_version[pedalSelected] = pedalState_read_st.payloadHeader_.version;
-                                /*
-                                if (Pedal_version[pedalSelected] != Constants.pedalConfigPayload_version && pedalState_read_st.payloadHeader_.payloadType == Constants.pedalStateBasicPayload_type)
-                                {
-                                    if (!Version_warning_first_show_b[pedalSelected])
-                                    {
-                                        Version_warning_first_show_b[pedalSelected] = true;
-                                        if (Pedal_version[pedalSelected] > Constants.pedalConfigPayload_version)
-                                        {
-                                            String MSG_tmp;
-                                            MSG_tmp = "Pedal: " + pedalState_read_st.payloadHeader_.PedalTag + " Pedal Dap version: " + Pedal_version[pedalSelected] + ", Plugin DAP version: " + Constants.pedalConfigPayload_version + ". Please update Simhub Plugin.";
-                                            System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                                        }
-                                        else
-                                        {
-                                            String MSG_tmp;
-                                            MSG_tmp = "Pedal: " + pedalState_read_st.payloadHeader_.PedalTag + " Pedal Dap version: " + Pedal_version[pedalSelected] + ", Plugin DAP version: " + Constants.pedalConfigPayload_version + ". Please update Pedal Firmware.";
-                                            System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                                        }
-                                    }
-                                }
-                                */
                                 // CRC check
                                 bool check_crc_state_b = false;
                                 if (Plugin.checksumCalc(p_state, sizeof(payloadHeader) + sizeof(payloadPedalState_Basic)) == pedalState_read_st.payloadFooter_.checkSum)
@@ -176,6 +156,12 @@ namespace User.PluginSdkDemo
 
                                     // write vJoy data
                                     Pedal_position_reading[pedalSelected] = pedalState_read_st.payloadPedalBasicState_.joystickOutput_u16;
+                                    if (Plugin._calculations.pedalWirelessStatus[pedalSelected] == WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT
+                                        || Plugin._calculations.pedalWirelessStatus[pedalSelected] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
+                                    {
+                                        Plugin._calculations.pedalWirelessStatus[pedalSelected] = WirelessConnectStateEnum.PEDAL_GET_BASIC_PACKETS_OVER_ESPNOW;
+                                    }
+                                    Plugin._calculations.pedalWirelessConnetionlastTime[pedalSelected] = DateTime.Now;
                                     //if (Plugin.Rudder_enable_flag == false)
                                     //{
                                     if (Plugin.Settings.vjoy_output_flag == 1)
@@ -254,6 +240,14 @@ namespace User.PluginSdkDemo
                                         TextBox_serialMonitor_bridge.Text = temp_str;
 
                                     }
+
+                                    //update Pedal status
+                                    double valueMax_u16 = 65535;
+                                    Plugin.PedalStatusInstance.PedalForceInPercent[pedalSelected] = ((double)pedalState_read_st.payloadPedalBasicState_.pedalForce_u16 / (double)valueMax_u16 * 100.0d);
+                                    Plugin.PedalStatusInstance.PedalMaxForce[pedalSelected] = (int)dap_config_st[pedalSelected].payloadPedalConfig_.maxForce;
+                                    Plugin.PedalStatusInstance.PedalMinForce[pedalSelected] = (int)dap_config_st[pedalSelected].payloadPedalConfig_.preloadForce;
+                                    Plugin.PedalStatusInstance.UpdatePedalStatus();
+
                                     if ((pedalStateHasAlreadyBeenUpdated_b == false) && (indexOfSelectedPedal_u == pedalSelected))
                                     {
                                         pedalStateHasAlreadyBeenUpdated_b = true;
@@ -331,7 +325,8 @@ namespace User.PluginSdkDemo
                                         {
                                             // Specify the path to the file
                                             string currentDirectory = Directory.GetCurrentDirectory();
-                                            string filePath = currentDirectory + "\\PluginsData\\Common" + "\\DiyFfbPedalStateLog_" + pedalSelected + ".txt";
+                                            string filePath = Plugin.logFolderPath+"\\DiyFfbPedalStateLog_" + PedalConstStrings.PedalID[pedalSelected] + "_Wireless"+Plugin._calculations.logDateTime +".txt";
+                                            
 
                                             // delete file 
                                             if (true == Plugin._calculations.dumpPedalToResponseFile_clearFile[indexOfSelectedPedal_u])
@@ -346,23 +341,34 @@ namespace User.PluginSdkDemo
                                                 using (StreamWriter writer = new StreamWriter(filePath, true))
                                                 {
                                                     // Write the content to the file
-                                                    writer.Write("cycleCtr");
-                                                    writer.Write(", time_InUs");
+                                                    writer.Write("WriterIdx");
+                                                    writer.Write(", servoStateCycleCount_u32");
+                                                    writer.Write(", servoPositionTarget_i32");
+                                                    writer.Write(", servoPositionFeedback_i32");
+                                                    writer.Write(", servoPositionError_i16");
+                                                    writer.Write(", servoVoltage_fl32");
+                                                    writer.Write(", servoCurrentPercent_i16");
+
+                                                    writer.Write(", timeInUs_u32");
                                                     writer.Write(", cycleCount_u32");
-                                                    writer.Write(", forceRaw_InKg");
-                                                    writer.Write(", forceFiltered_InKg");
-                                                    writer.Write(", forceVelocity_InKgPerSec");
-                                                    writer.Write(", servoPos_InSteps");
-                                                    writer.Write(", servoPosEsp_InSteps");
-                                                    writer.Write(", servoPosError_InSteps");
-                                                    writer.Write(", servoCurrent_InPercent");
-                                                    writer.Write(", servoVoltage_InV");
-                                                    writer.Write(", angleSensorOutput");
+                                                    writer.Write(", pedalForceRaw_fl32");
+                                                    writer.Write(", pedalForceFiltered_fl32");
+                                                    writer.Write(", forceVelEst_fl32");
+                                                    writer.Write(", targetPosition_i32");
+                                                    writer.Write(", currentSpeedInHz_i32");
                                                     writer.Write(", brakeResistorState_b");
-                                                    writer.Write(", servoPosEstimated_InSteps");
-                                                    writer.Write(", targetPosition_InSteps");
-                                                    writer.Write(", currentSpeedInMilliHz_i32");
-                                                    //writer.Write(", servoPositionEstimated_stepperPos_i16");
+                                                    writer.Write(", oscillationMonitorValue_u8");
+
+                                                    writer.Write(", admittance_expectedForce_N");
+                                                    writer.Write(", admittance_isOscillating");
+                                                    writer.Write(", admittance_admittancePsi_N");
+                                                    writer.Write(", admittance_virtualMass_kg");
+                                                    writer.Write(", admittance_virtualDamping_Ns_m");
+
+                                                    writer.Write(", admittance_virtualPosition_m");
+                                                    writer.Write(", admittance_virtualVelocity_mps");
+                                                    writer.Write(", admittance_virtualAcceleration_mps2");
+
                                                     writer.Write("\n");
                                                 }
 
@@ -374,7 +380,34 @@ namespace User.PluginSdkDemo
                                                 writeCntr++;
 
                                                 // Build the entire string in one line using interpolation
-                                                writer.WriteLine($"{writeCntr},{state.timeInUs_u32},{state.cycleCount_u32},{state.pedalForce_raw_fl32},{state.pedalForce_filtered_fl32},{state.forceVel_est_fl32},{state.servoPosition_i16},{state.servoPositionTarget_i16},{state.servo_position_error_i16},{state.servo_current_percent_i16},{state.servo_voltage_0p1V_i16 / 10.0f},{state.angleSensorOutput_ui16},{state.brakeResistorState_b},{state.servoPositionEstimated_i16},{state.targetPosition_i16},{state.currentSpeedInMilliHz_i32}");
+                                                writer.WriteLine(
+                                                    $"{writeCntr}" +
+
+                                                    $",{state.servoStateCycleCount_u32}" +
+                                                    $",{state.servoPositionTarget_i32}" +
+                                                    $",{state.servoPositionFeedback_i32}" +
+                                                    $",{state.servoPositionError_i16}" +
+                                                    $",{state.servoVoltage0p1V_i16 / 10.0f}" +
+                                                    $",{state.servoCurrentPercent_i16}" +
+
+                                                    $",{state.timeInUs_u32}" +
+                                                    $",{state.cycleCount_u32}" +
+                                                    $",{state.pedalForceRaw_fl32}" +
+                                                    $",{state.pedalForceFiltered_fl32}" +
+                                                    $",{state.forceVelEst_fl32}" +
+                                                    $",{state.targetPosition_i32}" +
+                                                    $",{state.currentSpeedInHz_i32}" +
+                                                    $",{state.brakeResistorState_b}" +
+                                                    $",{state.oscillationMonitorValue_u8}" +
+                                                    $",{state.admittance_expectedForce_N}" +
+                                                    $",{state.admittance_isOscillating}" +
+                                                    $",{state.admittance_admittancePsi_N}" +
+                                                    $",{state.admittance_virtualMass_kg}" +
+                                                    $",{state.admittance_virtualDamping_Ns_m}" +
+                                                    $",{state.admittance_virtualPosition_m}" +
+                                                    $",{state.admittance_virtualVelocity_mps}" +
+                                                    $",{state.admittance_virtualAcceleration_mps2}"
+                                                    );
                                             }
 
 
@@ -431,6 +464,11 @@ namespace User.PluginSdkDemo
                                 if ((check_payload_state_b) && check_crc_state_b)
                                 {
                                     //Bridge_RSSI = bridge_state.payloadBridgeState_.Pedal_RSSI;
+                                    if (Plugin._calculations.bridgeConnectionStatus == BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT)
+                                    {
+                                        Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_IS_READY;
+                                    }
+                                    Plugin._calculations.bridgeConnetionlastTime= DateTime.Now;
                                     
                                     if (bridge_state.payloadBridgeState_.unassignedPedalCount > 0 && Plugin._calculations.unassignedPedalCount != bridge_state.payloadBridgeState_.unassignedPedalCount)
                                     {
@@ -452,9 +490,9 @@ namespace User.PluginSdkDemo
                                     string connection_tmp = "";
                                     bool wireless_connection_update = false;
                                     //fill the status into _calculations
-                                    Plugin._calculations.PedalAvailability[0] = bridge_state.payloadBridgeState_.Pedal_availability_0 == 1;
-                                    Plugin._calculations.PedalAvailability[1] = bridge_state.payloadBridgeState_.Pedal_availability_1 == 1;
-                                    Plugin._calculations.PedalAvailability[2] = bridge_state.payloadBridgeState_.Pedal_availability_2 == 1;
+                                    //Plugin._calculations.PedalAvailability[0] = bridge_state.payloadBridgeState_.Pedal_availability_0 == 1;
+                                    //Plugin._calculations.PedalAvailability[1] = bridge_state.payloadBridgeState_.Pedal_availability_1 == 1;
+                                    //Plugin._calculations.PedalAvailability[2] = bridge_state.payloadBridgeState_.Pedal_availability_2 == 1;
                                     //check wireless pedal connection, if status change make toast notification
                                     if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_0 != bridge_state.payloadBridgeState_.Pedal_availability_0)
                                     {
@@ -472,8 +510,7 @@ namespace User.PluginSdkDemo
                                             ///ToastNotification("Wireless Clutch", "Disconnected");
                                             connection_tmp += "Clutch Disconnected";
                                             wireless_connection_update = true;
-                                            Plugin.PedalConfigRead_b[0] = false;
-                                            Plugin._calculations.PedalAvailability[0] = false;
+                                            //Plugin._calculations.PedalAvailability[0] = false;
                                         }
                                         dap_bridge_state_st.payloadBridgeState_.Pedal_availability_0 = bridge_state.payloadBridgeState_.Pedal_availability_0;
                                         //updateTheGuiFromConfig();
@@ -497,8 +534,7 @@ namespace User.PluginSdkDemo
                                             //ToastNotification("Wireless Brake", "Disconnected");
                                             connection_tmp += " Brake Disconnected";
                                             wireless_connection_update = true;
-                                            Plugin.PedalConfigRead_b[1] = false;
-                                            Plugin._calculations.PedalAvailability[1] = false;
+                                            //Plugin._calculations.PedalAvailability[1] = false;
                                         }
                                         dap_bridge_state_st.payloadBridgeState_.Pedal_availability_1 = bridge_state.payloadBridgeState_.Pedal_availability_1;
 
@@ -521,8 +557,7 @@ namespace User.PluginSdkDemo
                                             //ToastNotification("Wireless Throttle", "Disconnected");
                                             connection_tmp += " Throttle Disconnected";
                                             wireless_connection_update = true;
-                                            Plugin.PedalConfigRead_b[2] = false;
-                                            Plugin._calculations.PedalAvailability[2] = false;
+
                                         }
                                         dap_bridge_state_st.payloadBridgeState_.Pedal_availability_2 = bridge_state.payloadBridgeState_.Pedal_availability_2;
 
@@ -566,13 +601,14 @@ namespace User.PluginSdkDemo
                                             Pedal_connect_status = (byte)PedalAvailability.SinglePedalThrottle;
                                         }
                                     }
-
+                                    
                                     if (wireless_connection_update)
                                     {
-                                        ToastNotification("Wireless Connection", connection_tmp);
+                                       // ToastNotification("Wireless Connection", connection_tmp);
                                         updateTheGuiFromConfig();
                                         wireless_connection_update = false;
                                     }
+
                                     //fill the version info
                                     for (int i = 0; i < 3; i++)
                                     {
@@ -597,7 +633,7 @@ namespace User.PluginSdkDemo
                                 // check whether receive struct is plausible
                                 DAP_config_st* v_config = &pedalConfig_read_st;
                                 byte* p_config = (byte*)v_config;
-
+                                UInt16 pedalSelected = pedalConfig_read_st.payloadHeader_.PedalTag;
                                 // payload type check
                                 bool check_payload_config_b = false;
                                 if (pedalConfig_read_st.payloadHeader_.payloadType == Constants.pedalConfigPayload_type)
@@ -611,23 +647,48 @@ namespace User.PluginSdkDemo
                                 {
                                     check_crc_config_b = true;
                                 }
-                                UInt16 pedalSelected = pedalConfig_read_st.payloadHeader_.PedalTag;
-                                if (waiting_for_pedal_config[pedalSelected])
+                                
+
+
+                                if ((check_payload_config_b) && check_crc_config_b)
                                 {
-                                    if ((check_payload_config_b) && check_crc_config_b)
+                                    if (Plugin._calculations.pedalWirelessStatus[pedalSelected] == WirelessConnectStateEnum.PEDAL_GET_BASIC_PACKETS_OVER_ESPNOW)
                                     {
-                                        waiting_for_pedal_config[pedalSelected] = false;
-                                        dap_config_st[pedalSelected] = pedalConfig_read_st;
-                                        updateTheGuiFromConfig();
-                                        Plugin.PedalConfigRead_b[pedalSelected] = true;
-                                        continue;
+                                        Plugin._calculations.pedalWirelessStatus[pedalSelected] = WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY;
+                                    }
+                                    waiting_for_pedal_config[pedalSelected] = false;
+                                    dap_config_st[pedalSelected] = pedalConfig_read_st;
+                                    Plugin._calculations.configPreviewLock[pedalSelected] = true;
+                                    Plugin._calculations.configPreviewLockLast[pedalSelected]=DateTime.Now;
+                                    updateTheGuiFromConfig();
+                                    TextBox_serialMonitor_bridge.Text += "Pedal:"+ pedalSelected + " Payload config payload check: " + check_payload_config_b+"\n";
+                                    TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config crc check: " + check_crc_config_b + "\n";
+                                    if (pedalConfig_read_st.payloadPedalConfig_.configHash_u32 == (uint)175245064)
+                                    {
+                                        // if pedal return DefaultConfig, clear the default setting and ask re send a default config in
+                                        Plugin.Settings.DefaultConfig[pedalSelected] = "";
+                                        Plugin._calculations.ConfigEditing[pedalSelected] = "";
+                                        ToastNotification($"No Stored Config found in Pedal{PedalConstStrings.PedalID[pedalSelected]}", $"{PedalConstStrings.PedalID[pedalSelected]}: Please Set a Config as Default");
                                     }
                                     else
                                     {
-                                        TextBox2.Text = "Payload config test 1: " + check_payload_config_b;
-                                        TextBox2.Text += "Payload config test 2: " + check_crc_config_b;
+                                        Plugin._calculations.ConfigEditing[pedalSelected] = Plugin.ConfigService.ConfigHashMap.GetFileName(pedalConfig_read_st.payloadPedalConfig_.configHash_u32);
                                     }
+                                    
+
+                                    Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
+                                    continue;
                                 }
+                                else
+                                {
+                                    TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config payload check: " + check_payload_config_b + "\n";
+                                    TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload expected:" + Constants.pedalConfigPayload_type + " Payload get:" + pedalConfig_read_st.payloadHeader_.payloadType + "\n";
+                                    TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " Payload config crc check: " + check_crc_config_b + "\n";
+                                    TextBox_serialMonitor_bridge.Text += "Pedal:" + pedalSelected + " CRC expected" + Plugin.checksumCalc(p_config, sizeof(payloadHeader) + sizeof(payloadPedalConfig)) + " CRC Get:" + pedalConfig_read_st.payloadFooter_.checkSum + "\n";
+                                }
+
+
+
                             }
                             // If non known array datatype was received, assume a text message was received and print it
                             // only print debug messages when debug mode is active as it degrades performance
@@ -723,6 +784,10 @@ namespace User.PluginSdkDemo
 
                 SimHub.Logging.Current.Error(errorMessage);
             }
+
+
+
+            
 
         }
     }
