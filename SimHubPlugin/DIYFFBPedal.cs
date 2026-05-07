@@ -31,11 +31,11 @@ using IPlugin = SimHub.Plugins.IPlugin;
 
 
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     [PluginDescription("The Plugin was for FFB pedal, To tune the pedal parameters and communicates with the pedal over USB.")]
     [PluginAuthor("OpenSource")]
-    [PluginName("DIY active pedal plugin")]
+    [PluginName("DIY FFB pedal plugin")]
     public partial class DIY_FFB_Pedal : IPlugin, IDataPlugin, IWPFSettingsV2
     {
         public CalculationVariables _calculations;
@@ -1409,7 +1409,7 @@ namespace User.PluginSdkDemo
 
             pluginHandle = pluginManager;
             _calculations = new CalculationVariables();
-            SimHub.Logging.Current.Info("Starting DIY active pedal plugin");
+            SimHub.Logging.Current.Info("Starting DIY FFB pedal plugin");
 
             // Load settings
             Settings = this.ReadCommonSettings<DIYFFBPedalSettings>("GeneralSettings", () => new DIYFFBPedalSettings());

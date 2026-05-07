@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Windows;
 using Microsoft.Win32;
 
-namespace User.PluginSdkDemo.UIFunction
+namespace DiyFfbPedal.UIFunction
 {
     public partial class FirmwareFlasherWindow : Window
     {
@@ -39,7 +39,7 @@ namespace User.PluginSdkDemo.UIFunction
             // 1. Add the Custom Local option at the very top of the list
             firmwareOptions.Add("Custom Local Firmware...", "CUSTOM_LOCAL");
 
-            string manifestResourceName = "User.PluginSdkDemo.Resources.Firmware.manifest.txt";
+            string manifestResourceName = "DiyFfbPedal.Resources.Firmware.manifest.txt";
             var assembly = Assembly.GetExecutingAssembly();
 
             try
@@ -98,7 +98,7 @@ namespace User.PluginSdkDemo.UIFunction
         private string ExtractFirmwareResource(string boardFolder, string fileName)
         {
             // The resource path format: [Namespace].[Folders].[Filename]
-            string resourceName = $"User.PluginSdkDemo.Resources.Firmware.{boardFolder}.{fileName}";
+            string resourceName = $"DiyFfbPedal.Resources.Firmware.{boardFolder}.{fileName}";
 
             // Create a specific temp folder for this board to avoid overlaps
             string tempDir = Path.Combine(Path.GetTempPath(), "SimHub_DIY_Pedal_Flasher", boardFolder);

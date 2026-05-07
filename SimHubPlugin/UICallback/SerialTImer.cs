@@ -14,7 +14,7 @@ using Newtonsoft.Json.Linq;
 
 
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {

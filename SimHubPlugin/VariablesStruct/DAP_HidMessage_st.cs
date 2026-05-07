@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public unsafe struct Dap_hidmessage_st

@@ -12,7 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public partial class SerialMonitor_Window : Window
     {

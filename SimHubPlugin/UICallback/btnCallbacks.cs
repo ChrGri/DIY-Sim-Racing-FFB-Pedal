@@ -15,11 +15,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
-using User.PluginSdkDemo.UIFunction;
-using static User.PluginSdkDemo.DIY_FFB_Pedal;
+using DiyFfbPedal.UIFunction;
+using static DiyFfbPedal.DIY_FFB_Pedal;
 using MessageBox = System.Windows.MessageBox;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
@@ -1279,23 +1279,23 @@ namespace User.PluginSdkDemo
             if (sideWindow.ShowDialog() == true)
             {
                 string downloadUrl;
-                string rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyActivePedal.resx";
+                string rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyFfbPedal.resx";
                 string MSG_tmp = "Plugin will update from ";
                 switch (Plugin.Settings.updateChannel)
                 {
                     case 0:
-                        downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyActivePedal.dll";
-                        rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyActivePedal.resx";
+                        downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyFfbPedal.dll";
+                        rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyFfbPedal.resx";
                         MSG_tmp += "Stable release channel. ";
                         break;
                     case 1:
-                        downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/DevBuild/plugin/DiyActivePedal.dll";
-                        rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/DevBuild/plugin/DiyActivePedal.resx";
+                        downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/DevBuild/plugin/DiyFfbPedal.dll";
+                        rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/DevBuild/plugin/DiyFfbPedal.resx";
                         MSG_tmp += "Dev-Build channel. ";
                         break;
                     default:
-                        downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyActivePedal.dll";
-                        rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyActivePedal.resx";
+                        downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyFfbPedal.dll";
+                        rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyFfbPedal.resx";
                         MSG_tmp += "Mainline release channel. ";
                         break;
                 }
@@ -1312,8 +1312,8 @@ namespace User.PluginSdkDemo
                 {
                     string exeName = "SimHubWPF.exe";
                     string exePath = targetPath + exeName;
-                    string targetDllPath = targetPath + "DiyActivePedal.dll";
-                    string rsexTargetPath = targetPath + "languages\\DiyActivePedal.resx";
+                    string targetDllPath = targetPath + "DiyFfbPedal.dll";
+                    string rsexTargetPath = targetPath + "languages\\DiyFfbPedal.resx";
                     string psScript2 = $@"
                 $processName = 'SimHubWPF'
                 $downloadUrl = '{downloadUrl}'

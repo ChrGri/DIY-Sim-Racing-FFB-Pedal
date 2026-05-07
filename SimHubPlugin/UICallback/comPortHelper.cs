@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Management;
 
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public class VidPidResult
     {

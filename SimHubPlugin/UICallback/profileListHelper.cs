@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Input;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public class ProfileListItem : INotifyPropertyChanged
     {

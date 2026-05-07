@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using System.Windows.Documents;
 using static System.Net.Mime.MediaTypeNames;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public partial class DIY_FFB_Pedal : IPlugin, IDataPlugin, IWPFSettingsV2
     {

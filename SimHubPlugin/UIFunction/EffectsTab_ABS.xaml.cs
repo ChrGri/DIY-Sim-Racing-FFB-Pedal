@@ -16,7 +16,7 @@ using System.Windows.Shapes;
 using MessageBox = System.Windows.MessageBox;
 using UserControl = System.Windows.Controls.UserControl;
 
-namespace User.PluginSdkDemo.UIFunction
+namespace DiyFfbPedal.UIFunction
 {
     /// <summary>
     /// EffectsTab_ABS.xaml 的互動邏輯

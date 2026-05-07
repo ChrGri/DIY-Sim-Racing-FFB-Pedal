@@ -15,7 +15,7 @@ using System.Windows.Shapes;
 using WoteverCommon;
 using WoteverLocalization;
 
-namespace User.PluginSdkDemo.UIFunction
+namespace DiyFfbPedal.UIFunction
 {
     /// <summary>
     /// InfoSection_System.xaml 的互動邏輯

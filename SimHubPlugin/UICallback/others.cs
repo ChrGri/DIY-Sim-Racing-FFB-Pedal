@@ -21,11 +21,11 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Windows.UI.Notifications;
-using static User.PluginSdkDemo.ComPortHelper;
+using static DiyFfbPedal.ComPortHelper;
 using Button = System.Windows.Controls.Button;
 using Cursors = System.Windows.Input.Cursors;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {

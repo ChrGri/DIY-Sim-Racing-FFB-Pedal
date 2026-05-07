@@ -18,7 +18,7 @@ using SimHub.Plugins.DataPlugins.ShakeItV3;
 
 
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
 
     public partial class OnlineProfile : Window

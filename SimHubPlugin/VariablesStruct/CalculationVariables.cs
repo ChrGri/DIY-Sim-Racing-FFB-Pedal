@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public class CalculationVariables : INotifyPropertyChanged
     {

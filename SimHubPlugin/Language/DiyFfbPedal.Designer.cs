@@ -22,14 +22,14 @@ namespace User.PluginSdkDemo.Language {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class DiyActivePedal {
+    internal class DiyFfbPedal {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal DiyActivePedal() {
+        internal DiyFfbPedal() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace User.PluginSdkDemo.Language {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("User.PluginSdkDemo.Language.DiyActivePedal", typeof(DiyActivePedal).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("User.PluginSdkDemo.Language.DiyFfbPedal", typeof(DiyFfbPedal).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

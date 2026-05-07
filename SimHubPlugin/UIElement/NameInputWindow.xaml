@@ -1,10 +1,10 @@
-﻿<Window x:Class="User.PluginSdkDemo.NameInputWindow"
+<Window x:Class="DiyFfbPedal.NameInputWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:User.PluginSdkDemo.UIFunction"
-        xmlns:localResource="clr-namespace:User.PluginSdkDemo"
+        xmlns:local="clr-namespace:DiyFfbPedal.UIFunction"
+        xmlns:localResource="clr-namespace:DiyFfbPedal"
         xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
         xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
         Title="Input" Height="80" Width="300" Background="{x:Null}" WindowStyle="ToolWindow" ResizeMode="NoResize">

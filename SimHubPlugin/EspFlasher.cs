@@ -4,7 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public class EspFlasher
     {
@@ -13,7 +13,7 @@ namespace User.PluginSdkDemo
         private string ExtractEsptool()
         {
             // Exact namespace based on your AssemblyInfo/Project settings
-            string resourceName = "User.PluginSdkDemo.Resources.esptool.exe";
+            string resourceName = "DiyFfbPedal.Resources.esptool.exe";
             string tempFolder = Path.GetTempPath();
             string exePath = Path.Combine(tempFolder, "esptool_simhub_plugin.exe");
 

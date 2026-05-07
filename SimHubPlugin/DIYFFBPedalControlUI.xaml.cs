@@ -56,8 +56,8 @@ using System.Media;
 using System.Windows.Threading;
 using System.Net.Http;
 using System.Threading.Tasks;
-using static User.PluginSdkDemo.DIY_FFB_Pedal;
-using User.PluginSdkDemo.UIFunction;
+using static DiyFfbPedal.DIY_FFB_Pedal;
+using DiyFfbPedal.UIFunction;
 using Windows.UI.ViewManagement;
 using WoteverLocalization;
 
@@ -68,7 +68,7 @@ using WoteverLocalization;
 
 
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     /// <summary>
     /// Logique d'interaction pour SettingsControlDemo.xaml
@@ -506,7 +506,7 @@ namespace User.PluginSdkDemo
 		private void btn_USB_Flash_Click(object sender, RoutedEventArgs e)
 		{
 			// Open the new flasher window and pass the plugin reference to handle serial port locks
-			var flasherWindow = new User.PluginSdkDemo.UIFunction.FirmwareFlasherWindow(Plugin);
+			var flasherWindow = new DiyFfbPedal.UIFunction.FirmwareFlasherWindow(Plugin);
 			flasherWindow.ShowDialog();
 		}
 

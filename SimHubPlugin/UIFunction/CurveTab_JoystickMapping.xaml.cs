@@ -21,7 +21,7 @@ using WoteverCommon.WPF;
 using Point = System.Windows.Point;
 using Rectangle = System.Windows.Shapes.Rectangle;
 
-namespace User.PluginSdkDemo.UIFunction
+namespace DiyFfbPedal.UIFunction
 {
     /// <summary>
     /// CurveTab_PedalForceTravel.xaml 的互動邏輯

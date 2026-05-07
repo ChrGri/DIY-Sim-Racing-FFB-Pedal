@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     unsafe public struct payloadOtaInfo

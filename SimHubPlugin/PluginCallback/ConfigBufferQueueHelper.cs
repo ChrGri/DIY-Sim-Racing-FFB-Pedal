@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     public partial class DIY_FFB_Pedal : SimHub.Plugins.IPlugin, IDataPlugin, IWPFSettingsV2
     {

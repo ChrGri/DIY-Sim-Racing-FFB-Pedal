@@ -1,7 +1,7 @@
 ﻿using System.Linq.Expressions;
 using System.Windows.Media.Converters;
 
-namespace User.PluginSdkDemo
+namespace DiyFfbPedal
 {
     /// <summary>
     /// Settings class, make sure it can be correctly serialized using JSON.net

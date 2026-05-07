@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace User.PluginSdkDemo.UIElement
+namespace DiyFfbPedal.UIElement
 {
     /// <summary>
     /// CheckboxWithLabel.xaml 的互動邏輯

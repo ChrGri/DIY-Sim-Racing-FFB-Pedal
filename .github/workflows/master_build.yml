@@ -58,13 +58,19 @@ jobs:
         id: date
         run: echo "date=$(Get-Date -Format 'yyyyMMdd.HHmmss')" >> $env:GITHUB_OUTPUT
 
-      # Speichert IMMER ein Artefakt zum Testen
+      # --- Neu: Wir kopieren die DLL in einen sauberen Ordner, um die Unterordner loszuwerden ---
+      - name: Prepare Artifact Folder
+        run: |
+          mkdir Staging
+          # Sucht die DLL (egal ob in bin oder obj) und kopiert sie direkt in den "Staging"-Ordner
+          Get-ChildItem -Path SimHubPlugin -Filter DiyFfbPedal.dll -Recurse | Select-Object -First 1 | Copy-Item -Destination Staging\
+
+      # Speichert IMMER ein Artefakt zum Testen (jetzt flach und ohne Unterordner)
       - name: Upload DLL as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DiyActivePedal-DLL
-          # Das ** durchsucht alle Unterordner (findet es also in obj/Release/ ODER bin/Release/)
-          path: SimHubPlugin/**/DiyActivePedal.dll
+          name: DiyFfbPedal-DLL
+          path: Staging/
 
       # Macht NUR ein echtes Release, wenn der Branch "main" ist
       - name: Create Public Release
@@ -73,9 +79,7 @@ jobs:
         with:
           tag_name: Build_${{ steps.date.outputs.date }}
           name: Official Release ${{ steps.date.outputs.date }}
-          # Beide Pfade angeben, GitHub greift sich einfach den, wo die Datei liegt
-          files: |
-            SimHubPlugin/obj/Release/DiyActivePedal.dll
-            SimHubPlugin/bin/Release/DiyActivePedal.dll
+          # Wir greifen jetzt einfach auf die Datei im Staging-Ordner zu!
+          files: Staging/DiyFfbPedal.dll
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
