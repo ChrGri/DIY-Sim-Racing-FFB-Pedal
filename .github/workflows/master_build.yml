@@ -29,15 +29,16 @@ jobs:
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v1.0.5
 
-      # --- 3. SimHub Referenzen vorbereiten (aus deinem alten Skript) ---
+      # --- 3. SimHub Referenzen vorbereiten ---
       - name: Download & Extract SimHub Requirements
+        shell: cmd 
         run: | 
           aria2c -j1 -o innounp050.rar "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/refs/heads/develop/Helper/innounp050.rar"
-          aria2c -j1 -o SimHub.zip "https://github.com/SHWotever/SimHub/releases/download/9.11.0/SimHub.9.11.0.zip"
+          aria2c -j1 -o SimHub.zip "https://github.com/SHWotever/SimHub/releases/download/9.11.12/SimHub.9.11.12.zip"
           7z x innounp050.rar
           7z x SimHub.zip
           mkdir "C:\Program Files (x86)\SimHub\"
-          .\innounp.exe -v -x -b -e -d"C:\Program Files (x86)\SimHub\" SimHubSetup_9.1.22.exe
+          innounp.exe -v -x -b -e -d"C:\Program Files (x86)\SimHub\" SimHubSetup_*.exe
 
       - name: Restore NuGet Packages
         run: nuget restore "SimHubPlugin/User.PluginSdkDemo.sln"
