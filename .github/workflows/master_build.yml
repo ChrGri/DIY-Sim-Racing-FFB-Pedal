@@ -32,25 +32,18 @@ jobs:
       # --- 3. SimHub Referenzen vorbereiten ---
       - name: Download & Extract SimHub Requirements
         run: | 
-          # Nur noch SimHub herunterladen (kein altes innounp mehr nötig!)
           aria2c -j1 -o SimHub.zip "https://github.com/SHWotever/SimHub/releases/download/9.11.12/SimHub.9.11.12.zip"
           7z x SimHub.zip
-          
-          # Modernes innoextract über Chocolatey installieren (dauert nur wenige Sekunden)
-          choco install innoextract -y
           
           # Installer finden
           $installer = Get-ChildItem -Filter SimHubSetup_*.exe | Select-Object -First 1
           Write-Host "Gefundener Installer: $($installer.Name)"
           
-          # Mit innoextract entpacken
-          innoextract $installer.Name -d "C:\Program Files (x86)\SimHub\"
+          # Führe das echte Setup lautlos (ohne UI) aus und installiere es in den Zielordner
+          Write-Host "Installiere SimHub lautlos... (das dauert ein paar Sekunden)"
+          Start-Process -FilePath $installer.FullName -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /DIR=`"C:\Program Files (x86)\SimHub`"" -Wait -NoNewWindow
           
-          # innoextract packt die Dateien standardmäßig in einen Unterordner "app". 
-          # Wir verschieben sie eine Ebene nach oben, damit MSBuild sie sofort findet.
-          if (Test-Path "C:\Program Files (x86)\SimHub\app") {
-              Move-Item -Path "C:\Program Files (x86)\SimHub\app\*" -Destination "C:\Program Files (x86)\SimHub\" -Force
-          }
+          Write-Host "Installation abgeschlossen!"
 
       - name: Restore NuGet Packages
         run: nuget restore "SimHubPlugin/User.PluginSdkDemo.sln"
