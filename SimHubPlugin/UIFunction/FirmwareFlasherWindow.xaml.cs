@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Ports;
 using System.Reflection;
 using System.Windows;
+using Microsoft.Win32;
 
 namespace User.PluginSdkDemo.UIFunction
 {
@@ -35,7 +36,9 @@ namespace User.PluginSdkDemo.UIFunction
         {
             var firmwareOptions = new Dictionary<string, string>();
 
-            // The path to the manifest inside the DLL
+            // 1. Add the Custom Local option at the very top of the list
+            firmwareOptions.Add("Custom Local Firmware...", "CUSTOM_LOCAL");
+
             string manifestResourceName = "User.PluginSdkDemo.Resources.Firmware.manifest.txt";
             var assembly = Assembly.GetExecutingAssembly();
 
@@ -53,8 +56,6 @@ namespace User.PluginSdkDemo.UIFunction
                                 line = line.Trim();
                                 if (!string.IsNullOrEmpty(line))
                                 {
-                                    // Create a clean display name for the UI. 
-                                    // E.g., "esp32s3usbotg_pcbV6" becomes "esp32s3usbotg pcbV6"
                                     string displayName = line.Replace("_", " ");
                                     firmwareOptions.Add(displayName, line);
                                 }
@@ -63,7 +64,7 @@ namespace User.PluginSdkDemo.UIFunction
                     }
                     else
                     {
-                        TxtLog.AppendText("Warning: manifest.txt not found in embedded resources. Did you run the batch script?\n");
+                        TxtLog.AppendText("Warning: manifest.txt not found in embedded resources.\n");
                     }
                 }
             }
@@ -73,7 +74,10 @@ namespace User.PluginSdkDemo.UIFunction
             }
 
             CboFirmware.ItemsSource = firmwareOptions;
-            if (CboFirmware.Items.Count > 0) CboFirmware.SelectedIndex = 0;
+
+            // Select the first embedded board by default (index 1), unless none exist, then select Custom (index 0)
+            if (CboFirmware.Items.Count > 1) CboFirmware.SelectedIndex = 1;
+            else if (CboFirmware.Items.Count > 0) CboFirmware.SelectedIndex = 0;
         }
 
         private void BtnRefreshCom_Click(object sender, RoutedEventArgs e) => RefreshPorts();
@@ -119,6 +123,35 @@ namespace User.PluginSdkDemo.UIFunction
             return outPath;
         }
 
+        // Shows or hides the custom file browser based on dropdown selection
+        private void CboFirmware_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (PnlCustomFile == null) return; // Prevent crash during initialization
+
+            if (CboFirmware.SelectedValue != null && CboFirmware.SelectedValue.ToString() == "CUSTOM_LOCAL")
+            {
+                PnlCustomFile.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                PnlCustomFile.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        // Opens the file dialog for local firmware
+        private void BtnBrowse_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog
+            {
+                Filter = "Firmware File (firmware.bin)|firmware.bin|All Binary Files (*.bin)|*.bin",
+                Title = "Select firmware.bin"
+            };
+
+            if (ofd.ShowDialog() == true)
+            {
+                TxtBinPath.Text = ofd.FileName;
+            }
+        }
         private async void BtnFlash_Click(object sender, RoutedEventArgs e)
         {
             if (CboComPorts.SelectedItem == null || CboFirmware.SelectedItem == null)
@@ -130,21 +163,51 @@ namespace User.PluginSdkDemo.UIFunction
             string port = CboComPorts.SelectedItem.ToString();
             string selectedBoardFolder = CboFirmware.SelectedValue.ToString();
 
+            // Validation for custom file mode
+            if (selectedBoardFolder == "CUSTOM_LOCAL" && string.IsNullOrWhiteSpace(TxtBinPath.Text))
+            {
+                MessageBox.Show("Please browse and select your custom firmware.bin file.");
+                return;
+            }
+
             ForceDisconnectSerial(port);
 
             BtnFlash.IsEnabled = false;
             TxtLog.Clear();
-            TxtLog.AppendText($"Preparing to flash {selectedBoardFolder}...\n");
+            TxtLog.AppendText(selectedBoardFolder == "CUSTOM_LOCAL" ? "Preparing to flash local files...\n" : $"Preparing to flash {selectedBoardFolder}...\n");
 
             try
             {
-                // 1. Extract all 4 files from the embedded resources dynamically
-                string bootloaderPath = ExtractFirmwareResource(selectedBoardFolder, "bootloader.bin");
-                string partitionsPath = ExtractFirmwareResource(selectedBoardFolder, "partitions.bin");
-                string bootAppPath = ExtractFirmwareResource(selectedBoardFolder, "boot_app0.bin");
-                string firmwarePath = ExtractFirmwareResource(selectedBoardFolder, "firmware.bin");
+                string bootloaderPath, partitionsPath, bootAppPath, firmwarePath;
 
-                // 2. Pass them to the flasher
+                if (selectedBoardFolder == "CUSTOM_LOCAL")
+                {
+                    // --- MODE 1: LOCAL FILES ---
+                    firmwarePath = TxtBinPath.Text;
+                    string directory = Path.GetDirectoryName(firmwarePath);
+
+                    // Auto-resolve sibling files
+                    bootloaderPath = Path.Combine(directory, "bootloader.bin");
+                    partitionsPath = Path.Combine(directory, "partitions.bin");
+                    bootAppPath = Path.Combine(directory, "boot_app0.bin");
+
+                    if (!File.Exists(bootloaderPath) || !File.Exists(partitionsPath) || !File.Exists(bootAppPath))
+                    {
+                        MessageBox.Show("Missing files! Ensure 'bootloader.bin', 'partitions.bin', and 'boot_app0.bin' are in the same folder as your selected 'firmware.bin'.", "Files Missing", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        BtnFlash.IsEnabled = true;
+                        return;
+                    }
+                }
+                else
+                {
+                    // --- MODE 2: EMBEDDED RESOURCES ---
+                    bootloaderPath = ExtractFirmwareResource(selectedBoardFolder, "bootloader.bin");
+                    partitionsPath = ExtractFirmwareResource(selectedBoardFolder, "partitions.bin");
+                    bootAppPath = ExtractFirmwareResource(selectedBoardFolder, "boot_app0.bin");
+                    firmwarePath = ExtractFirmwareResource(selectedBoardFolder, "firmware.bin");
+                }
+
+                // Pass resolved paths to esptool
                 bool success = await _flasher.FlashFirmwareAsync(port, bootloaderPath, partitionsPath, bootAppPath, firmwarePath);
 
                 if (success)
@@ -158,7 +221,7 @@ namespace User.PluginSdkDemo.UIFunction
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error extracting firmware: {ex.Message}", "Extraction Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error preparing firmware: {ex.Message}", "File Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 TxtLog.AppendText($"\nERROR: {ex.Message}\n");
             }
             finally

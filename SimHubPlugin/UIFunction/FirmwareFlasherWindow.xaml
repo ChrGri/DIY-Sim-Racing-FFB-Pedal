@@ -14,10 +14,15 @@
                     <styles:SHButtonPrimary x:Name="BtnRefreshCom" Content="Refresh" Width="70" Height="25" Margin="5,0,0,0" Click="BtnRefreshCom_Click"/>
                 </StackPanel>
 
-                <StackPanel Orientation="Horizontal" Margin="0,5,0,10">
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
                     <Label Content="Hardware:" Width="80" Foreground="White" VerticalAlignment="Center"/>
-                    <!-- The DisplayMemberPath shows the friendly name, SelectedValuePath holds the folder name -->
-                    <ComboBox x:Name="CboFirmware" Width="240" Height="25" DisplayMemberPath="Key" SelectedValuePath="Value"/>
+                    <ComboBox x:Name="CboFirmware" Width="240" Height="25" DisplayMemberPath="Key" SelectedValuePath="Value" SelectionChanged="CboFirmware_SelectionChanged"/>
+                </StackPanel>
+
+                <StackPanel x:Name="PnlCustomFile" Orientation="Horizontal" Margin="0,0,0,10" Visibility="Collapsed">
+                    <Label Content="Custom .bin:" Width="80" Foreground="White" VerticalAlignment="Center"/>
+                    <TextBox x:Name="TxtBinPath" Width="165" Height="25" IsReadOnly="True" Background="#333" Foreground="White"/>
+                    <styles:SHButtonPrimary Content="Browse..." Width="70" Height="25" Margin="5,0,0,0" Click="BtnBrowse_Click"/>
                 </StackPanel>
 
                 <styles:SHButtonPrimary x:Name="BtnFlash" Content="Flash Firmware" Height="30" Click="BtnFlash_Click"/>
