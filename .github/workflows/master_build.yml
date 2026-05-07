@@ -1,0 +1,71 @@
+name: Master Build & Release
+
+on:
+  push:
+    branches: [ main, develop ]
+  workflow_dispatch: # Erlaubt dir, die Action auch manuell über den "Run workflow" Button zu starten
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest # Zwingend Windows für MSBuild und die .bat Datei
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # --- 1. PlatformIO Setup ---
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      # --- 2. MSBuild & NuGet Setup ---
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.0.5
+
+      # --- 3. SimHub Referenzen vorbereiten (aus deinem alten Skript) ---
+      - name: Download & Extract SimHub Requirements
+        run: | 
+          aria2c -j1 -o innounp050.rar "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/refs/heads/develop/Helper/innounp050.rar"
+          aria2c -j1 -o SimHub.zip "https://github.com/SHWotever/SimHub/releases/download/9.11.0/SimHub.9.11.0.zip"
+          7z x innounp050.rar
+          7z x SimHub.zip
+          mkdir "C:\Program Files (x86)\SimHub\"
+          .\innounp.exe -v -x -b -e -d"C:\Program Files (x86)\SimHub\" SimHubSetup_9.1.22.exe
+
+      - name: Restore NuGet Packages
+        run: nuget restore "SimHubPlugin/User.PluginSdkDemo.sln"
+
+      # --- 4. Ausführen deines Master Batch Skripts ---
+      - name: Run Master Build Script
+        # Das Skript baut alle ESPs und am Ende die DLL (wobei es intern copy_firmwares.bat aufruft)
+        run: cmd /c build_everything.bat
+
+      # --- 5. Dynamischen Release-Namen generieren (Datum & Uhrzeit) ---
+      - name: Generate Version Date
+        id: date
+        run: echo "date=$(Get-Date -Format 'yyyyMMdd.HHmmss')" >> $env:GITHUB_OUTPUT
+
+      # Speichert IMMER ein Artefakt zum Testen
+      - name: Upload DLL as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DiyActivePedal-DLL
+          path: SimHubPlugin/bin/Release/DiyActivePedal.dll
+
+      # Macht NUR ein echtes Release, wenn der Branch "main" ist
+      - name: Create Public Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: Build_${{ steps.date.outputs.date }}
+          name: Official Release ${{ steps.date.outputs.date }}
+          files: SimHubPlugin/bin/Release/DiyActivePedal.dll
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -21,7 +21,7 @@ if %errorlevel% neq 0 (
     ) else (
         echo [ERROR] PlatformIO 'pio' command not found.
         echo Make sure PlatformIO is installed via VS Code.
-        pause
+        if not defined CI pause
         exit /b 1
     )
 )
@@ -32,7 +32,7 @@ if %errorlevel% neq 0 (
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 if not exist "%VSWHERE%" (
     echo [ERROR] vswhere.exe not found. Is Visual Studio installed?
-    pause
+    if not defined CI pause
     exit /b 1
 )
 
@@ -43,7 +43,7 @@ for /f "usebackq tokens=*" %%i in (`"%VSWHERE%" -latest -requires Microsoft.Comp
 
 if not defined MSBUILD_PATH (
     echo [ERROR] MSBuild.exe not found on this system.
-    pause
+    if not defined CI pause
     exit /b 1
 )
 
@@ -96,4 +96,4 @@ echo.
 echo ===================================================
 echo                 ALL BUILDS COMPLETE!
 echo ===================================================
-pause
+if not defined CI pause
