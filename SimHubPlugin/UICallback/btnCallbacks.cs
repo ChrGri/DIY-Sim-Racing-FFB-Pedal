@@ -1322,7 +1322,7 @@ namespace DiyFfbPedal
                 $rsexTargetPath = '{rsexTargetPath}'
                 $exePath = '{exePath}'
                 $tempPath = $env:TEMP + '\plugin_temp.dll'
-                $tempRsexPath = $env:TEMP + '\plugin_temp.rsex'
+                $tempRsexPath = $env:TEMP + '\plugin_temp.resx'
 
                 Write-Host 'Closing Simhub...'
                 $procs = Get-Process -Name $processName -ErrorAction SilentlyContinue
