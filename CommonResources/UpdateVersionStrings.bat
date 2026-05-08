@@ -34,4 +34,4 @@ echo.
 echo Version strings updated successfully!
 
 :: CI-sicherer Pause-Befehl:
-if not defined CI pause
+::if not defined CI pause

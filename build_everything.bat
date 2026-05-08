@@ -53,6 +53,7 @@ if not defined MSBUILD_PATH (
 echo === Step 0: Updating Version Strings ===
 if exist "CommonResources\UpdateVersionStrings.bat" (
     cd CommonResources
+	call GenerateNewVersion.bat
     call UpdateVersionStrings.bat
     cd ..
 ) else (
@@ -60,7 +61,7 @@ if exist "CommonResources\UpdateVersionStrings.bat" (
 )
 echo.
 
-REM pause
+pause
 
 :: -----------------------------------------------------
 :: Step 1: Build ESP32 Firmwares

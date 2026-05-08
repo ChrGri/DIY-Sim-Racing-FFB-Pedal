@@ -20,7 +20,7 @@ namespace DiyFfbPedal
         public const uint bridgeStatePayloadType = 210;
         public const uint OtaPayloadType = 220;
         public const uint pedalHidMessage_type = 225;
-        public const string pluginVersion = "0.90.32";
+        public const string pluginVersion = "26.19.05";
         public const string version_control_url = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/version_control.json";
         public const int DEFAULTBAUD = 921600;
         public const int BAUD3M = 3000000;
