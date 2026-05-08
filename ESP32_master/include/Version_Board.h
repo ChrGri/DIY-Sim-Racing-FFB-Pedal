@@ -1,7 +1,7 @@
 
 #pragma once
 #include "Arduino.h"
-#define BRIDGE_FIRMWARE_VERSION "0.90.31"
+#define BRIDGE_FIRMWARE_VERSION "0.90.32"
 #if PCB_VERSION==5
 	#define BRIDGE_BOARD "Bridge_FANATEC"
 #endif
