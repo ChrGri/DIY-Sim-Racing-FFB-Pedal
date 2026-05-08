@@ -79,8 +79,8 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool
     _stepper->begin();
     _stepper->setExpectedCycleTimeUs(REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64);
 
-    // Clamp the endstop detection threshold to safe limits (25% to 50% current load)
-    endstopDetectionThreshold_u8 = constrain(endstopDetectionThreshold_u8, 25, 50);
+    // Clamp the endstop detection threshold to safe limits (10% to 50% current load)
+    endstopDetectionThreshold_u8 = constrain(endstopDetectionThreshold_u8, 10, 50);
     Serial.printf("InvertStepperDir: %d\n", invertMotorDir_b);
 
     // 2. Power on the servo if a hardware power pin is configured
