@@ -156,4 +156,7 @@ typedef struct __attribute__((packed)) PayloadPedalConfig
   // elastomere or spring behavior
   uint8_t dampingProgression_u8;
 
+  // friction parameters
+  uint8_t coulombFrictionIn0p1N_u8;
+
 } PayloadPedalConfig_t;

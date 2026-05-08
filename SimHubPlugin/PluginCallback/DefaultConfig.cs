@@ -124,6 +124,7 @@ namespace DiyFfbPedal
             DefaultConfig.payloadPedalConfig_.endstopDetectionThreshold = 30;
 
             DefaultConfig.payloadPedalConfig_.virtualPedalMass_u8 = 60;
+            DefaultConfig.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = 0;
             DefaultConfig.payloadPedalConfig_.virtualPedalDamping_u8 = 100;
             DefaultConfig.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = 10;
             DefaultConfig.payloadPedalConfig_.endstopTravelRange_mm_u8 = 0;

@@ -143,6 +143,7 @@ void DapConfig_t::initializeDefaults()
   payloadPedalConfig_st.endstopStiffness_kg_mm_u8 = 50;
   payloadPedalConfig_st.endstopTravelRange_mm_u8 = 10;
 
+  payloadPedalConfig_st.coulombFrictionIn0p1N_u8 = 0;
 }
 
 
