@@ -28,7 +28,7 @@ powershell -NoProfile -Command ^
 :: 3. Update ESP32_master\include\Version_Board.h
 echo Updating: %ESP32_MASTER_FILE%
 powershell -NoProfile -Command ^
-  "(Get-Content '%ESP32_MASTER_FILE%') -replace 'const char \*BRIDGE_FIRMWARE_VERSION = \"".*?\"";', 'const char *BRIDGE_FIRMWARE_VERSION = \""%VERSION%\"";' | Set-Content '%ESP32_MASTER_FILE%'"
+  "(Get-Content '%ESP32_MASTER_FILE%') -replace '#define BRIDGE_FIRMWARE_VERSION \"".*?\""', '#define BRIDGE_FIRMWARE_VERSION \""%VERSION%\""' | Set-Content '%ESP32_MASTER_FILE%'"
 
 echo.
 echo Version strings updated successfully!
