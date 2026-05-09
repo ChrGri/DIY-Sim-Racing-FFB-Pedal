@@ -22,6 +22,9 @@ obj/
 
 ## Compiled & generated files
 *.dll
+!OTA/Plugin/DiyFfbPedal.dll
+!OTA/DevBuild/plugin/DiyFfbPedal.dll
+!OTA/ReleaseBuild/Plugin/DiyFfbPedal.dll
 *.exe
 !SimHubPlugin/Resources/esptool.exe
 *.pdb
@@ -44,3 +47,4 @@ SimHubPlugin/DataPluginDemo.cs
 SimHubPlugin/SettingsControlDemo.xaml.cs
 /Firmware_for_V3/SimHubPlugin/obj
 /Firmware_for_V3/SimHubPlugin/.vs
+/SimHubPlugin/Resources/Firmware

@@ -64,8 +64,13 @@ namespace DiyFfbPedal.UIFunction
                         if (control.Slider_VirtualPedalMass != null)
                         {
                             control.Slider_VirtualPedalMass.SliderValue = (double)newData.payloadPedalConfig_.virtualPedalMass_u8 * (double)control.Slider_VirtualPedalMass.TickFrequency;
-
                         }
+
+                        if (control.Slider_CoulombFriction != null)
+                        {
+                            control.Slider_CoulombFriction.SliderValue = (double)newData.payloadPedalConfig_.coulombFrictionIn0p1N_u8 * (double)control.Slider_CoulombFriction.TickFrequency;
+                        }
+
 
                         if (control.Slider_VirtualDamping != null)
                         {
@@ -110,6 +115,16 @@ namespace DiyFfbPedal.UIFunction
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
         }
+
+        private void Slider_CoulombFrictionChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            double targetValue_fl64 = e.NewValue / (double)Slider_CoulombFriction.TickFrequency;
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = (Byte)(targetValue_fl64);
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
+
 
         public void Slider_VirtualPedalDampingChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {

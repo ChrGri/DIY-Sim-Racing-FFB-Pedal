@@ -714,7 +714,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float netForce_N = externalForce_N - springForce_N - softEndstopForce_N - dampingForce_N;
   
   // Minimal Coulomb Friction to prevent micro-hunting (jitter) around the rest position
-  const float FRICTION_N = 3.0f;
+  const float FRICTION_N = config_st->payloadPedalConfig_st.coulombFrictionIn0p1N_u8 * 0.1f;
   if (fabsf(g_vModelVel_mps) > 0.001f) {
       netForce_N -= (g_vModelVel_mps > 0 ? FRICTION_N : -FRICTION_N);
   }

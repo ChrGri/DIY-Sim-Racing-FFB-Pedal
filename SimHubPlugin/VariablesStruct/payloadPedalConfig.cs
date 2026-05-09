@@ -166,5 +166,8 @@ namespace DiyFfbPedal
 
         // elastomere or spring behavior
         public byte  dampingProgression_u8;
+
+        // friction parameters
+        public byte coulombFrictionIn0p1N_u8;
     }
 }
