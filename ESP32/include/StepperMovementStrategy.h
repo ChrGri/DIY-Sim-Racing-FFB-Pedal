@@ -378,7 +378,10 @@ static inline float CalcActiveDamping(
 
         // If tracking errors exceed 0.5%, the models damping is dynamically increased proportional
         // so that the servo can catch up.
-        if (trackingError_01 > 0.005f) {
+        // FIXED CODE: Gated Tracking-Error Damping
+        // Only apply the tracking-error penalty if we are moving reasonably fast.
+        // During reversals (v near 0), we ignore it so the pedal doesn't feel sticky.
+        if (trackingError_01 > 0.005f && fabsf(vModelVel_mps) > 0.05f) {
             // Tuning: the multiplier (here 20.0f) determines how much the model decelerates.
             dampingMultiplier += (trackingError_01 * 20.0f); 
         }
@@ -421,7 +424,11 @@ static inline float CalcActiveDamping(
 
             // REBOUND ASYMMETRY: Real elastomers return faster than they compress.
             // We reduce the hysteresis during release (v < 0) for a snappier feel.
-            float reboundFactor = (vModelVel_mps < 0.0f) ? 0.7f : 1.0f;
+            // FIXED CODE: Smooth Rebound Transition
+            // Blend over a small velocity window (-20 mm/s to +20 mm/s)
+            // When v is very negative, blend goes to 0. When v is positive, blend goes to 1.
+            float blend_01 = constrain((vModelVel_mps + 0.02f) / 0.04f, 0.0f, 1.0f);
+            float reboundFactor = 0.7f + (0.3f * blend_01);
 
             const float MAX_ELASTOMER_MULTIPLIER = 1.5f; 
             float ELASTOMER_VISCOSITY_COEFFICIENT = progression_01 * (MAX_ELASTOMER_MULTIPLIER * criticalDamping_Ns_m);
@@ -588,16 +595,47 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   }
 
-  // --- 4. PHYSICAL GEOMETRY ---
+  // =========================================================
+  // --- 4. PHYSICAL GEOMETRY (FORWARD KINEMATICS & TASK SPACE) ---
+  // =========================================================
+  // We transform the Actuator Space (Linear Sled Position) into Task Space 
+  // (Rotational Pedal Arc Length). This allows the entire Admittance Model 
+  // to run natively on the pedal face plate, eliminating non-linear instability.
+  
   // travelSteps_cnt: total steps from min to max soft endstop
   float travelSteps_cnt = (float)(calc_st->softEndstopMaxStepperPos_i32 - calc_st->softEndstopMinStepperPos_i32);
   
-  // totalTravel_m: physical length of the pedal stroke in meters
-  float motorRevolutionsPerSteps_lcl_fl32 = 1.0f / dap_calculationVariables_st.stepsPerMotorRevolution_u32;
-  float totalTravel_m = travelSteps_cnt * motorRevolutionsPerSteps_lcl_fl32 * config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8 * 0.001f;
+  // Calculate spindle pitch and steps per revolution parameters
+  float motorRevolutionsPerSteps_lcl_fl32 = 1.0f / (float)calc_st->stepsPerMotorRevolution_u32;
+  float pitch_mm = (float)config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8;
   
-  // actualPosFraction_01: The current command position of the ESP stepper [0.0, 1.0]
-  float actualPosFraction_01 = stepper->getCurrentPositionFraction();
+  // 1. Calculate physical sled boundaries in mm (relative to soft endstop min)
+  float minSledPos_mm = 0.0f;
+  float maxSledPos_mm = travelSteps_cnt * motorRevolutionsPerSteps_lcl_fl32 * pitch_mm;
+  
+  // actualSledPos_mm: The current physical position of the ESP stepper in mm
+  float actualSledPosFraction_01 = stepper->getCurrentPositionFraction();
+  float actualSledPos_mm = actualSledPosFraction_01 * maxSledPos_mm;
+
+  // 2. Forward Kinematics: Angles at the boundaries and current physical state
+  float angleAtMinSled_deg = pedalInclineAngleDeg(minSledPos_mm, config_st);
+  float angleAtMaxSled_deg = pedalInclineAngleDeg(maxSledPos_mm, config_st);
+  float currentAngle_deg = pedalInclineAngleDeg(actualSledPos_mm, config_st);
+
+  // 3. Convert Angles to Arc Length (Task Space in meters)
+  // Lever arm is lower pedal plate (B) + upper pedal plate (D)
+  float leverArm_m = ((float)config_st->payloadPedalConfig_st.lengthPedalB_i16 + (float)config_st->payloadPedalConfig_st.lengthPedalD_i16) * 0.001f;
+  
+  // totalTravel_m: The actual length of the curve the foot travels (replaces linear sled travel)
+  float totalTravel_m = fabsf(angleAtMaxSled_deg - angleAtMinSled_deg) * DEG_TO_RAD_FL32 * leverArm_m;
+  
+  // Normalized physical position [0.0, 1.0] based natively on the pedal angle
+  float actualPosFraction_01 = 0.0f;
+  if (fabsf(angleAtMaxSled_deg - angleAtMinSled_deg) > 0.001f) {
+      actualPosFraction_01 = (currentAngle_deg - angleAtMinSled_deg) / (angleAtMaxSled_deg - angleAtMinSled_deg);
+  }
+  actualPosFraction_01 = constrain(actualPosFraction_01, 0.0f, 1.0f);
+
 
   // --- 5. ELASTOMER PHYSICS & SPRING REACTION (Hunt-Crossley Model) ---
   float displacement_01 = constrain(g_vModelPos_01, 0.0f, 1.0f);
@@ -715,9 +753,12 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   
   // Minimal Coulomb Friction to prevent micro-hunting (jitter) around the rest position
   const float FRICTION_N = config_st->payloadPedalConfig_st.coulombFrictionIn0p1N_u8 * 0.1f;
-  if (fabsf(g_vModelVel_mps) > 0.001f) {
-      netForce_N -= (g_vModelVel_mps > 0 ? FRICTION_N : -FRICTION_N);
-  }
+  // FIXED CODE: Smooth Coulomb Friction
+  // Create a narrow "fade" band around 0 velocity (+/- 15 mm/s)
+  // This smoothly ramps the friction from -1 to +1 across the zero point
+  const float VELOCITY_BAND_MPS = 0.015f; 
+  float frictionBlend = constrain(g_vModelVel_mps / VELOCITY_BAND_MPS, -1.0f, 1.0f);
+  netForce_N -= (FRICTION_N * frictionBlend);
 
   // =========================================================
   // Integration approaches (Start)
@@ -739,9 +780,9 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       float netForce_without_damping_N = externalForce_N - springForce_N - softEndstopForce_N;
 
       // Minimal Coulomb Friction to prevent micro-hunting (jitter) around the rest position
-      if (fabsf(g_vModelVel_mps) > 0.001f) {
-          netForce_without_damping_N -= (g_vModelVel_mps > 0 ? FRICTION_N : -FRICTION_N);
-      }
+      // FIXED CODE: Smooth Coulomb Friction
+      float frictionBlendImplicit = constrain(g_vModelVel_mps / 0.015f, -1.0f, 1.0f);
+      netForce_without_damping_N -= (FRICTION_N * frictionBlendImplicit);
 
       // =========================================================
       // IMPLICIT EULER (BACKWARD EULER) MATHEMATICS
@@ -804,9 +845,9 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       float netForce_without_damping_N = externalForce_N - springForce_N - softEndstopForce_N;
 
       // Minimal Coulomb Friction to prevent micro-hunting (jitter) around the rest position
-      if (fabsf(g_vModelVel_mps) > 0.001f) {
-          netForce_without_damping_N -= (g_vModelVel_mps > 0 ? FRICTION_N : -FRICTION_N);
-      }
+      // FIXED CODE: Smooth Coulomb Friction
+      float frictionBlendTustin = constrain(g_vModelVel_mps / 0.015f, -1.0f, 1.0f);
+      netForce_without_damping_N -= (FRICTION_N * frictionBlendTustin);
 
       // =========================================================
       // TUSTIN (BILINEAR TRANSFORM) MATHEMATICS
@@ -907,11 +948,17 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Limit the movement speed if the system becomes unstable.
   float velocityLimit_01 = 1.0f; // Up to 70% speed reduction
   
-  float maxPhysicalVel_mps = 0.8f; 
+  float maxPhysicalSledVel_mps = 0.8f; 
   if (calc_st->stepsPerMotorRevolution_u32 > 0) {
-      maxPhysicalVel_mps = (float)MAXIMUM_STEPPER_SPEED_U32 * (float)config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8 / (float)calc_st->stepsPerMotorRevolution_u32 * 0.001f;
+      maxPhysicalSledVel_mps = (float)MAXIMUM_STEPPER_SPEED_U32 * (float)config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8 / (float)calc_st->stepsPerMotorRevolution_u32 * 0.001f;
   }
-  float dynamicSpeedLimit = maxPhysicalVel_mps * velocityLimit_01;
+  
+  // Scale sled velocity limit to Task Space (Pedal Arc) velocity limit
+  // FIXED: Converted maxSledPos_mm to meters (* 0.001f) to prevent dividing m by mm!
+  float maxSledPos_m = max(maxSledPos_mm * 0.001f, 0.0001f);
+  float maxPedalArcVel_mps = maxPhysicalSledVel_mps * (totalTravel_m / maxSledPos_m);
+  float dynamicSpeedLimit = maxPedalArcVel_mps * velocityLimit_01;
+  
   g_vModelVel_mps = constrain(g_vModelVel_mps, -dynamicSpeedLimit, dynamicSpeedLimit);
 
   // --- 14. POSITION INTEGRATION, BOUNDARY CONSTRAINTS & DRIFT CORRECTION ---
@@ -950,11 +997,53 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       debugState_st->virtualAcc_mps2 = acceleration_mps2;
   }
 
-  // --- 15. STEP CONVERSION & OUTPUT ---
-  // Convert normalized virtual position back to absolute stepper steps
-  float targetPosSteps_fl32 = (g_vModelPos_01 * travelSteps_cnt) + (float)calc_st->softEndstopMinStepperPos_i32;
+  // =========================================================
+  // --- 15. INVERSE KINEMATICS (ANALYTICAL) & STEP CONVERSION ---
+  // =========================================================
+  // We now have the target virtual position fraction (g_vModelPos_01) which lives 
+  // natively in the Pedal Task Space (Arc length). We must translate this 
+  // target back into non-linear physical stepper steps via Inverse Kinematics.
 
-  // Bypass effect position offset
+  // 1. Map the normalized task space target [0.0, 1.0] to a target pedal angle
+  float targetPedalAngle_deg = angleAtMinSled_deg + g_vModelPos_01 * (angleAtMaxSled_deg - angleAtMinSled_deg);
+  float targetPedalAngle_rad = targetPedalAngle_deg * DEG_TO_RAD_FL32;
+
+  // 2. Analytical Inverse Kinematics (O(1), perfect precision, absolutely zero hysteresis)
+  // The geometry is a triangle A-B-C where:
+  // A = Lower pedal pivot (origin 0,0)
+  // C = Loadcell connection to pedal = (b * cos(phi), b * sin(phi))
+  // B = Sled pivot = (c_hor_0 + x, c_vert)
+  // Distance between B and C is the loadcell rod length 'a'.
+  
+  float a_mm = (float)config_st->payloadPedalConfig_st.lengthPedalA_i16;
+  float b_mm = (float)config_st->payloadPedalConfig_st.lengthPedalB_i16;
+  float c_vert_mm = (float)config_st->payloadPedalConfig_st.lengthPedalCVertical_i16;
+  float c_hor_0_mm = (float)config_st->payloadPedalConfig_st.lengthPedalCHorizontal_i16;
+
+  // Calculate coordinates of the pedal pivot C
+  float Cx_mm = b_mm * cosf(targetPedalAngle_rad);
+  float Cy_mm = b_mm * sinf(targetPedalAngle_rad);
+
+  // Solve for target sled position using the circle equation: (B_x - C_x)^2 + (B_y - C_y)^2 = a^2
+  // -> (c_hor - Cx)^2 + (c_vert - Cy)^2 = a^2
+  float dy_mm = c_vert_mm - Cy_mm;
+  float dx_squared_mm2 = (a_mm * a_mm) - (dy_mm * dy_mm);
+
+  float targetSledPos_mm = actualSledPos_mm; // Fallback in case of kinematic impossibility
+  
+  if (dx_squared_mm2 > 0.0f) {
+      // We use the positive root because the sled (B) is horizontally further away than the pedal arm (C)
+      float c_hor_mm = Cx_mm + sqrtf(dx_squared_mm2);
+      targetSledPos_mm = c_hor_mm - c_hor_0_mm;
+  }
+
+  // Clamp the solved sled position to safe physical bounds
+  targetSledPos_mm = constrain(targetSledPos_mm, 0.0f, maxSledPos_mm);
+  
+  // 3. Convert target sled position (mm) back to absolute stepper steps
+  float targetPosSteps_fl32 = (targetSledPos_mm / (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm)) + (float)calc_st->softEndstopMinStepperPos_i32;
+
+  // Bypass effect position offset (Inject ABS/vibrations purely into the actuator space)
   targetPosSteps_fl32 += effectOffsets_st.forceOffset_Steps_fl32;
 
   // Final safety clamp to hard hardware limits
@@ -962,9 +1051,10 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   finalTargetPos_fl32 = constrain(finalTargetPos_fl32, stepper->getHardEndstopMinPosition(), stepper->getHardEndstopMaxPosition());
 
   if (admittanceStates_pst != nullptr) {
-    admittanceStates_pst->physicalPos_m = g_vModelPos_01 * totalTravel_m;
+    admittanceStates_pst->physicalPos_m = g_vModelPos_01 * totalTravel_m; // Logged natively in Task Space
     admittanceStates_pst->virtualVel_mps = g_vModelVel_mps;
     admittanceStates_pst->virtualAcc_mps2 = acceleration_mps2;
   }
+  
   return finalTargetPos_fl32;
 }
