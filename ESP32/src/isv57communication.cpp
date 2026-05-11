@@ -103,7 +103,7 @@ Isv57Communication::Isv57Communication()
   ActiveSerialForServoCommunication = &Serial2;
 
 
-  modbus.initialize(false);
+  modbus.initialize(true);
 }
 
 
@@ -244,11 +244,10 @@ void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection,
   // according to the iSV2 manual chapter 5.6, the model following control (MFC) parameter should be larger then Pr1.01, velocity loop gain
   float mfcLowerLimit_fl32 = tuned_parameters[pr_1_00+1] ;
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+0, (int32_t)mfcLowerLimit_fl32);
-
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+1, tuned_parameters[pr_0_00+1]); // control mode #
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+2, tuned_parameters[pr_0_00+2]); // deactivate auto gain
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+3, tuned_parameters[pr_0_00+3]); // machine stiffness
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+4, tuned_parameters[pr_0_00+3] ); // ratio of inertia
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+4, tuned_parameters[pr_0_00+4] ); // ratio of inertia
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+6, tuned_parameters[pr_0_00+6]); // motor command direction
   //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+6, commandRotationDirection); // Command Pulse Rotational Direction
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+8, (long)stepsPerMotorRev_u32); // microsteps
@@ -269,10 +268,11 @@ void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection,
   //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+4, tuned_parameters[pr_1_00+4]); // 1st torque filter
 
   // according to the iSV2 manual, the upper limit of the velocity loop gain is determined by the formula: upperLimit = 1000000 / (2 * pi * velocity loop gain * 4), where the velocity loop gain is determined by Pr1.01, so I want to make sure that the velocity loop gain is not set higher than this limit, otherwise the servo will be unstable. The factor 4 is a safety factor to make sure that we are well below the upper limit.
-  float upperLimit_fl32 = 1000000.0f / (2.0f * PI_FL32 * tuned_parameters[pr_1_00+1] * 4.0f);
-  upperLimit_fl32 = 20.0f;
-  upperLimit_fl32 = constrain(upperLimit_fl32, 0, 2500.0f);
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+4, upperLimit_fl32);
+  // float upperLimit_fl32 = 1000000.0f / (2.0f * PI_FL32 * tuned_parameters[pr_1_00+1] * 4.0f);
+  // upperLimit_fl32 = 20.0f;
+  // upperLimit_fl32 = constrain(upperLimit_fl32, 0, 2500.0f);
+  // retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+4, upperLimit_fl32);
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+4, tuned_parameters[pr_1_00+4]);
 
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+10, tuned_parameters[pr_1_00+10]); // velocity feed forward gain
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+11, tuned_parameters[pr_1_00+11]); // velocity feed forward filter
@@ -645,7 +645,6 @@ bool Isv57Communication::readAlarmHistory() {
     
 	return 1;
 }
-
 
 
 void Isv57Communication::resetToFactoryParams() 
