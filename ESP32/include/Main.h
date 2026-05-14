@@ -589,7 +589,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 /********************************************************************/
 #define CORE_ID_PEDAL_UPDATE_TASK_U8 (uint8_t)1
 #define CORE_ID_SERIAL_COMMUNICATION_TASK_U8 (uint8_t)0
-#define CORE_ID_JOYSTICK_TASK_U8 (uint8_t)1
+#define CORE_ID_JOYSTICK_TASK_U8 (uint8_t)0 // TinyUSB runs on Core0, keep it here, otherwise race condition
 #define CORE_ID_MISC_TASK_U8 (uint8_t)0
 #define CORE_ID_OTA_TASK_U8 (uint8_t)0
 #define CORE_ID_SERVO_COMMUNICATION_TASK_U8 (uint8_t)0

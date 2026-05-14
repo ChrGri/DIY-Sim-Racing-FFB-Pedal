@@ -528,7 +528,7 @@ uint8_t taskCount = 0;
 hw_timer_t *timer0 = NULL;
 
 // === Scheduler ISR ===
-void IRAM_ATTR_FLAG onTimer(void* arg) {
+void IRAM_ATTR_FLAG onTimer() {
   BaseType_t xHigherPriorityWoken = pdFALSE;
 
   for (int i = 0; i < taskCount; i++) {
@@ -1075,21 +1075,12 @@ void setup()
   addScheduledTask(pedalUpdateTask, "pedalUpdateTask", REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64, TASK_PRIORITY_PEDAL_UPDATE_TASK_UBASETYPE, CORE_ID_PEDAL_UPDATE_TASK_U8, 7000);
   addScheduledTask(serialCommunicationTaskRx, "serComRx", REPETITION_INTERVAL_SERIALCOMMUNICATION_TASK_IN_US_I64, TASK_PRIORITY_SERIALCOMMUNICATION_TASK_UBASETYPE, CORE_ID_SERIAL_COMMUNICATION_TASK_U8, 6000);
 
-  // === Scheduler timer (esp_timer, TASK dispatch) ===
-  // skip_unhandled_events=true prevents timer callbacks from queuing up
-  // during brief overruns, avoiding a burst of back-to-back wakeups.
-  const esp_timer_create_args_t periodic_timer_args = {
-    .callback = &onTimer,
-    .arg = NULL,
-    .name = "sched_timer",
-    .skip_unhandled_events = true
-  };
-
-  esp_timer_handle_t periodic_timer;
-  esp_timer_create(&periodic_timer_args, &periodic_timer);
-
-  // Start periodic timer at BASE_TICK_US interval
-  esp_timer_start_periodic(periodic_timer, BASE_TICK_US);
+  // === Scheduler timer (hw_timer, ISR dispatch) ===
+  // timerBegin(1000000) → 1 MHz counter, 1 tick = 1 µs.
+  // timerAlarm fires every BASE_TICK_US ticks (= BASE_TICK_US µs), auto-reload.
+  timer0 = timerBegin(1000000);
+  timerAttachInterrupt(timer0, &onTimer);
+  timerAlarm(timer0, BASE_TICK_US, true, 0);
 
 
 	// the serialCommunicationTaskTx does not need a dedicated timer, since it triggered by queue 
@@ -3346,7 +3337,6 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
       if (batchLen >= TX_WRITE_THRESHOLD)
       {
         size_t written = ActiveSerial->write(txBatch, batchLen);
-        tud_cdc_write_flush();
         if (written < batchLen)
         {
           // TinyUSB TX FIFO was not large enough for the full batch.
