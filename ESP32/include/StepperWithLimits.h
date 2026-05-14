@@ -41,7 +41,7 @@ private:
     // --- Servo State and Control Flags ---
     bool isv57LifeSignal_b = false;                // True if communication with servo is established
     bool invertMotorDir_global_b = false;          // True if the motor direction is mechanically inverted
-    int32_t servoPos_i16 = 0;                      // Raw servo position read via Modbus
+    volatile int32_t servoPos_i16 = 0;                               // Raw servo position read via Modbus
     int32_t servo_offset_compensation_steps_i32 = 0; // Steps to inject to recover from lost steps
     
     bool restartServo = false;                     // Flag to trigger a servo restart cycle
@@ -55,7 +55,8 @@ private:
     bool resetServoRegistersToFactoryValues_b = false; // Trigger flag to perform a factory reset
     bool updateServoParams_b = false;              // Trigger flag to push new parameters to the servo
 
-    int32_t servoPos_local_corrected_i32 = 0;      // Fully unwrapped and corrected servo position
+    volatile int32_t servoPos_local_corrected_i32 = 0;               // Fully unwrapped and corrected servo position
+                                                                       // volatile: 32-bit aligned → atomic on ESP32-S3, no mutex needed
     uint32_t stepsPerMotorRev_u32 = 3200u;         // Configured microsteps per full motor revolution
     bool brakeResistorState_b = false;             // True if the external brake resistor circuit is active
 

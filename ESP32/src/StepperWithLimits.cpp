@@ -392,17 +392,18 @@ int32_t IRAM_ATTR StepperWithLimits::getServosPosErrorChangeRateInStepsPerSecond
 uint32_t IRAM_ATTR StepperWithLimits::getServoCycleCounter() { return isv57.isv57dynamicStates_.servo_cycleCounter_u32; }
 
 void IRAM_ATTR StepperWithLimits::setServosInternalPositionCorrected(int32_t posCorrected_i32) {
-    MutexGuard guard(getCorrectedServoPosSemaphore());
+    // servoPos_local_corrected_i32 is volatile DRAM_ATTR int32_t.
+    // 32-bit aligned single-word writes are atomic on ESP32-S3 → no mutex needed.
     servoPos_local_corrected_i32 = posCorrected_i32;
 }
 
 int32_t IRAM_ATTR StepperWithLimits::getServosInternalPositionCorrected() {
-    MutexGuard guard(getCorrectedServoPosSemaphore());
+    // Lockless read: 32-bit aligned single-word reads are atomic on ESP32-S3.
     return servoPos_local_corrected_i32;
 }
 
 int32_t IRAM_ATTR StepperWithLimits::getServosInternalPosition() {
-    MutexGuard guard(getReadServoValuesSemaphore());
+    // Lockless read: 32-bit aligned single-word reads are atomic on ESP32-S3.
     return servoPos_i16;
 }
 

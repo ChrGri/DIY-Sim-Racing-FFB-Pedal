@@ -734,7 +734,7 @@ void setup()
       // Register vendor HID BEFORE SetupController() to include both HID interfaces in the
       // single re-enumeration caused by joystick_.begin().
       // enableReboot(false) prevents SimHub's DtrEnable=true from resetting the ESP.
-      Serial.enableReboot(false);
+      // Serial.enableReboot(false);
       SetupVendorHID();
       #ifdef USB_JOYSTICK
         SetupController();
@@ -779,9 +779,9 @@ void setup()
 
   // ADD THIS: Create the queue before creating the tasks that use it.
   // The queue can hold up to N state packages.
-  // Depth = 60: holds 15 ms of 4 kHz production (4000 × 0.015 = 60 items)
-  // with margin so no drops occur during the 10 ms TX interval.
-  s_pedalStateQueue = xQueueCreate(60, sizeof(PedalStatePackage_t));
+  // Depth = 200: holds 50 ms of 4 kHz production (4000 × 0.05 = 200 items)
+  // giving ample margin even if the TX task is briefly delayed by USB activity.
+  s_pedalStateQueue = xQueueCreate(200, sizeof(PedalStatePackage_t));
   if (s_pedalStateQueue == NULL)
   {
     ActiveSerial->println("Error creating the pedal state queue!");
@@ -1076,11 +1076,14 @@ void setup()
   addScheduledTask(pedalUpdateTask, "pedalUpdateTask", REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64, TASK_PRIORITY_PEDAL_UPDATE_TASK_UBASETYPE, CORE_ID_PEDAL_UPDATE_TASK_U8, 7000);
   addScheduledTask(serialCommunicationTaskRx, "serComRx", REPETITION_INTERVAL_SERIALCOMMUNICATION_TASK_IN_US_I64, TASK_PRIORITY_SERIALCOMMUNICATION_TASK_UBASETYPE, CORE_ID_SERIAL_COMMUNICATION_TASK_U8, 6000);
 
-  // === Replace hw_timer with esp_timer ===
+  // === Scheduler timer (esp_timer, TASK dispatch) ===
+  // skip_unhandled_events=true prevents timer callbacks from queuing up
+  // during brief overruns, avoiding a burst of back-to-back wakeups.
   const esp_timer_create_args_t periodic_timer_args = {
     .callback = &onTimer,
     .arg = NULL,
-    .name = "sched_timer"
+    .name = "sched_timer",
+    .skip_unhandled_events = true
   };
 
   esp_timer_handle_t periodic_timer;
@@ -3342,9 +3345,19 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
       #ifdef USE_VENDOR_HID
       if (batchLen >= TX_WRITE_THRESHOLD)
       {
-        ActiveSerial->write(txBatch, batchLen);
+        size_t written = ActiveSerial->write(txBatch, batchLen);
         tud_cdc_write_flush();
-        batchLen = 0;
+        if (written < batchLen)
+        {
+          // TinyUSB TX FIFO was not large enough for the full batch.
+          // Keep the unsent bytes at the front so they are sent next cycle.
+          memmove(txBatch, txBatch + written, batchLen - written);
+          batchLen -= written;
+        }
+        else
+        {
+          batchLen = 0;
+        }
       }
       #endif
     }
