@@ -731,14 +731,13 @@ void setup()
   #ifdef USE_CDC_INSTEAD_OF_UART
     #ifdef USE_VENDOR_HID
       // PCB_VERSION=14 (S3-Zero): data exchange via vendor HID, CDC used for debug only.
-      // Register vendor HID BEFORE SetupController() to include both HID interfaces in the
-      // single re-enumeration caused by joystick_.begin().
-      // enableReboot(false) prevents SimHub's DtrEnable=true from resetting the ESP.
-      // Serial.enableReboot(false);
+      // enableReboot(false) prevents Windows CDC driver from triggering RESTART_BOOTLOADER:
+      // any SET_LINE_CODING at 1200 bps fires usb_persist_restart() regardless of DTR state.
+      // Upload via 1200bps-touch is therefore disabled; use manual BOOT+RESET instead.
+      // SetupController_USB() (with VID/PID and proper product name) is called later once the
+      // config (pedal type) is loaded, same as all other board variants.
+      Serial.enableReboot(false);
       SetupVendorHID();
-      #ifdef USB_JOYSTICK
-        SetupController();
-      #endif
       // CDC was already started by ARDUINO_USB_CDC_ON_BOOT=1 before setup(). 
       // Serial.begin() would trigger a second detach/attach corrupting the CDC RX endpoint.
       // Do NOT call Serial.begin() here. setTxTimeoutMs is safe to call at any time.
@@ -1322,7 +1321,8 @@ xTaskCreatePinnedToCore(
     delay(500);
   #endif
 
-  #if defined(CONTROLLER_SPECIFIC_VIDPID) && defined(USB_JOYSTICK) && !defined(USE_CDC_INSTEAD_OF_UART)
+  #if defined(CONTROLLER_SPECIFIC_VIDPID) && defined(USB_JOYSTICK) && \
+      (!defined(USE_CDC_INSTEAD_OF_UART) || defined(USE_VENDOR_HID))
       ActiveSerial->println("Setup Controller");
       SetupController_USB(dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
       delay(500);

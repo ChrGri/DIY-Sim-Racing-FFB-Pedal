@@ -357,8 +357,7 @@ void IRAM_ATTR StepperWithLimits::moveToWithSpeed(int32_t targetPos_i32, uint32_
 // to keep mechanical position aligned with the software coordinates.
 void IRAM_ATTR StepperWithLimits::correctPos() {
     if(!_stepper->isRunning()) {
-        MutexGuard guard(getResetServoPosSemaphore());
-        // Cap the maximum recovery amount per call to avoid violent jumps
+        // servo_offset_compensation_steps_i32 is volatile int32_t: 32-bit aligned → atomic read/write on ESP32-S3, no mutex needed.
         int32_t maxStepsToRecoverPerCall_i32 = 2;
         int32_t stepOffset = (int32_t)constrain(servo_offset_compensation_steps_i32, -maxStepsToRecoverPerCall_i32, maxStepsToRecoverPerCall_i32);
         
@@ -587,7 +586,7 @@ void IRAM_ATTR StepperWithLimits::performSafetyChecks() {
             servo_offset_compensation_steps_local_i32 = espPos_i32 - servoPosCorrected_i32;
         }
 
-        MutexGuard guard(getResetServoPosSemaphore());
+        // Lockless write: servo_offset_compensation_steps_i32 is volatile int32_t → atomic on ESP32-S3.
         servo_offset_compensation_steps_i32 = servo_offset_compensation_steps_local_i32;
     }
 

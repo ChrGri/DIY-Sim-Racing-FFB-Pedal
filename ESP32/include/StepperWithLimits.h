@@ -42,7 +42,7 @@ private:
     bool isv57LifeSignal_b = false;                // True if communication with servo is established
     bool invertMotorDir_global_b = false;          // True if the motor direction is mechanically inverted
     volatile int32_t servoPos_i16 = 0;                               // Raw servo position read via Modbus
-    int32_t servo_offset_compensation_steps_i32 = 0; // Steps to inject to recover from lost steps
+    volatile int32_t servo_offset_compensation_steps_i32 = 0; // Steps to inject to recover from lost steps; volatile: 32-bit aligned → atomic on ESP32-S3
     
     bool restartServo = false;                     // Flag to trigger a servo restart cycle
     bool enableSteplossRecov_b = true;             // Toggles automatic step-loss recovery
