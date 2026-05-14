@@ -168,6 +168,7 @@
     <Compile Include="PluginCallback\ConfigListService.cs" />
     <Compile Include="PluginCallback\DefaultConfig.cs" />
     <Compile Include="PluginCallback\FileIoHelper.cs" />
+    <Compile Include="PluginCallback\DapAttrProtocol.cs" />
     <Compile Include="PluginCallback\HidService.cs" />
     <Compile Include="PluginCallback\PedalIoCallback.cs" />
     <Compile Include="PluginCallback\PluginMiscHelper.cs" />

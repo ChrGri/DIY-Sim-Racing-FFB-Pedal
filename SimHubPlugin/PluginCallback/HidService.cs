@@ -197,6 +197,16 @@ namespace DiyFfbPedal
                 }
             }
 
+            /// <summary>
+            /// Sends a single attribute packet to the device using the DAP attribute protocol.
+            /// The packet is packed into a 64-byte HID OUT report with the 0xA1 marker byte.
+            /// </summary>
+            public void SendAttrPacket(DapAttrPacket pkt)
+            {
+                if (!IsConnected) return;
+                Write(pkt.ToHidReport());
+            }
+
             public void Disconnect()
             {
                 _cancelSource?.Cancel();

@@ -135,6 +135,10 @@ namespace DiyFfbPedal
 
         public SerialPort ESPsync_serialPort = new SerialPort("COM7", 3000000, Parity.None, 8, StopBits.One);
 
+        // Per-pedal vendor HID service for boards using USE_VENDOR_HID (e.g. PCB_VERSION=14, S3-Zero).
+        // null = pedal communicates via Serial; non-null + IsConnected = pedal communicates via HID.
+        public HidDeviceController[] PedalHidService = new HidDeviceController[3] { null, null, null };
+
         //for (byte pedalIdx_lcl = 0; pedalIdx_lcl< 3; pedalIdx_lcl++)
         //{
         //    _serialPortt[pedalIdx_lcl].RtsEnable = false;

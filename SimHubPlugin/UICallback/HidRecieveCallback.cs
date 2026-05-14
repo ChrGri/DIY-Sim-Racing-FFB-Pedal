@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -17,6 +18,19 @@ namespace DiyFfbPedal
         private bool _isReceiving = false;
         private byte PKT_TYPE_START = 0x01;
         private byte PKT_TYPE_CONT = 0x02;
+
+        // Per-pedal vendor HID reassembly state (for PCB_VERSION=14 direct-HID pedals)
+        private readonly byte[][] _pedalHidRxBuf    = { new byte[4096], new byte[4096], new byte[4096] };
+        private readonly int[]    _pedalHidRxIndex   = new int[3];
+        private readonly int[]    _pedalHidExpected  = new int[3];
+        private readonly bool[]   _pedalHidReceiving = new bool[3];
+        // Queues are drained from the UI timer thread; items are appended from the HID read thread.
+        public readonly ConcurrentQueue<byte[]>[] PedalHidDataQueue =
+        {
+            new ConcurrentQueue<byte[]>(),
+            new ConcurrentQueue<byte[]>(),
+            new ConcurrentQueue<byte[]>(),
+        };
         public void HidRecieveCallback(byte[] buffer)
         {
             if (buffer == null || buffer.Length < 4) return;
@@ -660,6 +674,51 @@ namespace DiyFfbPedal
                 });
             }
         }
+        /// <summary>
+        /// Reassembles chunked HID reports from a direct-connected vendor HID pedal
+        /// (PCB_VERSION=14, S3-Zero, UsagePage=0xFF00) and enqueues the complete packet
+        /// so that the serial timer can drain it into buffer_appended[].
+        /// Called from the HidSharp ReadLoop background thread.
+        /// Report layout: [ReportID=0x02][pkt_type][total_len][chunk_len][data...]
+        /// </summary>
+        public void HidRecieveCallback_DirectPedal(byte[] buffer, int pedalIdx)
+        {
+            if (buffer == null || buffer.Length < 4 || pedalIdx < 0 || pedalIdx >= 3) return;
+
+            // buffer[0] = ReportID (0x02), buffer[1] = pkt_type, buffer[2] = totalLen, buffer[3] = chunkLen
+            byte type     = buffer[1];
+            int  totalLen = buffer[2];
+            int  chunkLen = buffer[3];
+
+            if (type == PKT_TYPE_START)
+            {
+                _pedalHidRxIndex[pedalIdx]   = 0;
+                _pedalHidExpected[pedalIdx]  = totalLen;
+                _pedalHidReceiving[pedalIdx] = true;
+                if (totalLen > _pedalHidRxBuf[pedalIdx].Length)
+                {
+                    _pedalHidReceiving[pedalIdx] = false;
+                    return;
+                }
+            }
+
+            if (_pedalHidReceiving[pedalIdx] && chunkLen > 0 &&
+                _pedalHidRxIndex[pedalIdx] + chunkLen <= _pedalHidRxBuf[pedalIdx].Length)
+            {
+                Array.Copy(buffer, 4, _pedalHidRxBuf[pedalIdx], _pedalHidRxIndex[pedalIdx], chunkLen);
+                _pedalHidRxIndex[pedalIdx] += chunkLen;
+            }
+
+            if (_pedalHidReceiving[pedalIdx] && _pedalHidRxIndex[pedalIdx] >= _pedalHidExpected[pedalIdx])
+            {
+                _pedalHidReceiving[pedalIdx] = false;
+                int finalLen = _pedalHidExpected[pedalIdx];
+                byte[] packet = new byte[finalLen];
+                Array.Copy(_pedalHidRxBuf[pedalIdx], 0, packet, 0, finalLen);
+                PedalHidDataQueue[pedalIdx].Enqueue(packet);
+            }
+        }
+
         public void PrintHidData(byte[] data)
         {
             int length = data.Length;

@@ -760,9 +760,9 @@ namespace DiyFfbPedal
                 // serial port settings
                 //Plugin._serialPort[pedalIdx].BaudRate = 921600;
                 var serialInfo = ComPortHelper.GetVidPidFromComPort(Plugin._serialPort[pedalIdx].PortName);
-                if (serialInfo.Vid == "303A" && serialInfo.Pid == "1001")
+                if (serialInfo.Vid == "303A")
                 {
-                    //CDC serial enabled
+                    //CDC serial enabled (any ESP32-S3 TinyUSB device: PID 1001 for HWCDC, 8332/8333/8334 for TinyUSB composite)
                     Plugin.isCdcSerial[pedalIdx] = true;
                     //MessageBox.Show("CDC connected");
                 }
@@ -857,6 +857,26 @@ namespace DiyFfbPedal
                         System.Threading.Thread.Sleep(100);
                         Serial_connect_status[pedalIdx] = true;
                         Plugin._calculations.pedalSerialStatus[pedalIdx] = ConnectStateEnum.PEDAL_ENTRY_CONNECT;
+
+                        // For TinyUSB composite boards (S3-Zero, isCdcSerial=true), also connect the
+                        // vendor HID interface (UsagePage=0xFF00) for bidirectional data exchange.
+                        if (Plugin.isCdcSerial[pedalIdx] && serialInfo.Found &&
+                            serialInfo.Vid != null && serialInfo.Pid != null)
+                        {
+                            try
+                            {
+                                int hidVid = Convert.ToInt32(serialInfo.Vid, 16);
+                                int hidPid = Convert.ToInt32(serialInfo.Pid, 16);
+                                int capturedIdx = (int)pedalIdx;
+                                var hid = new DIY_FFB_Pedal.HidDeviceController(hidVid, hidPid, 0xFF00);
+                                hid.OnDataReceived += (data) => HidRecieveCallback_DirectPedal(data, capturedIdx);
+                                Plugin.PedalHidService[capturedIdx] = hid;
+                            }
+                            catch (Exception hidEx)
+                            {
+                                SimHub.Logging.Current.Error($"VendorHID connect error (pedal {pedalIdx}): {hidEx.Message}");
+                            }
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -924,6 +944,13 @@ namespace DiyFfbPedal
                 Plugin._serialPort[pedalIdx].Close();
                 Plugin.Settings.connect_status[pedalIdx] = 0;
                 Plugin._calculations.pedalSerialStatus[pedalIdx] = ConnectStateEnum.PEDAL_DISCONNECT;
+
+                // Disconnect vendor HID (if connected)
+                if (Plugin.PedalHidService[pedalIdx] != null)
+                {
+                    Plugin.PedalHidService[pedalIdx].Dispose();
+                    Plugin.PedalHidService[pedalIdx] = null;
+                }
             }
             if (Plugin.ESPsync_serialPort.IsOpen)
             {

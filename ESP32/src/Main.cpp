@@ -127,6 +127,14 @@ MovingAverageFilter averagefilter_joystick(40);
 
 
 #include "DiyActivePedal_types.h"
+#include "DapAttributeProtocol.h"
+
+// Forward declarations for attribute apply/read helpers (defined in DapAttributeProtocol.cpp)
+#ifdef USE_VENDOR_HID
+void DapAttr_ApplyToConfig(PayloadPedalConfig_t* cfg, const DapAttrPacket_t* pkt);
+void DapAttr_ReadFromConfig(const PayloadPedalConfig_t* cfg, DapAttrPacket_t* pkt);
+void DapAttr_ApplyToAction(DapActions_t* act, const DapAttrPacket_t* pkt);
+#endif
 
 DapConfigClass global_dap_config_class;
 DRAM_ATTR DapCalculationVariables_t dap_calculationVariables_st;
@@ -721,14 +729,39 @@ void setup()
   // setup serial
   // #define USE_CDC_INSTEAD_OF_UART
   #ifdef USE_CDC_INSTEAD_OF_UART
-    Serial.begin(DEFAULT_BAUD_U32);
-    //Serial.enableReboot(false);
-    
-    Serial.setTxTimeoutMs(100);
-    ActiveSerial = &Serial;
-    #ifdef USB_JOYSTICK
-      ActiveSerial->println("Setup Controller");
-      SetupController();
+    #ifdef USE_VENDOR_HID
+      // PCB_VERSION=14 (S3-Zero): data exchange via vendor HID, CDC used for debug only.
+      // Register vendor HID BEFORE SetupController() to include both HID interfaces in the
+      // single re-enumeration caused by joystick_.begin().
+      // enableReboot(false) prevents SimHub's DtrEnable=true from resetting the ESP.
+      Serial.enableReboot(false);
+      SetupVendorHID();
+      #ifdef USB_JOYSTICK
+        SetupController();
+      #endif
+      // CDC was already started by ARDUINO_USB_CDC_ON_BOOT=1 before setup(). 
+      // Serial.begin() would trigger a second detach/attach corrupting the CDC RX endpoint.
+      // Do NOT call Serial.begin() here. setTxTimeoutMs is safe to call at any time.
+      // Use timeout=0: TX writes are guarded by availableForWrite() in the TX task, so
+      // blocking is never needed. Without timeout=0, a write that slips past the guard
+      // (e.g. debug println) would block for up to the old timeout and stall the system.
+      Serial.setTxTimeoutMs(0);
+      ActiveSerial = &Serial;
+    #else
+      // Standard CDC path for other boards.
+      #ifdef USB_JOYSTICK
+        SetupController();
+      #endif
+      Serial.begin(DEFAULT_BAUD_U32);
+      Serial.enableReboot(false);
+      // Wait until the host opens the COM port (up to 3s)
+      uint32_t timeout = millis();
+      while (!Serial && (millis() - timeout < 3000)) {
+        delay(10);
+      }
+      delay(500); // Give windows a small amount of time to breathe
+      Serial.setTxTimeoutMs(100);
+      ActiveSerial = &Serial;
     #endif
   #elif CONFIG_IDF_TARGET_ESP32S3
     Serial1.begin(BAUD_3M_U32, SERIAL_8N1, 44, 43);
@@ -2358,9 +2391,24 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       
       // update pedal states
       // check if data needs to be send
+      #ifdef USE_CDC_INSTEAD_OF_UART
+      // On CDC-over-USB (V7) the TX bandwidth is limited to ~64 KB/s (USB FS).
+      // Sending the extended struct every pedal cycle (4 kHz × 109 B = 436 KB/s)
+      // overflows the CDC TX buffer completely: availableForWrite() never returns
+      // enough space, so zero packets reach the host.  Worse, the resulting flood
+      // of tud_cdc_write_flush() calls fires USB OTG IRQs at 4 kHz, which can
+      // delay the stepper timer ISR and cause a rough pedal feel.
+      // Fix: always use the counter-based rate (same as normal mode) regardless
+      // of the debug flag.  The counter sends at REPETITION_INTERVAL_SERIAL… Hz,
+      // which is low enough for USB to keep up.
+      sendPedalStructsViaSerialCounter_u8++;
+      sendPedalStructsViaSerialCounter_u8 %= serialSendCounterMax_u8;
+      sendBasicFlag_b = true;
+      sendExtendedFlag_b = (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT_U8) != 0;
+      #else
       if ( (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT_U8) )
       {
-        // send data every frame
+        // send data every frame (hardware UART has enough bandwidth)
         sendPedalStructsViaSerialCounter_u8 = 0;
         sendBasicFlag_b = true;
         sendExtendedFlag_b = true;
@@ -2373,6 +2421,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         sendBasicFlag_b = true;
         sendExtendedFlag_b = false;
       }
+      #endif
 
       if (s_pedalStateQueue != NULL) {
 
@@ -2617,6 +2666,13 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
 
     static DapConfig_t sct_dap_config_st;
 
+    // Shadow config updated field-by-field via attribute packets.
+    // COMMIT (0xFFFF) pushes this to s_configUpdateAvailableQueue.
+    #ifdef USE_VENDOR_HID
+    static DapConfig_t sct_shadow_config_st;
+    static bool sct_shadow_initialised_b = false;
+    #endif
+
     // Buffer to accumulate incoming serial data
     const size_t RX_BUFFER_SIZE = 1028; // Should be at least 2x the largest possible packet
     static uint8_t rx_buffer[RX_BUFFER_SIZE];
@@ -2635,6 +2691,11 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
           if (xQueueReceive(s_configUpdateSendToSerialRXTaskQueue, &configPackage_st, (TickType_t)0) == pdPASS)
           {
             sct_dap_config_st = configPackage_st.config_st;
+            #ifdef USE_VENDOR_HID
+            // Keep shadow in sync when the canonical config is updated via any path.
+            sct_shadow_config_st      = sct_dap_config_st;
+            sct_shadow_initialised_b  = true;
+            #endif
 
             // activate profiler depending on pedal config
             if (sct_dap_config_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_CYCLE_TIMER_U8) 
@@ -2647,7 +2708,157 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
             }
 
             ActiveSerial->println("Update config: serial RX");
-          } 
+          }
+
+          // ---- Attribute packet dispatcher (USE_VENDOR_HID only) ----
+          // Drain all attribute packets that arrived since the last cycle.
+          // Each WRITE packet updates the shadow config/action struct.
+          // A COMMIT packet pushes the shadow to the global config queue.
+          #ifdef USE_VENDOR_HID
+          {
+            // Lazily initialise shadow from global on first run.
+            if (!sct_shadow_initialised_b) {
+              global_dap_config_class.getConfig(&sct_shadow_config_st, 500);
+              sct_shadow_initialised_b = true;
+            }
+
+            DapAttrPacket_t attr_pkt;
+            // Re-usable action struct for ACTION class packets.
+            // Fields accumulate until DAP_ATTR_ACT_EXECUTE is received.
+            DapActions_t pending_action;
+            memset(&pending_action, 0, sizeof(pending_action));
+            bool has_pending_action_b = false;
+
+            while (VendorHID_ReadAttrPacket(&attr_pkt)) {
+
+              if (attr_pkt.classId_u8 == (uint8_t)DAP_ATTR_CLASS_CONFIG) {
+
+                if (attr_pkt.cmdType_u8 == (uint8_t)DAP_ATTR_CMD_WRITE) {
+
+                  if (attr_pkt.attrId_u16 == (uint16_t)DAP_ATTR_CFG_STORE_TO_EEPROM) {
+                    // Set the storeToEeprom flag on the shadow header.
+                    sct_shadow_config_st.payloadHeader_st.storeToEeprom_u8 =
+                        (attr_pkt.value_i64 != 0) ? 1u : 0u;
+                  } else if (attr_pkt.attrId_u16 == (uint16_t)DAP_ATTR_CFG_COMMIT) {
+                    // Recalculate CRC and push shadow to config queue.
+                    sct_shadow_config_st.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+                    sct_shadow_config_st.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+                    sct_shadow_config_st.payloadHeader_st.payloadType_u8   = DAP_PAYLOAD_TYPE_CONFIG_U8;
+                    sct_shadow_config_st.payloadHeader_st.version_u8       = DAP_VERSION_CONFIG_U8;
+                    sct_shadow_config_st.payloadFooter_st.enfOfFrame0_u8   = EOF_BYTE_0_U8;
+                    sct_shadow_config_st.payloadFooter_st.enfOfFrame1_u8   = EOF_BYTE_1_U8;
+                    uint16_t crc = checksumCalculator_u16(
+                        (uint8_t*)(&sct_shadow_config_st.payloadHeader_st),
+                        sizeof(sct_shadow_config_st.payloadHeader_st) +
+                        sizeof(sct_shadow_config_st.payloadPedalConfig_st));
+                    sct_shadow_config_st.payloadFooter_st.checkSum_u16 = crc;
+
+                    configDataPackage_t cfgPkg;
+                    cfgPkg.config_st = sct_shadow_config_st;
+                    xQueueSend(s_configUpdateAvailableQueue, &cfgPkg, portMAX_DELAY);
+                    ActiveSerial->println("Attr COMMIT: config pushed");
+
+                    if (sct_shadow_config_st.payloadHeader_st.storeToEeprom_u8 == 1) {
+                      Buzzer.single_beep_tone(700, 100);
+                    }
+                    // Clear eeprom flag so it doesn't persist
+                    sct_shadow_config_st.payloadHeader_st.storeToEeprom_u8 = 0;
+                  } else {
+                    // Normal field write
+                    DapAttr_ApplyToConfig(&sct_shadow_config_st.payloadPedalConfig_st, &attr_pkt);
+                  }
+
+                  // Send ACK
+                  DapAttrPacket_t ack = attr_pkt;
+                  ack.cmdType_u8 = (uint8_t)DAP_ATTR_CMD_ACK;
+                  VendorHID_SendAttrReply(&ack);
+
+                } else if (attr_pkt.cmdType_u8 == (uint8_t)DAP_ATTR_CMD_READ) {
+                  DapAttrPacket_t reply = attr_pkt;
+                  reply.cmdType_u8 = (uint8_t)DAP_ATTR_CMD_ACK;
+                  DapAttr_ReadFromConfig(&sct_shadow_config_st.payloadPedalConfig_st, &reply);
+                  VendorHID_SendAttrReply(&reply);
+                }
+
+              } else if (attr_pkt.classId_u8 == (uint8_t)DAP_ATTR_CLASS_ACTION) {
+
+                if (attr_pkt.cmdType_u8 == (uint8_t)DAP_ATTR_CMD_WRITE) {
+                  if (attr_pkt.attrId_u16 == (uint16_t)DAP_ATTR_ACT_EXECUTE) {
+                    // Execute all accumulated action fields
+                    if (has_pending_action_b) {
+                      // Inline the action dispatch (same logic as legacy struct path below)
+                      // ---- start ExecuteAction inline ----
+                      if (pending_action.payloadPedalAction_st.systemAction_u8 == 2) {
+                        ActiveSerial->println("ESP restart by user request");
+                        ESP.restart();
+                      }
+                      #ifdef ESPNOW_Enable
+                      if (pending_action.payloadPedalAction_st.systemAction_u8 == (uint8_t)PedalSystemAction::ENABLE_OTA) {
+                        g_OTA_enable_b = true; g_ESPNow_OTA_enable = false;
+                      }
+                      #endif
+                      if (pending_action.payloadPedalAction_st.triggerAbs_u8 > 0) {
+                        absOscillation.trigger();
+                        dap_calculationVariables_st.trackCondition_u8 =
+                            (pending_action.payloadPedalAction_st.triggerAbs_u8 > 1)
+                            ? (pending_action.payloadPedalAction_st.triggerAbs_u8 - 1) : 0;
+                      }
+                      _RPMOscillation.rpmValue_fl32 = pending_action.payloadPedalAction_st.rpm_u8;
+                      gForceEffect_.gValue_fl32     = pending_action.payloadPedalAction_st.gValue_u8 - 128;
+                      if (pending_action.payloadPedalAction_st.wheelSlip_u8) _WSOscillation.trigger();
+                      if (!dap_calculationVariables_st.rudderStatus_b)
+                        roadImpactEffect_.roadImpactValue_u8 = pending_action.payloadPedalAction_st.impactValue_u8;
+                      if (pending_action.payloadPedalAction_st.startSystemIdentification_u8) systemIdentificationMode_b = true;
+                      if (pending_action.payloadPedalAction_st.triggerCv1_u8) customVibration1_.trigger();
+                      if (pending_action.payloadPedalAction_st.triggerCv2_u8) customVibration2_.trigger();
+                      if (pending_action.payloadPedalAction_st.triggerCv3_u8) customVibration3_.trigger();
+                      if (pending_action.payloadPedalAction_st.triggerCv4_u8) customVibration4_.trigger();
+                      if (pending_action.payloadPedalAction_st.returnPedalConfig_u8) {
+                        sct_dap_config_st.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+                        sct_dap_config_st.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+                        sct_dap_config_st.payloadFooter_st.enfOfFrame0_u8   = EOF_BYTE_0_U8;
+                        sct_dap_config_st.payloadFooter_st.enfOfFrame1_u8   = EOF_BYTE_1_U8;
+                        uint16_t crc2 = checksumCalculator_u16(
+                            (uint8_t*)(&sct_dap_config_st.payloadHeader_st),
+                            sizeof(sct_dap_config_st.payloadHeader_st) +
+                            sizeof(sct_dap_config_st.payloadPedalConfig_st));
+                        sct_dap_config_st.payloadFooter_st.checkSum_u16 = crc2;
+                        vTaskSuspend(handle_serialCommunicationTx);
+                        delay(50);
+                        ActiveSerial->write((char*)&sct_dap_config_st, sizeof(DapConfig_t));
+                        delay(50);
+                        vTaskResume(handle_serialCommunicationTx);
+                      }
+                      #ifdef ESPNOW_Enable
+                      if (pending_action.payloadPedalAction_st.rudderAction_u8 == 1) {
+                        if (!dap_calculationVariables_st.rudderStatus_b) { dap_calculationVariables_st.rudderStatus_b = true; Rudder_initializing = true; moveSlowlyToPosition_b = true; }
+                        else { dap_calculationVariables_st.rudderStatus_b = false; Rudder_deinitializing = true; moveSlowlyToPosition_b = true; }
+                      }
+                      if (pending_action.payloadPedalAction_st.rudderAction_u8 == 2) {
+                        dap_calculationVariables_st.rudderStatus_b = false; dap_calculationVariables_st.rudderBrakeStatus_b = false; Rudder_deinitializing = true; moveSlowlyToPosition_b = true;
+                      }
+                      if (pending_action.payloadPedalAction_st.rudderBrakeAction_u8 == 1) {
+                        dap_calculationVariables_st.rudderBrakeStatus_b = !dap_calculationVariables_st.rudderBrakeStatus_b;
+                      }
+                      #endif
+                      // ---- end ExecuteAction inline ----
+                      memset(&pending_action, 0, sizeof(pending_action));
+                      has_pending_action_b = false;
+                    }
+                  } else {
+                    DapAttr_ApplyToAction(&pending_action, &attr_pkt);
+                    has_pending_action_b = true;
+                  }
+
+                  // ACK every WRITE
+                  DapAttrPacket_t ack = attr_pkt;
+                  ack.cmdType_u8 = (uint8_t)DAP_ATTR_CMD_ACK;
+                  VendorHID_SendAttrReply(&ack);
+                }
+              }
+            } // while VendorHID_ReadAttrPacket
+          }
+          #endif // USE_VENDOR_HID 
 
           
 
@@ -2655,18 +2866,24 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
           profiler_serialCommunicationTask.start(0);
 
           // --- 1. Read all available data into our buffer ---
+          #ifdef USE_VENDOR_HID
+            {
+              size_t pktLen = RX_BUFFER_SIZE - buffer_len;
+              if (pktLen > 0 && VendorHID_ReadPacket(&rx_buffer[buffer_len], &pktLen)) {
+                buffer_len += pktLen;
+              }
+            }
+          #else
             if (ActiveSerial->available())
             {
-              // Prevent buffer overflow by only reading what fits
               size_t bytesToRead = min((size_t)ActiveSerial->available(), RX_BUFFER_SIZE - buffer_len);
               if (bytesToRead > 0)
               {
                   ActiveSerial->readBytes(&rx_buffer[buffer_len], bytesToRead);
                   buffer_len += bytesToRead;
               }
-
-              // ActiveSerial->println("Serial data available");
-          }
+            }
+          #endif
 
           // --- 2. Process all complete packets in the buffer ---
           size_t buffer_idx = 0;
@@ -2881,8 +3098,8 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                             // suspend the serial Tx task so that data can properly be send
                             vTaskSuspend(handle_serialCommunicationTx);
                             delay(50);
+                            // Config reply goes via CDC TX (always works)
                             ActiveSerial->write((char*)dap_config_st_local_ptr, sizeof(DapConfig_t));
-                            ActiveSerial->print("Return pedal config");
                             delay(50);
                             vTaskResume(handle_serialCommunicationTx);
 
@@ -3010,6 +3227,14 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
 
 
 uint32_t communicationTask_stackSizeIdx_u32 = 0;
+// tud_cdc_write / tud_cdc_write_flush / tud_cdc_write_available are needed
+// for batched CDC TX under USE_VENDOR_HID.  The TinyUSB header is already
+// pulled in by Adafruit_TinyUSB via Controller.h when USE_VENDOR_HID is
+// defined; include it here unconditionally so the TX task always compiles.
+#ifdef USE_VENDOR_HID
+  #include "tusb.h"
+#endif
+
 void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
 { 
   // FunctionProfiler profiler_serialCommunicationTask;
@@ -3079,17 +3304,47 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
         // send basic pedal state struct
         if (receivedState.sendBasicFlag_b)
         {
-          // update CRC before transmission
           basic_to_send.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(basic_to_send.payloadHeader_st)), sizeof(basic_to_send.payloadHeader_st) + sizeof(basic_to_send.payloadPedalStateBasic_st));
-          ActiveSerial->write((char*)&basic_to_send, sizeof(DapStateBasic_t));
+          #ifdef USE_VENDOR_HID
+          // Batch write: use tud_cdc_write() (no per-call flush) so that all
+          // structs drained from the queue in this loop share a single USB IRQ.
+          // tud_cdc_write_flush() is called once after the do-while loop.
+          if (tud_cdc_write_available() >= sizeof(DapStateBasic_t))
+          {
+            tud_cdc_write(&basic_to_send, sizeof(DapStateBasic_t));
+          }
+          #else
+          #ifdef USE_CDC_INSTEAD_OF_UART
+          if (ActiveSerial->availableForWrite() >= (int)sizeof(DapStateBasic_t))
+          #endif
+          {
+            ActiveSerial->write((char*)&basic_to_send, sizeof(DapStateBasic_t));
+          }
+          #endif
         }
 
         // send extended pedal state struct
         if (receivedState.sendExtendedFlag_b)
         {
-          // update CRC before transmission
           extended_to_send.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(extended_to_send.payloadHeader_st)), sizeof(extended_to_send.payloadHeader_st) + sizeof(extended_to_send.payloadPedalStateExtended_st));
-          ActiveSerial->write((char*)&extended_to_send, sizeof(DapStateExtended_t));
+          #ifdef USE_VENDOR_HID
+          if (tud_cdc_write_available() >= sizeof(DapStateExtended_t))
+          {
+            tud_cdc_write(&extended_to_send, sizeof(DapStateExtended_t));
+          }
+          #else
+          // Guard: only write when the full struct fits in the CDC TX buffer.
+          // Without this, Serial.write() can block for many ms when the USB host
+          // has not yet consumed previous data, stalling the serialCommunicationTaskTx
+          // and disrupting system timing. Dropped packets are tolerated for logging;
+          // V6 (hardware UART) is non-blocking and does not need this guard.
+          #ifdef USE_CDC_INSTEAD_OF_UART
+          if (ActiveSerial->availableForWrite() >= (int)sizeof(DapStateExtended_t))
+          #endif
+          {
+            ActiveSerial->write((char*)&extended_to_send, sizeof(DapStateExtended_t));
+          }
+          #endif
         }
 
         // profiler_serialCommunicationTask.end(0);
@@ -3099,6 +3354,12 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
       // Continue looping with a zero timeout to process any other items that are
       // already in the queue. The loop will exit when the queue is empty.
       } while (xQueueReceive(s_pedalStateQueue, &receivedState, (TickType_t)0) == pdPASS);
+
+      // Single flush after draining the entire queue → at most one USB IRQ per
+      // 10ms task interval instead of one per write (up to 4000/s at 4kHz).
+      #ifdef USE_VENDOR_HID
+      tud_cdc_write_flush();
+      #endif
 
 
       // force a context switch
