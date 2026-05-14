@@ -779,7 +779,9 @@ void setup()
 
   // ADD THIS: Create the queue before creating the tasks that use it.
   // The queue can hold up to N state packages.
-  s_pedalStateQueue = xQueueCreate(10, sizeof(PedalStatePackage_t));
+  // Depth = 60: holds 15 ms of 4 kHz production (4000 × 0.015 = 60 items)
+  // with margin so no drops occur during the 10 ms TX interval.
+  s_pedalStateQueue = xQueueCreate(60, sizeof(PedalStatePackage_t));
   if (s_pedalStateQueue == NULL)
   {
     ActiveSerial->println("Error creating the pedal state queue!");
@@ -1581,6 +1583,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       if (xQueueReceive(s_configUpdateSendToPedalUpdateTaskQueue, &configPackage_st, (TickType_t)0) == pdPASS)
       {
         dap_config_pedalUpdateTask_st = configPackage_st.config_st;
+        ActiveSerial->printf("[pedalTask] debugFlags0=%d\n",
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8);
 
         // activate profiler depending on pedal config
         if (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_CYCLE_TIMER_U8) 
@@ -2392,17 +2396,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // update pedal states
       // check if data needs to be send
       #ifdef USE_CDC_INSTEAD_OF_UART
-      // On CDC-over-USB (V7) the TX bandwidth is limited to ~64 KB/s (USB FS).
-      // Sending the extended struct every pedal cycle (4 kHz × 109 B = 436 KB/s)
-      // overflows the CDC TX buffer completely: availableForWrite() never returns
-      // enough space, so zero packets reach the host.  Worse, the resulting flood
-      // of tud_cdc_write_flush() calls fires USB OTG IRQs at 4 kHz, which can
-      // delay the stepper timer ISR and cause a rough pedal feel.
-      // Fix: always use the counter-based rate (same as normal mode) regardless
-      // of the debug flag.  The counter sends at REPETITION_INTERVAL_SERIAL… Hz,
-      // which is low enough for USB to keep up.
-      sendPedalStructsViaSerialCounter_u8++;
-      sendPedalStructsViaSerialCounter_u8 %= serialSendCounterMax_u8;
+      // Every pedal cycle enqueues a state package. serialCommunicationTaskTx
+      // drains the queue and writes all accumulated structs in a single batched
+      // ActiveSerial->write(), so only one USB IRQ fires per TX-task wakeup.
       sendBasicFlag_b = true;
       sendExtendedFlag_b = (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT_U8) != 0;
       #else
@@ -2522,20 +2518,17 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
 
 
-        if (sendPedalStructsViaSerialCounter_u8 == 0)
-        {
-          // Package the new state data into a single struct
-          PedalStatePackage_t newStatePackage;
-          newStatePackage.basic_st = dap_state_basic_st_lcl_pedalUpdateTask;
-          newStatePackage.extended_st = dap_state_extended_st_lcl_pedalUpdateTask;
-          newStatePackage.sendBasicFlag_b = sendBasicFlag_b;
-          newStatePackage.sendExtendedFlag_b = sendExtendedFlag_b;
+        // Package the new state data into a single struct
+        PedalStatePackage_t newStatePackage;
+        newStatePackage.basic_st = dap_state_basic_st_lcl_pedalUpdateTask;
+        newStatePackage.extended_st = dap_state_extended_st_lcl_pedalUpdateTask;
+        newStatePackage.sendBasicFlag_b = sendBasicFlag_b;
+        newStatePackage.sendExtendedFlag_b = sendExtendedFlag_b;
 
-          // Send the package to the queue. Use a timeout of 0 (non-blocking).
-          // If the queue is full, the data is simply dropped. This prevents this
-          // high-priority control task from ever blocking on a full serial buffer.
-          xQueueSend(s_pedalStateQueue, &newStatePackage, (TickType_t)0);
-        }
+        // Send the package to the queue. Use a timeout of 0 (non-blocking).
+        // If the queue is full, the data is simply dropped. This prevents this
+        // high-priority control task from ever blocking on a full serial buffer.
+        xQueueSend(s_pedalStateQueue, &newStatePackage, (TickType_t)0);
       }
 
       profiler_pedalUpdateTask.end(7);
@@ -2858,9 +2851,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
               }
             } // while VendorHID_ReadAttrPacket
           }
-          #endif // USE_VENDOR_HID 
-
-          
+          #endif // USE_VENDOR_HID
 
           // Activate profiler based on config
           profiler_serialCommunicationTask.start(0);
@@ -3243,21 +3234,27 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
 
   // static DapConfig_t sct_dap_config_st;
 
-  // This task now waits for a complete package of data from the queue.
   PedalStatePackage_t receivedState;
+
+  #ifdef USE_VENDOR_HID
+  // Batch TX: accumulate bytes across queue wakeups; write to USB only once
+  // TX_WRITE_THRESHOLD bytes have built up (~40 items = ~10 ms of 4 kHz data).
+  // This limits USB OTG flushes to ~100/s, preventing them from delaying the
+  // stepper timer ISR (rough pedal feel), while keeping the task immediately
+  // responsive to new queue items so config/action replies are not blocked.
+  // batchLen persists across wakeups and resets only after each write.
+  static const size_t TX_WRITE_THRESHOLD =
+      40u * (sizeof(DapStateBasic_t) + sizeof(DapStateExtended_t));
+  static uint8_t txBatch[60u * (sizeof(DapStateBasic_t) + sizeof(DapStateExtended_t))];
+  size_t batchLen = 0;
+  #endif
 
   for (;;)
   {
-
-    // global_dap_config_class.getConfig(&sct_dap_config_st, 0);
-
-    // Block indefinitely until a new state package arrives from pedalUpdateTask.
-    // This is now the ONLY trigger for this task.
+    // Block until at least one item is available.
     if (xQueueReceive(s_pedalStateQueue, &receivedState, portMAX_DELAY) == pdPASS)
     {
-      
-      // Now, process the first item, and then enter a loop to
-      // empty the rest of the queue.
+      // Drain all items currently in the queue into the batch buffer.
       do {
                 
         // Copy to a local variable to calculate CRC
@@ -3289,29 +3286,16 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
 
 
 
-        // activate profiler depending on pedal config
-        // if (sct_dap_config_st.payloadPedalConfig_st.debugFlags0_u8 & DEBUG_INFO_0_CYCLE_TIMER) 
-        // {
-        //   profiler_serialCommunicationTask.activate( true );
-        // }
-        // else
-        // {
-        //   profiler_serialCommunicationTask.activate( false );
-        // }
-        // // start profiler 0, overall function
-        // profiler_serialCommunicationTask.start(0);
-
         // send basic pedal state struct
         if (receivedState.sendBasicFlag_b)
         {
           basic_to_send.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(basic_to_send.payloadHeader_st)), sizeof(basic_to_send.payloadHeader_st) + sizeof(basic_to_send.payloadPedalStateBasic_st));
           #ifdef USE_VENDOR_HID
-          // Batch write: use tud_cdc_write() (no per-call flush) so that all
-          // structs drained from the queue in this loop share a single USB IRQ.
-          // tud_cdc_write_flush() is called once after the do-while loop.
-          if (tud_cdc_write_available() >= sizeof(DapStateBasic_t))
+          // Accumulate into batch buffer; sent as one block after the queue is drained.
+          if (batchLen + sizeof(DapStateBasic_t) <= sizeof(txBatch))
           {
-            tud_cdc_write(&basic_to_send, sizeof(DapStateBasic_t));
+            memcpy(&txBatch[batchLen], &basic_to_send, sizeof(DapStateBasic_t));
+            batchLen += sizeof(DapStateBasic_t);
           }
           #else
           #ifdef USE_CDC_INSTEAD_OF_UART
@@ -3328,9 +3312,11 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
         {
           extended_to_send.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(extended_to_send.payloadHeader_st)), sizeof(extended_to_send.payloadHeader_st) + sizeof(extended_to_send.payloadPedalStateExtended_st));
           #ifdef USE_VENDOR_HID
-          if (tud_cdc_write_available() >= sizeof(DapStateExtended_t))
+          // Accumulate into batch buffer; sent as one block after the queue is drained.
+          if (batchLen + sizeof(DapStateExtended_t) <= sizeof(txBatch))
           {
-            tud_cdc_write(&extended_to_send, sizeof(DapStateExtended_t));
+            memcpy(&txBatch[batchLen], &extended_to_send, sizeof(DapStateExtended_t));
+            batchLen += sizeof(DapStateExtended_t);
           }
           #else
           // Guard: only write when the full struct fits in the CDC TX buffer.
@@ -3347,23 +3333,20 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
           #endif
         }
 
-        // profiler_serialCommunicationTask.end(0);
-
-        // // print profiler results
-        // profiler_serialCommunicationTask.report();
-      // Continue looping with a zero timeout to process any other items that are
-      // already in the queue. The loop will exit when the queue is empty.
+      // Drain done.
       } while (xQueueReceive(s_pedalStateQueue, &receivedState, (TickType_t)0) == pdPASS);
 
-      // Single flush after draining the entire queue → at most one USB IRQ per
-      // 10ms task interval instead of one per write (up to 4000/s at 4kHz).
+      // Write only when the accumulated batch reaches the threshold (~100 Hz).
+      // batchLen is NOT reset on passes below the threshold so bytes continue
+      // accumulating until the next threshold crossing.
       #ifdef USE_VENDOR_HID
-      tud_cdc_write_flush();
+      if (batchLen >= TX_WRITE_THRESHOLD)
+      {
+        ActiveSerial->write(txBatch, batchLen);
+        tud_cdc_write_flush();
+        batchLen = 0;
+      }
       #endif
-
-
-      // force a context switch
-      // taskYIELD();
     }
   }
 }

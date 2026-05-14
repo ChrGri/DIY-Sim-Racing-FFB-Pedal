@@ -390,7 +390,8 @@ namespace DiyFfbPedal
             {
                 wirelessUpdate = true;
             }
-            if (!wirelessUpdate && _calculations.pedalSerialStatus[PedalIDX] == ConnectStateEnum.PEDAL_IS_READY)
+            if (!wirelessUpdate && (_calculations.pedalSerialStatus[PedalIDX] == ConnectStateEnum.PEDAL_IS_READY
+                                    || _calculations.pedalSerialStatus[PedalIDX] == ConnectStateEnum.PEDAL_GET_BASIC_PACKETS))
             {
                 serialUpdate = true;
             }
