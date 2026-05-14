@@ -1981,13 +1981,21 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
 
       // --- Predictive Brake Resistor Activator ---
+      // Cache servo state once per cycle; reused in extended debug struct
+      // to avoid duplicate ISR-spinlock-contending calls later.
+      const int32_t  cached_servosPosError_i32            = stepper->getServosPosError();
+      const int32_t  cached_currentSpeedInHz_i32          = stepper->getCurrentSpeedInHz();
+      const int16_t  cached_servosVoltage_i16             = stepper->getServosVoltage();
+      const int16_t  cached_servosCurrent_i16             = stepper->getServosCurrent();
+      const uint32_t cached_servoCycleCounter_u32         = stepper->getServoCycleCounter();
+      const int32_t  cached_servosInternalPosCorrected_i32 = stepper->getServosInternalPositionCorrected();
       uint32_t current_time_us = micros();
       bool brake_state = brakeController.Update(
-          stepper->getServosPosError()
+          cached_servosPosError_i32
           , stepper->getServosPosErrorChangeRateInStepsPerSecond()
           , changeVelocity
-          , stepper->getCurrentSpeedInHz()
-          , ( (float)stepper->getServosVoltage() ) * 0.1f
+          , cached_currentSpeedInHz_i32
+          , ( (float)cached_servosVoltage_i16 ) * 0.1f
           , current_time_us
       );
       #ifdef BRAKE_RESISTOR_PIN_U8
@@ -2478,13 +2486,13 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           // update extended struct 
           int32_t minPos = 0; //stepper->getMinPosition();
 
-          // Servo states
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoStateCycleCount_u32 = stepper->getServoCycleCounter();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionTarget_i32 = stepper->getServosInternalPositionCorrected();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionFeedback_i32 = stepper->getServosInternalPositionCorrected() + stepper->getServosPosError() - minPos;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionError_i16 = stepper->getServosPosError();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoVoltage0p1V_i16 =  stepper->getServosVoltage();
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoCurrentPercent_i16 = stepper->getServosCurrent();
+          // Servo states (values cached earlier in the cycle)
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoStateCycleCount_u32  = cached_servoCycleCounter_u32;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionTarget_i32   = cached_servosInternalPosCorrected_i32;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionFeedback_i32 = cached_servosInternalPosCorrected_i32 + cached_servosPosError_i32 - minPos;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoPositionError_i16    = cached_servosPosError_i32;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoVoltage0p1V_i16      = cached_servosVoltage_i16;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.servoCurrentPercent_i16   = cached_servosCurrent_i16;
 
           // ESP states
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.timeInUs_u32 = cycleCallTimeInUs_u32;//micros();
@@ -2492,8 +2500,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.pedalForceRaw_fl32 =  loadcellReading;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.pedalForceFiltered_fl32 =  filteredReading;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.forceVelEst_fl32 =  changeVelocity;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.targetPosition_i32 = stepper->getCurrentPosition() - minPos;
-          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.currentSpeedInHz_i32 = stepper->getCurrentSpeedInHz();
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.targetPosition_i32   = stepperPosCurrent_i32 - minPos;
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.currentSpeedInHz_i32 = cached_currentSpeedInHz_i32;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.brakeResistorState_b = brake_state * 255;//stepper->getBrakeResistorState();
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.oscillationMonitorValue_u8 = 0.0f;
         

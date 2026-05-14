@@ -6,10 +6,10 @@
 //#define JSON_URL_dev "https://raw.githubusercontent.com/tcfshcrw/playground/main/OTA_test_repo/GH2/Version.json"
 #define OTA_JSON_URL_MAIN   "https://raw.githubusercontent.com/gilphilbert/pedal-flasher/main/json/main/Version_ControlBoard.json"
 #define OTA_JSON_URL_TEST "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/TestBuild/json/Version_ControlBoard.json"
-bool g_OTA_enable_b =false;
-bool g_OTA_status =false;
-bool g_beepForOtaProgress = false;
-bool g_OTA_enable_start=false;
+volatile bool g_OTA_enable_b =false;
+volatile bool g_OTA_status =false;
+bool g_beepForOtaProgress = false;  // Core 0 only (otaUpdateTask → miscTask), no cross-core race
+volatile bool g_OTA_enable_start=false;
 char* g_SSID;
 char* g_PASS;
 

@@ -27,8 +27,8 @@ DAP_otaWifiInfo_st g_dap_OtaWifiInfo_st;
 //const char *new_ssid = "ADD_WANTED_SSID_HERE";
 const char *password = "pedaladmin";
 WebServer server(80);
-bool g_OTA_status=false;
-bool g_OTA_enable_b=false;
+volatile bool g_OTA_status=false;
+volatile bool g_OTA_enable_b=false;
 //OTA update page
 #define jquery_min_js_v3_2_1_gz_len 30178
 PROGMEM const char jquery_min_js_v3_2_1_gz[]  = {

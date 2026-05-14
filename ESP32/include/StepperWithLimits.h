@@ -84,7 +84,7 @@ private:
     void performSafetyChecks();
 
 public:
-    uint8_t servoStatus = 0;                       // Current global state of the servo
+    volatile uint8_t servoStatus = 0;              // Current global state of the servo — volatile: written Core 0 (servoCommunicationTask) and Core 1 (pedalUpdateTask)
     uint8_t endstopDetectionThreshold_u8 = 30;     // Current threshold (in percent) to detect a physical block
 
     // Constructor
