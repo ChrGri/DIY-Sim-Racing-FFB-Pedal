@@ -94,7 +94,7 @@ inline uint16_t checksumCalculator_u16(uint8_t * data_pu8, uint16_t length_u16)
 
 
 
-bool systemIdentificationMode_b = false;
+volatile bool systemIdentificationMode_b = false;
 unsigned long saveToEEPRomDuration=0;
 
 
@@ -299,7 +299,7 @@ StepperWithLimits* stepper = NULL;
 #include "StepperMovementStrategy.h"
 #include "StepperMovementStrategy_MPC.h"
 #include "ChatterReduction.h"
-bool moveSlowlyToPosition_b = true;
+volatile bool moveSlowlyToPosition_b = true;
 /**********************************************************************************************/
 /*                                                                                            */
 /*                         OTA                                                                */
@@ -3226,6 +3226,7 @@ uint32_t communicationTask_stackSizeIdx_u32 = 0;
 // defined; include it here unconditionally so the TX task always compiles.
 #ifdef USE_VENDOR_HID
   #include "tusb.h"
+  #include "esp32-hal-tinyusb.h"  // usb_persist_restart / restart_type_t
 #endif
 
 void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
@@ -4037,6 +4038,30 @@ void miscTask( void * pvParameters )
   // for the task no need complete asap, ex buzzer, led 
   for(;;)
   {
+    // Detect esptool's 1200bps upload-touch by polling TinyUSB's CDC line coding directly.
+    // Serial.enableReboot(false) in setup() keeps the native Arduino CDC (COM25) from
+    // responding to 1200bps.  The active port while firmware runs is the TinyUSB CDC
+    // (COM27, controlled by Adafruit_USBD_CDC), which is a separate class that does NOT
+    // forward to USBCDC::_onLineCoding, so Serial.enableReboot(true) would have no effect
+    // on COM27.  Instead, poll tud_cdc_n_get_line_coding() here every 50ms after the 5s
+    // startup guard.  When esptool sets 1200bps, usb_persist_restart(RESTART_BOOTLOADER)
+    // enters ROM download mode so the upload completes without pressing BOOT+RESET.
+    #if defined(USE_CDC_INSTEAD_OF_UART) && defined(USE_VENDOR_HID)
+    {
+      static bool s_rebootEnabled_b = false;
+      if (!s_rebootEnabled_b && millis() > 5000) {
+        s_rebootEnabled_b = true;
+      }
+      if (s_rebootEnabled_b && tud_mounted()) {
+        cdc_line_coding_t lc = {};
+        tud_cdc_n_get_line_coding(0, &lc);
+        if (lc.bit_rate == 1200) {
+          usb_persist_restart(RESTART_BOOTLOADER);
+        }
+      }
+    }
+    #endif
+
     global_dap_config_class.getConfig(&misc_dap_config_st, 500);
     
     #ifdef ESPNOW_Enable
