@@ -5,7 +5,7 @@
 // Type: Signed 32-bit integer
 #define ISV57_NMB_OF_REGISTERS 305
 const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
-    1,     // Pr0.00: Reserved parameters
+    500,     // Pr0.00: Reserved parameters
     0,     // Pr0.01: Control mode
     0,     // Pr0.02: Real-time auto-gain tuning mode
     9,    // Pr0.03: Selection of machine stiffness at real-time...
@@ -13,7 +13,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,     // Pr0.05: Command pulse input selection
     0,     // Pr0.06: Motor rotational direction setup
     3,     // Pr0.07: Reserved parameters
-    3780,  // Pr0.08: Microstep
+    3750,  // Pr0.08: Microstep
     1,     // Pr0.09: 1st numerator of electronic gear
     1,     // Pr0.10: Denominator of electronic gear
     4000,  // Pr0.11: Reserved parameters
@@ -38,8 +38,8 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     175,   // Pr1.05: 2nd position loop gain
     110,   // Pr1.06: 2nd velocity loop gain
     10000, // Pr1.07: 2nd time constant of velocity loop
-    9,     // Pr1.08: 2nd filter of velocity detection
-    50,   // Pr1.09: 2nd torque filter
+    8,     // Pr1.08: 2nd filter of velocity detection
+    200,   // Pr1.09: 2nd torque filter
     500,   // Pr1.10: Velocity feed forward gain
     1000,  // Pr1.11: Velocity feed forward filter. Had better velocity error decay with higher values and also less noise.
     0,     // Pr1.12: Torque feed forward gain

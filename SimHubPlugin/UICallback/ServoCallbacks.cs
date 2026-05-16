@@ -78,53 +78,46 @@ namespace DiyFfbPedal
         }
 
         /// <summary>
-        /// Called when the user clicks "Load current from servo".
-        /// Sends a READ attr packet for every servo register to the selected pedal.
-        /// Responses arrive asynchronously and are dispatched to Servo_Tab.HandleServoModbusAck().
+        /// Called by the sequential read queue in GeneralSetting_Servo.
+        /// Sends exactly ONE READ attr packet for the given Modbus address.
+        /// The next request is only triggered after the ACK (or 1 s timeout) is received —
+        /// this guarantees strict request-response ordering and prevents flooding the ESP32.
         /// </summary>
-        private async void Servo_Tab_LoadFromServoRequested(object sender, EventArgs e)
+        private void Servo_Tab_ServoModbusReadRequested(object sender, ushort modbusAddr)
         {
             if (Plugin == null) return;
 
             byte pedalIdx = (byte)indexOfSelectedPedal_u;
 
-            foreach (var entry in Servo_Tab.ServoRegisters)
+            var pkt = new DapAttrPacket
             {
-                if (!DapAttrHelper.TryParseServoAddress(entry.Address, out ushort modbusAddr))
-                    continue;
+                CmdType = (byte)DapAttrCmdType.Read,
+                ClassId = (byte)DapAttrClassId.ServoModbus,
+                AttrId  = modbusAddr,
+                Value   = 0,
+            };
 
-                var pkt = new DapAttrPacket
-                {
-                    CmdType = (byte)DapAttrCmdType.Read,
-                    ClassId = (byte)DapAttrClassId.ServoModbus,
-                    AttrId  = modbusAddr,
-                    Value   = 0,
-                };
+            if (Plugin.PedalHidService[pedalIdx]?.IsConnected == true)
+            {
+                Plugin.PedalHidService[pedalIdx].SendAttrPacket(pkt);
+                return;
+            }
 
-                if (Plugin.PedalHidService[pedalIdx]?.IsConnected == true)
+            byte[] report = pkt.ToHidReport();
+            if (Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalIdx])
+            {
+                if (Plugin.BridgeHidService.IsConnected)
+                    Task.Run(() => Plugin.BridgeHidService.SendLargeDataAsync(report));
+                else if (Plugin.ESPsync_serialPort.IsOpen)
                 {
-                    Plugin.PedalHidService[pedalIdx].SendAttrPacket(pkt);
-                }
-                else if (Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalIdx])
-                {
-                    byte[] report = pkt.ToHidReport();
-                    if (Plugin.BridgeHidService.IsConnected)
-                        await Task.Run(() => Plugin.BridgeHidService.SendLargeDataAsync(report));
-                    else if (Plugin.ESPsync_serialPort.IsOpen)
-                    {
-                        try { Plugin.ESPsync_serialPort.Write(report, 0, report.Length); }
-                        catch (Exception ex) { SimHub.Logging.Current.Error("ServoRegisterRead serial error: " + ex.Message); }
-                    }
-                }
-                else if (Plugin._serialPort[pedalIdx].IsOpen)
-                {
-                    byte[] report = pkt.ToHidReport();
-                    try { Plugin._serialPort[pedalIdx].Write(report, 0, report.Length); }
+                    try { Plugin.ESPsync_serialPort.Write(report, 0, report.Length); }
                     catch (Exception ex) { SimHub.Logging.Current.Error("ServoRegisterRead serial error: " + ex.Message); }
                 }
-
-                // Small inter-packet delay to avoid flooding the ESP32
-                await Task.Delay(5);
+            }
+            else if (Plugin._serialPort[pedalIdx].IsOpen)
+            {
+                try { Plugin._serialPort[pedalIdx].Write(report, 0, report.Length); }
+                catch (Exception ex) { SimHub.Logging.Current.Error("ServoRegisterRead serial error: " + ex.Message); }
             }
         }
         /// <summary>

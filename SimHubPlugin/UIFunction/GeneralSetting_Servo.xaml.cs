@@ -403,6 +403,13 @@ namespace DiyFfbPedal.UIFunction
             InitializeComponent();
             dap_config_st = new DAP_config_st();
 
+            // Timer fires if an ACK is not received within 1 s — skips the stalled register
+            _readTimeoutTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(1)
+            };
+            _readTimeoutTimer.Tick += OnReadTimeout;
+
             // Populate the register table with recommended values as defaults
             int idx = 0;
             foreach (var def in s_registerDefs)
@@ -472,10 +479,11 @@ namespace DiyFfbPedal.UIFunction
         public event EventHandler<ServoRegisterEntry> ServoRegisterValueChanged;
 
         /// <summary>
-        /// Raised when the user clicks "Load current from servo".
-        /// The parent UI should subscribe and send a READ attr packet for each entry's Modbus address.
+        /// Raised to request a single Modbus READ for the given holding-register address.
+        /// The parent sends the HID packet; the next request is only fired after the ACK arrives
+        /// (or after the per-register timeout expires), ensuring strict sequential ordering.
         /// </summary>
-        public event EventHandler LoadFromServoRequested;
+        public event EventHandler<ushort> ServoModbusReadRequested;
 
         /// <summary>
         /// Raised when the user clicks "Flash to servo".
@@ -484,30 +492,73 @@ namespace DiyFfbPedal.UIFunction
         public event EventHandler FlashToServoRequested;
 
         // ---------------------------------------------------------------
+        // Sequential load state
+        // ---------------------------------------------------------------
+        private readonly Queue<ushort> _pendingReadQueue = new Queue<ushort>();
+        private readonly System.Windows.Threading.DispatcherTimer _readTimeoutTimer;
+
+        // ---------------------------------------------------------------
         // Button handlers
         // ---------------------------------------------------------------
 
         /// <summary>
         /// Triggered when the user clicks "Load current from servo".
-        /// Resets all live values to unknown and raises the request event.
+        /// Resets all live values to unknown, builds the sequential read queue,
+        /// and fires the first request. Each subsequent request is fired only after
+        /// the ACK (or 1-second timeout) for the previous one is received.
         /// </summary>
         private void Btn_LoadFromServo_Click(object sender, RoutedEventArgs e)
         {
+            _readTimeoutTimer.Stop();
+            _pendingReadQueue.Clear();
+
             // Reset all live values to unknown (pending state)
             foreach (var entry in ServoRegisters)
                 entry.LiveValue = null;
 
-            LoadFromServoRequested?.Invoke(this, EventArgs.Empty);
+            // Enqueue addresses in display order
+            foreach (var entry in ServoRegisters)
+            {
+                if (DapAttrHelper.TryParseServoAddress(entry.Address, out ushort addr))
+                    _pendingReadQueue.Enqueue(addr);
+            }
+
+            SendNextPendingRead();
+        }
+
+        /// <summary>
+        /// Dequeues the next pending address and raises ServoModbusReadRequested.
+        /// </summary>
+        private void SendNextPendingRead()
+        {
+            _readTimeoutTimer.Stop();
+            if (_pendingReadQueue.Count == 0) return;
+
+            ushort nextAddr = _pendingReadQueue.Peek(); // leave in queue until ACK arrives
+            _readTimeoutTimer.Start();
+            ServoModbusReadRequested?.Invoke(this, nextAddr);
+        }
+
+        /// <summary>
+        /// Called when no ACK arrives within 1 second — skips the current register and continues.
+        /// </summary>
+        private void OnReadTimeout(object sender, EventArgs e)
+        {
+            _readTimeoutTimer.Stop();
+            if (_pendingReadQueue.Count > 0)
+                _pendingReadQueue.Dequeue(); // skip stalled register
+            SendNextPendingRead();
         }
 
         /// <summary>
         /// Called when the ESP32 returns a ServoModbus ACK packet.
-        /// Finds the register entry with the matching Modbus address and updates its LiveValue.
+        /// Updates the matching LiveValue and advances the sequential read queue.
         /// </summary>
         /// <param name="addr">Absolute Modbus holding-register address.</param>
         /// <param name="value">Register value reported by the servo.</param>
         public void HandleServoModbusAck(ushort addr, short value)
         {
+            // Update the matching entry's live value
             foreach (var entry in ServoRegisters)
             {
                 if (DapAttrHelper.TryParseServoAddress(entry.Address, out ushort entryAddr) && entryAddr == addr)
@@ -516,6 +567,12 @@ namespace DiyFfbPedal.UIFunction
                     break;
                 }
             }
+
+            // Advance the sequential queue: dequeue only when the head matches the ACK address
+            if (_pendingReadQueue.Count > 0 && _pendingReadQueue.Peek() == addr)
+                _pendingReadQueue.Dequeue();
+
+            SendNextPendingRead();
         }
 
         /// <summary>
