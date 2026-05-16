@@ -685,6 +685,26 @@ namespace DiyFfbPedal
         {
             if (buffer == null || buffer.Length < 4 || pedalIdx < 0 || pedalIdx >= 3) return;
 
+            // Detect a DAP attribute reply (marker 0xA1 at buffer[1]).
+            // Layout: [ReportID][0xA1][CmdType][ClassId][AttrId_lo][AttrId_hi][Value:8 bytes][...]
+            const byte DapAttrMarker = 0xA1;
+            if (buffer[1] == DapAttrMarker && buffer.Length >= 14)
+            {
+                byte cmdType  = buffer[2];
+                byte classId  = buffer[3];
+                ushort attrId = (ushort)(buffer[4] | (buffer[5] << 8));
+                short value   = (short)(BitConverter.ToInt64(buffer, 6) & 0xFFFF);
+
+                if (cmdType == (byte)DapAttrCmdType.Ack && classId == (byte)DapAttrClassId.ServoModbus)
+                {
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        Servo_Tab?.HandleServoModbusAck(attrId, value);
+                    }));
+                }
+                return; // attr packets are not chunked reassembly
+            }
+
             // buffer[0] = ReportID (0x02), buffer[1] = pkt_type, buffer[2] = totalLen, buffer[3] = chunkLen
             byte type     = buffer[1];
             int  totalLen = buffer[2];

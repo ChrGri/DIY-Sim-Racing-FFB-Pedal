@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,8 +21,11 @@ namespace DiyFfbPedal.UIFunction
     /// <summary>
     /// One row in the servo register table.
     /// </summary>
-    public class ServoRegisterEntry
+    public class ServoRegisterEntry : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void Notify(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
         /// <summary>Insertion index – used for natural register order sorting.</summary>
         public int Index { get; set; }
         /// <summary>Register address string, e.g. "Pr0.00"</summary>
@@ -32,6 +36,39 @@ namespace DiyFfbPedal.UIFunction
         public int CurrentValue { get; set; }
         /// <summary>Factory-tuned recommended value (read-only).</summary>
         public int RecommendedValue { get; set; }
+
+        // ---- Live read-back from servo ----
+        private int? _liveValue;
+        /// <summary>
+        /// Live register value received from the servo.
+        /// null = not yet read (unknown state).
+        /// </summary>
+        public int? LiveValue
+        {
+            get => _liveValue;
+            set
+            {
+                _liveValue = value;
+                Notify(nameof(LiveValue));
+                Notify(nameof(LiveValueDisplay));
+                Notify(nameof(LiveValueColor));
+            }
+        }
+
+        /// <summary>Display string for the live value column.</summary>
+        public string LiveValueDisplay => _liveValue.HasValue ? _liveValue.Value.ToString() : "-";
+
+        // Foreground color as a string so WPF's binding engine compares by value, not by reference.
+        // This avoids the optimization where WPF skips an update because the Brush object reference
+        // didn't change (all static frozen brushes are the same object each time).
+        public string LiveValueColor
+        {
+            get
+            {
+                if (!_liveValue.HasValue) return "#FFDADADA"; // neutral
+                return _liveValue.Value == RecommendedValue ? "#FF4CAF50" : "#FFE53935"; // green / red
+            }
+        }
     }
 
     /// <summary>
@@ -434,17 +471,51 @@ namespace DiyFfbPedal.UIFunction
         /// </summary>
         public event EventHandler<ServoRegisterEntry> ServoRegisterValueChanged;
 
+        /// <summary>
+        /// Raised when the user clicks "Load current from servo".
+        /// The parent UI should subscribe and send a READ attr packet for each entry's Modbus address.
+        /// </summary>
+        public event EventHandler LoadFromServoRequested;
+
+        /// <summary>
+        /// Raised when the user clicks "Flash to servo".
+        /// The parent UI should send the NVM-save command (register 0x019A = 0x5555) to the servo.
+        /// </summary>
+        public event EventHandler FlashToServoRequested;
+
         // ---------------------------------------------------------------
         // Button handlers
         // ---------------------------------------------------------------
 
         /// <summary>
         /// Triggered when the user clicks "Load current from servo".
-        /// TODO: read live register values from the servo and update CurrentValue.
+        /// Resets all live values to unknown and raises the request event.
         /// </summary>
         private void Btn_LoadFromServo_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: implement servo register read-back
+            // Reset all live values to unknown (pending state)
+            foreach (var entry in ServoRegisters)
+                entry.LiveValue = null;
+
+            LoadFromServoRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>
+        /// Called when the ESP32 returns a ServoModbus ACK packet.
+        /// Finds the register entry with the matching Modbus address and updates its LiveValue.
+        /// </summary>
+        /// <param name="addr">Absolute Modbus holding-register address.</param>
+        /// <param name="value">Register value reported by the servo.</param>
+        public void HandleServoModbusAck(ushort addr, short value)
+        {
+            foreach (var entry in ServoRegisters)
+            {
+                if (DapAttrHelper.TryParseServoAddress(entry.Address, out ushort entryAddr) && entryAddr == addr)
+                {
+                    entry.LiveValue = (int)value;
+                    break;
+                }
+            }
         }
 
         /// <summary>
@@ -457,6 +528,16 @@ namespace DiyFfbPedal.UIFunction
 
             // Refresh the DataGrid so the new values are visible
             ServoRegisterGrid.Items.Refresh();
+        }
+
+        /// <summary>
+        /// Sends the iSV57 NVM-save command to the servo:
+        /// write 0x5555 to holding register 0x019A.
+        /// The servo persists all RAM parameters to flash; a power-cycle is required afterwards.
+        /// </summary>
+        private void Btn_FlashToServo_Click(object sender, RoutedEventArgs e)
+        {
+            FlashToServoRequested?.Invoke(this, EventArgs.Empty);
         }
 
         // ---------------------------------------------------------------

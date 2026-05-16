@@ -112,8 +112,14 @@
                         <Button Content="Reset to recommended"
                                 x:Name="Btn_ResetToRecommended"
                                 Click="Btn_ResetToRecommended_Click"
-                                Padding="8,4"
+                                Padding="8,4" Margin="0,0,6,0"
                                 VerticalAlignment="Center"/>
+                        <Button Content="Flash to servo"
+                                x:Name="Btn_FlashToServo"
+                                Click="Btn_FlashToServo_Click"
+                                Padding="8,4"
+                                VerticalAlignment="Center"
+                                ToolTip="Writes 0x5555 to register 0x019A — forces the servo to persist all parameters to NVM (requires power-cycle)"/>
                     </StackPanel>
 
                     <DataGrid x:Name="ServoRegisterGrid"
@@ -135,6 +141,7 @@
                               RowStyle="{StaticResource RowStyle}"
                               CellStyle="{StaticResource CellStyle}"
                               MaxHeight="450"
+                              EnableRowVirtualization="False"
                               CellEditEnding="ServoRegisterGrid_CellEditEnding">
 
                         <DataGrid.Columns>
@@ -160,11 +167,27 @@
                                                 Width="*"
                                                 IsReadOnly="True"/>
 
-                            <!-- Editable current value -->
-                            <DataGridTextColumn Header="Current Value"
-                                                Binding="{Binding CurrentValue,
-                                                    UpdateSourceTrigger=LostFocus}"
-                                                Width="105"/>
+                            <!-- Editable current value / live read-back -->
+                            <DataGridTemplateColumn Header="Current Value"
+                                                    Width="105"
+                                                    SortMemberPath="CurrentValue">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding LiveValueDisplay}"
+                                                   Foreground="{Binding LiveValueColor}"
+                                                   VerticalAlignment="Center"
+                                                   Padding="4,2"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <TextBox Text="{Binding CurrentValue,
+                                                     UpdateSourceTrigger=LostFocus}"
+                                                 BorderThickness="0"
+                                                 Background="Transparent"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
 
                             <!-- Recommended value (read-only, muted color) -->
                             <DataGridTemplateColumn Header="Recommended"
