@@ -10,7 +10,7 @@
 /*                                                                                            */
 /**********************************************************************************************/
 // see https://swharden.com/blog/2022-01-22-spline-interpolation/
-float ForceCurveInterpolated::EvalForceCubicSpline(const DapConfig_t* config_st, const DapCalculationVariables_t* calc_st, float fractionalPos_fl32)
+float IRAM_ATTR_FLAG ForceCurveInterpolated::EvalForceCubicSpline(const DapConfig_t* config_st, const DapCalculationVariables_t* calc_st, float fractionalPos_fl32)
 {
 
   float fractionalPosLcl_fl32 = constrain(fractionalPos_fl32, 0, 1);
@@ -102,7 +102,7 @@ float ForceCurveInterpolated::EvalForceCubicSpline(const DapConfig_t* config_st,
 /*                                                                                            */
 /**********************************************************************************************/
 
-float ForceCurveInterpolated::EvalForceGradientCubicSpline(const DapConfig_t* config_st, const DapCalculationVariables_t* calc_st, float fractionalPos_fl32, bool normalized_b)
+float IRAM_ATTR_FLAG ForceCurveInterpolated::EvalForceGradientCubicSpline(const DapConfig_t* config_st, const DapCalculationVariables_t* calc_st, float fractionalPos_fl32, bool normalized_b)
 {
   float fractionalPosLcl_fl32 = constrain(fractionalPos_fl32, 0, 1);
   float fractionalPosPercent_fl32 = fractionalPosLcl_fl32*100.0f;
@@ -194,7 +194,7 @@ float ForceCurveInterpolated::EvalForceGradientCubicSpline(const DapConfig_t* co
   {
     float dYScale_fl32 = calc_st->forceRange_fl32 / 100.0f;
     float dXScale_fl32=0.0f;
-    if (fabs(calc_st->stepperPosRange_fl32) > 0.01f)
+    if (fabsf(calc_st->stepperPosRange_fl32) > 0.01f)
     {
       dXScale_fl32 = 100.0f / calc_st->stepperPosRange_fl32;
     }
@@ -246,7 +246,7 @@ float ForceCurveInterpolated::EvalForceGradientCubicSpline(const DapConfig_t* co
 
 
 
-float ForceCurveInterpolated::EvalJoystickCubicSpline(const DapConfig_t* config_st, const DapCalculationVariables_t* calc_st, float fractionalPos_fl32)
+float IRAM_ATTR_FLAG ForceCurveInterpolated::EvalJoystickCubicSpline(const DapConfig_t* config_st, const DapCalculationVariables_t* calc_st, float fractionalPos_fl32)
 {
 
   float fractionalPosLcl_fl32 = constrain(fractionalPos_fl32, 0, 1);

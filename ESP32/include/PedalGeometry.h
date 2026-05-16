@@ -5,16 +5,16 @@
 #include "FastTrig.h"
 
 
-static inline float sledPositionInMM(StepperWithLimits* stepper_pstwl, DapConfig_t * config_pst, float motorRevolutionsPerStep_fl32) {
+static inline IRAM_ATTR_FLAG float sledPositionInMM(StepperWithLimits* stepper_pstwl, DapConfig_t * config_pst, float motorRevolutionsPerStep_fl32) {
   float currentPos_fl32 = stepper_pstwl->getCurrentPositionFromMin();
   return currentPos_fl32 * motorRevolutionsPerStep_fl32 * (float)config_pst->payloadPedalConfig_st.spindlePitch_mmPerRev_u8;
 }
 
-static inline float sledPositionInMM_withPositionAsArgument(float currentPos_fl32, DapConfig_t * config_pst, float motorRevolutionsPerStep_fl32) {
+static inline IRAM_ATTR_FLAG float sledPositionInMM_withPositionAsArgument(float currentPos_fl32, DapConfig_t * config_pst, float motorRevolutionsPerStep_fl32) {
   return currentPos_fl32 * motorRevolutionsPerStep_fl32 * (float)config_pst->payloadPedalConfig_st.spindlePitch_mmPerRev_u8;
 }
 
-static inline float pedalInclineAngleDeg(float sledPositionMm_fl32, DapConfig_t * config_pst) {
+static inline IRAM_ATTR_FLAG float pedalInclineAngleDeg(float sledPositionMm_fl32, DapConfig_t * config_pst) {
   // see https://de.wikipedia.org/wiki/Kosinussatz
   // A: is lower pedal pivot
   // C: is upper pedal pivot
@@ -39,7 +39,7 @@ static inline float pedalInclineAngleDeg(float sledPositionMm_fl32, DapConfig_t 
   float cosineDen_fl32 = 2.0f * pedalLengthB_fl32 * pedalLengthC_fl32;
   
   float alpha_fl32 = 0.0f;
-  if (abs(cosineDen_fl32) > 0.01f) {
+  if (fabsf(cosineDen_fl32) > 0.01f) {
     // alpha = acos( nom / den );
     // alpha = fastAcos( nom / den );
     alpha_fl32 = iacos( cosineNom_fl32 / cosineDen_fl32 ) * DEG_TO_RAD_FL32;
@@ -50,7 +50,7 @@ static inline float pedalInclineAngleDeg(float sledPositionMm_fl32, DapConfig_t 
 #endif
 
   // add incline due to AB incline --> result is incline realtive to horizontal 
-  if (abs(pedalLengthCHorizontal_fl32)>0.01f) {
+  if (fabsf(pedalLengthCHorizontal_fl32)>0.01f) {
     // alpha += atan2f(c_ver, c_hor); // y, x
     alpha_fl32 += atan2Fast(pedalLengthCVertical_fl32, pedalLengthCHorizontal_fl32); // y, x
   }
@@ -69,7 +69,7 @@ static inline float pedalInclineAngleDeg(float sledPositionMm_fl32, DapConfig_t 
 }
 
 
-static inline float convertToPedalForce(float loadcellForce_fl32, float sledPositionMm_fl32, DapConfig_t * config_pst) {
+static inline IRAM_ATTR_FLAG float convertToPedalForce(float loadcellForce_fl32, float sledPositionMm_fl32, DapConfig_t * config_pst) {
   // see https://de.wikipedia.org/wiki/Kosinussatz
   // A: is lower pedal pivot
   // B: is rear pedal pivot
@@ -108,7 +108,7 @@ static inline float convertToPedalForce(float loadcellForce_fl32, float sledPosi
   float cosineDen_fl32 = 2 * pedalLengthA_fl32 * pedalLengthB_fl32;
   
   float cosineArg_fl32 = 0.0f;
-  if (abs(cosineDen_fl32) > 0.01f) {
+  if (fabsf(cosineDen_fl32) > 0.01f) {
     cosineArg_fl32 = cosineNom_fl32 / cosineDen_fl32;
     cosineArg_fl32 *= cosineArg_fl32;
   }
@@ -128,7 +128,7 @@ static inline float convertToPedalForce(float loadcellForce_fl32, float sledPosi
 
 // Calculate gradient of phi with respect to sled position.
 // This is done by taking the derivative of the force with respect to the sled position.
-static inline float convertToPedalForceGain(float sledPositionMm_fl32, DapConfig_t * config_pst) {
+static inline IRAM_ATTR_FLAG float convertToPedalForceGain(float sledPositionMm_fl32, DapConfig_t * config_pst) {
   // see https://de.wikipedia.org/wiki/Kosinussatz
   // A: is lower pedal pivot
   // B: is rear pedal pivot
@@ -169,11 +169,11 @@ static inline float convertToPedalForceGain(float sledPositionMm_fl32, DapConfig
   float alphaPlusInDeg_fl32 = alphaPlus_fl32 * RAD_TO_DEG_FL32;
   float sinAlpha_fl32 = isin(alphaInDeg_fl32);
   float cosAlpha_fl32 = icos(alphaInDeg_fl32);
-  float sinAlphaPlus_fl32 = isin(alphaPlusInDeg_fl32);
+  // float sinAlphaPlus_fl32 = isin(alphaPlusInDeg_fl32);
   float cosAlphaPlus_fl32 = icos(alphaPlusInDeg_fl32);
 
   // d_alpha_d_x
-  float dAlphaDx_fl32 = - 1.0f / fabs( sinAlpha_fl32 ) * ( 1.0f / pedalLengthB_fl32 - cosAlpha_fl32 / pedalLengthC_fl32) * cosAlphaPlus_fl32;
+  float dAlphaDx_fl32 = - 1.0f / fabsf( sinAlpha_fl32 ) * ( 1.0f / pedalLengthB_fl32 - cosAlpha_fl32 / pedalLengthC_fl32) * cosAlphaPlus_fl32;
 
   // d_alphaPlus_d_x
   float dAlphaPlusDx_fl32 = - pedalLengthCVertical_fl32 / (pedalLengthC_fl32 * pedalLengthC_fl32);

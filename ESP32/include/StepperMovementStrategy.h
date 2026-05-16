@@ -94,7 +94,7 @@ float g_prevFilteredPhysicalVel_mps = 0.0f;
 /**
  * @brief Calculates dynamic travel limits based on effect offsets and local stiffness
  */
-static inline void CalcDynamicTravelLimits(
+static inline IRAM_ATTR_FLAG void CalcDynamicTravelLimits(
     float travelSteps_cnt, float localStiffness_kg_step,
     const EffectOffsets_t& effectOffsets_st,
     float& lowerTravelLimit_01, float& upperTravelLimit_01) 
@@ -123,7 +123,7 @@ static inline void CalcDynamicTravelLimits(
 /**
  * @brief Simulates a heavy spring pushing back once the travel range is exceeded
  */
-static inline float CalcSoftEndstopForce(
+static inline IRAM_ATTR_FLAG float CalcSoftEndstopForce(
     float vModelPos_01, float totalTravel_m, const EndstopBehavior_t& endstopBehavior_st,
     float& currentStiffness_N_m, float& upperTravelLimit_01) 
 {
@@ -160,7 +160,7 @@ static inline float CalcSoftEndstopForce(
  * @param hasActiveEffect Flag indicating if vibration/ABS effects are currently active.
  * @return true if an unstable limit cycle (oscillation) is detected, false otherwise.
  */
-static inline bool DetectAdmittanceOscillation(
+static inline IRAM_ATTR_FLAG bool DetectAdmittanceOscillation(
     float externalForce_N, float actualPosFraction_01, float totalTravel_m, 
     float totalSpringReaction_N, float baseDamping_Ns_m, float currentMass_kg, float dt_s,
     float maxPedalForce_kg, AdmittanceDebugState_t* debugState_st, bool hasActiveEffect)
@@ -310,7 +310,7 @@ static inline bool DetectAdmittanceOscillation(
  * @brief Position-gated Parameter Adaptation
  * Increases virtual mass during oscillations and only releases it when the pedal is near an endstop.
  */
-static inline void AdaptVirtualMass(
+static inline IRAM_ATTR_FLAG void AdaptVirtualMass(
     bool isOscillating, float dt_s, 
     float baseMass_kg, float& virtualMass_kg, bool hasActiveEffect, float actualPosFraction_01)
 {
@@ -348,7 +348,7 @@ static inline void AdaptVirtualMass(
 /**
  * @brief Calculates active damping including AOM Boost, Trajectory Shaping, and Elastomer Hysteresis.
  */
-static inline float CalcActiveDamping(
+static inline IRAM_ATTR_FLAG float CalcActiveDamping(
     float dampingRatio_zeta, float virtualMass_kg, float currentStiffness_N_m,
     float vModelPos_01, float actualPosFraction_01,
     int32_t actualServoTrackingError_i32, float travelSteps_cnt, float effectForceOffset_fl32,
@@ -461,7 +461,7 @@ static inline float CalcActiveDamping(
 /**
  * @brief Predictive EMF Reduction (Regenerative Power Clamping)
  */
-static inline void ApplyRegenPowerClamping(
+static inline IRAM_ATTR_FLAG void ApplyRegenPowerClamping(
     float virtualMass_kg, float vModelVel_mps, float& acceleration_mps2)
 {
     // If acceleration and velocity have opposite signs, the system is braking (Generator Mode).

@@ -547,7 +547,8 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 0
   //#define ESPNow_Pairing_function
   #define PAIRING_GPIO_U8 0   // Boot-Button des S3-Zero
-  #define OTA_update
+  // #define OTA_update
+  #define WIFI_DISABLE
   
   #ifndef DEBUG_KEEP_USB_SERIAL_JTAG
     #define CONTROLLER_SPECIFIC_VIDPID

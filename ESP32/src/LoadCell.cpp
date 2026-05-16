@@ -64,7 +64,7 @@ ADS1256& ADC()
     ActiveSerial->println("ADC Started");
     
     adc.waitDRDY(); // wait for DRDY to go low before changing multiplexer register
-    if ( fabs(CONVERSION_FACTOR) > 0.01f)
+    if ( fabsf(CONVERSION_FACTOR) > 0.01f)
     {
         adc.setConversionFactor(CONVERSION_FACTOR);
     }
@@ -196,7 +196,7 @@ void LoadCellAds1256::estimateBiasAndVariance()
   }
 
   _zeroPoint = mean;
-  _standardDeviationEstimate = sqrt(varEstimate);
+  _standardDeviationEstimate = sqrtf(varEstimate);
   _varianceEstimate = varEstimate;
 
   ActiveSerial->print("Offset ");

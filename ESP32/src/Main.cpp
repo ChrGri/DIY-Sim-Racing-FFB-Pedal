@@ -738,6 +738,12 @@ void setup()
   pinMode(ISV57_TXPIN, OUTPUT);
   digitalWrite(ISV57_TXPIN, HIGH); // HIGH ist der Idle-State für UART
 
+  // disable WIFI & Bluetooth to improve loadcell reading. 
+  // HINT: The ESP32 S3 zero board doen't have strong 5V signal smoothing hardware as the regular S3 devboard. 
+  #ifdef WIFI_DISABLE
+    WiFi.mode(WIFI_OFF);
+    btStop();
+  #endif
 
   DapConfig_t dap_config_st_local;
   DapConfig_t dap_config_st_eeprom;
@@ -1873,7 +1879,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       float sledPosition = sledPositionInMM(stepper, &dap_config_pedalUpdateTask_st, motorRevolutionsPerSteps_fl32);
       float pedalInclineAngleInDeg_fl32 = pedalInclineAngleDeg(sledPosition, &dap_config_pedalUpdateTask_st);
       float pedalForce_fl32 = convertToPedalForce(loadcellReading, sledPosition, &dap_config_pedalUpdateTask_st);
-      float d_phi_d_x = convertToPedalForceGain(sledPosition, &dap_config_pedalUpdateTask_st);
+      // float d_phi_d_x = convertToPedalForceGain(sledPosition, &dap_config_pedalUpdateTask_st);
 
       // compute gain for horizontal foot model
       float b = (float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st.lengthPedalB_i16;
@@ -2429,7 +2435,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
       
       
-        if ( fabs(dap_calculationVariables_st.forceRange_fl32) > 0.01f)
+        if ( fabsf(dap_calculationVariables_st.forceRange_fl32) > 0.01f)
       {
           normalizedPedalReading_fl32 = constrain((filteredReading - dap_calculationVariables_st.forceMin_fl32) / dap_calculationVariables_st.forceRange_fl32, 0.0f, 1.0f);
       }
