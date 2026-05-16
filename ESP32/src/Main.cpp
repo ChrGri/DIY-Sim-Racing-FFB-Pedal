@@ -53,13 +53,57 @@ Stream *ActiveSerial = nullptr;
 //#define ALLOW_SYSTEM_IDENTIFICATION
 
 
+#include "DiyActivePedal_types.h"
+#include "DapAttributeProtocol.h"
+
+
+/**********************************************************************************************/
+/*                                                                                            */
+/*                         variable declarations                                              */
+/*                                                                                            */
+/**********************************************************************************************/
+DapConfigClass global_dap_config_class;
+DRAM_ATTR DapCalculationVariables_t dap_calculationVariables_st;
+DapStateBasic_t dap_state_basic_st;
+DapStateExtended_t dap_state_extended_st;
+DapEspPairing_t dap_esppairing_st;//saving
+DapEspPairing_t dap_esppairing_lcl;//sending
+DapActionOta_t dap_action_ota_st;//OTA command(do not check version)
+
+
+
+/**********************************************************************************************/
+/*                                                                                            */
+/*                         struct definitions                                                 */
+/*                                                                                            */
+/**********************************************************************************************/
+typedef struct {
+    DapStateBasic_t    basic_st;
+    DapStateExtended_t extended_st;
+    bool sendBasicFlag_b;
+    bool sendExtendedFlag_b;
+} PedalStatePackage_t;
+
+typedef struct {
+    uint16_t joystickNormalizedToUInt16;
+    bool sendJoystickFlag_b;
+} joystickDataPackage_t;
+
+typedef struct {
+    float loadcellReadingInKg_fl32;
+} loadcellDataPackage_t;
+
+typedef struct {
+    DapConfig_t config_st;
+} configDataPackage_t;
+
 
 /**********************************************************************************************/
 /*                                                                                            */
 /*                         function declarations                                              */
 /*                                                                                            */
 /**********************************************************************************************/
-void updatePedalCalcParameters();
+void updatePedalCalcParameters(const DapConfig_t& newConfig);
 void pedalUpdateTask( void * pvParameters );
 void loadcellReadingTask( void * pvParameters );
 void profilerTask( void * pvParameters );
@@ -94,7 +138,6 @@ inline uint16_t checksumCalculator_u16(uint8_t * data_pu8, uint16_t length_u16)
 
 
 
-volatile bool systemIdentificationMode_b = false;
 unsigned long saveToEEPRomDuration=0;
 
 
@@ -126,8 +169,7 @@ MovingAverageFilter averagefilter_joystick(40);
 
 
 
-#include "DiyActivePedal_types.h"
-#include "DapAttributeProtocol.h"
+
 
 // Forward declarations for attribute apply/read helpers (defined in DapAttributeProtocol.cpp)
 #ifdef USE_VENDOR_HID
@@ -136,13 +178,6 @@ void DapAttr_ReadFromConfig(const PayloadPedalConfig_t* cfg, DapAttrPacket_t* pk
 void DapAttr_ApplyToAction(DapActions_t* act, const DapAttrPacket_t* pkt);
 #endif
 
-DapConfigClass global_dap_config_class;
-DRAM_ATTR DapCalculationVariables_t dap_calculationVariables_st;
-DapStateBasic_t dap_state_basic_st;
-DapStateExtended_t dap_state_extended_st;
-DapEspPairing_t dap_esppairing_st;//saving
-DapEspPairing_t dap_esppairing_lcl;//sending
-DapActionOta_t dap_action_ota_st;//OTA command(do not check version)
 
 
 
@@ -194,31 +229,12 @@ static QueueHandle_t s_loadcellDataQueue = NULL;
 static QueueHandle_t s_configUpdateAvailableQueue = NULL;
 static QueueHandle_t s_configUpdateSendToPedalUpdateTaskQueue = NULL;
 static QueueHandle_t s_configUpdateSendToLoadcellTaskQueue = NULL;
+static QueueHandle_t s_actionCommandQueue = NULL;
 // static QueueHandle_t configUpdateSendToJoystickTaskQueue = NULL;
 static QueueHandle_t s_configUpdateSendToSerialRXTaskQueue = NULL;
+static QueueHandle_t s_systemControlQueue = NULL;
 
 
-
-// ADD THIS: New data structure to send both states together in one package
-typedef struct {
-    DapStateBasic_t    basic_st;
-    DapStateExtended_t extended_st;
-    bool sendBasicFlag_b;
-    bool sendExtendedFlag_b;
-} PedalStatePackage_t;
-
-typedef struct {
-    uint16_t joystickNormalizedToUInt16;
-    bool sendJoystickFlag_b;
-} joystickDataPackage_t;
-
-typedef struct {
-    float loadcellReadingInKg_fl32;
-} loadcellDataPackage_t;
-
-typedef struct {
-    DapConfig_t config_st;
-} configDataPackage_t;
 
 
 
@@ -819,6 +835,16 @@ void setup()
   {
     ActiveSerial->println("Error creating the config data queue!");
   }
+  s_actionCommandQueue = xQueueCreate(10, sizeof(DapActions_t));
+  if (s_actionCommandQueue == NULL)
+  {
+    ActiveSerial->println("Error creating the action command queue!");
+  }
+  s_systemControlQueue = xQueueCreate(5, sizeof(uint8_t));
+  if (s_systemControlQueue == NULL)
+  {
+    ActiveSerial->println("Error creating the system control queue!");
+  }
 
 
 
@@ -1361,7 +1387,7 @@ xTaskCreatePinnedToCore(
 /*                         Calc update function                                               */
 /*                                                                                            */
 /**********************************************************************************************/
-void updatePedalCalcParameters()
+void updatePedalCalcParameters(const DapConfig_t& newConfig)
 {
   DapConfig_t dap_config_st_local;  
   global_dap_config_class.getConfig(&dap_config_st_local, 500);
@@ -1561,6 +1587,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
   static bool sendExtendedFlag_b = false;
   static int32_t stepperPosCurrent_i32;
   static uint32_t cycleCount_u32 = 0;
+  
+  bool local_systemIdentificationMode_b = false;
+  bool local_OTA_status_b = false;
 
   AdmittanceDebugState_t admittanceDebugInfo_st;
   AdmittanceStates_t admittanceStates_st;
@@ -1572,6 +1601,35 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
     // trigger task 
     if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
     {
+      DapActions_t incomingAction;
+      if (xQueueReceive(s_actionCommandQueue, &incomingAction, 0) == pdPASS) {
+        if (incomingAction.payloadPedalAction_st.triggerAbs_u8 > 0) {
+          absOscillation.trigger();
+          dap_calculationVariables_st.trackCondition_u8 =
+              (incomingAction.payloadPedalAction_st.triggerAbs_u8 > 1)
+              ? (incomingAction.payloadPedalAction_st.triggerAbs_u8 - 1) : 0;
+        }
+        _RPMOscillation.rpmValue_fl32 = incomingAction.payloadPedalAction_st.rpm_u8;
+        gForceEffect_.gValue_fl32     = incomingAction.payloadPedalAction_st.gValue_u8 - 128;
+        if (incomingAction.payloadPedalAction_st.wheelSlip_u8) _WSOscillation.trigger();
+        if (!dap_calculationVariables_st.rudderStatus_b) {
+          roadImpactEffect_.roadImpactValue_u8 = incomingAction.payloadPedalAction_st.impactValue_u8;
+        }
+        if (incomingAction.payloadPedalAction_st.startSystemIdentification_u8) {
+          local_systemIdentificationMode_b = true;
+        }
+        if (incomingAction.payloadPedalAction_st.triggerCv1_u8) customVibration1_.trigger();
+        if (incomingAction.payloadPedalAction_st.triggerCv2_u8) customVibration2_.trigger();
+        if (incomingAction.payloadPedalAction_st.triggerCv3_u8) customVibration3_.trigger();
+        if (incomingAction.payloadPedalAction_st.triggerCv4_u8) customVibration4_.trigger();
+      }
+
+      uint8_t systemControlEvent;
+      if (xQueueReceive(s_systemControlQueue, &systemControlEvent, 0) == pdPASS) {
+        if (systemControlEvent == 1) { // 1 = OTA Start / Stop Motor
+            local_OTA_status_b = true;
+        }
+      }
 
       // if new data package is available, update the local config
       if (xQueueReceive(s_configUpdateSendToPedalUpdateTaskQueue, &configPackage_st, (TickType_t)0) == pdPASS)
@@ -1612,7 +1670,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           saveToEEPRomDuration = 0;
         }
         
-        updatePedalCalcParameters(); // update the calc parameters
+        updatePedalCalcParameters(dap_config_pedalUpdateTask_st); // update the calc parameters
         moveSlowlyToPosition_b = true;
 
         // enable/disable step loss recovery and crash
@@ -2208,7 +2266,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         //if (stepper->isAtMinPos())
         {
           #if defined(OTA_update_ESP32) || defined(OTA_update)
-            if(g_OTA_status==false)
+            if(local_OTA_status_b==false)
             {
               stepper->correctPos();
             }
@@ -2225,7 +2283,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // stop movement, when OTA is in progres
       bool doMovement_b = true;
       #if defined(OTA_update_ESP32) || defined(OTA_update)
-        if(g_OTA_status==true)
+        if(local_OTA_status_b==true)
         {
           doMovement_b = false;
         } 
@@ -2792,22 +2850,8 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                         g_OTA_enable_b = true; g_ESPNow_OTA_enable = false;
                       }
                       #endif
-                      if (pending_action.payloadPedalAction_st.triggerAbs_u8 > 0) {
-                        absOscillation.trigger();
-                        dap_calculationVariables_st.trackCondition_u8 =
-                            (pending_action.payloadPedalAction_st.triggerAbs_u8 > 1)
-                            ? (pending_action.payloadPedalAction_st.triggerAbs_u8 - 1) : 0;
-                      }
-                      _RPMOscillation.rpmValue_fl32 = pending_action.payloadPedalAction_st.rpm_u8;
-                      gForceEffect_.gValue_fl32     = pending_action.payloadPedalAction_st.gValue_u8 - 128;
-                      if (pending_action.payloadPedalAction_st.wheelSlip_u8) _WSOscillation.trigger();
-                      if (!dap_calculationVariables_st.rudderStatus_b)
-                        roadImpactEffect_.roadImpactValue_u8 = pending_action.payloadPedalAction_st.impactValue_u8;
-                      if (pending_action.payloadPedalAction_st.startSystemIdentification_u8) systemIdentificationMode_b = true;
-                      if (pending_action.payloadPedalAction_st.triggerCv1_u8) customVibration1_.trigger();
-                      if (pending_action.payloadPedalAction_st.triggerCv2_u8) customVibration2_.trigger();
-                      if (pending_action.payloadPedalAction_st.triggerCv3_u8) customVibration3_.trigger();
-                      if (pending_action.payloadPedalAction_st.triggerCv4_u8) customVibration4_.trigger();
+                      // Send action to pedalUpdateTask via Queue
+                      xQueueSend(s_actionCommandQueue, &pending_action, (TickType_t)0);
                       if (pending_action.payloadPedalAction_st.returnPedalConfig_u8) {
                         sct_dap_config_st.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
                         sct_dap_config_st.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
@@ -3029,52 +3073,8 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                             ActiveSerial->println(logString);
                           }
 
-                          // trigger ABS effect
-                          if (received_action.payloadPedalAction_st.triggerAbs_u8>0)
-                          {
-                            // ActiveSerial->println("Trigger ABS");
-                            absOscillation.trigger();
-                            if(received_action.payloadPedalAction_st.triggerAbs_u8>1)
-                            {
-                              dap_calculationVariables_st.trackCondition_u8=received_action.payloadPedalAction_st.triggerAbs_u8-1;
-                            }
-                            else
-                            {
-                              dap_calculationVariables_st.trackCondition_u8=received_action.payloadPedalAction_st.triggerAbs_u8=0;
-                            }
-                          }
-                          //RPM effect
-                          _RPMOscillation.rpmValue_fl32=received_action.payloadPedalAction_st.rpm_u8;
-                          //G force effect
-                          gForceEffect_.gValue_fl32=received_action.payloadPedalAction_st.gValue_u8-128;       
-                          //wheel slip
-                          if (received_action.payloadPedalAction_st.wheelSlip_u8)
-                          {
-                            _WSOscillation.trigger();
-                          }     
-                          //Road impact
-                          if(dap_calculationVariables_st.rudderStatus_b==false)
-                          {
-                            roadImpactEffect_.roadImpactValue_u8=received_action.payloadPedalAction_st.impactValue_u8;
-                          }
-                          else
-                          {
-
-                          }
-                          
-                          // trigger system identification
-                          if (received_action.payloadPedalAction_st.startSystemIdentification_u8)
-                          {
-                            systemIdentificationMode_b = true;
-                          }
-                          // trigger Custom effect effect 1
-                          if (received_action.payloadPedalAction_st.triggerCv1_u8) customVibration1_.trigger();
-                          // trigger Custom effect effect 2
-                          if (received_action.payloadPedalAction_st.triggerCv2_u8) customVibration2_.trigger();
-                          // trigger Custom effect effect 3
-                          if (received_action.payloadPedalAction_st.triggerCv3_u8) customVibration3_.trigger();
-                          // trigger Custom effect effect 4
-                          if (received_action.payloadPedalAction_st.triggerCv4_u8) customVibration4_.trigger();
+                          // Send action to pedalUpdateTask via Queue
+                          xQueueSend(s_actionCommandQueue, &received_action, (TickType_t)0);
                           // trigger return pedal position
                           if (received_action.payloadPedalAction_st.returnPedalConfig_u8)
                           {
@@ -3459,6 +3459,11 @@ void otaUpdateTask( void * pvParameters )
           if(result==ESP_OK)
           {
             g_OTA_status=true;
+            
+            // notify pedal task to stop movement
+            uint8_t ota_event = 1;
+            xQueueSend(s_systemControlQueue, &ota_event, (TickType_t)0);
+
             Buzzer.single_beep_tone(700,100); 
             delay(1000);
             #ifdef OTA_update_ESP32
