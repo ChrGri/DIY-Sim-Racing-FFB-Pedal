@@ -567,9 +567,32 @@ void Isv57Communication::readServoStates() {
 
 
 
-bool Isv57Communication::clearServoAlarms() {
+int Isv57Communication::readRegisters(
+        uint16_t startAddr_u16, uint8_t count_u8, int16_t* out_pi16)
+{
+    if (count_u8 == 0 || out_pi16 == nullptr) return -1;
 
-  // read the alarm list
+    int bytesReceived = modbus.sendRequestAndReceiveResponse(
+        slaveId, 0x03, (int32_t)startAddr_u16, (int32_t)count_u8);
+
+    if (bytesReceived != (count_u8 * 2)) return -1;
+
+    modbus.getRawRxBuffer(raw, len);
+    for (uint8_t i = 0; i < count_u8; i++) {
+        out_pi16[i] = modbus.convertRxBufferToInt16(i);
+    }
+    return (int)count_u8;
+}
+
+int32_t Isv57Communication::writeHoldingRegisterToDevice(
+        int32_t slaveId_i32, int32_t registerAddress_i32, uint16_t value_u16)
+{
+    return modbus.writeHoldingRegisterToDevice(slaveId_i32, registerAddress_i32, value_u16);
+}
+
+
+
+bool Isv57Communication::clearServoAlarms() {
   // int8_t numberOfRegistersToRead_u8 = 0;
   // Alarm register address: 0x02
   //int bytesReceived_i = modbus.requestFrom(slaveId, 0x03, 0x02, numberOfRegistersToRead_u8);

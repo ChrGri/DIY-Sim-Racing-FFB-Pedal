@@ -195,6 +195,24 @@ void StepperWithLimits::clearAllServoAlarms() { clearAllServoAlarms_b = true; }
 void StepperWithLimits::printAllServoParameters() { logAllServoParams = true; }
 void StepperWithLimits::configSetProfilingFlag(bool proFlag_b) { s_printProfilingFlag_b = proFlag_b; }
 
+void StepperWithLimits::scheduleServoModbusCmd(const ServoModbusCmd_t& cmd)
+{
+    // Write struct first, then set flag (acts as release fence on volatile).
+    servoModbusPendingCmd_st = cmd;
+    servoModbusCmdPending_b  = true;
+}
+
+bool StepperWithLimits::tryGetServoModbusReadResult(
+        uint16_t& addrOut, int16_t* valuesOut, uint8_t& countOut)
+{
+    if (!servoModbusReadReady_b) return false;
+    addrOut  = servoModbusReadAddr_u16;
+    countOut = servoModbusReadCount_u8;
+    memcpy(valuesOut, servoModbusReadResult, countOut * sizeof(int16_t));
+    servoModbusReadReady_b = false;  // consume the result
+    return true;
+}
+
 // --- Sensorless Homing Routine ---
 // Automatically sweeps the pedal to find physical minimum and maximum bounds
 // by monitoring the servo's internal current/load telemetry.
@@ -465,6 +483,51 @@ void IRAM_ATTR StepperWithLimits::processPendingCommands() {
         updateServoParams_b = false;
         ActiveSerial->println("Updating Servo parameters.");
         // Note: The specific parameter updates would be applied here
+    }
+
+    // --- Pending Servo Modbus Command (UI-triggered register access) ---
+    // Consumed here on the servo task to avoid concurrent Serial2 access.
+    if (servoModbusCmdPending_b) {
+        servoModbusCmdPending_b = false;  // clear flag first
+
+        const ServoModbusCmd_t& cmd = servoModbusPendingCmd_st;
+        uint8_t count = (cmd.count_u8 > 8u) ? 8u : cmd.count_u8;
+
+        if (cmd.isWrite_b) {
+            // WRITE: FC06 writes exactly 1 register per frame.
+            // Multiple registers are written as consecutive single writes.
+            ActiveSerial->printf("[ServoModbus] WRITE addr=0x%04X count=%u\n",
+                                 cmd.startAddr_u16, count);
+            for (uint8_t i = 0; i < count; i++) {
+                ActiveSerial->printf("[ServoModbus]   reg[%u] 0x%04X = %d\n",
+                                     i, cmd.startAddr_u16 + i, cmd.values[i]);
+                isv57.writeHoldingRegisterToDevice(
+                    isv57.slaveId,
+                    (int32_t)(cmd.startAddr_u16 + i),
+                    (uint16_t)cmd.values[i]);
+            }
+            ActiveSerial->printf("[ServoModbus] WRITE done\n");
+        } else {
+            // READ: read 'count' consecutive registers in a single FC03 frame
+            // (same pattern as readServoStates()).
+            ActiveSerial->printf("[ServoModbus] READ addr=0x%04X count=%u\n",
+                                 cmd.startAddr_u16, count);
+            int16_t buf[8] = {};
+            int n = isv57.readRegisters(cmd.startAddr_u16, count, buf);
+            if (n > 0) {
+                for (uint8_t i = 0; i < (uint8_t)n; i++) {
+                    ActiveSerial->printf("[ServoModbus]   reg[%u] 0x%04X = %d\n",
+                                         i, cmd.startAddr_u16 + i, buf[i]);
+                }
+                memcpy(servoModbusReadResult, buf, n * sizeof(int16_t));
+                servoModbusReadCount_u8 = (uint8_t)n;
+                servoModbusReadAddr_u16 = cmd.startAddr_u16;
+                servoModbusReadReady_b  = true;
+                ActiveSerial->printf("[ServoModbus] READ done, %d register(s) ready\n", n);
+            } else {
+                ActiveSerial->printf("[ServoModbus] READ failed (n=%d)\n", n);
+            }
+        }
     }
 }
 

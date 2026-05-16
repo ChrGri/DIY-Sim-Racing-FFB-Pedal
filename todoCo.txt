@@ -1,0 +1,304 @@
+=============================================================================
+TODO: ESP32 Firmware Changes for ServoModbus Attribute Class
+=============================================================================
+Erstellt: 2025-07-14
+
+Kontext:
+  Der SimHub-Plugin sendet DapAttrPacket_t mit classId_u8 = 0x02
+  (DAP_ATTR_CLASS_SERVO_MODBUS) um iSV57-Register direkt aus der UI
+  heraus zu lesen/schreiben. Die Firmware kennt diese Klasse noch nicht.
+  Ziel: Modbus-Zugriff soll thread-safe ueber die bestehende State Machine
+  in StepperWithLimits::processPendingCommands() abgewickelt werden,
+  analog zum Pattern in Isv57Communication::readServoStates().
+  Mehrere aufeinanderfolgende Register sollen in einem einzigen Modbus-Frame
+  gelesen werden (FC03 mit count > 1), wie es readServoStates() macht.
+=============================================================================
+
+
+------------------------------------------------------------------------------
+DATEI 1: Common_Libs/DiyActivePedal_types/src/DapAttributeProtocol.h
+------------------------------------------------------------------------------
+AENDERUNG: Neuen Enum-Wert DAP_ATTR_CLASS_SERVO_MODBUS = 0x02u in
+           DapAttrClassId_e einfuegen.
+
+VORHER:
+    typedef enum : uint8_t
+    {
+        DAP_ATTR_CLASS_CONFIG = 0x00u,
+        DAP_ATTR_CLASS_ACTION = 0x01u,
+    } DapAttrClassId_e;
+
+NACHHER:
+    typedef enum : uint8_t
+    {
+        DAP_ATTR_CLASS_CONFIG       = 0x00u,
+        DAP_ATTR_CLASS_ACTION       = 0x01u,
+        DAP_ATTR_CLASS_SERVO_MODBUS = 0x02u,
+            // attrId_u16 = absoluter Modbus holding-register Adresse
+            //              (PC-seitig bereits via pr_X_00 offsets aufgeloest)
+            // value_i64  = Registerwert (int16 Bereich) bei WRITE
+            //              oder ignoriert bei READ
+    } DapAttrClassId_e;
+
+HINWEIS: Diese Lib wird von allen Targets genutzt (ESP32, BridgeFirmware,
+         ESP32_master). Aenderung ist rueckwaertskompatibel (neuer Wert,
+         keine bestehenden Werte veraendert).
+
+
+------------------------------------------------------------------------------
+DATEI 2: ESP32/include/isv57communication.h
+------------------------------------------------------------------------------
+AENDERUNG: Neue public-Methode readRegisters deklarieren.
+           Einfuegen in den public-Bereich der Klasse Isv57Communication.
+
+    // Reads 'count' consecutive holding registers starting at startAddr_u16
+    // using a single Modbus FC03 frame (same pattern as readServoStates).
+    // Returns number of registers successfully read, or -1 on error.
+    // Output values are written to out_pi16[0..count-1].
+    int readRegisters(uint16_t startAddr_u16,
+                      uint8_t  count_u8,
+                      int16_t* out_pi16);
+
+
+------------------------------------------------------------------------------
+DATEI 3: ESP32/src/isv57communication.cpp
+------------------------------------------------------------------------------
+AENDERUNG: readRegisters implementieren.
+           Einfuegen nach readServoStates() als naechste Funktion.
+
+    int Isv57Communication::readRegisters(
+            uint16_t startAddr_u16, uint8_t count_u8, int16_t* out_pi16)
+    {
+        if (count_u8 == 0 || out_pi16 == nullptr) return -1;
+
+        int bytesReceived = modbus.sendRequestAndReceiveResponse(
+            slaveId, 0x03, (int32_t)startAddr_u16, (int32_t)count_u8);
+
+        if (bytesReceived != (count_u8 * 2)) return -1;
+
+        modbus.getRawRxBuffer(raw, len);
+        for (uint8_t i = 0; i < count_u8; i++) {
+            out_pi16[i] = modbus.convertRxBufferToInt16(i);
+        }
+        return (int)count_u8;
+    }
+
+DESIGN-NOTE: Das Pattern ist identisch zu readServoStates().
+             sendRequestAndReceiveResponse sendet FC03 mit startAddr und
+             count, empfaengt count*2 Bytes Nutzdaten.
+             convertRxBufferToInt16(i) liefert Register i als int16.
+
+
+------------------------------------------------------------------------------
+DATEI 4: ESP32/include/StepperWithLimits.h
+------------------------------------------------------------------------------
+AENDERUNG A: Neues struct fuer einen pending Servo-Register-Befehl.
+             Einfuegen oberhalb der class-Definition (nach den Enums).
+
+    // Command struct for UI-triggered iSV57 register access.
+    // Supports batched reads of up to 8 consecutive registers in one FC03 frame.
+    struct ServoModbusCmd_t {
+        uint16_t startAddr_u16;  // first Modbus holding-register address
+        uint8_t  count_u8;       // number of consecutive registers (1..8)
+        bool     isWrite_b;      // true = WRITE, false = READ
+        int16_t  values[8];      // write values (used only when isWrite_b == true)
+    };
+
+AENDERUNG B: Folgende private Member in der Klasse ergaenzen
+             (nach den bestehenden bool-Flags, z.B. nach updateServoParams_b):
+
+    // Pending servo register command written by serialCommunicationTaskRx,
+    // consumed by processPendingCommands() on the servo task.
+    volatile bool         servoModbusCmdPending_b  = false;
+    ServoModbusCmd_t      servoModbusPendingCmd_st = {};
+
+    // Result buffer for READ replies; written by processPendingCommands(),
+    // polled by serialCommunicationTaskRx via tryGetServoModbusReadResult().
+    volatile bool         servoModbusReadReady_b   = false;
+    int16_t               servoModbusReadResult[8] = {};
+    uint8_t               servoModbusReadCount_u8  = 0;
+    uint16_t              servoModbusReadAddr_u16  = 0;
+
+AENDERUNG C: Zwei public Methoden deklarieren
+             (nach den bestehenden public configuration-Trigger-Methoden):
+
+    // Schedule a register access to be executed by the servo task.
+    // Non-blocking: returns immediately; actual Modbus IO happens later.
+    void scheduleServoModbusCmd(const ServoModbusCmd_t& cmd);
+
+    // Poll for a completed READ result. Returns true and fills output params
+    // if a result is available. Clears the ready-flag after reading.
+    bool tryGetServoModbusReadResult(uint16_t& addrOut,
+                                     int16_t*  valuesOut,
+                                     uint8_t&  countOut);
+
+
+------------------------------------------------------------------------------
+DATEI 5: ESP32/src/StepperWithLimits.cpp
+------------------------------------------------------------------------------
+AENDERUNG A: scheduleServoModbusCmd implementieren.
+             Einfuegen nach clearAllServoAlarms / resetServoParametersToFactory.
+
+    void StepperWithLimits::scheduleServoModbusCmd(
+            const ServoModbusCmd_t& cmd)
+    {
+        // Write struct first, then set flag (acts as release fence on volatile).
+        servoModbusPendingCmd_st = cmd;
+        servoModbusCmdPending_b  = true;
+    }
+
+AENDERUNG B: tryGetServoModbusReadResult implementieren.
+
+    bool StepperWithLimits::tryGetServoModbusReadResult(
+            uint16_t& addrOut, int16_t* valuesOut, uint8_t& countOut)
+    {
+        if (!servoModbusReadReady_b) return false;
+        addrOut  = servoModbusReadAddr_u16;
+        countOut = servoModbusReadCount_u8;
+        memcpy(valuesOut, servoModbusReadResult, countOut * sizeof(int16_t));
+        servoModbusReadReady_b = false;  // consume the result
+        return true;
+    }
+
+AENDERUNG C: processPendingCommands() am Ende um den neuen Block ergaenzen.
+             Einfuegen direkt vor der schliessenden Klammer der Funktion.
+             (Aktuell endet die Funktion nach dem updateServoParams_b-Block.)
+
+    // --- Pending Servo Modbus Command (UI-triggered register access) ---
+    // Consumed here on the servo task to avoid concurrent Serial2 access.
+    if (servoModbusCmdPending_b) {
+        servoModbusCmdPending_b = false;  // clear flag first
+
+        const ServoModbusCmd_t& cmd = servoModbusPendingCmd_st;
+        uint8_t count = (cmd.count_u8 > 8u) ? 8u : cmd.count_u8;
+
+        if (cmd.isWrite_b) {
+            // WRITE: Modbus FC06 schreibt immer genau 1 Register pro Frame.
+            // Mehrere Register werden als aufeinanderfolgende Einzelschreibvorgaenge
+            // abgearbeitet (kein FC16 Multi-Write noetig fuer kleine Anzahlen).
+            for (uint8_t i = 0; i < count; i++) {
+                isv57.writeHoldingRegisterToDevice(
+                    isv57.slaveId,
+                    (int32_t)(cmd.startAddr_u16 + i),
+                    (uint16_t)cmd.values[i]);
+            }
+
+        } else {
+            // READ: count aufeinanderfolgende Register in einem einzigen
+            // FC03-Frame lesen (analog zu readServoStates()).
+            int16_t buf[8] = {};
+            int n = isv57.readRegisters(cmd.startAddr_u16, count, buf);
+            if (n > 0) {
+                memcpy(servoModbusReadResult, buf, n * sizeof(int16_t));
+                servoModbusReadCount_u8 = (uint8_t)n;
+                servoModbusReadAddr_u16 = cmd.startAddr_u16;
+                servoModbusReadReady_b  = true;
+            }
+        }
+    }
+
+
+------------------------------------------------------------------------------
+DATEI 6: ESP32/src/Main.cpp
+------------------------------------------------------------------------------
+AENDERUNG A: Neuen else-if-Zweig im Attribute-Dispatcher in
+             serialCommunicationTaskRx() einfuegen.
+
+POSITION: Direkt nach dem abschliessenden } des DAP_ATTR_CLASS_ACTION-Blocks,
+          vor dem Kommentar "} // while VendorHID_ReadAttrPacket" (ca. Zeile 2928).
+
+    } else if (attr_pkt.classId_u8 ==
+               (uint8_t)DAP_ATTR_CLASS_SERVO_MODBUS) {
+
+        ServoModbusCmd_t cmd = {};
+        cmd.startAddr_u16 = attr_pkt.attrId_u16;
+        cmd.count_u8      = 1;   // single register per packet
+        cmd.isWrite_b     = (attr_pkt.cmdType_u8 ==
+                             (uint8_t)DAP_ATTR_CMD_WRITE);
+
+        if (cmd.isWrite_b) {
+            cmd.values[0] = (int16_t)(attr_pkt.value_i64 & 0xFFFF);
+        }
+
+        if (stepper != nullptr) {
+            stepper->scheduleServoModbusCmd(cmd);
+        }
+
+        // WRITE: send ACK immediately (fire-and-forget).
+        // READ:  ACK with value is sent below when the result is ready.
+        if (cmd.isWrite_b) {
+            DapAttrPacket_t ack = attr_pkt;
+            ack.cmdType_u8 = (uint8_t)DAP_ATTR_CMD_ACK;
+            VendorHID_SendAttrReply(&ack);
+        }
+    }
+
+AENDERUNG B: Polling fuer READ-Ergebnisse einfuegen.
+             Direkt nach dem "} // while VendorHID_ReadAttrPacket"-Kommentar,
+             noch innerhalb des "#ifdef USE_VENDOR_HID"-Blocks.
+
+    // Poll for pending servo Modbus READ results and forward to PC.
+    if (stepper != nullptr) {
+        uint16_t addr    = 0;
+        int16_t  vals[8] = {};
+        uint8_t  cnt     = 0;
+        if (stepper->tryGetServoModbusReadResult(addr, vals, cnt)) {
+            for (uint8_t i = 0; i < cnt; i++) {
+                DapAttrPacket_t reply = {};
+                reply.cmdType_u8  = (uint8_t)DAP_ATTR_CMD_ACK;
+                reply.classId_u8  = (uint8_t)DAP_ATTR_CLASS_SERVO_MODBUS;
+                reply.attrId_u16  = (uint16_t)(addr + i);
+                reply.value_i64   = (int64_t)vals[i];
+                VendorHID_SendAttrReply(&reply);
+            }
+        }
+    }
+
+
+------------------------------------------------------------------------------
+THREAD-SAFETY ANALYSE
+------------------------------------------------------------------------------
+  Beide Tasks (serialCommunicationTaskRx und servoCommunicationTask) laufen
+  typischerweise auf dem gleichen Core (Core 0).
+
+  servoModbusCmdPending_b ist volatile bool:
+  - scheduleServoModbusCmd: schreibt struct zuerst, setzt Flag danach
+    (release-Semantik durch volatile auf ESP32-S3).
+  - processPendingCommands: liest Flag zuerst, liest struct danach
+    (acquire-Semantik durch volatile auf ESP32-S3).
+  - Auf ESP32-S3 sind bool-Writes und 32-bit-aligned Writes atomar.
+  - Ein Mutex ist fuer den Prototyp nicht noetig. Fuer Produktion:
+    portENTER_CRITICAL / portEXIT_CRITICAL um scheduleServoModbusCmd.
+
+  servoModbusReadReady_b ist volatile bool (analoges handshake-Muster).
+
+  WICHTIG: Kein direkter Modbus-Zugriff aus serialCommunicationTaskRx!
+  Alle iSV57-Zugriffe bleiben im servoCommunicationTask-Context, der
+  bereits alle anderen isv57.*-Aufrufe besitzt. Keine Kollision moeglich.
+
+
+------------------------------------------------------------------------------
+ZUSAMMENFASSUNG ALLER DATEIEN
+------------------------------------------------------------------------------
+Datei                                               Aenderungsgroesse
+----------------------------------------------------+-------------------------
+Common_Libs/.../DapAttributeProtocol.h              +4 Zeilen (1 Enum-Wert)
+ESP32/include/isv57communication.h                  +5 Zeilen (1 Methode)
+ESP32/src/isv57communication.cpp                    +14 Zeilen (Implementierung)
+ESP32/include/StepperWithLimits.h                   +22 Zeilen (struct+member+decl)
+ESP32/src/StepperWithLimits.cpp                     +50 Zeilen (3 Methoden)
+ESP32/src/Main.cpp                                  +38 Zeilen (dispatcher+poll)
+=============================================================================
+
+REIHENFOLGE DER IMPLEMENTIERUNG:
+  1. Common_Libs/.../DapAttributeProtocol.h      (Enum-Wert hinzufuegen)
+  2. ESP32/include/isv57communication.h          (readRegisters deklarieren)
+  3. ESP32/src/isv57communication.cpp            (readRegisters implementieren)
+  4. ESP32/include/StepperWithLimits.h           (struct + member + decl)
+  5. ESP32/src/StepperWithLimits.cpp             (3 Methoden implementieren)
+  6. ESP32/src/Main.cpp                          (dispatcher + poll)
+  7. Kompilieren mit BUILD-TARGET: ControlBoard_V6_without_espnow
+     oder ControlBoard_V7_without_espnow (USE_VENDOR_HID aktiv)
+  8. Testen: UI-Servo-Tab -> Register lesen -> Wert anzeigen
+             UI-Servo-Tab -> Register schreiben -> Servo-Response pruefen
+=============================================================================

@@ -20,8 +20,9 @@ namespace DiyFfbPedal
 
     public enum DapAttrClassId : byte
     {
-        Config = 0x00,
-        Action = 0x01,
+        Config     = 0x00,
+        Action     = 0x01,
+        ServoModbus = 0x02,   // iSV57 Modbus register read/write
     }
 
     public enum DapConfigAttrId : ushort
@@ -251,6 +252,46 @@ namespace DiyFfbPedal
             byte[] bytes = BitConverter.GetBytes(f);
             int i = BitConverter.ToInt32(bytes, 0);
             return i; // implicit widening to long, lower 4 bytes = float bits
+        }
+
+        /// <summary>
+        /// Converts an iSV57 register address string ("Pr0.00" … "Pr7.49") to
+        /// the Modbus holding-register address used by the firmware.
+        ///
+        /// Register block base addresses (from isv57communication.h):
+        ///   pr_0_00 = 0x0000
+        ///   pr_1_00 = pr_0_00 + 25  (0x0019)
+        ///   pr_2_00 = pr_1_00 + 40  (0x0041)
+        ///   pr_3_00 = pr_2_00 + 30  (0x005F)
+        ///   pr_4_00 = pr_3_00 + 30  (0x007D)
+        ///   pr_5_00 = pr_4_00 + 50  (0x00AF)
+        ///   pr_6_00 = pr_5_00 + 40  (0x00D7)
+        ///   pr_7_00 = pr_6_00 + 40  (0x00FF)
+        /// </summary>
+        /// <param name="address">Address string, e.g. "Pr1.03".</param>
+        /// <param name="modbusAddr">Resulting Modbus register address.</param>
+        /// <returns>True on success, false if the string could not be parsed.</returns>
+        public static bool TryParseServoAddress(string address, out ushort modbusAddr)
+        {
+            modbusAddr = 0;
+            if (string.IsNullOrEmpty(address)) return false;
+
+            string s = address.Trim();
+            if (s.Length < 2) return false;
+            if (!s.StartsWith("Pr", StringComparison.OrdinalIgnoreCase)) return false;
+
+            int dotIdx = s.IndexOf('.');
+            if (dotIdx < 0) return false;
+
+            if (!int.TryParse(s.Substring(2, dotIdx - 2), out int block)) return false;
+            if (!int.TryParse(s.Substring(dotIdx + 1), out int offset)) return false;
+
+            // Block base addresses (matching #defines in isv57communication.h)
+            int[] blockBase = { 0x0000, 0x0019, 0x0041, 0x005F, 0x007D, 0x00AF, 0x00D7, 0x00FF };
+            if (block < 0 || block >= blockBase.Length) return false;
+
+            modbusAddr = (ushort)(blockBase[block] + offset);
+            return true;
         }
     }
 }

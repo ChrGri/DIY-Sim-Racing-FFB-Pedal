@@ -25,6 +25,15 @@ enum ServoStatus
 
 class FunctionProfiler; // Forward declaration for the performance profiler
 
+// Command struct for UI-triggered iSV57 register access.
+// Supports batched reads of up to 8 consecutive registers in one FC03 frame.
+struct ServoModbusCmd_t {
+    uint16_t startAddr_u16;  // first Modbus holding-register address
+    uint8_t  count_u8;       // number of consecutive registers (1..8)
+    bool     isWrite_b;      // true = WRITE, false = READ
+    int16_t  values[8];      // write values (used only when isWrite_b == true)
+};
+
 // ==============================================================================
 // Class Definition: StepperWithLimits
 // Handles the physical stepper motor, virtual endstops, and Modbus communication 
@@ -54,6 +63,18 @@ private:
     bool clearAllServoAlarms_b = false;            // Trigger flag to clear servo fault states
     bool resetServoRegistersToFactoryValues_b = false; // Trigger flag to perform a factory reset
     bool updateServoParams_b = false;              // Trigger flag to push new parameters to the servo
+
+    // Pending servo register command written by serialCommunicationTaskRx,
+    // consumed by processPendingCommands() on the servo task.
+    volatile bool         servoModbusCmdPending_b  = false;
+    ServoModbusCmd_t      servoModbusPendingCmd_st = {};
+
+    // Result buffer for READ replies; written by processPendingCommands(),
+    // polled by serialCommunicationTaskRx via tryGetServoModbusReadResult().
+    volatile bool         servoModbusReadReady_b   = false;
+    int16_t               servoModbusReadResult[8] = {};
+    uint8_t               servoModbusReadCount_u8  = 0;
+    uint16_t              servoModbusReadAddr_u16  = 0;
 
     volatile int32_t servoPos_local_corrected_i32 = 0;               // Fully unwrapped and corrected servo position
                                                                        // volatile: 32-bit aligned → atomic on ESP32-S3, no mutex needed
@@ -151,6 +172,16 @@ public:
     void clearAllServoAlarms();
     void resetServoParametersToFactoryValues();
     void configSetProfilingFlag(bool proFlag_b);
+
+    // Schedule a register access to be executed by the servo task.
+    // Non-blocking: returns immediately; actual Modbus IO happens later.
+    void scheduleServoModbusCmd(const ServoModbusCmd_t& cmd);
+
+    // Poll for a completed READ result. Returns true and fills output params
+    // if a result is available. Clears the ready-flag after reading.
+    bool tryGetServoModbusReadResult(uint16_t& addrOut,
+                                     int16_t*  valuesOut,
+                                     uint8_t&  countOut);
 
     // --- Internal Thread-Safe Setters/Getters ---
     void setServosInternalPositionCorrected(int32_t posCorrected_i32);

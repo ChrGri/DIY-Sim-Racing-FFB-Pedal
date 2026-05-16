@@ -43,8 +43,12 @@ typedef enum : uint8_t
 // ---------------------------------------------------------------------------
 typedef enum : uint8_t
 {
-    DAP_ATTR_CLASS_CONFIG = 0x00u,  // targets PayloadPedalConfig_t fields
-    DAP_ATTR_CLASS_ACTION = 0x01u,  // targets PayloadPedalAction_t fields
+    DAP_ATTR_CLASS_CONFIG       = 0x00u,  // targets PayloadPedalConfig_t fields
+    DAP_ATTR_CLASS_ACTION       = 0x01u,  // targets PayloadPedalAction_t fields
+    DAP_ATTR_CLASS_SERVO_MODBUS = 0x02u,  // direct iSV57 register access
+        // attrId_u16 = absolute Modbus holding-register address
+        //              (already resolved with pr_X_00 offsets on the PC side)
+        // value_i64  = register value (int16 range) for WRITE, ignored for READ
 } DapAttrClassId_e;
 
 // ---------------------------------------------------------------------------

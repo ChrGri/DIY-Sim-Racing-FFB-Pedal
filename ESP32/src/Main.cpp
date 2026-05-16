@@ -720,8 +720,32 @@ static void uart_event_task(void *pvParameters) {
 
 #endif
 
-
-
+class NonBlockingStreamWrapper : public Stream {
+private:
+    Stream* target;
+public:
+    NonBlockingStreamWrapper(Stream* target) : target(target) {}
+    int available() override { return target->available(); }
+    int read() override { return target->read(); }
+    int peek() override { return target->peek(); }
+    void flush() override { target->flush(); }
+    size_t write(uint8_t c) override {
+        if (target->availableForWrite() > 0) {
+            return target->write(c);
+        }
+        return 1; // Pretend it was written to avoid blocking
+    }
+    size_t write(const uint8_t *buffer, size_t size) override {
+        if (size == 0) return 0;
+        int avail = target->availableForWrite();
+        if (avail > 0) {
+            size_t toWrite = (size < (size_t)avail) ? size : (size_t)avail;
+            target->write(buffer, toWrite);
+        }
+        return size; // Pretend it was all written to avoid blocking/retrying
+    }
+    int availableForWrite() override { return target->availableForWrite(); }
+};
 
 void setup()
 {
@@ -2900,8 +2924,49 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                   ack.cmdType_u8 = (uint8_t)DAP_ATTR_CMD_ACK;
                   VendorHID_SendAttrReply(&ack);
                 }
+              } else if (attr_pkt.classId_u8 ==
+                         (uint8_t)DAP_ATTR_CLASS_SERVO_MODBUS) {
+
+                  ServoModbusCmd_t cmd = {};
+                  cmd.startAddr_u16 = attr_pkt.attrId_u16;
+                  cmd.count_u8      = 1;   // single register per packet
+                  cmd.isWrite_b     = (attr_pkt.cmdType_u8 ==
+                                      (uint8_t)DAP_ATTR_CMD_WRITE);
+
+                  if (cmd.isWrite_b) {
+                      cmd.values[0] = (int16_t)(attr_pkt.value_i64 & 0xFFFF);
+                  }
+
+                  if (stepper != nullptr) {
+                      stepper->scheduleServoModbusCmd(cmd);
+                  }
+
+                  // WRITE: send ACK immediately (fire-and-forget).
+                  // READ:  ACK with value is sent below when the result is ready.
+                  if (cmd.isWrite_b) {
+                      DapAttrPacket_t ack = attr_pkt;
+                      ack.cmdType_u8 = (uint8_t)DAP_ATTR_CMD_ACK;
+                      VendorHID_SendAttrReply(&ack);
+                  }
               }
             } // while VendorHID_ReadAttrPacket
+
+          // Poll for pending servo Modbus READ results and forward to PC.
+          if (stepper != nullptr) {
+              uint16_t addr    = 0;
+              int16_t  vals[8] = {};
+              uint8_t  cnt     = 0;
+              if (stepper->tryGetServoModbusReadResult(addr, vals, cnt)) {
+                  for (uint8_t i = 0; i < cnt; i++) {
+                      DapAttrPacket_t reply = {};
+                      reply.cmdType_u8  = (uint8_t)DAP_ATTR_CMD_ACK;
+                      reply.classId_u8  = (uint8_t)DAP_ATTR_CLASS_SERVO_MODBUS;
+                      reply.attrId_u16  = (uint16_t)(addr + i);
+                      reply.value_i64   = (int64_t)vals[i];
+                      VendorHID_SendAttrReply(&reply);
+                  }
+              }
+          }
           }
           #endif // USE_VENDOR_HID
 
@@ -3351,7 +3416,14 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
       #ifdef USE_VENDOR_HID
       if (batchLen >= TX_WRITE_THRESHOLD)
       {
-        size_t written = ActiveSerial->write(txBatch, batchLen);
+        int available = ActiveSerial->availableForWrite();
+        size_t written = 0;
+        if (available > 0)
+        {
+          size_t toWrite = ((size_t)available < batchLen) ? (size_t)available : batchLen;
+          written = ActiveSerial->write(txBatch, toWrite);
+        }
+
         if (written < batchLen)
         {
           // TinyUSB TX FIFO was not large enough for the full batch.
