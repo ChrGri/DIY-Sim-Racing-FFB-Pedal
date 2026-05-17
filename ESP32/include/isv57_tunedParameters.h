@@ -40,8 +40,8 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     10000, // Pr1.07: 2nd time constant of velocity loop
     8,     // Pr1.08: 2nd filter of velocity detection
     200,   // Pr1.09: 2nd torque filter
-    500,   // Pr1.10: Velocity feed forward gain
-    1000,  // Pr1.11: Velocity feed forward filter. Had better velocity error decay with higher values and also less noise.
+    900,   // Pr1.10: Velocity feed forward gain
+    200,  // Pr1.11: Velocity feed forward filter. Had better velocity error decay with higher values and also less noise.
     0,     // Pr1.12: Torque feed forward gain
     1000,     // Pr1.13: Torque feed forward filter
     1,     // Pr1.14: 2nd gain setup

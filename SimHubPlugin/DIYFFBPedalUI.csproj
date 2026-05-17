@@ -14,6 +14,7 @@
     <TargetFrameworkProfile />
     <ProjectGuid>{833040C9-FE5E-4CCF-B21D-71979E049B6B}</ProjectGuid>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TransformOnBuild>true</TransformOnBuild>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -164,6 +165,11 @@
     <Compile Include="DIYFFBPedal.cs" />
     <Compile Include="DIYFFBPedalSettings.cs" />
     <Compile Include="EspFlasher.cs" />
+    <Compile Include="Generated\ServoTunedParameters.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ServoTunedParameters.tt</DependentUpon>
+    </Compile>
     <Compile Include="PluginCallback\ConfigBufferQueueHelper.cs" />
     <Compile Include="PluginCallback\ConfigListService.cs" />
     <Compile Include="PluginCallback\DefaultConfig.cs" />
@@ -540,6 +546,10 @@
   <ItemGroup>
     <Content Include=".gitignore" />
     <EmbeddedResource Include="Resources\esptool.exe" />
+    <Content Include="Generated\ServoTunedParameters.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ServoTunedParameters.cs</LastGenOutput>
+    </Content>
     <Content Include="sdkmenuicon.png" />
   </ItemGroup>
   <ItemGroup>
@@ -556,6 +566,10 @@
     <Folder Include="Language\" />
     <Folder Include="Resources\Firmware\" />
   </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TextTemplating\Microsoft.TextTemplating.targets" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy /y "$(TargetPath)" "$(ProjectDir)bin\"  
