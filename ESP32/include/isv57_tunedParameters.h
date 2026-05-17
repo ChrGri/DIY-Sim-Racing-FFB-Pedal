@@ -93,7 +93,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,     // Pr2.20: 4th damping frequency
     0,     // Pr2.21: 4th damping filter
     0,    // Pr2.22: Positional command smoothing filter. Less noise with value >0, since feed forward are smoothed.
-    0,     // Pr2.23: Positional command FIR filter
+    200,     // Pr2.23: Positional command FIR filter
     0,     // Pr2.24: Reserved parameter
     0,     // Pr2.25: Reserved parameter
     0,     // Pr2.26: Reserved parameter
