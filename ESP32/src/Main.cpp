@@ -729,22 +729,35 @@ public:
     int read() override { return target->read(); }
     int peek() override { return target->peek(); }
     void flush() override { target->flush(); }
+    
     size_t write(uint8_t c) override {
+        // DER MAGISCHE FIX: Ist überhaupt ein Terminal offen?
+        if (!Serial) return 1; // Nein? Daten direkt verwerfen.
+
         if (target->availableForWrite() > 0) {
             return target->write(c);
         }
-        return 1; // Pretend it was written to avoid blocking
+        return 1;
     }
+    
     size_t write(const uint8_t *buffer, size_t size) override {
         if (size == 0) return 0;
+        
+        // DER MAGISCHE FIX: Ist überhaupt ein Terminal offen?
+        if (!Serial) return size; // So tun, als wäre alles gesendet worden!
+
         int avail = target->availableForWrite();
         if (avail > 0) {
             size_t toWrite = (size < (size_t)avail) ? size : (size_t)avail;
             target->write(buffer, toWrite);
         }
-        return size; // Pretend it was all written to avoid blocking/retrying
+        return size; 
     }
-    int availableForWrite() override { return target->availableForWrite(); }
+    
+    int availableForWrite() override { 
+        if (!Serial) return 0;
+        return target->availableForWrite(); 
+    }
 };
 
 void setup()
@@ -773,6 +786,11 @@ void setup()
   DapConfig_t dap_config_st_eeprom;
 
   // setup serial
+
+  #ifdef USE_VENDOR_HID
+    SetupVendorHID();
+  #endif
+
   // #define USE_CDC_INSTEAD_OF_UART
   #ifdef USE_CDC_INSTEAD_OF_UART
     #ifdef USE_VENDOR_HID
@@ -783,15 +801,15 @@ void setup()
       // SetupController_USB() (with VID/PID and proper product name) is called later once the
       // config (pedal type) is loaded, same as all other board variants.
       Serial.enableReboot(false);
-      SetupVendorHID();
       // CDC was already started by ARDUINO_USB_CDC_ON_BOOT=1 before setup(). 
       // Serial.begin() would trigger a second detach/attach corrupting the CDC RX endpoint.
       // Do NOT call Serial.begin() here. setTxTimeoutMs is safe to call at any time.
       // Use timeout=0: TX writes are guarded by availableForWrite() in the TX task, so
       // blocking is never needed. Without timeout=0, a write that slips past the guard
       // (e.g. debug println) would block for up to the old timeout and stall the system.
-      Serial.setTxTimeoutMs(0);
-      ActiveSerial = &Serial;
+      Serial.setTxTimeoutMs(1);
+      // ActiveSerial = &Serial;
+      ActiveSerial = new NonBlockingStreamWrapper(&Serial);
     #else
       // Standard CDC path for other boards.
       #ifdef USB_JOYSTICK
@@ -806,7 +824,8 @@ void setup()
       }
       delay(500); // Give windows a small amount of time to breathe
       Serial.setTxTimeoutMs(100);
-      ActiveSerial = &Serial;
+      // ActiveSerial = &Serial;
+      ActiveSerial = new NonBlockingStreamWrapper(&Serial);
     #endif
   #elif CONFIG_IDF_TARGET_ESP32S3
     Serial1.begin(BAUD_3M_U32, SERIAL_8N1, 44, 43);
@@ -3417,23 +3436,28 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
       if (batchLen >= TX_WRITE_THRESHOLD)
       {
         int available = ActiveSerial->availableForWrite();
-        size_t written = 0;
-        if (available > 0)
+        if (available == 0)
         {
-          size_t toWrite = ((size_t)available < batchLen) ? (size_t)available : batchLen;
-          written = ActiveSerial->write(txBatch, toWrite);
-        }
-
-        if (written < batchLen)
-        {
-          // TinyUSB TX FIFO was not large enough for the full batch.
-          // Keep the unsent bytes at the front so they are sent next cycle.
-          memmove(txBatch, txBatch + written, batchLen - written);
-          batchLen -= written;
+          // CDC buffers are running full (e.g. host not reading).
+          // Drop the accumulated batch to prevent memory buildup and potential restart.
+          batchLen = 0;
         }
         else
         {
-          batchLen = 0;
+          size_t toWrite = ((size_t)available < batchLen) ? (size_t)available : batchLen;
+          size_t written = ActiveSerial->write(txBatch, toWrite);
+
+          if (written < batchLen)
+          {
+            // TinyUSB TX FIFO was not large enough for the full batch.
+            // Keep the unsent bytes at the front so they are sent next cycle.
+            memmove(txBatch, txBatch + written, batchLen - written);
+            batchLen -= written;
+          }
+          else
+          {
+            batchLen = 0;
+          }
         }
       }
       #endif
