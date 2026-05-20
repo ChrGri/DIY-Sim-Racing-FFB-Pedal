@@ -17,6 +17,7 @@
 #include "PayloadPedalConfig.h"
 #include "PayloadFooter.h"
 #include "PayloadHidMessage.h"
+#include "PayloadServoConfig.h"
 
 // define the payload revision
 typedef struct __attribute__((packed)) DapActions
@@ -98,6 +99,12 @@ typedef struct DapAssignmentReg
   uint16_t crc_u16;
 } DapAssignmentReg_t;
 
+typedef struct __attribute__((packed)) DAP_servo_config_st {
+  PayloadHeader_t payloadHeader_st;
+  payloadServoConfig_t payloadServoConfig_st;
+  PayloadFooter_t payloadFooter_st;
+} DAP_servo_config_st_t;
+
 typedef struct DapCalculationVariables
 {
   float springStiffnesss_fl32;
@@ -128,21 +135,21 @@ typedef struct DapCalculationVariables
   float forceMaxDefault_fl32;
   float wsAmp_fl32;
   float wsFreq_fl32;
-  bool rudderStatus_b;
+  volatile bool rudderStatus_b;
   bool isRudderInitialized_b = false;
-  bool helicopterRudderStatus_b;
+  volatile bool helicopterRudderStatus_b;
   bool isHelicopterRudderInitialized_b = false;
   uint8_t pedalType_u8;
   uint32_t syncPedalPosition_u32;
   uint32_t currentPedalPosition_u32;
   float currentPedalPositionRatio_fl32;
   float syncPedalPositionRatio_fl32;
-  bool rudderBrakeStatus_b;
+  volatile bool rudderBrakeStatus_b;
   int32_t stepperPosMinDefault_i32;
   int32_t stepperPosMaxDefault_i32;
   float stepperPosRangeDefault_fl32;
   uint32_t stepsPerMotorRevolution_u32;
-  uint8_t trackCondition_u8;
+  volatile uint8_t trackCondition_u8;
   float currentForceReading_fl32;
   float force_afl32[11];
   float travel_afl32[11]; 

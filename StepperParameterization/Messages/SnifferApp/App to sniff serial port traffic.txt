@@ -1,0 +1,12 @@
+App to sniff serial port traffic
+https://www.aggsoft.com/serial-port-monitor/download.htm
+
+
+Open the app
+start spy mode
+open COM port
+
+Open stepperonline app
+open port
+
+traffic should be shown in the monitor sniffer app

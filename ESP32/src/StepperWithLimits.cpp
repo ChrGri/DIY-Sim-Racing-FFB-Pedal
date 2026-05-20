@@ -195,6 +195,24 @@ void StepperWithLimits::clearAllServoAlarms() { clearAllServoAlarms_b = true; }
 void StepperWithLimits::printAllServoParameters() { logAllServoParams = true; }
 void StepperWithLimits::configSetProfilingFlag(bool proFlag_b) { s_printProfilingFlag_b = proFlag_b; }
 
+void StepperWithLimits::scheduleServoModbusCmd(const ServoModbusCmd_t& cmd)
+{
+    // Write struct first, then set flag (acts as release fence on volatile).
+    servoModbusPendingCmd_st = cmd;
+    servoModbusCmdPending_b  = true;
+}
+
+bool StepperWithLimits::tryGetServoModbusReadResult(
+        uint16_t& addrOut, int16_t* valuesOut, uint8_t& countOut)
+{
+    if (!servoModbusReadReady_b) return false;
+    addrOut  = servoModbusReadAddr_u16;
+    countOut = servoModbusReadCount_u8;
+    memcpy(valuesOut, servoModbusReadResult, countOut * sizeof(int16_t));
+    servoModbusReadReady_b = false;  // consume the result
+    return true;
+}
+
 // --- Sensorless Homing Routine ---
 // Automatically sweeps the pedal to find physical minimum and maximum bounds
 // by monitoring the servo's internal current/load telemetry.
@@ -357,8 +375,7 @@ void IRAM_ATTR StepperWithLimits::moveToWithSpeed(int32_t targetPos_i32, uint32_
 // to keep mechanical position aligned with the software coordinates.
 void IRAM_ATTR StepperWithLimits::correctPos() {
     if(!_stepper->isRunning()) {
-        MutexGuard guard(getResetServoPosSemaphore());
-        // Cap the maximum recovery amount per call to avoid violent jumps
+        // servo_offset_compensation_steps_i32 is volatile int32_t: 32-bit aligned → atomic read/write on ESP32-S3, no mutex needed.
         int32_t maxStepsToRecoverPerCall_i32 = 2;
         int32_t stepOffset = (int32_t)constrain(servo_offset_compensation_steps_i32, -maxStepsToRecoverPerCall_i32, maxStepsToRecoverPerCall_i32);
         
@@ -392,17 +409,18 @@ int32_t IRAM_ATTR StepperWithLimits::getServosPosErrorChangeRateInStepsPerSecond
 uint32_t IRAM_ATTR StepperWithLimits::getServoCycleCounter() { return isv57.isv57dynamicStates_.servo_cycleCounter_u32; }
 
 void IRAM_ATTR StepperWithLimits::setServosInternalPositionCorrected(int32_t posCorrected_i32) {
-    MutexGuard guard(getCorrectedServoPosSemaphore());
+    // servoPos_local_corrected_i32 is volatile DRAM_ATTR int32_t.
+    // 32-bit aligned single-word writes are atomic on ESP32-S3 → no mutex needed.
     servoPos_local_corrected_i32 = posCorrected_i32;
 }
 
 int32_t IRAM_ATTR StepperWithLimits::getServosInternalPositionCorrected() {
-    MutexGuard guard(getCorrectedServoPosSemaphore());
+    // Lockless read: 32-bit aligned single-word reads are atomic on ESP32-S3.
     return servoPos_local_corrected_i32;
 }
 
 int32_t IRAM_ATTR StepperWithLimits::getServosInternalPosition() {
-    MutexGuard guard(getReadServoValuesSemaphore());
+    // Lockless read: 32-bit aligned single-word reads are atomic on ESP32-S3.
     return servoPos_i16;
 }
 
@@ -465,6 +483,51 @@ void IRAM_ATTR StepperWithLimits::processPendingCommands() {
         updateServoParams_b = false;
         ActiveSerial->println("Updating Servo parameters.");
         // Note: The specific parameter updates would be applied here
+    }
+
+    // --- Pending Servo Modbus Command (UI-triggered register access) ---
+    // Consumed here on the servo task to avoid concurrent Serial2 access.
+    if (servoModbusCmdPending_b) {
+        servoModbusCmdPending_b = false;  // clear flag first
+
+        const ServoModbusCmd_t& cmd = servoModbusPendingCmd_st;
+        uint8_t count = (cmd.count_u8 > 8u) ? 8u : cmd.count_u8;
+
+        if (cmd.isWrite_b) {
+            // WRITE: FC06 writes exactly 1 register per frame.
+            // Multiple registers are written as consecutive single writes.
+            ActiveSerial->printf("[ServoModbus] WRITE addr=0x%04X count=%u\n",
+                                 cmd.startAddr_u16, count);
+            for (uint8_t i = 0; i < count; i++) {
+                ActiveSerial->printf("[ServoModbus]   reg[%u] 0x%04X = %d\n",
+                                     i, cmd.startAddr_u16 + i, cmd.values[i]);
+                isv57.writeHoldingRegisterToDevice(
+                    isv57.slaveId,
+                    (int32_t)(cmd.startAddr_u16 + i),
+                    (uint16_t)cmd.values[i]);
+            }
+            ActiveSerial->printf("[ServoModbus] WRITE done\n");
+        } else {
+            // READ: read 'count' consecutive registers in a single FC03 frame
+            // (same pattern as readServoStates()).
+            ActiveSerial->printf("[ServoModbus] READ addr=0x%04X count=%u\n",
+                                 cmd.startAddr_u16, count);
+            int16_t buf[8] = {};
+            int n = isv57.readRegisters(cmd.startAddr_u16, count, buf);
+            if (n > 0) {
+                for (uint8_t i = 0; i < (uint8_t)n; i++) {
+                    ActiveSerial->printf("[ServoModbus]   reg[%u] 0x%04X = %d\n",
+                                         i, cmd.startAddr_u16 + i, buf[i]);
+                }
+                memcpy(servoModbusReadResult, buf, n * sizeof(int16_t));
+                servoModbusReadCount_u8 = (uint8_t)n;
+                servoModbusReadAddr_u16 = cmd.startAddr_u16;
+                servoModbusReadReady_b  = true;
+                ActiveSerial->printf("[ServoModbus] READ done, %d register(s) ready\n", n);
+            } else {
+                ActiveSerial->printf("[ServoModbus] READ failed (n=%d)\n", n);
+            }
+        }
     }
 }
 
@@ -586,7 +649,7 @@ void IRAM_ATTR StepperWithLimits::performSafetyChecks() {
             servo_offset_compensation_steps_local_i32 = espPos_i32 - servoPosCorrected_i32;
         }
 
-        MutexGuard guard(getResetServoPosSemaphore());
+        // Lockless write: servo_offset_compensation_steps_i32 is volatile int32_t → atomic on ESP32-S3.
         servo_offset_compensation_steps_i32 = servo_offset_compensation_steps_local_i32;
     }
 

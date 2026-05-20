@@ -14,6 +14,7 @@ using Newtonsoft.Json.Linq;
 
 
 
+
 namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
@@ -252,11 +253,13 @@ namespace DiyFfbPedal
                         List<int> indices_sof_extended_struct = FindAllOccurrences(buffer_appended[pedalSelected], STARTOFFRAME_EXTENDED_STRUCT, currentBufferLength);
                         List<int> indices_sof_basic_struct = FindAllOccurrences(buffer_appended[pedalSelected], STARTOFFRAME_BASIC_STRUCT, currentBufferLength);
                         List<int> indices_sof_config = FindAllOccurrences(buffer_appended[pedalSelected], STARTOFFRAME_CONFIG, currentBufferLength);
+                        List<int> indices_sof_servo_config = FindAllOccurrences(buffer_appended[pedalSelected], STARTOFFRAME_SERVO_CONFIG, currentBufferLength);
                         List<int> indices_eof = FindAllOccurrences(buffer_appended[pedalSelected], ENDOFFRAMCHAR, currentBufferLength);
 
                         var validPairsExtendedStruct = new List<Tuple<int, int>>();
                         var validPairsBasicStruct = new List<Tuple<int, int>>();
                         var validPairsConfig = new List<Tuple<int, int>>();
+                        var validPairsServoConfig = new List<Tuple<int, int>>();
 
                         bool sofHasBeenReceivedEofNotYet = false;
                         byte[] bufferByteAssignedToStruct_class = new byte[bufferSize];
@@ -291,6 +294,16 @@ namespace DiyFfbPedal
                             ref sofHasBeenReceivedEofNotYet,
                             bufferByteAssignedToStruct_class,
                             3);
+
+                        // Search for the servo config struct
+                        FindValidMessagePairs(
+                            indices_sof_servo_config,
+                            indices_eof,
+                            System.Runtime.InteropServices.Marshal.SizeOf(typeof(DAP_servo_config_st)),
+                            validPairsServoConfig,
+                            ref sofHasBeenReceivedEofNotYet,
+                            bufferByteAssignedToStruct_class,
+                            5); // classId=5: servo config (1=basic, 2=extended, 3=config, 4=bridge)
 
                         // check if at least SOF1 byte was received, but EOF was not for last packet
                         List<int> indices_sof1 = FindAllOccurrences(buffer_appended[pedalSelected], STARTOFFRAMCHAR_SOF_byte0, currentBufferLength);
@@ -749,6 +762,67 @@ namespace DiyFfbPedal
                             }
 
 
+                            // servo config response (ESP32 echoes back read results as DAP_servo_config_st)
+                            for (int pairId = 0; pairId < validPairsServoConfig.Count; pairId++)
+                            {
+                                int srcBufferOffset_0 = validPairsServoConfig[pairId].Item1;
+                                int srcBufferOffset_1 = validPairsServoConfig[pairId].Item2;
+
+                                int destBuffLength = srcBufferOffset_1 - srcBufferOffset_0;
+                                int servoConfigMarshalSize = System.Runtime.InteropServices.Marshal.SizeOf(typeof(DAP_servo_config_st));
+                                unsafe
+                                {
+                                    if (destBuffLength == servoConfigMarshalSize)
+                                    {
+                                        byte[] destArr = new byte[destBuffLength];
+                                        Buffer.BlockCopy(buffer_appended[pedalSelected], srcBufferOffset_0, destArr, 0, destBuffLength);
+
+                                        System.Runtime.InteropServices.GCHandle handle =
+                                            System.Runtime.InteropServices.GCHandle.Alloc(destArr,
+                                                System.Runtime.InteropServices.GCHandleType.Pinned);
+                                        try
+                                        {
+                                            DAP_servo_config_st sc = (DAP_servo_config_st)
+                                                System.Runtime.InteropServices.Marshal.PtrToStructure(
+                                                    handle.AddrOfPinnedObject(), typeof(DAP_servo_config_st));
+
+                                            bool validType = sc.payloadHeader_st.payloadType == Constants.servoConfigPayload_type;
+                                            ushort calcCrc = Plugin.checksumCalcArray(destArr,
+                                                System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadHeader)) +
+                                                System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadServoConfig)));
+                                            bool validCrc = (calcCrc == sc.payloadFooter_st.checkSum);
+
+                                            if (validType && validCrc)
+                                            {
+                                                // Mark bytes in BOTH tracking arrays so buffer cleanup and
+                                                // serial-monitor filter both skip these bytes correctly
+                                                bufferByteAssignedToStruct.AsSpan(srcBufferOffset_0, destBuffLength).Fill(true);
+                                                bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, destBuffLength).Fill(4); // class 4 = servo config
+                                                lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + destBuffLength);
+
+                                                // The ESP32 reply may carry multiple consecutive registers:
+                                                // registerAddresses[i] = startAddr + i,  registerValues[i] = read value
+                                                byte n = sc.payloadServoConfig_st.numValidFields;
+                                                if (n > 10) n = 10;
+                                                for (int i = 0; i < n; i++)
+                                                {
+                                                    ushort addr = sc.payloadServoConfig_st.registerAddresses[i];
+                                                    short  val  = (short)sc.payloadServoConfig_st.registerValues[i];
+                                                    Servo_Tab?.HandleServoModbusAck(addr, val);
+                                                }
+                                            }
+                                        }
+                                        finally
+                                        {
+                                            handle.Free();
+                                        }
+                                    }
+                                }
+                            }
+
+
+
+
                             // print all non identified structs to serial monitor
                             // If non known array datatype was received, assume a text message was received and print it
                             // only print debug messages when debug mode is active as it degrades performance
@@ -795,7 +869,7 @@ namespace DiyFfbPedal
 
 
                             // remove elements from buffer
-                            //lastTrueElementIndex
+                            //lastTrueIndex
                             int lastTrueIndex = -1; // -1 means "not found"
                             for (int i = currentBufferLength - 1; i >= 0; i--)
                             {

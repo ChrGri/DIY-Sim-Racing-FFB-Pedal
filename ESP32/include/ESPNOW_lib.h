@@ -43,10 +43,10 @@ bool software_pairing_action_b = false;
 bool hardware_pairing_action_b = false;
 bool OTA_update_action_b=false;
 bool Config_update_b=false;
-bool Rudder_initializing = false;
-bool Rudder_deinitializing = false;
-bool HeliRudder_initializing = false;
-bool HeliRudder_deinitializing = false;
+volatile bool Rudder_initializing = false;
+volatile bool Rudder_deinitializing = false;
+volatile bool HeliRudder_initializing = false;
+volatile bool HeliRudder_deinitializing = false;
 bool ESPNOW_BootIntoDownloadMode = false;
 bool Get_Rudder_action_b=false;
 bool Get_HeliRudder_action_b=false;
@@ -418,10 +418,10 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               rudderGForce_.gValue_u8 = dap_actions_st.payloadPedalAction_st.impactValue_u8;
             }
             // trigger system identification
-            if (dap_actions_st.payloadPedalAction_st.startSystemIdentification_u8)
-            {
-              systemIdentificationMode_b = true;
-            }
+            // if (dap_actions_st.payloadPedalAction_st.startSystemIdentification_u8)
+            // {
+            //   systemIdentificationMode_b = true;
+            // }
             // trigger Custom effect effect 1
             if (dap_actions_st.payloadPedalAction_st.triggerCv1_u8) customVibration1_.trigger();
             // trigger Custom effect effect 2

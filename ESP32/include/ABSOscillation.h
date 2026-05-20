@@ -23,7 +23,7 @@ enum class TrackCondition
 };
 class ABSOscillation {
 private:
-  long timeLastTriggerMillis_i32;
+  volatile long timeLastTriggerMillis_i32;  // written Core0 (trigger), read Core1 (forceOffset)
   long absTimeMillis_i32;
   long lastCallTimeMillis_i32 = 0;
 
@@ -143,7 +143,7 @@ public:
   RPMOscillation()
     : timeLastTriggerMillis_i32(0)
   {}
-  float rpmValue_fl32 = 0.0f;
+  volatile float rpmValue_fl32 = 0.0f;  // written Core0 (serialCommunicationTaskRx), read Core1 (forceOffset)
   int32_t rpmPositionOffset_i32 = 0;
 public:
   void IRAM_ATTR_FLAG trigger()
@@ -253,7 +253,7 @@ MovingAverageFilter g_movingAverageFilter_st(100);
 class GForceEffect
 {
   public:
-  float gValue_fl32 = 0.0f;
+  volatile float gValue_fl32 = 0.0f;  // written Core0 (serialCommunicationTaskRx), read Core1 (forceOffset)
   float gForceRaw_fl32 = 0.0f;
   float gForce_fl32 = 0.0f;
   float gNormInverse_fl32 = 0.10193679918450560652395514780836f; //1 / 9.81f;
@@ -281,7 +281,7 @@ class GForceEffect
 //Wheel slip
 class WSOscillation {
 private:
-  long timeLastTriggerMillis_i32;
+  volatile long timeLastTriggerMillis_i32;  // written Core0 (trigger), read Core1 (forceOffset)
   long wsTimeMillis_i32;
   long lastCallTimeMillis_i32 = 0;
   
@@ -333,7 +333,7 @@ class RoadImpactEffect
   public:
   float roadImpactForce_fl32 = 0;
   float roadImpactForceRaw_fl32 = 0;
-  uint8_t roadImpactValue_u8 = 0;
+  volatile uint8_t roadImpactValue_u8 = 0;  // written Core0 (serialCommunicationTaskRx), read Core1 (forceOffset)
 
   void IRAM_ATTR_FLAG forceOffset(DapCalculationVariables_t* calcVars_st, uint8_t roadImpactMulti_u8)
   {
@@ -350,7 +350,7 @@ class RoadImpactEffect
 //Custom effects
 class CustomVibration {
 private:
-  long timeLastTriggerMillis_i32;
+  volatile long timeLastTriggerMillis_i32;  // written Core0 (trigger), read Core1 (forceOffset)
   long cvTimeMillis_i32;
   long lastCallTimeMillis_i32 = 0;
   float cvAmp_fl32 = 0.0f;

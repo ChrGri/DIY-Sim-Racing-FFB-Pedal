@@ -295,6 +295,12 @@ namespace DiyFfbPedal.UIFunction
             calculation.dumpPedalToResponseFile[Settings.table_selected] = true;
             calculation.logDateTime = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             CalculationChangedEvent(calculation);
+            // Enable extended state struct on ESP32 (debug flag bit 6 = 64).
+            // Without this the ESP32 never sends DAP_state_extended_st, so the
+            // trace file would never be created.
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.debug_flags_0 |= 64;
+            dap_config_st = tmp;
         }
 
         private void dump_pedal_response_to_file_Unchecked(object sender, RoutedEventArgs e)
@@ -302,6 +308,10 @@ namespace DiyFfbPedal.UIFunction
             
             calculation.dumpPedalToResponseFile[Settings.table_selected] = false;
             CalculationChangedEvent(calculation);
+            // Clear extended state struct flag when trace is stopped.
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.debug_flags_0 = (byte)(tmp.payloadPedalConfig_.debug_flags_0 & ~64);
+            dap_config_st = tmp;
         }
 
         private void Vjoy_out_check_Checked(object sender, RoutedEventArgs e)

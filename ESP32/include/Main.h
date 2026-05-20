@@ -509,6 +509,57 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define PEDAL_SOFTWARE_ASSIGNMENT
 
   #define ALM_PORT_GPIO 11
+
+#endif
+
+// V7 version of dev PCB for ESP32-S3-Zero
+// Based on DIY_FFB_pedal_PCB_V6_clone schematic
+#if PCB_VERSION == 14
+  // ADC defines (ADS1220)
+  #define USES_ADS1220
+  #define FFB_ADS1220_SCLK    9
+  #define FFB_ADS1220_DIN     10    // MOSI
+  #define FFB_ADS1220_DOUT    11    // MISO
+  #define FFB_ADS1220_DRDY    12
+  #define FFB_ADS1220_CS      8
+  #define FFB_ADS1220_CLK     7     // Takt-Signal laut Schaltplan (falls in Software genutzt)
+
+  // stepper pins
+  #define DIR_PIN_STEPPER_U8    5
+  #define STEP_PIN_STEPPER_U8   4
+
+  // level shifter is present on this PCB design
+  #define SENSORLESS_HOMING true
+
+  // UART Kommunikation zum Servo
+  #define ISV57_TXPIN 2
+  #define ISV57_RXPIN 3
+
+  // Bremswiderstand
+  #define BRAKE_RESISTOR_PIN_U8 1
+  
+  #ifndef DEBUG_KEEP_USB_SERIAL_JTAG
+    #define USB_JOYSTICK
+  #endif
+  
+  //#define ESPNOW_Enable
+  //#define ESPNow_S3
+  #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 0
+  //#define ESPNow_Pairing_function
+  #define PAIRING_GPIO_U8 0   // Boot-Button des S3-Zero
+  // #define OTA_update
+  #define WIFI_DISABLE
+  
+  #ifndef DEBUG_KEEP_USB_SERIAL_JTAG
+    #define CONTROLLER_SPECIFIC_VIDPID
+  #endif
+  
+  #define BAUDRATE3M
+  #define PEDAL_SOFTWARE_ASSIGNMENT
+
+  // Alarm Pin vom Servo
+  #define ALM_PORT_GPIO 6
+
 #endif
 
 
@@ -533,12 +584,11 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 /********************************************************************/
 #define CORE_ID_PEDAL_UPDATE_TASK_U8 (uint8_t)1
 #define CORE_ID_SERIAL_COMMUNICATION_TASK_U8 (uint8_t)0
-#define CORE_ID_JOYSTICK_TASK_U8 (uint8_t)1
+#define CORE_ID_JOYSTICK_TASK_U8 (uint8_t)0 // TinyUSB runs on Core0, keep it here, otherwise race condition
 #define CORE_ID_MISC_TASK_U8 (uint8_t)0
 #define CORE_ID_OTA_TASK_U8 (uint8_t)0
 #define CORE_ID_SERVO_COMMUNICATION_TASK_U8 (uint8_t)0
 #define CORE_ID_ESPNOW_TASK_U8 (uint8_t)0
-#define CORE_ID_STEPPER_TASK_U8 (uint8_t)1
 #define CORE_ID_LOADCELLREADING_TASK_U8 (uint8_t)1
 #define CORE_ID_PROFILER_TASK_U8 (uint8_t)0
 #define CORE_ID_CONFIG_HANDLING_TASK_U8 (uint8_t)0

@@ -3,14 +3,15 @@
 
 #include <stdint.h>
 #include <Arduino.h> // Assuming this is for `micros()` and `fabsf()`
+#include "Main.h"
 
 // Kalman Filter class declaration
 class KalmanFilter2ndOrder {
 public:
     KalmanFilter2ndOrder(float varianceEstimate_fl32);
-    float filteredValue(float measurement_fl32, float command_fl32, uint8_t modelNoiseScaling_u8);
-    float changeVelocity();
-    float changeAccel();
+    float IRAM_ATTR_FLAG filteredValue(float measurement_fl32, float command_fl32, uint8_t modelNoiseScaling_u8);
+    float IRAM_ATTR_FLAG changeVelocity();
+    float IRAM_ATTR_FLAG changeAccel();
 
 private:
     // State

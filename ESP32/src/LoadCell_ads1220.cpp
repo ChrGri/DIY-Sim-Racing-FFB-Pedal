@@ -203,7 +203,7 @@ void LoadCellAds1220::estimateBiasAndVariance()
   }
 
   zeroPoint_fl32 = mean_fl32;
-  standardDeviationEstimate_fl32 = sqrt(varianceEstimateLocal_fl32);
+  standardDeviationEstimate_fl32 = sqrtf(varianceEstimateLocal_fl32);
   varianceEstimate_fl32 = varianceEstimateLocal_fl32;
 
   ActiveSerial->print("Offset ");

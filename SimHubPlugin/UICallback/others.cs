@@ -721,6 +721,7 @@ namespace DiyFfbPedal
         public byte[] STARTOFFRAME_BASIC_STRUCT = { 0xAA, 0x55, 120 };
         public byte[] STARTOFFRAME_BRIDGE_BASIC_STRUCT = { 0xAA, 0x55, 210 };
         public byte[] STARTOFFRAME_CONFIG = { 0xAA, 0x55, 100 };
+        public byte[] STARTOFFRAME_SERVO_CONFIG = { 0xAA, 0x55, 170 };
 
         public byte[] STARTOFFRAMCHAR_SOF_byte0 = { 0xAA};
         public byte[] STARTOFFRAMCHAR_SOF_byte1 = { 0x55};

@@ -128,6 +128,19 @@ class Isv57Communication {
     uint32_t getServoCycleTimestamp();
     int16_t regArray[NUMBER_OF_ISV57_REGISTERS_TO_READ_IN_CYCLIC_READ];
 
+    // Reads 'count' consecutive holding registers starting at startAddr_u16
+    // using a single Modbus FC03 frame (same pattern as readServoStates).
+    // Returns number of registers successfully read, or -1 on error.
+    // Output values are written to out_pi16[0..count-1].
+    int readRegisters(uint16_t startAddr_u16,
+                      uint8_t  count_u8,
+                      int16_t* out_pi16);
+
+    // Wrapper for single-register FC06 write; delegates to modbus object.
+    int32_t writeHoldingRegisterToDevice(int32_t slaveId_i32,
+                                         int32_t registerAddress_i32,
+                                         uint16_t value_u16);
+
     int16_t slaveId = 63; 
 
     isv57dynamicStates isv57dynamicStates_;

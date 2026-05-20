@@ -9,7 +9,7 @@ namespace DiyFfbPedal
     static class Constants
     {
         // payload revisiom
-        public const uint pedalConfigPayload_version = 171;
+        public const uint pedalConfigPayload_version = 172;
 
 
         // pyload types
@@ -17,6 +17,7 @@ namespace DiyFfbPedal
         public const uint pedalActionPayload_type = 110;
         public const uint pedalStateBasicPayload_type = 120;
         public const uint pedalStateExtendedPayload_type = 130;
+        public const uint servoConfigPayload_type = 170;
         public const uint bridgeStatePayloadType = 210;
         public const uint OtaPayloadType = 220;
         public const uint pedalHidMessage_type = 225;
