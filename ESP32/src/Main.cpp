@@ -3029,8 +3029,8 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                       ActiveSerial->println("The command is not supported");
                     #endif    
                     break;
-                }
-case DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8: {
+                  }
+                  case DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8: {
                       DAP_servo_config_st received_servo_config;
                       memcpy(&received_servo_config, packet_start, sizeof(DAP_servo_config_st));
 
@@ -3065,19 +3065,17 @@ case DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8: {
                                   vTaskDelay(pdMS_TO_TICKS(10));
                               }
                           } else {
-                              // Read
-                              // Assuming validFields > 0, we schedule the first requested register.
-                              // If multiple sequential registers are requested, we could optimize,
-                              // but here we simply read from the first address for 'validFields' count.
+                              // Read: schedule all requested register addresses (up to 10, non-consecutive)
                               if (validFields > 0 && stepper != nullptr) {
-                                  uint16_t addr = received_servo_config.payloadServoConfig_st.registerAddresses[0];
                                   ServoModbusCmd_t cmd = {};
-                                  cmd.startAddr_u16 = addr;
-                                  cmd.count_u8      = validFields;
-                                  if (cmd.count_u8 > 8) cmd.count_u8 = 8; // Modbus limit
-                                  cmd.isWrite_b     = false;
+                                  cmd.count_u8  = validFields;
+                                  if (cmd.count_u8 > 10) cmd.count_u8 = 10;
+                                  cmd.isWrite_b = false;
+                                  for (uint8_t i = 0; i < cmd.count_u8; i++) {
+                                      cmd.readAddresses[i] = received_servo_config.payloadServoConfig_st.registerAddresses[i];
+                                  }
                                   stepper->scheduleServoModbusCmd(cmd);
-                                  ActiveSerial->printf("Servo config read scheduled: addr=0x%X, count=%u\n", addr, cmd.count_u8);
+                                  ActiveSerial->printf("Servo config read scheduled: %u register(s)\n", cmd.count_u8);
                               }
                           }
                       }
@@ -3204,9 +3202,10 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
         // --- Send servo Modbus read result back to SimHub plugin ---
         if (stepper != nullptr) {
           uint16_t addr_u16 = 0;
-          int16_t  vals[8]  = {};
+          int16_t  vals[10] = {};
+          uint16_t addrs[10] = {};
           uint8_t  cnt_u8   = 0;
-          if (stepper->tryGetServoModbusReadResult(addr_u16, vals, cnt_u8) && cnt_u8 > 0) {
+          if (stepper->tryGetServoModbusReadResult(addr_u16, vals, cnt_u8, addrs) && cnt_u8 > 0) {
             DAP_servo_config_st_t resp = {};
             resp.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
             resp.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
@@ -3217,7 +3216,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
             resp.payloadServoConfig_st.readWriteFlag  = 0; // read response
             resp.payloadServoConfig_st.numValidFields = cnt_u8;
             for (uint8_t i = 0; i < cnt_u8; i++) {
-              resp.payloadServoConfig_st.registerAddresses[i] = addr_u16 + i;
+              resp.payloadServoConfig_st.registerAddresses[i] = addrs[i];
               resp.payloadServoConfig_st.registerValues[i]    = (uint16_t)vals[i];
             }
             resp.payloadFooter_st.checkSum_u16 = checksumCalculator_u16(

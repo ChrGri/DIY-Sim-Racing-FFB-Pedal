@@ -496,6 +496,7 @@ namespace DiyFfbPedal.UIFunction
         /// The parent UI should send the NVM-save command (register 0x019A = 0x5555) to the servo.
         /// </summary>
         public event EventHandler FlashToServoRequested;
+        public event EventHandler ResetToFactoryRequested;
 
         // ---------------------------------------------------------------
         // Sequential load state
@@ -587,8 +588,14 @@ namespace DiyFfbPedal.UIFunction
             foreach (var entry in ServoRegisters)
                 entry.LiveValue = entry.RecommendedValue;
 
-            // Refresh the DataGrid so the new values are visible
             ServoRegisterGrid.Items.Refresh();
+
+            // Send each register to the servo
+            foreach (var entry in ServoRegisters)
+                ServoRegisterValueChanged?.Invoke(this, entry);
+
+            // Persist all parameters to NVM
+            FlashToServoRequested?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -599,6 +606,11 @@ namespace DiyFfbPedal.UIFunction
         private void Btn_FlashToServo_Click(object sender, RoutedEventArgs e)
         {
             FlashToServoRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void Btn_ResetToFactory_Click(object sender, RoutedEventArgs e)
+        {
+            ResetToFactoryRequested?.Invoke(this, EventArgs.Empty);
         }
 
         // ---------------------------------------------------------------
@@ -614,7 +626,7 @@ namespace DiyFfbPedal.UIFunction
         }
 
         // ---------------------------------------------------------------
-        // Existing slider handlers (unchanged)
+        // Slider handlers
         // ---------------------------------------------------------------
         private void Slider_ServoEndstopDetecionThreshold_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {

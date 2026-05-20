@@ -196,5 +196,26 @@ namespace DiyFfbPedal
                 values:    new ushort[] { 0x5555 });
             SendServoConfigSerial(pedalIdx, packet);
         }
+
+        // ---------------------------------------------------------------
+        // Reset to factory — triggers Isv57Communication::resetToFactoryParams()
+        // via debugFlags0 bit DEBUG_INFO_0_RESET_SERVO_TO_FACTORY_U8 (32)
+        // ---------------------------------------------------------------
+        unsafe private void Servo_Tab_ResetToFactoryRequested(object sender, EventArgs e)
+        {
+            if (Plugin == null) return;
+
+            byte pedalIdx = (byte)indexOfSelectedPedal_u;
+
+            // Set DEBUG_INFO_0_RESET_SERVO_TO_FACTORY_U8 (bit 5 = 32) in debugFlags0.
+            // Main.cpp watches for this bit, calls stepper->resetServoParametersToFactoryValues()
+            // (which calls Isv57Communication::resetToFactoryParams()), then clears the bit.
+            DAP_config_st cfg = dap_config_st[pedalIdx];
+            cfg.payloadHeader_.storeToEeprom   = 1;
+            cfg.payloadPedalConfig_.debug_flags_0 = (byte)(cfg.payloadPedalConfig_.debug_flags_0 | 32);
+            dap_config_st[pedalIdx] = cfg;
+
+            Sendconfig(pedalIdx);
+        }
     }
 }
