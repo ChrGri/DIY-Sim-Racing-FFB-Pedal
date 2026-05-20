@@ -412,9 +412,16 @@ namespace DiyFfbPedal.UIFunction
             };
             _readTimeoutTimer.Tick += OnReadTimeout;
 
+            // Write timer: sends one register every 50 ms to avoid flooding the serial port.
+            _writeTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(50)
+            };
+            _writeTimer.Tick += OnWriteTimerTick;
+
             // Populate the register table.
             // Recommended values come from the auto-generated Isv57TunedParameters class
-            // (Generated/ServoTunedParameters.tt → Generated/ServoTunedParameters.cs),
+            // (Generated/ServoTunedParameters.tt ? Generated/ServoTunedParameters.cs),
             // which is parsed from ESP32/include/isv57_tunedParameters.h at build time.
             int idx = 0;
             foreach (var def in s_registerDefs)
@@ -505,6 +512,12 @@ namespace DiyFfbPedal.UIFunction
         private readonly System.Windows.Threading.DispatcherTimer _readTimeoutTimer;
 
         // ---------------------------------------------------------------
+        // Sequential write state (used by Btn_ResetToRecommended_Click)
+        // ---------------------------------------------------------------
+        private readonly Queue<ServoRegisterEntry> _pendingWriteQueue = new Queue<ServoRegisterEntry>();
+        private readonly System.Windows.Threading.DispatcherTimer _writeTimer;
+
+        // ---------------------------------------------------------------
         // Button handlers
         // ---------------------------------------------------------------
 
@@ -581,21 +594,46 @@ namespace DiyFfbPedal.UIFunction
         }
 
         /// <summary>
-        /// Resets every CurrentValue back to its RecommendedValue.
+        /// Resets every CurrentValue back to its RecommendedValue,
+        /// then sends all registers to the servo sequentially (one per 50 ms).
+        /// FlashToServoRequested is raised only after the last register is sent.
         /// </summary>
         private void Btn_ResetToRecommended_Click(object sender, RoutedEventArgs e)
         {
+            // Stop any pending write sequence first
+            _writeTimer.Stop();
+            _pendingWriteQueue.Clear();
+
+            // Update the table
             foreach (var entry in ServoRegisters)
                 entry.LiveValue = entry.RecommendedValue;
 
             ServoRegisterGrid.Items.Refresh();
 
-            // Send each register to the servo
+            // Enqueue all registers for sequential serial write
             foreach (var entry in ServoRegisters)
-                ServoRegisterValueChanged?.Invoke(this, entry);
+                _pendingWriteQueue.Enqueue(entry);
 
-            // Persist all parameters to NVM
-            FlashToServoRequested?.Invoke(this, EventArgs.Empty);
+            // Start the write timer – OnWriteTimerTick will drain the queue
+            _writeTimer.Start();
+        }
+
+        /// <summary>
+        /// Sends the next queued register write to the servo.
+        /// When the queue is empty, fires FlashToServoRequested to persist to NVM.
+        /// </summary>
+        private void OnWriteTimerTick(object sender, EventArgs e)
+        {
+            if (_pendingWriteQueue.Count == 0)
+            {
+                _writeTimer.Stop();
+                // Persist all parameters to NVM
+                FlashToServoRequested?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+
+            var entry = _pendingWriteQueue.Dequeue();
+            ServoRegisterValueChanged?.Invoke(this, entry);
         }
 
         /// <summary>

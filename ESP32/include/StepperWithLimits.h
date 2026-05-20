@@ -134,6 +134,7 @@ public:
     int32_t getHardEndstopMaxPosition() const { return _endstopLimitMax; }
     int32_t getCurrentPositionFromMin() const;
     int32_t getMinPosition() const;
+    int32_t getMaxPosition() const;
     int32_t getCurrentPosition() const;
     float getCurrentPositionFraction() const;
     float getCurrentPositionFractionFromExternalPos(int32_t extPos_i32) const;

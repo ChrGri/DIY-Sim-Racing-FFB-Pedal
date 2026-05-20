@@ -77,15 +77,15 @@ namespace DiyFfbPedal
         {
             var psc = new payloadServoConfig
             {
-                readWriteFlag   = readWriteFlag,
-                numValidFields  = (byte)Math.Min(addresses.Length, 10),
+                readWriteFlag = readWriteFlag,
+                numValidFields = (byte)Math.Min(addresses.Length, 10),
                 registerAddresses = new ushort[10],
-                registerValues    = new ushort[10],
+                registerValues = new ushort[10],
             };
             for (int i = 0; i < psc.numValidFields; i++)
             {
                 psc.registerAddresses[i] = addresses[i];
-                psc.registerValues[i]    = (values != null && i < values.Length) ? values[i] : (ushort)0;
+                psc.registerValues[i] = (values != null && i < values.Length) ? values[i] : (ushort)0;
             }
 
             var pkt = new DAP_servo_config_st
@@ -94,10 +94,10 @@ namespace DiyFfbPedal
                 {
                     startOfFrame0_u8 = STARTOFFRAME_SERVO_CONFIG[0],
                     startOfFrame1_u8 = STARTOFFRAME_SERVO_CONFIG[1],
-                    payloadType      = (byte)Constants.servoConfigPayload_type,
-                    version          = (byte)Constants.pedalConfigPayload_version,
-                    storeToEeprom    = 0,
-                    PedalTag         = (byte)indexOfSelectedPedal_u,
+                    payloadType = (byte)Constants.servoConfigPayload_type,
+                    version = (byte)Constants.pedalConfigPayload_version,
+                    storeToEeprom = 0,
+                    PedalTag = (byte)indexOfSelectedPedal_u,
                 },
                 payloadServoConfig_st = psc,
             };
@@ -109,9 +109,9 @@ namespace DiyFfbPedal
 
             pkt.payloadFooter_st = new payloadFooter
             {
-                checkSum        = crc,
-                enfOfFrame0_u8  = ENDOFFRAMCHAR[0],
-                enfOfFrame1_u8  = ENDOFFRAMCHAR[1],
+                checkSum = crc,
+                enfOfFrame0_u8 = ENDOFFRAMCHAR[0],
+                enfOfFrame1_u8 = ENDOFFRAMCHAR[1],
             };
 
             return pkt.toBytes();
@@ -159,7 +159,7 @@ namespace DiyFfbPedal
             byte[] packet = BuildServoConfigPacket(
                 readWriteFlag: 1,
                 addresses: new ushort[] { modbusAddr },
-                values:    new ushort[] { (ushort)(entry.LiveValue.Value & 0xFFFF) });
+                values: new ushort[] { (ushort)(entry.LiveValue.Value & 0xFFFF) });
             SendServoConfigSerial(pedalIdx, packet);
         }
 
@@ -176,7 +176,7 @@ namespace DiyFfbPedal
             byte[] packet = BuildServoConfigPacket(
                 readWriteFlag: 0,
                 addresses: new ushort[] { modbusAddr },
-                values:    new ushort[] { 0 });
+                values: new ushort[] { 0 });
             SendServoConfigSerial(pedalIdx, packet);
         }
 
@@ -187,13 +187,13 @@ namespace DiyFfbPedal
         {
             if (Plugin == null) return;
 
-            byte pedalIdx = (byte)indexOfSelectedPedal_u;        
+            byte pedalIdx = (byte)indexOfSelectedPedal_u;
 
             // --- Serial path ---
             byte[] packet = BuildServoConfigPacket(
                 readWriteFlag: 1,
                 addresses: new ushort[] { 0x019A },
-                values:    new ushort[] { 0x5555 });
+                values: new ushort[] { 0x5555 });
             SendServoConfigSerial(pedalIdx, packet);
         }
 
@@ -211,7 +211,7 @@ namespace DiyFfbPedal
             // Main.cpp watches for this bit, calls stepper->resetServoParametersToFactoryValues()
             // (which calls Isv57Communication::resetToFactoryParams()), then clears the bit.
             DAP_config_st cfg = dap_config_st[pedalIdx];
-            cfg.payloadHeader_.storeToEeprom   = 1;
+            cfg.payloadHeader_.storeToEeprom = 1;
             cfg.payloadPedalConfig_.debug_flags_0 = (byte)(cfg.payloadPedalConfig_.debug_flags_0 | 32);
             dap_config_st[pedalIdx] = cfg;
 

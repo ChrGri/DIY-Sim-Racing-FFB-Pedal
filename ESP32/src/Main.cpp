@@ -1878,6 +1878,7 @@ DapActions_t incomingAction;
       float pedalInclineAngleInDeg_fl32 = pedalInclineAngleDeg(sledPosition, &dap_config_pedalUpdateTask_st);
       float pedalForce_fl32 = convertToPedalForce(loadcellReading, sledPosition, &dap_config_pedalUpdateTask_st);
       // float d_phi_d_x = convertToPedalForceGain(sledPosition, &dap_config_pedalUpdateTask_st);
+      float pedalArcPercentage_fl32 = pedalArcPercentage(stepper, &dap_config_pedalUpdateTask_st, motorRevolutionsPerSteps_fl32, &dap_calculationVariables_st);
 
       // compute gain for horizontal foot model
       float b = (float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st.lengthPedalB_i16;
@@ -2379,7 +2380,7 @@ DapActions_t incomingAction;
       {
         if (1 == dap_config_pedalUpdateTask_st.payloadPedalConfig_st.travelAsJoystickOutput_u8)
         {
-          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(stepperPosCurrent_i32, dap_calculationVariables_st.softEndstopMinStepperPos_i32, dap_calculationVariables_st.softEndstopMaxStepperPos_i32, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.maxGameOutput_u8);
+          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(constrain(pedalArcPercentage_fl32, 0.0f, 1.0f), 0.0f, 1.0f, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.maxGameOutput_u8);
         }
         else
         {            
@@ -2481,7 +2482,8 @@ DapActions_t incomingAction;
         if (sendBasicFlag_b)
         {
           dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.pedalForce_u16 =  normalizedPedalReading_fl32 * 65535.0f;
-          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.pedalPosition_u16 = constrain(stepperPosFraction_fl32, 0.0f, 1.0f) * 65535.0f;
+          // dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.pedalPosition_u16 = constrain(stepperPosFraction_fl32, 0.0f, 1.0f) * 65535.0f;
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.pedalPosition_u16 = constrain(pedalArcPercentage_fl32, 0.0f, 1.0f) * 65535.0f;
           dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.joystickOutput_u16 = joystickNormalizedToUInt16;
           dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.pedalFirmwareVersion_au8[0] = g_versionMajor;
           dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.pedalFirmwareVersion_au8[1] = g_versionMinor;  

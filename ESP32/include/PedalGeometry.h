@@ -14,6 +14,8 @@ static inline IRAM_ATTR_FLAG float sledPositionInMM_withPositionAsArgument(float
   return currentPos_fl32 * motorRevolutionsPerStep_fl32 * (float)config_pst->payloadPedalConfig_st.spindlePitch_mmPerRev_u8;
 }
 
+
+
 static inline IRAM_ATTR_FLAG float pedalInclineAngleDeg(float sledPositionMm_fl32, DapConfig_t * config_pst) {
   // see https://de.wikipedia.org/wiki/Kosinussatz
   // A: is lower pedal pivot
@@ -68,6 +70,30 @@ static inline IRAM_ATTR_FLAG float pedalInclineAngleDeg(float sledPositionMm_fl3
   return alpha_fl32 * RAD_TO_DEG_FL32;
 }
 
+
+static inline IRAM_ATTR_FLAG float pedalArcPercentage(StepperWithLimits* stepper_pstwl, DapConfig_t * config_pst, float motorRevolutionsPerStep_fl32, DapCalculationVariables_t* dapCalc_pst) {
+
+  // travelSteps_cnt: total steps from min to max soft endstop
+  float travelSteps_cnt = (float)(dapCalc_pst->softEndstopMaxStepperPos_i32 - dapCalc_pst->softEndstopMinStepperPos_i32);
+
+  // steps to mm
+  float stepsToMm_fl32 = motorRevolutionsPerStep_fl32 * (float)config_pst->payloadPedalConfig_st.spindlePitch_mmPerRev_u8;
+
+  float minSledPos_mm = 0.0f;
+  float maxSledPos_mm = travelSteps_cnt * stepsToMm_fl32;
+
+  // actualSledPos_mm: The current physical position of the ESP stepper in mm
+  float actualSledPosFraction_01 = stepper_pstwl->getCurrentPositionFraction();
+  float actualSledPos_mm = actualSledPosFraction_01 * maxSledPos_mm;
+
+  // 2. Forward Kinematics: Angles at the boundaries and current physical state
+  float angleAtMinSled_deg = pedalInclineAngleDeg(minSledPos_mm, config_pst);
+  float angleAtMaxSled_deg = pedalInclineAngleDeg(maxSledPos_mm, config_pst);
+  float currentAngle_deg = pedalInclineAngleDeg(actualSledPos_mm, config_pst);
+
+  float actualPosFraction_01 = fabsf( (currentAngle_deg - angleAtMinSled_deg) / (angleAtMaxSled_deg - angleAtMinSled_deg) );
+  return actualPosFraction_01 = constrain(actualPosFraction_01, 0.0f, 1.0f);
+}
 
 static inline IRAM_ATTR_FLAG float convertToPedalForce(float loadcellForce_fl32, float sledPositionMm_fl32, DapConfig_t * config_pst) {
   // see https://de.wikipedia.org/wiki/Kosinussatz

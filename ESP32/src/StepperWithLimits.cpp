@@ -358,6 +358,7 @@ int8_t StepperWithLimits::moveTo(int32_t position, bool blocking) {
 // --- Simple Getters ---
 int32_t IRAM_ATTR StepperWithLimits::getCurrentPositionFromMin() const { return _stepper->getCurrentPosition() - _posMin; }
 int32_t IRAM_ATTR StepperWithLimits::getMinPosition() const { return _posMin; }
+int32_t IRAM_ATTR StepperWithLimits::getMaxPosition() const { return _posMax; }
 int32_t IRAM_ATTR StepperWithLimits::getCurrentPosition() const { return _stepper->getCurrentPosition(); }
 float IRAM_ATTR StepperWithLimits::getCurrentPositionFraction() const { return float(getCurrentPositionFromMin()) / getTravelSteps(); }
 float IRAM_ATTR StepperWithLimits::getCurrentPositionFractionFromExternalPos(int32_t extPos_i32) const { return ((float)(extPos_i32)) / getTravelSteps(); }
