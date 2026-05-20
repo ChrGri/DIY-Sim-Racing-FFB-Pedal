@@ -32,16 +32,15 @@ namespace DiyFfbPedal.UIFunction
         public string Address { get; set; }
         /// <summary>Human-readable register name shown as tooltip and in the Name column.</summary>
         public string Name { get; set; }
-        /// <summary>Current value – editable by the user.</summary>
-        public int CurrentValue { get; set; }
+
         /// <summary>Factory-tuned recommended value (read-only).</summary>
         public int RecommendedValue { get; set; }
 
         // ---- Live read-back from servo ----
         private int? _liveValue;
         /// <summary>
-        /// Live register value received from the servo.
-        /// null = not yet read (unknown state).
+        /// Value shown and edited in the "Live (Servo)" column.
+        /// null = not yet read.
         /// </summary>
         public int? LiveValue
         {
@@ -58,15 +57,17 @@ namespace DiyFfbPedal.UIFunction
         /// <summary>Display string for the live value column.</summary>
         public string LiveValueDisplay => _liveValue.HasValue ? _liveValue.Value.ToString() : "-";
 
-        // Foreground color as a string so WPF's binding engine compares by value, not by reference.
-        // This avoids the optimization where WPF skips an update because the Brush object reference
-        // didn't change (all static frozen brushes are the same object each time).
+        /// <summary>
+        /// Green  = matches recommended value
+        /// Red    = deviates from recommended value
+        /// Neutral = not yet read
+        /// </summary>
         public string LiveValueColor
         {
             get
             {
-                if (!_liveValue.HasValue) return "#FFDADADA"; // neutral
-                return _liveValue.Value == RecommendedValue ? "#FF4CAF50" : "#FFE53935"; // green / red
+                if (!_liveValue.HasValue) return "#FFDADADA";
+                return _liveValue.Value == RecommendedValue ? "#FF4CAF50" : "#FFE53935";
             }
         }
     }
@@ -405,7 +406,6 @@ namespace DiyFfbPedal.UIFunction
             InitializeComponent();
             dap_config_st = new DAP_config_st();
 
-            // Timer fires if an ACK is not received within 1 s — skips the stalled register
             _readTimeoutTimer = new System.Windows.Threading.DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(1)
@@ -425,8 +425,8 @@ namespace DiyFfbPedal.UIFunction
                     Index            = idx++,
                     Address          = def.addr,
                     Name             = def.name,
-                    CurrentValue     = recommended,
                     RecommendedValue = recommended,
+                    // LiveValue starts null (unknown) – populated by "Load from servo"
                 });
             }
 
@@ -564,7 +564,6 @@ namespace DiyFfbPedal.UIFunction
         /// <param name="value">Register value reported by the servo.</param>
         public void HandleServoModbusAck(ushort addr, short value)
         {
-            // Update the matching entry's live value
             foreach (var entry in ServoRegisters)
             {
                 if (DapAttrHelper.TryParseServoAddress(entry.Address, out ushort entryAddr) && entryAddr == addr)
@@ -574,7 +573,6 @@ namespace DiyFfbPedal.UIFunction
                 }
             }
 
-            // Advance the sequential queue: dequeue only when the head matches the ACK address
             if (_pendingReadQueue.Count > 0 && _pendingReadQueue.Peek() == addr)
                 _pendingReadQueue.Dequeue();
 
@@ -587,7 +585,7 @@ namespace DiyFfbPedal.UIFunction
         private void Btn_ResetToRecommended_Click(object sender, RoutedEventArgs e)
         {
             foreach (var entry in ServoRegisters)
-                entry.CurrentValue = entry.RecommendedValue;
+                entry.LiveValue = entry.RecommendedValue;
 
             // Refresh the DataGrid so the new values are visible
             ServoRegisterGrid.Items.Refresh();
@@ -611,16 +609,7 @@ namespace DiyFfbPedal.UIFunction
             if (e.EditAction != DataGridEditAction.Commit) return;
             if (!(e.Row.Item is ServoRegisterEntry entry)) return;
 
-            // Read the edited text from the cell
-            if (e.EditingElement is TextBox tb)
-            {
-                if (int.TryParse(tb.Text, out int newValue))
-                {
-                    entry.CurrentValue = newValue;
-                }
-            }
-
-            // TODO: implement actual servo register write logic here
+            // Raise event so ServoCallbacks sends the new LiveValue to the servo
             ServoRegisterValueChanged?.Invoke(this, entry);
         }
 

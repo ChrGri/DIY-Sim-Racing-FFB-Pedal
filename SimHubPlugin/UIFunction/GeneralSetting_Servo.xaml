@@ -145,7 +145,7 @@
                               CellEditEnding="ServoRegisterGrid_CellEditEnding">
 
                         <DataGrid.Columns>
-                            <!-- Address - tooltip shows full name -->
+                            <!-- Address -->
                             <DataGridTemplateColumn Header="Register"
                                                     Width="80"
                                                     IsReadOnly="True"
@@ -167,10 +167,10 @@
                                                 Width="*"
                                                 IsReadOnly="True"/>
 
-                            <!-- Editable current value / live read-back -->
-                            <DataGridTemplateColumn Header="Current Value"
+                            <!-- Live value – editable; sends to servo on commit -->
+                            <DataGridTemplateColumn Header="Live (Servo)"
                                                     Width="105"
-                                                    SortMemberPath="CurrentValue">
+                                                    SortMemberPath="LiveValue">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding LiveValueDisplay}"
@@ -181,10 +181,11 @@
                                 </DataGridTemplateColumn.CellTemplate>
                                 <DataGridTemplateColumn.CellEditingTemplate>
                                     <DataTemplate>
-                                        <TextBox Text="{Binding CurrentValue,
+                                        <TextBox Text="{Binding LiveValue,
                                                      UpdateSourceTrigger=LostFocus}"
                                                  BorderThickness="0"
-                                                 Background="Transparent"/>
+                                                 Background="Transparent"
+                                                 Foreground="#FFDADADA"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellEditingTemplate>
                             </DataGridTemplateColumn>

@@ -145,6 +145,7 @@ namespace DiyFfbPedal
         private void Servo_Tab_ServoRegisterValueChanged(object sender, ServoRegisterEntry entry)
         {
             if (Plugin == null || entry == null) return;
+            if (!entry.LiveValue.HasValue) return;
 
             if (!DapAttrHelper.TryParseServoAddress(entry.Address, out ushort modbusAddr))
             {
@@ -155,11 +156,10 @@ namespace DiyFfbPedal
 
             byte pedalIdx = (byte)indexOfSelectedPedal_u;
 
-            // --- Serial path: DAP_servo_config_st WRITE ---
             byte[] packet = BuildServoConfigPacket(
                 readWriteFlag: 1,
                 addresses: new ushort[] { modbusAddr },
-                values:    new ushort[] { (ushort)(entry.CurrentValue & 0xFFFF) });
+                values:    new ushort[] { (ushort)(entry.LiveValue.Value & 0xFFFF) });
             SendServoConfigSerial(pedalIdx, packet);
         }
 
