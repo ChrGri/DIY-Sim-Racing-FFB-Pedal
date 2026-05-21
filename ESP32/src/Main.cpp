@@ -221,6 +221,7 @@ static QueueHandle_t s_actionCommandQueue = NULL;
 // static QueueHandle_t configUpdateSendToJoystickTaskQueue = NULL;
 static QueueHandle_t s_configUpdateSendToSerialRXTaskQueue = NULL;
 static QueueHandle_t s_systemControlQueue = NULL;
+static QueueHandle_t s_servoConfigTxQueue = NULL;
 
 
 
@@ -850,6 +851,11 @@ void setup()
   if (s_systemControlQueue == NULL)
   {
     ActiveSerial->println("Error creating the system control queue!");
+  }
+  s_servoConfigTxQueue = xQueueCreate(5, sizeof(DAP_servo_config_st_t));
+  if (s_servoConfigTxQueue == NULL)
+  {
+    ActiveSerial->println("Error creating the servo config tx queue!");
   }
 
 
@@ -3087,11 +3093,14 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                               resp.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
                               resp.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
                             
-                              // 10er-Paket am Stück zurück an den PC senden
-                              ActiveSerial->write((char*)&resp, sizeof(DAP_servo_config_st_t));
+                              // 10er-Paket am Stück zurück an den PC senden via Queue
+                              if (s_servoConfigTxQueue != NULL) {
+                                  xQueueSend(s_servoConfigTxQueue, &resp, (TickType_t)0);
+                              }
 			
                           } 
-						  else {
+						              else 
+                          {
                               // Read: schedule all requested register addresses (up to 10, non-consecutive)
                               if (validFields > 0 && stepper != nullptr) {
                                   ServoModbusCmd_t cmd = {};
@@ -3161,8 +3170,8 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
     // global_dap_config_class.getConfig(&sct_dap_config_st, 0);
 
     // Block indefinitely until a new state package arrives from pedalUpdateTask.
-    // This is now the ONLY trigger for this task.
-    if (xQueueReceive(s_pedalStateQueue, &receivedState, portMAX_DELAY) == pdPASS)
+    // Timeout is set to 5ms to allow processing of other queues like s_servoConfigTxQueue.
+    if (xQueueReceive(s_pedalStateQueue, &receivedState, pdMS_TO_TICKS(5)) == pdPASS)
     {
       
       // Now, process the first item, and then enter a loop to
@@ -3263,9 +3272,12 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
       // already in the queue. The loop will exit when the queue is empty.
       } while (xQueueReceive(s_pedalStateQueue, &receivedState, (TickType_t)0) == pdPASS);
 
+    }
 
-      // force a context switch
-      // taskYIELD();
+    // Process the servo config tx queue
+    DAP_servo_config_st_t servoConfigResp;
+    while (s_servoConfigTxQueue != NULL && xQueueReceive(s_servoConfigTxQueue, &servoConfigResp, (TickType_t)0) == pdPASS) {
+        ActiveSerial->write((char*)&servoConfigResp, sizeof(DAP_servo_config_st_t));
     }
   }
 }
@@ -3998,4 +4010,3 @@ void miscTask( void * pvParameters )
     delay(50);
   }
 }
-
