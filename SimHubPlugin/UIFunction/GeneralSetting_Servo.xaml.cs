@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -427,7 +427,7 @@ namespace DiyFfbPedal.UIFunction
             // Timer fires if an ACK is not received within 1 s — skips the stalled batch
             _readTimeoutTimer = new System.Windows.Threading.DispatcherTimer
             {
-                Interval = TimeSpan.FromSeconds(1)
+                Interval = TimeSpan.FromSeconds(2)
             };
             _readTimeoutTimer.Tick += OnReadTimeout;
 

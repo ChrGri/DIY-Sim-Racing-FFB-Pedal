@@ -228,22 +228,19 @@ int32_t Modbus::sendRequestAndReceiveResponse(int32_t slaveId_i32, int32_t funct
     txBuffer_au8[0] = slaveId_i32;
     txBuffer_au8[1] = functionCode_i32;
     txBuffer_au8[2] = registerAddress_i32 >> 8;
-    txBuffer_au8[3] = registerAddress_i32;
+    txBuffer_au8[3] = registerAddress_i32 & 0xFF;
     txBuffer_au8[4] = numberOfRegisters_i32 >> 8;
-    txBuffer_au8[5] = numberOfRegisters_i32;
+    txBuffer_au8[5] = numberOfRegisters_i32 & 0xFF;
     crc_i32 = this->computeCrc(txBuffer_au8, 6);
-    txBuffer_au8[6] = crc_i32;
-    txBuffer_au8[7] = crc_i32 >> 8;
+    txBuffer_au8[6] = crc_i32 & 0xFF;
+    txBuffer_au8[7] = (crc_i32 >> 8) & 0xFF;
  
-    size_t bufferCapacity_st = this->serial_pHS->availableForWrite();
-    this->serial_pHS->write(txBuffer_au8, 8);
-    delay(1);
-    uint8_t timeoutCounter_u8 = 10;
-    while( (bufferCapacity_st != this->serial_pHS->availableForWrite() ) && (timeoutCounter_u8 > 0) ) 
-    { 
-      delay(1);
-      timeoutCounter_u8--;
+    while(this->serial_pHS->available()) {
+        this->serial_pHS->read();
     }
+
+    this->serial_pHS->write(txBuffer_au8, 8);
+    this->serial_pHS->flush();
 
     uint32_t startTime_u32 = millis();
     rawRxBufferLength_i32   = 0;
@@ -259,7 +256,6 @@ int32_t Modbus::sendRequestAndReceiveResponse(int32_t slaveId_i32, int32_t funct
        
        while(this->serial_pHS->available())
        {
-            startTime_u32 = millis();
             receivedByte_i32 = this->serial_pHS->read();
 
             if(receiveState_u8 == 0)
@@ -434,25 +430,19 @@ int32_t Modbus::writeHoldingRegisterToDevice(int32_t slaveId_i32, int32_t regist
     txBuffer_au8[0] = slaveId_i32;
     txBuffer_au8[1] = WRITE_HOLDING_REGISTER_U8;
     txBuffer_au8[2] = registerAddress_i32 >> 8;
-    txBuffer_au8[3] = registerAddress_i32;
+    txBuffer_au8[3] = registerAddress_i32 & 0xFF;
     txBuffer_au8[4] = value_u16 >> 8;
-    txBuffer_au8[5] = value_u16;
+    txBuffer_au8[5] = value_u16 & 0xFF;
     crc_i32 = this->computeCrc(txBuffer_au8, 6);
-    txBuffer_au8[6] = crc_i32;
-    txBuffer_au8[7] = crc_i32 >> 8;
+    txBuffer_au8[6] = crc_i32 & 0xFF;
+    txBuffer_au8[7] = (crc_i32 >> 8) & 0xFF;
 	
-  size_t bufferCapacity_st = this->serial_pHS->availableForWrite();
-  delay(1);
-  this->serial_pHS->write(txBuffer_au8, 8);
-  delay(1);
-  uint8_t timeOutCounter_u8 = 10;
-  while( (bufferCapacity_st != this->serial_pHS->availableForWrite() ) && (timeOutCounter_u8 > 0) ) 
-  { 
-    delay(1);
-    timeOutCounter_u8--;
+  while(this->serial_pHS->available()) {
+      this->serial_pHS->read();
   }
 
-  delay(1);
+  this->serial_pHS->write(txBuffer_au8, 8);
+  this->serial_pHS->flush();
 
   uint32_t startTime_u32 = millis();
   int32_t echoMatchCount_i32 = 0;
@@ -461,7 +451,6 @@ int32_t Modbus::writeHoldingRegisterToDevice(int32_t slaveId_i32, int32_t regist
   bool responseReceived_b = false;
   while( ( (millis() - startTime_u32) < timeout_u32)  && (false == responseReceived_b))
   {
-      delay(1);
       while(this->serial_pHS->available())
       {
         receivedByte_i32 = this->serial_pHS->read();
@@ -480,6 +469,8 @@ int32_t Modbus::writeHoldingRegisterToDevice(int32_t slaveId_i32, int32_t regist
           break;
         }
       }
+      if (responseReceived_b) break;
+      delay(1);
   }
 
   delay(5);
@@ -493,9 +484,9 @@ int32_t Modbus::writeHoldingRegistersToDevice(int32_t slaveId_i32, int32_t regis
     localTxBuffer[0] = slaveId_i32;
     localTxBuffer[1] = 0x10; // FC16 Preset Multiple Registers
     localTxBuffer[2] = registerAddress_i32 >> 8;
-    localTxBuffer[3] = registerAddress_i32;
+    localTxBuffer[3] = registerAddress_i32 & 0xFF;
     localTxBuffer[4] = count_u8 >> 8;
-    localTxBuffer[5] = count_u8;
+    localTxBuffer[5] = count_u8 & 0xFF;
     localTxBuffer[6] = count_u8 * 2;
     
     for (uint8_t i = 0; i < count_u8; i++) {
@@ -505,44 +496,49 @@ int32_t Modbus::writeHoldingRegistersToDevice(int32_t slaveId_i32, int32_t regis
     
     uint8_t length = 7 + count_u8 * 2;
     int32_t crc_i32 = this->computeCrc(localTxBuffer, length);
-    localTxBuffer[length] = crc_i32;
-    localTxBuffer[length+1] = crc_i32 >> 8;
+    localTxBuffer[length] = crc_i32 & 0xFF;
+    localTxBuffer[length+1] = (crc_i32 >> 8) & 0xFF;
     
-    size_t bufferCapacity_st = this->serial_pHS->availableForWrite();
-    delay(1);
-    this->serial_pHS->write(localTxBuffer, length + 2);
-    delay(1);
-    uint8_t timeOutCounter_u8 = 10;
-    while( (bufferCapacity_st != this->serial_pHS->availableForWrite() ) && (timeOutCounter_u8 > 0) ) 
-    { 
-        delay(1);
-        timeOutCounter_u8--;
+    // 1. Flush RX buffer to remove any garbage before transmitting
+    while(this->serial_pHS->available()) {
+        this->serial_pHS->read();
     }
 
-    delay(1);
+    // 2. Transmit the packet and wait until it physically leaves the UART hardware FIFO
+    this->serial_pHS->write(localTxBuffer, length + 2);
+    this->serial_pHS->flush();
+
+    // 3. Read exact 8-byte response and verify CRC
     uint32_t startTime_u32 = millis();
-    int32_t echoMatchCount_i32 = 0;
-    int32_t receivedByte_i32;
+    uint8_t rxBuffer[8];
+    uint8_t rxCount = 0;
     
     bool responseReceived_b = false;
     while( ( (millis() - startTime_u32) < timeout_u32)  && (false == responseReceived_b))
     {
-        delay(1);
         while(this->serial_pHS->available())
         {
-            receivedByte_i32 = this->serial_pHS->read();
-            // Modbus FC16 responds with an exact echo of the first 6 bytes
-            if(localTxBuffer[echoMatchCount_i32] == receivedByte_i32) {
-                echoMatchCount_i32++;
-            } else {
-                echoMatchCount_i32 = 0;
+            rxBuffer[rxCount++] = this->serial_pHS->read();
+            
+            // Modbus FC16 Exception Response is exactly 5 bytes long (SlaveID, 0x90, ExceptionCode, CRC_L, CRC_H)
+            if (rxCount == 5 && rxBuffer[1] == 0x90) {
+                // Exception detected, abort waiting for 8 bytes to avoid 100ms timeout penalty!
+                responseReceived_b = false; 
+                break;
             }
-
-            if (echoMatchCount_i32 == 6) {
-                responseReceived_b = true;
+            
+            if (rxCount == 8) {
+                int32_t receivedCrc = ((uint16_t)rxBuffer[7] << 8) | rxBuffer[6];
+                int32_t computedCrc = this->computeCrc(rxBuffer, 6);
+                
+                if (rxBuffer[0] == slaveId_i32 && rxBuffer[1] == 0x10 && receivedCrc == computedCrc) {
+                    responseReceived_b = true;
+                }
                 break;
             }
         }
+        if (responseReceived_b || rxCount == 8 || (rxCount == 5 && rxBuffer[1] == 0x90)) break; 
+        delay(1);
     }
     delay(5);
     return responseReceived_b;

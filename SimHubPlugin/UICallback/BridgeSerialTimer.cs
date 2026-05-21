@@ -201,16 +201,19 @@ namespace DiyFfbPedal
 
                         try
                         {
-                            if ((currentBufferLength - 1) == indices_sof1.Last<int>())
+                            if (indices_sof1.Count > 0 && (currentBufferLength - 1) == indices_sof1.Last<int>())
                             {
                                 bufferByteAssignedToStruct.AsSpan((currentBufferLength - 1), 1).Fill(true);
+                                bufferByteAssignedToStruct_class[(currentBufferLength - 1)] = 255;
                                 sofHasBeenReceivedEofNotYet = true;
                             }
 
                             // when last element is SOF2 and seconmd to last is SOF1
-                            if ((currentBufferLength - 2) == indices_sof1_and_sof2.Last<int>())
+                            if (indices_sof1_and_sof2.Count > 0 && (currentBufferLength - 2) == indices_sof1_and_sof2.Last<int>())
                             {
                                 bufferByteAssignedToStruct.AsSpan((currentBufferLength - 2), 2).Fill(true);
+                                bufferByteAssignedToStruct_class[(currentBufferLength - 2)] = 255;
+                                bufferByteAssignedToStruct_class[(currentBufferLength - 1)] = 255;
                                 sofHasBeenReceivedEofNotYet = true;
                             }
                         }

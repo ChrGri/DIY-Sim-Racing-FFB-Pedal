@@ -559,20 +559,35 @@ void IRAM_ATTR StepperWithLimits::processPendingCommands() {
             servoModbusReadReady_b  = true;
         } else {
             // READ: read each requested address individually (supports non-consecutive registers).
-            // ActiveSerial->printf("[ServoModbus] READ %u register(s)\n", count);
             int16_t resultBuf[10] = {};
             uint8_t resultCount = 0;
-            for (uint8_t i = 0; i < count; i++) {
-                int16_t buf[1] = {};
-                int n = isv57.readRegisters(cmd.readAddresses[i], 1, buf);
-                if (n > 0) {
-                    // ActiveSerial->printf("[ServoModbus]   reg[%u] 0x%04X = %d\n", i, cmd.readAddresses[i], buf[0]);
+            
+            bool isSequential = (count > 0);
+            for (uint8_t i = 1; i < count; i++) {
+                if (cmd.readAddresses[i] != cmd.readAddresses[i - 1] + 1) {
+                    isSequential = false;
+                    break;
+                }
+            }
+
+            if (isSequential && count > 1) {
+                // SEQUENTIAL BATCH READ (Modbus FC03)
+                int16_t readBackBuf[10] = {0};
+                int n = isv57.readRegisters(cmd.readAddresses[0], count, readBackBuf);
+                
+                for (uint8_t i = 0; i < count; i++) {
+                    resultBuf[i] = (n == count) ? readBackBuf[i] : 0xFFFF;
+                    servoModbusReadAddresses[i] = cmd.readAddresses[i];
+                }
+                resultCount = count;
+            } else {
+                // FALLBACK: Individual Reads
+                for (uint8_t i = 0; i < count; i++) {
+                    int16_t buf[1] = {-1};
+                    int n = isv57.readRegisters(cmd.readAddresses[i], 1, buf);
                     servoModbusReadAddresses[resultCount] = cmd.readAddresses[i];
-                    resultBuf[resultCount++] = buf[0];
-                } else {
-                    // ActiveSerial->printf("[ServoModbus]   reg[%u] 0x%04X READ failed\n", i, cmd.readAddresses[i]);
-                    servoModbusReadAddresses[resultCount] = cmd.readAddresses[i];
-                    resultBuf[resultCount++] = 0; // placeholder for failed read
+                    resultBuf[resultCount++] = (n > 0) ? buf[0] : 0xFFFF; 
+                    vTaskDelay(pdMS_TO_TICKS(5)); // small delay to let RS485 driver turn around
                 }
             }
             memcpy(servoModbusReadResult, resultBuf, resultCount * sizeof(int16_t));

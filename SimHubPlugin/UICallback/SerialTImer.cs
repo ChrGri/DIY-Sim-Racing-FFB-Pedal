@@ -312,16 +312,19 @@ namespace DiyFfbPedal
 
                         try
                         {
-                            if ((currentBufferLength - 1) == indices_sof1.Last<int>())
+                            if (indices_sof1.Count > 0 && (currentBufferLength - 1) == indices_sof1.Last<int>())
                             {
                                 bufferByteAssignedToStruct.AsSpan((currentBufferLength - 1), 1).Fill(true);
+                                bufferByteAssignedToStruct_class[(currentBufferLength - 1)] = 255;
                                 sofHasBeenReceivedEofNotYet = true;
                             }
 
                             // when last element is SOF2 and seconmd to last is SOF1
-                            if ((currentBufferLength - 2) == indices_sof1_and_sof2.Last<int>())
+                            if (indices_sof1_and_sof2.Count > 0 && (currentBufferLength - 2) == indices_sof1_and_sof2.Last<int>())
                             {
                                 bufferByteAssignedToStruct.AsSpan((currentBufferLength - 2), 2).Fill(true);
+                                bufferByteAssignedToStruct_class[(currentBufferLength - 2)] = 255;
+                                bufferByteAssignedToStruct_class[(currentBufferLength - 1)] = 255;
                                 sofHasBeenReceivedEofNotYet = true;
                             }
                         }
@@ -868,8 +871,26 @@ namespace DiyFfbPedal
                             }
 
 
-                            // remove elements from buffer
-                            //lastTrueIndex
+                            // Find the start of the first incomplete struct
+                            int firstIncompleteIndex = currentBufferLength;
+                            for (int i = 0; i < currentBufferLength; i++)
+                            {
+                                if (bufferByteAssignedToStruct_class[i] == 255)
+                                {
+                                    firstIncompleteIndex = i;
+                                    break;
+                                }
+                            }
+
+                            // Find end of last CRLF message that is BEFORE the incomplete struct
+                            int lastCrlfEnd = -1;
+                            foreach (int idx in indices)
+                            {
+                                int crlfEnd = idx + stop_char_length - 1;
+                                if (crlfEnd < firstIncompleteIndex) lastCrlfEnd = crlfEnd;
+                            }
+
+                            // Find end of last binary struct
                             int lastTrueIndex = -1; // -1 means "not found"
                             for (int i = currentBufferLength - 1; i >= 0; i--)
                             {
@@ -882,38 +903,30 @@ namespace DiyFfbPedal
                                 }
                             }
 
-                            if (lastTrueIndex > (-1))
+                            int bytesToDiscard = Math.Max(lastTrueIndex, lastCrlfEnd) + 1;
+                            
+                            // Ultimate safety net to protect incomplete structs from fragmentation truncation
+                            if (bytesToDiscard > firstIncompleteIndex)
                             {
-                                int remainingMessageLength = currentBufferLength - (lastTrueIndex + 1);
+                                bytesToDiscard = firstIncompleteIndex;
+                            }
+                            
+                            if (bytesToDiscard > 0)
+                            {
+                                int remainingMessageLength = currentBufferLength - bytesToDiscard;
                                 if (remainingMessageLength > 0)
                                 {
                                     appendedBufferOffset[pedalSelected] = remainingMessageLength;
-
-                                    Buffer.BlockCopy(buffer_appended[pedalSelected], lastTrueIndex + 1, buffer_appended[pedalSelected], 0, remainingMessageLength);
-                                    //Array.Clear(buffer_appended[pedalSelected], appendedBufferOffset[pedalSelected], bufferSize - appendedBufferOffset[pedalSelected]); // 120 - 20 + 1 = 101 elements
-
-
-
-                                    if (!((buffer_appended[pedalSelected][0] == 170) && (buffer_appended[pedalSelected][1] == 85)))
-                                    {
-                                        int tmp = 5;
-                                    }
+                                    Buffer.BlockCopy(buffer_appended[pedalSelected], bytesToDiscard, buffer_appended[pedalSelected], 0, remainingMessageLength);
+                                    Array.Clear(buffer_appended[pedalSelected], remainingMessageLength, bufferSize - remainingMessageLength);
                                 }
                                 else
                                 {
                                     appendedBufferOffset[pedalSelected] = 0;
                                 }
                             }
-                            else
-                            {
-                                //appendedBufferOffset[pedalSelected] += receivedLength;
-                                appendedBufferOffset[pedalSelected] = 0;
-                            }
-
-
-
-
                         }
+
                         
 
 
