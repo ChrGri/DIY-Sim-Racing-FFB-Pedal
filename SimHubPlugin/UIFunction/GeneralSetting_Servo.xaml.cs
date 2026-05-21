@@ -531,12 +531,16 @@ namespace DiyFfbPedal.UIFunction
         // ---------------------------------------------------------------
         private readonly Queue<ServoReadBatch> _pendingBatchQueue = new Queue<ServoReadBatch>();
         private readonly System.Windows.Threading.DispatcherTimer _readTimeoutTimer;
+        private int _totalReads;
 
         // ---------------------------------------------------------------
         // Sequential write state (used by Btn_ResetToRecommended_Click)
         // ---------------------------------------------------------------
         private readonly Queue<ServoRegisterEntry> _pendingWriteQueue = new Queue<ServoRegisterEntry>();
         private readonly System.Windows.Threading.DispatcherTimer _writeTimer;
+        private Window _progressWindow;
+        private ProgressBar _progressBar;
+        private int _totalWrites;
 
         // ---------------------------------------------------------------
         // Button handlers
@@ -578,6 +582,30 @@ namespace DiyFfbPedal.UIFunction
                 _pendingBatchQueue.Enqueue(currentBatch);
             }
 
+            _totalReads = _pendingBatchQueue.Count;
+
+            _progressBar = new ProgressBar
+            {
+                Minimum = 0,
+                Maximum = _totalReads,
+                Margin = new Thickness(20),
+                Height = 20
+            };
+
+            _progressWindow = new Window
+            {
+                Title = "Reading from Servo...",
+                Width = 300,
+                Height = 100,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                WindowStyle = WindowStyle.ToolWindow,
+                ResizeMode = ResizeMode.NoResize,
+                Topmost = true,
+                Content = _progressBar
+            };
+            _progressWindow.Closed += (s, ev) => { _progressWindow = null; _progressBar = null; };
+            _progressWindow.Show();
+
             SendNextPendingBatch();
         }
 
@@ -587,7 +615,19 @@ namespace DiyFfbPedal.UIFunction
         private void SendNextPendingBatch()
         {
             _readTimeoutTimer.Stop();
-            if (_pendingBatchQueue.Count == 0) return;
+            if (_pendingBatchQueue.Count == 0)
+            {
+                if (_progressWindow != null)
+                {
+                    _progressWindow.Close();
+                }
+                return;
+            }
+
+            if (_progressBar != null)
+            {
+                _progressBar.Value = _totalReads - _pendingBatchQueue.Count;
+            }
 
             ServoReadBatch nextBatch = _pendingBatchQueue.Peek();
             _readTimeoutTimer.Start();
@@ -664,19 +704,59 @@ namespace DiyFfbPedal.UIFunction
         /// </summary>
         private void Btn_ResetToRecommended_Click(object sender, RoutedEventArgs e)
         {
-            // Stop any pending write sequence first
-            _writeTimer.Stop();
-            _pendingWriteQueue.Clear();
-
             // Update the table
             foreach (var entry in ServoRegisters)
                 entry.LiveValue = entry.RecommendedValue;
 
             ServoRegisterGrid.Items.Refresh();
 
-            // Enqueue all registers for sequential serial write
+            WriteAllRegistersToServo();
+        }
+
+        private void WriteAllRegistersToServo()
+        {
+            // Stop any pending write sequence first
+            _writeTimer.Stop();
+            _pendingWriteQueue.Clear();
+
+            // Enqueue all registers that have a value for sequential serial write
             foreach (var entry in ServoRegisters)
-                _pendingWriteQueue.Enqueue(entry);
+            {
+                if (entry.LiveValue.HasValue)
+                {
+                    _pendingWriteQueue.Enqueue(entry);
+                }
+            }
+
+            if (_pendingWriteQueue.Count == 0)
+            {
+                FlashToServoRequested?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+
+            _totalWrites = _pendingWriteQueue.Count;
+
+            _progressBar = new ProgressBar
+            {
+                Minimum = 0,
+                Maximum = _totalWrites,
+                Margin = new Thickness(20),
+                Height = 20
+            };
+
+            _progressWindow = new Window
+            {
+                Title = "Writing to Servo...",
+                Width = 300,
+                Height = 100,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                WindowStyle = WindowStyle.ToolWindow,
+                ResizeMode = ResizeMode.NoResize,
+                Topmost = true,
+                Content = _progressBar
+            };
+            _progressWindow.Closed += (s, ev) => { _progressWindow = null; _progressBar = null; };
+            _progressWindow.Show();
 
             // Start the write timer – OnWriteTimerTick will drain the queue
             _writeTimer.Start();
@@ -692,6 +772,11 @@ namespace DiyFfbPedal.UIFunction
             if (_pendingWriteQueue.Count == 0)
             {
                 _writeTimer.Stop();
+                if (_progressWindow != null)
+                {
+                    _progressWindow.Close();
+                }
+
                 FlashToServoRequested?.Invoke(this, EventArgs.Empty);
                 return;
             }
@@ -701,6 +786,11 @@ namespace DiyFfbPedal.UIFunction
             var batch = new List<ServoRegisterEntry>(batchSize);
             while (batch.Count < batchSize && _pendingWriteQueue.Count > 0)
                 batch.Add(_pendingWriteQueue.Dequeue());
+
+            if (_progressBar != null)
+            {
+                _progressBar.Value = _totalWrites - _pendingWriteQueue.Count;
+            }
 
             ServoBatchWriteRequested?.Invoke(this, batch.ToArray());
         }
@@ -712,7 +802,7 @@ namespace DiyFfbPedal.UIFunction
         /// </summary>
         private void Btn_FlashToServo_Click(object sender, RoutedEventArgs e)
         {
-            FlashToServoRequested?.Invoke(this, EventArgs.Empty);
+            WriteAllRegistersToServo();
         }
 
         private void Btn_ResetToFactory_Click(object sender, RoutedEventArgs e)

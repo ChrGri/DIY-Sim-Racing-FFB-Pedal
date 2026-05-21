@@ -500,33 +500,29 @@ void IRAM_ATTR StepperWithLimits::processPendingCommands() {
         if (cmd.isWrite_b) {
             // WRITE: FC06 writes exactly 1 register per frame.
             // Multiple registers are written as consecutive single writes.
-            ActiveSerial->printf("[ServoModbus] WRITE addr=0x%04X count=%u\n",
-                                 cmd.startAddr_u16, count);
+            // ActiveSerial->printf("[ServoModbus] WRITE addr=0x%04X count=%u\n", cmd.startAddr_u16, count);
             for (uint8_t i = 0; i < count; i++) {
-                ActiveSerial->printf("[ServoModbus]   reg[%u] 0x%04X = %d\n",
-                                     i, cmd.startAddr_u16 + i, cmd.values[i]);
+                // ActiveSerial->printf("[ServoModbus]   reg[%u] 0x%04X = %d\n", i, cmd.startAddr_u16 + i, cmd.values[i]);
                 isv57.writeHoldingRegisterToDevice(
                     isv57.slaveId,
                     (int32_t)(cmd.startAddr_u16 + i),
                     (uint16_t)cmd.values[i]);
             }
-            ActiveSerial->printf("[ServoModbus] WRITE done\n");
+            // ActiveSerial->printf("[ServoModbus] WRITE done\n");
         } else {
             // READ: read each requested address individually (supports non-consecutive registers).
-            ActiveSerial->printf("[ServoModbus] READ %u register(s)\n", count);
+            // ActiveSerial->printf("[ServoModbus] READ %u register(s)\n", count);
             int16_t resultBuf[10] = {};
             uint8_t resultCount = 0;
             for (uint8_t i = 0; i < count; i++) {
                 int16_t buf[1] = {};
                 int n = isv57.readRegisters(cmd.readAddresses[i], 1, buf);
                 if (n > 0) {
-                    ActiveSerial->printf("[ServoModbus]   reg[%u] 0x%04X = %d\n",
-                                         i, cmd.readAddresses[i], buf[0]);
+                    // ActiveSerial->printf("[ServoModbus]   reg[%u] 0x%04X = %d\n", i, cmd.readAddresses[i], buf[0]);
                     servoModbusReadAddresses[resultCount] = cmd.readAddresses[i];
                     resultBuf[resultCount++] = buf[0];
                 } else {
-                    ActiveSerial->printf("[ServoModbus]   reg[%u] 0x%04X READ failed\n",
-                                         i, cmd.readAddresses[i]);
+                    // ActiveSerial->printf("[ServoModbus]   reg[%u] 0x%04X READ failed\n", i, cmd.readAddresses[i]);
                     servoModbusReadAddresses[resultCount] = cmd.readAddresses[i];
                     resultBuf[resultCount++] = 0; // placeholder for failed read
                 }
@@ -535,7 +531,7 @@ void IRAM_ATTR StepperWithLimits::processPendingCommands() {
             servoModbusReadCount_u8 = resultCount;
             servoModbusReadAddr_u16 = (count > 0) ? cmd.readAddresses[0] : 0;
             servoModbusReadReady_b  = true;
-            ActiveSerial->printf("[ServoModbus] READ done, %u register(s) ready\n", resultCount);
+            // ActiveSerial->printf("[ServoModbus] READ done, %u register(s) ready\n", resultCount);
         }
     }
 }

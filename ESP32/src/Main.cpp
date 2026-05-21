@@ -112,6 +112,7 @@ void otaUpdateTask( void * pvParameters );
 void espNowCommunicationTaskTx( void * pvParameters);
 void miscTask( void * pvParameters);
 void configUpdateTask( void * pvParameters );
+void servoConfigHandlingTask( void * pvParameters );
 
 #ifdef USB_JOYSTICK
   void joystickOutputTask( void * pvParameters );
@@ -222,6 +223,7 @@ static QueueHandle_t s_actionCommandQueue = NULL;
 static QueueHandle_t s_configUpdateSendToSerialRXTaskQueue = NULL;
 static QueueHandle_t s_systemControlQueue = NULL;
 static QueueHandle_t s_servoConfigTxQueue = NULL;
+static QueueHandle_t s_servoConfigRxQueue = NULL;
 
 
 
@@ -586,6 +588,7 @@ TaskHandle_t handle_miscTask = NULL;
 TaskHandle_t handle_otaTask = NULL;
 TaskHandle_t handle_espnowTask = NULL;
 TaskHandle_t handle_configHandlingTask = NULL;
+TaskHandle_t handle_servoConfigHandlingTask = NULL;
 
 #define COUNTER_SIZE_U32 4u
 uint16_t tickCount_au16[COUNTER_SIZE_U32] = {0};
@@ -857,6 +860,11 @@ void setup()
   {
     ActiveSerial->println("Error creating the servo config tx queue!");
   }
+  s_servoConfigRxQueue = xQueueCreate(5, sizeof(DAP_servo_config_st));
+  if (s_servoConfigRxQueue == NULL)
+  {
+    ActiveSerial->println("Error creating the servo config rx queue!");
+  }
 
 
 
@@ -867,6 +875,15 @@ void setup()
                     NULL,        /* parameter of the task */
                     TASK_PRIORITY_CONFIG_HANDLING_TASK_UBASETYPE,           /* priority of the task */
                     &handle_configHandlingTask,      /* Task handle to keep track of created task */
+                    CORE_ID_CONFIG_HANDLING_TASK_U8);          /* pin task to core 1 */  
+
+  xTaskCreatePinnedToCore(
+                    servoConfigHandlingTask,   /* Task function. */
+                    "servoConfigHandlingTask",     /* name of task. */
+                    3000,       /* Stack size of task */
+                    NULL,        /* parameter of the task */
+                    TASK_PRIORITY_CONFIG_HANDLING_TASK_UBASETYPE,           /* priority of the task */
+                    &handle_servoConfigHandlingTask,      /* Task handle */
                     CORE_ID_CONFIG_HANDLING_TASK_U8);          /* pin task to core 1 */  
 
   
@@ -2868,144 +2885,140 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                       calculated_crc = checksumCalculator_u16((uint8_t*)(&(received_action.payloadHeader_st)), sizeof(received_action.payloadHeader_st) + sizeof(received_action.payloadPedalAction_st));
                       received_crc = received_action.payloadFooter_st.checkSum_u16;
 
-                        if (calculated_crc != received_crc || received_action.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8)
+                      if (calculated_crc != received_crc || received_action.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8)
+                      {
+                        structIsValid = false;
+                      }
+                      else
+                      {
+                        // --- VALID ACTION PACKET ---
+                        // Place your extensive action handling logic here
+                        // For clarity, this could be moved to its own function: handleActionPacket(received_action);
+                        if (received_action.payloadPedalAction_st.systemAction_u8 == 2)
                         {
-                          structIsValid = false;
+                            ActiveSerial->println("ESP restart by user request");
+                            ESP.restart();
                         }
-                        else
+
+                        //3= Wifi OTA
+                        #ifdef ESPNOW_Enable
+                        if (received_action.payloadPedalAction_st.systemAction_u8==(uint8_t)PedalSystemAction::ENABLE_OTA)
                         {
-                          // --- VALID ACTION PACKET ---
-                          // Place your extensive action handling logic here
-                          // For clarity, this could be moved to its own function: handleActionPacket(received_action);
-                          if (received_action.payloadPedalAction_st.systemAction_u8 == 2)
-                          {
-                              ActiveSerial->println("ESP restart by user request");
-                              ESP.restart();
-                          }
-
-                          //3= Wifi OTA
-                          #ifdef ESPNOW_Enable
-                          if (received_action.payloadPedalAction_st.systemAction_u8==(uint8_t)PedalSystemAction::ENABLE_OTA)
-                          {
-                            ActiveSerial->println("Get OTA command");
-                            g_OTA_enable_b=true;
-                            //g_OTA_enable_start=true;
-                            g_ESPNow_OTA_enable=false;
-                          }
+                          ActiveSerial->println("Get OTA command");
+                          g_OTA_enable_b=true;
+                          //g_OTA_enable_start=true;
+                          g_ESPNow_OTA_enable=false;
+                        }
+                        #endif
+                        //4 Enable pairing
+                        if (received_action.payloadPedalAction_st.systemAction_u8==4)
+                        {
+                          #ifdef ESPNow_Pairing_function
+                            ActiveSerial->println("Get Pairing command");
+                            software_pairing_action_b=true;
                           #endif
-                          //4 Enable pairing
-                          if (received_action.payloadPedalAction_st.systemAction_u8==4)
-                          {
-                            #ifdef ESPNow_Pairing_function
-                              ActiveSerial->println("Get Pairing command");
-                              software_pairing_action_b=true;
-                            #endif
-                            #ifndef ESPNow_Pairing_function
-                              ActiveSerial->println("no supporting command");
-                            #endif
-                          }
-                          
-                          if (received_action.payloadPedalAction_st.systemAction_u8==(uint8_t)PedalSystemAction::ESP_BOOT_INTO_DOWNLOAD_MODE)
-                          {
-                            #ifdef ESPNow_S3
-                              ActiveSerial->println("Restart into Download mode");
-                              delay(1000);
-                              REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
-                              ESP.restart();
-                            #else
-                              ActiveSerial->println("Command not supported");
-                              delay(1000);
-                            #endif
-                            //ESPNOW_BootIntoDownloadMode = false;
-                          }
-                          if (received_action.payloadPedalAction_st.systemAction_u8 == (uint8_t)PedalSystemAction::PRINT_PEDAL_INFO)
-                          {
-                            char logString[200];
-                            snprintf(logString, sizeof(logString),
-                                    "Pedal ID: %d\nBoard: %s\nLoadcell shift= %.3f kg\nLoadcell variance= %.3f kg\nPSU voltage:%.1f V\nMax endstop:%lu\nCurrentPos:%lu\n\0",
-                                     sct_dap_config_st.payloadPedalConfig_st.pedalType_u8, CONTROL_BOARD, loadcell->getBiasEstimate(), loadcell->getStandardDeviationEstimate(), ((float)stepper->getServosVoltage() / 10.0f), dap_calculationVariables_st.stepperPosMaxEndstop_i32, dap_calculationVariables_st.currentPedalPosition_u32);
-                            ActiveSerial->println(logString);
-                          }
+                          #ifndef ESPNow_Pairing_function
+                            ActiveSerial->println("no supporting command");
+                          #endif
+                        }
+                        
+                        if (received_action.payloadPedalAction_st.systemAction_u8==(uint8_t)PedalSystemAction::ESP_BOOT_INTO_DOWNLOAD_MODE)
+                        {
+                          #ifdef ESPNow_S3
+                            ActiveSerial->println("Restart into Download mode");
+                            delay(1000);
+                            REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+                            ESP.restart();
+                          #else
+                            ActiveSerial->println("Command not supported");
+                            delay(1000);
+                          #endif
+                          //ESPNOW_BootIntoDownloadMode = false;
+                        }
+                        if (received_action.payloadPedalAction_st.systemAction_u8 == (uint8_t)PedalSystemAction::PRINT_PEDAL_INFO)
+                        {
+                          char logString[200];
+                          snprintf(logString, sizeof(logString),
+                                  "Pedal ID: %d\nBoard: %s\nLoadcell shift= %.3f kg\nLoadcell variance= %.3f kg\nPSU voltage:%.1f V\nMax endstop:%lu\nCurrentPos:%lu\n\0",
+                                    sct_dap_config_st.payloadPedalConfig_st.pedalType_u8, CONTROL_BOARD, loadcell->getBiasEstimate(), loadcell->getStandardDeviationEstimate(), ((float)stepper->getServosVoltage() / 10.0f), dap_calculationVariables_st.stepperPosMaxEndstop_i32, dap_calculationVariables_st.currentPedalPosition_u32);
+                          ActiveSerial->println(logString);
+                        }
 
-                          // Send action to pedalUpdateTask via Queue
-                          xQueueSend(s_actionCommandQueue, &received_action, (TickType_t)0);
-                          // trigger return pedal position
-                          if (received_action.payloadPedalAction_st.returnPedalConfig_u8)
+                        // Send action to pedalUpdateTask via Queue
+                        xQueueSend(s_actionCommandQueue, &received_action, (TickType_t)0);
+                        // trigger return pedal position
+                        if (received_action.payloadPedalAction_st.returnPedalConfig_u8)
+                        {
+                        
+                          DapConfig_t * dap_config_st_local_ptr;
+                          dap_config_st_local_ptr = &sct_dap_config_st;
+                          dap_config_st_local_ptr->payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+                          dap_config_st_local_ptr->payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+                          dap_config_st_local_ptr->payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+                          dap_config_st_local_ptr->payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
+                          uint16_t crc = checksumCalculator_u16((uint8_t*)(&(sct_dap_config_st.payloadHeader_st)), sizeof(sct_dap_config_st.payloadHeader_st) + sizeof(sct_dap_config_st.payloadPedalConfig_st));
+                          dap_config_st_local_ptr->payloadFooter_st.checkSum_u16 = crc;
+
+                          // suspend the serial Tx task so that data can properly be send
+                          vTaskSuspend(handle_serialCommunicationTx);
+                          delay(50);
+                          ActiveSerial->write((char*)dap_config_st_local_ptr, sizeof(DapConfig_t));
+                          ActiveSerial->print("Return pedal config");
+                          delay(50);
+                          vTaskResume(handle_serialCommunicationTx);
+
+                        }
+                        #ifdef ESPNOW_Enable
+                          if(received_action.payloadPedalAction_st.rudderAction_u8==1)//Enable Rudder
                           {
-                          
-                            DapConfig_t * dap_config_st_local_ptr;
-                            dap_config_st_local_ptr = &sct_dap_config_st;
-                            dap_config_st_local_ptr->payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
-                            dap_config_st_local_ptr->payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
-                            dap_config_st_local_ptr->payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
-                            dap_config_st_local_ptr->payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
-                            uint16_t crc = checksumCalculator_u16((uint8_t*)(&(sct_dap_config_st.payloadHeader_st)), sizeof(sct_dap_config_st.payloadHeader_st) + sizeof(sct_dap_config_st.payloadPedalConfig_st));
-                            dap_config_st_local_ptr->payloadFooter_st.checkSum_u16 = crc;
-
-                            // suspend the serial Tx task so that data can properly be send
-                            vTaskSuspend(handle_serialCommunicationTx);
-                            delay(50);
-                            ActiveSerial->write((char*)dap_config_st_local_ptr, sizeof(DapConfig_t));
-                            ActiveSerial->print("Return pedal config");
-                            delay(50);
-                            vTaskResume(handle_serialCommunicationTx);
-
-                          }
-                          #ifdef ESPNOW_Enable
-                            if(received_action.payloadPedalAction_st.rudderAction_u8==1)//Enable Rudder
+                            if(dap_calculationVariables_st.rudderStatus_b==false)
                             {
-                              if(dap_calculationVariables_st.rudderStatus_b==false)
-                              {
-                                dap_calculationVariables_st.rudderStatus_b=true;
-                                ActiveSerial->println("Rudder on");
-                                Rudder_initializing=true;
-                                moveSlowlyToPosition_b=true;
-                                //ActiveSerial->print("status:");
-                                //ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
-                              }
-                              else
-                              {
-                                dap_calculationVariables_st.rudderStatus_b=false;
-                                ActiveSerial->println("Rudder off");
-                                Rudder_deinitializing=true;
-                                moveSlowlyToPosition_b=true; 
-
-                                //ActiveSerial->print("status:");
-                                //ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
-                              }
+                              dap_calculationVariables_st.rudderStatus_b=true;
+                              ActiveSerial->println("Rudder on");
+                              Rudder_initializing=true;
+                              moveSlowlyToPosition_b=true;
+                              //ActiveSerial->print("status:");
+                              //ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
                             }
-                            if(received_action.payloadPedalAction_st.rudderBrakeAction_u8==1)
-                            {
-                              if(dap_calculationVariables_st.rudderBrakeStatus_b==false&&dap_calculationVariables_st.rudderStatus_b==true)
-                              {
-                                dap_calculationVariables_st.rudderBrakeStatus_b=true;
-                                ActiveSerial->println("Rudder brake on");
-                                //ActiveSerial->print("status:");
-                                //ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
-                              }
-                              else
-                              {
-                                dap_calculationVariables_st.rudderBrakeStatus_b=false;
-                                ActiveSerial->println("Rudder brake off");
-                                //ActiveSerial->print("status:");
-                                //ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
-                              }
-                            }
-                            //clear rudder status
-                            if(received_action.payloadPedalAction_st.rudderAction_u8==2)
+                            else
                             {
                               dap_calculationVariables_st.rudderStatus_b=false;
-                              dap_calculationVariables_st.rudderBrakeStatus_b=false;
-                              ActiveSerial->println("Rudder Status Clear");
+                              ActiveSerial->println("Rudder off");
                               Rudder_deinitializing=true;
-                              moveSlowlyToPosition_b=true;
+                              moveSlowlyToPosition_b=true; 
 
+                              //ActiveSerial->print("status:");
+                              //ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
                             }
-                          #endif
-                          
-                          
+                          }
+                          if(received_action.payloadPedalAction_st.rudderBrakeAction_u8==1)
+                          {
+                            if(dap_calculationVariables_st.rudderBrakeStatus_b==false&&dap_calculationVariables_st.rudderStatus_b==true)
+                            {
+                              dap_calculationVariables_st.rudderBrakeStatus_b=true;
+                              ActiveSerial->println("Rudder brake on");
+                              //ActiveSerial->print("status:");
+                              //ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
+                            }
+                            else
+                            {
+                              dap_calculationVariables_st.rudderBrakeStatus_b=false;
+                              ActiveSerial->println("Rudder brake off");
+                              //ActiveSerial->print("status:");
+                              //ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
+                            }
+                          }
+                          //clear rudder status
+                          if(received_action.payloadPedalAction_st.rudderAction_u8==2)
+                          {
+                            dap_calculationVariables_st.rudderStatus_b=false;
+                            dap_calculationVariables_st.rudderBrakeStatus_b=false;
+                            ActiveSerial->println("Rudder Status Clear");
+                            Rudder_deinitializing=true;
+                            moveSlowlyToPosition_b=true;
 
-                          
+                          }
+                        #endif
                       }
                       break;
                   }
@@ -3052,74 +3065,13 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                       else
                       {
                           ActiveSerial->println("Valid servo config packet received");
-                          uint8_t validFields = received_servo_config.payloadServoConfig_st.numValidFields;
-                          if (validFields > 10) validFields = 10;
-
-                          if (received_servo_config.payloadServoConfig_st.readWriteFlag == 1) {
-                              // Write
-                              DAP_servo_config_st_t resp;
-                              resp.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8;
-                              resp.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
-                              resp.payloadServoConfig_st.readWriteFlag = 2; // Kennzeichnung als ACK/Antwort
-							  
-                              for (uint8_t i = 0; i < validFields; i++) {
-                                  uint16_t addr = received_servo_config.payloadServoConfig_st.registerAddresses[i];
-                                  uint16_t val = received_servo_config.payloadServoConfig_st.registerValues[i];
-								  
-								                  resp.payloadServoConfig_st.registerAddresses[i] = addr;
-								  
-                                  if (stepper != nullptr) {
-                                      ServoModbusCmd_t cmd = {};
-                                      cmd.startAddr_u16 = addr;
-                                      cmd.count_u8      = 1;   // single register per packet
-                                      cmd.isWrite_b     = true;
-                                      cmd.values[0] = (int16_t)(val & 0xFFFF);
-                                      stepper->scheduleServoModbusCmd(cmd);
-                                  }
-								  
-                                  bool success = 1;
-                                  if (success) {
-                                      resp.payloadServoConfig_st.registerValues[i] = val;
-                                  } else {
-                                    resp.payloadServoConfig_st.registerValues[i] = 0xFFFF; // Fehlercode falls Timeout
-                                  }
-								
-                                  ActiveSerial->printf("Servo config write: addr=0x%X, val=%u\n", addr, val);
-                                  // Add small delay to avoid overwriting pending command too quickly
-                                  vTaskDelay(pdMS_TO_TICKS(10));
-                              }
-                              // CRC Checksumme und Footer berechnen
-                              resp.payloadFooter_st.checkSum_u16 = checksumCalculator_u16( (uint8_t*)(&resp.payloadHeader_st), sizeof(resp.payloadHeader_st) + sizeof(resp.payloadServoConfig_st));
-                              resp.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
-                              resp.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
-                            
-                              // 10er-Paket am Stück zurück an den PC senden via Queue
-                              if (s_servoConfigTxQueue != NULL) {
-                                  xQueueSend(s_servoConfigTxQueue, &resp, (TickType_t)0);
-                              }
-			
-                          } 
-						              else 
-                          {
-                              // Read: schedule all requested register addresses (up to 10, non-consecutive)
-                              if (validFields > 0 && stepper != nullptr) {
-                                  ServoModbusCmd_t cmd = {};
-                                  cmd.count_u8  = validFields;
-                                  if (cmd.count_u8 > 10) cmd.count_u8 = 10;
-                                  cmd.isWrite_b = false;
-                                  for (uint8_t i = 0; i < cmd.count_u8; i++) {
-                                      cmd.readAddresses[i] = received_servo_config.payloadServoConfig_st.registerAddresses[i];
-                                  }
-                                  stepper->scheduleServoModbusCmd(cmd);
-                                  ActiveSerial->printf("Servo config read scheduled: %u register(s)\n", cmd.count_u8);
-                              }
+                          if (s_servoConfigRxQueue != NULL) {
+                              xQueueSend(s_servoConfigRxQueue, &received_servo_config, (TickType_t)0);
                           }
                       }
                       break;
                   }
-
-                  
-              } // end switch
+                } // end switch
 
                 if (!structIsValid)
                 {
@@ -3131,17 +3083,17 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                   // Packet was valid and processed, advance index past this packet
                   buffer_idx += expectedSize;
               }
-          } // end while
+            } // end while
 
-          // --- 3. Clean up the buffer ---
-              if (buffer_idx > 0)
+            // --- 3. Clean up the buffer ---
+            if (buffer_idx > 0)
+            {
+            size_t remaining_len = buffer_len - buffer_idx;
+              if (remaining_len > 0)
               {
-              size_t remaining_len = buffer_len - buffer_idx;
-                if (remaining_len > 0)
-                {
-                  memmove(rx_buffer, &rx_buffer[buffer_idx], remaining_len);
-              }
-              buffer_len = remaining_len;
+                memmove(rx_buffer, &rx_buffer[buffer_idx], remaining_len);
+            }
+            buffer_len = remaining_len;
           }
 
           profiler_serialCommunicationTask.end(0);
@@ -3278,6 +3230,85 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
     DAP_servo_config_st_t servoConfigResp;
     while (s_servoConfigTxQueue != NULL && xQueueReceive(s_servoConfigTxQueue, &servoConfigResp, (TickType_t)0) == pdPASS) {
         ActiveSerial->write((char*)&servoConfigResp, sizeof(DAP_servo_config_st_t));
+    }
+  }
+}
+
+/**********************************************************************************************/
+/*                                                                                            */
+/*                         servo config handling                                              */
+/*                                                                                            */
+/**********************************************************************************************/
+void IRAM_ATTR_FLAG servoConfigHandlingTask( void * pvParameters )
+{
+  DAP_servo_config_st received_servo_config;
+
+  for (;;)
+  {
+    if (xQueueReceive(s_servoConfigRxQueue, &received_servo_config, portMAX_DELAY) == pdPASS)
+    {
+      uint8_t validFields = received_servo_config.payloadServoConfig_st.numValidFields;
+      if (validFields > 10) validFields = 10;
+
+      if (received_servo_config.payloadServoConfig_st.readWriteFlag == 1) {
+          // Write
+          DAP_servo_config_st_t resp;
+          resp.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8;
+          resp.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
+          resp.payloadServoConfig_st.readWriteFlag = 2; // Kennzeichnung als ACK/Antwort
+          
+          for (uint8_t i = 0; i < validFields; i++) {
+              uint16_t addr = received_servo_config.payloadServoConfig_st.registerAddresses[i];
+              uint16_t val = received_servo_config.payloadServoConfig_st.registerValues[i];
+              
+              resp.payloadServoConfig_st.registerAddresses[i] = addr;
+              
+              if (stepper != nullptr) {
+                  ServoModbusCmd_t cmd = {};
+                  cmd.startAddr_u16 = addr;
+                  cmd.count_u8      = 1;   // single register per packet
+                  cmd.isWrite_b     = true;
+                  cmd.values[0] = (int16_t)(val & 0xFFFF);
+                  stepper->scheduleServoModbusCmd(cmd);
+              }
+              
+              bool success = 1;
+              if (success) {
+                  resp.payloadServoConfig_st.registerValues[i] = val;
+              } else {
+                resp.payloadServoConfig_st.registerValues[i] = 0xFFFF; // Fehlercode falls Timeout
+              }
+            
+              // ActiveSerial->printf("Servo config write: addr=0x%X, val=%u\n", addr, val);
+              // Add small delay to avoid overwriting pending command too quickly
+              vTaskDelay(pdMS_TO_TICKS(10));
+          }
+          // CRC Checksumme und Footer berechnen
+          resp.payloadFooter_st.checkSum_u16 = checksumCalculator_u16( (uint8_t*)(&resp.payloadHeader_st), sizeof(resp.payloadHeader_st) + sizeof(resp.payloadServoConfig_st));
+          resp.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+          resp.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
+        
+          // 10er-Paket am Stück zurück an den PC senden via Queue
+          if (s_servoConfigTxQueue != NULL) {
+              xQueueSend(s_servoConfigTxQueue, &resp, (TickType_t)0);
+          }
+
+      } 
+      else 
+      {
+          // Read: schedule all requested register addresses (up to 10, non-consecutive)
+          if (validFields > 0 && stepper != nullptr) {
+              ServoModbusCmd_t cmd = {};
+              cmd.count_u8  = validFields;
+              if (cmd.count_u8 > 10) cmd.count_u8 = 10;
+              cmd.isWrite_b = false;
+              for (uint8_t i = 0; i < cmd.count_u8; i++) {
+                  cmd.readAddresses[i] = received_servo_config.payloadServoConfig_st.registerAddresses[i];
+              }
+              stepper->scheduleServoModbusCmd(cmd);
+              // ActiveSerial->printf("Servo config read scheduled: %u register(s)\n", cmd.count_u8);
+          }
+      }
     }
   }
 }
