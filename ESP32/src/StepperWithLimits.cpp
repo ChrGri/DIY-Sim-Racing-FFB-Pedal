@@ -498,6 +498,14 @@ void IRAM_ATTR StepperWithLimits::processPendingCommands() {
         uint8_t count = (cmd.count_u8 > 10u) ? 10u : cmd.count_u8;
 
         if (cmd.isWrite_b) {
+            // Wenn SimHub einen vollständigen Schreibvorgang startet (beginnt immer bei Pr0.00 = 0x0000),
+            // oder den NVM-Flash-Befehl (0x019A) sendet, schalten wir die Achse ab, da der Servo sonst blockiert.
+            if (cmd.readAddresses[0] == 0x0000 || cmd.readAddresses[0] == 0x019A) {
+                isv57.disableAxis();
+                servoStatus = SERVO_IDLE_NOT_CONNECTED; // Erlaubt den automatischen ESP-Neustart beim nächsten Pedal-Druck!
+            }
+            delay(20);
+
             int16_t resultBuf[10] = {};
             uint8_t resultCount = 0;
             

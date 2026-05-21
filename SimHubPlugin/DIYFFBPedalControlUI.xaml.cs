@@ -1,4 +1,4 @@
-﻿//using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
+﻿﻿//using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
 using System;
 using System.Collections.Generic;
 using System.IO.Ports;
@@ -202,6 +202,20 @@ namespace DiyFfbPedal
             {
                 DAP_config_set_default(pedalIdx);
 
+            }
+
+            // WICHTIG: Hier abonnieren wir die neuen Batch-Events für den Servo-Tab,
+            // damit die UI-Events auch wirklich an die C#-Methoden weitergeleitet werden!
+            if (Servo_Tab != null)
+            {
+                Servo_Tab.ServoModbusBatchReadRequested -= Servo_Tab_ServoModbusBatchReadRequested;
+                Servo_Tab.ServoModbusBatchReadRequested += Servo_Tab_ServoModbusBatchReadRequested;
+                Servo_Tab.ServoBatchWriteRequested -= Servo_Tab_ServoBatchWriteRequested;
+                Servo_Tab.ServoBatchWriteRequested += Servo_Tab_ServoBatchWriteRequested;
+                Servo_Tab.FlashToServoRequested -= Servo_Tab_FlashToServoRequested;
+                Servo_Tab.FlashToServoRequested += Servo_Tab_FlashToServoRequested;
+                Servo_Tab.ResetToFactoryRequested -= Servo_Tab_ResetToFactoryRequested;
+                Servo_Tab.ResetToFactoryRequested += Servo_Tab_ResetToFactoryRequested;
             }
 
             //auto connection with timmer
