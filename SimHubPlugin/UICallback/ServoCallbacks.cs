@@ -179,6 +179,24 @@ namespace DiyFfbPedal
                 values: new ushort[] { 0 });
             SendServoConfigSerial(pedalIdx, packet);
         }
+		
+		private void Servo_Tab_ServoModbusBatchReadRequested(object sender, System.Collections.Generic.List<ushort> addresses)
+		{
+			if (Plugin == null) return;
+
+			byte pedalIdx = (byte)indexOfSelectedPedal_u;
+
+			// Wir brauchen ein leeres Array für die Values in der gleichen Größe wie die Adressen (da wir nur lesen)
+			ushort[] emptyValues = new ushort[addresses.Count];
+
+			// --- Serial path: DAP_servo_config_st READ (Batch von bis zu 10 Registern) ---
+			byte[] packet = BuildServoConfigPacket(
+				readWriteFlag: 0,
+				addresses: addresses.ToArray(), // Liste in ein Array umwandeln
+				values:    emptyValues);
+
+			SendServoConfigSerial(pedalIdx, packet);
+		}
 
         // ---------------------------------------------------------------
         // Flash — NVM-save command: register 0x019A = 0x5555
