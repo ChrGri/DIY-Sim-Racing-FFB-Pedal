@@ -180,7 +180,7 @@ namespace DiyFfbPedal
             SendServoConfigSerial(pedalIdx, packet);
         }
 		
-		private void Servo_Tab_ServoModbusBatchReadRequested(object sender, List<ushort> addresses)
+		private void Servo_Tab_ServoModbusBatchReadRequested(object sender, System.Collections.Generic.List<ushort> addresses)
 		{
 			if (Plugin == null) return;
 

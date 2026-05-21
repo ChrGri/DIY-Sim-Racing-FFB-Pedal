@@ -502,6 +502,12 @@ namespace DiyFfbPedal.UIFunction
         public event EventHandler<ServoRegisterEntry> ServoRegisterValueChanged;
 
         /// <summary>
+        /// Raised by the write timer with a batch of up to 10 registers to write at once.
+        /// The parent builds a single DAP_servo_config_st packet containing all entries.
+        /// </summary>
+        public event EventHandler<ServoRegisterEntry[]> ServoBatchWriteRequested;
+
+        /// <summary>
         /// Raised to request a single Modbus READ for the given holding-register address.
         /// Note: Kept for legacy signature compatibility, but internal queueing now optimizes via batches.
         /// </summary>
@@ -678,6 +684,7 @@ namespace DiyFfbPedal.UIFunction
 
         /// <summary>
         /// Sends the next queued register write to the servo.
+        /// Dequeues up to 10 registers per tick and fires them as a single batch.
         /// When the queue is empty, fires FlashToServoRequested to persist to NVM.
         /// </summary>
         private void OnWriteTimerTick(object sender, EventArgs e)
@@ -685,13 +692,17 @@ namespace DiyFfbPedal.UIFunction
             if (_pendingWriteQueue.Count == 0)
             {
                 _writeTimer.Stop();
-                // Persist all parameters to NVM
                 FlashToServoRequested?.Invoke(this, EventArgs.Empty);
                 return;
             }
 
-            var entry = _pendingWriteQueue.Dequeue();
-            ServoRegisterValueChanged?.Invoke(this, entry);
+            // Dequeue up to 10 entries and send as a single batch packet
+            const int batchSize = 10;
+            var batch = new List<ServoRegisterEntry>(batchSize);
+            while (batch.Count < batchSize && _pendingWriteQueue.Count > 0)
+                batch.Add(_pendingWriteQueue.Dequeue());
+
+            ServoBatchWriteRequested?.Invoke(this, batch.ToArray());
         }
 
         /// <summary>

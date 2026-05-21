@@ -3051,16 +3051,16 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
 
                           if (received_servo_config.payloadServoConfig_st.readWriteFlag == 1) {
                               // Write
-							  DAP_servo_config_st_t resp;
-							  resp.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8;
-							  resp.payloadHeader_st.version_u8 = DAP_VERSION_SERVO_CONFIG_U8;
-							  resp.payloadServoConfig_st.readWriteFlag = 2; // Kennzeichnung als ACK/Antwort
+                              DAP_servo_config_st_t resp;
+                              resp.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8;
+                              resp.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
+                              resp.payloadServoConfig_st.readWriteFlag = 2; // Kennzeichnung als ACK/Antwort
 							  
                               for (uint8_t i = 0; i < validFields; i++) {
                                   uint16_t addr = received_servo_config.payloadServoConfig_st.registerAddresses[i];
                                   uint16_t val = received_servo_config.payloadServoConfig_st.registerValues[i];
 								  
-								  resp.payloadServoConfig_st.registerAddresses[i] = addr;
+								                  resp.payloadServoConfig_st.registerAddresses[i] = addr;
 								  
                                   if (stepper != nullptr) {
                                       ServoModbusCmd_t cmd = {};
@@ -3071,24 +3071,24 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                                       stepper->scheduleServoModbusCmd(cmd);
                                   }
 								  
-								  bool success = 1;
-								  if (success) {
-								      resp.payloadServoConfig_st.registerValues[i] = regValue;
-								  } else {
-									  resp.payloadServoConfig_st.registerValues[i] = 0xFFFF; // Fehlercode falls Timeout
-								  }
+                                  bool success = 1;
+                                  if (success) {
+                                      resp.payloadServoConfig_st.registerValues[i] = val;
+                                  } else {
+                                    resp.payloadServoConfig_st.registerValues[i] = 0xFFFF; // Fehlercode falls Timeout
+                                  }
 								
                                   ActiveSerial->printf("Servo config write: addr=0x%X, val=%u\n", addr, val);
                                   // Add small delay to avoid overwriting pending command too quickly
                                   vTaskDelay(pdMS_TO_TICKS(10));
                               }
-							  // CRC Checksumme und Footer berechnen
-							  resp.payloadFooter_st.checkSum_u16 = checksumCalculator_u16( (uint8_t*)(&resp.payloadHeader_st), sizeof(resp.payloadHeader_st) + sizeof(resp.payloadServoConfig_st));
-							  resp.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
-							  resp.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
-							
-							  // 10er-Paket am Stück zurück an den PC senden
-							  ActiveSerial->write((char*)&resp, sizeof(DAP_servo_config_st_t));
+                              // CRC Checksumme und Footer berechnen
+                              resp.payloadFooter_st.checkSum_u16 = checksumCalculator_u16( (uint8_t*)(&resp.payloadHeader_st), sizeof(resp.payloadHeader_st) + sizeof(resp.payloadServoConfig_st));
+                              resp.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+                              resp.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
+                            
+                              // 10er-Paket am Stück zurück an den PC senden
+                              ActiveSerial->write((char*)&resp, sizeof(DAP_servo_config_st_t));
 			
                           } 
 						  else {
