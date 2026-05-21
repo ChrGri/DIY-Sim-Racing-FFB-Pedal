@@ -73,6 +73,15 @@ namespace DiyFfbPedal.UIFunction
     }
 
     /// <summary>
+    /// Helper class to track a batch of registers sent in a single packet.
+    /// </summary>
+    public class ServoReadBatch
+    {
+        public List<ushort> Addresses { get; set; } = new List<ushort>();
+        public HashSet<ushort> PendingAddresses { get; set; } = new HashSet<ushort>();
+    }
+
+    /// <summary>
     /// GeneralSetting_Servo.xaml interaction logic
     /// </summary>
     public partial class GeneralSetting_Servo : UserControl
@@ -406,6 +415,7 @@ namespace DiyFfbPedal.UIFunction
             InitializeComponent();
             dap_config_st = new DAP_config_st();
 
+            // Timer fires if an ACK is not received within 1 s — skips the stalled batch
             _readTimeoutTimer = new System.Windows.Threading.DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(1)
@@ -493,10 +503,15 @@ namespace DiyFfbPedal.UIFunction
 
         /// <summary>
         /// Raised to request a single Modbus READ for the given holding-register address.
-        /// The parent sends the HID packet; the next request is only fired after the ACK arrives
-        /// (or after the per-register timeout expires), ensuring strict sequential ordering.
+        /// Note: Kept for legacy signature compatibility, but internal queueing now optimizes via batches.
         /// </summary>
         public event EventHandler<ushort> ServoModbusReadRequested;
+
+        /// <summary>
+        /// Custom event added to allow the parent system to transmit structured batch payloads 
+        /// utilizing the 10-field array structures available in payloadServoConfig.
+        /// </summary>
+        public event EventHandler<List<ushort>> ServoModbusBatchReadRequested;
 
         /// <summary>
         /// Raised when the user clicks "Flash to servo".
@@ -506,9 +521,9 @@ namespace DiyFfbPedal.UIFunction
         public event EventHandler ResetToFactoryRequested;
 
         // ---------------------------------------------------------------
-        // Sequential load state
+        // Sequential batch load state
         // ---------------------------------------------------------------
-        private readonly Queue<ushort> _pendingReadQueue = new Queue<ushort>();
+        private readonly Queue<ServoReadBatch> _pendingBatchQueue = new Queue<ServoReadBatch>();
         private readonly System.Windows.Threading.DispatcherTimer _readTimeoutTimer;
 
         // ---------------------------------------------------------------
@@ -523,61 +538,87 @@ namespace DiyFfbPedal.UIFunction
 
         /// <summary>
         /// Triggered when the user clicks "Load current from servo".
-        /// Resets all live values to unknown, builds the sequential read queue,
-        /// and fires the first request. Each subsequent request is fired only after
-        /// the ACK (or 1-second timeout) for the previous one is received.
+        /// Resets all live values to unknown, builds sequential read batches of up to 10 registers,
+        /// and fires the requests. Subsequent batches fire once previous batch ACKs are collected.
         /// </summary>
         private void Btn_LoadFromServo_Click(object sender, RoutedEventArgs e)
         {
             _readTimeoutTimer.Stop();
-            _pendingReadQueue.Clear();
+            _pendingBatchQueue.Clear();
 
             // Reset all live values to unknown (pending state)
             foreach (var entry in ServoRegisters)
                 entry.LiveValue = null;
 
-            // Enqueue addresses in display order
+            // Enqueue addresses packed in batches of up to 10 items
+            ServoReadBatch currentBatch = new ServoReadBatch();
             foreach (var entry in ServoRegisters)
             {
                 if (DapAttrHelper.TryParseServoAddress(entry.Address, out ushort addr))
-                    _pendingReadQueue.Enqueue(addr);
+                {
+                    currentBatch.Addresses.Add(addr);
+                    currentBatch.PendingAddresses.Add(addr);
+
+                    if (currentBatch.Addresses.Count == 10)
+                    {
+                        _pendingBatchQueue.Enqueue(currentBatch);
+                        currentBatch = new ServoReadBatch();
+                    }
+                }
+            }
+            // Enqueue any remaining addresses that didn't form a full group of 10
+            if (currentBatch.Addresses.Count > 0)
+            {
+                _pendingBatchQueue.Enqueue(currentBatch);
             }
 
-            SendNextPendingRead();
+            SendNextPendingBatch();
         }
 
         /// <summary>
-        /// Dequeues the next pending address and raises ServoModbusReadRequested.
+        /// Dequeues or peeks the next batch of addresses and requests transmission.
         /// </summary>
-        private void SendNextPendingRead()
+        private void SendNextPendingBatch()
         {
             _readTimeoutTimer.Stop();
-            if (_pendingReadQueue.Count == 0) return;
+            if (_pendingBatchQueue.Count == 0) return;
 
-            ushort nextAddr = _pendingReadQueue.Peek(); // leave in queue until ACK arrives
+            ServoReadBatch nextBatch = _pendingBatchQueue.Peek();
             _readTimeoutTimer.Start();
-            ServoModbusReadRequested?.Invoke(this, nextAddr);
+
+            // Fire the chunk request via batch handler if subscribed; fallback sequentially otherwise
+            if (ServoModbusBatchReadRequested != null)
+            {
+                ServoModbusBatchReadRequested.Invoke(this, nextBatch.Addresses);
+            }
+            else
+            {
+                // Fallback architecture matching legacy single register loop for protection
+                ushort nextAddr = nextBatch.PendingAddresses.First();
+                ServoModbusReadRequested?.Invoke(this, nextAddr);
+            }
         }
 
         /// <summary>
-        /// Called when no ACK arrives within 1 second — skips the current register and continues.
+        /// Called when no ACK arrives within 1 second — skips the current stalled batch and continues.
         /// </summary>
         private void OnReadTimeout(object sender, EventArgs e)
         {
             _readTimeoutTimer.Stop();
-            if (_pendingReadQueue.Count > 0)
-                _pendingReadQueue.Dequeue(); // skip stalled register
-            SendNextPendingRead();
+            if (_pendingBatchQueue.Count > 0)
+                _pendingBatchQueue.Dequeue(); // skip stalled batch entirely to ensure interface responsiveness
+            SendNextPendingBatch();
         }
 
         /// <summary>
         /// Called when the ESP32 returns a ServoModbus ACK packet.
-        /// Updates the matching LiveValue and advances the sequential read queue.
+        /// Updates the matching LiveValue and advances the sequential batch queue.
         /// </summary>
         /// <param name="addr">Absolute Modbus holding-register address.</param>
         /// <param name="value">Register value reported by the servo.</param>
         public void HandleServoModbusAck(ushort addr, short value)
         {
+            // Update the matching entry's live value inside UI thread context data
             foreach (var entry in ServoRegisters)
             {
                 if (DapAttrHelper.TryParseServoAddress(entry.Address, out ushort entryAddr) && entryAddr == addr)
@@ -587,10 +628,27 @@ namespace DiyFfbPedal.UIFunction
                 }
             }
 
-            if (_pendingReadQueue.Count > 0 && _pendingReadQueue.Peek() == addr)
-                _pendingReadQueue.Dequeue();
+            // Check if we are currently waiting for this register in the front batch
+            if (_pendingBatchQueue.Count > 0)
+            {
+                ServoReadBatch currentBatch = _pendingBatchQueue.Peek();
+                if (currentBatch.PendingAddresses.Contains(addr))
+                {
+                    currentBatch.PendingAddresses.Remove(addr);
 
-            SendNextPendingRead();
+                    // If all registers inside this batch packet have been successfully received, pop from queue
+                    if (currentBatch.PendingAddresses.Count == 0)
+                    {
+                        _pendingBatchQueue.Dequeue();
+                        SendNextPendingBatch();
+                    }
+                    else if (ServoModbusBatchReadRequested == null)
+                    {
+                        // If running legacy fallback path without batch-hook registration, request next item explicitly
+                        SendNextPendingBatch();
+                    }
+                }
+            }
         }
 
         /// <summary>
