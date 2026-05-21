@@ -141,6 +141,10 @@ class Isv57Communication {
                                          int32_t registerAddress_i32,
                                          uint16_t value_u16);
 
+    int32_t writeHoldingRegistersToDevice(int32_t slaveId_i32,
+                                         int32_t registerAddress_i32,
+                                         uint16_t* values_u16, uint8_t count_u8);
+
     int16_t slaveId = 63; 
 
     isv57dynamicStates isv57dynamicStates_;

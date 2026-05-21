@@ -487,6 +487,67 @@ int32_t Modbus::writeHoldingRegisterToDevice(int32_t slaveId_i32, int32_t regist
   return responseReceived_b;
 }
 
+int32_t Modbus::writeHoldingRegistersToDevice(int32_t slaveId_i32, int32_t registerAddress_i32, uint16_t* values_u16, uint8_t count_u8)
+{
+    uint8_t localTxBuffer[32]; // Max 10 registers supported
+    localTxBuffer[0] = slaveId_i32;
+    localTxBuffer[1] = 0x10; // FC16 Preset Multiple Registers
+    localTxBuffer[2] = registerAddress_i32 >> 8;
+    localTxBuffer[3] = registerAddress_i32;
+    localTxBuffer[4] = count_u8 >> 8;
+    localTxBuffer[5] = count_u8;
+    localTxBuffer[6] = count_u8 * 2;
+    
+    for (uint8_t i = 0; i < count_u8; i++) {
+        localTxBuffer[7 + i*2] = values_u16[i] >> 8;
+        localTxBuffer[8 + i*2] = values_u16[i] & 0xFF;
+    }
+    
+    uint8_t length = 7 + count_u8 * 2;
+    int32_t crc_i32 = this->computeCrc(localTxBuffer, length);
+    localTxBuffer[length] = crc_i32;
+    localTxBuffer[length+1] = crc_i32 >> 8;
+    
+    size_t bufferCapacity_st = this->serial_pHS->availableForWrite();
+    delay(1);
+    this->serial_pHS->write(localTxBuffer, length + 2);
+    delay(1);
+    uint8_t timeOutCounter_u8 = 10;
+    while( (bufferCapacity_st != this->serial_pHS->availableForWrite() ) && (timeOutCounter_u8 > 0) ) 
+    { 
+        delay(1);
+        timeOutCounter_u8--;
+    }
+
+    delay(1);
+    uint32_t startTime_u32 = millis();
+    int32_t echoMatchCount_i32 = 0;
+    int32_t receivedByte_i32;
+    
+    bool responseReceived_b = false;
+    while( ( (millis() - startTime_u32) < timeout_u32)  && (false == responseReceived_b))
+    {
+        delay(1);
+        while(this->serial_pHS->available())
+        {
+            receivedByte_i32 = this->serial_pHS->read();
+            // Modbus FC16 responds with an exact echo of the first 6 bytes
+            if(localTxBuffer[echoMatchCount_i32] == receivedByte_i32) {
+                echoMatchCount_i32++;
+            } else {
+                echoMatchCount_i32 = 0;
+            }
+
+            if (echoMatchCount_i32 == 6) {
+                responseReceived_b = true;
+                break;
+            }
+        }
+    }
+    delay(5);
+    return responseReceived_b;
+}
+
 int32_t Modbus::writeCoilToDevice(int32_t registerAddress_i32, uint8_t value_u8)
 {
     // Not implemented

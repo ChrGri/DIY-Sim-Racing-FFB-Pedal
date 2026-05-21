@@ -590,6 +590,12 @@ int32_t Isv57Communication::writeHoldingRegisterToDevice(
     return modbus.writeHoldingRegisterToDevice(slaveId_i32, registerAddress_i32, value_u16);
 }
 
+int32_t Isv57Communication::writeHoldingRegistersToDevice(
+        int32_t slaveId_i32, int32_t registerAddress_i32, uint16_t* values_u16, uint8_t count_u8)
+{
+    return modbus.writeHoldingRegistersToDevice(slaveId_i32, registerAddress_i32, values_u16, count_u8);
+}
+
 
 
 bool Isv57Communication::clearServoAlarms() {
@@ -737,4 +743,3 @@ void Isv57Communication::resetToFactoryParams()
   // }
   
 }
-

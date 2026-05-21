@@ -49,6 +49,7 @@ public:
     int32_t writeCoilToDevice(int32_t slaveId_i32, int32_t registerAddress_i32, uint8_t value_u8);
     int32_t writeHoldingRegisterToDevice(int32_t registerAddress_i32, uint16_t value_u16);
     int32_t writeHoldingRegisterToDevice(int32_t slaveId_i32, int32_t registerAddress_i32, uint16_t value_u16);
+    int32_t writeHoldingRegistersToDevice(int32_t slaveId_i32, int32_t registerAddress_i32, uint16_t* values_u16, uint8_t count_u8);
     void getRawRxBuffer(uint8_t *rawBuffer_pu8, uint8_t &rawBufferLength_u8);
     void getRawTxBuffer(uint8_t *rawBuffer_pu8, uint8_t &rawBufferLength_u8);
 

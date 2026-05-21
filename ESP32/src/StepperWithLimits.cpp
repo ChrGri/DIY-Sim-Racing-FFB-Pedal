@@ -500,23 +500,58 @@ void IRAM_ATTR StepperWithLimits::processPendingCommands() {
         if (cmd.isWrite_b) {
             int16_t resultBuf[10] = {};
             uint8_t resultCount = 0;
-            for (uint8_t i = 0; i < count; i++) {
-                // 1. Wert schreiben
-                isv57.writeHoldingRegisterToDevice(
-                    isv57.slaveId,
-                    (int32_t)(cmd.readAddresses[i]),
-                    (uint16_t)cmd.values[i]);
+            
+            // Check if the addresses are sequential
+            bool isSequential = (count > 0);
+            for (uint8_t i = 1; i < count; i++) {
+                if (cmd.readAddresses[i] != cmd.readAddresses[i - 1] + 1) {
+                    isSequential = false;
+                    break;
+                }
+            }
+
+            if (isSequential && count > 1) {
+                // SEQUENTIAL BATCH WRITE (Modbus FC16)
+                uint16_t writeValues[10];
+                for (uint8_t i = 0; i < count; i++) {
+                    writeValues[i] = (uint16_t)cmd.values[i];
+                    servoModbusReadAddresses[i] = cmd.readAddresses[i];
+                }
+
+                // 1. Alle Werte auf einmal schreiben (erfordert FC16 in Modbus.cpp)
+                isv57.writeHoldingRegistersToDevice(isv57.slaveId, cmd.readAddresses[0], writeValues, count);
                 
-                // 2. Kurze Pause, damit der Servo das Register intern verarbeiten kann
+                // 2. Kurze Pause für den Servo
                 vTaskDelay(pdMS_TO_TICKS(10));
                 
-                // 3. Verifizierung: Direktes Zurücklesen des tatsächlichen Wertes
-                int16_t buf[1] = {-1};
-                int n = isv57.readRegisters(cmd.readAddresses[i], 1, buf);
+                // 3. Verifizierung: Alle tatsächlichen Werte auf einmal zurücklesen
+                int16_t readBackBuf[10] = {0};
+                int n = isv57.readRegisters(cmd.readAddresses[0], count, readBackBuf);
                 
-                servoModbusReadAddresses[resultCount] = cmd.readAddresses[i];
-                resultBuf[resultCount] = (n > 0) ? buf[0] : 0xFFFF; // Error code if read timeout
-                resultCount++;
+                for (uint8_t i = 0; i < count; i++) {
+                    resultBuf[i] = (n == count) ? readBackBuf[i] : 0xFFFF;
+                }
+                resultCount = count;
+            } else {
+                // FALLBACK: Einzelne Writes (FC06)
+                for (uint8_t i = 0; i < count; i++) {
+                    // 1. Wert schreiben
+                    isv57.writeHoldingRegisterToDevice(
+                        isv57.slaveId,
+                        (int32_t)(cmd.readAddresses[i]),
+                        (uint16_t)cmd.values[i]);
+                    
+                    // 2. Kurze Pause, damit der Servo das Register intern verarbeiten kann
+                    vTaskDelay(pdMS_TO_TICKS(5));
+                    
+                    // 3. Verifizierung: Direktes Zurücklesen des tatsächlichen Wertes
+                    int16_t buf[1] = {-1};
+                    int n = isv57.readRegisters(cmd.readAddresses[i], 1, buf);
+                    
+                    servoModbusReadAddresses[resultCount] = cmd.readAddresses[i];
+                    resultBuf[resultCount] = (n > 0) ? buf[0] : 0xFFFF; // Error code if read timeout
+                    resultCount++;
+                }
             }
             memcpy(servoModbusReadResult, resultBuf, resultCount * sizeof(int16_t));
             servoModbusReadCount_u8 = resultCount;
