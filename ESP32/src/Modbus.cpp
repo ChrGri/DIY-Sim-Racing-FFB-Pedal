@@ -462,7 +462,6 @@ int32_t Modbus::writeHoldingRegisterToDevice(int32_t slaveId_i32, int32_t regist
   while( ( (millis() - startTime_u32) < timeout_u32)  && (false == responseReceived_b))
   {
       delay(1);
-      startTime_u32 = millis();
       while(this->serial_pHS->available())
       {
         receivedByte_i32 = this->serial_pHS->read();

@@ -1,4 +1,4 @@
-﻿#include "StepperWithLimits.h"
+#include "StepperWithLimits.h"
 #include "Main.h"
 #include "Math.h"
 #include "FunctionProfiler.h"
@@ -99,29 +99,29 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool
     
     if (ActiveSerial) ActiveSerial->println("Waiting for stable Servo ready signal...");
     
-    uint32_t srdyWaitStart = millis();      // Globaler Timeout-Zähler
-    uint32_t readyStableStartTime = 0;      // Zähler für die Entprellung
+    uint32_t srdyWaitStart = millis();      // Global timeout counter
+    uint32_t readyStableStartTime = 0;      // Debounce counter
     bool isStableReady = false;
     bool forceProceed_b = false;
     
     while (!isStableReady && !forceProceed_b) {
         if (digitalRead(ALM_PORT_GPIO) == LOW) {
-            // Signal ist auf "Ready". Prüfen, ob der Timer schon läuft.
+            // Signal is 'Ready'. Check if timer is already running.
             if (readyStableStartTime == 0) {
-                readyStableStartTime = millis(); // Timer starten
+                readyStableStartTime = millis(); // Start timer
             } 
-            // Prüfen, ob die 500ms ununterbrochen erreicht wurden
+            // Check if 500ms has been reached continuously
             else if (millis() - readyStableStartTime >= 500) {
-                isStableReady = true; // Erfolgreich entprellt!
+                isStableReady = true; // Successfully debounced!
             }
         } else {
-            // Signal ist wieder HIGH ("Not Ready" oder prellen). Timer zurücksetzen!
+            // Signal is HIGH again ('Not Ready' or bouncing). Reset timer!
             readyStableStartTime = 0;
         }
 
-        delay(10); // Dem Watchdog und dem System Zeit geben
+        delay(10); // Give watchdog and system time
         
-        // Failsafe-Timeout (z.B. 5 Sekunden insgesamt für den Bootvorgang)
+        // Failsafe-Timeout (e.g. 5 seconds total for boot process)
         if (millis() - srdyWaitStart > 5000) { 
             //if (ActiveSerial) ActiveSerial->println("CRITICAL: Timeout waiting for stable SRDY! Restarting ESP.");
             //delay(100);
@@ -498,17 +498,30 @@ void IRAM_ATTR StepperWithLimits::processPendingCommands() {
         uint8_t count = (cmd.count_u8 > 10u) ? 10u : cmd.count_u8;
 
         if (cmd.isWrite_b) {
-            // WRITE: FC06 writes exactly 1 register per frame.
-            // Multiple registers are written as consecutive single writes.
-            // ActiveSerial->printf("[ServoModbus] WRITE addr=0x%04X count=%u\n", cmd.startAddr_u16, count);
+            int16_t resultBuf[10] = {};
+            uint8_t resultCount = 0;
             for (uint8_t i = 0; i < count; i++) {
-                // ActiveSerial->printf("[ServoModbus]   reg[%u] 0x%04X = %d\n", i, cmd.startAddr_u16 + i, cmd.values[i]);
+                // 1. Wert schreiben
                 isv57.writeHoldingRegisterToDevice(
                     isv57.slaveId,
-                    (int32_t)(cmd.startAddr_u16 + i),
+                    (int32_t)(cmd.readAddresses[i]),
                     (uint16_t)cmd.values[i]);
+                
+                // 2. Kurze Pause, damit der Servo das Register intern verarbeiten kann
+                vTaskDelay(pdMS_TO_TICKS(10));
+                
+                // 3. Verifizierung: Direktes Zurücklesen des tatsächlichen Wertes
+                int16_t buf[1] = {-1};
+                int n = isv57.readRegisters(cmd.readAddresses[i], 1, buf);
+                
+                servoModbusReadAddresses[resultCount] = cmd.readAddresses[i];
+                resultBuf[resultCount] = (n > 0) ? buf[0] : 0xFFFF; // Error code if read timeout
+                resultCount++;
             }
-            // ActiveSerial->printf("[ServoModbus] WRITE done\n");
+            memcpy(servoModbusReadResult, resultBuf, resultCount * sizeof(int16_t));
+            servoModbusReadCount_u8 = resultCount;
+            servoModbusReadAddr_u16 = (count > 0) ? cmd.readAddresses[0] : 0;
+            servoModbusReadReady_b  = true;
         } else {
             // READ: read each requested address individually (supports non-consecutive registers).
             // ActiveSerial->printf("[ServoModbus] READ %u register(s)\n", count);

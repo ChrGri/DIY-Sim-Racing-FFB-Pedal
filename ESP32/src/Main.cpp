@@ -3250,64 +3250,15 @@ void IRAM_ATTR_FLAG servoConfigHandlingTask( void * pvParameters )
       uint8_t validFields = received_servo_config.payloadServoConfig_st.numValidFields;
       if (validFields > 10) validFields = 10;
 
-      if (received_servo_config.payloadServoConfig_st.readWriteFlag == 1) {
-          // Write
-          DAP_servo_config_st_t resp;
-          resp.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8;
-          resp.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
-          resp.payloadServoConfig_st.readWriteFlag = 2; // Kennzeichnung als ACK/Antwort
-          
-          for (uint8_t i = 0; i < validFields; i++) {
-              uint16_t addr = received_servo_config.payloadServoConfig_st.registerAddresses[i];
-              uint16_t val = received_servo_config.payloadServoConfig_st.registerValues[i];
-              
-              resp.payloadServoConfig_st.registerAddresses[i] = addr;
-              
-              if (stepper != nullptr) {
-                  ServoModbusCmd_t cmd = {};
-                  cmd.startAddr_u16 = addr;
-                  cmd.count_u8      = 1;   // single register per packet
-                  cmd.isWrite_b     = true;
-                  cmd.values[0] = (int16_t)(val & 0xFFFF);
-                  stepper->scheduleServoModbusCmd(cmd);
-              }
-              
-              bool success = 1;
-              if (success) {
-                  resp.payloadServoConfig_st.registerValues[i] = val;
-              } else {
-                resp.payloadServoConfig_st.registerValues[i] = 0xFFFF; // Fehlercode falls Timeout
-              }
-            
-              // ActiveSerial->printf("Servo config write: addr=0x%X, val=%u\n", addr, val);
-              // Add small delay to avoid overwriting pending command too quickly
-              vTaskDelay(pdMS_TO_TICKS(10));
+      if (validFields > 0 && stepper != nullptr) {
+          ServoModbusCmd_t cmd = {};
+          cmd.count_u8  = validFields;
+          cmd.isWrite_b = (received_servo_config.payloadServoConfig_st.readWriteFlag == 1);
+          for (uint8_t i = 0; i < cmd.count_u8; i++) {
+              cmd.readAddresses[i] = received_servo_config.payloadServoConfig_st.registerAddresses[i];
+              cmd.values[i] = received_servo_config.payloadServoConfig_st.registerValues[i];
           }
-          // CRC Checksumme und Footer berechnen
-          resp.payloadFooter_st.checkSum_u16 = checksumCalculator_u16( (uint8_t*)(&resp.payloadHeader_st), sizeof(resp.payloadHeader_st) + sizeof(resp.payloadServoConfig_st));
-          resp.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
-          resp.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
-        
-          // 10er-Paket am Stück zurück an den PC senden via Queue
-          if (s_servoConfigTxQueue != NULL) {
-              xQueueSend(s_servoConfigTxQueue, &resp, (TickType_t)0);
-          }
-
-      } 
-      else 
-      {
-          // Read: schedule all requested register addresses (up to 10, non-consecutive)
-          if (validFields > 0 && stepper != nullptr) {
-              ServoModbusCmd_t cmd = {};
-              cmd.count_u8  = validFields;
-              if (cmd.count_u8 > 10) cmd.count_u8 = 10;
-              cmd.isWrite_b = false;
-              for (uint8_t i = 0; i < cmd.count_u8; i++) {
-                  cmd.readAddresses[i] = received_servo_config.payloadServoConfig_st.registerAddresses[i];
-              }
-              stepper->scheduleServoModbusCmd(cmd);
-              // ActiveSerial->printf("Servo config read scheduled: %u register(s)\n", cmd.count_u8);
-          }
+          stepper->scheduleServoModbusCmd(cmd);
       }
     }
   }

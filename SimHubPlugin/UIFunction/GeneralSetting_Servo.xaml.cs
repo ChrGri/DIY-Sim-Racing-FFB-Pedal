@@ -82,6 +82,15 @@ namespace DiyFfbPedal.UIFunction
     }
 
     /// <summary>
+    /// Helper class to track a batch of registers sent in a single packet for writing.
+    /// </summary>
+    public class ServoWriteBatch
+    {
+        public List<ServoRegisterEntry> Entries { get; set; } = new List<ServoRegisterEntry>();
+        public HashSet<ushort> PendingAddresses { get; set; } = new HashSet<ushort>();
+    }
+
+    /// <summary>
     /// GeneralSetting_Servo.xaml interaction logic
     /// </summary>
     public partial class GeneralSetting_Servo : UserControl
@@ -422,12 +431,12 @@ namespace DiyFfbPedal.UIFunction
             };
             _readTimeoutTimer.Tick += OnReadTimeout;
 
-            // Write timer: sends one register every 50 ms to avoid flooding the serial port.
-            _writeTimer = new System.Windows.Threading.DispatcherTimer
+            // Write timer fires if an ACK is not received within 1 s — skips the stalled batch
+            _writeTimeoutTimer = new System.Windows.Threading.DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(50)
+                Interval = TimeSpan.FromSeconds(1)
             };
-            _writeTimer.Tick += OnWriteTimerTick;
+            _writeTimeoutTimer.Tick += OnWriteTimeout;
 
             // Populate the register table.
             // Recommended values come from the auto-generated Isv57TunedParameters class
@@ -536,8 +545,8 @@ namespace DiyFfbPedal.UIFunction
         // ---------------------------------------------------------------
         // Sequential write state (used by Btn_ResetToRecommended_Click)
         // ---------------------------------------------------------------
-        private readonly Queue<ServoRegisterEntry> _pendingWriteQueue = new Queue<ServoRegisterEntry>();
-        private readonly System.Windows.Threading.DispatcherTimer _writeTimer;
+        private readonly Queue<ServoWriteBatch> _pendingWriteBatchQueue = new Queue<ServoWriteBatch>();
+        private readonly System.Windows.Threading.DispatcherTimer _writeTimeoutTimer;
         private Window _progressWindow;
         private ProgressBar _progressBar;
         private int _totalWrites;
@@ -695,6 +704,22 @@ namespace DiyFfbPedal.UIFunction
                     }
                 }
             }
+
+            // Check if we are currently waiting for this register in the front write batch
+            if (_pendingWriteBatchQueue.Count > 0)
+            {
+                ServoWriteBatch currentWriteBatch = _pendingWriteBatchQueue.Peek();
+                if (currentWriteBatch.PendingAddresses.Contains(addr))
+                {
+                    currentWriteBatch.PendingAddresses.Remove(addr);
+
+                    if (currentWriteBatch.PendingAddresses.Count == 0)
+                    {
+                        _pendingWriteBatchQueue.Dequeue();
+                        SendNextPendingWriteBatch();
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -716,25 +741,40 @@ namespace DiyFfbPedal.UIFunction
         private void WriteAllRegistersToServo()
         {
             // Stop any pending write sequence first
-            _writeTimer.Stop();
-            _pendingWriteQueue.Clear();
+            _writeTimeoutTimer.Stop();
+            _pendingWriteBatchQueue.Clear();
 
-            // Enqueue all registers that have a value for sequential serial write
+            // Enqueue all registers that have a value for sequential serial write in batches
+            ServoWriteBatch currentBatch = new ServoWriteBatch();
             foreach (var entry in ServoRegisters)
             {
                 if (entry.LiveValue.HasValue)
                 {
-                    _pendingWriteQueue.Enqueue(entry);
+                    if (DapAttrHelper.TryParseServoAddress(entry.Address, out ushort addr))
+                    {
+                        currentBatch.Entries.Add(entry);
+                        currentBatch.PendingAddresses.Add(addr);
+
+                        if (currentBatch.Entries.Count == 10)
+                        {
+                            _pendingWriteBatchQueue.Enqueue(currentBatch);
+                            currentBatch = new ServoWriteBatch();
+                        }
+                    }
                 }
             }
+            if (currentBatch.Entries.Count > 0)
+            {
+                _pendingWriteBatchQueue.Enqueue(currentBatch);
+            }
 
-            if (_pendingWriteQueue.Count == 0)
+            if (_pendingWriteBatchQueue.Count == 0)
             {
                 FlashToServoRequested?.Invoke(this, EventArgs.Empty);
                 return;
             }
 
-            _totalWrites = _pendingWriteQueue.Count;
+            _totalWrites = _pendingWriteBatchQueue.Count;
 
             _progressBar = new ProgressBar
             {
@@ -758,20 +798,15 @@ namespace DiyFfbPedal.UIFunction
             _progressWindow.Closed += (s, ev) => { _progressWindow = null; _progressBar = null; };
             _progressWindow.Show();
 
-            // Start the write timer – OnWriteTimerTick will drain the queue
-            _writeTimer.Start();
+            // Start the write sequence
+            SendNextPendingWriteBatch();
         }
 
-        /// <summary>
-        /// Sends the next queued register write to the servo.
-        /// Dequeues up to 10 registers per tick and fires them as a single batch.
-        /// When the queue is empty, fires FlashToServoRequested to persist to NVM.
-        /// </summary>
-        private void OnWriteTimerTick(object sender, EventArgs e)
+        private void SendNextPendingWriteBatch()
         {
-            if (_pendingWriteQueue.Count == 0)
+            _writeTimeoutTimer.Stop();
+            if (_pendingWriteBatchQueue.Count == 0)
             {
-                _writeTimer.Stop();
                 if (_progressWindow != null)
                 {
                     _progressWindow.Close();
@@ -781,18 +816,23 @@ namespace DiyFfbPedal.UIFunction
                 return;
             }
 
-            // Dequeue up to 10 entries and send as a single batch packet
-            const int batchSize = 10;
-            var batch = new List<ServoRegisterEntry>(batchSize);
-            while (batch.Count < batchSize && _pendingWriteQueue.Count > 0)
-                batch.Add(_pendingWriteQueue.Dequeue());
-
             if (_progressBar != null)
             {
-                _progressBar.Value = _totalWrites - _pendingWriteQueue.Count;
+                _progressBar.Value = _totalWrites - _pendingWriteBatchQueue.Count;
             }
 
-            ServoBatchWriteRequested?.Invoke(this, batch.ToArray());
+            ServoWriteBatch nextBatch = _pendingWriteBatchQueue.Peek();
+            _writeTimeoutTimer.Start();
+
+            ServoBatchWriteRequested?.Invoke(this, nextBatch.Entries.ToArray());
+        }
+
+        private void OnWriteTimeout(object sender, EventArgs e)
+        {
+            _writeTimeoutTimer.Stop();
+            if (_pendingWriteBatchQueue.Count > 0)
+                _pendingWriteBatchQueue.Dequeue(); // skip stalled batch
+            SendNextPendingWriteBatch();
         }
 
         /// <summary>

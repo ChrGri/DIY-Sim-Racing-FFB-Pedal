@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DiyFfbPedal.UIFunction;
@@ -197,6 +197,36 @@ namespace DiyFfbPedal
 
 			SendServoConfigSerial(pedalIdx, packet);
 		}
+
+        // ---------------------------------------------------------------
+        // Write — batch register polling triggered by Reset/Flash
+        // ---------------------------------------------------------------
+        private void Servo_Tab_ServoBatchWriteRequested(object sender, ServoRegisterEntry[] entries)
+        {
+            if (Plugin == null || entries == null || entries.Length == 0) return;
+
+            byte pedalIdx = (byte)indexOfSelectedPedal_u;
+
+            ushort[] addresses = new ushort[entries.Length];
+            ushort[] values = new ushort[entries.Length];
+
+            for (int i = 0; i < entries.Length; i++)
+            {
+                if (DapAttrHelper.TryParseServoAddress(entries[i].Address, out ushort modbusAddr))
+                {
+                    addresses[i] = modbusAddr;
+                    values[i] = (ushort)(entries[i].LiveValue.Value & 0xFFFF);
+                }
+            }
+
+            // --- Serial path: DAP_servo_config_st WRITE (Batch von bis zu 10 Registern) ---
+            byte[] packet = BuildServoConfigPacket(
+                readWriteFlag: 1, // 1 = Write
+                addresses: addresses,
+                values: values);
+
+            SendServoConfigSerial(pedalIdx, packet);
+        }
 
         // ---------------------------------------------------------------
         // Flash — NVM-save command: register 0x019A = 0x5555
