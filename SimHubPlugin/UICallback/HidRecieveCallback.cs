@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -651,6 +651,42 @@ namespace DiyFfbPedal
                                 {
                                     _serial_monitor_window.TextBox_SerialMonitor.Text += textContent + "\n";
                                 }
+                            }
+                        }
+                        //
+
+                        if (length == System.Runtime.InteropServices.Marshal.SizeOf(typeof(DAP_servo_config_st)))
+                        {
+                            System.Runtime.InteropServices.GCHandle handle =
+                                System.Runtime.InteropServices.GCHandle.Alloc(data,
+                                    System.Runtime.InteropServices.GCHandleType.Pinned);
+                            try
+                            {
+                                DAP_servo_config_st sc = (DAP_servo_config_st)
+                                    System.Runtime.InteropServices.Marshal.PtrToStructure(
+                                        handle.AddrOfPinnedObject(), typeof(DAP_servo_config_st));
+
+                                bool validType = sc.payloadHeader_st.payloadType == Constants.servoConfigPayload_type;
+                                ushort calcCrc = Plugin.checksumCalcArray(data,
+                                    System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadHeader)) +
+                                    System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadServoConfig)));
+                                bool validCrc = (calcCrc == sc.payloadFooter_st.checkSum);
+
+                                if (validType && validCrc)
+                                {
+                                    byte n = sc.payloadServoConfig_st.numValidFields;
+                                    if (n > 10) n = 10;
+                                    for (int i = 0; i < n; i++)
+                                    {
+                                        ushort addr = sc.payloadServoConfig_st.registerAddresses[i];
+                                        short  val  = (short)sc.payloadServoConfig_st.registerValues[i];
+                                        Servo_Tab?.HandleServoModbusAck(addr, val);
+                                    }
+                                }
+                            }
+                            finally
+                            {
+                                handle.Free();
                             }
                         }
                         //
