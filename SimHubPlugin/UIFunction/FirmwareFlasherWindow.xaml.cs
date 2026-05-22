@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Ports;
 using System.Reflection;
 using System.Windows;
+using System.Linq;
 using Microsoft.Win32;
 
 namespace DiyFfbPedal.UIFunction
@@ -85,7 +86,19 @@ namespace DiyFfbPedal.UIFunction
         private void RefreshPorts()
         {
             CboComPorts.Items.Clear();
-            foreach (string port in SerialPort.GetPortNames())
+
+            string[] comPorts = SerialPort.GetPortNames().Distinct().ToArray();
+            var sortedPorts = comPorts
+                .Select(port => new
+                {
+                    Name = port,
+                    Number = int.TryParse(System.Text.RegularExpressions.Regex.Match(port, @"\d+").Value, out int num) ? num : int.MaxValue
+                })
+                .OrderBy(p => p.Number)
+                .Select(p => p.Name)
+                .ToArray();
+
+            foreach (string port in sortedPorts)
             {
                 CboComPorts.Items.Add(port);
             }
