@@ -1,4 +1,4 @@
-﻿#include "TinyusbJoystick.h"
+﻿﻿#include "TinyusbJoystick.h"
 #define ESPNOW_LOG_MAGIC_KEY 0x99
 #define ESPNOW_LOG_MAGIC_KEY_2 0x97
 TinyusbJoystick* TinyusbJoystick::instance = nullptr;
@@ -227,6 +227,26 @@ void TinyusbJoystick::ProcessFullData(uint8_t *rxBuffer, uint8_t totalLen)
         {
             memcpy(&tmpOtaAction, &tmp, totalLen);
             isOtaActionGet = true;
+        }
+    }
+    if(totalLen == sizeof(DAP_servo_config_st_t))
+    {
+        DAP_servo_config_st_t tmp;
+        memcpy(&tmp, rxBuffer, totalLen);
+        bool structChecker = true;
+        if(tmp.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8) structChecker = false;
+        if(tmp.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8) structChecker = false;
+        uint16_t crc = checksumCal((uint8_t*)(&(tmp.payloadHeader_st)), sizeof(tmp.payloadHeader_st) + sizeof(tmp.payloadServoConfig_st));
+        if(crc != tmp.payloadFooter_st.checkSum_u16) structChecker = false;
+        if(structChecker)
+        {
+            uint8_t pedalTag = tmp.payloadHeader_st.pedalTag_u8;
+            if(pedalTag >= 0 && pedalTag < 3) 
+            {
+                // Setze globale Variablen (wie update_servo_config), die in hidCommunicaitonRxTask abgefragt werden
+                memcpy(&dap_servo_config_st[pedalTag], &tmp, totalLen);
+                update_servo_config[pedalTag] = true; 
+            }
         }
     }
 }

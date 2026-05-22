@@ -74,6 +74,12 @@ DapBridgeState_t dap_bridge_state_lcl;//
 DapActionOta_t dap_action_ota_st;
 #include "ESPNOW_lib.h"
 
+// --- ADDED: Globale Variablen fuer Servo Config Routing ---
+DAP_servo_config_st_t dap_servo_config_st[3];          // Pakete vom Host zum Pedal
+DAP_servo_config_st_t dap_servo_config_response_st[3]; // Pakete vom Pedal zum Host (Antworten)
+bool update_servo_config[3] = {false, false, false};
+bool send_servo_config_to_host[3] = {false, false, false}; // Muss in ESPNOW_lib.cpp bei RX gesetzt werden
+
 
 #define EEPROM_offset 15
 
@@ -562,6 +568,24 @@ void espNowCommunicationTxTask( void * pvParameters )
           }
         }
 
+        // --- ADDED: Forward Servo Config to Pedals ---
+        for(int i=0; i<3; i++)
+        {
+          if(update_servo_config[i])
+          {
+            update_servo_config[i] = false;
+            if(dap_bridge_state_st.payloadBridgeState_st.pedalAvailability_au8[i]==1)
+            {
+              switch (i)
+              {
+                case PEDAL_ID_CLUTCH:   ESPNow.send_message(Clu_mac,(uint8_t *) &dap_servo_config_st[i],sizeof(DAP_servo_config_st_t)); break;
+                case PEDAL_ID_BRAKE:    ESPNow.send_message(Brk_mac,(uint8_t *) &dap_servo_config_st[i],sizeof(DAP_servo_config_st_t)); break;
+                case PEDAL_ID_THROTTLE: ESPNow.send_message(Gas_mac,(uint8_t *) &dap_servo_config_st[i],sizeof(DAP_servo_config_st_t)); break;
+              }
+            }
+          }
+        }
+
         if(sendAssignment_b[i])
         {
           sendAssignment_b[i]=false;
@@ -626,6 +650,8 @@ static inline size_t getExpectedPacketSize(uint8_t payloadType) {
             return sizeof(DapActionOta_t);
         case DAP_PAYLOAD_TYPE_BRIDGE_STATE_U8:
             return sizeof(DapBridgeState_t);
+        case DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8:
+            return sizeof(DAP_servo_config_st_t);
         // Add other packet types here in the future
         default:
             return 0;
@@ -990,6 +1016,42 @@ void serialCommunicationRxTask( void * pvParameters)
             #endif
             break;
           }
+          //case action for servo config
+          case DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8:
+          {
+            #ifndef USB_JOYSTICK
+              bool structChecker = true;
+              DAP_servo_config_st_t dap_servo_config_local;
+              memcpy(&dap_servo_config_local, packet_start, sizeof(DAP_servo_config_st_t));
+              
+              if (dap_servo_config_local.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8)
+              {
+                structChecker = false;
+                structIsValid = false;
+              }
+              if (dap_servo_config_local.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8)
+              {
+                structChecker = false;
+                structIsValid = false;
+              }
+              uint16_t crc = checksumCalculator((uint8_t *)(&(dap_servo_config_local.payloadHeader_st)), sizeof(dap_servo_config_local.payloadHeader_st) + sizeof(dap_servo_config_local.payloadServoConfig_st));
+              if (crc != dap_servo_config_local.payloadFooter_st.checkSum_u16)
+              {
+                structChecker = false;
+                structIsValid = false;
+              }
+              if (structChecker == true)
+              {
+                int pedalIdx = dap_servo_config_local.payloadHeader_st.pedalTag_u8;
+                if(pedalIdx >= 0 && pedalIdx < 3)
+                {
+                  memcpy(&dap_servo_config_st[pedalIdx], &dap_servo_config_local, sizeof(DAP_servo_config_st_t));
+                  update_servo_config[pedalIdx] = true;
+                }
+              }
+            #endif
+            break;
+          }
           default:
           {
             ActiveSerial->println("[L]Unknown payload type");
@@ -1082,6 +1144,15 @@ void serialCommunicationTxTask( void * pvParameters)
             ActiveSerial->print("\r\n");
 
           }
+          
+          // --- ADDED: Forward Servo Config Responses to Host ---
+          if(send_servo_config_to_host[i])
+          {
+            send_servo_config_to_host[i] = false;
+            ActiveSerial->write((char*)&dap_servo_config_response_st[i], sizeof(DAP_servo_config_st_t));
+            ActiveSerial->print("\r\n");
+          }
+
         }
       
         int pedal_config_IDX=0;
@@ -2088,5 +2159,3 @@ void hidCommunicaitonTxTask(void *pvParameters)
     }
   }
 }
-
-
