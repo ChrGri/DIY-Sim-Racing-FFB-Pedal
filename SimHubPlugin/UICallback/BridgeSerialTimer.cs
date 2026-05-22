@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.Ports;
@@ -556,7 +556,7 @@ namespace DiyFfbPedal
                                     }
                                     else
                                     {
-                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_extended_st)).Fill(0);
+                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_basic_st)).Fill(0);
                                     }
                                 }
                             }
@@ -620,7 +620,7 @@ namespace DiyFfbPedal
                                     else
                                     {
 
-                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_extended_st)).Fill(0);
+                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_config_st)).Fill(0);
 
                                         TextBox2.Text = "Payload config test 1: " + check_payload_config_b;
                                         TextBox2.Text += "Payload config test 2: " + check_crc_config_b;
@@ -850,7 +850,12 @@ namespace DiyFfbPedal
 
                                         if (bufferByteAssignedToStruct_class[i] == 0)  // copy only if not true
                                         {
-                                            filteredList.Add(buffer_appended[3][i]);
+                                            byte b = buffer_appended[3][i];
+                                            // Nur druckbare ASCII-Zeichen und reguläre Leerzeichen/Zeilenumbrüche zulassen
+                                            if ((b >= 32 && b <= 126) || b == '\r' || b == '\n' || b == '\t')
+                                            {
+                                                filteredList.Add(b);
+                                            }
                                         }
                                     }
 

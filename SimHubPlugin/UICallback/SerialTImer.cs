@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.Ports;
@@ -511,7 +511,7 @@ namespace DiyFfbPedal
                                     }
                                     else
                                     {
-                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_extended_st)).Fill(0);
+                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_basic_st)).Fill(0);
                                     }
                                 }
                             }
@@ -667,7 +667,7 @@ namespace DiyFfbPedal
                                     }
                                     else
                                     {
-                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_extended_st)).Fill(0);
+                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_basic_st)).Fill(0);
                                     }
                                 }
                             }
@@ -750,7 +750,7 @@ namespace DiyFfbPedal
                                     else
                                     {
 
-                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_extended_st)).Fill(0);
+                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_config_st)).Fill(0);
 
                                         TextBox2.Text = "Payload config test 1: " + check_payload_config_b;
                                         TextBox2.Text += "Payload config test 2: " + check_crc_config_b;
@@ -823,6 +823,29 @@ namespace DiyFfbPedal
                                 }
                             }
 
+                            // --- GENERIC BINARY SWEEPER ---
+                            // Fängt übrig gebliebene Binär-Frames ab (z.B. DAP_action_st Echoes oder fehlerhafte Pakete)
+                            // damit diese nicht als ASCII-Text fehlinterpretiert werden.
+                            List<int> indices_sof_all = FindAllOccurrences(buffer_appended[pedalSelected], STARTOFFRAMCHAR, currentBufferLength);
+                            List<int> indices_eof_all = FindAllOccurrences(buffer_appended[pedalSelected], ENDOFFRAMCHAR, currentBufferLength);
+                            for (int i = 0; i < indices_sof_all.Count; i++)
+                            {
+                                int sof = indices_sof_all[i];
+                                int next_sof = (i + 1 < indices_sof_all.Count) ? indices_sof_all[i + 1] : currentBufferLength;
+                                foreach (int eof in indices_eof_all)
+                                {
+                                    if (eof > sof && eof < next_sof && (eof - sof) <= 250) 
+                                    {
+                                        for (int j = sof; j <= eof + 1 && j < currentBufferLength; j++)
+                                        {
+                                            if (bufferByteAssignedToStruct_class[j] == 0)
+                                                bufferByteAssignedToStruct_class[j] = 254; // 254 = Ignorierte Binärdaten
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+
 
 
 
@@ -846,7 +869,12 @@ namespace DiyFfbPedal
 
                                         if (bufferByteAssignedToStruct_class[i] == 0)  // copy only if not true
                                         {
-                                            filteredList.Add(buffer_appended[pedalSelected][i]);
+                                            byte b = buffer_appended[pedalSelected][i];
+                                            // Nur druckbare ASCII-Zeichen und reguläre Leerzeichen/Zeilenumbrüche zulassen
+                                            if ((b >= 32 && b <= 126) || b == '\r' || b == '\n' || b == '\t')
+                                            {
+                                                filteredList.Add(b);
+                                            }
                                         }
                                     }
 

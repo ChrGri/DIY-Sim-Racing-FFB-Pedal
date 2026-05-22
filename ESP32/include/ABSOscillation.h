@@ -53,7 +53,8 @@ public:
       absTimeMillis_i32 = 0;
       
       // --- DECAY LOGIC (Max 10 steps) ---
-      float posDecayStep = 10;
+      float posDecayStep = 10.0f;
+      float forceDecayStep = 0.1f; // Etwa 0.5 kg Abbau pro Zyklus für einen sanften Übergang
 
       // Decay Position Offset towards 0
       if (absOscillationPositionOffset_fl32 > posDecayStep) {
@@ -62,6 +63,15 @@ public:
         absOscillationPositionOffset_fl32 += posDecayStep;
       } else {
         absOscillationPositionOffset_fl32 = 0.0f;
+      }
+
+      // Decay Force Offset towards 0
+      if (absOscillationForceOffset_fl32 > forceDecayStep) {
+        absOscillationForceOffset_fl32 -= forceDecayStep;
+      } else if (absOscillationForceOffset_fl32 < -forceDecayStep) {
+        absOscillationForceOffset_fl32 += forceDecayStep;
+      } else {
+        absOscillationForceOffset_fl32 = 0.0f;
       }
     }
     else

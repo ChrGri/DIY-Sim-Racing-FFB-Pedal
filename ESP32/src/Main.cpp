@@ -1540,6 +1540,29 @@ void loop() {
   taskYIELD();
 }
 
+void IRAM_ATTR_FLAG handleIncomingActions(const DapActions_t& action, bool& systemIdentificationMode) {
+    if (action.payloadPedalAction_st.triggerAbs_u8 > 0) {
+        absOscillation.trigger();
+        dap_calculationVariables_st.trackCondition_u8 =
+            (action.payloadPedalAction_st.triggerAbs_u8 > 1)
+            ? (action.payloadPedalAction_st.triggerAbs_u8 - 1) : 0;
+    }
+    _RPMOscillation.rpmValue_fl32 = action.payloadPedalAction_st.rpm_u8;
+    gForceEffect_.gValue_fl32     = action.payloadPedalAction_st.gValue_u8 - 128;
+    if (action.payloadPedalAction_st.wheelSlip_u8) _WSOscillation.trigger();
+    if (!dap_calculationVariables_st.rudderStatus_b) {
+        roadImpactEffect_.roadImpactValue_u8 = action.payloadPedalAction_st.impactValue_u8;
+    }
+    if (action.payloadPedalAction_st.startSystemIdentification_u8) {
+        systemIdentificationMode = true;
+    }
+    if (action.payloadPedalAction_st.triggerCv1_u8) customVibration1_.trigger();
+    if (action.payloadPedalAction_st.triggerCv2_u8) customVibration2_.trigger();
+    if (action.payloadPedalAction_st.triggerCv3_u8) customVibration3_.trigger();
+    if (action.payloadPedalAction_st.triggerCv4_u8) customVibration4_.trigger();
+}
+
+
 
 
 
@@ -1629,27 +1652,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
     // trigger task 
     if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
     {
-DapActions_t incomingAction;
+      DapActions_t incomingAction;
       if (xQueueReceive(s_actionCommandQueue, &incomingAction, 0) == pdPASS) {
-        if (incomingAction.payloadPedalAction_st.triggerAbs_u8 > 0) {
-          absOscillation.trigger();
-          dap_calculationVariables_st.trackCondition_u8 =
-              (incomingAction.payloadPedalAction_st.triggerAbs_u8 > 1)
-              ? (incomingAction.payloadPedalAction_st.triggerAbs_u8 - 1) : 0;
-        }
-        _RPMOscillation.rpmValue_fl32 = incomingAction.payloadPedalAction_st.rpm_u8;
-        gForceEffect_.gValue_fl32     = incomingAction.payloadPedalAction_st.gValue_u8 - 128;
-        if (incomingAction.payloadPedalAction_st.wheelSlip_u8) _WSOscillation.trigger();
-        if (!dap_calculationVariables_st.rudderStatus_b) {
-          roadImpactEffect_.roadImpactValue_u8 = incomingAction.payloadPedalAction_st.impactValue_u8;
-        }
-        if (incomingAction.payloadPedalAction_st.startSystemIdentification_u8) {
-          local_systemIdentificationMode_b = true;
-        }
-        if (incomingAction.payloadPedalAction_st.triggerCv1_u8) customVibration1_.trigger();
-        if (incomingAction.payloadPedalAction_st.triggerCv2_u8) customVibration2_.trigger();
-        if (incomingAction.payloadPedalAction_st.triggerCv3_u8) customVibration3_.trigger();
-        if (incomingAction.payloadPedalAction_st.triggerCv4_u8) customVibration4_.trigger();
+        handleIncomingActions(incomingAction, local_systemIdentificationMode_b);
       }
 
       uint8_t systemControlEvent;
