@@ -25,6 +25,7 @@
 
 #define BAUD_3M_U32 3000000U
 #define DEFAULT_BAUD_U32 921600U
+
 #include "Arduino.h"
 #include "Main.h"
 #ifdef CONFIG_IDF_TARGET_ESP32S3
@@ -243,8 +244,8 @@ static QueueHandle_t s_servoConfigRxQueue = NULL;
 /*                         controller  definitions                                            */
 /*                                                                                            */
 /**********************************************************************************************/
-
-#include "Controller.h"
+#include "UsbComManager.h"
+UsbComManager usbManager(5); // 5ms Batch-Intervall
 
 
 
@@ -712,45 +713,6 @@ static void uart_event_task(void *pvParameters) {
 
 #endif
 
-class NonBlockingStreamWrapper : public Stream {
-private:
-    Stream* target;
-public:
-    NonBlockingStreamWrapper(Stream* target) : target(target) {}
-    int available() override { return target->available(); }
-    int read() override { return target->read(); }
-    int peek() override { return target->peek(); }
-    void flush() override { target->flush(); }
-    
-    size_t write(uint8_t c) override {
-        // DER MAGISCHE FIX: Ist überhaupt ein Terminal offen?
-        if (!Serial) return 1; // Nein? Daten direkt verwerfen.
-
-        if (target->availableForWrite() > 0) {
-            return target->write(c);
-        }
-        return 1;
-    }
-    
-    size_t write(const uint8_t *buffer, size_t size) override {
-        if (size == 0) return 0;
-        
-        // DER MAGISCHE FIX: Ist überhaupt ein Terminal offen?
-        if (!Serial) return size; // So tun, als wäre alles gesendet worden!
-
-        int avail = target->availableForWrite();
-        if (avail > 0) {
-            size_t toWrite = (size < (size_t)avail) ? size : (size_t)avail;
-            target->write(buffer, toWrite);
-        }
-        return size; 
-    }
-
-    int availableForWrite() override { 
-        if (!Serial) return 0;
-        return target->availableForWrite(); 
-    }
-};
 
 void setup()
 {
@@ -777,24 +739,19 @@ void setup()
   DapConfig_t dap_config_st_eeprom;
 
   // setup serial
-  // #define USE_CDC_INSTEAD_OF_UART
   #ifdef USE_CDC_INSTEAD_OF_UART
-    Serial.begin(DEFAULT_BAUD_U32);
-    //Serial.enableReboot(false);
     
-    Serial.setTxTimeoutMs(100);
-    ActiveSerial = &Serial;
-    #ifdef USB_JOYSTICK
-      ActiveSerial->println("Setup Controller");
-      SetupController();
-    #endif
+    // NEU: Manager starten (er übernimmt CDC und Controller-Setup)
+    usbManager.begin(dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
+    
+    // NEU: System-Pointer auf den Manager umbiegen
+    ActiveSerial = &usbManager;
+
   #elif CONFIG_IDF_TARGET_ESP32S3
     Serial1.begin(BAUD_3M_U32, SERIAL_8N1, 44, 43);
-    // Serial.begin(BAUD_3M_U32, SERIAL_8N1, 44, 43);
     ActiveSerial = &Serial1;
   #elif CONFIG_IDF_TARGET_ESP32
     Serial.begin(DEFAULT_BAUD_U32);
-    // Serial.begin(BAUD_3M_U32, SERIAL_8N1, 44, 43);
     ActiveSerial = &Serial;
   #endif
 
@@ -2686,14 +2643,13 @@ void IRAM_ATTR_FLAG joystickOutputTask( void * pvParameters )
 
       if (sendFlag_b)
       {
-        // send joystick output
-        if (IsControllerReady()) 
+        // NEU: Manager nutzen, um den Status abzufragen
+        if (usbManager.isJoystickReady()) 
         {
           if(dap_calculationVariables_st.rudderStatus_b==false)
           {
-            //general output
-            // ActiveSerial->printf("joystick: %lu\n", joystickData_u16);
-            SetControllerOutputValue(joystickData_u16);
+            // NEU: Manager nutzen, um den Wert zu senden
+            usbManager.sendJoystickValue(joystickData_u16);
           }
         }
       }
@@ -3236,8 +3192,14 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
     while (s_servoConfigTxQueue != NULL && xQueueReceive(s_servoConfigTxQueue, &servoConfigResp, (TickType_t)0) == pdPASS) {
         ActiveSerial->write((char*)&servoConfigResp, sizeof(DAP_servo_config_st_t));
     }
-  }
-}
+
+    // NEU: Batch-Puffer abarbeiten und gesammelte Texte an Windows senden
+    #ifdef USE_CDC_INSTEAD_OF_UART
+        usbManager.processTxBatch();
+    #endif
+
+  } // <-- Ende der for(;;) Schleife
+} // <-- Ende von serialCommunicationTaskTx
 
 /**********************************************************************************************/
 /*                                                                                            */
