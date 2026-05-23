@@ -3065,7 +3065,6 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
 
 
 
-uint32_t communicationTask_stackSizeIdx_u32 = 0;
 void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
 { 
   // FunctionProfiler profiler_serialCommunicationTask;
