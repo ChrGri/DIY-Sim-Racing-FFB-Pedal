@@ -761,7 +761,7 @@ namespace DiyFfbPedal
                 // serial port settings
                 //Plugin._serialPort[pedalIdx].BaudRate = 921600;
                 var serialInfo = ComPortHelper.GetVidPidFromComPort(Plugin._serialPort[pedalIdx].PortName);
-                if (serialInfo.Vid == "303A" && serialInfo.Pid == "1001")
+                if (serialInfo.Vid == "303A")// && serialInfo.Pid == "1001")
                 {
                     //CDC serial enabled
                     Plugin.isCdcSerial[pedalIdx] = true;
@@ -818,24 +818,19 @@ namespace DiyFfbPedal
                 {
                     try
                     {
-                        Plugin._serialPort[pedalIdx].Open();
-
-                        // ESP32 S3
-                        /*
-                        if (Plugin.Settings.RTSDTR_False[pedalIdx] == true)
-                        {
-                            Plugin._serialPort[pedalIdx].RtsEnable = false;
-                            Plugin._serialPort[pedalIdx].DtrEnable = false;
-                        }
-                        */
-                        //
-
+                        // RTS und DTR VOR dem Öffnen setzen
                         if (Plugin.isCdcSerial[pedalIdx])
                         {
                             // ESP32 S3
-                            Plugin._serialPort[pedalIdx].RtsEnable = false;
+                            Plugin._serialPort[pedalIdx].RtsEnable = true;
                             Plugin._serialPort[pedalIdx].DtrEnable = true;
                         }
+
+                        Plugin._serialPort[pedalIdx].Open();
+
+
+
+                        
 
 
 
@@ -915,9 +910,9 @@ namespace DiyFfbPedal
                 // RTS/DTR to false before closing port, otherwise device will stall
                 if (Plugin.isCdcSerial[pedalIdx] == true)
                 {
-                    // ESP32 S3
-                    Plugin._serialPort[pedalIdx].RtsEnable = false;
+                    // ESP32 S3: Reihenfolge korrigiert, um Hard-Reset (DTR=1, RTS=0) zu vermeiden!
                     Plugin._serialPort[pedalIdx].DtrEnable = false;
+                    Plugin._serialPort[pedalIdx].RtsEnable = false;
                 }
 
                 Plugin._serialPort[pedalIdx].DiscardInBuffer();
