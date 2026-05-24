@@ -1,15 +1,24 @@
 #pragma once
 #include <Arduino.h>
 #include "USB.h"
-#include "USBCDC.h"
 #include "Controller.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include "Main.h"
 
+// Wenn der Core kein USBCDC bereitstellt, müssen wir es manuell inkludieren und verwalten
+#if defined(USE_CDC_INSTEAD_OF_UART)
+  #include "USBCDC.h"
+#endif
+
 class UsbComManager : public Stream {
 private:
-    USBCDC usbSerial;
+
+    Stream* targetStream;
+    #if defined(USE_CDC_INSTEAD_OF_UART)
+      USBCDC customUsbSerial;
+    #endif
+
     SemaphoreHandle_t bufferMutex;
     
     static const size_t BUFFER_SIZE = 8192; // Puffer vergrößert für 4kHz Telemetrie (ca. 250 KB/s)

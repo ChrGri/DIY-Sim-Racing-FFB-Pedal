@@ -225,6 +225,7 @@ static QueueHandle_t s_configUpdateSendToSerialRXTaskQueue = NULL;
 static QueueHandle_t s_systemControlQueue = NULL;
 static QueueHandle_t s_servoConfigTxQueue = NULL;
 static QueueHandle_t s_servoConfigRxQueue = NULL;
+static QueueHandle_t s_configTxQueue = NULL;
 static QueueSetHandle_t s_serialTxQueueSet = NULL;
 
 
@@ -739,24 +740,11 @@ void setup()
   DapConfig_t dap_config_st_local;
   DapConfig_t dap_config_st_eeprom;
 
-  // setup serial
-  #ifdef USE_CDC_INSTEAD_OF_UART
-    
-    // NEU: Manager starten (er übernimmt CDC und Controller-Setup)
-    usbManager.begin(dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
-    
-    // NEU: System-Pointer auf den Manager umbiegen
-    ActiveSerial = &usbManager;
-
-  #elif CONFIG_IDF_TARGET_ESP32S3
-    Serial1.begin(BAUD_3M_U32, SERIAL_8N1, 44, 43);
-    ActiveSerial = &Serial1;
-  #elif CONFIG_IDF_TARGET_ESP32
-    Serial.begin(DEFAULT_BAUD_U32);
-    ActiveSerial = &Serial;
-  #endif
-
-
+    // Manager starten (er übernimmt CDC und Controller-Setup)
+  usbManager.begin(dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
+  
+  // System-Pointer auf den Manager umbiegen
+  ActiveSerial = &usbManager;
 
 
 
@@ -823,13 +811,19 @@ void setup()
   {
     ActiveSerial->println("Error creating the servo config rx queue!");
   }
+  s_configTxQueue = xQueueCreate(2, sizeof(DapConfig_t));
+  if (s_configTxQueue == NULL)
+  {
+    ActiveSerial->println("Error creating the config tx queue!");
+  }
 
-  // Create the QueueSet combining the TX queues (200 from pedalState + 5 from servoConfigTx)
-  s_serialTxQueueSet = xQueueCreateSet(200 + 5);
+  // Create the QueueSet combining the TX queues (200 from pedalState + 5 from servoConfigTx + 2 from configTx)
+  s_serialTxQueueSet = xQueueCreateSet(200 + 5 + 2);
   if (s_serialTxQueueSet != NULL)
   {
     xQueueAddToSet(s_pedalStateQueue, s_serialTxQueueSet);
     xQueueAddToSet(s_servoConfigTxQueue, s_serialTxQueueSet);
+    xQueueAddToSet(s_configTxQueue, s_serialTxQueueSet);
   }
   else
   {
@@ -2924,22 +2918,17 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                         if (received_action.payloadPedalAction_st.returnPedalConfig_u8)
                         {
                         
-                          DapConfig_t * dap_config_st_local_ptr;
-                          dap_config_st_local_ptr = &sct_dap_config_st;
-                          dap_config_st_local_ptr->payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
-                          dap_config_st_local_ptr->payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
-                          dap_config_st_local_ptr->payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
-                          dap_config_st_local_ptr->payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
+                          sct_dap_config_st.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+                          sct_dap_config_st.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+                          sct_dap_config_st.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+                          sct_dap_config_st.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
                           uint16_t crc = checksumCalculator_u16((uint8_t*)(&(sct_dap_config_st.payloadHeader_st)), sizeof(sct_dap_config_st.payloadHeader_st) + sizeof(sct_dap_config_st.payloadPedalConfig_st));
-                          dap_config_st_local_ptr->payloadFooter_st.checkSum_u16 = crc;
+                          sct_dap_config_st.payloadFooter_st.checkSum_u16 = crc;
 
-                          // suspend the serial Tx task so that data can properly be send
-                          vTaskSuspend(handle_serialCommunicationTx);
-                          delay(50);
-                          ActiveSerial->write((char*)dap_config_st_local_ptr, sizeof(DapConfig_t));
-                          ActiveSerial->print("Return pedal config");
-                          delay(50);
-                          vTaskResume(handle_serialCommunicationTx);
+                          // Sende die Konfiguration völlig asynchron an den Sende-Task
+                          if (s_configTxQueue != NULL) {
+                              xQueueSend(s_configTxQueue, &sct_dap_config_st, (TickType_t)0);
+                          }
 
                         }
                         #ifdef ESPNOW_Enable
@@ -3175,6 +3164,14 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
       {
         if (xQueueReceive(s_servoConfigTxQueue, &servoConfigResp, 0) == pdPASS) {
             usbManager.write((const uint8_t*)&servoConfigResp, sizeof(DAP_servo_config_st_t));
+        }
+      }
+      else if (activatedMember == s_configTxQueue)
+      {
+        DapConfig_t configToSend;
+        if (xQueueReceive(s_configTxQueue, &configToSend, 0) == pdPASS) {
+            usbManager.write((const uint8_t*)&configToSend, sizeof(DapConfig_t));
+            ActiveSerial->print("Return pedal config");
         }
       }
 
