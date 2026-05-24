@@ -11,7 +11,7 @@ private:
     USBCDC usbSerial;
     SemaphoreHandle_t bufferMutex;
     
-    static const size_t BUFFER_SIZE = 2048;
+    static const size_t BUFFER_SIZE = 8192; // Puffer vergrößert für 4kHz Telemetrie (ca. 250 KB/s)
     uint8_t txRingBuffer[BUFFER_SIZE];
     size_t writeIdx;
     size_t readIdx;
@@ -125,24 +125,23 @@ public:
         if (timeToBatch || bufferFullEnough) {
             lastBatchTimeMs = millis();
             
-            size_t avail = usbSerial.availableForWrite();
-            if (avail > 0) {
-                if (xSemaphoreTake(bufferMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
-                    size_t copyLen = (availableBytes < avail) ? availableBytes : avail;
-                    
-                    if (copyLen > 0) {
-                        size_t untilEnd = BUFFER_SIZE - readIdx;
-                        if (copyLen <= untilEnd) {
-                            usbSerial.write(&txRingBuffer[readIdx], copyLen);
-                        } else {
-                            usbSerial.write(&txRingBuffer[readIdx], untilEnd);
-                            usbSerial.write(&txRingBuffer[0], copyLen - untilEnd);
-                        }
-                        readIdx = (readIdx + copyLen) % BUFFER_SIZE;
-                        availableBytes -= copyLen;
+            if (xSemaphoreTake(bufferMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
+                // WICHTIG: Nicht auf availableForWrite() limitieren!
+                // Die USBCDC-Klasse zerteilt große Blöcke intern und blockiert so lange, bis sie über USB versendet wurden.
+                size_t copyLen = availableBytes;
+                
+                if (copyLen > 0) {
+                    size_t untilEnd = BUFFER_SIZE - readIdx;
+                    if (copyLen <= untilEnd) {
+                        usbSerial.write(&txRingBuffer[readIdx], copyLen);
+                    } else {
+                        usbSerial.write(&txRingBuffer[readIdx], untilEnd);
+                        usbSerial.write(&txRingBuffer[0], copyLen - untilEnd);
                     }
-                    xSemaphoreGive(bufferMutex);
+                    readIdx = (readIdx + copyLen) % BUFFER_SIZE;
+                    availableBytes -= copyLen;
                 }
+                xSemaphoreGive(bufferMutex);
             }
         }
     }

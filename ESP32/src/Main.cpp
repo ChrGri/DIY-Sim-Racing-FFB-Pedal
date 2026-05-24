@@ -3179,8 +3179,8 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
       }
 
       itemsProcessed++;
-      if (itemsProcessed >= 30) {
-        break; // Maximale Batch-Größe erreicht (Füllt ca. den 2000-Byte-Puffer). Pause machen!
+      if (itemsProcessed >= 60) {
+        break; // Maximale Batch-Größe erreicht (Füllt ca. 4 KB Puffer). Batch verarbeiten!
       }
 
       // Checke sofort (ohne zu blockieren), ob noch mehr Items da sind
@@ -3194,7 +3194,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
 
     // Wenn wir das 30-Paket-Limit erreicht haben, gibt es extrem viele Daten.
     // Ein explizites Yield verhindert, dass der Watchdog-Timer auf Core 0 wegen Starvation zuschlägt.
-    if (itemsProcessed >= 30) {
+    if (itemsProcessed >= 60) {
         vTaskDelay(pdMS_TO_TICKS(1));
     }
 
