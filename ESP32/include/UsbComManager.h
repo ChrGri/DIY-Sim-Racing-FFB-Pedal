@@ -10,7 +10,13 @@ class UsbComManager : public Stream {
 private:
     USBCDC usbSerial;
     SemaphoreHandle_t bufferMutex;
-    String txBatchBuffer;
+    
+    static const size_t BUFFER_SIZE = 2048;
+    uint8_t txRingBuffer[BUFFER_SIZE];
+    size_t writeIdx;
+    size_t readIdx;
+    size_t availableBytes;
+
     unsigned long lastBatchTimeMs;
     uint32_t batchIntervalMs;
 
@@ -19,12 +25,12 @@ public:
     UsbComManager(uint32_t intervalMs = 5) {
         batchIntervalMs = intervalMs;
         lastBatchTimeMs = 0;
+        writeIdx = 0;
+        readIdx = 0;
+        availableBytes = 0;
         
         // Mutex erstellen, um Thread-Sicherheit zwischen den Tasks zu garantieren
         bufferMutex = xSemaphoreCreateMutex();
-        
-        // Speicher fest reservieren, um Heap-Fragmentierung zu verhindern
-        txBatchBuffer.reserve(2048); 
     }
 
     void begin(uint8_t pedalId = 1) {
@@ -44,8 +50,10 @@ public:
 
         // Versuche den Mutex zu bekommen (Wartezeit 0, um Tasks wie pedalUpdateTask niemals zu blockieren!)
         if (xSemaphoreTake(bufferMutex, 0) == pdTRUE) {
-            if (txBatchBuffer.length() < 2000) {
-                txBatchBuffer += (char)c;
+            if (availableBytes < BUFFER_SIZE) {
+                txRingBuffer[writeIdx] = c;
+                writeIdx = (writeIdx + 1) % BUFFER_SIZE;
+                availableBytes++;
             }
             xSemaphoreGive(bufferMutex);
         }
@@ -57,8 +65,20 @@ public:
         if (!usbSerial) return size; // So tun als wäre gesendet worden
 
         if (xSemaphoreTake(bufferMutex, 0) == pdTRUE) {
-            if (txBatchBuffer.length() + size < 2000) {
-                txBatchBuffer.concat((const char*)buffer, size);
+            size_t freeSpace = BUFFER_SIZE - availableBytes;
+            
+            // WICHTIG: Nur schreiben, wenn das KOMPLETTE Paket in den Puffer passt!
+            // Sonst zerschießen wir das Protokoll mit halben Paketen, bei denen das EOF fehlt.
+            if (size > 0 && size <= freeSpace) {
+                size_t untilEnd = BUFFER_SIZE - writeIdx;
+                if (size <= untilEnd) {
+                    memcpy(&txRingBuffer[writeIdx], buffer, size);
+                } else {
+                    memcpy(&txRingBuffer[writeIdx], buffer, untilEnd);
+                    memcpy(&txRingBuffer[0], buffer + untilEnd, size - untilEnd);
+                }
+                writeIdx = (writeIdx + size) % BUFFER_SIZE;
+                availableBytes += size;
             }
             xSemaphoreGive(bufferMutex);
         }
@@ -81,14 +101,13 @@ public:
     // ====================================================================
     // Multi-Tasking Batch-Processor (Wird von serialCommunicationTaskTx aufgerufen)
     // ====================================================================
-    // ====================================================================
-    // Multi-Tasking Batch-Processor (Wird von serialCommunicationTaskTx aufgerufen)
-    // ====================================================================
     void processTxBatch() {
         if (!usbSerial) {
             // PC getrennt: Puffer leeren, damit kein alter Müll hängenbleibt
             if (xSemaphoreTake(bufferMutex, pdMS_TO_TICKS(2)) == pdTRUE) {
-                txBatchBuffer = "";
+                writeIdx = 0;
+                readIdx = 0;
+                availableBytes = 0;
                 xSemaphoreGive(bufferMutex);
             }
             return;
@@ -99,7 +118,7 @@ public:
         bool bufferFullEnough = false;
         
         if (xSemaphoreTake(bufferMutex, 0) == pdTRUE) {
-            bufferFullEnough = (txBatchBuffer.length() >= 128);
+            bufferFullEnough = (availableBytes >= 128);
             xSemaphoreGive(bufferMutex);
         }
 
@@ -108,24 +127,21 @@ public:
             
             size_t avail = usbSerial.availableForWrite();
             if (avail > 0) {
-                String dataToSend = "";
-                
                 if (xSemaphoreTake(bufferMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
-                    size_t bufferLen = txBatchBuffer.length();
-                    if (bufferLen > 0) {
-                        // DER MAGISCHE FIX: Nimm nur exakt so viele Zeichen, 
-                        // wie die USB-Hardware jetzt gerade schlucken kann!
-                        size_t copyLen = (bufferLen < avail) ? bufferLen : avail;
-                        dataToSend = txBatchBuffer.substring(0, copyLen);
-                        
-                        // Entferne nur die gesendeten Zeichen, der Rest bleibt sicher im Puffer!
-                        txBatchBuffer.remove(0, copyLen); 
+                    size_t copyLen = (availableBytes < avail) ? availableBytes : avail;
+                    
+                    if (copyLen > 0) {
+                        size_t untilEnd = BUFFER_SIZE - readIdx;
+                        if (copyLen <= untilEnd) {
+                            usbSerial.write(&txRingBuffer[readIdx], copyLen);
+                        } else {
+                            usbSerial.write(&txRingBuffer[readIdx], untilEnd);
+                            usbSerial.write(&txRingBuffer[0], copyLen - untilEnd);
+                        }
+                        readIdx = (readIdx + copyLen) % BUFFER_SIZE;
+                        availableBytes -= copyLen;
                     }
                     xSemaphoreGive(bufferMutex);
-                }
-
-                if (dataToSend.length() > 0) {
-                    usbSerial.print(dataToSend);
                 }
             }
         }
