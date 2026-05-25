@@ -250,6 +250,9 @@ static QueueSetHandle_t s_serialTxQueueSet = NULL;
 #include "UsbComManager.h"
 UsbComManager usbManager(5); // 5ms Batch-Intervall
 
+#if defined(USE_CDC_INSTEAD_OF_UART)
+    USBCDC customUsbSerial;
+#endif
 
 
 
@@ -3205,8 +3208,6 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
         }
       }
 
-      usbManager.processTxBatch();
-
       itemsProcessed++;
       if (itemsProcessed >= 60) {
         break; // Maximale Batch-Größe erreicht! Watchdog retten!
@@ -3225,6 +3226,10 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
         // sagen wir dem TinyUSB-Treiber: "Schick den Buffer SOFORT los, warte nicht auf mehr!"
         usbManager.flush();
     }
+
+    // HIER IST DER RICHTIGE PLATZ! 
+    // 1x pro Task-Aufwach-Zyklus prüfen, ob PlatformIO einen Reboot will.
+    usbManager.processTxBatch();
 
   } // <-- Ende der for(;;) Schleife
 }

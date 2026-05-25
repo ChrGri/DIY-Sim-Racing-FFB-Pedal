@@ -6,10 +6,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include "Main.h"
-  // Wenn der Core kein USBCDC bereitstellt, müssen wir es manuell inkludieren und verwalten
-#if defined(USE_CDC_INSTEAD_OF_UART)
-  #include "USBCDC.h"
-#endif
+
 
 #ifdef USB_JOYSTICK
   #include "Controller.h"
@@ -40,8 +37,4 @@ public:
 
 private:
     Stream* targetStream;
-    #if defined(USE_CDC_INSTEAD_OF_UART)
-      USBCDC customUsbSerial;
-    #endif
-  
 };

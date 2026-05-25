@@ -10,7 +10,7 @@
         #include "soc/rtc_cntl_reg.h"
     #endif
     
-    extern HWCDC customUsbSerial; 
+    extern USBCDC customUsbSerial;
 #endif
 
 UsbComManager::UsbComManager(uint32_t intervalMs) {
@@ -37,11 +37,11 @@ void UsbComManager::begin(uint8_t pedalId) {
     #endif
 }
 
-size_t IRAM_ATTR UsbComManager::write(uint8_t c) {
+size_t IRAM_ATTR_FLAG UsbComManager::write(uint8_t c) {
     return write(&c, 1);
 }
 
-size_t IRAM_ATTR UsbComManager::write(const uint8_t *buffer, size_t size) {
+size_t IRAM_ATTR_FLAG UsbComManager::write(const uint8_t *buffer, size_t size) {
     if (size == 0) return 0;
 
     #if defined(USE_CDC_INSTEAD_OF_UART)
@@ -55,19 +55,19 @@ size_t IRAM_ATTR UsbComManager::write(const uint8_t *buffer, size_t size) {
     #endif
 }
 
-int IRAM_ATTR UsbComManager::availableForWrite() { 
+int IRAM_ATTR_FLAG UsbComManager::availableForWrite() { 
     return targetStream->availableForWrite();
 }
 
-int IRAM_ATTR UsbComManager::available() { return targetStream->available(); }
-int IRAM_ATTR UsbComManager::read() { return targetStream->read(); }
-int IRAM_ATTR UsbComManager::peek() { return targetStream->peek(); }
+int IRAM_ATTR_FLAG UsbComManager::available() { return targetStream->available(); }
+int IRAM_ATTR_FLAG UsbComManager::read() { return targetStream->read(); }
+int IRAM_ATTR_FLAG UsbComManager::peek() { return targetStream->peek(); }
 
-void IRAM_ATTR UsbComManager::flush() { 
+void IRAM_ATTR_FLAG UsbComManager::flush() { 
     targetStream->flush(); 
 }
 
-void IRAM_ATTR UsbComManager::processTxBatch() {
+void IRAM_ATTR_FLAG UsbComManager::processTxBatch() {
     #if defined(USE_CDC_INSTEAD_OF_UART)
     if (!customUsbSerial) return;
 
@@ -88,6 +88,6 @@ void IRAM_ATTR UsbComManager::processTxBatch() {
 }
 
 #ifdef USB_JOYSTICK
-bool IRAM_ATTR UsbComManager::isJoystickReady() { return IsControllerReady(); }
-void IRAM_ATTR UsbComManager::sendJoystickValue(uint16_t val) { SetControllerOutputValue(val); }
+bool IRAM_ATTR_FLAG UsbComManager::isJoystickReady() { return IsControllerReady(); }
+void IRAM_ATTR_FLAG UsbComManager::sendJoystickValue(uint16_t val) { SetControllerOutputValue(val); }
 #endif
