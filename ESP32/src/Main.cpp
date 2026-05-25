@@ -109,6 +109,7 @@ void loadcellReadingTask( void * pvParameters );
 void profilerTask( void * pvParameters );
 void serialCommunicationTaskRx( void * pvParameters );
 void serialCommunicationTaskTx( void * pvParameters );
+void serialTxPumpTask( void * pvParameters );
 void otaUpdateTask( void * pvParameters );
 void espNowCommunicationTaskTx( void * pvParameters);
 void miscTask( void * pvParameters);
@@ -740,12 +741,65 @@ void setup()
   DapConfig_t dap_config_st_local;
   DapConfig_t dap_config_st_eeprom;
 
-    // Manager starten (er übernimmt CDC und Controller-Setup)
+  // 1. EEPROM sehr früh laden, um den korrekten Pedal-Namen für das USB-Setup zu ermitteln
+  EEPROM.begin(2048);
+  global_dap_config_class.loadConfigFromEeprom();
+  global_dap_config_class.getConfig(&dap_config_st_eeprom, 500);
+  
+  bool earlyConfigValid_b = true;
+  if (dap_config_st_eeprom.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_CONFIG_U8) earlyConfigValid_b = false;
+  if (dap_config_st_eeprom.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8) earlyConfigValid_b = false;
+  uint16_t earlyCrc = checksumCalculator_u16((uint8_t*)(&(dap_config_st_eeprom.payloadHeader_st)), sizeof(dap_config_st_eeprom.payloadHeader_st) + sizeof(dap_config_st_eeprom.payloadPedalConfig_st));
+  if (earlyCrc != dap_config_st_eeprom.payloadFooter_st.checkSum_u16) earlyConfigValid_b = false;
+
+  if (earlyConfigValid_b) {
+    dap_config_st_local.payloadPedalConfig_st.pedalType_u8 = dap_config_st_eeprom.payloadPedalConfig_st.pedalType_u8;
+  }
+
+  #if defined(PEDAL_SOFTWARE_ASSIGNMENT) && defined(ESPNOW_Enable)
+    DapAssignmentReg_t dap_assignement_reg_local;
+    EEPROM.get(ASSIGNMENT_EEPROM_OFFSET_U32, dap_assignement_reg_local);
+    uint16_t crcAssign = checksumCalculator_u16((uint8_t *)(&dap_assignement_reg_local), sizeof(DapAssignmentReg_t) - sizeof(uint16_t));
+    if (dap_assignement_reg_local.payloadType_u8 == DAP_PAYLOAD_TYPE_ASSIGNMENT_U8 && 
+        dap_assignement_reg_local.magicKey_u8 == ESPNOW_ASSIGNMENT_MAGIC_KEY && 
+        crcAssign == dap_assignement_reg_local.crc_u16) {
+        
+        if (dap_assignement_reg_local.deviceId_u8 == PEDAL_ID_CLUTCH || 
+            dap_assignement_reg_local.deviceId_u8 == PEDAL_ID_BRAKE || 
+            dap_assignement_reg_local.deviceId_u8 == PEDAL_ID_THROTTLE) {
+          dap_config_st_local.payloadPedalConfig_st.pedalType_u8 = dap_assignement_reg_local.deviceId_u8;
+        }
+    }
+  #endif
+
+  #ifdef PEDAL_HARDWARE_ASSIGNMENT
+    pinMode(CFG1_U8, INPUT_PULLUP);
+    pinMode(CFG2_U8, INPUT_PULLUP);
+    delay(50); // give the pin time to settle
+    uint8_t CFG1_reading = digitalRead(CFG1_U8);
+    uint8_t CFG2_reading = digitalRead(CFG2_U8);
+    uint8_t Pedal_assignment = CFG1_reading * 2 + CFG2_reading * 1; // 00=clutch 01=brk  02=gas
+    if (Pedal_assignment != PEDAL_ID_ASSIGNMENT_ERROR && Pedal_assignment != PEDAL_ID_UNKNOWN) {
+      dap_config_st_local.payloadPedalConfig_st.pedalType_u8 = Pedal_assignment;
+    }
+  #endif
+
+  // Manager starten (er übernimmt CDC und Controller-Setup mit der finalen Identität)
   usbManager.begin(dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
   
   // System-Pointer auf den Manager umbiegen
   ActiveSerial = &usbManager;
 
+  // Dedizierten Pump-Task sofort starten, damit Ausgaben im setup() nicht den Puffer sprengen!
+  // Dieser leert alle 2ms den Ringpuffer in die USB/UART-Hardware.
+  xTaskCreatePinnedToCore(
+      serialTxPumpTask,
+      "serTxPump",
+      2048,
+      NULL,
+      TASK_PRIORITY_SERIALCOMMUNICATION_TX_TASK_UBASETYPE,
+      NULL,
+      CORE_ID_SERIAL_COMMUNICATION_TASK_U8);
 
 
   // ADD THIS: Create the queue before creating the tasks that use it.
@@ -1331,11 +1385,6 @@ xTaskCreatePinnedToCore(
     delay(500);
   #endif
 
-  #if defined(CONTROLLER_SPECIFIC_VIDPID) && defined(USB_JOYSTICK) && !defined(USE_CDC_INSTEAD_OF_UART)
-      ActiveSerial->println("Setup Controller");
-      SetupController_USB(dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
-      delay(500);
-  #endif
   #ifdef ESPNOW_Enable
       //print out basic pedal info via espnow
       sendESPNOWLog("Pedal:%d DAP version: %d", dap_config_st_local.payloadPedalConfig_st.pedalType_u8, DAP_VERSION_CONFIG_U8);
@@ -3195,6 +3244,20 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
     }
 
   } // <-- Ende der for(;;) Schleife
+}
+
+/**********************************************************************************************/
+/*                                                                                            */
+/*                         serial tx pump task                                                */
+/*                                                                                            */
+/**********************************************************************************************/
+void IRAM_ATTR_FLAG serialTxPumpTask( void * pvParameters )
+{ 
+  for (;;)
+  {
+    usbManager.processTxBatch();
+    vTaskDelay(pdMS_TO_TICKS(2)); // Puffer alle 2 Millisekunden im Hintergrund flushen
+  }
 }
 
 /**********************************************************************************************/
