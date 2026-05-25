@@ -2440,7 +2440,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
         // send data every N-th frame
         sendJoystickDataCounter_u8++;
-        sendJoystickDataCounter_u8 %= joystickSendCounterMax_u8;
+        if (sendJoystickDataCounter_u8 >= joystickSendCounterMax_u8) sendJoystickDataCounter_u8 = 0; // use instead of modulo due to runtime efficiency
 
         if (sendJoystickDataCounter_u8 == 0)
         {
