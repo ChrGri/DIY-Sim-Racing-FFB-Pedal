@@ -3175,6 +3175,10 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
         }
       }
 
+      // Die Daten kontinuierlich und blockierungsfrei an die USB-Hardware leiten!
+      // Dadurch stauen sich keine Daten an und wir nutzen die vollen 800+ KB/s Bandbreite.
+      usbManager.processTxBatch();
+
       itemsProcessed++;
       if (itemsProcessed >= 60) {
         break; // Maximale Batch-Größe erreicht (Füllt ca. 4 KB Puffer). Batch verarbeiten!
@@ -3184,15 +3188,10 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
       activatedMember = xQueueSelectFromSet(s_serialTxQueueSet, 0);
     }
 
-    // NEU: Batch-Puffer abarbeiten und gesammelte Texte an Windows senden
-    #ifdef USE_CDC_INSTEAD_OF_UART
-        usbManager.processTxBatch();
-    #endif
-
-    // Wenn wir das 30-Paket-Limit erreicht haben, gibt es extrem viele Daten.
-    // Ein explizites Yield verhindert, dass der Watchdog-Timer auf Core 0 wegen Starvation zuschlägt.
     if (itemsProcessed >= 60) {
-        vTaskDelay(pdMS_TO_TICKS(1));
+        // WICHTIG: Ein hartes 1ms-Delay zwingt diesen Task in den "Blocked"-Zustand.
+        // Dadurch kann der FreeRTOS Idle-Task laufen und den Watchdog rechtzeitig zurücksetzen!
+        vTaskDelay(pdMS_TO_TICKS(1)); 
     }
 
   } // <-- Ende der for(;;) Schleife

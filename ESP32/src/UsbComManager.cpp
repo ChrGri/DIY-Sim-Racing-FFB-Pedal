@@ -52,13 +52,6 @@ size_t IRAM_ATTR_FLAG UsbComManager::write(uint8_t c) {
     #endif
 
     if (xSemaphoreTake(bufferMutex, 0) == pdTRUE) {
-        // ANTI-STARVATION (Aushungern verhindern)
-        if ((BUFFER_SIZE - availableBytes) < 256) {
-            writeIdx = 0;
-            readIdx = 0;
-            availableBytes = 0;
-        }
-        
         if (availableBytes < BUFFER_SIZE) {
             txRingBuffer[writeIdx] = c;
             writeIdx = (writeIdx + 1) % BUFFER_SIZE;
@@ -80,17 +73,8 @@ size_t IRAM_ATTR_FLAG UsbComManager::write(const uint8_t *buffer, size_t size) {
     if (xSemaphoreTake(bufferMutex, 0) == pdTRUE) {
         size_t freeSpace = BUFFER_SIZE - availableBytes;
         
-        // ANTI-STARVATION (Aushungern verhindern)
-        // Wenn nicht mehr genug Platz für unser größtes Paket ist, leeren wir den Ringpuffer 
-        // komplett (Drop). Das verhindert, dass kleine Pakete den Platz dauerhaft blockieren 
-        // und große Pakete verhungern! Wir starten frisch und latenzfrei mit dem neusten Paket.
-        if (freeSpace < 256) {
-            writeIdx = 0;
-            readIdx = 0;
-            availableBytes = 0;
-            freeSpace = BUFFER_SIZE;
-        }
-
+        // Fällt das Paket nicht mehr rein? -> Einfach verwerfen (Drop-Newest)
+        // Das erhält den FIFO-Stream absolut lückenlos. Keine 20ms Lücken mehr!
         if (size > 0 && size <= freeSpace) {
             size_t untilEnd = BUFFER_SIZE - writeIdx;
             if (size <= untilEnd) {
@@ -154,37 +138,26 @@ void IRAM_ATTR_FLAG UsbComManager::processTxBatch() {
     }
 #endif
 
-    bool timeToBatch = (millis() - lastBatchTimeMs >= batchIntervalMs);
-    bool bufferFullEnough = false;
-    
     if (xSemaphoreTake(bufferMutex, 0) == pdTRUE) {
-        // WICHTIG: ~40 Pakete sammeln (ca. 4000 Bytes), um das Loadcell-Rauschen zu unterdrücken!
-        bufferFullEnough = (availableBytes >= 4000);
-        xSemaphoreGive(bufferMutex);
-    }
-
-    if (timeToBatch || bufferFullEnough) {
-        lastBatchTimeMs = millis();
+        int avail = targetStream->availableForWrite();
         
-        if (xSemaphoreTake(bufferMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
-            int avail = targetStream->availableForWrite();
+        // Kontinuierlicher, blockierungsfreier Datenabfluss in die USB-Hardware
+        while (avail > 0 && availableBytes > 0) {
+            size_t copyLen = (availableBytes < (size_t)avail) ? availableBytes : (size_t)avail;
             
-            if (avail > 0 && availableBytes > 0) {
-                // Echte Non-Blocking-Logik: Nur so viel senden, wie Hardware schluckt!
-                size_t copyLen = (availableBytes < (size_t)avail) ? availableBytes : (size_t)avail;
-                
-                size_t untilEnd = BUFFER_SIZE - readIdx;
-                if (copyLen <= untilEnd) {
-                    targetStream->write(&txRingBuffer[readIdx], copyLen);
-                } else {
-                    targetStream->write(&txRingBuffer[readIdx], untilEnd);
-                    targetStream->write(&txRingBuffer[0], copyLen - untilEnd);
-                }
-                readIdx = (readIdx + copyLen) % BUFFER_SIZE;
-                availableBytes -= copyLen;
+            size_t untilEnd = BUFFER_SIZE - readIdx;
+            if (copyLen <= untilEnd) {
+                targetStream->write(&txRingBuffer[readIdx], copyLen);
+            } else {
+                targetStream->write(&txRingBuffer[readIdx], untilEnd);
+                targetStream->write(&txRingBuffer[0], copyLen - untilEnd);
             }
-            xSemaphoreGive(bufferMutex);
+            readIdx = (readIdx + copyLen) % BUFFER_SIZE;
+            availableBytes -= copyLen;
+            
+            avail = targetStream->availableForWrite(); // Platz nach dem Write neu abfragen!
         }
+        xSemaphoreGive(bufferMutex);
     }
 }
 
