@@ -560,6 +560,8 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   // Alarm Pin vom Servo
   #define ALM_PORT_GPIO 6
 
+  #define USE_CDC_INSTEAD_OF_UART
+
 #endif
 
 
