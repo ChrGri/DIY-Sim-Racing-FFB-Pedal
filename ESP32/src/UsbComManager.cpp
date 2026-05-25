@@ -103,7 +103,10 @@ int IRAM_ATTR_FLAG UsbComManager::availableForWrite() {
 int IRAM_ATTR_FLAG UsbComManager::available() { return targetStream->available(); }
 int IRAM_ATTR_FLAG UsbComManager::read() { return targetStream->read(); }
 int IRAM_ATTR_FLAG UsbComManager::peek() { return targetStream->peek(); }
-void IRAM_ATTR_FLAG UsbComManager::flush() { targetStream->flush(); }
+void IRAM_ATTR_FLAG UsbComManager::flush() { 
+    processTxBatch();      // 1. Unseren eigenen Ringpuffer leeren
+    targetStream->flush(); // 2. Danach warten, bis die Hardware leer ist
+}
 
 void IRAM_ATTR_FLAG UsbComManager::processTxBatch() {
     #if defined(USE_CDC_INSTEAD_OF_UART)
@@ -143,17 +146,25 @@ void IRAM_ATTR_FLAG UsbComManager::processTxBatch() {
         
         // Kontinuierlicher, blockierungsfreier Datenabfluss in die USB-Hardware
         while (avail > 0 && availableBytes > 0) {
-            size_t copyLen = (availableBytes < (size_t)avail) ? availableBytes : (size_t)avail;
+            size_t chunkLen = (availableBytes < (size_t)avail) ? availableBytes : (size_t)avail;
             
             size_t untilEnd = BUFFER_SIZE - readIdx;
-            if (copyLen <= untilEnd) {
-                targetStream->write(&txRingBuffer[readIdx], copyLen);
-            } else {
-                targetStream->write(&txRingBuffer[readIdx], untilEnd);
-                targetStream->write(&txRingBuffer[0], copyLen - untilEnd);
+            if (chunkLen > untilEnd) {
+                chunkLen = untilEnd; // Verhindert Wrap-Around und aufgeteilte Writes!
             }
-            readIdx = (readIdx + copyLen) % BUFFER_SIZE;
-            availableBytes -= copyLen;
+            
+            // Die Hardware entscheidet, wie viel wirklich geschrieben wurde:
+            size_t bytesWritten = targetStream->write(&txRingBuffer[readIdx], chunkLen);
+            
+            if (bytesWritten > 0) {
+                readIdx = (readIdx + bytesWritten) % BUFFER_SIZE;
+                availableBytes -= bytesWritten;
+            }
+            
+            // Wenn die Hardware weniger annimmt als wir dachten -> Puffer voll, Abbruch!
+            if (bytesWritten < chunkLen) {
+                break;
+            }
             
             avail = targetStream->availableForWrite(); // Platz nach dem Write neu abfragen!
         }
