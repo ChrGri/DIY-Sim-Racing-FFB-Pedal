@@ -2502,8 +2502,12 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       {
         // send data every N-th frame
         sendPedalStructsViaSerialCounter_u8++;
-        sendPedalStructsViaSerialCounter_u8 %= serialSendCounterMax_u8;
-        sendBasicFlag_b = true;
+        if (sendPedalStructsViaSerialCounter_u8 >= serialSendCounterMax_u8) {
+            sendPedalStructsViaSerialCounter_u8 = 0;
+            sendBasicFlag_b = true;
+        } else {
+            sendBasicFlag_b = false;
+        }
         sendExtendedFlag_b = false;
       }
 
@@ -3181,7 +3185,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
                 sizeof(resp.payloadHeader_st) + sizeof(resp.payloadServoConfig_st));
               resp.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
               resp.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
-              ActiveSerial->write((char*)&resp, sizeof(DAP_servo_config_st_t));
+              usbManager.write((const uint8_t*)&resp, sizeof(DAP_servo_config_st_t));
             }
           }
         }
@@ -3201,25 +3205,29 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
         }
       }
 
+      usbManager.processTxBatch();
+
       itemsProcessed++;
       if (itemsProcessed >= 60) {
-        break; // Batch verarbeiten!
+        break; // Maximale Batch-Größe erreicht! Watchdog retten!
       }
 
-      // Checke sofort, ob noch mehr Items da sind
+      // Checke sofort (ohne zu blockieren), ob noch mehr Items da sind
       activatedMember = xQueueSelectFromSet(s_serialTxQueueSet, 0);
     }
 
     if (itemsProcessed >= 60) {
+        // Watchdog-Feeder: Wenn extrem viel los war (USB-Lag), zwingen wir den Task kurz 
+        // in den "Blocked"-Zustand, damit der Idle-Task überleben kann.
         vTaskDelay(pdMS_TO_TICKS(1)); 
+    } else if (itemsProcessed > 0) {
+        // PERFEKTE LATENZ: Wenn wir die Queue komplett und schnell leergesaugt haben, 
+        // sagen wir dem TinyUSB-Treiber: "Schick den Buffer SOFORT los, warte nicht auf mehr!"
+        usbManager.flush();
     }
 
-    // Checken, ob PlatformIO flashen will
-    usbManager.processTxBatch();
-
   } // <-- Ende der for(;;) Schleife
-} // <-- ENDE DER FUNKTION serialCommunicationTaskTx
-
+}
 
 /**********************************************************************************************/
 /*                                                                                            */
