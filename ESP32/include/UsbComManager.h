@@ -14,7 +14,7 @@
 
 class UsbComManager : public Stream {
 public:
-    UsbComManager(uint32_t intervalMs = 5);
+    UsbComManager();
 
     void begin(uint8_t pedalId);
 

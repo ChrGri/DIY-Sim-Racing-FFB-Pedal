@@ -13,7 +13,7 @@
     extern USBCDC customUsbSerial;
 #endif
 
-UsbComManager::UsbComManager(uint32_t intervalMs) {
+UsbComManager::UsbComManager() {
     #if defined(USE_CDC_INSTEAD_OF_UART)
         targetStream = &customUsbSerial;
     #else

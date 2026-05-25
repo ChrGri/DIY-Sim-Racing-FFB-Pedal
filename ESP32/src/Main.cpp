@@ -97,6 +97,18 @@ typedef struct {
     DapConfig_t config_st;
 } configDataPackage_t;
 
+enum TxMessageType {
+    TX_MSG_PEDAL_STATE,
+    TX_MSG_CONFIG
+};
+
+struct TxMessage_t {
+    TxMessageType type;
+    union {
+        PedalStatePackage_t pedalState;
+        DapConfig_t config;
+    } payload;
+};
 
 /**********************************************************************************************/
 /*                                                                                            */
@@ -212,22 +224,23 @@ static SemaphoreHandle_t s_semaphore_updatePedalStates=NULL;
 /*                                                                                            */
 /*                         queue declarations                                                 */
 /*                                                                                            */
+/*                                                                                            */
 /**********************************************************************************************/
 // ADD THIS: The handle for our new FreeRTOS queue
-static QueueHandle_t s_pedalStateQueue = NULL;
+static QueueHandle_t s_unifiedTxQueue = NULL;
 static QueueHandle_t s_joystickDataQueue = NULL;
 static QueueHandle_t s_loadcellDataQueue = NULL;
 static QueueHandle_t s_configUpdateAvailableQueue = NULL;
 static QueueHandle_t s_configUpdateSendToPedalUpdateTaskQueue = NULL;
 static QueueHandle_t s_configUpdateSendToLoadcellTaskQueue = NULL;
 static QueueHandle_t s_actionCommandQueue = NULL;
-// static QueueHandle_t configUpdateSendToJoystickTaskQueue = NULL;
 static QueueHandle_t s_configUpdateSendToSerialRXTaskQueue = NULL;
 static QueueHandle_t s_systemControlQueue = NULL;
-static QueueHandle_t s_servoConfigTxQueue = NULL;
 static QueueHandle_t s_servoConfigRxQueue = NULL;
-static QueueHandle_t s_configTxQueue = NULL;
-static QueueSetHandle_t s_serialTxQueueSet = NULL;
+
+
+
+
 
 
 
@@ -248,7 +261,7 @@ static QueueSetHandle_t s_serialTxQueueSet = NULL;
 /*                                                                                            */
 /**********************************************************************************************/
 #include "UsbComManager.h"
-UsbComManager usbManager(5); // 5ms Batch-Intervall
+UsbComManager usbManager; 
 
 #if defined(USE_CDC_INSTEAD_OF_UART)
     USBCDC customUsbSerial;
@@ -795,14 +808,13 @@ void setup()
 
 
 
-  // ADD THIS: Create the queue before creating the tasks that use it.
   // The queue can hold up to N state packages.
   // Depth = 200: holds 50 ms of 4 kHz production (4000 × 0.05 = 200 items)
   // giving ample margin even if the TX task is briefly delayed by USB activity.
-  s_pedalStateQueue = xQueueCreate(200, sizeof(PedalStatePackage_t));
-  if (s_pedalStateQueue == NULL)
+  s_unifiedTxQueue = xQueueCreate(207, sizeof(TxMessage_t));
+  if (s_unifiedTxQueue == NULL)
   {
-    ActiveSerial->println("Error creating the pedal state queue!");
+    ActiveSerial->println("Error creating the unified TX queue!");
   }
   s_joystickDataQueue = xQueueCreate(1, sizeof(joystickDataPackage_t));
   if (s_joystickDataQueue == NULL)
@@ -812,7 +824,7 @@ void setup()
   s_loadcellDataQueue = xQueueCreate(1, sizeof(loadcellDataPackage_t));
   if (s_loadcellDataQueue == NULL)
   {
-    ActiveSerial->println("Error creating the joystick data queue!");
+    ActiveSerial->println("Error creating the loadcell data queue!");
   }
   s_configUpdateAvailableQueue = xQueueCreate(1, sizeof(configDataPackage_t));
   if (s_configUpdateAvailableQueue == NULL)
@@ -848,34 +860,15 @@ void setup()
   {
     ActiveSerial->println("Error creating the system control queue!");
   }
-  s_servoConfigTxQueue = xQueueCreate(5, sizeof(DAP_servo_config_st_t));
-  if (s_servoConfigTxQueue == NULL)
-  {
-    ActiveSerial->println("Error creating the servo config tx queue!");
-  }
   s_servoConfigRxQueue = xQueueCreate(5, sizeof(DAP_servo_config_st));
   if (s_servoConfigRxQueue == NULL)
   {
     ActiveSerial->println("Error creating the servo config rx queue!");
   }
-  s_configTxQueue = xQueueCreate(2, sizeof(DapConfig_t));
-  if (s_configTxQueue == NULL)
-  {
-    ActiveSerial->println("Error creating the config tx queue!");
-  }
 
-  // Create the QueueSet combining the TX queues (200 from pedalState + 5 from servoConfigTx + 2 from configTx)
-  s_serialTxQueueSet = xQueueCreateSet(200 + 5 + 2);
-  if (s_serialTxQueueSet != NULL)
-  {
-    xQueueAddToSet(s_pedalStateQueue, s_serialTxQueueSet);
-    xQueueAddToSet(s_servoConfigTxQueue, s_serialTxQueueSet);
-    xQueueAddToSet(s_configTxQueue, s_serialTxQueueSet);
-  }
-  else
-  {
-    ActiveSerial->println("Error creating the serial TX queue set!");
-  }
+
+
+
 
 
 
@@ -2514,7 +2507,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         sendExtendedFlag_b = false;
       }
 
-      if (s_pedalStateQueue != NULL) {
+      if (s_unifiedTxQueue != NULL) {
 
 
         if (sendBasicFlag_b)
@@ -2609,23 +2602,21 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_virtualVelocity_mps = admittanceStates_st.virtualVel_mps;
           dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st.admittance_virtualAcceleration_mps2 = admittanceStates_st.virtualAcc_mps2;
 
-        
+        }
+
+          // Package the new state data into a unified struct
+          TxMessage_t txMsg;
+          txMsg.type = TX_MSG_PEDAL_STATE;
+          txMsg.payload.pedalState.basic_st = dap_state_basic_st_lcl_pedalUpdateTask;
+          txMsg.payload.pedalState.extended_st = dap_state_extended_st_lcl_pedalUpdateTask;
+          txMsg.payload.pedalState.sendBasicFlag_b = sendBasicFlag_b;
+          txMsg.payload.pedalState.sendExtendedFlag_b = sendExtendedFlag_b;
+
+          // Send the package to the unified queue. Use a timeout of 0 (non-blocking).
+          xQueueSend(s_unifiedTxQueue, &txMsg, (TickType_t)0);
         }
 
 
-
-          // Package the new state data into a single struct
-          PedalStatePackage_t newStatePackage;
-          newStatePackage.basic_st = dap_state_basic_st_lcl_pedalUpdateTask;
-          newStatePackage.extended_st = dap_state_extended_st_lcl_pedalUpdateTask;
-          newStatePackage.sendBasicFlag_b = sendBasicFlag_b;
-          newStatePackage.sendExtendedFlag_b = sendExtendedFlag_b;
-
-          // Send the package to the queue. Use a timeout of 0 (non-blocking).
-          // If the queue is full, the data is simply dropped. This prevents this
-          // high-priority control task from ever blocking on a full serial buffer.
-          xQueueSend(s_pedalStateQueue, &newStatePackage, (TickType_t)0);
-        }
 
       profiler_pedalUpdateTask.end(7);
       profiler_pedalUpdateTask.end(0);
@@ -2972,11 +2963,15 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                           sct_dap_config_st.payloadFooter_st.checkSum_u16 = crc;
 
                           // Sende die Konfiguration völlig asynchron an den Sende-Task
-                          if (s_configTxQueue != NULL) {
-                              xQueueSend(s_configTxQueue, &sct_dap_config_st, (TickType_t)0);
+                          if (s_unifiedTxQueue != NULL) {
+                              TxMessage_t txMsg;
+                              txMsg.type = TX_MSG_CONFIG;
+                              txMsg.payload.config = sct_dap_config_st;
+                              xQueueSend(s_unifiedTxQueue, &txMsg, (TickType_t)0);
                           }
 
                         }
+
                         #ifdef ESPNOW_Enable
                           if(received_action.payloadPedalAction_st.rudderAction_u8==1)//Enable Rudder
                           {
@@ -3113,29 +3108,56 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
 
 
 
+
 void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
 { 
-  PedalStatePackage_t receivedState;
-  DAP_servo_config_st_t servoConfigResp;
-  QueueSetMemberHandle_t activatedMember;
+  TxMessage_t msg;
 
   for (;;)
   {
     uint16_t itemsProcessed = 0;
 
-    // Warte auf Daten (max 5ms blockieren, falls Queue leer ist)
-    activatedMember = xQueueSelectFromSet(s_serialTxQueueSet, pdMS_TO_TICKS(5));
+    // 1. Unabhängiges Polling der Modbus-Antwort direkt vorm Queue-Lesen
+    if (stepper != nullptr) {
+      uint16_t addr_u16 = 0;
+      int16_t  vals[10] = {};
+      uint16_t addrs[10] = {};
+      uint8_t  cnt_u8   = 0;
+      if (stepper->tryGetServoModbusReadResult(addr_u16, vals, cnt_u8, addrs) && cnt_u8 > 0) {
+        DAP_servo_config_st_t resp = {};
+        resp.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+        resp.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+        resp.payloadHeader_st.payloadType_u8   = DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8;
+        resp.payloadHeader_st.version_u8       = DAP_VERSION_CONFIG_U8;
+        resp.payloadHeader_st.storeToEeprom_u8 = 0;
+        resp.payloadHeader_st.pedalTag_u8      = 0;
+        resp.payloadServoConfig_st.readWriteFlag  = 0; 
+        resp.payloadServoConfig_st.numValidFields = cnt_u8;
+        for (uint8_t i = 0; i < cnt_u8; i++) {
+          resp.payloadServoConfig_st.registerAddresses[i] = addrs[i];
+          resp.payloadServoConfig_st.registerValues[i]    = (uint16_t)vals[i];
+        }
+        resp.payloadFooter_st.checkSum_u16 = checksumCalculator_u16(
+          (uint8_t*)(&resp.payloadHeader_st),
+          sizeof(resp.payloadHeader_st) + sizeof(resp.payloadServoConfig_st));
+        resp.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+        resp.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
+        usbManager.write((const uint8_t*)&resp, sizeof(DAP_servo_config_st_t));
+      }
+    }
 
-    // Schleife, um Pakete im Batch abzuarbeiten
-    while (activatedMember != NULL)
+    // 2. Warte auf Daten (max 2ms blockieren, falls Queue leer ist)
+    if (xQueueReceive(s_unifiedTxQueue, &msg, pdMS_TO_TICKS(2)) == pdPASS)
     {
-      if (activatedMember == s_pedalStateQueue)
+      // Schleife, um Pakete im Batch abzuarbeiten
+      do
       {
-        if (xQueueReceive(s_pedalStateQueue, &receivedState, 0) == pdPASS)
+        if (msg.type == TX_MSG_PEDAL_STATE)
         {
+          PedalStatePackage_t& receivedState = msg.payload.pedalState;
           DapStateBasic_t basic_to_send = receivedState.basic_st;
           DapStateExtended_t extended_to_send = receivedState.extended_st;
-  
+
           #ifdef ESPNOW_Enable
           if (s_semaphore_updatePedalStates != NULL)
           {
@@ -3163,76 +3185,38 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
             extended_to_send.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(extended_to_send.payloadHeader_st)), sizeof(extended_to_send.payloadHeader_st) + sizeof(extended_to_send.payloadPedalStateExtended_st));
             usbManager.write((const uint8_t*)&extended_to_send, sizeof(DapStateExtended_t));
           }
-  
-          if (stepper != nullptr) {
-            uint16_t addr_u16 = 0;
-            int16_t  vals[10] = {};
-            uint16_t addrs[10] = {};
-            uint8_t  cnt_u8   = 0;
-            if (stepper->tryGetServoModbusReadResult(addr_u16, vals, cnt_u8, addrs) && cnt_u8 > 0) {
-              DAP_servo_config_st_t resp = {};
-              resp.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
-              resp.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
-              resp.payloadHeader_st.payloadType_u8   = DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8;
-              resp.payloadHeader_st.version_u8       = DAP_VERSION_CONFIG_U8;
-              resp.payloadHeader_st.storeToEeprom_u8 = 0;
-              resp.payloadHeader_st.pedalTag_u8      = 0;
-              resp.payloadServoConfig_st.readWriteFlag  = 0; 
-              resp.payloadServoConfig_st.numValidFields = cnt_u8;
-              for (uint8_t i = 0; i < cnt_u8; i++) {
-                resp.payloadServoConfig_st.registerAddresses[i] = addrs[i];
-                resp.payloadServoConfig_st.registerValues[i]    = (uint16_t)vals[i];
-              }
-              resp.payloadFooter_st.checkSum_u16 = checksumCalculator_u16(
-                (uint8_t*)(&resp.payloadHeader_st),
-                sizeof(resp.payloadHeader_st) + sizeof(resp.payloadServoConfig_st));
-              resp.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
-              resp.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
-              usbManager.write((const uint8_t*)&resp, sizeof(DAP_servo_config_st_t));
-            }
-          }
         }
-      }
-      else if (activatedMember == s_servoConfigTxQueue)
-      {
-        if (xQueueReceive(s_servoConfigTxQueue, &servoConfigResp, 0) == pdPASS) {
-            usbManager.write((const uint8_t*)&servoConfigResp, sizeof(DAP_servo_config_st_t));
+        else if (msg.type == TX_MSG_CONFIG)
+        {
+          usbManager.write((const uint8_t*)&msg.payload.config, sizeof(DapConfig_t));
+          ActiveSerial->print("Return pedal config");
         }
-      }
-      else if (activatedMember == s_configTxQueue)
-      {
-        DapConfig_t configToSend;
-        if (xQueueReceive(s_configTxQueue, &configToSend, 0) == pdPASS) {
-            usbManager.write((const uint8_t*)&configToSend, sizeof(DapConfig_t));
-            ActiveSerial->print("Return pedal config");
-        }
-      }
 
-      itemsProcessed++;
-      if (itemsProcessed >= 60) {
-        break; // Maximale Batch-Größe erreicht! Watchdog retten!
-      }
-
-      // Checke sofort (ohne zu blockieren), ob noch mehr Items da sind
-      activatedMember = xQueueSelectFromSet(s_serialTxQueueSet, 0);
+        itemsProcessed++;
+        if (itemsProcessed >= 60) {
+          break; // Maximale Batch-Größe erreicht!
+        }
+      } while (xQueueReceive(s_unifiedTxQueue, &msg, 0) == pdPASS);
     }
 
     if (itemsProcessed >= 60) {
-        // Watchdog-Feeder: Wenn extrem viel los war (USB-Lag), zwingen wir den Task kurz 
-        // in den "Blocked"-Zustand, damit der Idle-Task überleben kann.
+        // Watchdog-Feeder: CPU kurz abgeben, falls sehr viel los war
         vTaskDelay(pdMS_TO_TICKS(1)); 
     } else if (itemsProcessed > 0) {
-        // PERFEKTE LATENZ: Wenn wir die Queue komplett und schnell leergesaugt haben, 
-        // sagen wir dem TinyUSB-Treiber: "Schick den Buffer SOFORT los, warte nicht auf mehr!"
+        // Wenn der Buffer leer ist, direkt raussenden
         usbManager.flush();
     }
 
-    // HIER IST DER RICHTIGE PLATZ! 
-    // 1x pro Task-Aufwach-Zyklus prüfen, ob PlatformIO einen Reboot will.
     usbManager.processTxBatch();
 
   } // <-- Ende der for(;;) Schleife
 }
+          
+
+/**********************************************************************************************/
+
+  
+
 
 /**********************************************************************************************/
 /*                                                                                            */
