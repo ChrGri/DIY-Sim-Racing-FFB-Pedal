@@ -790,16 +790,6 @@ void setup()
   // System-Pointer auf den Manager umbiegen
   ActiveSerial = &usbManager;
 
-  // Dedizierten Pump-Task sofort starten, damit Ausgaben im setup() nicht den Puffer sprengen!
-  // Dieser leert alle 2ms den Ringpuffer in die USB/UART-Hardware.
-  xTaskCreatePinnedToCore(
-      serialTxPumpTask,
-      "serTxPump",
-      2048,
-      NULL,
-      TASK_PRIORITY_SERIALCOMMUNICATION_TX_TASK_UBASETYPE,
-      NULL,
-      CORE_ID_SERIAL_COMMUNICATION_TASK_U8);
 
 
   // ADD THIS: Create the queue before creating the tasks that use it.
@@ -3122,7 +3112,6 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
   DAP_servo_config_st_t servoConfigResp;
   QueueSetMemberHandle_t activatedMember;
 
-  
   for (;;)
   {
     uint16_t itemsProcessed = 0;
@@ -3135,25 +3124,18 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
     {
       if (activatedMember == s_pedalStateQueue)
       {
-        // Nach xQueueSelectFromSet exakt 1x lesen (FreeRTOS Best-Practice für QueueSets)
         if (xQueueReceive(s_pedalStateQueue, &receivedState, 0) == pdPASS)
         {
-          // Copy to a local variable to calculate CRC
           DapStateBasic_t basic_to_send = receivedState.basic_st;
           DapStateExtended_t extended_to_send = receivedState.extended_st;
   
-          // Provide pedal states to ESPnow task
           #ifdef ESPNOW_Enable
-          // update pedal states
           if (s_semaphore_updatePedalStates != NULL)
           {
             if (xSemaphoreTake(s_semaphore_updatePedalStates, (TickType_t)0) == pdTRUE)
             {
-              // move local structure values to global structures
               dap_state_basic_st = basic_to_send;
               dap_state_extended_st = extended_to_send;
-  
-              // release semaphore
               xSemaphoreGive(s_semaphore_updatePedalStates);
             }
           }
@@ -3163,23 +3145,18 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
           }
           #endif
   
-          // send basic pedal state struct
           if (receivedState.sendBasicFlag_b)
           {
-            // update CRC before transmission
             basic_to_send.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(basic_to_send.payloadHeader_st)), sizeof(basic_to_send.payloadHeader_st) + sizeof(basic_to_send.payloadPedalStateBasic_st));
             usbManager.write((const uint8_t*)&basic_to_send, sizeof(DapStateBasic_t));
           }
   
-          // send extended pedal state struct
           if (receivedState.sendExtendedFlag_b)
           {
-            // update CRC before transmission
             extended_to_send.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(extended_to_send.payloadHeader_st)), sizeof(extended_to_send.payloadHeader_st) + sizeof(extended_to_send.payloadPedalStateExtended_st));
             usbManager.write((const uint8_t*)&extended_to_send, sizeof(DapStateExtended_t));
           }
   
-          // --- Send servo Modbus read result back to SimHub plugin ---
           if (stepper != nullptr) {
             uint16_t addr_u16 = 0;
             int16_t  vals[10] = {};
@@ -3193,7 +3170,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
               resp.payloadHeader_st.version_u8       = DAP_VERSION_CONFIG_U8;
               resp.payloadHeader_st.storeToEeprom_u8 = 0;
               resp.payloadHeader_st.pedalTag_u8      = 0;
-              resp.payloadServoConfig_st.readWriteFlag  = 0; // read response
+              resp.payloadServoConfig_st.readWriteFlag  = 0; 
               resp.payloadServoConfig_st.numValidFields = cnt_u8;
               for (uint8_t i = 0; i < cnt_u8; i++) {
                 resp.payloadServoConfig_st.registerAddresses[i] = addrs[i];
@@ -3224,41 +3201,25 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
         }
       }
 
-      // Die Daten kontinuierlich und blockierungsfrei an die USB-Hardware leiten!
-      // Dadurch stauen sich keine Daten an und wir nutzen die vollen 800+ KB/s Bandbreite.
-      usbManager.processTxBatch();
-
       itemsProcessed++;
       if (itemsProcessed >= 60) {
-        break; // Maximale Batch-Größe erreicht (Füllt ca. 4 KB Puffer). Batch verarbeiten!
+        break; // Batch verarbeiten!
       }
 
-      // Checke sofort (ohne zu blockieren), ob noch mehr Items da sind
+      // Checke sofort, ob noch mehr Items da sind
       activatedMember = xQueueSelectFromSet(s_serialTxQueueSet, 0);
     }
 
     if (itemsProcessed >= 60) {
-        // WICHTIG: Ein hartes 1ms-Delay zwingt diesen Task in den "Blocked"-Zustand.
-        // Dadurch kann der FreeRTOS Idle-Task laufen und den Watchdog rechtzeitig zurücksetzen!
         vTaskDelay(pdMS_TO_TICKS(1)); 
     }
 
-  } // <-- Ende der for(;;) Schleife
-}
-
-/**********************************************************************************************/
-/*                                                                                            */
-/*                         serial tx pump task                                                */
-/*                                                                                            */
-/**********************************************************************************************/
-void IRAM_ATTR_FLAG serialTxPumpTask( void * pvParameters )
-{ 
-  for (;;)
-  {
+    // Checken, ob PlatformIO flashen will
     usbManager.processTxBatch();
-    vTaskDelay(pdMS_TO_TICKS(2)); // Puffer alle 2 Millisekunden im Hintergrund flushen
-  }
-}
+
+  } // <-- Ende der for(;;) Schleife
+} // <-- ENDE DER FUNKTION serialCommunicationTaskTx
+
 
 /**********************************************************************************************/
 /*                                                                                            */

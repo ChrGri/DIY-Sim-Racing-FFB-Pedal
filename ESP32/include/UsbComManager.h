@@ -1,52 +1,47 @@
 #pragma once
+
 #include <Arduino.h>
 #include "USB.h"
 #include "Controller.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include "Main.h"
-
-// Wenn der Core kein USBCDC bereitstellt, müssen wir es manuell inkludieren und verwalten
+  // Wenn der Core kein USBCDC bereitstellt, müssen wir es manuell inkludieren und verwalten
 #if defined(USE_CDC_INSTEAD_OF_UART)
   #include "USBCDC.h"
 #endif
 
-class UsbComManager : public Stream {
-private:
+#ifdef USB_JOYSTICK
+  #include "Controller.h"
+#endif
 
+class UsbComManager : public Stream {
+public:
+    UsbComManager(uint32_t intervalMs = 5);
+
+    void begin(uint8_t pedalId);
+
+    // Stream Overrides
+    size_t write(uint8_t c) override;
+    size_t write(const uint8_t *buffer, size_t size) override;
+    
+    int availableForWrite() override;
+    int available() override;
+    int read() override;
+    int peek() override;
+    void flush() override;
+
+    void processTxBatch();
+
+#ifdef USB_JOYSTICK
+    bool isJoystickReady();
+    void sendJoystickValue(uint16_t val);
+#endif
+
+private:
     Stream* targetStream;
     #if defined(USE_CDC_INSTEAD_OF_UART)
       USBCDC customUsbSerial;
     #endif
-
-    SemaphoreHandle_t bufferMutex;
-    
-    static const size_t BUFFER_SIZE = 8192; // Puffer vergrößert für 4kHz Telemetrie (ca. 250 KB/s)
-    uint8_t txRingBuffer[BUFFER_SIZE];
-    size_t writeIdx;
-    size_t readIdx;
-    size_t availableBytes;
-
-    unsigned long lastBatchTimeMs;
-    uint32_t batchIntervalMs;
-
-public:
-    UsbComManager(uint32_t intervalMs = 5);
-    void begin(uint8_t pedalId = 1);
-
-    size_t IRAM_ATTR_FLAG write(uint8_t c) override;
-    size_t IRAM_ATTR_FLAG write(const uint8_t *buffer, size_t size) override;
-    int IRAM_ATTR_FLAG availableForWrite() override;
-
-    int IRAM_ATTR_FLAG available() override;
-    int IRAM_ATTR_FLAG read() override;
-    int IRAM_ATTR_FLAG peek() override;
-    void IRAM_ATTR_FLAG flush() override;
-
-    void IRAM_ATTR_FLAG processTxBatch();
-
-    #ifdef USB_JOYSTICK
-    bool IRAM_ATTR_FLAG isJoystickReady();
-    void IRAM_ATTR_FLAG sendJoystickValue(uint16_t val);
-    #endif
+  
 };

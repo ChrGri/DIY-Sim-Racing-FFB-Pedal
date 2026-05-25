@@ -9,18 +9,11 @@
     #if __has_include("soc/rtc_cntl_reg.h")
         #include "soc/rtc_cntl_reg.h"
     #endif
+    
+    extern HWCDC customUsbSerial; 
 #endif
 
 UsbComManager::UsbComManager(uint32_t intervalMs) {
-    batchIntervalMs = intervalMs;
-    lastBatchTimeMs = 0;
-    writeIdx = 0;
-    readIdx = 0;
-    availableBytes = 0;
-    
-    // Mutex erstellen, um Thread-Sicherheit zwischen den Tasks zu garantieren
-    bufferMutex = xSemaphoreCreateMutex();
-
     #if defined(USE_CDC_INSTEAD_OF_UART)
         targetStream = &customUsbSerial;
     #else
@@ -29,11 +22,12 @@ UsbComManager::UsbComManager(uint32_t intervalMs) {
 }
 
 void UsbComManager::begin(uint8_t pedalId) {
-
     #if defined(USE_CDC_INSTEAD_OF_UART)
         customUsbSerial.begin(115200);
-        customUsbSerial.setTxTimeoutMs(1); 
-        customUsbSerial.enableReboot(false); // Lebenswichtig, damit SimHub die Config empfängt!
+        // WICHTIG: Großzügiger Timeout. Erlaubt dem Tx-Task zu blockieren, 
+        // ohne Structs zu zerschneiden, falls der 16KB Puffer wirklich mal voll ist.
+        customUsbSerial.setTxTimeoutMs(50); 
+        customUsbSerial.enableReboot(false);
     #else
         Serial.begin(BAUD_3M_U32);
     #endif
@@ -43,94 +37,45 @@ void UsbComManager::begin(uint8_t pedalId) {
     #endif
 }
 
-size_t IRAM_ATTR_FLAG UsbComManager::write(uint8_t c) {
-    
-    #if defined(USE_CDC_INSTEAD_OF_UART)
-    if (!customUsbSerial) return 1;
-    #else
-    if (!Serial) return 1;
-    #endif
-
-    if (xSemaphoreTake(bufferMutex, 0) == pdTRUE) {
-        if (availableBytes < BUFFER_SIZE) {
-            txRingBuffer[writeIdx] = c;
-            writeIdx = (writeIdx + 1) % BUFFER_SIZE;
-            availableBytes++;
-        }
-        xSemaphoreGive(bufferMutex);
-    }
-    return 1;
+size_t IRAM_ATTR UsbComManager::write(uint8_t c) {
+    return write(&c, 1);
 }
 
-size_t IRAM_ATTR_FLAG UsbComManager::write(const uint8_t *buffer, size_t size) {
+size_t IRAM_ATTR UsbComManager::write(const uint8_t *buffer, size_t size) {
     if (size == 0) return 0;
+
     #if defined(USE_CDC_INSTEAD_OF_UART)
-    if (!customUsbSerial) return size;
+        if (!customUsbSerial) return size;
+        // Check entfernt! Wir vertrauen auf den 16KB Puffer und den Timeout.
+        // Wenn voll, wartet der Task. Wenn Timeout abläuft, bricht er ab.
+        return customUsbSerial.write(buffer, size);
     #else
-    if (!Serial) return size;
+        if (!Serial) return size;
+        return Serial.write(buffer, size);
     #endif
-
-    if (xSemaphoreTake(bufferMutex, 0) == pdTRUE) {
-        size_t freeSpace = BUFFER_SIZE - availableBytes;
-        
-        // Fällt das Paket nicht mehr rein? -> Einfach verwerfen (Drop-Newest)
-        // Das erhält den FIFO-Stream absolut lückenlos. Keine 20ms Lücken mehr!
-        if (size > 0 && size <= freeSpace) {
-            size_t untilEnd = BUFFER_SIZE - writeIdx;
-            if (size <= untilEnd) {
-                memcpy(&txRingBuffer[writeIdx], buffer, size);
-            } else {
-                memcpy(&txRingBuffer[writeIdx], buffer, untilEnd);
-                memcpy(&txRingBuffer[0], buffer + untilEnd, size - untilEnd);
-            }
-            writeIdx = (writeIdx + size) % BUFFER_SIZE;
-            availableBytes += size;
-        }
-        xSemaphoreGive(bufferMutex);
-    }
-    return size; 
 }
 
-int IRAM_ATTR_FLAG UsbComManager::availableForWrite() { 
-    if (xSemaphoreTake(bufferMutex, 0) == pdTRUE) {
-        int freeSpace = BUFFER_SIZE - availableBytes;
-        xSemaphoreGive(bufferMutex);
-        return freeSpace;
-    }
-    return 0;
+int IRAM_ATTR UsbComManager::availableForWrite() { 
+    return targetStream->availableForWrite();
 }
 
-int IRAM_ATTR_FLAG UsbComManager::available() { return targetStream->available(); }
-int IRAM_ATTR_FLAG UsbComManager::read() { return targetStream->read(); }
-int IRAM_ATTR_FLAG UsbComManager::peek() { return targetStream->peek(); }
-void IRAM_ATTR_FLAG UsbComManager::flush() { 
-    processTxBatch();      // 1. Unseren eigenen Ringpuffer leeren
-    targetStream->flush(); // 2. Danach warten, bis die Hardware leer ist
+int IRAM_ATTR UsbComManager::available() { return targetStream->available(); }
+int IRAM_ATTR UsbComManager::read() { return targetStream->read(); }
+int IRAM_ATTR UsbComManager::peek() { return targetStream->peek(); }
+
+void IRAM_ATTR UsbComManager::flush() { 
+    targetStream->flush(); 
 }
 
-void IRAM_ATTR_FLAG UsbComManager::processTxBatch() {
+void IRAM_ATTR UsbComManager::processTxBatch() {
     #if defined(USE_CDC_INSTEAD_OF_UART)
-    if (!customUsbSerial) {
-    #else
-    if (!Serial) {
-    #endif
-        // PC getrennt: Puffer leeren
-        if (xSemaphoreTake(bufferMutex, pdMS_TO_TICKS(2)) == pdTRUE) {
-            writeIdx = 0;
-            readIdx = 0;
-            availableBytes = 0;
-            xSemaphoreGive(bufferMutex);
-        }
-        return;
-    }
+    if (!customUsbSerial) return;
 
-#if defined(USE_CDC_INSTEAD_OF_UART)
-    // Manueller 1200bps Upload-Touch für PlatformIO Auto-Flash.
-    // Startet erst nach 5s, damit das Öffnen von SimHub/SerialMonitor den ESP nicht resettet!
     static bool rebootEnabled = false;
     if (!rebootEnabled && millis() > 5000) {
         rebootEnabled = true;
     }
+    
     if (rebootEnabled && customUsbSerial.baudRate() == 1200) {
         #if __has_include("esp32-hal-tinyusb.h")
             usb_persist_restart(RESTART_BOOTLOADER);
@@ -139,40 +84,10 @@ void IRAM_ATTR_FLAG UsbComManager::processTxBatch() {
             ESP.restart();
         #endif
     }
-#endif
-
-    if (xSemaphoreTake(bufferMutex, 0) == pdTRUE) {
-        int avail = targetStream->availableForWrite();
-        
-        // Kontinuierlicher, blockierungsfreier Datenabfluss in die USB-Hardware
-        while (avail > 0 && availableBytes > 0) {
-            size_t chunkLen = (availableBytes < (size_t)avail) ? availableBytes : (size_t)avail;
-            
-            size_t untilEnd = BUFFER_SIZE - readIdx;
-            if (chunkLen > untilEnd) {
-                chunkLen = untilEnd; // Verhindert Wrap-Around und aufgeteilte Writes!
-            }
-            
-            // Die Hardware entscheidet, wie viel wirklich geschrieben wurde:
-            size_t bytesWritten = targetStream->write(&txRingBuffer[readIdx], chunkLen);
-            
-            if (bytesWritten > 0) {
-                readIdx = (readIdx + bytesWritten) % BUFFER_SIZE;
-                availableBytes -= bytesWritten;
-            }
-            
-            // Wenn die Hardware weniger annimmt als wir dachten -> Puffer voll, Abbruch!
-            if (bytesWritten < chunkLen) {
-                break;
-            }
-            
-            avail = targetStream->availableForWrite(); // Platz nach dem Write neu abfragen!
-        }
-        xSemaphoreGive(bufferMutex);
-    }
+    #endif
 }
 
 #ifdef USB_JOYSTICK
-bool IRAM_ATTR_FLAG UsbComManager::isJoystickReady() { return IsControllerReady(); }
-void IRAM_ATTR_FLAG UsbComManager::sendJoystickValue(uint16_t val) { SetControllerOutputValue(val); }
+bool IRAM_ATTR UsbComManager::isJoystickReady() { return IsControllerReady(); }
+void IRAM_ATTR UsbComManager::sendJoystickValue(uint16_t val) { SetControllerOutputValue(val); }
 #endif
