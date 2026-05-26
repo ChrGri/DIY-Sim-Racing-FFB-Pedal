@@ -1,7 +1,7 @@
 #include "SignalFilter_1st_order.h"
 
 // Define a new tuning constant for the random acceleration model
-static const float s_kfModelNoiseAcceleration_fl32 = 1.0f * 1e2; // Tune this value
+static const float s_kfModelNoiseAcceleration_fl32 = 1.0f * 1e-2; // Tune this value
 
 // Constructor
 KalmanFilter1stOrder::KalmanFilter1stOrder(float varianceEstimate_fl32)
