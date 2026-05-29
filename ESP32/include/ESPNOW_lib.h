@@ -60,6 +60,8 @@ unsigned long Rudder_initialized_time=0;
 DapAssignmentReg_t dap_assignement_reg;
 DapRudder_t dap_rudder_receiving;
 DapRudder_t dap_rudder_sending;
+extern QueueHandle_t s_servoConfigRxQueue;
+
 /*
 struct ESPNow_Send_Struct
 { 
@@ -543,6 +545,25 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
         OTA_update_action_b=true;
       }
       
+      if(data_len==sizeof(DAP_servo_config_st))
+      {
+        DAP_servo_config_st received_servo_config;
+        memcpy(&received_servo_config, data, sizeof(DAP_servo_config_st));
+        
+        bool structChecker = true;
+        if (received_servo_config.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8) structChecker = false;
+        if (received_servo_config.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8) structChecker = false;
+        
+        uint16_t crc = checksumCalculator_u16((uint8_t *)(&(received_servo_config.payloadHeader_st)), sizeof(received_servo_config.payloadHeader_st) + sizeof(received_servo_config.payloadServoConfig_st));
+        if (crc != received_servo_config.payloadFooter_st.checkSum_u16) structChecker = false;
+        
+        if (structChecker == true)
+        {
+          if (s_servoConfigRxQueue != NULL) {
+            xQueueSend(s_servoConfigRxQueue, &received_servo_config, (TickType_t)0);
+          }
+        }
+      }
 
     }
 

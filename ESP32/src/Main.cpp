@@ -236,7 +236,7 @@ static QueueHandle_t s_configUpdateSendToLoadcellTaskQueue = NULL;
 static QueueHandle_t s_actionCommandQueue = NULL;
 static QueueHandle_t s_configUpdateSendToSerialRXTaskQueue = NULL;
 static QueueHandle_t s_systemControlQueue = NULL;
-static QueueHandle_t s_servoConfigRxQueue = NULL;
+QueueHandle_t s_servoConfigRxQueue = NULL;
 
 
 
@@ -3124,13 +3124,16 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
       uint16_t addrs[10] = {};
       uint8_t  cnt_u8   = 0;
       if (stepper->tryGetServoModbusReadResult(addr_u16, vals, cnt_u8, addrs) && cnt_u8 > 0) {
+        DapConfig_t tmpConf;
+        global_dap_config_class.getConfig(&tmpConf, 50);
+
         DAP_servo_config_st_t resp = {};
         resp.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
         resp.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
         resp.payloadHeader_st.payloadType_u8   = DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8;
         resp.payloadHeader_st.version_u8       = DAP_VERSION_CONFIG_U8;
         resp.payloadHeader_st.storeToEeprom_u8 = 0;
-        resp.payloadHeader_st.pedalTag_u8      = 0;
+        resp.payloadHeader_st.pedalTag_u8      = tmpConf.payloadPedalConfig_st.pedalType_u8;
         resp.payloadServoConfig_st.readWriteFlag  = 0; 
         resp.payloadServoConfig_st.numValidFields = cnt_u8;
         for (uint8_t i = 0; i < cnt_u8; i++) {
@@ -3143,6 +3146,10 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
         resp.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
         resp.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
         usbManager.write((const uint8_t*)&resp, sizeof(DAP_servo_config_st_t));
+
+#ifdef ESPNOW_Enable
+            ESPNow.send_message(g_broadcast_mac, (uint8_t*)&resp, sizeof(DAP_servo_config_st_t));
+#endif
       }
     }
 
