@@ -1,6 +1,13 @@
-﻿﻿#include "TinyusbJoystick.h"
+#include "TinyusbJoystick.h"
+#include <cstdint>
+#include <cstring>
+#include <cstdarg>
 #define ESPNOW_LOG_MAGIC_KEY 0x99
 #define ESPNOW_LOG_MAGIC_KEY_2 0x97
+
+extern DAP_servo_config_st_t dap_servo_config_st[3];
+extern bool update_servo_config[3];
+
 TinyusbJoystick* TinyusbJoystick::instance = nullptr;
 TinyusbJoystick::TinyusbJoystick() 
 {    

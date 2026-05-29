@@ -74,9 +74,9 @@ DapBridgeState_t dap_bridge_state_lcl;//
 DapActionOta_t dap_action_ota_st;
 #include "ESPNOW_lib.h"
 
-// --- ADDED: Globale Variablen fuer Servo Config Routing ---
-DAP_servo_config_st_t dap_servo_config_st[3];          // Pakete vom Host zum Pedal
-DAP_servo_config_st_t dap_servo_config_response_st[3]; // Pakete vom Pedal zum Host (Antworten)
+// global variable for servo config routing ---
+DAP_servo_config_st_t dap_servo_config_st[3];          // packets from host to servo
+DAP_servo_config_st_t dap_servo_config_response_st[3]; // packets from servo to host (responses)
 bool update_servo_config[3] = {false, false, false};
 bool send_servo_config_to_host[3] = {false, false, false}; // Muss in ESPNOW_lib.cpp bei RX gesetzt werden
 
@@ -1145,7 +1145,7 @@ void serialCommunicationTxTask( void * pvParameters)
 
           }
           
-          // --- ADDED: Forward Servo Config Responses to Host ---
+          // Forward Servo Config Responses to Host ---
           if(send_servo_config_to_host[i])
           {
             send_servo_config_to_host[i] = false;
@@ -2057,6 +2057,13 @@ void hidCommunicaitonTxTask(void *pvParameters)
             tinyusbJoystick_.sendData((uint8_t*)&dap_state_extended_st[i], sizeof(DapStateExtended_t));
             
 
+          }
+
+          // Forward Servo Config Responses to Host via HID ---
+          if(send_servo_config_to_host[i])
+          {
+            send_servo_config_to_host[i] = false;
+            tinyusbJoystick_.sendData((uint8_t*)&dap_servo_config_response_st[i], sizeof(DAP_servo_config_st_t));
           }
         }
         
