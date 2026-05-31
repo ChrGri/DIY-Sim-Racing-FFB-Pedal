@@ -64,8 +64,6 @@ Stream *ActiveSerial = nullptr;
 /**********************************************************************************************/
 DapConfigClass global_dap_config_class;
 DRAM_ATTR DapCalculationVariables_t dap_calculationVariables_st;
-DapStateBasic_t dap_state_basic_st;
-DapStateExtended_t dap_state_extended_st;
 DapEspPairing_t dap_esppairing_st;//saving
 DapEspPairing_t dap_esppairing_lcl;//sending
 DapActionOta_t dap_action_ota_st;//OTA command(do not check version)
@@ -216,9 +214,6 @@ ForceCurveInterpolated forceCurve;
 
 
 
-static SemaphoreHandle_t s_semaphore_updatePedalStates=NULL;
-
-
 
 /**********************************************************************************************/
 /*                                                                                            */
@@ -228,6 +223,9 @@ static SemaphoreHandle_t s_semaphore_updatePedalStates=NULL;
 /**********************************************************************************************/
 // ADD THIS: The handle for our new FreeRTOS queue
 static QueueHandle_t s_unifiedTxQueue = NULL;
+#ifdef ESPNOW_Enable
+static QueueHandle_t s_espnowStateQueue = NULL;
+#endif
 static QueueHandle_t s_joystickDataQueue = NULL;
 static QueueHandle_t s_loadcellDataQueue = NULL;
 static QueueHandle_t s_configUpdateAvailableQueue = NULL;
@@ -811,7 +809,7 @@ void setup()
   // The queue can hold up to N state packages.
   // Depth = 200: holds 50 ms of 4 kHz production (4000 × 0.05 = 200 items)
   // giving ample margin even if the TX task is briefly delayed by USB activity.
-  s_unifiedTxQueue = xQueueCreate(207, sizeof(TxMessage_t));
+  s_unifiedTxQueue = xQueueCreate(60, sizeof(TxMessage_t));
   if (s_unifiedTxQueue == NULL)
   {
     ActiveSerial->println("Error creating the unified TX queue!");
@@ -1119,7 +1117,9 @@ void setup()
 
 
   // setup multi tasking
-  s_semaphore_updatePedalStates = xSemaphoreCreateMutex();
+  #ifdef ESPNOW_Enable
+    s_espnowStateQueue = xQueueCreate(1, sizeof(PedalStatePackage_t));
+  #endif
 
 
 
@@ -2507,9 +2507,6 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         sendExtendedFlag_b = false;
       }
 
-      if (s_unifiedTxQueue != NULL) {
-
-
         if (sendBasicFlag_b)
         {
           dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.pedalForce_u16 =  normalizedPedalReading_fl32 * 65535.0f;
@@ -2612,9 +2609,17 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           txMsg.payload.pedalState.sendBasicFlag_b = sendBasicFlag_b;
           txMsg.payload.pedalState.sendExtendedFlag_b = sendExtendedFlag_b;
 
-          // Send the package to the unified queue. Use a timeout of 0 (non-blocking).
-          xQueueSend(s_unifiedTxQueue, &txMsg, (TickType_t)0);
-        }
+          if (s_unifiedTxQueue != NULL) {
+            // Send the package to the unified queue. Use a timeout of 0 (non-blocking).
+            xQueueSend(s_unifiedTxQueue, &txMsg, (TickType_t)0);
+          }
+          
+          #ifdef ESPNOW_Enable
+          if (s_espnowStateQueue != NULL) {
+            // Overwrite the single-element mailbox queue with the latest state
+            xQueueOverwrite(s_espnowStateQueue, &txMsg.payload.pedalState);
+          }
+          #endif
 
 
 
@@ -3165,21 +3170,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
           DapStateBasic_t basic_to_send = receivedState.basic_st;
           DapStateExtended_t extended_to_send = receivedState.extended_st;
 
-          #ifdef ESPNOW_Enable
-          if (s_semaphore_updatePedalStates != NULL)
-          {
-            if (xSemaphoreTake(s_semaphore_updatePedalStates, (TickType_t)0) == pdTRUE)
-            {
-              dap_state_basic_st = basic_to_send;
-              dap_state_extended_st = extended_to_send;
-              xSemaphoreGive(s_semaphore_updatePedalStates);
-            }
-          }
-          else
-          {
-            s_semaphore_updatePedalStates = xSemaphoreCreateMutex();
-          }
-          #endif
+          
   
           if (receivedState.sendBasicFlag_b)
           {
@@ -3695,23 +3686,14 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
             DapStateBasic_t dap_state_basic_st_lcl;       
             // initialize with zeros in case semaphore couldn't be aquired
             memset(&dap_state_basic_st_lcl, 0, sizeof(dap_state_basic_st_lcl));
-            if(s_semaphore_updatePedalStates!=NULL)
-            {  
-              if(xSemaphoreTake(s_semaphore_updatePedalStates, (TickType_t)5)==pdTRUE) 
-              {
-                // UPDATE basic pedal state struct
-                dap_state_basic_st_lcl = dap_state_basic_st;
-
-                // release semaphore
-                xSemaphoreGive(s_semaphore_updatePedalStates);
-                dap_state_basic_st_lcl.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(dap_state_basic_st_lcl.payloadHeader_st)), sizeof(dap_state_basic_st_lcl.payloadHeader_st) + sizeof(dap_state_basic_st_lcl.payloadPedalStateBasic_st));
-              }
-            }
-            else
+            
+            PedalStatePackage_t statePkg;
+            if (s_espnowStateQueue != NULL && xQueuePeek(s_espnowStateQueue, &statePkg, 0) == pdTRUE)
             {
-              s_semaphore_updatePedalStates = xSemaphoreCreateMutex();
+              dap_state_basic_st_lcl = statePkg.basic_st;
+              dap_state_basic_st_lcl.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(dap_state_basic_st_lcl.payloadHeader_st)), sizeof(dap_state_basic_st_lcl.payloadHeader_st) + sizeof(dap_state_basic_st_lcl.payloadPedalStateBasic_st));
+              ESPNow.send_message(g_broadcast_mac,(uint8_t *) & dap_state_basic_st_lcl,sizeof(dap_state_basic_st_lcl));
             }
-            ESPNow.send_message(g_broadcast_mac,(uint8_t *) & dap_state_basic_st_lcl,sizeof(dap_state_basic_st_lcl));
             basic_state_send_b=false;
           }
 
@@ -3725,24 +3707,16 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
             DapStateExtended_t dap_state_extended_st_espNow; 
             // initialize with zeros in case semaphore couldn't be aquired
             memset(&dap_state_extended_st_espNow, 0, sizeof(dap_state_extended_st_espNow));
-            if(s_semaphore_updatePedalStates!=NULL)
-            {  
-              if(xSemaphoreTake(s_semaphore_updatePedalStates, (TickType_t)5)==pdTRUE) 
-              {
-                // UPDATE extended pedal state struct
-                dap_state_extended_st_espNow = dap_state_extended_st; 
-                // release semaphore
-                xSemaphoreGive(s_semaphore_updatePedalStates);
-                dap_state_extended_st_espNow.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(dap_state_extended_st_espNow.payloadHeader_st)), sizeof(dap_state_extended_st_espNow.payloadHeader_st) + sizeof(dap_state_extended_st_espNow.payloadPedalStateExtended_st));
-              }
-            }
-            else
+            
+            PedalStatePackage_t statePkg;
+            if (s_espnowStateQueue != NULL && xQueuePeek(s_espnowStateQueue, &statePkg, 0) == pdTRUE)
             {
-              s_semaphore_updatePedalStates = xSemaphoreCreateMutex();
+              dap_state_extended_st_espNow = statePkg.extended_st;
+              dap_state_extended_st_espNow.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(dap_state_extended_st_espNow.payloadHeader_st)), sizeof(dap_state_extended_st_espNow.payloadHeader_st) + sizeof(dap_state_extended_st_espNow.payloadPedalStateExtended_st));
+              ESPNow.send_message(g_broadcast_mac,(uint8_t *)&dap_state_extended_st_espNow, sizeof(dap_state_extended_st_espNow));
             }
-
-            ESPNow.send_message(g_broadcast_mac,(uint8_t *)&dap_state_extended_st_espNow, sizeof(dap_state_extended_st_espNow));
             extend_state_send_b=false;
+            
           }
 
           profiler_espNow.end(3);
