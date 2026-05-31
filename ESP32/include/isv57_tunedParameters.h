@@ -41,7 +41,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     8,     // Pr1.08: 2nd filter of velocity detection
     200,   // Pr1.09: 2nd torque filter
     900,   // Pr1.10: Velocity feed forward gain
-    200,  // Pr1.11: Velocity feed forward filter. Had better velocity error decay with higher values and also less noise.
+    0,     // Pr1.11: Velocity feed forward filter. Had better velocity error decay with higher values and also less noise. Edit: 31.05.2026: Set to zero to keep coherency between feed forward and feedback. With non-zero values, the feed forward is smoothed, but the feedback is not, which will cause overshoot.
     0,     // Pr1.12: Torque feed forward gain
     1000,     // Pr1.13: Torque feed forward filter
     1,     // Pr1.14: 2nd gain setup
