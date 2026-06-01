@@ -88,12 +88,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define DIR_PIN_STEPPER_U8    0
   #define STEP_PIN_STEPPER_U8   4
 
-
-  // level shifter not present on this PCB design
-  #define SENSORLESS_HOMING false
-
   //#define USB_JOYSTICK
-  #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 1
   #define RUN_IN_CACHE
 #endif
 
@@ -112,12 +107,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define DIR_PIN_STEPPER_U8    8
   #define STEP_PIN_STEPPER_U8   9
 
-
-  // level shifter not present on this PCB design
-  #define SENSORLESS_HOMING false
-
   #define USB_JOYSTICK
-  #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 1
   #define RUN_IN_CACHE
 #endif
 
@@ -142,8 +132,6 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define I2C_SDA 32
   #define I2C_SCL 33
 
-  // level shifter is present on this PCB design
-  #define SENSORLESS_HOMING true
   #define ISV57_TXPIN 27 //17
   #define ISV57_RXPIN 26 // 16
   //pedal assignment
@@ -156,7 +144,6 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define ESPNow_ESP32
   //#define I2C_slave_address 0x15
   //#define USB_JOYSTICK
-  #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 1
   //#define ESPNow_Pairing_function
   //#define Pairing_GPIO 13
   //#define ESPNow_debug_rudder
@@ -182,14 +169,11 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define DIR_PIN_STEPPER_U8    32
   #define STEP_PIN_STEPPER_U8   33
 
-  // level shifter is present on this PCB design
-  #define SENSORLESS_HOMING true
   #define ISV57_TXPIN 27 //17
   #define ISV57_RXPIN 26 // 16
 
   //#define USB_JOYSTICK
 
-  #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 3
   //#define Pairing_GPIO 0
   //#define ESPNow_Pairing_function
   #define ESPNow_ESP32
@@ -213,13 +197,10 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define DIR_PIN_STEPPER_U8    22
   #define STEP_PIN_STEPPER_U8   23
 
-  // level shifter is present on this PCB design
-  #define SENSORLESS_HOMING true
   #define ISV57_TXPIN 26 //17
   #define ISV57_RXPIN 27 // 16
   #define ESPNOW_Enable
   //#define USB_JOYSTICK
-  #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 3
   #define PAIRING_GPIO_U8 0
   //#define ESPNow_Pairing_function
   #define ESPNow_ESP32
@@ -253,8 +234,6 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define MCP_SDA_U8 48
   #define MCP_SCL_U8 47
 
-  // level shifter is present on this PCB design
-  #define SENSORLESS_HOMING true
   #define ISV57_TXPIN 10//27 //17
   #define ISV57_RXPIN 9//26 // 16
 
@@ -263,7 +242,6 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define USB_JOYSTICK
   #define ESPNOW_Enable
   #define ESPNow_S3
-  #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 0
   //#define ESPNow_Pairing_function
   //#define Pairing_GPIO 0
   #define OTA_update
@@ -302,14 +280,12 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 
   #define EMERGENCY_BUTTON
   #define BUZZER_PIN_U8 6
-  // level shifter is present on this PCB design
-  #define SENSORLESS_HOMING true
+
   #define ISV57_TXPIN 10//27 //17
   #define ISV57_RXPIN 9//26 // 16
 
   #define USB_JOYSTICK
 
-  #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 5
   //#define ESPNow_Pairing_function
   //#define Hardware_Pairing_button
   #define PAIRING_GPIO_U8 0
@@ -347,14 +323,12 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   // #define EMERGENCY_BUTTON
   // #define ShutdownPin 6
   #define BUZZER_PIN_U8 21
-  // level shifter is present on this PCB design
-  #define SENSORLESS_HOMING true
+
   #define ISV57_TXPIN 10 // 27 //17
   #define ISV57_RXPIN 9  // 26 // 16
 
   #define USB_JOYSTICK
 
-  #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 5
   // #define ESPNow_Pairing_function
   // #define Hardware_Pairing_button
   #define PAIRING_GPIO_U8 33
@@ -400,8 +374,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 
   #define EMERGENCY_BUTTON
   #define BUZZER_PIN_U8 5
-  // level shifter is present on this PCB design
-  #define SENSORLESS_HOMING true
+
   #define ISV57_TXPIN 10//27 //17
   #define ISV57_RXPIN 9//26 // 16
 
@@ -410,7 +383,6 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define ESPNow_S3
   #define USB_JOYSTICK
 
-  #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 5
   //#define ESPNow_Pairing_function
   #define Hardware_Pairing_button
   #define PAIRING_GPIO_U8 33
@@ -444,8 +416,6 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define DIR_PIN_STEPPER_U8    36
   #define STEP_PIN_STEPPER_U8   37
 
-  // level shifter is present on this PCB design
-  #define SENSORLESS_HOMING true
   #define ISV57_TXPIN 2
   #define ISV57_RXPIN 1
 
@@ -456,7 +426,6 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #endif
   //#define ESPNOW_Enable
   //#define ESPNow_S3
-  #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 0
   //#define ESPNow_Pairing_function
   #define PAIRING_GPIO_U8 0
   #define OTA_update
@@ -485,9 +454,6 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define DIR_PIN_STEPPER_U8    36
   #define STEP_PIN_STEPPER_U8   37
 
-  // level shifter is present on this PCB design
-  #define SENSORLESS_HOMING true
-
   #define ISV57_TXPIN 2
   #define ISV57_RXPIN 1
 
@@ -498,7 +464,6 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #endif
   //#define ESPNOW_Enable
   //#define ESPNow_S3
-  #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 0
   //#define ESPNow_Pairing_function
   #define PAIRING_GPIO_U8 0
   #define OTA_update
@@ -513,7 +478,6 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 #endif
 
 // V7 version of dev PCB for ESP32-S3-Zero
-// Based on DIY_FFB_pedal_PCB_V6_clone schematic
 #if PCB_VERSION == 14
   // ADC defines (ADS1220)
   #define USES_ADS1220
@@ -528,9 +492,6 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define DIR_PIN_STEPPER_U8    5
   #define STEP_PIN_STEPPER_U8   4
 
-  // level shifter is present on this PCB design
-  #define SENSORLESS_HOMING true
-
   // UART Kommunikation zum Servo
   #define ISV57_TXPIN 2
   #define ISV57_RXPIN 3
@@ -542,10 +503,6 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
     #define USB_JOYSTICK
   #endif
   
-  //#define ESPNOW_Enable
-  //#define ESPNow_S3
-  #define SERIAL_COOMUNICATION_TASK_DELAY_IN_MS 0
-  //#define ESPNow_Pairing_function
   #define PAIRING_GPIO_U8 0   // Boot-Button des S3-Zero
   
   #ifndef DEBUG_KEEP_USB_SERIAL_JTAG
@@ -559,7 +516,6 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define ALM_PORT_GPIO 6
 
   #define USE_CDC_INSTEAD_OF_UART
-
 #endif
 
 
