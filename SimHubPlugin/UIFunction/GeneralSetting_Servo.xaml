@@ -104,20 +104,26 @@
                                Foreground="White"
                                Padding="0,0,8,0"
                                VerticalContentAlignment="Center"/>
-                        <Button Content="Load current from servo"
+                        <Button Content="Load from servo"
                                 x:Name="Btn_LoadFromServo"
                                 Click="Btn_LoadFromServo_Click"
-                                Padding="8,4" Margin="0,0,6,0"
+                                FontSize="8" Padding="3,1" Margin="0,0,3,0"
                                 VerticalAlignment="Center"/>
                         <Button Content="Reset to recommended"
                                 x:Name="Btn_ResetToRecommended"
                                 Click="Btn_ResetToRecommended_Click"
-                                Padding="8,4" Margin="0,0,6,0"
+                                FontSize="8" Padding="3,1" Margin="0,0,3,0"
                                 VerticalAlignment="Center"/>
+                        <Button Content="Reset to factory"
+                                x:Name="Btn_ResetToFactory"
+                                Click="Btn_ResetToFactory_Click"
+                                FontSize="8" Padding="3,1" Margin="0,0,3,0"
+                                VerticalAlignment="Center"
+                                ToolTip="Calls Isv57Communication::resetToFactoryParams() on the servo (sets debugFlags0 bit 32, requires power-cycle)"/>
                         <Button Content="Flash to servo"
                                 x:Name="Btn_FlashToServo"
                                 Click="Btn_FlashToServo_Click"
-                                Padding="8,4"
+                                FontSize="8" Padding="3,1"
                                 VerticalAlignment="Center"
                                 ToolTip="Writes 0x5555 to register 0x019A — forces the servo to persist all parameters to NVM (requires power-cycle)"/>
                     </StackPanel>
@@ -140,12 +146,12 @@
                               ColumnHeaderStyle="{StaticResource HeaderStyle}"
                               RowStyle="{StaticResource RowStyle}"
                               CellStyle="{StaticResource CellStyle}"
-                              MaxHeight="450"
                               EnableRowVirtualization="False"
+                              ScrollViewer.VerticalScrollBarVisibility="Hidden"
                               CellEditEnding="ServoRegisterGrid_CellEditEnding">
 
                         <DataGrid.Columns>
-                            <!-- Address - tooltip shows full name -->
+                            <!-- Address -->
                             <DataGridTemplateColumn Header="Register"
                                                     Width="80"
                                                     IsReadOnly="True"
@@ -167,10 +173,10 @@
                                                 Width="*"
                                                 IsReadOnly="True"/>
 
-                            <!-- Editable current value / live read-back -->
-                            <DataGridTemplateColumn Header="Current Value"
+                            <!-- Live value – editable; sends to servo on commit -->
+                            <DataGridTemplateColumn Header="Live (Servo)"
                                                     Width="105"
-                                                    SortMemberPath="CurrentValue">
+                                                    SortMemberPath="LiveValue">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding LiveValueDisplay}"
@@ -181,10 +187,11 @@
                                 </DataGridTemplateColumn.CellTemplate>
                                 <DataGridTemplateColumn.CellEditingTemplate>
                                     <DataTemplate>
-                                        <TextBox Text="{Binding CurrentValue,
+                                        <TextBox Text="{Binding LiveValue,
                                                      UpdateSourceTrigger=LostFocus}"
                                                  BorderThickness="0"
-                                                 Background="Transparent"/>
+                                                 Background="Transparent"
+                                                 Foreground="#FFDADADA"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellEditingTemplate>
                             </DataGridTemplateColumn>

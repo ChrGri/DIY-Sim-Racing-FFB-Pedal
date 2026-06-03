@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.Ports;
@@ -145,12 +145,14 @@ namespace DiyFfbPedal
                         List<int> indices_sof_basic_struct = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAME_BASIC_STRUCT, currentBufferLength);
                         List<int> indices_sof_bridge_basic_struct = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAME_BRIDGE_BASIC_STRUCT, currentBufferLength);
                         List<int> indices_sof_config = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAME_CONFIG, currentBufferLength);
+                        List<int> indices_sof_servo_config = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAME_SERVO_CONFIG, currentBufferLength);
                         List<int> indices_eof = FindAllOccurrences(buffer_appended[bridgeBufferIndex], ENDOFFRAMCHAR, currentBufferLength);
 
                         var validPairsExtendedStruct = new List<Tuple<int, int>>();
                         var validPairsBasicStruct = new List<Tuple<int, int>>();
                         var validPairsConfig = new List<Tuple<int, int>>();
                         var validPairsBridgeState = new List<Tuple<int, int>>();
+                        var validPairsServoConfig = new List<Tuple<int, int>>();
 
                         bool sofHasBeenReceivedEofNotYet = false;
                         byte[] bufferByteAssignedToStruct_class = new byte[bufferSize];
@@ -194,6 +196,15 @@ namespace DiyFfbPedal
                             ref sofHasBeenReceivedEofNotYet,
                             bufferByteAssignedToStruct_class,
                             4);
+                        // Search for the servo config struct
+                        FindValidMessagePairs(
+                            indices_sof_servo_config,
+                            indices_eof,
+                            System.Runtime.InteropServices.Marshal.SizeOf(typeof(DAP_servo_config_st)),
+                            validPairsServoConfig,
+                            ref sofHasBeenReceivedEofNotYet,
+                            bufferByteAssignedToStruct_class,
+                            5);
                         // check if at least SOF1 byte was received, but EOF was not for last packet
                         List<int> indices_sof1 = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAMCHAR_SOF_byte0, currentBufferLength);
                         List<int> indices_sof1_and_sof2 = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAMCHAR, currentBufferLength);
@@ -201,16 +212,19 @@ namespace DiyFfbPedal
 
                         try
                         {
-                            if ((currentBufferLength - 1) == indices_sof1.Last<int>())
+                            if (indices_sof1.Count > 0 && (currentBufferLength - 1) == indices_sof1.Last<int>())
                             {
                                 bufferByteAssignedToStruct.AsSpan((currentBufferLength - 1), 1).Fill(true);
+                                bufferByteAssignedToStruct_class[(currentBufferLength - 1)] = 255;
                                 sofHasBeenReceivedEofNotYet = true;
                             }
 
                             // when last element is SOF2 and seconmd to last is SOF1
-                            if ((currentBufferLength - 2) == indices_sof1_and_sof2.Last<int>())
+                            if (indices_sof1_and_sof2.Count > 0 && (currentBufferLength - 2) == indices_sof1_and_sof2.Last<int>())
                             {
                                 bufferByteAssignedToStruct.AsSpan((currentBufferLength - 2), 2).Fill(true);
+                                bufferByteAssignedToStruct_class[(currentBufferLength - 2)] = 255;
+                                bufferByteAssignedToStruct_class[(currentBufferLength - 1)] = 255;
                                 sofHasBeenReceivedEofNotYet = true;
                             }
                         }
@@ -553,7 +567,7 @@ namespace DiyFfbPedal
                                     }
                                     else
                                     {
-                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_extended_st)).Fill(0);
+                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_basic_st)).Fill(0);
                                     }
                                 }
                             }
@@ -617,7 +631,7 @@ namespace DiyFfbPedal
                                     else
                                     {
 
-                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_extended_st)).Fill(0);
+                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_config_st)).Fill(0);
 
                                         TextBox2.Text = "Payload config test 1: " + check_payload_config_b;
                                         TextBox2.Text += "Payload config test 2: " + check_crc_config_b;
@@ -627,6 +641,70 @@ namespace DiyFfbPedal
 
                             }
 
+
+
+
+
+
+                            // servo config response (ESP32 echoes back read results as DAP_servo_config_st)
+                            for (int pairId = 0; pairId < validPairsServoConfig.Count; pairId++)
+                            {
+                                int srcBufferOffset_0 = validPairsServoConfig[pairId].Item1;
+                                int srcBufferOffset_1 = validPairsServoConfig[pairId].Item2;
+
+                                int destBuffLength = srcBufferOffset_1 - srcBufferOffset_0;
+                                int servoConfigMarshalSize = System.Runtime.InteropServices.Marshal.SizeOf(typeof(DAP_servo_config_st));
+                                unsafe
+                                {
+                                    if (destBuffLength == servoConfigMarshalSize)
+                                    {
+                                        byte[] destArr = new byte[destBuffLength];
+                                        Buffer.BlockCopy(buffer_appended[bridgeBufferIndex], srcBufferOffset_0, destArr, 0, destBuffLength);
+
+                                        System.Runtime.InteropServices.GCHandle handle =
+                                            System.Runtime.InteropServices.GCHandle.Alloc(destArr,
+                                                System.Runtime.InteropServices.GCHandleType.Pinned);
+                                        try
+                                        {
+                                            DAP_servo_config_st sc = (DAP_servo_config_st)
+                                                System.Runtime.InteropServices.Marshal.PtrToStructure(
+                                                    handle.AddrOfPinnedObject(), typeof(DAP_servo_config_st));
+
+                                            bool validType = sc.payloadHeader_st.payloadType == Constants.servoConfigPayload_type;
+                                            ushort calcCrc = Plugin.checksumCalcArray(destArr,
+                                                System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadHeader)) +
+                                                System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadServoConfig)));
+                                            bool validCrc = (calcCrc == sc.payloadFooter_st.checkSum);
+
+                                            if (validType && validCrc)
+                                            {
+                                                bufferByteAssignedToStruct.AsSpan(srcBufferOffset_0, destBuffLength).Fill(true);
+                                                bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, destBuffLength).Fill(5); // class 5 = servo config
+                                                lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + destBuffLength);
+
+                                                byte n = sc.payloadServoConfig_st.numValidFields;
+                                                if (n > 10) n = 10;
+                                                for (int i = 0; i < n; i++)
+                                                {
+                                                    ushort addr = sc.payloadServoConfig_st.registerAddresses[i];
+                                                    short val = (short)sc.payloadServoConfig_st.registerValues[i];
+                                                    Servo_Tab?.HandleServoModbusAck(addr, val);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, destBuffLength).Fill(0);
+                                            }
+                                        }
+                                        finally
+                                        {
+                                            handle.Free();
+                                        }
+                                    }
+                                }
+                            }
+
+                     
 
                             //bridge states here
                             for (int pairId = 0; pairId < validPairsBridgeState.Count; pairId++)
@@ -682,6 +760,9 @@ namespace DiyFfbPedal
 
                                     if ((check_payload_state_b) && check_crc_state_b)
                                     {
+                                        bufferByteAssignedToStruct.AsSpan(srcBufferOffset_0, sizeof(DAP_bridge_state_st)).Fill(true);
+                                        lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + sizeof(DAP_bridge_state_st));
+
                                         //Bridge_RSSI = bridge_state.payloadBridgeState_.Pedal_RSSI;
                                         for (int pedalIDX = 0; pedalIDX < 3; pedalIDX++)
                                         {
@@ -821,6 +902,10 @@ namespace DiyFfbPedal
                                         //updateTheGuiFromConfig();
                                         continue;
                                     }
+                                    else
+                                    {
+                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_bridge_state_st)).Fill(0);
+                                    }
                                 }
                             }
 
@@ -847,7 +932,12 @@ namespace DiyFfbPedal
 
                                         if (bufferByteAssignedToStruct_class[i] == 0)  // copy only if not true
                                         {
-                                            filteredList.Add(buffer_appended[3][i]);
+                                            byte b = buffer_appended[3][i];
+                                            // Nur druckbare ASCII-Zeichen und reguläre Leerzeichen/Zeilenumbrüche zulassen
+                                            if ((b >= 32 && b <= 126) || b == '\r' || b == '\n' || b == '\t')
+                                            {
+                                                filteredList.Add(b);
+                                            }
                                         }
                                     }
 

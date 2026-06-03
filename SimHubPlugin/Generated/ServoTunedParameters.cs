@@ -68,7 +68,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr1.08", 8 },  // 2nd filter of velocity detection
             { "Pr1.09", 200 },  // 2nd torque filter
             { "Pr1.10", 900 },  // Velocity feed forward gain
-            { "Pr1.11", 200 },  // Velocity feed forward filter. Had better velocity er?
+            { "Pr1.11", 0 },  // Velocity feed forward filter. Had better velocity er?
             { "Pr1.12", 0 },  // Torque feed forward gain
             { "Pr1.13", 1000 },  // Torque feed forward filter
             { "Pr1.14", 1 },  // 2nd gain setup

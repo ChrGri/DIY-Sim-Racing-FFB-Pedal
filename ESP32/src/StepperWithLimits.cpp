@@ -1,4 +1,4 @@
-﻿#include "StepperWithLimits.h"
+#include "StepperWithLimits.h"
 #include "Main.h"
 #include "Math.h"
 #include "FunctionProfiler.h"
@@ -99,29 +99,29 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool
     
     if (ActiveSerial) ActiveSerial->println("Waiting for stable Servo ready signal...");
     
-    uint32_t srdyWaitStart = millis();      // Globaler Timeout-Zähler
-    uint32_t readyStableStartTime = 0;      // Zähler für die Entprellung
+    uint32_t srdyWaitStart = millis();      // Global timeout counter
+    uint32_t readyStableStartTime = 0;      // Debounce counter
     bool isStableReady = false;
     bool forceProceed_b = false;
     
     while (!isStableReady && !forceProceed_b) {
         if (digitalRead(ALM_PORT_GPIO) == LOW) {
-            // Signal ist auf "Ready". Prüfen, ob der Timer schon läuft.
+            // Signal is 'Ready'. Check if timer is already running.
             if (readyStableStartTime == 0) {
-                readyStableStartTime = millis(); // Timer starten
+                readyStableStartTime = millis(); // Start timer
             } 
-            // Prüfen, ob die 500ms ununterbrochen erreicht wurden
+            // Check if 500ms has been reached continuously
             else if (millis() - readyStableStartTime >= 500) {
-                isStableReady = true; // Erfolgreich entprellt!
+                isStableReady = true; // Successfully debounced!
             }
         } else {
-            // Signal ist wieder HIGH ("Not Ready" oder prellen). Timer zurücksetzen!
+            // Signal is HIGH again ('Not Ready' or bouncing). Reset timer!
             readyStableStartTime = 0;
         }
 
-        delay(10); // Dem Watchdog und dem System Zeit geben
+        delay(10); // Give watchdog and system time
         
-        // Failsafe-Timeout (z.B. 5 Sekunden insgesamt für den Bootvorgang)
+        // Failsafe-Timeout (e.g. 5 seconds total for boot process)
         if (millis() - srdyWaitStart > 5000) { 
             //if (ActiveSerial) ActiveSerial->println("CRITICAL: Timeout waiting for stable SRDY! Restarting ESP.");
             //delay(100);
@@ -202,13 +202,16 @@ void StepperWithLimits::scheduleServoModbusCmd(const ServoModbusCmd_t& cmd)
     servoModbusCmdPending_b  = true;
 }
 
-bool StepperWithLimits::tryGetServoModbusReadResult(
-        uint16_t& addrOut, int16_t* valuesOut, uint8_t& countOut)
+bool IRAM_ATTR StepperWithLimits::tryGetServoModbusReadResult(
+        uint16_t& addrOut, int16_t* valuesOut, uint8_t& countOut, uint16_t* addrsOut)
 {
     if (!servoModbusReadReady_b) return false;
     addrOut  = servoModbusReadAddr_u16;
     countOut = servoModbusReadCount_u8;
     memcpy(valuesOut, servoModbusReadResult, countOut * sizeof(int16_t));
+    if (addrsOut != nullptr) {
+        memcpy(addrsOut, servoModbusReadAddresses, countOut * sizeof(uint16_t));
+    }
     servoModbusReadReady_b = false;  // consume the result
     return true;
 }
@@ -355,6 +358,7 @@ int8_t StepperWithLimits::moveTo(int32_t position, bool blocking) {
 // --- Simple Getters ---
 int32_t IRAM_ATTR StepperWithLimits::getCurrentPositionFromMin() const { return _stepper->getCurrentPosition() - _posMin; }
 int32_t IRAM_ATTR StepperWithLimits::getMinPosition() const { return _posMin; }
+int32_t IRAM_ATTR StepperWithLimits::getMaxPosition() const { return _posMax; }
 int32_t IRAM_ATTR StepperWithLimits::getCurrentPosition() const { return _stepper->getCurrentPosition(); }
 float IRAM_ATTR StepperWithLimits::getCurrentPositionFraction() const { return float(getCurrentPositionFromMin()) / getTravelSteps(); }
 float IRAM_ATTR StepperWithLimits::getCurrentPositionFractionFromExternalPos(int32_t extPos_i32) const { return ((float)(extPos_i32)) / getTravelSteps(); }
@@ -491,42 +495,114 @@ void IRAM_ATTR StepperWithLimits::processPendingCommands() {
         servoModbusCmdPending_b = false;  // clear flag first
 
         const ServoModbusCmd_t& cmd = servoModbusPendingCmd_st;
-        uint8_t count = (cmd.count_u8 > 8u) ? 8u : cmd.count_u8;
+        uint8_t count = (cmd.count_u8 > 10u) ? 10u : cmd.count_u8;
 
         if (cmd.isWrite_b) {
-            // WRITE: FC06 writes exactly 1 register per frame.
-            // Multiple registers are written as consecutive single writes.
-            ActiveSerial->printf("[ServoModbus] WRITE addr=0x%04X count=%u\n",
-                                 cmd.startAddr_u16, count);
-            for (uint8_t i = 0; i < count; i++) {
-                ActiveSerial->printf("[ServoModbus]   reg[%u] 0x%04X = %d\n",
-                                     i, cmd.startAddr_u16 + i, cmd.values[i]);
-                isv57.writeHoldingRegisterToDevice(
-                    isv57.slaveId,
-                    (int32_t)(cmd.startAddr_u16 + i),
-                    (uint16_t)cmd.values[i]);
+            // Wenn SimHub einen vollständigen Schreibvorgang startet (beginnt immer bei Pr0.00 = 0x0000),
+            // oder den NVM-Flash-Befehl (0x019A) sendet, schalten wir die Achse ab, da der Servo sonst blockiert.
+            if (cmd.readAddresses[0] == 0x0000 || cmd.readAddresses[0] == 0x019A) {
+                isv57.disableAxis();
+                servoStatus = SERVO_IDLE_NOT_CONNECTED; // Erlaubt den automatischen ESP-Neustart beim nächsten Pedal-Druck!
             }
-            ActiveSerial->printf("[ServoModbus] WRITE done\n");
-        } else {
-            // READ: read 'count' consecutive registers in a single FC03 frame
-            // (same pattern as readServoStates()).
-            ActiveSerial->printf("[ServoModbus] READ addr=0x%04X count=%u\n",
-                                 cmd.startAddr_u16, count);
-            int16_t buf[8] = {};
-            int n = isv57.readRegisters(cmd.startAddr_u16, count, buf);
-            if (n > 0) {
-                for (uint8_t i = 0; i < (uint8_t)n; i++) {
-                    ActiveSerial->printf("[ServoModbus]   reg[%u] 0x%04X = %d\n",
-                                         i, cmd.startAddr_u16 + i, buf[i]);
+            delay(20);
+
+            int16_t resultBuf[10] = {};
+            uint8_t resultCount = 0;
+            
+            // Check if the addresses are sequential
+            bool isSequential = (count > 0);
+            for (uint8_t i = 1; i < count; i++) {
+                if (cmd.readAddresses[i] != cmd.readAddresses[i - 1] + 1) {
+                    isSequential = false;
+                    break;
                 }
-                memcpy(servoModbusReadResult, buf, n * sizeof(int16_t));
-                servoModbusReadCount_u8 = (uint8_t)n;
-                servoModbusReadAddr_u16 = cmd.startAddr_u16;
-                servoModbusReadReady_b  = true;
-                ActiveSerial->printf("[ServoModbus] READ done, %d register(s) ready\n", n);
-            } else {
-                ActiveSerial->printf("[ServoModbus] READ failed (n=%d)\n", n);
             }
+
+            if (isSequential && count > 1) {
+                // SEQUENTIAL BATCH WRITE (Modbus FC16)
+                uint16_t writeValues[10];
+                for (uint8_t i = 0; i < count; i++) {
+                    writeValues[i] = (uint16_t)cmd.values[i];
+                    servoModbusReadAddresses[i] = cmd.readAddresses[i];
+                }
+
+                // 1. Alle Werte auf einmal schreiben (erfordert FC16 in Modbus.cpp)
+                isv57.writeHoldingRegistersToDevice(isv57.slaveId, cmd.readAddresses[0], writeValues, count);
+                
+                // 2. Kurze Pause für den Servo
+                vTaskDelay(pdMS_TO_TICKS(10));
+                
+                // 3. Verifizierung: Alle tatsächlichen Werte auf einmal zurücklesen
+                int16_t readBackBuf[10] = {0};
+                int n = isv57.readRegisters(cmd.readAddresses[0], count, readBackBuf);
+                
+                for (uint8_t i = 0; i < count; i++) {
+                    resultBuf[i] = (n == count) ? readBackBuf[i] : 0xFFFF;
+                }
+                resultCount = count;
+            } else {
+                // FALLBACK: Einzelne Writes (FC06)
+                for (uint8_t i = 0; i < count; i++) {
+                    // 1. Wert schreiben
+                    isv57.writeHoldingRegisterToDevice(
+                        isv57.slaveId,
+                        (int32_t)(cmd.readAddresses[i]),
+                        (uint16_t)cmd.values[i]);
+                    
+                    // 2. Kurze Pause, damit der Servo das Register intern verarbeiten kann
+                    vTaskDelay(pdMS_TO_TICKS(5));
+                    
+                    // 3. Verifizierung: Direktes Zurücklesen des tatsächlichen Wertes
+                    int16_t buf[1] = {-1};
+                    int n = isv57.readRegisters(cmd.readAddresses[i], 1, buf);
+                    
+                    servoModbusReadAddresses[resultCount] = cmd.readAddresses[i];
+                    resultBuf[resultCount] = (n > 0) ? buf[0] : 0xFFFF; // Error code if read timeout
+                    resultCount++;
+                }
+            }
+            memcpy(servoModbusReadResult, resultBuf, resultCount * sizeof(int16_t));
+            servoModbusReadCount_u8 = resultCount;
+            servoModbusReadAddr_u16 = (count > 0) ? cmd.readAddresses[0] : 0;
+            servoModbusReadReady_b  = true;
+        } else {
+            // READ: read each requested address individually (supports non-consecutive registers).
+            int16_t resultBuf[10] = {};
+            uint8_t resultCount = 0;
+            
+            bool isSequential = (count > 0);
+            for (uint8_t i = 1; i < count; i++) {
+                if (cmd.readAddresses[i] != cmd.readAddresses[i - 1] + 1) {
+                    isSequential = false;
+                    break;
+                }
+            }
+
+            if (isSequential && count > 1) {
+                // SEQUENTIAL BATCH READ (Modbus FC03)
+                int16_t readBackBuf[10] = {0};
+                int n = isv57.readRegisters(cmd.readAddresses[0], count, readBackBuf);
+                
+                for (uint8_t i = 0; i < count; i++) {
+                    resultBuf[i] = (n == count) ? readBackBuf[i] : 0xFFFF;
+                    servoModbusReadAddresses[i] = cmd.readAddresses[i];
+                }
+                resultCount = count;
+            } else {
+                // FALLBACK: Individual Reads
+                for (uint8_t i = 0; i < count; i++) {
+                    int16_t buf[1] = {-1};
+                    int n = isv57.readRegisters(cmd.readAddresses[i], 1, buf);
+                    servoModbusReadAddresses[resultCount] = cmd.readAddresses[i];
+                    resultBuf[resultCount++] = (n > 0) ? buf[0] : 0xFFFF; 
+                    vTaskDelay(pdMS_TO_TICKS(5)); // small delay to let RS485 driver turn around
+                }
+            }
+            memcpy(servoModbusReadResult, resultBuf, resultCount * sizeof(int16_t));
+            servoModbusReadCount_u8 = resultCount;
+            servoModbusReadAddr_u16 = (count > 0) ? cmd.readAddresses[0] : 0;
+            servoModbusReadReady_b  = true;
+            // ActiveSerial->printf("[ServoModbus] READ done, %u register(s) ready\n", resultCount);
         }
     }
 }

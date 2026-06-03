@@ -1,0 +1,40 @@
+#pragma once
+
+#include <Arduino.h>
+#include "USB.h"
+#include "Controller.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+#include "Main.h"
+
+
+#ifdef USB_JOYSTICK
+  #include "Controller.h"
+#endif
+
+class UsbComManager : public Stream {
+public:
+    UsbComManager();
+
+    void begin(uint8_t pedalId);
+
+    // Stream Overrides
+    size_t write(uint8_t c) override;
+    size_t write(const uint8_t *buffer, size_t size) override;
+    
+    int availableForWrite() override;
+    int available() override;
+    int read() override;
+    int peek() override;
+    void flush() override;
+
+    void processTxBatch();
+
+#ifdef USB_JOYSTICK
+    bool isJoystickReady();
+    void sendJoystickValue(uint16_t val);
+#endif
+
+private:
+    Stream* targetStream;
+};

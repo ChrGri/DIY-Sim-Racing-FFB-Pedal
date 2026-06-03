@@ -54,6 +54,9 @@ bool software_pairing_action_b = false;
 bool newUnassignedPedalDetected[3]={false,false,false};
 QueueHandle_t messageQueueHandle;
 
+extern DAP_servo_config_st_t dap_servo_config_response_st[3];
+extern bool send_servo_config_to_host[3];
+
 int16_t Uint16ToInt16Cnvertor(uint16_t unsignedValue)
 {
   const uint16_t OFFSET = 0x8000;
@@ -291,6 +294,26 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
         memcpy(&dap_config_st_Gas, &dap_config_st_Temp, sizeof(DapConfig_t));
       }
       
+    }
+
+    if(data_len==sizeof(DAP_servo_config_st_t))
+    {
+      DAP_servo_config_st_t received_servo_config;
+      memcpy(&received_servo_config, data, sizeof(DAP_servo_config_st_t));
+      bool structChecker=true;
+      if(received_servo_config.payloadHeader_st.version_u8!=DAP_VERSION_CONFIG_U8) structChecker=false;
+      if(received_servo_config.payloadHeader_st.payloadType_u8!=DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8) structChecker=false;
+      uint16_t crcChecker = checksumCalculator((uint8_t*)(&(received_servo_config.payloadHeader_st)), sizeof(received_servo_config.payloadHeader_st) + sizeof(received_servo_config.payloadServoConfig_st));
+      if(crcChecker!=received_servo_config.payloadFooter_st.checkSum_u16) structChecker=false;
+      
+      if(structChecker)
+      {
+        uint8_t pedalTag = received_servo_config.payloadHeader_st.pedalTag_u8;
+        if(pedalTag < 3) {
+          memcpy(&dap_servo_config_response_st[pedalTag], &received_servo_config, sizeof(DAP_servo_config_st_t));
+          send_servo_config_to_host[pedalTag] = true;
+        }
+      }
     }
   }
   

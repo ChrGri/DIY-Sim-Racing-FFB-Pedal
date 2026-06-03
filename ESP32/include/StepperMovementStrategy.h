@@ -383,7 +383,7 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
         // During reversals (v near 0), we ignore it so the pedal doesn't feel sticky.
         if (trackingError_01 > 0.005f && fabsf(vModelVel_mps) > 0.05f) {
             // Tuning: the multiplier (here 20.0f) determines how much the model decelerates.
-            dampingMultiplier += (trackingError_01 * 20.0f); 
+            // dampingMultiplier += (trackingError_01 * 20.0f); // Temporär deaktiviert, da schwankender Schleppfehler zu hochfrequenten Dämpfungsschwankungen führt
         }
     }
     
@@ -756,7 +756,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // FIXED CODE: Smooth Coulomb Friction
   // Create a narrow "fade" band around 0 velocity (+/- 15 mm/s)
   // This smoothly ramps the friction from -1 to +1 across the zero point
-  const float VELOCITY_BAND_MPS = 0.015f; 
+  const float VELOCITY_BAND_MPS = 0.030f; // Verbreitert für weicheren Nulldurchgang (verhindert Ruckeln/Schläge bei Richtungswechsel)
   float frictionBlend = constrain(g_vModelVel_mps / VELOCITY_BAND_MPS, -1.0f, 1.0f);
   netForce_N -= (FRICTION_N * frictionBlend);
 
@@ -979,8 +979,15 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // SOFT LEASH: Synchronize the virtual model with the actual stepper command position
   // to prevent divergence due to numerical drift without corrupting second-order dynamics.
   float divergence_01 = actualPosFraction_01 - g_vModelPos_01;
-  const float LEASH_RATE = 1.5f;
-  g_vModelPos_01 += divergence_01 * (LEASH_RATE * dt_s); // 0.05% correction per cycle. 
+  
+  // SOFT LEASH DEADBAND: Verhindert, dass Sensorrauschen Schläge ins Physikmodell überträgt
+  if (fabsf(divergence_01) < 0.005f) { // Auf 0.5% Toleranz erhöht (ca. 0.5 mm Pufferzone)
+      divergence_01 = 0.0f;
+  } else {
+      divergence_01 += (divergence_01 > 0.0f) ? -0.005f : 0.005f;
+  }
+  const float LEASH_RATE = 0.5f; // Noch sanfterer Rückzug (0.5 statt 1.0)
+  g_vModelPos_01 += divergence_01 * (LEASH_RATE * dt_s);
 
   // =========================================================
   // POPULATE REMAINDER OF DEBUG TELEMETRY STRUCT

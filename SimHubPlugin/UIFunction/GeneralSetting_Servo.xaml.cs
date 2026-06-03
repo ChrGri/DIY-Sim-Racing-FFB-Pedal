@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -32,16 +32,15 @@ namespace DiyFfbPedal.UIFunction
         public string Address { get; set; }
         /// <summary>Human-readable register name shown as tooltip and in the Name column.</summary>
         public string Name { get; set; }
-        /// <summary>Current value – editable by the user.</summary>
-        public int CurrentValue { get; set; }
+
         /// <summary>Factory-tuned recommended value (read-only).</summary>
         public int RecommendedValue { get; set; }
 
         // ---- Live read-back from servo ----
         private int? _liveValue;
         /// <summary>
-        /// Live register value received from the servo.
-        /// null = not yet read (unknown state).
+        /// Value shown and edited in the "Live (Servo)" column.
+        /// null = not yet read.
         /// </summary>
         public int? LiveValue
         {
@@ -58,17 +57,37 @@ namespace DiyFfbPedal.UIFunction
         /// <summary>Display string for the live value column.</summary>
         public string LiveValueDisplay => _liveValue.HasValue ? _liveValue.Value.ToString() : "-";
 
-        // Foreground color as a string so WPF's binding engine compares by value, not by reference.
-        // This avoids the optimization where WPF skips an update because the Brush object reference
-        // didn't change (all static frozen brushes are the same object each time).
+        /// <summary>
+        /// Green  = matches recommended value
+        /// Red    = deviates from recommended value
+        /// Neutral = not yet read
+        /// </summary>
         public string LiveValueColor
         {
             get
             {
-                if (!_liveValue.HasValue) return "#FFDADADA"; // neutral
-                return _liveValue.Value == RecommendedValue ? "#FF4CAF50" : "#FFE53935"; // green / red
+                if (!_liveValue.HasValue) return "#FFDADADA";
+                return _liveValue.Value == RecommendedValue ? "#FF4CAF50" : "#FFE53935";
             }
         }
+    }
+
+    /// <summary>
+    /// Helper class to track a batch of registers sent in a single packet.
+    /// </summary>
+    public class ServoReadBatch
+    {
+        public List<ushort> Addresses { get; set; } = new List<ushort>();
+        public HashSet<ushort> PendingAddresses { get; set; } = new HashSet<ushort>();
+    }
+
+    /// <summary>
+    /// Helper class to track a batch of registers sent in a single packet for writing.
+    /// </summary>
+    public class ServoWriteBatch
+    {
+        public List<ServoRegisterEntry> Entries { get; set; } = new List<ServoRegisterEntry>();
+        public HashSet<ushort> PendingAddresses { get; set; } = new HashSet<ushort>();
     }
 
     /// <summary>
@@ -405,16 +424,23 @@ namespace DiyFfbPedal.UIFunction
             InitializeComponent();
             dap_config_st = new DAP_config_st();
 
-            // Timer fires if an ACK is not received within 1 s — skips the stalled register
+            // Timer fires if an ACK is not received within 1 s — skips the stalled batch
             _readTimeoutTimer = new System.Windows.Threading.DispatcherTimer
             {
-                Interval = TimeSpan.FromSeconds(1)
+                Interval = TimeSpan.FromSeconds(2)
             };
             _readTimeoutTimer.Tick += OnReadTimeout;
 
+            // Write timer fires if an ACK is not received within 1 s — skips the stalled batch
+            _writeTimeoutTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(1)
+            };
+            _writeTimeoutTimer.Tick += OnWriteTimeout;
+
             // Populate the register table.
             // Recommended values come from the auto-generated Isv57TunedParameters class
-            // (Generated/ServoTunedParameters.tt → Generated/ServoTunedParameters.cs),
+            // (Generated/ServoTunedParameters.tt ? Generated/ServoTunedParameters.cs),
             // which is parsed from ESP32/include/isv57_tunedParameters.h at build time.
             int idx = 0;
             foreach (var def in s_registerDefs)
@@ -425,8 +451,8 @@ namespace DiyFfbPedal.UIFunction
                     Index            = idx++,
                     Address          = def.addr,
                     Name             = def.name,
-                    CurrentValue     = recommended,
                     RecommendedValue = recommended,
+                    // LiveValue starts null (unknown) – populated by "Load from servo"
                 });
             }
 
@@ -485,23 +511,45 @@ namespace DiyFfbPedal.UIFunction
         public event EventHandler<ServoRegisterEntry> ServoRegisterValueChanged;
 
         /// <summary>
+        /// Raised by the write timer with a batch of up to 10 registers to write at once.
+        /// The parent builds a single DAP_servo_config_st packet containing all entries.
+        /// </summary>
+        public event EventHandler<ServoRegisterEntry[]> ServoBatchWriteRequested;
+
+        /// <summary>
         /// Raised to request a single Modbus READ for the given holding-register address.
-        /// The parent sends the HID packet; the next request is only fired after the ACK arrives
-        /// (or after the per-register timeout expires), ensuring strict sequential ordering.
+        /// Note: Kept for legacy signature compatibility, but internal queueing now optimizes via batches.
         /// </summary>
         public event EventHandler<ushort> ServoModbusReadRequested;
+
+        /// <summary>
+        /// Custom event added to allow the parent system to transmit structured batch payloads 
+        /// utilizing the 10-field array structures available in payloadServoConfig.
+        /// </summary>
+        public event EventHandler<List<ushort>> ServoModbusBatchReadRequested;
 
         /// <summary>
         /// Raised when the user clicks "Flash to servo".
         /// The parent UI should send the NVM-save command (register 0x019A = 0x5555) to the servo.
         /// </summary>
         public event EventHandler FlashToServoRequested;
+        public event EventHandler ResetToFactoryRequested;
 
         // ---------------------------------------------------------------
-        // Sequential load state
+        // Sequential batch load state
         // ---------------------------------------------------------------
-        private readonly Queue<ushort> _pendingReadQueue = new Queue<ushort>();
+        private readonly Queue<ServoReadBatch> _pendingBatchQueue = new Queue<ServoReadBatch>();
         private readonly System.Windows.Threading.DispatcherTimer _readTimeoutTimer;
+        private int _totalReads;
+
+        // ---------------------------------------------------------------
+        // Sequential write state (used by Btn_ResetToRecommended_Click)
+        // ---------------------------------------------------------------
+        private readonly Queue<ServoWriteBatch> _pendingWriteBatchQueue = new Queue<ServoWriteBatch>();
+        private readonly System.Windows.Threading.DispatcherTimer _writeTimeoutTimer;
+        private Window _progressWindow;
+        private ProgressBar _progressBar;
+        private int _totalWrites;
 
         // ---------------------------------------------------------------
         // Button handlers
@@ -509,62 +557,123 @@ namespace DiyFfbPedal.UIFunction
 
         /// <summary>
         /// Triggered when the user clicks "Load current from servo".
-        /// Resets all live values to unknown, builds the sequential read queue,
-        /// and fires the first request. Each subsequent request is fired only after
-        /// the ACK (or 1-second timeout) for the previous one is received.
+        /// Resets all live values to unknown, builds sequential read batches of up to 10 registers,
+        /// and fires the requests. Subsequent batches fire once previous batch ACKs are collected.
         /// </summary>
         private void Btn_LoadFromServo_Click(object sender, RoutedEventArgs e)
         {
             _readTimeoutTimer.Stop();
-            _pendingReadQueue.Clear();
+            _pendingBatchQueue.Clear();
 
             // Reset all live values to unknown (pending state)
             foreach (var entry in ServoRegisters)
                 entry.LiveValue = null;
 
-            // Enqueue addresses in display order
+            // Enqueue addresses packed in batches of up to 10 items
+            ServoReadBatch currentBatch = new ServoReadBatch();
             foreach (var entry in ServoRegisters)
             {
                 if (DapAttrHelper.TryParseServoAddress(entry.Address, out ushort addr))
-                    _pendingReadQueue.Enqueue(addr);
+                {
+                    currentBatch.Addresses.Add(addr);
+                    currentBatch.PendingAddresses.Add(addr);
+
+                    if (currentBatch.Addresses.Count == 10)
+                    {
+                        _pendingBatchQueue.Enqueue(currentBatch);
+                        currentBatch = new ServoReadBatch();
+                    }
+                }
+            }
+            // Enqueue any remaining addresses that didn't form a full group of 10
+            if (currentBatch.Addresses.Count > 0)
+            {
+                _pendingBatchQueue.Enqueue(currentBatch);
             }
 
-            SendNextPendingRead();
+            _totalReads = _pendingBatchQueue.Count;
+
+            _progressBar = new ProgressBar
+            {
+                Minimum = 0,
+                Maximum = _totalReads,
+                Margin = new Thickness(20),
+                Height = 20
+            };
+
+            _progressWindow = new Window
+            {
+                Title = "Reading from Servo...",
+                Width = 300,
+                Height = 100,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                WindowStyle = WindowStyle.ToolWindow,
+                ResizeMode = ResizeMode.NoResize,
+                Topmost = true,
+                Content = _progressBar
+            };
+            _progressWindow.Closed += (s, ev) => { _progressWindow = null; _progressBar = null; };
+            _progressWindow.Show();
+
+            SendNextPendingBatch();
         }
 
         /// <summary>
-        /// Dequeues the next pending address and raises ServoModbusReadRequested.
+        /// Dequeues or peeks the next batch of addresses and requests transmission.
         /// </summary>
-        private void SendNextPendingRead()
+        private void SendNextPendingBatch()
         {
             _readTimeoutTimer.Stop();
-            if (_pendingReadQueue.Count == 0) return;
+            if (_pendingBatchQueue.Count == 0)
+            {
+                if (_progressWindow != null)
+                {
+                    _progressWindow.Close();
+                }
+                return;
+            }
 
-            ushort nextAddr = _pendingReadQueue.Peek(); // leave in queue until ACK arrives
+            if (_progressBar != null)
+            {
+                _progressBar.Value = _totalReads - _pendingBatchQueue.Count;
+            }
+
+            ServoReadBatch nextBatch = _pendingBatchQueue.Peek();
             _readTimeoutTimer.Start();
-            ServoModbusReadRequested?.Invoke(this, nextAddr);
+
+            // Fire the chunk request via batch handler if subscribed; fallback sequentially otherwise
+            if (ServoModbusBatchReadRequested != null)
+            {
+                ServoModbusBatchReadRequested.Invoke(this, nextBatch.Addresses);
+            }
+            else
+            {
+                // Fallback architecture matching legacy single register loop for protection
+                ushort nextAddr = nextBatch.PendingAddresses.First();
+                ServoModbusReadRequested?.Invoke(this, nextAddr);
+            }
         }
 
         /// <summary>
-        /// Called when no ACK arrives within 1 second — skips the current register and continues.
+        /// Called when no ACK arrives within 1 second — skips the current stalled batch and continues.
         /// </summary>
         private void OnReadTimeout(object sender, EventArgs e)
         {
             _readTimeoutTimer.Stop();
-            if (_pendingReadQueue.Count > 0)
-                _pendingReadQueue.Dequeue(); // skip stalled register
-            SendNextPendingRead();
+            if (_pendingBatchQueue.Count > 0)
+                _pendingBatchQueue.Dequeue(); // skip stalled batch entirely to ensure interface responsiveness
+            SendNextPendingBatch();
         }
 
         /// <summary>
         /// Called when the ESP32 returns a ServoModbus ACK packet.
-        /// Updates the matching LiveValue and advances the sequential read queue.
+        /// Updates the matching LiveValue and advances the sequential batch queue.
         /// </summary>
         /// <param name="addr">Absolute Modbus holding-register address.</param>
         /// <param name="value">Register value reported by the servo.</param>
         public void HandleServoModbusAck(ushort addr, short value)
         {
-            // Update the matching entry's live value
+            // Update the matching entry's live value inside UI thread context data
             foreach (var entry in ServoRegisters)
             {
                 if (DapAttrHelper.TryParseServoAddress(entry.Address, out ushort entryAddr) && entryAddr == addr)
@@ -574,23 +683,156 @@ namespace DiyFfbPedal.UIFunction
                 }
             }
 
-            // Advance the sequential queue: dequeue only when the head matches the ACK address
-            if (_pendingReadQueue.Count > 0 && _pendingReadQueue.Peek() == addr)
-                _pendingReadQueue.Dequeue();
+            // Check if we are currently waiting for this register in the front batch
+            if (_pendingBatchQueue.Count > 0)
+            {
+                ServoReadBatch currentBatch = _pendingBatchQueue.Peek();
+                if (currentBatch.PendingAddresses.Contains(addr))
+                {
+                    currentBatch.PendingAddresses.Remove(addr);
 
-            SendNextPendingRead();
+                    // If all registers inside this batch packet have been successfully received, pop from queue
+                    if (currentBatch.PendingAddresses.Count == 0)
+                    {
+                        _pendingBatchQueue.Dequeue();
+                        SendNextPendingBatch();
+                    }
+                    else if (ServoModbusBatchReadRequested == null)
+                    {
+                        // If running legacy fallback path without batch-hook registration, request next item explicitly
+                        SendNextPendingBatch();
+                    }
+                }
+            }
+
+            // Check if we are currently waiting for this register in the front write batch
+            if (_pendingWriteBatchQueue.Count > 0)
+            {
+                ServoWriteBatch currentWriteBatch = _pendingWriteBatchQueue.Peek();
+                if (currentWriteBatch.PendingAddresses.Contains(addr))
+                {
+                    currentWriteBatch.PendingAddresses.Remove(addr);
+
+                    if (currentWriteBatch.PendingAddresses.Count == 0)
+                    {
+                        _pendingWriteBatchQueue.Dequeue();
+                        SendNextPendingWriteBatch();
+                    }
+                }
+            }
         }
 
         /// <summary>
-        /// Resets every CurrentValue back to its RecommendedValue.
+        /// Resets every CurrentValue back to its RecommendedValue,
+        /// then sends all registers to the servo sequentially (one per 50 ms).
+        /// FlashToServoRequested is raised only after the last register is sent.
         /// </summary>
         private void Btn_ResetToRecommended_Click(object sender, RoutedEventArgs e)
         {
+            // Update the table
             foreach (var entry in ServoRegisters)
-                entry.CurrentValue = entry.RecommendedValue;
+                entry.LiveValue = entry.RecommendedValue;
 
-            // Refresh the DataGrid so the new values are visible
             ServoRegisterGrid.Items.Refresh();
+
+            WriteAllRegistersToServo();
+        }
+
+        private void WriteAllRegistersToServo()
+        {
+            // Stop any pending write sequence first
+            _writeTimeoutTimer.Stop();
+            _pendingWriteBatchQueue.Clear();
+
+            // Enqueue all registers that have a value for sequential serial write in batches
+            ServoWriteBatch currentBatch = new ServoWriteBatch();
+            foreach (var entry in ServoRegisters)
+            {
+                if (entry.LiveValue.HasValue)
+                {
+                    if (DapAttrHelper.TryParseServoAddress(entry.Address, out ushort addr))
+                    {
+                        currentBatch.Entries.Add(entry);
+                        currentBatch.PendingAddresses.Add(addr);
+
+                        if (currentBatch.Entries.Count == 10)
+                        {
+                            _pendingWriteBatchQueue.Enqueue(currentBatch);
+                            currentBatch = new ServoWriteBatch();
+                        }
+                    }
+                }
+            }
+            if (currentBatch.Entries.Count > 0)
+            {
+                _pendingWriteBatchQueue.Enqueue(currentBatch);
+            }
+
+            if (_pendingWriteBatchQueue.Count == 0)
+            {
+                FlashToServoRequested?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+
+            _totalWrites = _pendingWriteBatchQueue.Count;
+
+            _progressBar = new ProgressBar
+            {
+                Minimum = 0,
+                Maximum = _totalWrites,
+                Margin = new Thickness(20),
+                Height = 20
+            };
+
+            _progressWindow = new Window
+            {
+                Title = "Writing to Servo...",
+                Width = 300,
+                Height = 100,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                WindowStyle = WindowStyle.ToolWindow,
+                ResizeMode = ResizeMode.NoResize,
+                Topmost = true,
+                Content = _progressBar
+            };
+            _progressWindow.Closed += (s, ev) => { _progressWindow = null; _progressBar = null; };
+            _progressWindow.Show();
+
+            // Start the write sequence
+            SendNextPendingWriteBatch();
+        }
+
+        private void SendNextPendingWriteBatch()
+        {
+            _writeTimeoutTimer.Stop();
+            if (_pendingWriteBatchQueue.Count == 0)
+            {
+                if (_progressWindow != null)
+                {
+                    _progressWindow.Close();
+                }
+
+                FlashToServoRequested?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+
+            if (_progressBar != null)
+            {
+                _progressBar.Value = _totalWrites - _pendingWriteBatchQueue.Count;
+            }
+
+            ServoWriteBatch nextBatch = _pendingWriteBatchQueue.Peek();
+            _writeTimeoutTimer.Start();
+
+            ServoBatchWriteRequested?.Invoke(this, nextBatch.Entries.ToArray());
+        }
+
+        private void OnWriteTimeout(object sender, EventArgs e)
+        {
+            _writeTimeoutTimer.Stop();
+            if (_pendingWriteBatchQueue.Count > 0)
+                _pendingWriteBatchQueue.Dequeue(); // skip stalled batch
+            SendNextPendingWriteBatch();
         }
 
         /// <summary>
@@ -600,7 +842,12 @@ namespace DiyFfbPedal.UIFunction
         /// </summary>
         private void Btn_FlashToServo_Click(object sender, RoutedEventArgs e)
         {
-            FlashToServoRequested?.Invoke(this, EventArgs.Empty);
+            WriteAllRegistersToServo();
+        }
+
+        private void Btn_ResetToFactory_Click(object sender, RoutedEventArgs e)
+        {
+            ResetToFactoryRequested?.Invoke(this, EventArgs.Empty);
         }
 
         // ---------------------------------------------------------------
@@ -611,21 +858,12 @@ namespace DiyFfbPedal.UIFunction
             if (e.EditAction != DataGridEditAction.Commit) return;
             if (!(e.Row.Item is ServoRegisterEntry entry)) return;
 
-            // Read the edited text from the cell
-            if (e.EditingElement is TextBox tb)
-            {
-                if (int.TryParse(tb.Text, out int newValue))
-                {
-                    entry.CurrentValue = newValue;
-                }
-            }
-
-            // TODO: implement actual servo register write logic here
+            // Raise event so ServoCallbacks sends the new LiveValue to the servo
             ServoRegisterValueChanged?.Invoke(this, entry);
         }
 
         // ---------------------------------------------------------------
-        // Existing slider handlers (unchanged)
+        // Slider handlers
         // ---------------------------------------------------------------
         private void Slider_ServoEndstopDetecionThreshold_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {

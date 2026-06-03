@@ -1,7 +1,7 @@
 #include "SignalFilter_2nd_order.h"
 
 // Define constants from the original code
-static const float s_kfModelNoiseForceJerk_fl32 = 1.0f * 1e-5;
+static const float s_kfModelNoiseForceJerk_fl32 = 1.0f * 1e-5; // higher value --> faster response 
 
 // Constructor
 KalmanFilter2ndOrder::KalmanFilter2ndOrder(float varianceEstimate_fl32)

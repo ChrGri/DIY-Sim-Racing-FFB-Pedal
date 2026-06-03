@@ -590,6 +590,12 @@ int32_t Isv57Communication::writeHoldingRegisterToDevice(
     return modbus.writeHoldingRegisterToDevice(slaveId_i32, registerAddress_i32, value_u16);
 }
 
+int32_t Isv57Communication::writeHoldingRegistersToDevice(
+        int32_t slaveId_i32, int32_t registerAddress_i32, uint16_t* values_u16, uint8_t count_u8)
+{
+    return modbus.writeHoldingRegistersToDevice(slaveId_i32, registerAddress_i32, values_u16, count_u8);
+}
+
 
 
 bool Isv57Communication::clearServoAlarms() {
@@ -684,58 +690,56 @@ void Isv57Communication::resetToFactoryParams()
   // Read:  3F 03 02 55 55 6E EE
 
 
-  // // disable axis first
+  // disable axis first
+  disableAxis();
+  ActiveSerial->println("Disabling axis first\n");
+  delay(1000);
+
+  // identified with logic analyzer. See \StepperParameterization\Meesages\ResetToFactorySettings_0.png
+  long tmp = modbus.readHoldingRegisterFromDevice(0x01F0);
+
+  if (tmp == 0x00)
+  {
+    ActiveSerial->println("First test passed\n");
+    modbus.writeHoldingRegisterToDevice(slaveId, 0x019a, 0x4444);
+
+    tmp = modbus.readHoldingRegisterFromDevice(0x01F7);
+
+    if (tmp == 0x5555)
+    {
+      ActiveSerial->println("Reset to factory settings successfull\n");
+    }
+  }
+
+
+
   // disableAxis();
-  // ActiveSerial->println("Disabling axis first\n");
-  // delay(500);
 
-
-  // // identified with logic analyzer. See \StepperParameterization\Meesages\ResetToFactorySettings_0.png
-  // long tmp = modbus.holdingRegisterRead(0x01F0);
-
-  // if (tmp == 0x00)
+  // bool retValue_b = false;
+  
+  // for (uint16_t registerIndex_u16 = 0; registerIndex_u16 < ISV57_NMB_OF_REGISTERS; registerIndex_u16++)
   // {
-  //   ActiveSerial->println("First test passed\n");
-  //   modbus.writeHoldingRegister(slaveId, 0x019a, 0x4444);
-
-  //   tmp = modbus.holdingRegisterRead(0x01F7);
-
-  //   if (tmp == 0x5555)
-  //   {
-  //     ActiveSerial->println("Reset to factory settings successfull\n");
-  //   }
+  //   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, registerIndex_u16, tuned_parameters[registerIndex_u16]);
   // }
 
 
 
-  disableAxis();
+  // // store the settings to servos NVM if necesssary
+  // if (retValue_b)
+  // {
 
-  bool retValue_b = false;
-  
-  for (uint16_t registerIndex_u16 = 0; registerIndex_u16 < ISV57_NMB_OF_REGISTERS; registerIndex_u16++)
-  {
-    retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, registerIndex_u16, tuned_parameters[registerIndex_u16]);
-  }
+  //   ActiveSerial->println("Servo registered in NVM have been updated! Please power cycle the servo and the ESP!");
 
-
-
-  // store the settings to servos NVM if necesssary
-  if (retValue_b)
-  {
-
-    ActiveSerial->println("Servo registered in NVM have been updated! Please power cycle the servo and the ESP!");
-
-    // identified with logic analyzer. See \StepperParameterization\Meesages\StoreSettingsToEEPROM_0.png
-    modbus.writeHoldingRegisterToDevice(slaveId, 0x019A, 0x5555); // store the settings to servos NVM
-    // ToDo: according to iSV57 manual, 0x2211 is the command to write values to EEPROM
-    delay(500);
+  //   // identified with logic analyzer. See \StepperParameterization\Meesages\StoreSettingsToEEPROM_0.png
+  //   modbus.writeHoldingRegisterToDevice(slaveId, 0x019A, 0x5555); // store the settings to servos NVM
+  //   // ToDo: according to iSV57 manual, 0x2211 is the command to write values to EEPROM
+  //   delay(500);
     
-    // ToDo: soft reset servo. The iSV57 docu says Pr0.25: 0x6666 is soft reset
-    // modbus.writeHoldingRegister(slaveId, 0x019A, 0x6666); // store the settings to servos NVM
+  //   // ToDo: soft reset servo. The iSV57 docu says Pr0.25: 0x6666 is soft reset
+  //   // modbus.writeHoldingRegister(slaveId, 0x019A, 0x6666); // store the settings to servos NVM
     
-    isv57_update_parameter_b=true;
-    delay(1000);
-  }
+  //   isv57_update_parameter_b=true;
+  //   delay(1000);
+  // }
   
 }
-

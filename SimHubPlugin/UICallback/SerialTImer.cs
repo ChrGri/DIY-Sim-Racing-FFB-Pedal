@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.Ports;
@@ -312,16 +312,19 @@ namespace DiyFfbPedal
 
                         try
                         {
-                            if ((currentBufferLength - 1) == indices_sof1.Last<int>())
+                            if (indices_sof1.Count > 0 && (currentBufferLength - 1) == indices_sof1.Last<int>())
                             {
                                 bufferByteAssignedToStruct.AsSpan((currentBufferLength - 1), 1).Fill(true);
+                                bufferByteAssignedToStruct_class[(currentBufferLength - 1)] = 255;
                                 sofHasBeenReceivedEofNotYet = true;
                             }
 
                             // when last element is SOF2 and seconmd to last is SOF1
-                            if ((currentBufferLength - 2) == indices_sof1_and_sof2.Last<int>())
+                            if (indices_sof1_and_sof2.Count > 0 && (currentBufferLength - 2) == indices_sof1_and_sof2.Last<int>())
                             {
                                 bufferByteAssignedToStruct.AsSpan((currentBufferLength - 2), 2).Fill(true);
+                                bufferByteAssignedToStruct_class[(currentBufferLength - 2)] = 255;
+                                bufferByteAssignedToStruct_class[(currentBufferLength - 1)] = 255;
                                 sofHasBeenReceivedEofNotYet = true;
                             }
                         }
@@ -508,7 +511,7 @@ namespace DiyFfbPedal
                                     }
                                     else
                                     {
-                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_extended_st)).Fill(0);
+                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_basic_st)).Fill(0);
                                     }
                                 }
                             }
@@ -664,7 +667,7 @@ namespace DiyFfbPedal
                                     }
                                     else
                                     {
-                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_extended_st)).Fill(0);
+                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_basic_st)).Fill(0);
                                     }
                                 }
                             }
@@ -747,7 +750,7 @@ namespace DiyFfbPedal
                                     else
                                     {
 
-                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_extended_st)).Fill(0);
+                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_config_st)).Fill(0);
 
                                         TextBox2.Text = "Payload config test 1: " + check_payload_config_b;
                                         TextBox2.Text += "Payload config test 2: " + check_crc_config_b;
@@ -820,6 +823,29 @@ namespace DiyFfbPedal
                                 }
                             }
 
+                            // --- GENERIC BINARY SWEEPER ---
+                            // Fängt übrig gebliebene Binär-Frames ab (z.B. DAP_action_st Echoes oder fehlerhafte Pakete)
+                            // damit diese nicht als ASCII-Text fehlinterpretiert werden.
+                            List<int> indices_sof_all = FindAllOccurrences(buffer_appended[pedalSelected], STARTOFFRAMCHAR, currentBufferLength);
+                            List<int> indices_eof_all = FindAllOccurrences(buffer_appended[pedalSelected], ENDOFFRAMCHAR, currentBufferLength);
+                            for (int i = 0; i < indices_sof_all.Count; i++)
+                            {
+                                int sof = indices_sof_all[i];
+                                int next_sof = (i + 1 < indices_sof_all.Count) ? indices_sof_all[i + 1] : currentBufferLength;
+                                foreach (int eof in indices_eof_all)
+                                {
+                                    if (eof > sof && eof < next_sof && (eof - sof) <= 250) 
+                                    {
+                                        for (int j = sof; j <= eof + 1 && j < currentBufferLength; j++)
+                                        {
+                                            if (bufferByteAssignedToStruct_class[j] == 0)
+                                                bufferByteAssignedToStruct_class[j] = 254; // 254 = Ignorierte Binärdaten
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+
 
 
 
@@ -843,7 +869,12 @@ namespace DiyFfbPedal
 
                                         if (bufferByteAssignedToStruct_class[i] == 0)  // copy only if not true
                                         {
-                                            filteredList.Add(buffer_appended[pedalSelected][i]);
+                                            byte b = buffer_appended[pedalSelected][i];
+                                            // Nur druckbare ASCII-Zeichen und reguläre Leerzeichen/Zeilenumbrüche zulassen
+                                            if ((b >= 32 && b <= 126) || b == '\r' || b == '\n' || b == '\t')
+                                            {
+                                                filteredList.Add(b);
+                                            }
                                         }
                                     }
 
@@ -868,8 +899,26 @@ namespace DiyFfbPedal
                             }
 
 
-                            // remove elements from buffer
-                            //lastTrueIndex
+                            // Find the start of the first incomplete struct
+                            int firstIncompleteIndex = currentBufferLength;
+                            for (int i = 0; i < currentBufferLength; i++)
+                            {
+                                if (bufferByteAssignedToStruct_class[i] == 255)
+                                {
+                                    firstIncompleteIndex = i;
+                                    break;
+                                }
+                            }
+
+                            // Find end of last CRLF message that is BEFORE the incomplete struct
+                            int lastCrlfEnd = -1;
+                            foreach (int idx in indices)
+                            {
+                                int crlfEnd = idx + stop_char_length - 1;
+                                if (crlfEnd < firstIncompleteIndex) lastCrlfEnd = crlfEnd;
+                            }
+
+                            // Find end of last binary struct
                             int lastTrueIndex = -1; // -1 means "not found"
                             for (int i = currentBufferLength - 1; i >= 0; i--)
                             {
@@ -882,38 +931,30 @@ namespace DiyFfbPedal
                                 }
                             }
 
-                            if (lastTrueIndex > (-1))
+                            int bytesToDiscard = Math.Max(lastTrueIndex, lastCrlfEnd) + 1;
+                            
+                            // Ultimate safety net to protect incomplete structs from fragmentation truncation
+                            if (bytesToDiscard > firstIncompleteIndex)
                             {
-                                int remainingMessageLength = currentBufferLength - (lastTrueIndex + 1);
+                                bytesToDiscard = firstIncompleteIndex;
+                            }
+                            
+                            if (bytesToDiscard > 0)
+                            {
+                                int remainingMessageLength = currentBufferLength - bytesToDiscard;
                                 if (remainingMessageLength > 0)
                                 {
                                     appendedBufferOffset[pedalSelected] = remainingMessageLength;
-
-                                    Buffer.BlockCopy(buffer_appended[pedalSelected], lastTrueIndex + 1, buffer_appended[pedalSelected], 0, remainingMessageLength);
-                                    //Array.Clear(buffer_appended[pedalSelected], appendedBufferOffset[pedalSelected], bufferSize - appendedBufferOffset[pedalSelected]); // 120 - 20 + 1 = 101 elements
-
-
-
-                                    if (!((buffer_appended[pedalSelected][0] == 170) && (buffer_appended[pedalSelected][1] == 85)))
-                                    {
-                                        int tmp = 5;
-                                    }
+                                    Buffer.BlockCopy(buffer_appended[pedalSelected], bytesToDiscard, buffer_appended[pedalSelected], 0, remainingMessageLength);
+                                    Array.Clear(buffer_appended[pedalSelected], remainingMessageLength, bufferSize - remainingMessageLength);
                                 }
                                 else
                                 {
                                     appendedBufferOffset[pedalSelected] = 0;
                                 }
                             }
-                            else
-                            {
-                                //appendedBufferOffset[pedalSelected] += receivedLength;
-                                appendedBufferOffset[pedalSelected] = 0;
-                            }
-
-
-
-
                         }
+
                         
 
 

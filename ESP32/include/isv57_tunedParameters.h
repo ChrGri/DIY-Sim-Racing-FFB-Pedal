@@ -40,8 +40,8 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     10000, // Pr1.07: 2nd time constant of velocity loop
     8,     // Pr1.08: 2nd filter of velocity detection
     200,   // Pr1.09: 2nd torque filter
-    900,   // Pr1.10: Velocity feed forward gain
-    200,  // Pr1.11: Velocity feed forward filter. Had better velocity error decay with higher values and also less noise.
+    0,     // Pr1.10: Velocity feed forward gain (Reduziert gegen aggressives Überschwingen bei haptischem Feedback)
+    0,     // Pr1.11: Velocity feed forward filter. Had better velocity error decay with higher values and also less noise. Edit: 31.05.2026: Set to zero to keep coherency between feed forward and feedback. With non-zero values, the feed forward is smoothed, but the feedback is not, which will cause overshoot.
     0,     // Pr1.12: Torque feed forward gain
     1000,     // Pr1.13: Torque feed forward filter
     1,     // Pr1.14: 2nd gain setup
@@ -70,7 +70,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     1052,  // Pr1.37: Special function register
     0,     // Pr1.38: Reserved parameter
     0,     // Pr1.39: Reserved parameter
-    2,     // Pr2.00: Adaptive filter mode setup
+    0,     // Pr2.00: Adaptive filter mode setup (Ausgeschaltet für konstante Phasenlage ohne "Hunting")
     50,    // Pr2.01: 1st notch frequency
     20,    // Pr2.02: 1st notch width
     99,    // Pr2.03: 1st notch depth
@@ -92,8 +92,8 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,     // Pr2.19: 3rd damping filter
     0,     // Pr2.20: 4th damping frequency
     0,     // Pr2.21: 4th damping filter
-    0,    // Pr2.22: Positional command smoothing filter. Less noise with value >0, since feed forward are smoothed.
-    200,     // Pr2.23: Positional command FIR filter
+    15,    // Pr2.22: Positional command smoothing filter (PT1). 1.5ms glättet die Treppenstufen der Microsteps, ohne die Admittanz zu destabilisieren.
+    10,    // Pr2.23: Positional command FIR filter. 1.0ms Moving Average für weicheren Motorlauf.
     0,     // Pr2.24: Reserved parameter
     0,     // Pr2.25: Reserved parameter
     0,     // Pr2.26: Reserved parameter

@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DiyFfbPedal.UIFunction;
@@ -77,15 +77,15 @@ namespace DiyFfbPedal
         {
             var psc = new payloadServoConfig
             {
-                readWriteFlag   = readWriteFlag,
-                numValidFields  = (byte)Math.Min(addresses.Length, 10),
+                readWriteFlag = readWriteFlag,
+                numValidFields = (byte)Math.Min(addresses.Length, 10),
                 registerAddresses = new ushort[10],
-                registerValues    = new ushort[10],
+                registerValues = new ushort[10],
             };
             for (int i = 0; i < psc.numValidFields; i++)
             {
                 psc.registerAddresses[i] = addresses[i];
-                psc.registerValues[i]    = (values != null && i < values.Length) ? values[i] : (ushort)0;
+                psc.registerValues[i] = (values != null && i < values.Length) ? values[i] : (ushort)0;
             }
 
             var pkt = new DAP_servo_config_st
@@ -94,10 +94,10 @@ namespace DiyFfbPedal
                 {
                     startOfFrame0_u8 = STARTOFFRAME_SERVO_CONFIG[0],
                     startOfFrame1_u8 = STARTOFFRAME_SERVO_CONFIG[1],
-                    payloadType      = (byte)Constants.servoConfigPayload_type,
-                    version          = (byte)Constants.pedalConfigPayload_version,
-                    storeToEeprom    = 0,
-                    PedalTag         = (byte)indexOfSelectedPedal_u,
+                    payloadType = (byte)Constants.servoConfigPayload_type,
+                    version = (byte)Constants.pedalConfigPayload_version,
+                    storeToEeprom = 0,
+                    PedalTag = (byte)indexOfSelectedPedal_u,
                 },
                 payloadServoConfig_st = psc,
             };
@@ -109,9 +109,9 @@ namespace DiyFfbPedal
 
             pkt.payloadFooter_st = new payloadFooter
             {
-                checkSum        = crc,
-                enfOfFrame0_u8  = ENDOFFRAMCHAR[0],
-                enfOfFrame1_u8  = ENDOFFRAMCHAR[1],
+                checkSum = crc,
+                enfOfFrame0_u8 = ENDOFFRAMCHAR[0],
+                enfOfFrame1_u8 = ENDOFFRAMCHAR[1],
             };
 
             return pkt.toBytes();
@@ -145,6 +145,7 @@ namespace DiyFfbPedal
         private void Servo_Tab_ServoRegisterValueChanged(object sender, ServoRegisterEntry entry)
         {
             if (Plugin == null || entry == null) return;
+            if (!entry.LiveValue.HasValue) return;
 
             if (!DapAttrHelper.TryParseServoAddress(entry.Address, out ushort modbusAddr))
             {
@@ -155,11 +156,10 @@ namespace DiyFfbPedal
 
             byte pedalIdx = (byte)indexOfSelectedPedal_u;
 
-            // --- Serial path: DAP_servo_config_st WRITE ---
             byte[] packet = BuildServoConfigPacket(
                 readWriteFlag: 1,
                 addresses: new ushort[] { modbusAddr },
-                values:    new ushort[] { (ushort)(entry.CurrentValue & 0xFFFF) });
+                values: new ushort[] { (ushort)(entry.LiveValue.Value & 0xFFFF) });
             SendServoConfigSerial(pedalIdx, packet);
         }
 
@@ -176,7 +176,55 @@ namespace DiyFfbPedal
             byte[] packet = BuildServoConfigPacket(
                 readWriteFlag: 0,
                 addresses: new ushort[] { modbusAddr },
-                values:    new ushort[] { 0 });
+                values: new ushort[] { 0 });
+            SendServoConfigSerial(pedalIdx, packet);
+        }
+		
+		private void Servo_Tab_ServoModbusBatchReadRequested(object sender, System.Collections.Generic.List<ushort> addresses)
+		{
+			if (Plugin == null) return;
+
+			byte pedalIdx = (byte)indexOfSelectedPedal_u;
+
+			// Wir brauchen ein leeres Array für die Values in der gleichen Größe wie die Adressen (da wir nur lesen)
+			ushort[] emptyValues = new ushort[addresses.Count];
+
+			// --- Serial path: DAP_servo_config_st READ (Batch von bis zu 10 Registern) ---
+			byte[] packet = BuildServoConfigPacket(
+				readWriteFlag: 0,
+				addresses: addresses.ToArray(), // Liste in ein Array umwandeln
+				values:    emptyValues);
+
+			SendServoConfigSerial(pedalIdx, packet);
+		}
+
+        // ---------------------------------------------------------------
+        // Write — batch register polling triggered by Reset/Flash
+        // ---------------------------------------------------------------
+        private void Servo_Tab_ServoBatchWriteRequested(object sender, ServoRegisterEntry[] entries)
+        {
+            if (Plugin == null || entries == null || entries.Length == 0) return;
+
+            byte pedalIdx = (byte)indexOfSelectedPedal_u;
+
+            ushort[] addresses = new ushort[entries.Length];
+            ushort[] values = new ushort[entries.Length];
+
+            for (int i = 0; i < entries.Length; i++)
+            {
+                if (DapAttrHelper.TryParseServoAddress(entries[i].Address, out ushort modbusAddr))
+                {
+                    addresses[i] = modbusAddr;
+                    values[i] = (ushort)(entries[i].LiveValue.Value & 0xFFFF);
+                }
+            }
+
+            // --- Serial path: DAP_servo_config_st WRITE (Batch von bis zu 10 Registern) ---
+            byte[] packet = BuildServoConfigPacket(
+                readWriteFlag: 1, // 1 = Write
+                addresses: addresses,
+                values: values);
+
             SendServoConfigSerial(pedalIdx, packet);
         }
 
@@ -187,14 +235,35 @@ namespace DiyFfbPedal
         {
             if (Plugin == null) return;
 
-            byte pedalIdx = (byte)indexOfSelectedPedal_u;        
+            byte pedalIdx = (byte)indexOfSelectedPedal_u;
 
             // --- Serial path ---
             byte[] packet = BuildServoConfigPacket(
                 readWriteFlag: 1,
                 addresses: new ushort[] { 0x019A },
-                values:    new ushort[] { 0x5555 });
+                values: new ushort[] { 0x5555 });
             SendServoConfigSerial(pedalIdx, packet);
+        }
+
+        // ---------------------------------------------------------------
+        // Reset to factory — triggers Isv57Communication::resetToFactoryParams()
+        // via debugFlags0 bit DEBUG_INFO_0_RESET_SERVO_TO_FACTORY_U8 (32)
+        // ---------------------------------------------------------------
+        unsafe private void Servo_Tab_ResetToFactoryRequested(object sender, EventArgs e)
+        {
+            if (Plugin == null) return;
+
+            byte pedalIdx = (byte)indexOfSelectedPedal_u;
+
+            // Set DEBUG_INFO_0_RESET_SERVO_TO_FACTORY_U8 (bit 5 = 32) in debugFlags0.
+            // Main.cpp watches for this bit, calls stepper->resetServoParametersToFactoryValues()
+            // (which calls Isv57Communication::resetToFactoryParams()), then clears the bit.
+            DAP_config_st cfg = dap_config_st[pedalIdx];
+            cfg.payloadHeader_.storeToEeprom = 1;
+            cfg.payloadPedalConfig_.debug_flags_0 = (byte)(cfg.payloadPedalConfig_.debug_flags_0 | 32);
+            dap_config_st[pedalIdx] = cfg;
+
+            Sendconfig(pedalIdx);
         }
     }
 }

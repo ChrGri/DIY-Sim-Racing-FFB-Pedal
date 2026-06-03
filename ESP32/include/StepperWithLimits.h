@@ -26,12 +26,13 @@ enum ServoStatus
 class FunctionProfiler; // Forward declaration for the performance profiler
 
 // Command struct for UI-triggered iSV57 register access.
-// Supports batched reads of up to 8 consecutive registers in one FC03 frame.
+// Supports WRITE of consecutive registers and READ of up to 10 (possibly non-consecutive) registers.
 struct ServoModbusCmd_t {
-    uint16_t startAddr_u16;  // first Modbus holding-register address
-    uint8_t  count_u8;       // number of consecutive registers (1..8)
-    bool     isWrite_b;      // true = WRITE, false = READ
-    int16_t  values[8];      // write values (used only when isWrite_b == true)
+    uint16_t startAddr_u16;     // first Modbus holding-register address (used for WRITE)
+    uint16_t readAddresses[10]; // individual register addresses for READ mode (up to 10)
+    uint8_t  count_u8;          // number of registers (1..10)
+    bool     isWrite_b;         // true = WRITE, false = READ
+    int16_t  values[10];        // write values (used only when isWrite_b == true)
 };
 
 // ==============================================================================
@@ -71,10 +72,11 @@ private:
 
     // Result buffer for READ replies; written by processPendingCommands(),
     // polled by serialCommunicationTaskRx via tryGetServoModbusReadResult().
-    volatile bool         servoModbusReadReady_b   = false;
-    int16_t               servoModbusReadResult[8] = {};
-    uint8_t               servoModbusReadCount_u8  = 0;
-    uint16_t              servoModbusReadAddr_u16  = 0;
+    volatile bool         servoModbusReadReady_b      = false;
+    int16_t               servoModbusReadResult[10]   = {};
+    uint16_t              servoModbusReadAddresses[10] = {};
+    uint8_t               servoModbusReadCount_u8     = 0;
+    uint16_t              servoModbusReadAddr_u16     = 0;
 
     volatile int32_t servoPos_local_corrected_i32 = 0;               // Fully unwrapped and corrected servo position
                                                                        // volatile: 32-bit aligned → atomic on ESP32-S3, no mutex needed
@@ -132,6 +134,7 @@ public:
     int32_t getHardEndstopMaxPosition() const { return _endstopLimitMax; }
     int32_t getCurrentPositionFromMin() const;
     int32_t getMinPosition() const;
+    int32_t getMaxPosition() const;
     int32_t getCurrentPosition() const;
     float getCurrentPositionFraction() const;
     float getCurrentPositionFractionFromExternalPos(int32_t extPos_i32) const;
@@ -179,9 +182,11 @@ public:
 
     // Poll for a completed READ result. Returns true and fills output params
     // if a result is available. Clears the ready-flag after reading.
+    // addrsOut (optional): if non-null, receives the individual register addresses (array of countOut entries).
     bool tryGetServoModbusReadResult(uint16_t& addrOut,
                                      int16_t*  valuesOut,
-                                     uint8_t&  countOut);
+                                     uint8_t&  countOut,
+                                     uint16_t* addrsOut = nullptr);
 
     // --- Internal Thread-Safe Setters/Getters ---
     void setServosInternalPositionCorrected(int32_t posCorrected_i32);
