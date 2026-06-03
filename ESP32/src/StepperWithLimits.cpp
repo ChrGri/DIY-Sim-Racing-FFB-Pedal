@@ -202,7 +202,7 @@ void StepperWithLimits::scheduleServoModbusCmd(const ServoModbusCmd_t& cmd)
     servoModbusCmdPending_b  = true;
 }
 
-bool StepperWithLimits::tryGetServoModbusReadResult(
+bool IRAM_ATTR StepperWithLimits::tryGetServoModbusReadResult(
         uint16_t& addrOut, int16_t* valuesOut, uint8_t& countOut, uint16_t* addrsOut)
 {
     if (!servoModbusReadReady_b) return false;
