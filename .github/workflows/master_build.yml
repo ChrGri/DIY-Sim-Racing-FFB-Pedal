@@ -58,6 +58,7 @@ jobs:
         id: version
         run: |
           $ver = (Get-Content CommonResources\verisonDefines.txt -First 1).Replace('"', '').Trim()
+          echo "Extracted version: $ver"
           echo "version=$ver" >> $env:GITHUB_OUTPUT
 
       # --- Neu: Wir kopieren die DLL in einen sauberen Ordner, um die Unterordner loszuwerden ---
