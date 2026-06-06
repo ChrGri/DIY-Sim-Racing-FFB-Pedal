@@ -53,10 +53,12 @@ jobs:
         # Das Skript baut alle ESPs und am Ende die DLL (wobei es intern copy_firmwares.bat aufruft)
         run: cmd /c build_everything.bat
 
-      # --- 5. Dynamischen Release-Namen generieren (Datum & Uhrzeit) ---
-      - name: Generate Version Date
-        id: date
-        run: echo "date=$(Get-Date -Format 'yyyyMMdd.HHmmss')" >> $env:GITHUB_OUTPUT
+      # --- 5. Release-Version aus versionDefines.txt auslesen ---
+      - name: Extract Version
+        id: version
+        run: |
+          $ver = (Get-Content CommonResources\versionDefines.txt -First 1).Trim()
+          echo "version=$ver" >> $env:GITHUB_OUTPUT
 
       # --- Neu: Wir kopieren die DLL in einen sauberen Ordner, um die Unterordner loszuwerden ---
       - name: Prepare Artifact Folder
@@ -77,8 +79,8 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: Build_${{ steps.date.outputs.date }}
-          name: Official Release ${{ steps.date.outputs.date }}
+          tag_name: Build_${{ steps.version.outputs.version }}
+          name: Official Release ${{ steps.version.outputs.version }}
           # Wir greifen jetzt einfach auf die Datei im Staging-Ordner zu!
           files: Staging/DiyFfbPedal.dll
         env:
