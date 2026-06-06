@@ -220,7 +220,6 @@ void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection,
   
   bool retValue_b = false;
 
-
   
 // #define ADAPTIVE_SERVO_PARAMS
 // #ifdef ADAPTIVE_SERVO_PARAMS
@@ -239,52 +238,18 @@ void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection,
 
 
   // Pr0 register
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+0, tuned_parameters[pr_0_00+0]); // control mode
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+0, tuned_parameters[pr_0_00+0]); // control mode
 
   // according to the iSV2 manual chapter 5.6, the model following control (MFC) parameter should be larger then Pr1.01, velocity loop gain
   // float mfcLowerLimit_fl32 = tuned_parameters[pr_1_00+1] ;
-  // retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+0, (int32_t)mfcLowerLimit_fl32);
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+1, tuned_parameters[pr_0_00+1]); // control mode #
-  // retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+2, tuned_parameters[pr_0_00+2]); // deactivate auto gain
-  // retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+3, tuned_parameters[pr_0_00+3]); // machine stiffness
-  // retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+4, tuned_parameters[pr_0_00+4] ); // ratio of inertia
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+6, tuned_parameters[pr_0_00+6]); // motor command direction
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+6, commandRotationDirection); // Command Pulse Rotational Direction
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+8, (long)stepsPerMotorRev_u32); // microsteps
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+9, tuned_parameters[pr_0_00+9]); // 1st numerator 
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+10, tuned_parameters[pr_0_00+10]); // & denominator
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+13, tuned_parameters[pr_0_00+13]); // 1st torque limit
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+14, tuned_parameters[pr_0_00+14]); // position deviation setup
-  // retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+16, tuned_parameters[pr_0_00+16]); // regenerative braking resitor
-  // retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+17, tuned_parameters[pr_0_00+17]);
-  // retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+18, tuned_parameters[pr_0_00+18]); // vibration suppression
-  // retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_0_00+19, tuned_parameters[pr_0_00+19]);
 
   // Pr1 register
-  /*retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+0, tuned_parameters[pr_1_00+0]); // 1st position gain
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+1, tuned_parameters[pr_1_00+1]); // 1st velocity loop gain
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+2, tuned_parameters[pr_1_00+2]); // 1st time constant of velocity loop
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+3, tuned_parameters[pr_1_00+3]); // 1st filter of velocity detection
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+4, tuned_parameters[pr_1_00+4]); // 1st torque filter
-
-  // according to the iSV2 manual, the upper limit of the velocity loop gain is determined by the formula: upperLimit = 1000000 / (2 * pi * velocity loop gain * 4), where the velocity loop gain is determined by Pr1.01, so I want to make sure that the velocity loop gain is not set higher than this limit, otherwise the servo will be unstable. The factor 4 is a safety factor to make sure that we are well below the upper limit.
-  // float upperLimit_fl32 = 1000000.0f / (2.0f * PI_FL32 * tuned_parameters[pr_1_00+1] * 4.0f);
-  // upperLimit_fl32 = 20.0f;
-  // upperLimit_fl32 = constrain(upperLimit_fl32, 0, 2500.0f);
-  // retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+4, upperLimit_fl32);
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+4, tuned_parameters[pr_1_00+4]);
-
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+10, tuned_parameters[pr_1_00+10]); // velocity feed forward gain
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+11, tuned_parameters[pr_1_00+11]); // velocity feed forward filter
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+12, tuned_parameters[pr_1_00+12]); // torque feed forward gain
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+13, tuned_parameters[pr_1_00+13]); // torque feed forward filter
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+15, tuned_parameters[pr_1_00+15]); // control switching mode
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+28, tuned_parameters[pr_1_00+28]); // 1st position loop integral time
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+29, tuned_parameters[pr_1_00+29]); // 1st position loop differential time
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+33, tuned_parameters[pr_1_00+33]); // speed given filter
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+35, tuned_parameters[pr_1_00+35]); // position command filter
-  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+36, tuned_parameters[pr_1_00+36]); // encoder feedback*/
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+37, 1052); // special function register
   //uint16_t special_function_flags = 0x4 | 0x8 | 0x10 | 0x40 | 0x400;
   uint16_t special_function_flags = 0x4 | 0x8 | 0x10 | 0x20| 0x400;
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_1_00+37, tuned_parameters[pr_1_00+37]); // special function register
@@ -298,46 +263,16 @@ void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection,
   // 0x40: =0: Mask drive disable Er260 alarm; =0x40: Enable drive disable Er260 alarm
   // 0x400: =0: Mask undervoltage Er0D0 alarm; =0x400: Enable undervoltage Er0D0 alarm
   
-
-  
-  // Pr2 register
-  // vibration suppression 
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_2_00, tuned_parameters[pr_2_00]);
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_2_00+1, tuned_parameters[pr_2_00+1]);
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_2_00+2, tuned_parameters[pr_2_00+2]);
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_2_00+3, tuned_parameters[pr_2_00+3]);
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_2_00+4, tuned_parameters[pr_2_00+4]);
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_2_00+5, tuned_parameters[pr_2_00+5]);
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_2_00+6, tuned_parameters[pr_2_00+6]);
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_2_00+22, tuned_parameters[pr_2_00+22]);
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_2_00+23, tuned_parameters[pr_2_00+23]);// FIR based command smoothing time. Since the stpper task runs every 4ms, this time is selected to be larger than that. Unit is 0.1ms 
-  
-
-  // Pr3 register
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_3_00+12, tuned_parameters[pr_3_00+12]); // time setup acceleration
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_3_00+13, tuned_parameters[pr_3_00+13]); // time setup deceleration
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_3_00+24, tuned_parameters[pr_3_00+24]); // maximum rpm
-  
   // Pr4 register
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_4_00+10, tuned_parameters[pr_4_00+10]); // Alarm port signal
 
   // Pr5 register
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_5_00+13, tuned_parameters[pr_5_00+13]); // overspeed level
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_5_00+20, tuned_parameters[pr_5_00+20]); // encoder output resolution  {0: Encoder units; 1: Command units; 2: 10000pulse/rotation}
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_5_00+35, 1); // lock front panel
   
-  // Pr6 register
-  // retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_6_00+17, 1); // lock front panel
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_6_00+11, tuned_parameters[pr_6_00+11]); // current response time. Default was 100%. Reducing value causes less noise
-
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_5_00+32, 300); // command pulse input maximum setup
-
   // Pr7 register
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+0, tuned_parameters[pr_7_00+0]); // current loop gain
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+1, tuned_parameters[pr_7_00+1]); // current loop integral time
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+11, tuned_parameters[pr_7_00+11]); // Motor Maximum speed
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+28, tuned_parameters[pr_7_00+28]);
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+29, tuned_parameters[pr_7_00+29]);
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+0, tuned_parameters[pr_7_00+0]); // current loop gain
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+1, tuned_parameters[pr_7_00+1]); // current loop integral time
 
   // Enable & tune reactive pumping. This will act like a braking resistor and reduce EMF voltage.
   // See https://en.wikipedia.org/wiki/Bleeder_resistor
@@ -346,35 +281,9 @@ void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection,
   retValue_b |= setServoVoltage(SERVO_MAX_VOLTAGE_IN_V_36V);
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00+33, tuned_parameters[pr_7_00+33]); // bleeder hysteresis voltage; Contrary to the manual this seems to be an offset voltage, thus Braking disabling voltage = Pr7.32 + Pr.33
 
-
-
-
-  
-
-  //retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_5_00+33, 0); // pulse regenerative output limit setup [0,1]
-  // retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_6_00+37, 0); // oscillation detection level [0, 1000] 0.1%
-
-
-  // disable axis after servo startup --> ESP has to enable the axis first
-  // Pr4.08
-  // long servoEnableStatus = modbus.holdingRegisterRead(slaveId, 0x03, pr_4_00+8);
-  // ActiveSerial->print("Servo enable setting: ");
-  // ActiveSerial->println(servoEnableStatus, HEX);
-  // delay(100);
-  // if (servoEnableStatus != 0x303)
-  // {
-  //   isv57communication::disableAxis();
-  // }
-  // delay(100);
-  // servoEnableStatus = modbus.holdingRegisterRead(slaveId, 0x03, pr_4_00+8);
-  // ActiveSerial->print("Servo enable setting: ");
-  // ActiveSerial->println(servoEnableStatus, HEX);
-
   // disable axis by default
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_4_00+8, tuned_parameters[pr_4_00+8]);
   
-
-
   // store the settings to servos NVM if necesssary
   if (retValue_b)
   {
