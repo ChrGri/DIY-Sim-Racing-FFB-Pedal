@@ -863,6 +863,25 @@ namespace DiyFfbPedal.UIFunction
         }
 
         // ---------------------------------------------------------------
+        // DataGrid MouseWheel Bubble handler
+        // ---------------------------------------------------------------
+        private void ServoRegisterGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (!e.Handled)
+            {
+                e.Handled = true;
+                var eventArg = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+                {
+                    RoutedEvent = System.Windows.UIElement.MouseWheelEvent,
+                    Source = sender
+                };
+                
+                var parent = ((Control)sender).Parent as System.Windows.UIElement;
+                parent?.RaiseEvent(eventArg);
+            }
+        }
+
+        // ---------------------------------------------------------------
         // Slider handlers
         // ---------------------------------------------------------------
         private void Slider_ServoEndstopDetecionThreshold_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)

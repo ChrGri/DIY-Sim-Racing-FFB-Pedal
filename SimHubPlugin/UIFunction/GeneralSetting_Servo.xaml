@@ -147,8 +147,9 @@
                               RowStyle="{StaticResource RowStyle}"
                               CellStyle="{StaticResource CellStyle}"
                               EnableRowVirtualization="False"
-                              ScrollViewer.VerticalScrollBarVisibility="Hidden"
-                              CellEditEnding="ServoRegisterGrid_CellEditEnding">
+                              ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                              CellEditEnding="ServoRegisterGrid_CellEditEnding"
+                              PreviewMouseWheel="ServoRegisterGrid_PreviewMouseWheel">
 
                         <DataGrid.Columns>
                             <!-- Address -->
