@@ -67,7 +67,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr1.07", 10000 },  // 2nd time constant of velocity loop
             { "Pr1.08", 8 },  // 2nd filter of velocity detection
             { "Pr1.09", 200 },  // 2nd torque filter
-            { "Pr1.10", 900 },  // Velocity feed forward gain
+            { "Pr1.10", 0 },  // Velocity feed forward gain (Reduziert gegen aggressi?
             { "Pr1.11", 0 },  // Velocity feed forward filter. Had better velocity er?
             { "Pr1.12", 0 },  // Torque feed forward gain
             { "Pr1.13", 1000 },  // Torque feed forward filter
@@ -97,7 +97,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr1.37", 1052 },  // Special function register
             { "Pr1.38", 0 },  // Reserved parameter
             { "Pr1.39", 0 },  // Reserved parameter
-            { "Pr2.00", 2 },  // Adaptive filter mode setup
+            { "Pr2.00", 0 },  // Adaptive filter mode setup (Ausgeschaltet für konsta?
             { "Pr2.01", 50 },  // 1st notch frequency
             { "Pr2.02", 20 },  // 1st notch width
             { "Pr2.03", 99 },  // 1st notch depth
@@ -119,8 +119,8 @@ namespace DiyFfbPedal.UIFunction
             { "Pr2.19", 0 },  // 3rd damping filter
             { "Pr2.20", 0 },  // 4th damping frequency
             { "Pr2.21", 0 },  // 4th damping filter
-            { "Pr2.22", 0 },  // Positional command smoothing filter. Less noise with?
-            { "Pr2.23", 200 },  // Positional command FIR filter
+            { "Pr2.22", 15 },  // Positional command smoothing filter (PT1). 1.5ms glä?
+            { "Pr2.23", 10 },  // Positional command FIR filter. 1.0ms Moving Average ?
             { "Pr2.24", 0 },  // Reserved parameter
             { "Pr2.25", 0 },  // Reserved parameter
             { "Pr2.26", 0 },  // Reserved parameter

@@ -1,4 +1,4 @@
-﻿using FMOD;
+﻿﻿using FMOD;
 using GameReaderCommon;
 using log4net.Plugin;
 using NCalc;
@@ -908,7 +908,6 @@ namespace DiyFfbPedal
                 DAP_action_st tmp;
                 tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
                 tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
-                tmp.payloadPedalAction_.triggerAbs_u8 = 1;
                 tmp.payloadPedalAction_.RPM_u8 = 0;
                 tmp.payloadPedalAction_.G_value = 128;
                 tmp.payloadPedalAction_.WS_u8 = 0;
@@ -918,7 +917,7 @@ namespace DiyFfbPedal
                 tmp.payloadPedalAction_.Rudder_action = 0;
                 tmp.payloadPedalAction_.Rudder_brake_action = 0;
 
-                for (uint PIDX = 1; PIDX < 3; PIDX++)
+                for (uint PIDX = 0; PIDX < 3; PIDX++)
                 {
                     bool update_b = false;
                     TimeSpan diff_action =  DateTime.Now - Action_lastTime[PIDX];
@@ -933,6 +932,7 @@ namespace DiyFfbPedal
                     if (update_b)
                     {
                         tmp.payloadHeader_.PedalTag = (byte)PIDX;
+                        tmp.payloadPedalAction_.triggerAbs_u8 = (byte)(PIDX == Settings.table_selected ? 1 : 0);
                         tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
                         tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
                         tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
