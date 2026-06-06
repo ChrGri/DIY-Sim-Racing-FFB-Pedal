@@ -53,11 +53,11 @@ jobs:
         # Das Skript baut alle ESPs und am Ende die DLL (wobei es intern copy_firmwares.bat aufruft)
         run: cmd /c build_everything.bat
 
-      # --- 5. Release-Version aus versionDefines.txt auslesen ---
+      # --- 5. Release-Version aus verisonDefines.txt auslesen ---
       - name: Extract Version
         id: version
         run: |
-          $ver = (Get-Content CommonResources\versionDefines.txt -First 1).Trim()
+          $ver = (Get-Content CommonResources\verisonDefines.txt -First 1).Replace('"', '').Trim()
           echo "version=$ver" >> $env:GITHUB_OUTPUT
 
       # --- Neu: Wir kopieren die DLL in einen sauberen Ordner, um die Unterordner loszuwerden ---
