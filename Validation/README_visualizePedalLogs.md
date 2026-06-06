@@ -1,14 +1,10 @@
 # Record pedal state logs
 1) Open the Simhub plugin and connect to the pedal.
-2) Select "Debug Flag 0" = 64 <br> <img width="200" alt="Bildschirmfoto 2024-11-01 um 20 37 07" src="https://github.com/user-attachments/assets/63e11f6c-c68b-4288-bfad-b6d732668d14"> <br> This will tell the ESP to broadcast the extended pedal info. <br>
-3) Send the config to the pedal.
-4) Activate the "Log pedal states" switch <br> <img width="200" alt="Bildschirmfoto 2024-11-01 um 20 37 07" src="https://github.com/user-attachments/assets/91138b5d-9903-4736-b46f-159eefd1b0e8"> <br>
-5) The pedal state record can be found in you Simhub installation directory, e.g.:  <br> <img width="500" alt="Bildschirmfoto 2024-11-01 um 20 37 07" src="https://github.com/user-attachments/assets/f32f461a-e1af-4a49-a92b-64daa4e745e4">. <br>
-The file naming is "DiyFfbPedalStateLog_0: for clutch", "DiyFfbPedalStateLog_1: for brake" and "DiyFfbPedalStateLog_2: for throttle".
-6) Now perform whatever test you want.
-7) Deactivate "Log pedal states" again
-8) Select "Debug Flag 0" = 0
-9) Send the config to the pedal.
+2) Activate the "Capture pedal trace" switch <br> <img width="200" alt="Bildschirmfoto 2024-11-01 um 20 37 07" src="https://github.com/user-attachments/assets/6a07a5b5-5135-40d7-99cf-33c8f27d77e9"> <br>
+3) The pedal state record can be found in you Simhub installation directory, e.g. "C:\Program Files (x86)\SimHub\PluginsData\Common\DiyFfbPedal\log"
+<br> <img width="500" alt="Bildschirmfoto 2024-11-01 um 20 37 07" src="https://github.com/user-attachments/assets/34a7df8e-825f-43bd-8bda-93cd2ffd76b1">. <br>
+4) Now perform whatever test you want.
+5) Deactivate "Capture pedal trace" switch again to finalize the capture.
 
 # Visualize the pedal logs
 ## Option 1: Via Google Colab:
