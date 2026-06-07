@@ -494,6 +494,44 @@ void IRAM_ATTR_FLAG loadcellReadingTask( void * pvParameters )
       {
         // reject update when loadcell reading likely outlier
           
+        float medianReading_fl32;
+      #ifdef USE_MEDIAN_FILTER_FOR_LOADCELL_READING
+        static const uint8_t filterLength_u8 = 15; // Parameterizable up to 16
+        static float filterBuffer_fl32[16] = {0.0f};
+        static uint8_t bufferIndex_u8 = 0;
+        
+        // Add new reading to circular buffer
+        filterBuffer_fl32[bufferIndex_u8] = loadcellReading_fl32;
+        bufferIndex_u8 = (bufferIndex_u8 + 1) % filterLength_u8;
+        
+        // Copy to temporary array for sorting
+        float sortedBuffer_fl32[16];
+        for (uint8_t i = 0; i < filterLength_u8; i++) {
+            sortedBuffer_fl32[i] = filterBuffer_fl32[i];
+        }
+        
+        // Simple insertion sort for up to 16 elements
+        for (uint8_t i = 1; i < filterLength_u8; i++) {
+            float key = sortedBuffer_fl32[i];
+            int8_t j = i - 1;
+            while (j >= 0 && sortedBuffer_fl32[j] > key) {
+                sortedBuffer_fl32[j + 1] = sortedBuffer_fl32[j];
+                j--;
+            }
+            sortedBuffer_fl32[j + 1] = key;
+        }
+        
+        // Calculate median
+        
+        if (filterLength_u8 % 2 == 0) {
+            medianReading_fl32 = (sortedBuffer_fl32[filterLength_u8 / 2 - 1] + sortedBuffer_fl32[filterLength_u8 / 2]) / 2.0f;
+        } else {
+            medianReading_fl32 = sortedBuffer_fl32[filterLength_u8 / 2];
+        }
+      #else
+        medianReading_fl32 = loadcellReading_fl32;
+      #endif
+
         // send joystick data to queue
         if (s_loadcellDataQueue != NULL)
         {
@@ -501,6 +539,7 @@ void IRAM_ATTR_FLAG loadcellReadingTask( void * pvParameters )
           // Package the new state data into a single struct
           loadcellDataPackage_t newLoadcellPackage;
           newLoadcellPackage.loadcellReadingInKg_fl32 = loadcellReading_fl32;
+          newLoadcellPackage.loadcellReadingInKg_fl32 = medianReading_fl32;
 
             // Send the package to the queue. Use a timeout of 0 (non-blocking).
             // If the queue is full, the data is simply dropped. This prevents this
@@ -1895,6 +1934,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         loadcellReading = loadcellDataReceived_st.loadcellReadingInKg_fl32;
       }
       profiler_pedalUpdateTask.end(2);
+
 
 
       // start profiler 3, loadcell reading conversion
