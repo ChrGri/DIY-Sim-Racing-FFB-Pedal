@@ -695,10 +695,31 @@ void IRAM_ATTR StepperWithLimits::calculateTrackingErrorChange() {
 
 // Checks for standstill and uses current telemetry to identify mechanical crashes
 // (e.g., when the user pushes the pedal hard against an unyielding mechanical limit)
+#define CYCLES_SINCE_SERVO_POS_CORREECTED (uint32_t)5
 void IRAM_ATTR StepperWithLimits::performSafetyChecks() {
     int32_t espPos_i32 = getCurrentPosition();
     int32_t servoPosCorrected_i32 = getServosInternalPositionCorrected();
+    static uint32_t servoLastCycleCounter_u32 = 0;
+    static uint32_t servoLastCycleCounterWhenPositionWasCorrected_u32 = 0;
+
+    bool cycleCounterAdvanced_b = false;
+    uint32_t servosCycleCount_u32 = getServoCycleCounter(); // Ensure we have the latest data for current and position before making safety decisions
+    if (servoLastCycleCounter_u32 != servosCycleCount_u32) {
+       cycleCounterAdvanced_b = true;
+    }
     
+    // Calculate elapsed cycles, explicitly accounting for uint32_t overflow/wrap-around
+    uint32_t cyclesSinceCorrection_u32 = 0;
+    if (servosCycleCount_u32 >= servoLastCycleCounterWhenPositionWasCorrected_u32) {
+        cyclesSinceCorrection_u32 = servosCycleCount_u32 - servoLastCycleCounterWhenPositionWasCorrected_u32;
+    } else {
+        cyclesSinceCorrection_u32 = (UINT32_MAX - servoLastCycleCounterWhenPositionWasCorrected_u32) + servosCycleCount_u32 + 1;
+    }
+    
+    bool cond_cyclesSinceServoPosCorrected = cyclesSinceCorrection_u32 >= CYCLES_SINCE_SERVO_POS_CORREECTED;
+
+    servoLastCycleCounter_u32 = servosCycleCount_u32;
+
     bool cond_stepperIsAtMinPos = isAtMinPos();
     bool cond_crash_detected = false;
 
@@ -731,8 +752,11 @@ void IRAM_ATTR StepperWithLimits::performSafetyChecks() {
 
     // Execute crash recovery bump if stuck against a hard stop
     // If current spikes high while the motor is commanded to be idle, it's pushing against a block.
-    if (cond_stepperIsAtMinPos && cond_crash_detected && enableCrashDetection_b) {
+    if (cond_stepperIsAtMinPos && cond_crash_detected && enableCrashDetection_b && cycleCounterAdvanced_b && cond_cyclesSinceServoPosCorrected) {
         if (abs(getServosCurrent()) >= 50) {
+
+            servoLastCycleCounterWhenPositionWasCorrected_u32 = servosCycleCount_u32; // Prevent multiple corrections within the same stall event
+
             // Apply a small inverse position offset to relax the servo strain against the block
             if (getServosCurrent() > 0) {
                 isv57.applyOfsetToZeroPos(-500); 
