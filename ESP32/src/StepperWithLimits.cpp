@@ -328,6 +328,7 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st) {
         
         // Return home
         moveToPosWithSpeed(0, endstopApproachingSpeed_fl32);
+        moveSlowlyToPos(0);
     }   
 }
 
