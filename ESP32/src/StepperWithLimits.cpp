@@ -2,6 +2,7 @@
 #include "Main.h"
 #include "Math.h"
 #include "FunctionProfiler.h"
+#include "esp_task_wdt.h"
 
 // ==============================================================================
 // Constants & Magic Numbers Refactored
@@ -229,6 +230,7 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st) {
         
         for (uint16_t waitTillServoCounterWasReset_Idx = 0; waitTillServoCounterWasReset_Idx < 10; waitTillServoCounterWasReset_Idx++) {
             delay(100);
+            esp_task_wdt_reset();
             // Voltage is reported in 0.1V units (e.g. 360 = 36.0V)
             float servosBusVoltageInVolt_fl32 = ((float)getServosVoltage()) / 10.0f;
             
@@ -269,6 +271,7 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st) {
         // Wait for current signal to stabilize before moving
         for (uint16_t tryIdx = 0; tryIdx < 500; tryIdx++) {
             delay(5);
+            esp_task_wdt_reset();
             endPosDetected = abs(getServosCurrent()) > endstopDetectionThreshold_u8;
             if (!endPosDetected) break;
         }
@@ -281,14 +284,14 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st) {
 
         while ((!endPosDetected) && (getLifelineSignal())) {
             delay(1);
+            esp_task_wdt_reset();
             endPosDetected = abs(getServosCurrent()) > endstopDetectionThreshold_u8;
         }
-        
+        _stepper->forceStop();
+
         // Back off slightly from the hard block to prevent binding during operation
         setPosition = -5 * s_ENDSTOP_MOVEMENT_SENSORLESS;
-        delay(20);
         _stepper->forceStopAndNewPosition(setPosition);
-        delay(100);
         
         ActiveSerial->println("Min endstop reached.");
         ActiveSerial->printf("Current pos: %d\n", _stepper->getCurrentPosition());
@@ -310,6 +313,7 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st) {
 
         while ((!endPosDetected) && (getLifelineSignal())) {
             delay(1);
+            esp_task_wdt_reset();
             // Only allow crash detection if we have driven a minimum distance (prevents false positives from initial inertia)
             if (_stepper->getCurrentPosition() > MIN_POS_MAX_ENDSTOP) {
                 endPosDetected = abs(getServosCurrent()) > endstopDetectionThreshold_u8;
@@ -318,17 +322,19 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st) {
             endPosDetected |= (_stepper->getCurrentPosition() > maxStepsToReachEndPos);
         }
         
-        _stepper->forceStop();
-        delay(100);
-        
         // Calculate max soft limit, backing off slightly from the hard crash point
+        _stepper->forceStop();
         _endstopLimitMax = _stepper->getCurrentPosition() - 5 * s_ENDSTOP_MOVEMENT_SENSORLESS;
 
-        ActiveSerial->printf("Max endstop reached: %d\n", _endstopLimitMax);
-        
         // Return home
         moveToPosWithSpeed(0, endstopApproachingSpeed_fl32);
         moveSlowlyToPos(0);
+        
+        
+
+        ActiveSerial->printf("Max endstop reached: %d\n", _endstopLimitMax);
+        
+        
     }   
 }
 
