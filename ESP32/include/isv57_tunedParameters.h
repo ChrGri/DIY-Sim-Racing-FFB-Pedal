@@ -31,7 +31,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,     // Pr0.23: Reserved parameter
     0,     // Pr0.24: Reserved parameter
     600,   // Pr1.00: 1st position loop gain
-    500,   // Pr1.01: 1st velocity loop gain
+    400,   // Pr1.01: 1st velocity loop gain
     500,   // Pr1.02: 1st time constant of velocity loop integration
     27,    // Pr1.03: 1st filter of velocity detection
     100,   // Pr1.04: 1st torque filter
