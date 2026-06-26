@@ -630,7 +630,7 @@ void Joystick_::sendState() {
 }
 
 void Joystick_::setVidPidProductVendorDescriptor(int vid, int pid, const char *ProductString, const char *VendorString) {
-    // Methoden großschreiben:
+    // Methoden gro?schreiben:
     USB.VID(vid);
     USB.PID(pid);
     USB.productName(ProductString);

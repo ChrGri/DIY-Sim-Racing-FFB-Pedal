@@ -43,7 +43,7 @@
 
 class Joystick_ : public USBHIDDevice {
   private:
-    USBHID hid; // <-- DIESE ZEILE HINZUFÜGEN
+    USBHID hid; // <-- DIESE ZEILE HINZUF?GEN
     
     // Joystick State
     int32_t   _xAxis;

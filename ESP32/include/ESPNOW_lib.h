@@ -1,4 +1,4 @@
-﻿#include <WiFi.h>
+#include <WiFi.h>
 #include <esp_wifi.h>
 #include <Arduino.h>
 #include "ESPNowW.h"
@@ -402,22 +402,23 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               }
             }
             // RPM effect
-              _RPMOscillation.rpmValue_fl32 = dap_actions_st.payloadPedalAction_st.rpm_u8;
+              g_rpmEffect_st.rpmValue_fl32 = dap_actions_st.payloadPedalAction_st.rpm_u8;
+              g_rpmEffect_st.trigger();
             // G force effect
-            gForceEffect_.gValue_fl32 = dap_actions_st.payloadPedalAction_st.gValue_u8 - 128;
+            g_gForceEffect_st.gValue_fl32 = dap_actions_st.payloadPedalAction_st.gValue_u8 - 128;
             // wheel slip
             if (dap_actions_st.payloadPedalAction_st.wheelSlip_u8)
             {
-              _WSOscillation.trigger();
+              g_wheelSlipOscillation_st.trigger();
             }
             // Road impact && Rudder G impact
             if (dap_calculationVariables_st.rudderStatus_b == false)
             {
-              roadImpactEffect_.roadImpactValue_u8 = dap_actions_st.payloadPedalAction_st.impactValue_u8;
+              g_roadImpactEffect_st.roadImpactValue_u8 = dap_actions_st.payloadPedalAction_st.impactValue_u8;
             }
             else
             {
-              rudderGForce_.gValue_u8 = dap_actions_st.payloadPedalAction_st.impactValue_u8;
+              g_rudderGForce_st.gValue_u8 = dap_actions_st.payloadPedalAction_st.impactValue_u8;
             }
             // trigger system identification
             // if (dap_actions_st.payloadPedalAction_st.startSystemIdentification_u8)
@@ -425,13 +426,13 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
             //   systemIdentificationMode_b = true;
             // }
             // trigger Custom effect effect 1
-            if (dap_actions_st.payloadPedalAction_st.triggerCv1_u8) customVibration1_.trigger();
+            if (dap_actions_st.payloadPedalAction_st.triggerCv1_u8) g_customVibration1_st.trigger();
             // trigger Custom effect effect 2
-            if (dap_actions_st.payloadPedalAction_st.triggerCv2_u8) customVibration2_.trigger();
+            if (dap_actions_st.payloadPedalAction_st.triggerCv2_u8) g_customVibration2_st.trigger();
             // trigger Custom effect effect 3
-            if (dap_actions_st.payloadPedalAction_st.triggerCv3_u8) customVibration3_.trigger();
+            if (dap_actions_st.payloadPedalAction_st.triggerCv3_u8) g_customVibration3_st.trigger();
             // trigger Custom effect effect 4
-            if (dap_actions_st.payloadPedalAction_st.triggerCv4_u8) customVibration4_.trigger();
+            if (dap_actions_st.payloadPedalAction_st.triggerCv4_u8) g_customVibration4_st.trigger();
             // trigger return pedal position
             if (dap_actions_st.payloadPedalAction_st.returnPedalConfig_u8)
             {

@@ -6,6 +6,7 @@
 
 static const long s_absActiveTimePerTriggerMillis_i32 = 100;
 static const long s_rpmActiveTimePerTriggerMillis_i32 = 100;
+static const long s_rpmEffectActiveTimePerTriggerMillis_i32 = 1000;
 static const long s_bpActiveTimePerTriggerMillis_i32 = 100;
 static const long s_wsActiveTimePerTriggerMillis_i32 = 100;
 static const long s_cvActiveTimePerTriggerMillis_i32 = 100;
@@ -54,7 +55,7 @@ public:
       
       // --- DECAY LOGIC (Max 10 steps) ---
       float posDecayStep = 10.0f;
-      float forceDecayStep = 0.1f; // Etwa 0.5 kg Abbau pro Zyklus für einen sanften Übergang
+      float forceDecayStep = 0.1f; // Etwa 0.5 kg Abbau pro Zyklus für einen sanften ?bergang
 
       // Decay Position Offset towards 0
       if (absOscillationPositionOffset_fl32 > posDecayStep) {
@@ -207,6 +208,87 @@ public:
   }
 };
 
+class RpmEffect {
+private:
+  long timeLastTriggerMillis_i32;
+  long lastCallTimeMillis_i32 = 0;
+  float currentPhase_deg = 0.0f; // Phase accumulation to prevent tearing
+
+public:
+  RpmEffect()
+    : timeLastTriggerMillis_i32(0)
+  {}
+  
+  volatile float rpmValue_fl32 = 0.0f;
+  int32_t rpmPositionOffset_i32 = 0;
+  float rpmForceOffset_fl32 = 0.0f;
+
+public:
+  void IRAM_ATTR_FLAG trigger()
+  {
+    timeLastTriggerMillis_i32 = millis();
+  }
+  
+  void IRAM_ATTR_FLAG forceOffset(DapCalculationVariables_t* calcVars_st)
+  {
+    long timeNowMillis = millis();
+    float timeSinceTrigger_fl32 = (float)(timeNowMillis - timeLastTriggerMillis_i32);
+    
+    // Calculate dt for phase accumulation
+    if (lastCallTimeMillis_i32 == 0) lastCallTimeMillis_i32 = timeNowMillis;
+    float dt_seconds = (float)(timeNowMillis - lastCallTimeMillis_i32) * 0.001f;
+    lastCallTimeMillis_i32 = timeNowMillis;
+
+    if (timeSinceTrigger_fl32 > s_rpmEffectActiveTimePerTriggerMillis_i32 || rpmValue_fl32 <= 0.0f)
+    {
+      // --- DECAY LOGIC ---
+      float decayStep = 0.5f;
+      if (rpmForceOffset_fl32 > decayStep) {
+        rpmForceOffset_fl32 -= decayStep;
+      } else if (rpmForceOffset_fl32 < -decayStep) {
+        rpmForceOffset_fl32 += decayStep;
+      } else {
+        rpmForceOffset_fl32 = 0.0f;
+      }
+    }
+    else
+    {
+      float rpmMaxFreq_fl32 = calcVars_st->rpmMaxFreq_fl32;
+      float rpmMinFreq_fl32 = calcVars_st->rpmMinFreq_fl32;
+      float rpmAmpBase_fl32 = calcVars_st->rpmAmp_fl32;
+      float stepperPosRange_fl32 = calcVars_st->stepperPosRange_fl32;
+      float rpmAmp_fl32 = 0.0f; 
+        // RESONANCE CURVE: Add a resonance peak around 80% RPM
+        float baseMultiplier = 1.0f + 0.3f * rpmValue_fl32 * 0.01f;
+        float resonance_center = 80.0f;
+        float resonance_width = 15.0f;
+        float diff = (rpmValue_fl32 - resonance_center) / resonance_width;
+        float resonanceBump = 0.5f * expf(-(diff * diff)); 
+        
+        rpmAmp_fl32 = rpmAmpBase_fl32 * (baseMultiplier + resonanceBump);
+
+        float rpmFreq_fl32 = constrain(rpmValue_fl32*(rpmMaxFreq_fl32-rpmMinFreq_fl32)* 0.01f, rpmMinFreq_fl32, rpmMaxFreq_fl32);
+        
+        // PHASE ACCUMULATION
+        currentPhase_deg += 360.0f * rpmFreq_fl32 * dt_seconds;
+        if (currentPhase_deg > 360.0f) {
+            currentPhase_deg -= 360.0f;
+        }
+
+        // MULTI-HARMONICS (Base tone + 2nd harmonic)
+        float wave1 = isin(currentPhase_deg);
+        float wave2 = 0.3f * isin(currentPhase_deg * 2.0f); 
+        
+        rpmForceOffset_fl32 = stepperPosRange_fl32 * rpmAmp_fl32 * (wave1 + wave2); 
+    }
+
+    if (calcVars_st->forceRange_fl32 > 0.0f)
+    {
+      rpmPositionOffset_i32 = (int32_t)rpmForceOffset_fl32;
+    }
+  }
+};
+
 class BitePointOscillation {
 private:
   long timeLastTriggerMillis_i32;
@@ -289,7 +371,7 @@ class GForceEffect
   }
 };
 //Wheel slip
-class WSOscillation {
+class WheelSlipOscillation {
 private:
   volatile long timeLastTriggerMillis_i32;  // written Core0 (trigger), read Core1 (forceOffset)
   long wsTimeMillis_i32;
@@ -297,7 +379,7 @@ private:
   
 
 public:
-  WSOscillation()
+  WheelSlipOscillation()
     : timeLastTriggerMillis_i32(0)
   {}
   //float RPM_value =0;

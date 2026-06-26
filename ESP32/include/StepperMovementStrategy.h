@@ -614,7 +614,10 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float maxSledPos_mm = travelSteps_cnt * motorRevolutionsPerSteps_lcl_fl32 * pitch_mm;
   
   // actualSledPos_mm: The current physical position of the ESP stepper in mm
-  float actualSledPosFraction_01 = stepper->getCurrentPositionFraction();
+  // We strip the effect position offset (which was added purely in actuator space) so the 
+  // admittance model and Landi oscillation detector only see the clean 'intended' physics position.
+  float strippedPos_steps = (float)stepper->getCurrentPositionFromMin() - effectOffsets_st.forceOffset_Steps_fl32;
+  float actualSledPosFraction_01 = strippedPos_steps / (float)stepper->getTravelSteps();
   float actualSledPos_mm = actualSledPosFraction_01 * maxSledPos_mm;
 
   // 2. Forward Kinematics: Angles at the boundaries and current physical state
@@ -711,7 +714,12 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Use the exact restoring force (spline + endstop) instead of linear stiffness assumption
   float totalSpringReaction_N = springForce_N + softEndstopForce_N;
   
-  bool hasActiveEffect = (effectOffsets_st.forceOffset_kg_fl32 != 0.0f) && (effectOffsets_st.forceOffset_Steps_fl32 != 0);
+  // Use OR so that a pure position-step effect (forceOffset_Steps_fl32 != 0) also suppresses
+  // the oscillation detector... WAIT! We now actively strip forceOffset_Steps_fl32 from the 
+  // physical kinematics (actualSledPosFraction_01). Therefore, position-based effects like RPM 
+  // no longer pollute the Landi algorithm. We can keep the detector ACTIVE during RPM effects!
+  // We only bypass for pure FORCE effects which break the rigid admittance model expectation.
+  bool hasActiveEffect = (effectOffsets_st.forceOffset_kg_fl32 != 0.0f);
 
   // Call the detector with max force from config to calculate dynamic threshold
   bool isOscillating = DetectAdmittanceOscillation(
@@ -978,7 +986,11 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   
   // SOFT LEASH: Synchronize the virtual model with the actual stepper command position
   // to prevent divergence due to numerical drift without corrupting second-order dynamics.
-  float divergence_01 = actualPosFraction_01 - g_vModelPos_01;
+  // Clamp the physical position to [0, 1] before computing divergence so that step-based
+  // effects injected beyond the soft endstop (forceOffset_Steps_fl32) do not pull the
+  // virtual model outside its normal operating range and corrupt the physics integrators.
+  float physicalPosForLeash_01 = constrain(actualPosFraction_01, 0.0f, 1.0f);
+  float divergence_01 = physicalPosForLeash_01 - g_vModelPos_01;
   
   // SOFT LEASH DEADBAND: Verhindert, dass Sensorrauschen Schläge ins Physikmodell überträgt
   if (fabsf(divergence_01) < 0.005f) { // Auf 0.5% Toleranz erhöht (ca. 0.5 mm Pufferzone)
