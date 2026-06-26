@@ -1,4 +1,4 @@
-﻿﻿//using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
+﻿//using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
 using System;
 using System.Collections.Generic;
 using System.IO.Ports;
@@ -192,6 +192,7 @@ namespace DiyFfbPedal
         public DIYFFBPedalControlUI(DIY_FFB_Pedal plugin) : this()
         {
             this.Plugin = plugin;
+            if (RudderDynamics_Tab != null) RudderDynamics_Tab.Settings = plugin.Settings;
             plugin.testValue = 1;
             plugin.wpfHandle = this;
             UpdateSerialPortList_click();
@@ -502,6 +503,7 @@ namespace DiyFfbPedal
             {
                 //_serial_monitor_window.TextBox_SerialMonitor.Text += "\n\nDefaultConfig Hash:" + hash+"\n";
                 PrintUnknownStructParameters(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_);
+                PrintUnknownStructParameters(dap_config_st_rudder.payloadPedalConfig_);
                 UpdateSerialPortList_click();
                 _serial_monitor_window.TextBox_SerialMonitor.Text += "\nCom port count: " + Plugin.comportList.Count;
                 foreach (var items in Plugin.comportList)

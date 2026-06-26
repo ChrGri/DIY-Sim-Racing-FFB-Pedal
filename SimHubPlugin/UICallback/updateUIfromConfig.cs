@@ -84,7 +84,7 @@ namespace DiyFfbPedal
                 PedalSettingsSection.dap_config_st = tmp_struct;
                 var tmp_rudder = dap_config_st_rudder;
                 CurveRudderForce_Tab.dap_config_st = tmp_rudder;
-                RudderSetting_Tab.dap_config_st = tmp_rudder;
+                RudderDynamics_Tab.dap_config_st = tmp_rudder;
                 EffectsRPMRudder_Tab.dap_config_st = tmp_rudder;
 
 
@@ -103,7 +103,7 @@ namespace DiyFfbPedal
                 EffectsRPMRudder_Tab.Settings = Plugin.Settings;
                 CurveRudderForce_Tab.Settings = Plugin.Settings;
                 EffectRudderACC_Tab.Settings = Plugin.Settings;
-                RudderSetting_Tab.Settings = Plugin.Settings;
+                //RudderDynamics_Tab.Settings = Plugin.Settings;
                 //SettingOTA_Tab.Settings = Plugin.Settings;
                 SystemLicense_Tab.Settings = Plugin.Settings;
                 SystemSetting_Section.Settings = Plugin.Settings;
