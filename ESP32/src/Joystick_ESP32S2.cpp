@@ -355,7 +355,7 @@ Joystick_::Joystick_(
         tempHidReportDescriptor[hidReportDescriptorSize++] = 0x00;
 
         if (includeRudder == true) {
-            // USAGE (Rudder)
+            // USAGE (Rudder_t)
             tempHidReportDescriptor[hidReportDescriptorSize++] = 0x09;
             tempHidReportDescriptor[hidReportDescriptorSize++] = 0xBA;
         }
@@ -418,7 +418,7 @@ Joystick_::Joystick_(
     _yAxisRotation = 0;
     _zAxisRotation = 0;
     _throttle = 0;
-    _rudder = 0;
+    g_rudder_st = 0;
     _accelerator = 0;
     _brake = 0;
     _steering = 0;
@@ -514,7 +514,7 @@ void Joystick_::setRzAxis(int32_t value) {
 }
 
 void Joystick_::setRudder(int32_t value) {
-    _rudder = value;
+    g_rudder_st = value;
     if (_autoSendState) sendState();
 }
 
@@ -610,7 +610,7 @@ void Joystick_::sendState() {
     index += buildAndSetAxisValue(_includeAxisFlags & JOYSTICK_INCLUDE_RZ_AXIS, _zAxisRotation, _rzAxisMinimum, _rzAxisMaximum, &(data[index]));
 
     // Set Simulation Values
-    index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_RUDDER, _rudder, _rudderMinimum, _rudderMaximum, &(data[index]));
+    index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_RUDDER, g_rudder_st, g_rudder_stMinimum, g_rudder_stMaximum, &(data[index]));
     index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_THROTTLE, _throttle, _throttleMinimum, _throttleMaximum, &(data[index]));
     index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_ACCELERATOR, _accelerator, _acceleratorMinimum, _acceleratorMaximum, &(data[index]));
     index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_BRAKE, _brake, _brakeMinimum, _brakeMaximum, &(data[index]));

@@ -146,7 +146,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   //#define USB_JOYSTICK
   //#define ESPNow_Pairing_function
   //#define Pairing_GPIO 13
-  //#define ESPNow_debug_rudder
+  //#define ESPNow_debugg_rudder_st
   #define OTA_update
   //#define BRAKE_RESISTOR_PIN 13
   //#define OTA_update_ESP32
@@ -289,7 +289,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   //#define ESPNow_Pairing_function
   //#define Hardware_Pairing_button
   #define PAIRING_GPIO_U8 0
-  //#define ESPNow_debug_rudder
+  //#define ESPNow_debugg_rudder_st
   #define USING_LED
   #define LED_GPIO_U8 12
   #define OTA_update
@@ -332,7 +332,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   // #define ESPNow_Pairing_function
   // #define Hardware_Pairing_button
   #define PAIRING_GPIO_U8 33
-  // #define ESPNow_debug_rudder
+  // #define ESPNow_debugg_rudder_st
   #define CONTROLLER_SPECIFIC_VIDPID
   #define USING_LED
   #define LED_GPIO_U8 12
@@ -386,7 +386,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   //#define ESPNow_Pairing_function
   #define Hardware_Pairing_button
   #define PAIRING_GPIO_U8 33
-  //#define ESPNow_debug_rudder
+  //#define ESPNow_debugg_rudder_st
   #define CONTROLLER_SPECIFIC_VIDPID
   #define USING_LED
   #define LED_GPIO_U8 38

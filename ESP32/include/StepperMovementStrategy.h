@@ -534,7 +534,7 @@ static inline IRAM_ATTR_FLAG void ApplyRegenPowerClamping(
  * @param config_st Pointer to the pedal's configuration structure.
  * @param effectOffsets_st High-frequency offsets (ABS vibrations, etc.).
  * @param endstopBehavior_st Configuration for the soft endstop feel.
- * @param rudderOffsets_st Rudder specific offset parameters.
+ * @param rudderOffsets_st Rudder_t specific offset parameters.
  * @param debugState_st Optional pointer to a struct to output internal variables for debugging. Default is nullptr.
  * @return int32_t The next absolute target position in steps for the stepper motor driver.
  */

@@ -165,19 +165,19 @@ bool splineDebug_b = false;
 #include "ABSOscillation.h"
 #include "Rudder.h"
 ABSOscillation absOscillation;
-RPMOscillation _RPMOscillation;
-BitePointOscillation _BitePointOscillation;
-GForceEffect gForceEffect_;
-WSOscillation _WSOscillation;
-RoadImpactEffect roadImpactEffect_;
-CustomVibration customVibration1_;
-CustomVibration customVibration2_;
-CustomVibration customVibration3_;
-CustomVibration customVibration4_;
-Rudder _rudder;
-HelicoptersRudder helicopterRudder_;
-RudderGForce rudderGForce_;
-MovingAverageFilter averagefilter_joystick(40);
+RpmOscillation_t g_rpmOscillation_st;
+BitePointOscillation_t g_bitePointOscillation_st;
+GForceEffect_t g_gForceEffect_st;
+WsOscillation_t g_wsOscillation_st;
+RoadImpactEffect_t g_roadImpactEffect_st;
+CustomVibration_t g_customVibration1_st;
+CustomVibration_t g_customVibration2_st;
+CustomVibration_t g_customVibration3_st;
+CustomVibration_t g_customVibration4_st;
+Rudder_t g_rudder_st;
+HelicoptersRudder_t g_helicopterRudder_st;
+RudderGForce_t g_rudderGForce_st;
+MovingAverageFilter g_averageFilterJoystick_st(40);
 
 
 
@@ -1585,19 +1585,19 @@ void IRAM_ATTR_FLAG handleIncomingActions(const DapActions_t& action, bool& syst
             (action.payloadPedalAction_st.triggerAbs_u8 > 1)
             ? (action.payloadPedalAction_st.triggerAbs_u8 - 1) : 0;
     }
-    _RPMOscillation.rpmValue_fl32 = action.payloadPedalAction_st.rpm_u8;
-    gForceEffect_.gValue_fl32     = action.payloadPedalAction_st.gValue_u8 - 128;
-    if (action.payloadPedalAction_st.wheelSlip_u8) _WSOscillation.trigger();
+    g_rpmOscillation_st.rpmValue_fl32 = action.payloadPedalAction_st.rpm_u8;
+    g_gForceEffect_st.gValue_fl32     = action.payloadPedalAction_st.gValue_u8 - 128;
+    if (action.payloadPedalAction_st.wheelSlip_u8) g_wsOscillation_st.trigger();
     if (!dap_calculationVariables_st.rudderStatus_b) {
-        roadImpactEffect_.roadImpactValue_u8 = action.payloadPedalAction_st.impactValue_u8;
+        g_roadImpactEffect_st.roadImpactValue_u8 = action.payloadPedalAction_st.impactValue_u8;
     }
     if (action.payloadPedalAction_st.startSystemIdentification_u8) {
         systemIdentificationMode = true;
     }
-    if (action.payloadPedalAction_st.triggerCv1_u8) customVibration1_.trigger();
-    if (action.payloadPedalAction_st.triggerCv2_u8) customVibration2_.trigger();
-    if (action.payloadPedalAction_st.triggerCv3_u8) customVibration3_.trigger();
-    if (action.payloadPedalAction_st.triggerCv4_u8) customVibration4_.trigger();
+    if (action.payloadPedalAction_st.triggerCv1_u8) g_customVibration1_st.trigger();
+    if (action.payloadPedalAction_st.triggerCv2_u8) g_customVibration2_st.trigger();
+    if (action.payloadPedalAction_st.triggerCv3_u8) g_customVibration3_st.trigger();
+    if (action.payloadPedalAction_st.triggerCv4_u8) g_customVibration4_st.trigger();
 }
 
 
@@ -1609,9 +1609,9 @@ void IRAM_ATTR_FLAG handleIncomingActions(const DapActions_t& action, bool& syst
 /*                         pedal update task                                                  */
 /*                                                                                            */
 /**********************************************************************************************/
-//#define ESPNow_debug_rudder
+//#define ESPNow_debugg_rudder_st
 
-#ifdef ESPNow_debug_rudder
+#ifdef ESPNow_debugg_rudder_st
   unsigned long debugMessageLast=0;
 #endif 
 
@@ -1855,23 +1855,23 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
       // trigger and compute effects
       absOscillation.forceOffset(&dap_calculationVariables_st, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.absPattern_u8, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.absForceOrTarvelBit_u8);
-      _RPMOscillation.trigger();
-      _RPMOscillation.forceOffset(&dap_calculationVariables_st);
-      _BitePointOscillation.forceOffset(&dap_calculationVariables_st);
-      gForceEffect_.forceOffset(&dap_calculationVariables_st, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.gMulti_u8);
-      _WSOscillation.forceOffset(&dap_calculationVariables_st);
-      roadImpactEffect_.forceOffset(&dap_calculationVariables_st, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.roadMulti_u8);
-      customVibration1_.forceOffset(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq1_u8,dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp1_u8,dap_calculationVariables_st.stepperPosRange_fl32);
-      customVibration2_.forceOffset(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq2_u8,dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp2_u8,dap_calculationVariables_st.stepperPosRange_fl32);
-      customVibration3_.forceOffset(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq3_u8,dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp3_u8,dap_calculationVariables_st.stepperPosRange_fl32);
-      customVibration4_.forceOffset(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq4_u8,dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp4_u8,dap_calculationVariables_st.stepperPosRange_fl32);     
+      g_rpmOscillation_st.trigger();
+      g_rpmOscillation_st.forceOffset(&dap_calculationVariables_st);
+      g_bitePointOscillation_st.forceOffset(&dap_calculationVariables_st);
+      g_gForceEffect_st.forceOffset(&dap_calculationVariables_st, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.gMulti_u8);
+      g_wsOscillation_st.forceOffset(&dap_calculationVariables_st);
+      g_roadImpactEffect_st.forceOffset(&dap_calculationVariables_st, dap_config_pedalUpdateTask_st.payloadPedalConfig_st.roadMulti_u8);
+      g_customVibration1_st.forceOffset(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq1_u8,dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp1_u8,dap_calculationVariables_st.stepperPosRange_fl32);
+      g_customVibration2_st.forceOffset(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq2_u8,dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp2_u8,dap_calculationVariables_st.stepperPosRange_fl32);
+      g_customVibration3_st.forceOffset(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq3_u8,dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp3_u8,dap_calculationVariables_st.stepperPosRange_fl32);
+      g_customVibration4_st.forceOffset(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq4_u8,dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp4_u8,dap_calculationVariables_st.stepperPosRange_fl32);     
       if(dap_config_pedalUpdateTask_st.payloadPedalConfig_st.bpTrigger_u8==1)
       {
         if(Position_check > BP_trigger_min)
         {
           if(Position_check < BP_trigger_max)
           {
-            _BitePointOscillation.trigger();
+            g_bitePointOscillation_st.trigger();
           }
         }
       }
@@ -1879,25 +1879,25 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
       if(dap_calculationVariables_st.rudderStatus_b) 
       {
-        rudderGForce_.offsetCalculate(&dap_calculationVariables_st);
-        dap_calculationVariables_st.updateStepperMaxPos(rudderGForce_.offsetFilter_l);
-        _rudder.offsetCalculate(&dap_calculationVariables_st);
-        dap_calculationVariables_st.updateStepperMinPos(_rudder.offsetFilter_i32);
+        g_rudderGForce_st.offsetCalculate(&dap_calculationVariables_st);
+        dap_calculationVariables_st.updateStepperMaxPos(g_rudderGForce_st.offsetFilter_l);
+        g_rudder_st.offsetCalculate(&dap_calculationVariables_st);
+        dap_calculationVariables_st.updateStepperMinPos(g_rudder_st.offsetFilter_i32);
 
       }
       if(dap_calculationVariables_st.helicopterRudderStatus_b) 
       {
-        helicopterRudder_.offsetCalculate(&dap_calculationVariables_st);
-        dap_calculationVariables_st.updateStepperMinPos(helicopterRudder_.offsetFilter_i32);
+        g_helicopterRudder_st.offsetCalculate(&dap_calculationVariables_st);
+        dap_calculationVariables_st.updateStepperMinPos(g_helicopterRudder_st.offsetFilter_i32);
       }
-      #ifdef ESPNow_debug_rudder
+      #ifdef ESPNow_debugg_rudder_st
       if(dap_calculationVariables_st.rudderStatus_b || dap_calculationVariables_st.helicopterRudderStatus_b)
       {
         if(millis()-debugMessageLast>500 )
         {
           debugMessageLast=millis();
           ActiveSerial->print("Center offset:");
-          ActiveSerial->println(_rudder.offsetFilter_i32);
+          ActiveSerial->println(g_rudder_st.offsetFilter_i32);
           ActiveSerial->print("pos min:");
           ActiveSerial->println(dap_calculationVariables_st.softEndstopMinStepperPos_i32);
           ActiveSerial->print("pos max:");
@@ -1913,15 +1913,15 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       }
       #endif
 
-      //_rudder.forceOffsetCalculate(&dap_calculationVariables_st);
+      //g_rudder_st.forceOffsetCalculate(&dap_calculationVariables_st);
 
 
       //update max force with G force effect
       g_movingAverageFilter_st.dataPointsCount_i32 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.gWindow_u8;
       g_movingAverageFilterRoadImpact_st.dataPointsCount_i32 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.roadWindow_u8;
       dap_calculationVariables_st.resetMaxForce();
-      dap_calculationVariables_st.forceMax_fl32 += gForceEffect_.gForce_fl32;
-      dap_calculationVariables_st.forceMax_fl32 += roadImpactEffect_.roadImpactForce_fl32;
+      dap_calculationVariables_st.forceMax_fl32 += g_gForceEffect_st.gForce_fl32;
+      dap_calculationVariables_st.forceMax_fl32 += g_roadImpactEffect_st.roadImpactForce_fl32;
       dap_calculationVariables_st.dynamicUpdate();
       dap_calculationVariables_st.updateStiffness();
     
@@ -2053,7 +2053,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           ActiveSerial->println("Servo force Stoped.");
         }
       #endif
-      //float FilterReadingJoystick=averagefilter_joystick.process(filteredReading);
+      //float FilterReadingJoystick=g_averageFilterJoystick_st.process(filteredReading);
 
 
       // start profiler 4, movement strategy
@@ -2080,20 +2080,20 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       {
         // accumulate force offsets
         effectsCalculated_b=true;
-        //effect_pos_fl32 += _RPMOscillation.RPM_position_offset;
+        //effect_pos_fl32 += g_rpmOscillation_st.RPM_position_offset;
       }
       if(effectsCalculated_b)
       {
         effect_force_fl32 += absOscillation.absOscillationForceOffset_fl32;
         // accumulate position offsets
         effect_pos_fl32 += absOscillation.absOscillationPositionOffset_fl32;
-        effect_pos_fl32 += _WSOscillation.wheelSlipOffset_fl32;
-        effect_pos_fl32 += _BitePointOscillation.bitePointOffset_fl32;
-        effect_pos_fl32 += customVibration1_.customVibrationOffset_fl32;
-        effect_pos_fl32 += customVibration2_.customVibrationOffset_fl32;
-        effect_pos_fl32 += customVibration3_.customVibrationOffset_fl32;
-        effect_pos_fl32 += customVibration4_.customVibrationOffset_fl32;
-        effect_pos_fl32 += _RPMOscillation.rpmPositionOffset_i32;
+        effect_pos_fl32 += g_wsOscillation_st.wheelSlipOffset_fl32;
+        effect_pos_fl32 += g_bitePointOscillation_st.bitePointOffset_fl32;
+        effect_pos_fl32 += g_customVibration1_st.customVibrationOffset_fl32;
+        effect_pos_fl32 += g_customVibration2_st.customVibrationOffset_fl32;
+        effect_pos_fl32 += g_customVibration3_st.customVibrationOffset_fl32;
+        effect_pos_fl32 += g_customVibration4_st.customVibrationOffset_fl32;
+        effect_pos_fl32 += g_rpmOscillation_st.rpmPositionOffset_i32;
       }
       effect_pos_fl32 *= EFFECT_POSITION_SCALING_FACTOR_FL32;
       // write the effect offsets into a struct for debug output and potential use in other functions like the effect offset PID
@@ -2168,7 +2168,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           , &admittanceDebugInfo_st
           , &admittanceStates_st
         ); 
-        // Rudder only
+        // Rudder_t only
         //Position_Next = MoveByForceTargetingStrategy(filteredReading, stepper, &forceCurve, &dap_calculationVariables_st, &dap_config_pedalUpdateTask_st, 0.0f/*effect_force*/, changeVelocity, d_phi_d_x, d_x_hor_d_phi);
         positionWithoutEffect=Position_Next_fl32;//send the value without rpm effect
         if(effectsCalculated_b)
@@ -2177,7 +2177,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           //Position_Next -= effectsOffsetFiltered;
           Position_Next_fl32 -= effect_pos_fl32;
         } 
-        //if(effectsCalculated_b) Position_Next -= _RPMOscillation.RPM_position_offset;
+        //if(effectsCalculated_b) Position_Next -= g_rpmOscillation_st.RPM_position_offset;
       }
       else 
       {
@@ -2225,7 +2225,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
       dap_calculationVariables_st.currentPedalPosition_u32 = positionWithoutEffect;
       dap_calculationVariables_st.currentPedalPositionRatio_fl32=((float)(dap_calculationVariables_st.currentPedalPosition_u32-dap_calculationVariables_st.stepperPosMinDefault_i32))/((float)dap_calculationVariables_st.stepperPosRangeDefault_fl32);
-      //Rudder initialzing and de initializing
+      //Rudder_t initialzing and de initializing
       #ifdef ESPNOW_Enable
         if(dap_calculationVariables_st.rudderStatus_b)
         {
@@ -2255,13 +2255,13 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
             {
               unsigned long Rudder_initialzing_time_Now = millis();
               //wait 3s for the initializing
-              //ActiveSerial->print("Rudder initializing...");
+              //ActiveSerial->print("Rudder_t initializing...");
               //ActiveSerial->println(Rudder_initialzing_time_Now-Rudder_initialized_time);
               if( (Rudder_initialzing_time_Now-Rudder_initialized_time)> Rudder_timeout )
               {
                 Rudder_initializing=false;
                 moveSlowlyToPosition_b=false;
-                ActiveSerial->println("Rudder initialized");
+                ActiveSerial->println("Rudder_t initialized");
                 dap_calculationVariables_st.isRudderInitialized_b=true;
                 Rudder_initialized_time=0;
                 Buzzer.play_melody_tone(melody_Airship_theme, sizeof(melody_Airship_theme)/sizeof(melody_Airship_theme[0]),melody_Airship_theme_duration);
@@ -2280,7 +2280,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         {
           Rudder_deinitializing=false;
           moveSlowlyToPosition_b=false;
-          ActiveSerial->println("Rudder deinitialized");
+          ActiveSerial->println("Rudder_t deinitialized");
           dap_calculationVariables_st.isRudderInitialized_b=false;
         }
         //helicopter rudder initialzied
@@ -2301,7 +2301,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
             {
               unsigned long Rudder_initialzing_time_Now = millis();
               //wait 3s for the initializing
-              //ActiveSerial->print("Rudder initializing...");
+              //ActiveSerial->print("Rudder_t initializing...");
               //ActiveSerial->println(Rudder_initialzing_time_Now-Rudder_initialized_time);
               if( (Rudder_initialzing_time_Now-Rudder_initialized_time)> Rudder_timeout )
               {
@@ -3018,12 +3018,12 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                         }
 
                         #ifdef ESPNOW_Enable
-                          if(received_action.payloadPedalAction_st.rudderAction_u8==1)//Enable Rudder
+                          if(received_action.payloadPedalAction_st.rudderAction_u8==1)//Enable Rudder_t
                           {
                             if(dap_calculationVariables_st.rudderStatus_b==false)
                             {
                               dap_calculationVariables_st.rudderStatus_b=true;
-                              ActiveSerial->println("Rudder on");
+                              ActiveSerial->println("Rudder_t on");
                               Rudder_initializing=true;
                               moveSlowlyToPosition_b=true;
                               //ActiveSerial->print("status:");
@@ -3032,7 +3032,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                             else
                             {
                               dap_calculationVariables_st.rudderStatus_b=false;
-                              ActiveSerial->println("Rudder off");
+                              ActiveSerial->println("Rudder_t off");
                               Rudder_deinitializing=true;
                               moveSlowlyToPosition_b=true; 
 
@@ -3045,14 +3045,14 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                             if(dap_calculationVariables_st.rudderBrakeStatus_b==false&&dap_calculationVariables_st.rudderStatus_b==true)
                             {
                               dap_calculationVariables_st.rudderBrakeStatus_b=true;
-                              ActiveSerial->println("Rudder brake on");
+                              ActiveSerial->println("Rudder_t brake on");
                               //ActiveSerial->print("status:");
                               //ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
                             }
                             else
                             {
                               dap_calculationVariables_st.rudderBrakeStatus_b=false;
-                              ActiveSerial->println("Rudder brake off");
+                              ActiveSerial->println("Rudder_t brake off");
                               //ActiveSerial->print("status:");
                               //ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
                             }
@@ -3062,7 +3062,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                           {
                             dap_calculationVariables_st.rudderStatus_b=false;
                             dap_calculationVariables_st.rudderBrakeStatus_b=false;
-                            ActiveSerial->println("Rudder Status Clear");
+                            ActiveSerial->println("Rudder_t Status Clear");
                             Rudder_deinitializing=true;
                             moveSlowlyToPosition_b=true;
 
@@ -3485,7 +3485,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
   bool building_dap_esppairing_lcl =false;
   unsigned long Pairing_state_start;
   unsigned long Pairing_state_last_sending;
-  unsigned long Debug_rudder_last=0;
+  unsigned long Debugg_rudder_st_last=0;
   unsigned long basic_state_update_last=0;
   unsigned long extend_state_update_last=0;
   unsigned long rudderPacketsUpdateLast=0;
@@ -3861,15 +3861,15 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
           {
             if((dap_calculationVariables_st.rudderStatus_b || dap_calculationVariables_st.helicopterRudderStatus_b) && (!Rudder_initializing && !HeliRudder_initializing))
             {              
-               dap_rudder_sending.payloadRudderState_st.pedalPositionRatio_fl32=dap_calculationVariables_st.currentPedalPositionRatio_fl32;
-               dap_rudder_sending.payloadRudderState_st.pedalPosition_u16=dap_calculationVariables_st.currentPedalPosition_u32;
-              dap_rudder_sending.payloadHeader_st.payloadType_u8=DAP_PAYLOAD_TYPE_ESPNOW_RUDDER_U8;
-              dap_rudder_sending.payloadHeader_st.pedalTag_u8 = espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8;
-              dap_rudder_sending.payloadHeader_st.version_u8=DAP_VERSION_CONFIG_U8;
+               dapg_rudder_st_sending.payloadRudderState_st.pedalPositionRatio_fl32=dap_calculationVariables_st.currentPedalPositionRatio_fl32;
+               dapg_rudder_st_sending.payloadRudderState_st.pedalPosition_u16=dap_calculationVariables_st.currentPedalPosition_u32;
+              dapg_rudder_st_sending.payloadHeader_st.payloadType_u8=DAP_PAYLOAD_TYPE_ESPNOW_RUDDER_U8;
+              dapg_rudder_st_sending.payloadHeader_st.pedalTag_u8 = espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8;
+              dapg_rudder_st_sending.payloadHeader_st.version_u8=DAP_VERSION_CONFIG_U8;
               uint16_t crc=0;
-              crc = checksumCalculator_u16((uint8_t*)(&(dap_rudder_sending.payloadHeader_st)), sizeof(dap_rudder_sending.payloadHeader_st) + sizeof(dap_rudder_sending.payloadRudderState_st));
-              dap_rudder_sending.payloadFooter_st.checkSum_u16=crc;
-              ESPNow.send_message(g_broadcast_mac,(uint8_t *) &dap_rudder_sending,sizeof(dap_rudder_sending));   
+              crc = checksumCalculator_u16((uint8_t*)(&(dapg_rudder_st_sending.payloadHeader_st)), sizeof(dapg_rudder_st_sending.payloadHeader_st) + sizeof(dapg_rudder_st_sending.payloadRudderState_st));
+              dapg_rudder_st_sending.payloadFooter_st.checkSum_u16=crc;
+              ESPNow.send_message(g_broadcast_mac,(uint8_t *) &dapg_rudder_st_sending,sizeof(dapg_rudder_st_sending));   
                //ESPNow_send=dap_calculationVariables_st.currentPedalPosition_u32; 
               //esp_err_t result =ESPNow.send_message(Recv_mac,(uint8_t *) &_ESPNow_Send,sizeof(_ESPNow_Send));                
               //if (result == ESP_OK) 
@@ -3879,8 +3879,8 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
               if (g_ESPNow_Rudder_Update && !noAssignmentStatus)
               {
                 //dap_calculationVariables_st.syncPedalPosition_u32=ESPNow_recieve;
-                dap_calculationVariables_st.syncPedalPosition_u32=dap_rudder_receiving.payloadRudderState_st.pedalPosition_u16;
-                dap_calculationVariables_st.syncPedalPositionRatio_fl32=dap_rudder_receiving.payloadRudderState_st.pedalPositionRatio_fl32;
+                dap_calculationVariables_st.syncPedalPosition_u32=dapg_rudder_st_receiving.payloadRudderState_st.pedalPosition_u16;
+                dap_calculationVariables_st.syncPedalPositionRatio_fl32=dapg_rudder_st_receiving.payloadRudderState_st.pedalPositionRatio_fl32;
                 g_ESPNow_Rudder_Update=false;
               }                
             }
@@ -3888,7 +3888,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
           }    
         }
 
-        #ifdef ESPNow_debug_rudder
+        #ifdef ESPNow_debugg_rudder_st
           if(print_count>1000)
           {
             if(dap_calculationVariables_st.rudderStatus_b)
@@ -3896,9 +3896,9 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
               ActiveSerial->print("Pedal:");
               ActiveSerial->print(espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8);
               ActiveSerial->print(", Send %: ");
-              ActiveSerial->print(dap_rudder_sending.payloadRudderState_st.pedalPositionRatio_fl32);
+              ActiveSerial->print(dapg_rudder_st_sending.payloadRudderState_st.pedalPositionRatio_fl32);
               ActiveSerial->print(", Recieve %:");
-              ActiveSerial->print(dap_rudder_receiving.payloadRudderState_st.pedalPositionRatio_fl32);
+              ActiveSerial->print(dapg_rudder_st_receiving.payloadRudderState_st.pedalPositionRatio_fl32);
               ActiveSerial->print(", Send Position: ");
                ActiveSerial->print(dap_calculationVariables_st.currentPedalPosition_u32);
               ActiveSerial->print(", % in cal: ");
@@ -3911,7 +3911,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
               ActiveSerial->println(dap_calculationVariables_st.stepperPosRangeDefault_fl32); 
             }
 
-            //Debug_rudder_last=now_rudder;
+            //Debugg_rudder_st_last=nowg_rudder_st;
              //ActiveSerial->println(dap_calculationVariables_st.currentPedalPosition_u32);                  
                 
             print_count=0;

@@ -3,9 +3,9 @@
 #include "DiyActivePedal_types.h"
 #include <MovingAverageFilter.h>
 #include "SignalFilter_1st_order.h"
-MovingAverageFilter averagefilter_rudder(200);
-MovingAverageFilter averagefilter_rudder_force(50);
-class Rudder{
+MovingAverageFilter averagefilterg_rudder_st(200);
+MovingAverageFilter averagefilterg_rudder_st_force(50);
+class Rudder_t{
   public:
   int32_t centerOffset_i32;
   int32_t offsetRaw_i32;
@@ -24,11 +24,11 @@ class Rudder{
   float positionRatioSync_fl32;
   float positionRatioCurrent_fl32;
   int debugCount_i32=0;
-  KalmanFilter1stOrder* kalman_rudder = NULL;
+  KalmanFilter1stOrder* kalmang_rudder_st = NULL;
   //bool IsReady = false;
-  Rudder()
+  Rudder_t()
   {
-    kalman_rudder=new KalmanFilter1stOrder(3.0f);
+    kalmang_rudder_st=new KalmanFilter1stOrder(3.0f);
   }
   void offsetCalculate(DapCalculationVariables_t* calcVars_st)
   {
@@ -54,8 +54,8 @@ class Rudder{
       {
         offsetRaw_i32=0;
       }
-      offsetFilter_i32=(int32_t)kalman_rudder->filteredValue(offsetRaw_i32+centerOffset_i32,0.0f,1);
-      //offset_filter=averagefilter_rudder.process(offset_raw+Center_offset);
+      offsetFilter_i32=(int32_t)kalmang_rudder_st->filteredValue(offsetRaw_i32+centerOffset_i32,0.0f,1);
+      //offset_filter=averagefilterg_rudder_st.process(offset_raw+Center_offset);
       //cap offset filter to prevent over the endstop value
       offsetFilter_i32=constrain(offsetFilter_i32,calcVars_st->stepperPosMinDefault_i32,calcVars_st->stepperPosMaxDefault_i32);
     }
@@ -101,7 +101,7 @@ class Rudder{
           forceOffsetRaw_fl32=0.0f;
         }
      
-      forceOffsetFilter_fl32=averagefilter_rudder_force.process(forceOffsetRaw_fl32+forceCenterOffset_fl32);
+      forceOffsetFilter_fl32=averagefilterg_rudder_st_force.process(forceOffsetRaw_fl32+forceCenterOffset_fl32);
     }
     else
     {
@@ -109,9 +109,9 @@ class Rudder{
     }
   }
 };
-//Rudder impact
+//Rudder_t impact
 MovingAverageFilter Averagefilter_Rudder_G_Offset(50);
-class RudderGForce{
+class RudderGForce_t{
   public:
   int32_t offsetRaw_i32;
   long offsetFilter_l;
@@ -137,7 +137,7 @@ class RudderGForce{
   }
 };
 MovingAverageFilter averagefilter_helirudder(200);
-class HelicoptersRudder{
+class HelicoptersRudder_t{
   public:
   int32_t centerOffset_i32;
   int32_t offsetRaw_i32;
@@ -162,11 +162,11 @@ class HelicoptersRudder{
   float deadzoneTolerance_fl32=0.01f;
   float positionRatioLast_fl32;
   unsigned long debugPrintLast=0;
-  KalmanFilter1stOrder* kalman_rudder = NULL;
+  KalmanFilter1stOrder* kalmang_rudder_st = NULL;
   //bool IsReady = false;
-  HelicoptersRudder()
+  HelicoptersRudder_t()
   {
-    kalman_rudder=new KalmanFilter1stOrder(3.0f);
+    kalmang_rudder_st=new KalmanFilter1stOrder(3.0f);
   }
   void offsetCalculate(DapCalculationVariables_t* calcVars_st)
   {
@@ -219,7 +219,7 @@ class HelicoptersRudder{
 
 
       }
-      //offset_filter=(int32_t)kalman_rudder->filteredValue(offset_raw+Center_offset,0.0f,1);
+      //offset_filter=(int32_t)kalmang_rudder_st->filteredValue(offset_raw+Center_offset,0.0f,1);
       offsetFilter_i32=averagefilter_helirudder.process(offsetRaw_i32+centerOffset_i32);
       //cap offset filter to prevent over the endstop value
       offsetFilter_i32=constrain(offsetFilter_i32,calcVars_st->stepperPosMinDefault_i32,calcVars_st->stepperPosMaxDefault_i32);
