@@ -589,6 +589,9 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <Target Name="UpdatePluginVersion" BeforeTargets="BeforeBuild">
+    <Exec Command="powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File &quot;$(ProjectDir)update_version.ps1&quot;" WorkingDirectory="$(ProjectDir)" />
+  </Target>
   <Target Name="EmbedDynamicFirmware" BeforeTargets="BeforeBuild">
     <Exec Command="$(ProjectDir)..\copy_firmwares.bat" WorkingDirectory="$(ProjectDir).." />
     <ItemGroup>
