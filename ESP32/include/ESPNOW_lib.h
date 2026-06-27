@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-//#define ESPNow_debug_rudder
+//#define ESPNow_debugg_rudder_st
 //#define ESPNow_debug
 #define ESPNOW_LOG_MAGIC_KEY 0x99
 #define ESPNOW_LOG_MAGIC_KEY_2 0x97
@@ -58,8 +58,8 @@ bool assignmentClear_b = false;
 bool deviceIdStructChecker = false;
 unsigned long Rudder_initialized_time=0;
 DapAssignmentReg_t dap_assignement_reg;
-DapRudder_t dap_rudder_receiving;
-DapRudder_t dap_rudder_sending;
+DapRudder_t dapg_rudder_st_receiving;
+DapRudder_t dapg_rudder_st_sending;
 extern QueueHandle_t s_servoConfigRxQueue;
 
 /*
@@ -214,27 +214,27 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
 
         bool structChecker = true;
         uint16_t crc;
-        DapRudder_t dap_rudder_st_local;
-        memcpy(&dap_rudder_st_local, data, sizeof(DapRudder_t));
+        DapRudder_t dapg_rudder_st_st_local;
+        memcpy(&dapg_rudder_st_st_local, data, sizeof(DapRudder_t));
         // check if data is plausible  
-        if ( dap_rudder_st_local.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_ESPNOW_RUDDER_U8 )
+        if ( dapg_rudder_st_st_local.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_ESPNOW_RUDDER_U8 )
         {
           structChecker = false;
         }  
-        if ( dap_rudder_st_local.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8 )
+        if ( dapg_rudder_st_st_local.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8 )
         {
           structChecker = false;
         }
         // checksum validation
-        crc = checksumCalculator_u16((uint8_t*)(&(dap_rudder_st_local.payloadHeader_st)), sizeof(dap_rudder_st_local.payloadHeader_st) + sizeof(dap_rudder_st_local.payloadRudderState_st));
-        if (crc != dap_rudder_st_local.payloadFooter_st.checkSum_u16)
+        crc = checksumCalculator_u16((uint8_t*)(&(dapg_rudder_st_st_local.payloadHeader_st)), sizeof(dapg_rudder_st_st_local.payloadHeader_st) + sizeof(dapg_rudder_st_st_local.payloadRudderState_st));
+        if (crc != dapg_rudder_st_st_local.payloadFooter_st.checkSum_u16)
         {
           structChecker = false;
         }
         // if checks are successfull, overwrite global configuration struct
         if (structChecker == true)
         {
-          memcpy(&dap_rudder_receiving, data, sizeof(DapRudder_t));
+          memcpy(&dapg_rudder_st_receiving, data, sizeof(DapRudder_t));
           g_ESPNow_Rudder_Update=true;
         }
 
@@ -402,22 +402,22 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               }
             }
             // RPM effect
-              _RPMOscillation.rpmValue_fl32 = dap_actions_st.payloadPedalAction_st.rpm_u8;
+              g_rpmOscillation_st.rpmValue_fl32 = dap_actions_st.payloadPedalAction_st.rpm_u8;
             // G force effect
-            gForceEffect_.gValue_fl32 = dap_actions_st.payloadPedalAction_st.gValue_u8 - 128;
+            g_gForceEffect_st.gValue_fl32 = dap_actions_st.payloadPedalAction_st.gValue_u8 - 128;
             // wheel slip
             if (dap_actions_st.payloadPedalAction_st.wheelSlip_u8)
             {
-              _WSOscillation.trigger();
+              g_wsOscillation_st.trigger();
             }
-            // Road impact && Rudder G impact
+            // Road impact && Rudder_t G impact
             if (dap_calculationVariables_st.rudderStatus_b == false)
             {
-              roadImpactEffect_.roadImpactValue_u8 = dap_actions_st.payloadPedalAction_st.impactValue_u8;
+              g_roadImpactEffect_st.roadImpactValue_u8 = dap_actions_st.payloadPedalAction_st.impactValue_u8;
             }
             else
             {
-              rudderGForce_.gValue_u8 = dap_actions_st.payloadPedalAction_st.impactValue_u8;
+              g_rudderGForce_st.gValue_u8 = dap_actions_st.payloadPedalAction_st.impactValue_u8;
             }
             // trigger system identification
             // if (dap_actions_st.payloadPedalAction_st.startSystemIdentification_u8)
@@ -425,13 +425,13 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
             //   systemIdentificationMode_b = true;
             // }
             // trigger Custom effect effect 1
-            if (dap_actions_st.payloadPedalAction_st.triggerCv1_u8) customVibration1_.trigger();
+            if (dap_actions_st.payloadPedalAction_st.triggerCv1_u8) g_customVibration1_st.trigger();
             // trigger Custom effect effect 2
-            if (dap_actions_st.payloadPedalAction_st.triggerCv2_u8) customVibration2_.trigger();
+            if (dap_actions_st.payloadPedalAction_st.triggerCv2_u8) g_customVibration2_st.trigger();
             // trigger Custom effect effect 3
-            if (dap_actions_st.payloadPedalAction_st.triggerCv3_u8) customVibration3_.trigger();
+            if (dap_actions_st.payloadPedalAction_st.triggerCv3_u8) g_customVibration3_st.trigger();
             // trigger Custom effect effect 4
-            if (dap_actions_st.payloadPedalAction_st.triggerCv4_u8) customVibration4_.trigger();
+            if (dap_actions_st.payloadPedalAction_st.triggerCv4_u8) g_customVibration4_st.trigger();
             // trigger return pedal position
             if (dap_actions_st.payloadPedalAction_st.returnPedalConfig_u8)
             {
@@ -462,7 +462,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               {
                 dap_calculationVariables_st.rudderStatus_b = true;
                 Rudder_initializing = true;
-                // ActiveSerial->println("Rudder on");
+                // ActiveSerial->println("Rudder_t on");
                 moveSlowlyToPosition_b = true;
                 // ActiveSerial->print("status:");
                 // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
@@ -470,7 +470,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               else
               {
                 dap_calculationVariables_st.rudderStatus_b = false;
-                // ActiveSerial->println("Rudder off");
+                // ActiveSerial->println("Rudder_t off");
                 Rudder_deinitializing = true;
                 moveSlowlyToPosition_b = true;
                 // ActiveSerial->print("status:");
@@ -492,7 +492,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               {
                 dap_calculationVariables_st.helicopterRudderStatus_b = true;
                 HeliRudder_initializing = true;
-                // ActiveSerial->println("Rudder on");
+                // ActiveSerial->println("Rudder_t on");
                 moveSlowlyToPosition_b = true;
                 // ActiveSerial->print("status:");
                 // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
@@ -500,7 +500,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               else
               {
                 dap_calculationVariables_st.helicopterRudderStatus_b = false;
-                // ActiveSerial->println("Rudder off");
+                // ActiveSerial->println("Rudder_t off");
                 HeliRudder_deinitializing = true;
                 moveSlowlyToPosition_b = true;
                 // ActiveSerial->print("status:");
@@ -513,14 +513,14 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               if (dap_calculationVariables_st.rudderBrakeStatus_b == false && dap_calculationVariables_st.rudderStatus_b == true)
               {
                 dap_calculationVariables_st.rudderBrakeStatus_b = true;
-                // ActiveSerial->println("Rudder brake on");
+                // ActiveSerial->println("Rudder_t brake on");
                 // ActiveSerial->print("status:");
                 // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
               }
               else
               {
                 dap_calculationVariables_st.rudderBrakeStatus_b = false;
-                // ActiveSerial->println("Rudder brake off");
+                // ActiveSerial->println("Rudder_t brake off");
                 // ActiveSerial->print("status:");
                 // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
               }
@@ -531,7 +531,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               dap_calculationVariables_st.rudderStatus_b = false;
               dap_calculationVariables_st.helicopterRudderStatus_b = false;
               dap_calculationVariables_st.rudderBrakeStatus_b = false;
-              // ActiveSerial->println("Rudder Status Clear");
+              // ActiveSerial->println("Rudder_t Status Clear");
               Rudder_deinitializing = true;
               HeliRudder_deinitializing = true;
               moveSlowlyToPosition_b = true;

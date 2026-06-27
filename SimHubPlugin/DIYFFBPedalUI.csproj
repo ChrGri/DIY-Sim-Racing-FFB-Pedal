@@ -24,8 +24,8 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-	<Prefer32Bit>false</Prefer32Bit>
-	<PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <PlatformTarget>x86</PlatformTarget>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
@@ -165,7 +165,7 @@
     <Compile Include="DIYFFBPedal.cs" />
     <Compile Include="DIYFFBPedalSettings.cs" />
     <Compile Include="EspFlasher.cs" />
-<Compile Include="Generated\ServoTunedParameters.cs">
+    <Compile Include="Generated\ServoTunedParameters.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>ServoTunedParameters.tt</DependentUpon>
@@ -267,6 +267,9 @@
       <DependentUpon>EffectsTab_WheelSlip.xaml</DependentUpon>
     </Compile>
     <Compile Include="UIFunction\FirmwareFlasherWindow.xaml.cs" />
+    <Compile Include="UIFunction\GeneralSetting_RudderDynamics.xaml.cs">
+      <DependentUpon>GeneralSetting_RudderDynamics.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\GeneralSetting_Servo.xaml.cs">
       <DependentUpon>GeneralSetting_Servo.xaml</DependentUpon>
     </Compile>
@@ -454,6 +457,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="UIFunction\GeneralSetting_RudderDynamics.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="UIFunction\GeneralSetting_Servo.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -546,7 +553,7 @@
   <ItemGroup>
     <Content Include=".gitignore" />
     <EmbeddedResource Include="Resources\esptool.exe" />
- <Content Include="Generated\ServoTunedParameters.tt">
+    <Content Include="Generated\ServoTunedParameters.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>ServoTunedParameters.cs</LastGenOutput>
     </Content>
