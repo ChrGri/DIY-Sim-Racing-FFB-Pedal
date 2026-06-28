@@ -20,11 +20,17 @@ def update_version(*args, **kwargs):
     with open(header_path, "r", encoding="utf-8") as f:
         content = f.read()
         
-    # Find and replace the version string, keeping the rest of the file intact
+    # Find and replace the version string for DAP
     new_content = re.sub(
         r'(const\s+char\s+\*DAP_FIRMWARE_VERSION\s*=\s*)".*?"',
         fr'\1{version_str}',
         content
+    )
+    # Find and replace the version string for Bridge
+    new_content = re.sub(
+        r'(#define\s+BRIDGE_FIRMWARE_VERSION\s+)".*?"',
+        fr'\1{version_str}',
+        new_content
     )
     
     if new_content != content:

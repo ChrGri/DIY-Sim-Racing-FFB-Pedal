@@ -85,18 +85,6 @@ namespace DiyFfbPedal.UIFunction
                     if (Slider_SoftEndstopStiffness != null) Slider_SoftEndstopStiffness.SliderValue = (double)Settings.rudderEndstopStiffness * Slider_SoftEndstopStiffness.TickFrequency;
                     
                     _isUpdatingUIFromConfig = false;
-
-                    _isUpdatingConfigFromUI = true;
-                    var tmp = dap_config_st;
-                    tmp.payloadPedalConfig_.virtualPedalMass_u8 = Settings.rudderVirtualPedalMass;
-                    tmp.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = Settings.rudderCoulombFriction;
-                    tmp.payloadPedalConfig_.virtualPedalDamping_u8 = Settings.rudderVirtualDamping;
-                    tmp.payloadPedalConfig_.dampingProgression_u8 = Settings.rudderDampingProgression;
-                    tmp.payloadPedalConfig_.endstopTravelRange_mm_u8 = Settings.rudderEndstopTravelRange;
-                    tmp.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = Settings.rudderEndstopStiffness;
-                    dap_config_st = tmp;
-                    ConfigChangedEvent(dap_config_st);
-                    _isUpdatingConfigFromUI = false;
                 }
             }
             catch
