@@ -95,7 +95,8 @@
                     </Canvas>
 
                     <StackPanel Width="50" Height="230" Margin="10,-10,0,0">
-                        <Label x:Name="Label_max_force" Width="50" Height="24" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" Margin="0,-15,0,0"/>
+                        <Label x:Name="Label_max_force" Width="50" Height="24" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" Margin="0,-15,0,0" Background="Transparent" MouseDoubleClick="Label_max_force_MouseDoubleClick" ToolTip="Double-click to type the force in kg"/>
+                        <TextBox x:Name="Edit_max_force" Width="50" Height="20" FontSize="10" FontFamily="Arial" Margin="0,-15,0,0" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
                         <StackPanel Height="15" Width="32" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                             <Button x:Name="btn_plus_maxforce"  Click="btn_plus_maxforce_Click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Margin="-1,0,0,0"/>
                             <Button x:Name="btn_minus_maxforce"  Click="btn_minus_maxforce_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10" Margin="2,0,0,0"/>
@@ -105,15 +106,18 @@
                             <Button x:Name="btn_plus_preload"  Click="btn_plus_preload_Click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Margin="-1,0,0,0"/>
                             <Button x:Name="btn_minus_preload"  Click="btn_minus_preload_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10" Margin="2,0,0,0"/>
                         </StackPanel>
-                        <Label x:Name="Label_min_force" Width="50" Height="24" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0"/>
+                        <Label x:Name="Label_min_force" Width="50" Height="24" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" Background="Transparent" MouseDoubleClick="Label_min_force_MouseDoubleClick" ToolTip="Double-click to type the force in kg"/>
+                        <TextBox x:Name="Edit_min_force" Width="50" Height="20" FontSize="10" FontFamily="Arial" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
                     </StackPanel>
                 </StackPanel>
 
 
                 <StackPanel Width="430" Height="40" Orientation="Horizontal" Margin="0,-10,0,0">
-                    <Label x:Name="Label_min_pos" Width="30" Height="40" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" HorizontalContentAlignment="Center"/>
+                    <Label x:Name="Label_min_pos" Width="30" Height="40" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" HorizontalContentAlignment="Center" Background="Transparent" MouseDoubleClick="Label_min_pos_MouseDoubleClick" ToolTip="Double-click to type the travel in mm"/>
+                    <TextBox x:Name="Edit_min_pos" Width="30" Height="20" FontSize="9" FontFamily="Arial" VerticalAlignment="Top" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
                     <controls:RangeSlider x:Name="Rangeslider_travel_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="1" Grid.Column="2" Height="20" LowerValueChanged="Rangeslider_travel_range_LowerValueChanged" UpperValueChanged="Rangeslider_travel_range_UpperValueChanged" MinRange="1" SmallChange="1" IsSnapToTickEnabled="True" UpperValue="80" Width="365" VerticalAlignment="Top" LowerValue="35" Minimum="5" Maximum="95"/>
-                    <Label x:Name="Label_max_pos" Width="30" Height="40" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" HorizontalContentAlignment="Center"/>
+                    <Label x:Name="Label_max_pos" Width="30" Height="40" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" HorizontalContentAlignment="Center" Background="Transparent" MouseDoubleClick="Label_max_pos_MouseDoubleClick" ToolTip="Double-click to type the travel in mm"/>
+                    <TextBox x:Name="Edit_max_pos" Width="30" Height="20" FontSize="9" FontFamily="Arial" VerticalAlignment="Top" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
                 </StackPanel>
             </StackPanel>
         </Border>
