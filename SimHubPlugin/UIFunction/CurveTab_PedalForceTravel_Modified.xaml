@@ -95,8 +95,10 @@
                     </Canvas>
 
                     <StackPanel Width="50" Height="230" Margin="10,-10,0,0">
-                        <Label x:Name="Label_max_force" Width="50" Height="24" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" Margin="0,-15,0,0" Background="Transparent" MouseDoubleClick="Label_max_force_MouseDoubleClick" ToolTip="Double-click to type the force in kg"/>
-                        <TextBox x:Name="TextBox_edit_max_force" Width="50" Height="20" FontSize="10" FontFamily="Arial" Margin="0,-15,0,0" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+                        <Grid Width="50" Height="24" Margin="0,-15,0,0">
+                            <Label x:Name="Label_max_force" Width="50" Height="24" Foreground="White" FontSize="10" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" Background="Transparent" MouseDoubleClick="Label_max_force_MouseDoubleClick" ToolTip="Double-click to type the force in kg"/>
+                            <TextBox x:Name="TextBox_edit_max_force" Width="50" Height="20" FontSize="10" FontFamily="Arial" VerticalAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+                        </Grid>
                         <StackPanel Height="15" Width="32" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                             <Button x:Name="btn_plus_maxforce"  Click="btn_plus_maxforce_Click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Margin="-1,0,0,0"/>
                             <Button x:Name="btn_minus_maxforce"  Click="btn_minus_maxforce_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10" Margin="2,0,0,0"/>
@@ -106,8 +108,10 @@
                             <Button x:Name="btn_plus_preload"  Click="btn_plus_preload_Click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Margin="-1,0,0,0"/>
                             <Button x:Name="btn_minus_preload"  Click="btn_minus_preload_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10" Margin="2,0,0,0"/>
                         </StackPanel>
-                        <Label x:Name="Label_min_force" Width="50" Height="24" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" Background="Transparent" MouseDoubleClick="Label_min_force_MouseDoubleClick" ToolTip="Double-click to type the force in kg"/>
-                        <TextBox x:Name="TextBox_edit_min_force" Width="50" Height="20" FontSize="10" FontFamily="Arial" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+                        <Grid Width="50" Height="24">
+                            <Label x:Name="Label_min_force" Width="50" Height="24" Foreground="White" FontSize="10" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" Background="Transparent" MouseDoubleClick="Label_min_force_MouseDoubleClick" ToolTip="Double-click to type the force in kg"/>
+                            <TextBox x:Name="TextBox_edit_min_force" Width="50" Height="20" FontSize="10" FontFamily="Arial" VerticalAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+                        </Grid>
                     </StackPanel>
                 </StackPanel>
 
