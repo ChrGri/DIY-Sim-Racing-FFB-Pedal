@@ -546,6 +546,114 @@ namespace DiyFfbPedal.UIFunction
             }
         }
 
+        private void Label_max_force_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (Rangeslider_force_range != null)
+                BeginInlineEdit(Label_max_force, TextBox_edit_max_force, Rangeslider_force_range.UpperValue);
+            e.Handled = true;
+        }
+
+        private void Label_min_force_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (Rangeslider_force_range != null)
+                BeginInlineEdit(Label_min_force, TextBox_edit_min_force, Rangeslider_force_range.LowerValue);
+            e.Handled = true;
+        }
+
+        private void Label_min_pos_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (Rangeslider_travel_range != null)
+                BeginInlineEdit(Label_min_pos, TextBox_edit_min_pos, CurrentTravelMm(Rangeslider_travel_range.LowerValue));
+            e.Handled = true;
+        }
+
+        private void Label_max_pos_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (Rangeslider_travel_range != null)
+                BeginInlineEdit(Label_max_pos, TextBox_edit_max_pos, CurrentTravelMm(Rangeslider_travel_range.UpperValue));
+            e.Handled = true;
+        }
+
+        private void BeginInlineEdit(Label label, TextBox box, double currentValue)
+        {
+            if (label == null || box == null) return;
+            box.Text = currentValue.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+            label.Visibility = Visibility.Collapsed;
+            box.Visibility = Visibility.Visible;
+            box.Focus();
+            box.SelectAll();
+        }
+
+        private void EditBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            var box = sender as TextBox;
+            if (box == null) return;
+            if (e.Key == Key.Enter)
+            {
+                CommitInlineEdit(box);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                EndInlineEdit(box);
+                e.Handled = true;
+            }
+        }
+
+        private void EditBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            var box = sender as TextBox;
+            if (box != null && box.Visibility == Visibility.Visible)
+                CommitInlineEdit(box);
+        }
+
+        private void CommitInlineEdit(TextBox box)
+        {
+            string text = (box.Text ?? string.Empty).Trim().Replace(',', '.');
+            if (double.TryParse(text, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double value))
+            {
+                if (box == TextBox_edit_max_force) SetForceValue(true, value);
+                else if (box == TextBox_edit_min_force) SetForceValue(false, value);
+                else if (box == TextBox_edit_min_pos) SetTravelMm(false, value);
+                else if (box == TextBox_edit_max_pos) SetTravelMm(true, value);
+            }
+            EndInlineEdit(box);
+        }
+
+        private void EndInlineEdit(TextBox box)
+        {
+            box.Visibility = Visibility.Collapsed;
+            Label label = null;
+            if (box == TextBox_edit_max_force) label = Label_max_force;
+            else if (box == TextBox_edit_min_force) label = Label_min_force;
+            else if (box == TextBox_edit_min_pos) label = Label_min_pos;
+            else if (box == TextBox_edit_max_pos) label = Label_max_pos;
+            if (label != null) label.Visibility = Visibility.Visible;
+        }
+
+        private void SetForceValue(bool upper, double kg)
+        {
+            if (Rangeslider_force_range == null) return;
+            if (upper) Rangeslider_force_range.UpperValue = kg;
+            else       Rangeslider_force_range.LowerValue = kg;
+        }
+
+        private double CurrentTravelMm(double percent)
+        {
+            double travelLen = dap_config_st.payloadPedalConfig_.lengthPedal_travel;
+            return Math.Round(travelLen * percent / 100.0);
+        }
+
+        private void SetTravelMm(bool upper, double mm)
+        {
+            if (Rangeslider_travel_range == null) return;
+            double travelLen = dap_config_st.payloadPedalConfig_.lengthPedal_travel;
+            if (travelLen <= 0) return;
+            double percent = mm * 100.0 / travelLen;
+            if (upper) Rangeslider_travel_range.UpperValue = percent;
+            else       Rangeslider_travel_range.LowerValue = percent;
+        }
+
         private void btn_plus_maxforce_Click(object sender, RoutedEventArgs e)
         {
             if (Settings.advanced_b)
