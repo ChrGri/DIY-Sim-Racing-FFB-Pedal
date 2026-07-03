@@ -216,7 +216,7 @@ namespace DiyFfbPedal
             if (scale_d > RootScale_MaxScale_d) scale_d = RootScale_MaxScale_d;
 
             if (scale_d >= 1.0 && Math.Abs(scale_d - ScaleTransform_RootScale.ScaleX) < RootScale_Deadband_d) return;
-
+            if (scale_d <= 1.0) return;
             ScaleTransform_RootScale.ScaleX = scale_d;
             ScaleTransform_RootScale.ScaleY = scale_d;
         }

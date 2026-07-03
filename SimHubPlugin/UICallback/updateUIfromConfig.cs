@@ -231,22 +231,14 @@ namespace DiyFfbPedal
             {
                 if (Plugin._calculations.verisonCreate_b == false)
                 {
-                    if (Plugin.Settings.updateChannel == 0)
-                    {
-                        Plugin._calculations.updateVerison = new Version(Plugin._calculations.pluginVersionReading[0]);
-                    }
-                    else
-                    {
-                        Plugin._calculations.updateVerison = new Version(Plugin._calculations.pluginVersionReading[1]);
-                    }
-
+                    Plugin._calculations.updateVerison = new Version(Plugin._calculations.pluginVersionReading[0]);
                     Plugin._calculations.pluginVersion = new Version(Constants.pluginVersion);
                     Plugin._calculations.verisonCreate_b = true;
                 }
 
                 if (Plugin._calculations.updateVerison > Plugin._calculations.pluginVersion)
                 {
-                    string tmpUpdateChannel = Plugin.Settings.updateChannel == 0 ? "Stable release" : "Nightly build";
+                    string tmpUpdateChannel =  "Stable release" ;
 
                     textBox_VersionUpdate.Text = "New "+tmpUpdateChannel+" available:" + Plugin._calculations.updateVerison;
                     textBox_VersionUpdate.Foreground=System.Windows.Media.Brushes.Red;

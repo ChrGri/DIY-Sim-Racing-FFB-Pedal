@@ -31,26 +31,10 @@ namespace DiyFfbPedal.UIFunction
             InitializeComponent();
             _settings = settings;
             _calculations = calculations;
-            if (_calculations != null && OTAChannel_Sel_1 != null && OTAChannel_Sel_2 != null )
+            if (_calculations != null)
             {
-                if (Label_update_channel_notice != null) Label_update_channel_notice.Content = "";
-                switch (_settings.updateChannel)
-                {
-                    case 0:
-                        OTAChannel_Sel_1.IsChecked = true;
-                        break;
-                    case 1:
-                        OTAChannel_Sel_2.IsChecked = true;
-                        Label_update_channel_notice.Content = "Warning: This is a Dev build intended for development and testing purposes only.\nIt may be unstable and is not recommended for production use.";
-                        break;
-                    default:
-                        OTAChannel_Sel_1.IsChecked=true;
-                        break;
-                }
                 if (_calculations.ForceUpdate_b == true && Checkbox_Force_flash != null) Checkbox_Force_flash.IsChecked = true;
                 if (_calculations.ForceUpdate_b == false && Checkbox_Force_flash != null) Checkbox_Force_flash.IsChecked = false;
-                if (_calculations.IsTestBuild == true && Checkbox_Force_flash != null) Checkbox_TestBuild.IsChecked = true;
-                if (_calculations.IsTestBuild == false && Checkbox_Force_flash != null) Checkbox_TestBuild.IsChecked = false ;
             }
             if (_settings != null)
             {
@@ -87,22 +71,6 @@ namespace DiyFfbPedal.UIFunction
             }
         }
 
-        private void OTAChannel_Sel_Checked(object sender, RoutedEventArgs e)
-        {
-            if (OTAChannel_Sel_1 != null && OTAChannel_Sel_2 != null )
-            {
-                Label_update_channel_notice.Content = "";
-                if ((bool)OTAChannel_Sel_1.IsChecked) _settings.updateChannel = 0;
-                if ((bool)OTAChannel_Sel_2.IsChecked)
-                {
-                    _settings.updateChannel = 1;
-                    Label_update_channel_notice.Content = "Warning: This is a Dev build intended for development and testing purposes only.\nIt may be unstable and is not recommended for production use.";
-                } 
-                 
-                textBox_changelog.Text = "Version:" + versions[_settings.updateChannel] + "\n" + changelogs[_settings.updateChannel];
-
-            }
-        }
 
         private void Checkbox_Force_flash_Checked(object sender, RoutedEventArgs e)
         {
@@ -147,7 +115,7 @@ namespace DiyFfbPedal.UIFunction
                             changelogs[i] = "Channel not found.";
                         }
                     }
-                    if (textBox_changelog != null) textBox_changelog.Text = "Version:" + versions[_settings.updateChannel] + "\n" + changelogs[_settings.updateChannel];
+                    if (textBox_changelog != null) textBox_changelog.Text = "Version:" + versions[0] + "\n" + changelogs[0];
 
                 }
                 
@@ -158,15 +126,6 @@ namespace DiyFfbPedal.UIFunction
             }
         }
 
-        private void Checkbox_TestBuild_Checked(object sender, RoutedEventArgs e)
-        {
-            _calculations.IsTestBuild = true;
-        }
-
-        private void Checkbox_TestBuild_Unchecked(object sender, RoutedEventArgs e)
-        {
-            _calculations.IsTestBuild = false;
-        }
 
         private void Checkbox_platformIo_upload_Checked(object sender, RoutedEventArgs e)
         {

@@ -12,7 +12,13 @@ $version = "${year}.${weekStr}.${dayStr}"
 
 $filepath = "VariablesStruct\constants.cs"
 if (Test-Path $filepath) {
-    $content = Get-Content $filepath -Raw
-    $content = $content -replace 'public const string pluginVersion = ".*?";', "public const string pluginVersion = `"$version`";"
-    Set-Content -Path $filepath -Value $content
+    try {
+        $content = Get-Content $filepath -Raw -ErrorAction Stop
+        if (![string]::IsNullOrWhiteSpace($content)) {
+            $content = $content -replace 'public const string pluginVersion = ".*?";', "public const string pluginVersion = `"$version`";"
+            Set-Content -Path $filepath -Value $content
+        }
+    } catch {
+        Write-Warning "Failed to update version in constants.cs: $_"
+    }
 }
