@@ -87,6 +87,13 @@ float g_filteredPhysicalVel_mps = 0.0f;
 float g_filteredPhysicalAcc_mps2 = 0.0f;
 float g_prevFilteredPhysicalVel_mps = 0.0f;
 
+// NEW: Filter states for internal Effect Feedforward (Velocity & Acceleration)
+float g_smoothedEffectPos_m = 0.0f;
+float g_prevSmoothedEffectPos_m = 0.0f;
+float g_smoothedEffectVel_mps = 0.0f;
+float g_prevSmoothedEffectVel_mps = 0.0f;
+float g_smoothedEffectAcc_mps2 = 0.0f;
+
 // =========================================================
 // HELPER SUB-FUNCTIONS FOR ENCAPSULATION
 // =========================================================
@@ -690,10 +697,52 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // =========================================================
 
   // --- 6. EFFECT OFFSETS & TOTAL FORCE ---
-  // convert position offset to force offset using the local stiffness at the current position on the force curve
+  // NEW: Feedforward Control (Inverse Dynamics)
+  // We derive velocity and acceleration internally from the effect step offset
+  // using cascaded EMA filters to avoid numerical explosions.
+  
+  // 1. Convert effect steps to task-space meters
+  float metersPerStep = 0.0f;
+  if (travelSteps_cnt > 0.0001f) {
+      metersPerStep = totalTravel_m / travelSteps_cnt;
+  }
+  float rawEffectPos_m = effectOffsets_st.forceOffset_Steps_fl32 * metersPerStep;
+
+  // 2. Smooth the position to avoid 60Hz staircase Dirac delta spikes
+  const float EFFECT_TAU_POS = 0.005f; // 5ms smoothing
+  float alpha_pos = 1.0f - expf(-dt_s / EFFECT_TAU_POS);
+  g_smoothedEffectPos_m = (alpha_pos * rawEffectPos_m) + ((1.0f - alpha_pos) * g_smoothedEffectPos_m);
+
+  // 3. Derive and smooth Velocity
+  float rawEffectVel_mps = (g_smoothedEffectPos_m - g_prevSmoothedEffectPos_m) / dt_s;
+  g_prevSmoothedEffectPos_m = g_smoothedEffectPos_m;
+  
+  const float EFFECT_TAU_VEL = 0.005f; // 5ms smoothing
+  float alpha_vel = 1.0f - expf(-dt_s / EFFECT_TAU_VEL);
+  g_smoothedEffectVel_mps = (alpha_vel * rawEffectVel_mps) + ((1.0f - alpha_vel) * g_smoothedEffectVel_mps);
+
+  // 4. Derive and smooth Acceleration
+  float rawEffectAcc_mps2 = (g_smoothedEffectVel_mps - g_prevSmoothedEffectVel_mps) / dt_s;
+  g_prevSmoothedEffectVel_mps = g_smoothedEffectVel_mps;
+
+  const float EFFECT_TAU_ACC = 0.010f; // 10ms smoothing
+  float alpha_acc = 1.0f - expf(-dt_s / EFFECT_TAU_ACC);
+  g_smoothedEffectAcc_mps2 = (alpha_acc * rawEffectAcc_mps2) + ((1.0f - alpha_acc) * g_smoothedEffectAcc_mps2);
+
+  // 5. Calculate Inverse Dynamics Feedforward Force (Newton)
+  // F_effekt = K*x + C*v + M*a
+  float idealBaseDamping_Ns_m_ff = dampingRatio_zeta * 2.0f * sqrtf(virtualMass_kg * localStiffness_N_m);
+  
+  float effectInjectedForce_N = (g_smoothedEffectPos_m * localStiffness_N_m) 
+                              + (g_smoothedEffectVel_mps * idealBaseDamping_Ns_m_ff)
+                              + (g_smoothedEffectAcc_mps2 * virtualMass_kg);
+
+  // 6. Keep legacy variable for downstream logic (e.g., disabling tracking error damping)
   float effectPositionToForceConversion_kg = effectOffsets_st.forceOffset_Steps_fl32 * localStiffness_kg_step;
   float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32;// + effectPositionToForceConversion_kg;
-  float externalForce_N = (loadCellReadingKg_fl32 + effectForceOffset_fl32) * GRAVITY_N_KG;
+
+  // 7. Final total force (Loadcell + Static Effect Weight + Dynamic Effect Force)
+  float externalForce_N = (loadCellReadingKg_fl32 * GRAVITY_N_KG) + (effectOffsets_st.forceOffset_kg_fl32 * GRAVITY_N_KG) + effectInjectedForce_N;
 
   // --- 7. DYNAMIC TRAVEL LIMITS ---
   float lowerTravelLimit_01 = 0.0f;
@@ -1051,7 +1100,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float targetPosSteps_fl32 = (targetSledPos_mm / (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm)) + (float)calc_st->softEndstopMinStepperPos_i32;
 
   // Bypass effect position offset (Inject ABS/vibrations purely into the actuator space)
-  targetPosSteps_fl32 += effectOffsets_st.forceOffset_Steps_fl32;
+  // targetPosSteps_fl32 += effectOffsets_st.forceOffset_Steps_fl32;
 
   // Final safety clamp to hard hardware limits
   float finalTargetPos_fl32 = targetPosSteps_fl32;

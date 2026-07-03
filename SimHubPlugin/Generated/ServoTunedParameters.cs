@@ -58,7 +58,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr0.23", 0 },  // Reserved parameter
             { "Pr0.24", 0 },  // Reserved parameter
             { "Pr1.00", 600 },  // 1st position loop gain
-            { "Pr1.01", 500 },  // 1st velocity loop gain
+            { "Pr1.01", 400 },  // 1st velocity loop gain
             { "Pr1.02", 500 },  // 1st time constant of velocity loop integration
             { "Pr1.03", 27 },  // 1st filter of velocity detection
             { "Pr1.04", 100 },  // 1st torque filter
