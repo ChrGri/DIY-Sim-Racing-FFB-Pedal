@@ -749,7 +749,7 @@ namespace DiyFfbPedal
                             {
                                 SimHub.Logging.Current.Error("CV3 value exceed limit");
                             }
-                            if (CV3_value > (Settings.CV2_trigger[pedalIdx]))
+                            if (CV3_value > (Settings.CV3_trigger[pedalIdx]))
                             {
                                 tmp.payloadPedalAction_.Trigger_CV_3 = 1;
                                 update_flag = true;
@@ -781,9 +781,9 @@ namespace DiyFfbPedal
                             {
                                 SimHub.Logging.Current.Error("CV4 value exceed limit");
                             }
-                            if (CV4_value > (Settings.CV2_trigger[pedalIdx]))
+                            if (CV4_value > (Settings.CV4_trigger[pedalIdx]))
                             {
-                                tmp.payloadPedalAction_.Trigger_CV_3 = 1;
+                                tmp.payloadPedalAction_.Trigger_CV_4 = 1;
                                 update_flag = true;
                             }
                         }
