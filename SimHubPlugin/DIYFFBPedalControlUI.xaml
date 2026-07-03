@@ -21,8 +21,11 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Width="810">
-        <Grid RenderTransformOrigin="0,0" Width="810" Height="900">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <Grid x:Name="Grid_RootScaleHost" RenderTransformOrigin="0,0" Width="810" Height="900">
+            <Grid.LayoutTransform>
+                <ScaleTransform x:Name="ScaleTransform_RootScale" ScaleX="1" ScaleY="1"/>
+            </Grid.LayoutTransform>
             <TabControl  x:Name="Function_Tab_seleciton"  SelectionChanged="Function_Tab_seleciton_SelectionChanged" Width="770" Grid.ColumnSpan="2" HorizontalContentAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Height="910" RenderTransformOrigin="0,0" Grid.RowSpan="1">
                 <TabControl.Resources>
                     <Style TargetType="TabItem">
