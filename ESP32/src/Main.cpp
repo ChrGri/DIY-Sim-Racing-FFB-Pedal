@@ -2216,7 +2216,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // start profiler 6, ...
       profiler_pedalUpdateTask.start(6);
 
-      // clip target position to hard endstops
+      // clip target position to hard endstops (strict, no expansion)
       Position_Next_fl32 = constrain(Position_Next_fl32, stepper->getHardEndstopMinPosition(), stepper->getHardEndstopMaxPosition());
       Position_Next = Position_Next_fl32;
       

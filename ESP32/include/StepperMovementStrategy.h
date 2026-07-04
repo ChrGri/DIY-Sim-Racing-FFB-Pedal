@@ -123,7 +123,7 @@ static inline IRAM_ATTR_FLAG void CalcDynamicTravelLimits(
         float ext_steps = ext_A + ext_B;
 
         lowerTravelLimit_01 = min(0.0f, ext_steps);
-        upperTravelLimit_01 = 1.0f + max(0.0f, ext_steps);
+        upperTravelLimit_01 = 1.0f + ext_steps; // Modified to allow dynamic boundary shift
     }
 }
 
@@ -1093,18 +1093,22 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       targetSledPos_mm = c_hor_mm - c_hor_0_mm;
   }
 
-  // Clamp the solved sled position to safe physical bounds
-  targetSledPos_mm = constrain(targetSledPos_mm, 0.0f, maxSledPos_mm);
+  float maxExt = max(0.0f, effectOffsets_st.forceOffset_Steps_fl32);
+  float minExt = min(0.0f, effectOffsets_st.forceOffset_Steps_fl32);
+
+  // Calculate equivalent expansion in millimeters for the sled position clamp
+  float maxExt_mm = maxExt * (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm);
+  float minExt_mm = minExt * (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm);
+
+  // Clamp the solved sled position to safe physical bounds (with dynamic expansion)
+  targetSledPos_mm = constrain(targetSledPos_mm, 0.0f + minExt_mm, maxSledPos_mm + maxExt_mm);
   
   // 3. Convert target sled position (mm) back to absolute stepper steps
   float targetPosSteps_fl32 = (targetSledPos_mm / (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm)) + (float)calc_st->softEndstopMinStepperPos_i32;
 
-  // Bypass effect position offset (Inject ABS/vibrations purely into the actuator space)
-  // targetPosSteps_fl32 += effectOffsets_st.forceOffset_Steps_fl32;
-
-  // Final safety clamp to hard hardware limits
+  // Clamp to software limits (with dynamic expansion for high-frequency effects)
   float finalTargetPos_fl32 = targetPosSteps_fl32;
-  finalTargetPos_fl32 = constrain(finalTargetPos_fl32, stepper->getHardEndstopMinPosition(), stepper->getHardEndstopMaxPosition());
+  finalTargetPos_fl32 = constrain(finalTargetPos_fl32, calc_st->softEndstopMinStepperPos_i32 + minExt, calc_st->softEndstopMaxStepperPos_i32 + maxExt);
 
   if (admittanceStates_pst != nullptr) {
     admittanceStates_pst->physicalPos_m = g_vModelPos_01 * totalTravel_m; // Logged natively in Task Space
