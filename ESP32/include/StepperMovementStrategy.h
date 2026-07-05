@@ -1093,8 +1093,10 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       targetSledPos_mm = c_hor_mm - c_hor_0_mm;
   }
 
-  float maxExt = max(0.0f, effectOffsets_st.forceOffset_Steps_fl32);
-  float minExt = min(0.0f, effectOffsets_st.forceOffset_Steps_fl32);
+  // Limit dynamic expansion to a maximum of +/- 5% of total travel for safety
+  float limitExt = travelSteps_cnt * 0.05f;
+  float maxExt = constrain(max(0.0f, effectOffsets_st.forceOffset_Steps_fl32), 0.0f, limitExt);
+  float minExt = constrain(min(0.0f, effectOffsets_st.forceOffset_Steps_fl32), -limitExt, 0.0f);
 
   // Calculate equivalent expansion in millimeters for the sled position clamp
   float maxExt_mm = maxExt * (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm);
