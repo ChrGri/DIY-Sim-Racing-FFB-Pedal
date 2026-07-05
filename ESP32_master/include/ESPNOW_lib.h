@@ -186,6 +186,18 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
   //only recieve the package from registed mac address
   if(MacCheck((uint8_t*)esp_now_info->src_addr, Clu_mac)||MacCheck((uint8_t*)esp_now_info->src_addr, Brk_mac)||MacCheck((uint8_t*)esp_now_info->src_addr, Gas_mac))
   {
+    if(esp_now_info->rx_ctrl != NULL) {
+      if(MacCheck((uint8_t*)esp_now_info->src_addr, Clu_mac)) {
+        rssi[0] = esp_now_info->rx_ctrl->rssi;
+        rssi_display = rssi[0];
+      } else if(MacCheck((uint8_t*)esp_now_info->src_addr, Brk_mac)) {
+        rssi[1] = esp_now_info->rx_ctrl->rssi;
+        rssi_display = rssi[1];
+      } else if(MacCheck((uint8_t*)esp_now_info->src_addr, Gas_mac)) {
+        rssi[2] = esp_now_info->rx_ctrl->rssi;
+        rssi_display = rssi[2];
+      }
+    }
     if(data[0]==DAP_PAYLOAD_TYPE_ESPNOW_LOG_U8 && data[1]==ESPNOW_LOG_MAGIC_KEY && data[2]==ESPNOW_LOG_MAGIC_KEY_2)
     {
 
@@ -468,9 +480,11 @@ void ESPNow_initialize()
     if(addPeerCHecker) ActiveSerial->println("[L]Peers added successfully.");
     ESPNow.reg_recv_cb(onRecv);
     ESPNow.reg_send_cb(OnSent);
+    //set wifi channel
+    esp_wifi_set_channel(1, WIFI_SECOND_CHAN_NONE);
     //rssi calculate
-    esp_wifi_set_promiscuous(true);
-    esp_wifi_set_promiscuous_rx_cb(&promiscuous_rx_cb);
+    // esp_wifi_set_promiscuous(true);
+    // esp_wifi_set_promiscuous_rx_cb(&promiscuous_rx_cb);
     ESPNow_initial_status=true;
     ESPNOW_status=true;
     ActiveSerial->println("[L]ESPNow Initialized");
