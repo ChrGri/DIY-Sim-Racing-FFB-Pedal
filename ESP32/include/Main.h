@@ -340,7 +340,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define USING_BUZZER
   #define BRAKE_RESISTOR_PIN_U8 4
   #define SERVO_POWER_PIN 3
-  #define EMERGENCY_PIN_U8 6
+  //#define EMERGENCY_PIN_U8 6
   #define BAUDRATE3M
 #endif
 // Switch-!t PCB for Waveshare ESP32-S3-DEV-KIT-N8R8

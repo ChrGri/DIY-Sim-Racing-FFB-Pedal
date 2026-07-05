@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include <Arduino.h>
@@ -367,6 +367,7 @@ void ESPNow_initialize()
 {
 
     WiFi.mode(WIFI_MODE_STA);
+    WiFi.setSleep(false);
     ActiveSerial->println("[L]Initializing Wifi."); 
     delay(1000);
     WiFi.macAddress(esp_Mac); 

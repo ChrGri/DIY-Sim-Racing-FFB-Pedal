@@ -3246,6 +3246,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
     }
 
     usbManager.processTxBatch();
+    taskYIELD(); // Force context switch to prevent Core 0 starvation
 
   } // <-- Ende der for(;;) Schleife
 }
@@ -3690,7 +3691,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
 
           //joystick value broadcast
           /*
-          if((joystickPacketsUpdateLast-millis())>joystickPacketInterval) 
+          if((millis() - joystickPacketsUpdateLast)>joystickPacketInterval) 
           {
             ESPNow_Joystick_Broadcast(joystickNormalizedToInt32);
             joystickPacketsUpdateLast=millis();
@@ -3857,7 +3858,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
             ESPNOW_BootIntoDownloadMode = false;
           }
           //send out rudder packet after rudder initialized
-          if (rudderPacketsUpdateLast - millis() > rudderPacketInterval && !noAssignmentStatus)
+          if (millis() - rudderPacketsUpdateLast > rudderPacketInterval && !noAssignmentStatus)
           {
             if((dap_calculationVariables_st.rudderStatus_b || dap_calculationVariables_st.helicopterRudderStatus_b) && (!Rudder_initializing && !HeliRudder_initializing))
             {              

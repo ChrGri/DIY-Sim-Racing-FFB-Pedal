@@ -1,4 +1,4 @@
-﻿#include <WiFi.h>
+#include <WiFi.h>
 #include <esp_wifi.h>
 #include <Arduino.h>
 #include "ESPNowW.h"
@@ -620,6 +620,7 @@ void ESPNow_initialize()
   DapConfig_t dap_config_espnow_init_st;
   global_dap_config_class.getConfig(&dap_config_espnow_init_st, 500);
   WiFi.mode(WIFI_MODE_STA);
+  WiFi.setSleep(false);
   delay(1000);
   ActiveSerial->println("Initializing Wifi, please wait");
   // ActiveSerial->print("Current MAC Address:  ");
