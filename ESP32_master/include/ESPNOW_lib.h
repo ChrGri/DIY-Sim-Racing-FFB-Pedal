@@ -204,7 +204,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
       PayloadHidMessage_t receivedMsg;
       //getESPNOWLog_b = true;
       int copyLen = data[3];
-      if (copyLen> sizeof(receivedMsg.text_ac)) copyLen = sizeof(receivedMsg.text_ac);
+      if (copyLen >= sizeof(receivedMsg.text_ac)) copyLen = sizeof(receivedMsg.text_ac) - 1;
       if (copyLen > 0)
       {
 
@@ -215,12 +215,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
         receivedMsg.length_u8= copyLen;
         memcpy(receivedMsg.text_ac, &data[4], copyLen);
         receivedMsg.text_ac[copyLen] = '\0';
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-        xQueueSendFromISR(messageQueueHandle, &receivedMsg, &xHigherPriorityTaskWoken);
-        if (xHigherPriorityTaskWoken)
-        {
-          portYIELD_FROM_ISR();
-        }
+        xQueueSend(messageQueueHandle, &receivedMsg, 0);
       }
     }
     if(data_len==sizeof(DapStateBasic_t))
@@ -239,35 +234,36 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
       if(structChecker)
       {
         uint8_t pedalTag=dap_state_basic_st_lcl.payloadHeader_st.pedalTag_u8;
-        memcpy(&dap_state_basic_st[pedalTag], data, sizeof(DapStateBasic_t));
-        update_basic_state[pedalTag]=true;
-        pedal_last_update[pedalTag]=millis();
-        if(dap_state_basic_st_lcl.payloadPedalStateBasic_st.errorCode_u8!=0) ESPNow_error_b[pedalTag]=true;
-        float joystickData_u32= dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.joystickOutput_u16/32767.0f*10000.0f;
-        uint16_t joystickNormalizedToInt16 = dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.joystickOutput_u16; 
-        switch (pedalTag)
-        {
-          case PEDAL_ID_CLUTCH:
-            pedal_cluth_value=joystickNormalizedToInt16;
-            Joystick_value[0]=joystickData_u32;
-            Joystick_value_original[0] = dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.joystickOutput_u16;
+        if(pedalTag < 3) {
+          memcpy(&dap_state_basic_st[pedalTag], data, sizeof(DapStateBasic_t));
+          update_basic_state[pedalTag]=true;
+          pedal_last_update[pedalTag]=millis();
+          if(dap_state_basic_st_lcl.payloadPedalStateBasic_st.errorCode_u8!=0) ESPNow_error_b[pedalTag]=true;
+          float joystickData_u32= dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.joystickOutput_u16/32767.0f*10000.0f;
+          uint16_t joystickNormalizedToInt16 = dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.joystickOutput_u16; 
+          switch (pedalTag)
+          {
+            case PEDAL_ID_CLUTCH:
+              pedal_cluth_value=joystickNormalizedToInt16;
+              Joystick_value[0]=joystickData_u32;
+              Joystick_value_original[0] = dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.joystickOutput_u16;
+              break;
+            case PEDAL_ID_BRAKE:
+              pedal_brake_value=joystickNormalizedToInt16;
+              Joystick_value[1]=joystickData_u32;
+              Joystick_value_original[1] = dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.joystickOutput_u16;
+              break;
+            case PEDAL_ID_THROTTLE:
+              pedal_throttle_value=joystickNormalizedToInt16;
+              Joystick_value[2]=joystickData_u32;
+              Joystick_value_original[2] = dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.joystickOutput_u16;
+              pedal_status=dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.pedalStatus_u8;//control pedal status only by Throttle
+              Joystick_throttle_value_from_pedal=dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.joystickOutput_u16;
             break;
-          case PEDAL_ID_BRAKE:
-            pedal_brake_value=joystickNormalizedToInt16;
-            Joystick_value[1]=joystickData_u32;
-            Joystick_value_original[1] = dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.joystickOutput_u16;
+            default:
             break;
-          case PEDAL_ID_THROTTLE:
-            pedal_throttle_value=joystickNormalizedToInt16;
-            Joystick_value[2]=joystickData_u32;
-            Joystick_value_original[2] = dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.joystickOutput_u16;
-            pedal_status=dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.pedalStatus_u8;//control pedal status only by Throttle
-            Joystick_throttle_value_from_pedal=dap_state_basic_st[pedalTag].payloadPedalStateBasic_st.joystickOutput_u16;
-          break;
-          default:
-          break;
+          }
         }
-
       }
     }
 
@@ -283,8 +279,10 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
       if(crcChecker!=dap_state_extend_st_lcl.payloadFooter_st.checkSum_u16) structChecker=false;
       if(structChecker)
       {
-        memcpy(&dap_state_extended_st[pedalTag], data, sizeof(DapStateExtended_t));
-        update_extend_state[pedalTag]=true;
+        if(pedalTag < 3) {
+          memcpy(&dap_state_extended_st[pedalTag], data, sizeof(DapStateExtended_t));
+          update_extend_state[pedalTag]=true;
+        }
       }
 
     }
@@ -292,20 +290,21 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
     if(data_len==sizeof(DapConfig_t))
     {
       memcpy(&dap_config_st_Temp, data, sizeof(DapConfig_t));
-      ESPNow_request_config_b[dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8]=true;
-      if(dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8==0)
-      {
-        memcpy(&dap_config_st_Clu, &dap_config_st_Temp, sizeof(DapConfig_t));
+      if(dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8 < 3) {
+        ESPNow_request_config_b[dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8]=true;
+        if(dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8==0)
+        {
+          memcpy(&dap_config_st_Clu, &dap_config_st_Temp, sizeof(DapConfig_t));
+        }
+        if(dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8==1)
+        {
+          memcpy(&dap_config_st_Brk, &dap_config_st_Temp, sizeof(DapConfig_t));
+        }
+        if(dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8==2)
+        {
+          memcpy(&dap_config_st_Gas, &dap_config_st_Temp, sizeof(DapConfig_t));
+        }
       }
-      if(dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8==1)
-      {
-        memcpy(&dap_config_st_Brk, &dap_config_st_Temp, sizeof(DapConfig_t));
-      }
-      if(dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8==2)
-      {
-        memcpy(&dap_config_st_Gas, &dap_config_st_Temp, sizeof(DapConfig_t));
-      }
-      
     }
 
     if(data_len==sizeof(DAP_servo_config_st_t))
@@ -379,6 +378,7 @@ void ESPNow_initialize()
 {
 
     WiFi.mode(WIFI_MODE_STA);
+    WiFi.disconnect(true, true);
     WiFi.setSleep(false);
     ActiveSerial->println("[L]Initializing Wifi."); 
     delay(1000);
