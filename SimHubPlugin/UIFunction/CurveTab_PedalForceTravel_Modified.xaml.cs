@@ -1,4 +1,4 @@
-﻿using FMOD;
+using FMOD;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -95,7 +95,7 @@ namespace DiyFfbPedal.UIFunction
             set
             {
                 SetValue(Cauculation_Property, value);
-                //updateUI();
+                //updateUI(); 
             }
         }
 
@@ -815,20 +815,26 @@ namespace DiyFfbPedal.UIFunction
                 Canvas.SetLeft(text_state, Canvas.GetLeft(rect_State) /*+ rect_State.Width*/);
                 Canvas.SetTop(text_state, Canvas.GetTop(rect_State) - rect_State.Height);
                 //update the line
+                double top = Canvas.GetTop(rect_State);
+                double left = Canvas.GetLeft(rect_State);
                 
-                StatusLineXBar.X1 = Canvas.GetLeft(rect_State) + 0.5 * rect_State.Width;
-                StatusLineXBar.Y1 = mainCanvas.Height;
-                StatusLineXBar.X2 = Canvas.GetLeft(rect_State) + 0.5 * rect_State.Width;
-                StatusLineXBar.Y2 = Canvas.GetTop(rect_State)+ rect_State.Height;
+                if (!double.IsNaN(top) && !double.IsNaN(left))
+                {
+                    StatusLineXBar.X1 = left + 0.5 * rect_State.Width;
+                    StatusLineXBar.Y1 = mainCanvas.Height;
+                    StatusLineXBar.X2 = left + 0.5 * rect_State.Width;
+                    StatusLineXBar.Y2 = top + rect_State.Height;
+                    
+                    StatusLineYBar.X1 = 0;
+                    StatusLineYBar.Y1 = top + 0.5 * rect_State.Height;
+                    StatusLineYBar.X2 = left;
+                    StatusLineYBar.Y2 = top + 0.5 * rect_State.Height;
+                }
                 
-                StatusLineYBar.X1 = 0;
-                StatusLineYBar.Y1 = Canvas.GetTop(rect_State) + 0.5 * rect_State.Height;
-                StatusLineYBar.X2 = Canvas.GetLeft(rect_State);
-                StatusLineYBar.Y2 = Canvas.GetTop(rect_State) + 0.5 * rect_State.Height;
                 text_state.Text = Math.Round(pedalForce_u16 / control_rect_value_max * 100) + "%";
                 int round_x = (int)(100 * pedalPosition_u16 / control_rect_value_max) - 1;
                 int x_showed = round_x + 1;
-                if (x_showed == 0)
+                if (x_showed == 0 || double.IsNaN(top) || double.IsNaN(left))
                 {
                     rect_State.Visibility = Visibility.Hidden;
                     StatusLineXBar.Visibility = Visibility.Hidden;
@@ -856,17 +862,24 @@ namespace DiyFfbPedal.UIFunction
                 Canvas.SetTop(text_state, Canvas.GetTop(rect_State) - rect_State.Height);
                 //update the line
 
-                StatusLineXBar.X1 = Canvas.GetLeft(rect_State) + 0.5 * rect_State.Width;
-                StatusLineXBar.Y1 = mainCanvas.Height;
-                StatusLineXBar.X2 = Canvas.GetLeft(rect_State) + 0.5 * rect_State.Width;
-                StatusLineXBar.Y2 = Canvas.GetTop(rect_State) + rect_State.Height;
+                double top = Canvas.GetTop(rect_State);
+                double left = Canvas.GetLeft(rect_State);
 
-                StatusLineYBar.X1 = 0;
-                StatusLineYBar.Y1 = Canvas.GetTop(rect_State) + 0.5 * rect_State.Height;
-                StatusLineYBar.X2 = Canvas.GetLeft(rect_State);
-                StatusLineYBar.Y2 = Canvas.GetTop(rect_State) + 0.5 * rect_State.Height;
+                if (!double.IsNaN(top) && !double.IsNaN(left))
+                {
+                    StatusLineXBar.X1 = left + 0.5 * rect_State.Width;
+                    StatusLineXBar.Y1 = mainCanvas.Height;
+                    StatusLineXBar.X2 = left + 0.5 * rect_State.Width;
+                    StatusLineXBar.Y2 = top + rect_State.Height;
+
+                    StatusLineYBar.X1 = 0;
+                    StatusLineYBar.Y1 = top + 0.5 * rect_State.Height;
+                    StatusLineYBar.X2 = left;
+                    StatusLineYBar.Y2 = top + 0.5 * rect_State.Height;
+                }
+
                 text_state.Text = x_showed + "%";
-                if (x_showed == 0)
+                if (x_showed == 0 || double.IsNaN(top) || double.IsNaN(left))
                 {
                     rect_State.Visibility = Visibility.Hidden;
                     StatusLineXBar.Visibility = Visibility.Hidden;
