@@ -10,7 +10,7 @@
 /*                                                                                            */
 /**********************************************************************************************/
 // see https://swharden.com/blog/2022-01-22-spline-interpolation/
-float IRAM_ATTR_FLAG ForceCurveInterpolated::EvalForceCubicSpline(const DapConfig_t* config_st, const DapCalculationVariables_t* calc_st, float fractionalPos_fl32)
+float ForceCurveInterpolated::EvalForceCubicSpline(const DapConfig_t* config_st, const DapCalculationVariables_t* calc_st, float fractionalPos_fl32)
 {
 
   float fractionalPosLcl_fl32 = constrain(fractionalPos_fl32, 0, 1);
@@ -102,7 +102,7 @@ float IRAM_ATTR_FLAG ForceCurveInterpolated::EvalForceCubicSpline(const DapConfi
 /*                                                                                            */
 /**********************************************************************************************/
 
-float IRAM_ATTR_FLAG ForceCurveInterpolated::EvalForceGradientCubicSpline(const DapConfig_t* config_st, const DapCalculationVariables_t* calc_st, float fractionalPos_fl32, bool normalized_b)
+float ForceCurveInterpolated::EvalForceGradientCubicSpline(const DapConfig_t* config_st, const DapCalculationVariables_t* calc_st, float fractionalPos_fl32, bool normalized_b)
 {
   float fractionalPosLcl_fl32 = constrain(fractionalPos_fl32, 0, 1);
   float fractionalPosPercent_fl32 = fractionalPosLcl_fl32*100.0f;
@@ -246,7 +246,7 @@ float IRAM_ATTR_FLAG ForceCurveInterpolated::EvalForceGradientCubicSpline(const 
 
 
 
-float IRAM_ATTR_FLAG ForceCurveInterpolated::EvalJoystickCubicSpline(const DapConfig_t* config_st, const DapCalculationVariables_t* calc_st, float fractionalPos_fl32)
+float ForceCurveInterpolated::EvalJoystickCubicSpline(const DapConfig_t* config_st, const DapCalculationVariables_t* calc_st, float fractionalPos_fl32)
 {
 
   float fractionalPosLcl_fl32 = constrain(fractionalPos_fl32, 0, 1);
