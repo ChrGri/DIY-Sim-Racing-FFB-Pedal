@@ -230,7 +230,7 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st) {
         
         for (uint16_t waitTillServoCounterWasReset_Idx = 0; waitTillServoCounterWasReset_Idx < 10; waitTillServoCounterWasReset_Idx++) {
             delay(100);
-            esp_task_wdt_reset();
+            //esp_task_wdt_reset();
             // Voltage is reported in 0.1V units (e.g. 360 = 36.0V)
             float servosBusVoltageInVolt_fl32 = ((float)getServosVoltage()) / 10.0f;
             
@@ -271,7 +271,7 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st) {
         // Wait for current signal to stabilize before moving
         for (uint16_t tryIdx = 0; tryIdx < 500; tryIdx++) {
             delay(5);
-            esp_task_wdt_reset();
+            //esp_task_wdt_reset();
             endPosDetected = abs(getServosCurrent()) > endstopDetectionThreshold_u8;
             if (!endPosDetected) break;
         }
@@ -284,7 +284,7 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st) {
 
         while ((!endPosDetected) && (getLifelineSignal())) {
             delay(1);
-            esp_task_wdt_reset();
+            //esp_task_wdt_reset();
             endPosDetected = abs(getServosCurrent()) > endstopDetectionThreshold_u8;
         }
         _stepper->forceStop();
@@ -313,7 +313,7 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st) {
 
         while ((!endPosDetected) && (getLifelineSignal())) {
             delay(1);
-            esp_task_wdt_reset();
+            //esp_task_wdt_reset();
             // Only allow crash detection if we have driven a minimum distance (prevents false positives from initial inertia)
             if (_stepper->getCurrentPosition() > MIN_POS_MAX_ENDSTOP) {
                 endPosDetected = abs(getServosCurrent()) > endstopDetectionThreshold_u8;
