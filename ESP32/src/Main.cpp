@@ -1677,6 +1677,13 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
   static int32_t stepperPosCurrent_i32;
   static uint32_t cycleCount_u32 = 0;
 
+  // Deferred EEPROM save: flash writes stall the other core via the ipc1 task.
+  // If stepper PCNT interrupts fire during the cache-disable window, the ipc1
+  // stack can overflow (stack canary panic). Therefore the EEPROM commit is
+  // deferred until the motor is idle instead of writing immediately.
+  static bool eepromSavePending_b = false;
+  static uint32_t eepromSaveRequestTimeInMs_u32 = 0;
+
   bool local_systemIdentificationMode_b = false;
   bool local_OTA_status_b = false;
 
@@ -1734,9 +1741,13 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           uint16_t crc = checksumCalculator_u16((uint8_t*)(&(dap_config_pedalUpdateTask_st.payloadHeader_st)), sizeof(dap_config_pedalUpdateTask_st.payloadHeader_st) + sizeof(dap_config_pedalUpdateTask_st.payloadPedalConfig_st));
           dap_config_pedalUpdateTask_st.payloadFooter_st.checkSum_u16 = crc;
           global_dap_config_class.setConfig(dap_config_pedalUpdateTask_st);
-          ActiveSerial->println("Saving into EEPROM");
-          global_dap_config_class.storeConfigToEeprom();
-          
+
+          // Do NOT write to flash here: the pedal may still be moving (homing /
+          // slow reposition after config update). Schedule the write instead.
+          eepromSavePending_b = true;
+          eepromSaveRequestTimeInMs_u32 = millis();
+          ActiveSerial->println("EEPROM save scheduled (deferred until motor is idle)");
+
           saveToEEPRomDuration = 0;
         }
         
@@ -1814,6 +1825,28 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
       }
 
+
+      // Deferred EEPROM commit: only write to flash when the stepper is idle,
+      // so the ipc1 cache-disable window cannot collide with step/PCNT interrupts.
+      if (eepromSavePending_b)
+      {
+        bool motorIdle_b = (stepper != NULL) && (!stepper->isRunning());
+        bool saveTimeout_b = (millis() - eepromSaveRequestTimeInMs_u32) > 10000u;
+
+        if (motorIdle_b || saveTimeout_b)
+        {
+          if (!motorIdle_b && (stepper != NULL))
+          {
+            // Failsafe: motor never became idle. Stop pulse generation briefly
+            // so the flash write cannot be interrupted; motion resumes with the
+            // next moveTo() command in the following cycle.
+            stepper->forceStop();
+          }
+          ActiveSerial->println("Saving into EEPROM");
+          global_dap_config_class.storeConfigToEeprom();
+          eepromSavePending_b = false;
+        }
+      }
 
       // start profiler 0, overall function
       profiler_pedalUpdateTask.start(0);
