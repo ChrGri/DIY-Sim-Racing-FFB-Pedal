@@ -99,8 +99,10 @@ public:
         }
 
         // --- 2. Foot Dynamics & Kinetic Checks ---
-        //bool foot_is_escaping_b = (forceVelEst_fl32 < FOOT_ESCAPE_RATE_KG_S);
-        bool high_kinetic_energy_b = (abs(currentSpeedInHz_i32) > MIN_SPEED_HZ);
+        //bool high_kinetic_energy_b = (abs(currentSpeedInHz_i32) > MIN_SPEED_HZ);
+
+        // The motor has kinetic energy, when ESP fires OR servo reduces error massively!
+        bool high_kinetic_energy_b = (abs(currentSpeedInHz_i32) > MIN_SPEED_HZ) || (fabsf(d_error_fl32) > (float)MIN_SPEED_HZ);
 
         // overwerite foot escaping value. Sometimes positive values have been seen here too. 
         bool foot_is_dynamic_b = ( fabsf(forceVelEst_fl32) > fabsf(FOOT_ESCAPE_RATE_KG_S) );
