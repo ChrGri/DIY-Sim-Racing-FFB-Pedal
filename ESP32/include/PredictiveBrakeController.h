@@ -111,9 +111,9 @@ public:
         bool trigger_b = foot_is_dynamic_b && high_kinetic_energy_b && (ttz_s_fl32 < TTZ_WARNING_S) && errorWasLarge_b;
 
         // --- 4. Rollover-Safe Timer Logic ---
-        if (trigger_b) {
+        if (trigger_b && !is_timer_active_b) {
             is_timer_active_b = true;
-            timer_start_time_us_u32 = currentTimeUs_u32; // Simply reset the start time
+            timer_start_time_us_u32 = currentTimeUs_u32; // Setze Startzeit nur einmal!
         }
 
         prev_error_fl32 = current_error_fl32;
