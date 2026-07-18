@@ -770,6 +770,15 @@ static void uart_event_task(void *pvParameters) {
 #endif
 
 
+static void homingTimeoutCallback(void* arg)
+{
+    if (ActiveSerial)
+    {
+        ActiveSerial->println("homing timeout");
+    }
+    ESP.restart();
+}
+
 void setup()
 {
 
@@ -950,11 +959,7 @@ void setup()
     pixels.show(); 
   #endif
 
-  #ifdef BUZZER_PIN_U8
-    Buzzer.initialized(BUZZER_PIN_U8, 1);
-  #else
-    Buzzer.initialized(1, 1);
-  #endif
+  Buzzer.initialized(BUZZER_PIN_U8, 1);
   Buzzer.single_beep_tone(770, 100);
 
 
@@ -1125,7 +1130,18 @@ void setup()
 
 	// find the min & max endstops
   ActiveSerial->println("Start homing");
+
+  esp_timer_create_args_t homingTimerArgs_st = {};
+  homingTimerArgs_st.callback = &homingTimeoutCallback;
+  homingTimerArgs_st.name = "homing_timeout";
+  esp_timer_handle_t homingTimer_st;
+  esp_timer_create(&homingTimerArgs_st, &homingTimer_st);
+  esp_timer_start_once(homingTimer_st, 30000000); // 30 seconds in microseconds
+
   stepper->findMinMaxSensorless(dap_config_st_local);
+
+  esp_timer_stop(homingTimer_st);
+  esp_timer_delete(homingTimer_st);
   ActiveSerial->print("Min Position is "); ActiveSerial->println(stepper->getLimitMin());
   ActiveSerial->print("Max Position is "); ActiveSerial->println(stepper->getLimitMax());
 
@@ -1366,7 +1382,7 @@ xTaskCreatePinnedToCore(
     uint8_t Pedal_assignment = CFG1_reading * 2 + CFG2_reading * 1; // 00=clutch 01=brk  02=gas
     if (Pedal_assignment == PEDAL_ID_ASSIGNMENT_ERROR)
     {
-      ActiveSerial->println("Pedal Type:3, assignment error, please adjust dip switch on control board to finish role assignment.");
+      ActiveSerial->println("Pedal Type:3, assignment error, please finish role assignment.");
     }
     else
     {
@@ -3512,7 +3528,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
   uint Pairing_timeout=20000;
   uint rudderPacketInterval=3;
   uint joystickPacketInterval=3;
-  uint basicStateUpdateIntervalBase[3]={5,4,3};
+  uint basicStateUpdateIntervalBase[3]={8,7,6};
   uint extendStateUpdateInterval=10;
   uint assignmentPacketUpdateInterval = 100;
   bool Pairing_timeout_status=false;
@@ -3754,7 +3770,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
             ESPNow.send_message(g_broadcast_mac, (uint8_t *)&dap_assignmentBoardcast_st, sizeof(DapAssignmentBroadcast_t));
           }
           // basic state packet send out  
-          if(basic_state_send_b && !noAssignmentStatus)
+          if(basic_state_send_b && !noAssignmentStatus && !isEspnowBusy())
           {
             // update pedal states
             DapStateBasic_t dap_state_basic_st_lcl;       
@@ -3766,6 +3782,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
             {
               dap_state_basic_st_lcl = statePkg.basic_st;
               dap_state_basic_st_lcl.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(dap_state_basic_st_lcl.payloadHeader_st)), sizeof(dap_state_basic_st_lcl.payloadHeader_st) + sizeof(dap_state_basic_st_lcl.payloadPedalStateBasic_st));
+              g_lastEspnowSendTime_u32 = millis();
               ESPNow.send_message(g_broadcast_mac,(uint8_t *) & dap_state_basic_st_lcl,sizeof(dap_state_basic_st_lcl));
             }
             basic_state_send_b=false;
@@ -4021,7 +4038,7 @@ void miscTask( void * pvParameters )
         buzzerBeepAction_b=false;
       }
     #endif
-    #if defined(OTA_update) && defined(USING_BUZZER)
+    #if defined(OTA_update)
       if(g_beepForOtaProgress)
       {
         Buzzer.single_beep_tone(700,50);

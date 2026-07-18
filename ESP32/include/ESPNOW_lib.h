@@ -62,6 +62,11 @@ DapRudder_t dapg_rudder_st_receiving;
 DapRudder_t dapg_rudder_st_sending;
 extern QueueHandle_t s_servoConfigRxQueue;
 
+volatile uint32_t g_lastEspnowRecvTime_u32 = 0;
+volatile bool g_isEspnowConnected_b = false;
+volatile uint32_t g_lastEspnowSendTime_u32 = 0;
+volatile uint32_t g_lastEspnowOnSentTime_u32 = 0;
+
 /*
 struct ESPNow_Send_Struct
 { 
@@ -90,24 +95,9 @@ DAP_Joystick_Message _dap_joystick_message;
 //ESPNow_Send_Struct _ESPNow_Send;
 ESP_pairing_reg _ESP_pairing_reg;
 
-bool MacCheck(uint8_t* Mac_A, uint8_t*  Mac_B)
+inline bool MacCheck(const uint8_t* Mac_A, const uint8_t* Mac_B)
 {
-  uint8_t mac_i=0;
-  for(mac_i=0;mac_i<6;mac_i++)
-  {
-    if(Mac_A[mac_i]!=Mac_B[mac_i])
-    {      
-      break;
-    }
-    else
-    {
-      if(mac_i==5)
-      {
-        return true;
-      }
-    }
-  }
-  return false;   
+  return memcmp(Mac_A, Mac_B, 6) == 0;
 }
 
 
@@ -132,6 +122,7 @@ void ESPNow_Joystick_Broadcast(int32_t controllerValue)
   {
     _dap_joystick_message.pedal_status=0;
   }
+  g_lastEspnowSendTime_u32 = millis();
   esp_now_send(g_broadcast_mac, (uint8_t *) &_dap_joystick_message, sizeof(_dap_joystick_message));
 
   
@@ -187,6 +178,8 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
   {
     return;
   }
+  g_lastEspnowRecvTime_u32 = millis();
+  g_isEspnowConnected_b = true;
   //uint8_t mac_addr[6]={0};
   DapConfig_t dap_config_espnow_recv_st;
   
@@ -574,7 +567,40 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
 }
 void OnSent(const esp_now_send_info_t *tx_info, esp_now_send_status_t status)
 {
+    g_lastEspnowOnSentTime_u32 = millis();
+}
 
+inline bool isEspnowBusy()
+{
+    uint32_t latency = millis() - g_lastEspnowSendTime_u32;
+    uint32_t onSentAgo = millis() - g_lastEspnowOnSentTime_u32;
+    // If last send is more recent than last OnSent
+    if (latency < onSentAgo)
+    {
+        // 50ms timeout to prevent permanent lockup
+        if (latency < 50) return true;
+    }
+    return false;
+}
+
+inline uint32_t getEspnowSendLatency()
+{
+    uint32_t latency = millis() - g_lastEspnowSendTime_u32;
+    uint32_t onSentAgo = millis() - g_lastEspnowOnSentTime_u32;
+    if (latency < onSentAgo)
+    {
+        return latency;
+    }
+    return 0;
+}
+
+inline bool checkEspnowConnection()
+{
+    if (millis() - g_lastEspnowRecvTime_u32 > 1000)
+    {
+        g_isEspnowConnected_b = false;
+    }
+    return g_isEspnowConnected_b;
 }
 
 // The callback that does the magic
@@ -756,6 +782,7 @@ void sendESPNOWLog(const char *log,...)
   buffer[2] = ESPNOW_LOG_MAGIC_KEY_2;
   buffer[3] = logLen;
   memcpy(&buffer[4], result, logLen);
+  g_lastEspnowSendTime_u32 = millis();
   ESPNow.send_message(g_broadcast_mac, (uint8_t *)buffer, 4 + logLen);
   free(result);
 }
