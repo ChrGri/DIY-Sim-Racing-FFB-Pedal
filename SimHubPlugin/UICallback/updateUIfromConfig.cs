@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -43,7 +43,7 @@ namespace DiyFfbPedal
                 {
                     if (!Plugin.Settings.Pedal_ESPNow_Sync_flag[i])
                     {
-                        if (!Plugin._serialPort[indexOfSelectedPedal_u].IsOpen)
+                        if (!Plugin._serialPort[i].IsOpen)
                         {
                             Plugin._calculations.ServoStatus[i] = 0;
                             Plugin._calculations.PedalFirmwareVersion[i, 2] = 0;
