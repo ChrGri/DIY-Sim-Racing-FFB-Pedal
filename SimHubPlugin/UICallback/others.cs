@@ -651,7 +651,7 @@ namespace DiyFfbPedal
             tmp.payloadPedalAction_.returnPedalConfig_u8 = 1;
             waiting_for_pedal_config[i] = true;
             Plugin.SendPedalAction(tmp, (byte)i);
-            /*
+        /*
             tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
             tmp.payloadHeader_.PedalTag = (byte)i;
@@ -709,6 +709,15 @@ namespace DiyFfbPedal
             }
             */
 
+        }
+
+        unsafe public void Reading_config_auto_wireless(uint i)
+        {
+            // compute checksum
+            DAP_action_st tmp = default;
+            tmp.payloadPedalAction_.returnPedalConfig_u8 = 1;
+            waiting_for_pedal_config[i] = true;
+            Plugin.SendPedalActionWireless(tmp, (byte)i);
         }
 
         public string[] STOPCHAR = { "\r\n" };

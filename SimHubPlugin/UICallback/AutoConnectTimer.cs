@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO.Ports;
 using System.Linq;
@@ -23,7 +23,7 @@ namespace DiyFfbPedal
             {
                 if (Plugin._calculations.pedalWirelessStatus[pedalIdx] == WirelessConnectStateEnum.PEDAL_GET_BASIC_PACKETS_OVER_ESPNOW)
                 {
-                    Reading_config_auto(pedalIdx);
+                    Reading_config_auto_wireless(pedalIdx);
                     
                 }
                 if (Plugin._calculations.pedalSerialStatus[pedalIdx] == ConnectStateEnum.PEDAL_GET_BASIC_PACKETS && !Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalIdx])

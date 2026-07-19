@@ -12,13 +12,26 @@ $version = "${year}.${weekStr}.${dayStr}"
 
 $filepath = "VariablesStruct\constants.cs"
 if (Test-Path $filepath) {
-    try {
-        $content = Get-Content $filepath -Raw -ErrorAction Stop
-        if (![string]::IsNullOrWhiteSpace($content)) {
-            $content = $content -replace 'public const string pluginVersion = ".*?";', "public const string pluginVersion = `"$version`";"
-            Set-Content -Path $filepath -Value $content
+    $newVersionStr = "public const string pluginVersion = `"$version`";"
+    $maxRetries = 5
+    $retryCount = 0
+    $success = $false
+    while (-not $success -and $retryCount -lt $maxRetries) {
+        try {
+            $content = [System.IO.File]::ReadAllText((Resolve-Path $filepath).Path)
+            if (![string]::IsNullOrWhiteSpace($content)) {
+                if (-not $content.Contains($newVersionStr)) {
+                    $content = $content -replace 'public const string pluginVersion = ".*?";', $newVersionStr
+                    [System.IO.File]::WriteAllText((Resolve-Path $filepath).Path, $content)
+                }
+            }
+            $success = $true
+        } catch {
+            $retryCount++
+            Start-Sleep -Milliseconds 500
         }
-    } catch {
-        Write-Warning "Failed to update version in constants.cs: $_"
+    }
+    if (-not $success) {
+        Write-Warning "Failed to update version in constants.cs after $maxRetries retries."
     }
 }
