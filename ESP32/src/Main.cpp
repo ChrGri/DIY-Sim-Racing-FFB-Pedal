@@ -823,7 +823,7 @@ void setup()
     EEPROM.get(ASSIGNMENT_EEPROM_OFFSET_U32, dap_assignement_reg_local);
     uint16_t crcAssign = checksumCalculator_u16((uint8_t *)(&dap_assignement_reg_local), sizeof(DapAssignmentReg_t) - sizeof(uint16_t));
     if (dap_assignement_reg_local.payloadType_u8 == DAP_PAYLOAD_TYPE_ASSIGNMENT_U8 && 
-        dap_assignement_reg_local.magicKey_u8 == ESPNOW_ASSIGNMENT_MAGIC_KEY && 
+        dap_assignement_reg_local.magicKey_u8 == ESPNOW_ASSIGNMENT_MAGIC_KEY_U8 && 
         crcAssign == dap_assignement_reg_local.crc_u16) {
         
         if (dap_assignement_reg_local.deviceId_u8 == PEDAL_ID_CLUTCH || 
@@ -1363,9 +1363,9 @@ xTaskCreatePinnedToCore(
     ActiveSerial->println("Starting software assignment");
     softwareAssignmentInitialize();
     //overwrite the pedal type with device ID
-    if (deviceIdStructChecker)
+    if (g_deviceIdStructChecker_b)
     {
-      dap_config_st_local.payloadPedalConfig_st.pedalType_u8 = dap_assignement_reg.deviceId_u8;
+      dap_config_st_local.payloadPedalConfig_st.pedalType_u8 = g_dapAssignmentReg_st.deviceId_u8;
     }
     else
     {
@@ -1419,7 +1419,7 @@ xTaskCreatePinnedToCore(
   #ifdef ESPNOW_Enable
     dap_calculationVariables_st.rudderBrakeStatus_b=false;
     ActiveSerial->println("Starting ESP now tasks");
-    ESPNow_initialize();
+    espNowInitialize();
     ActiveSerial->println("ESPNOW initialized, add task in");
     addScheduledTask(espNowCommunicationTaskTx, "ESPNOW_update_Task", REPETITION_INTERVAL_ESPNOW_TASK_IN_US_I64, TASK_PRIORITY_ESPNOW_TASK_UBASETYPE, CORE_ID_ESPNOW_TASK_U8, 10000);
     ActiveSerial->println("ESPNOW task added");
@@ -2278,7 +2278,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       #ifdef ESPNOW_Enable
         if(dap_calculationVariables_st.rudderStatus_b)
         {
-          if(Rudder_initializing)
+          if(g_rudderInitializing_b)
           {
             moveSlowlyToPosition_b=true;
             /*
@@ -2294,25 +2294,25 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
             //ActiveSerial->println("moving to center");
 
           }
-          if(Rudder_initializing && (Rudder_real_poisiton<52 && Rudder_real_poisiton>48))
+          if(g_rudderInitializing_b && (Rudder_real_poisiton<52 && Rudder_real_poisiton>48))
           {
-            if(Rudder_initialized_time==0)
+            if(g_rudderInitializedTime_u32==0)
             {
-              Rudder_initialized_time=millis();
+              g_rudderInitializedTime_u32=millis();
             }
             else
             {
               unsigned long Rudder_initialzing_time_Now = millis();
               //wait 3s for the initializing
               //ActiveSerial->print("Rudder_t initializing...");
-              //ActiveSerial->println(Rudder_initialzing_time_Now-Rudder_initialized_time);
-              if( (Rudder_initialzing_time_Now-Rudder_initialized_time)> Rudder_timeout )
+              //ActiveSerial->println(Rudder_initialzing_time_Now-g_rudderInitializedTime_u32);
+              if( (Rudder_initialzing_time_Now-g_rudderInitializedTime_u32)> Rudder_timeout )
               {
-                Rudder_initializing=false;
+                g_rudderInitializing_b=false;
                 moveSlowlyToPosition_b=false;
                 ActiveSerial->println("Rudder_t initialized");
                 dap_calculationVariables_st.isRudderInitialized_b=true;
-                Rudder_initialized_time=0;
+                g_rudderInitializedTime_u32=0;
                 Buzzer.play_melody_tone(melody_Airship_theme, sizeof(melody_Airship_theme)/sizeof(melody_Airship_theme[0]),melody_Airship_theme_duration);
               }
             }
@@ -2320,14 +2320,14 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
 
           }
         }
-        if(Rudder_deinitializing)
+        if(g_rudderDeinitializing_b)
         {
           moveSlowlyToPosition_b=true;
           //ActiveSerial->println("moving to min end stop");
         }
-        if(Rudder_deinitializing && (Rudder_real_poisiton< 2 ))
+        if(g_rudderDeinitializing_b && (Rudder_real_poisiton< 2 ))
         {
-          Rudder_deinitializing=false;
+          g_rudderDeinitializing_b=false;
           moveSlowlyToPosition_b=false;
           ActiveSerial->println("Rudder_t deinitialized");
           dap_calculationVariables_st.isRudderInitialized_b=false;
@@ -2335,43 +2335,43 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         //helicopter rudder initialzied
         if(dap_calculationVariables_st.helicopterRudderStatus_b)
         {
-          if(HeliRudder_initializing)
+          if(g_heliRudderInitializing_b)
           {
             moveSlowlyToPosition_b=true;
             //ActiveSerial->println("moving to center");
           }
-          if(HeliRudder_initializing && (Rudder_real_poisiton<52 && Rudder_real_poisiton>48))
+          if(g_heliRudderInitializing_b && (Rudder_real_poisiton<52 && Rudder_real_poisiton>48))
           {
-            if(Rudder_initialized_time==0)
+            if(g_rudderInitializedTime_u32==0)
             {
-              Rudder_initialized_time=millis();
+              g_rudderInitializedTime_u32=millis();
             }
             else
             {
               unsigned long Rudder_initialzing_time_Now = millis();
               //wait 3s for the initializing
               //ActiveSerial->print("Rudder_t initializing...");
-              //ActiveSerial->println(Rudder_initialzing_time_Now-Rudder_initialized_time);
-              if( (Rudder_initialzing_time_Now-Rudder_initialized_time)> Rudder_timeout )
+              //ActiveSerial->println(Rudder_initialzing_time_Now-g_rudderInitializedTime_u32);
+              if( (Rudder_initialzing_time_Now-g_rudderInitializedTime_u32)> Rudder_timeout )
               {
-                HeliRudder_initializing=false;
+                g_heliRudderInitializing_b=false;
                 moveSlowlyToPosition_b=false;
                 ActiveSerial->println("HeliRudder initialized");
                 dap_calculationVariables_st.isHelicopterRudderInitialized_b=true;
-                Rudder_initialized_time=0;
+                g_rudderInitializedTime_u32=0;
                 Buzzer.play_melody_tone(melodyAirwolfTheme, sizeof(melodyAirwolfTheme)/sizeof(melodyAirwolfTheme[0]),melodyAirwolfThemeDuration);
               }
             }
           }
         }
-        if(HeliRudder_deinitializing)
+        if(g_heliRudderDeinitializing_b)
         {
           moveSlowlyToPosition_b=true;
             //ActiveSerial->println("moving to min end stop");
         }
-        if(HeliRudder_deinitializing && (Rudder_real_poisiton< 2 ))
+        if(g_heliRudderDeinitializing_b && (Rudder_real_poisiton< 2 ))
         {
-          HeliRudder_deinitializing=false;
+          g_heliRudderDeinitializing_b=false;
           moveSlowlyToPosition_b=false;
           ActiveSerial->println("HeliRudder deinitialized");
           dap_calculationVariables_st.isHelicopterRudderInitialized_b=false;
@@ -2618,10 +2618,10 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.servoStatus_u8=stepper->servoStatus;
 
           #ifdef ESPNOW_Enable
-            if(g_ESPNow_error_code!=0)
+            if(g_espNowErrorCode_u8!=0)
             {
-              dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.errorCode_u8=g_ESPNow_error_code;
-              g_ESPNow_error_code=0;
+              dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st.errorCode_u8=g_espNowErrorCode_u8;
+              g_espNowErrorCode_u8=0;
             }
           #endif
 
@@ -3006,7 +3006,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                           ActiveSerial->println("Get OTA command");
                           g_OTA_enable_b=true;
                           //g_OTA_enable_start=true;
-                          g_ESPNow_OTA_enable=false;
+                          g_espNowOtaEnable_b=false;
                         }
                         #endif
                         //4 Enable pairing
@@ -3014,7 +3014,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                         {
                           #ifdef ESPNow_Pairing_function
                             ActiveSerial->println("Get Pairing command");
-                            software_pairing_action_b=true;
+                            g_softwarePairingAction_b=true;
                           #endif
                           #ifndef ESPNow_Pairing_function
                             ActiveSerial->println("no supporting command");
@@ -3032,7 +3032,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                             ActiveSerial->println("Command not supported");
                             delay(1000);
                           #endif
-                          //ESPNOW_BootIntoDownloadMode = false;
+                          //g_espNowBootIntoDownloadMode_b = false;
                         }
                         if (received_action.payloadPedalAction_st.systemAction_u8 == (uint8_t)PedalSystemAction::PRINT_PEDAL_INFO)
                         {
@@ -3073,7 +3073,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                             {
                               dap_calculationVariables_st.rudderStatus_b=true;
                               ActiveSerial->println("Rudder_t on");
-                              Rudder_initializing=true;
+                              g_rudderInitializing_b=true;
                               moveSlowlyToPosition_b=true;
                               //ActiveSerial->print("status:");
                               //ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
@@ -3082,7 +3082,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                             {
                               dap_calculationVariables_st.rudderStatus_b=false;
                               ActiveSerial->println("Rudder_t off");
-                              Rudder_deinitializing=true;
+                              g_rudderDeinitializing_b=true;
                               moveSlowlyToPosition_b=true; 
 
                               //ActiveSerial->print("status:");
@@ -3112,7 +3112,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                             dap_calculationVariables_st.rudderStatus_b=false;
                             dap_calculationVariables_st.rudderBrakeStatus_b=false;
                             ActiveSerial->println("Rudder_t Status Clear");
-                            Rudder_deinitializing=true;
+                            g_rudderDeinitializing_b=true;
                             moveSlowlyToPosition_b=true;
 
                           }
@@ -3140,7 +3140,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                           g_OTA_enable_b=true;
                           g_OTA_enable_start=true;
                           #ifdef ESPNOW_Enable
-                            g_ESPNow_OTA_enable=false;
+                            g_espNowOtaEnable_b=false;
                           #endif
                         }
                       }
@@ -3242,7 +3242,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskTx( void * pvParameters )
         usbManager.write((const uint8_t*)&resp, sizeof(DAP_servo_config_st_t));
 
 #ifdef ESPNOW_Enable
-            ESPNow.send_message(g_broadcast_mac, (uint8_t*)&resp, sizeof(DAP_servo_config_st_t));
+            ESPNow.send_message(g_broadcastMac_au8, (uint8_t*)&resp, sizeof(DAP_servo_config_st_t));
 #endif
       }
     }
@@ -3422,8 +3422,8 @@ void otaUpdateTask( void * pvParameters )
             sendESPNOWLog("wait...");
             delay(1000);
             result= esp_now_deinit();
-            g_ESPNow_initial_status=false;
-            g_ESPNOW_status=false;
+            g_espNowInitialStatus_b=false;
+            g_espNowStatus_b=false;
           #else
             result = ESP_OK;
           #endif
@@ -3574,7 +3574,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
           noAssignmentStatus=true;
         }
         //restart from espnow
-        if(g_ESPNow_restart)
+        if(g_espNowRestart_b)
         {
           ActiveSerial->println("ESP restart by ESPnow request");
           sendESPNOWLog("Pedal:%d restarted by request", espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8);
@@ -3607,11 +3607,11 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
         profiler_espNow.start(0);
 
         
-        if(g_ESPNow_initial_status==false  )
+        if(g_espNowInitialStatus_b==false  )
         {
           if(g_OTA_enable_b==false)
           {
-            ESPNow_initialize();
+            espNowInitialize();
           }
           
         }
@@ -3621,22 +3621,22 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
           #ifdef Hardware_Pairing_button
             if(digitalRead(PAIRING_GPIO_U8)==LOW)
             {
-              hardware_pairing_action_b=true;
+              g_hardwarePairingAction_b=true;
             }
           #endif
-            if(hardware_pairing_action_b||software_pairing_action_b)
+            if(g_hardwarePairingAction_b||g_softwarePairingAction_b)
             {
               ActiveSerial->println("Pedal Pairing.....");
               delay(1000);
               Pairing_state_start=millis();
               Pairing_state_last_sending=millis();
-              ESPNow_pairing_action_b=true;
+              g_espNowPairingAction_b=true;
               building_dap_esppairing_lcl=true;
-              software_pairing_action_b=false;
-              hardware_pairing_action_b=false;
+              g_softwarePairingAction_b=false;
+              g_hardwarePairingAction_b=false;
               
             }
-            if(ESPNow_pairing_action_b)
+            if(g_espNowPairingAction_b)
             {
               unsigned long now=millis();
               //sending package
@@ -3654,7 +3654,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
               if(now-Pairing_state_last_sending>400)
               {
                 Pairing_state_last_sending=now;
-                ESPNow.send_message(g_broadcast_mac,(uint8_t *) &dap_esppairing_lcl, sizeof(dap_esppairing_lcl));
+                ESPNow.send_message(g_broadcastMac_au8,(uint8_t *) &dap_esppairing_lcl, sizeof(dap_esppairing_lcl));
               }
 
               
@@ -3662,72 +3662,72 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
               //timeout check
               if(now-Pairing_state_start>Pairing_timeout)
               {
-                ESPNow_pairing_action_b=false;
+                g_espNowPairingAction_b=false;
                 ActiveSerial->print("Pedal: ");
                 ActiveSerial->print(espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8);
                 ActiveSerial->println(" timeout.");
                 Buzzer.single_beep_tone(700,100);
-                if(g_UpdatePairingToEeprom)
+                if(g_updatePairingToEeprom_b)
                 {
-                  EEPROM.put(EEPROM_OFFSET_U32,_ESP_pairing_reg);
+                  EEPROM.put(EEPROM_OFFSET_U32,g_espPairingReg_st);
                   EEPROM.commit();
-                  g_UpdatePairingToEeprom=false;
+                  g_updatePairingToEeprom_b=false;
                   //list eeprom
-                  ESP_pairing_reg ESP_pairing_reg_local;
+                  EspPairingReg_t ESP_pairing_reg_local;
                   EEPROM.get(EEPROM_OFFSET_U32, ESP_pairing_reg_local);
                   for(int i=0;i<4;i++)
                   {
-                    if(ESP_pairing_reg_local.Pair_status[i]==1)
+                    if(ESP_pairing_reg_local.pairStatus_au8[i]==1)
                     {
                       ActiveSerial->print("#");
                       ActiveSerial->print(i);
                       ActiveSerial->print("Pair: ");
-                      ActiveSerial->print(ESP_pairing_reg_local.Pair_status[i]);
-                      ActiveSerial->printf(" Mac: %02X:%02X:%02X:%02X:%02X:%02X\n", ESP_pairing_reg_local.Pair_mac[i][0], ESP_pairing_reg_local.Pair_mac[i][1], ESP_pairing_reg_local.Pair_mac[i][2], ESP_pairing_reg_local.Pair_mac[i][3], ESP_pairing_reg_local.Pair_mac[i][4], ESP_pairing_reg_local.Pair_mac[i][5]);
+                      ActiveSerial->print(ESP_pairing_reg_local.pairStatus_au8[i]);
+                      ActiveSerial->printf(" Mac: %02X:%02X:%02X:%02X:%02X:%02X\n", ESP_pairing_reg_local.pairMac_aau8[i][0], ESP_pairing_reg_local.pairMac_aau8[i][1], ESP_pairing_reg_local.pairMac_aau8[i][2], ESP_pairing_reg_local.pairMac_aau8[i][3], ESP_pairing_reg_local.pairMac_aau8[i][4], ESP_pairing_reg_local.pairMac_aau8[i][5]);
                     }
                   }
                   //adding peer
                   
                   for(int i=0; i<4;i++)
                   {
-                    if(_ESP_pairing_reg.Pair_status[i]==1)
+                    if(g_espPairingReg_st.pairStatus_au8[i]==1)
                     {
                       if(i==0)
                       {
-                        ESPNow.remove_peer(g_Clu_mac);
-                        memcpy(&g_Clu_mac,&_ESP_pairing_reg.Pair_mac[i],6);
+                        ESPNow.remove_peer(g_pedalMac_aau8[0]);
+                        memcpy(&g_pedalMac_aau8[0],&g_espPairingReg_st.pairMac_aau8[i],6);
                         delay(100);
-                        ESPNow.add_peer(g_Clu_mac);
+                        ESPNow.add_peer(g_pedalMac_aau8[0]);
                         
                       }
                       if(i==1)
                       {
-                        ESPNow.remove_peer(g_Brk_mac);
-                        memcpy(&g_Brk_mac,&_ESP_pairing_reg.Pair_mac[i],6);
+                        ESPNow.remove_peer(g_pedalMac_aau8[1]);
+                        memcpy(&g_pedalMac_aau8[1],&g_espPairingReg_st.pairMac_aau8[i],6);
                         delay(100);
-                        ESPNow.add_peer(g_Brk_mac);
+                        ESPNow.add_peer(g_pedalMac_aau8[1]);
                       }
                       if(i==2)
                       {
-                        ESPNow.remove_peer(g_Gas_mac);
-                        memcpy(&g_Gas_mac,&_ESP_pairing_reg.Pair_mac[i],6);
+                        ESPNow.remove_peer(g_pedalMac_aau8[2]);
+                        memcpy(&g_pedalMac_aau8[2],&g_espPairingReg_st.pairMac_aau8[i],6);
                         delay(100);
-                        ESPNow.add_peer(g_Gas_mac);
+                        ESPNow.add_peer(g_pedalMac_aau8[2]);
                       }        
                       if(i==3)
                       {
-                        ESPNow.remove_peer(g_esp_Host);
-                        memcpy(&g_esp_Host,&_ESP_pairing_reg.Pair_mac[i],6);
+                        ESPNow.remove_peer(g_espHost_au8);
+                        memcpy(&g_espHost_au8,&g_espPairingReg_st.pairMac_aau8[i],6);
                         delay(100);
-                        ESPNow.add_peer(g_esp_Host);                
+                        ESPNow.add_peer(g_espHost_au8);                
                       }        
                       if(espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8==1)
                       {
-                        memcpy(g_Recv_mac, g_Gas_mac, 6);
+                        memcpy(g_recvMac_au8, g_pedalMac_aau8[2], 6);
                       }
                       if(espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8==2)
                       {
-                        memcpy(g_Recv_mac, g_Brk_mac, 6);
+                        memcpy(g_recvMac_au8, g_pedalMac_aau8[1], 6);
                       }
                     }
                   }
@@ -3763,11 +3763,11 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
             dap_assignmentBoardcast_st.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
             dap_assignmentBoardcast_st.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
             dap_assignmentBoardcast_st.payloadAssignmentRequest_st.assignmentAction_u8=1;
-            memcpy(dap_assignmentBoardcast_st.payloadAssignmentRequest_st.macAddress_au8,g_esp_Mac,6);
+            memcpy(dap_assignmentBoardcast_st.payloadAssignmentRequest_st.macAddress_au8,g_espMac_au8,6);
             uint16_t crc = 0;
             crc = checksumCalculator_u16((uint8_t *)(&(dap_assignmentBoardcast_st.payloadHeader_st)), sizeof(dap_assignmentBoardcast_st.payloadHeader_st) + sizeof(dap_assignmentBoardcast_st.payloadAssignmentRequest_st));
             dap_assignmentBoardcast_st.payloadFooter_st.checkSum_u16=crc;
-            ESPNow.send_message(g_broadcast_mac, (uint8_t *)&dap_assignmentBoardcast_st, sizeof(DapAssignmentBroadcast_t));
+            ESPNow.send_message(g_broadcastMac_au8, (uint8_t *)&dap_assignmentBoardcast_st, sizeof(DapAssignmentBroadcast_t));
           }
           // basic state packet send out  
           if(basic_state_send_b && !noAssignmentStatus && !isEspnowBusy())
@@ -3783,7 +3783,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
               dap_state_basic_st_lcl = statePkg.basic_st;
               dap_state_basic_st_lcl.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(dap_state_basic_st_lcl.payloadHeader_st)), sizeof(dap_state_basic_st_lcl.payloadHeader_st) + sizeof(dap_state_basic_st_lcl.payloadPedalStateBasic_st));
               g_lastEspnowSendTime_u32 = millis();
-              ESPNow.send_message(g_broadcast_mac,(uint8_t *) & dap_state_basic_st_lcl,sizeof(dap_state_basic_st_lcl));
+              ESPNow.send_message(g_broadcastMac_au8,(uint8_t *) & dap_state_basic_st_lcl,sizeof(dap_state_basic_st_lcl));
             }
             basic_state_send_b=false;
           }
@@ -3804,7 +3804,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
             {
               dap_state_extended_st_espNow = statePkg.extended_st;
               dap_state_extended_st_espNow.payloadFooter_st.checkSum_u16 = checksumCalculator_u16((uint8_t*)(&(dap_state_extended_st_espNow.payloadHeader_st)), sizeof(dap_state_extended_st_espNow.payloadHeader_st) + sizeof(dap_state_extended_st_espNow.payloadPedalStateExtended_st));
-              ESPNow.send_message(g_broadcast_mac,(uint8_t *)&dap_state_extended_st_espNow, sizeof(dap_state_extended_st_espNow));
+              ESPNow.send_message(g_broadcastMac_au8,(uint8_t *)&dap_state_extended_st_espNow, sizeof(dap_state_extended_st_espNow));
             }
             extend_state_send_b=false;
             
@@ -3812,7 +3812,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
 
           profiler_espNow.end(3);
 
-          if (g_ESPNow_config_request && !noAssignmentStatus)
+          if (g_espNowConfigRequest_b && !noAssignmentStatus)
           {
             DapConfig_t * dap_config_st_local_ptr;
             dap_config_st_local_ptr = &espnow_dap_config_st;
@@ -3824,29 +3824,29 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
             uint16_t crc=0;
             crc = checksumCalculator_u16((uint8_t*)(&(espnow_dap_config_st.payloadHeader_st)), sizeof(espnow_dap_config_st.payloadHeader_st) + sizeof(espnow_dap_config_st.payloadPedalConfig_st));
             dap_config_st_local_ptr->payloadFooter_st.checkSum_u16 = crc;
-            ESPNow.send_message(g_broadcast_mac,(uint8_t *) & espnow_dap_config_st, sizeof(espnow_dap_config_st));
-            g_ESPNow_config_request=false;
+            ESPNow.send_message(g_broadcastMac_au8,(uint8_t *) & espnow_dap_config_st, sizeof(espnow_dap_config_st));
+            g_espNowConfigRequest_b=false;
             sendESPNOWLog("Pedal:%d Config returned by user request, CRC:%d", espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8, crc);
             delay(2);
           }
 
-          if (g_ESPNow_OTA_enable && !noAssignmentStatus)
+          if (g_espNowOtaEnable_b && !noAssignmentStatus)
           {
             ActiveSerial->println("Get OTA command");
             
             g_OTA_enable_b=true;
             g_OTA_enable_start=true;
-            g_ESPNow_OTA_enable=false;
+            g_espNowOtaEnable_b=false;
           }
 
-          if (OTA_update_action_b && !noAssignmentStatus)
+          if (g_otaUpdateAction_b && !noAssignmentStatus)
           {
             ActiveSerial->println("Starting Pedal OTA");
             buzzerBeepAction_b=true;
             g_OTA_enable_b=true;
             g_OTA_enable_start=true;
-            g_ESPNow_OTA_enable=false;
-            OTA_update_action_b = false;
+            g_espNowOtaEnable_b=false;
+            g_otaUpdateAction_b = false;
             //ActiveSerial->println("get basic wifi info");
             //ActiveSerial->readBytes((char*)&dap_action_ota_st, sizeof(DapActionOta_t));
             #ifdef OTA_update
@@ -3869,31 +3869,31 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
 
           }
 
-          if (printPedalInfo_b && !noAssignmentStatus)
+          if (g_printPedalInfo_b && !noAssignmentStatus)
           {
-            printPedalInfo_b=false;
+            g_printPedalInfo_b=false;
             buzzerBeepAction_b=true;
             delay(100);
              pedalInfoBuilder.BuildInfoString(espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8, CONTROL_BOARD, loadcell->getBiasEstimate(), loadcell->getStandardDeviationEstimate(), ((float)stepper->getServosVoltage()/10.0f),dap_calculationVariables_st.stepperPosMaxEndstop_i32,dap_calculationVariables_st.currentPedalPosition_u32);
             sendESPNOWLog(pedalInfoBuilder.logString);
             ActiveSerial->println(pedalInfoBuilder.logString);
             delay(3);
-            pedalInfoBuilder.BuildESPNOWInfo(espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8,g_rssi);
+            pedalInfoBuilder.BuildESPNOWInfo(espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8,g_rssi_ai32);
             sendESPNOWLog(pedalInfoBuilder.logESPNOWString);
             ActiveSerial->println(pedalInfoBuilder.logESPNOWString);
 
           }
-          if (Get_Rudder_action_b && !noAssignmentStatus)
+          if (g_getRudderAction_b && !noAssignmentStatus)
           {
-            Get_Rudder_action_b=false;
+            g_getRudderAction_b=false;
             Buzzer.single_beep_tone(700,100);
           }
-          if (Get_HeliRudder_action_b && !noAssignmentStatus)
+          if (g_getHeliRudderAction_b && !noAssignmentStatus)
           {
-            Get_HeliRudder_action_b=false;
+            g_getHeliRudderAction_b=false;
             Buzzer.single_beep_tone(700,100);
           }
-          if (ESPNOW_BootIntoDownloadMode && !noAssignmentStatus)
+          if (g_espNowBootIntoDownloadMode_b && !noAssignmentStatus)
           {
             #ifdef ESPNow_S3
               ActiveSerial->println("Restart into Download mode");
@@ -3905,34 +3905,34 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
               ActiveSerial->println("Command not supported");
               delay(1000);
             #endif
-            ESPNOW_BootIntoDownloadMode = false;
+            g_espNowBootIntoDownloadMode_b = false;
           }
           //send out rudder packet after rudder initialized
           if (millis() - rudderPacketsUpdateLast > rudderPacketInterval && !noAssignmentStatus)
           {
-            if((dap_calculationVariables_st.rudderStatus_b || dap_calculationVariables_st.helicopterRudderStatus_b) && (!Rudder_initializing && !HeliRudder_initializing))
+            if((dap_calculationVariables_st.rudderStatus_b || dap_calculationVariables_st.helicopterRudderStatus_b) && (!g_rudderInitializing_b && !g_heliRudderInitializing_b))
             {              
-               dapg_rudder_st_sending.payloadRudderState_st.pedalPositionRatio_fl32=dap_calculationVariables_st.currentPedalPositionRatio_fl32;
-               dapg_rudder_st_sending.payloadRudderState_st.pedalPosition_u16=dap_calculationVariables_st.currentPedalPosition_u32;
-              dapg_rudder_st_sending.payloadHeader_st.payloadType_u8=DAP_PAYLOAD_TYPE_ESPNOW_RUDDER_U8;
-              dapg_rudder_st_sending.payloadHeader_st.pedalTag_u8 = espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8;
-              dapg_rudder_st_sending.payloadHeader_st.version_u8=DAP_VERSION_CONFIG_U8;
+               g_dapRudderSending_st.payloadRudderState_st.pedalPositionRatio_fl32=dap_calculationVariables_st.currentPedalPositionRatio_fl32;
+               g_dapRudderSending_st.payloadRudderState_st.pedalPosition_u16=dap_calculationVariables_st.currentPedalPosition_u32;
+              g_dapRudderSending_st.payloadHeader_st.payloadType_u8=DAP_PAYLOAD_TYPE_ESPNOW_RUDDER_U8;
+              g_dapRudderSending_st.payloadHeader_st.pedalTag_u8 = espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8;
+              g_dapRudderSending_st.payloadHeader_st.version_u8=DAP_VERSION_CONFIG_U8;
               uint16_t crc=0;
-              crc = checksumCalculator_u16((uint8_t*)(&(dapg_rudder_st_sending.payloadHeader_st)), sizeof(dapg_rudder_st_sending.payloadHeader_st) + sizeof(dapg_rudder_st_sending.payloadRudderState_st));
-              dapg_rudder_st_sending.payloadFooter_st.checkSum_u16=crc;
-              ESPNow.send_message(g_broadcast_mac,(uint8_t *) &dapg_rudder_st_sending,sizeof(dapg_rudder_st_sending));   
+              crc = checksumCalculator_u16((uint8_t*)(&(g_dapRudderSending_st.payloadHeader_st)), sizeof(g_dapRudderSending_st.payloadHeader_st) + sizeof(g_dapRudderSending_st.payloadRudderState_st));
+              g_dapRudderSending_st.payloadFooter_st.checkSum_u16=crc;
+              ESPNow.send_message(g_broadcastMac_au8,(uint8_t *) &g_dapRudderSending_st,sizeof(g_dapRudderSending_st));   
                //ESPNow_send=dap_calculationVariables_st.currentPedalPosition_u32; 
               //esp_err_t result =ESPNow.send_message(Recv_mac,(uint8_t *) &_ESPNow_Send,sizeof(_ESPNow_Send));                
               //if (result == ESP_OK) 
               //{
               //  ActiveSerial->println("Error sending the data");
               //}
-              if (g_ESPNow_Rudder_Update && !noAssignmentStatus)
+              if (g_espNowRudderUpdate_b && !noAssignmentStatus)
               {
                 //dap_calculationVariables_st.syncPedalPosition_u32=ESPNow_recieve;
-                dap_calculationVariables_st.syncPedalPosition_u32=dapg_rudder_st_receiving.payloadRudderState_st.pedalPosition_u16;
-                dap_calculationVariables_st.syncPedalPositionRatio_fl32=dapg_rudder_st_receiving.payloadRudderState_st.pedalPositionRatio_fl32;
-                g_ESPNow_Rudder_Update=false;
+                dap_calculationVariables_st.syncPedalPosition_u32=g_dapRudderReceiving_st.payloadRudderState_st.pedalPosition_u16;
+                dap_calculationVariables_st.syncPedalPositionRatio_fl32=g_dapRudderReceiving_st.payloadRudderState_st.pedalPositionRatio_fl32;
+                g_espNowRudderUpdate_b=false;
               }                
             }
             rudderPacketsUpdateLast=millis();
@@ -3947,9 +3947,9 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
               ActiveSerial->print("Pedal:");
               ActiveSerial->print(espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8);
               ActiveSerial->print(", Send %: ");
-              ActiveSerial->print(dapg_rudder_st_sending.payloadRudderState_st.pedalPositionRatio_fl32);
+              ActiveSerial->print(g_dapRudderSending_st.payloadRudderState_st.pedalPositionRatio_fl32);
               ActiveSerial->print(", Recieve %:");
-              ActiveSerial->print(dapg_rudder_st_receiving.payloadRudderState_st.pedalPositionRatio_fl32);
+              ActiveSerial->print(g_dapRudderReceiving_st.payloadRudderState_st.pedalPositionRatio_fl32);
               ActiveSerial->print(", Send Position: ");
                ActiveSerial->print(dap_calculationVariables_st.currentPedalPosition_u32);
               ActiveSerial->print(", % in cal: ");
@@ -4002,17 +4002,17 @@ void miscTask( void * pvParameters )
     
     #ifdef ESPNOW_Enable
       //software assignment
-      if(assignmentUpdate_b)
+      if(g_assignmentUpdate_b)
       {
-        assignmentUpdate_b = false;
+        g_assignmentUpdate_b = false;
         writeAssignmentToEeprom();
         delay(1000);
         //restart after aassignment
         ESP.restart();
       }
-      if (assignmentClear_b)
+      if (g_assignmentClear_b)
       {
-        assignmentClear_b = false;
+        g_assignmentClear_b = false;
         clearAssignmentToEeprom();
         delay(1000);
         // restart after aassignment
@@ -4021,16 +4021,16 @@ void miscTask( void * pvParameters )
 #endif
     // make buzzer sound actions here
     #ifdef ESPNOW_Enable
-      if (Config_update_Buzzer_b)
+      if (g_configUpdateBuzzer_b)
       {
         Buzzer.single_beep_tone(700, 50);
-        Config_update_Buzzer_b = false;
+        g_configUpdateBuzzer_b = false;
       }
-      if (assignmentUpdateBuzzer_b)
+      if (g_assignmentUpdateBuzzer_b)
       {
         ActiveSerial->println("Beep");
         Buzzer.single_beep_tone(700, 50);
-        assignmentUpdateBuzzer_b = false;
+        g_assignmentUpdateBuzzer_b = false;
       }
       if(buzzerBeepAction_b)
       {
