@@ -6,7 +6,19 @@
 #include <Adafruit_NeoPixel.h>
 #endif
 
+typedef uint32_t crgb_t;
+
 class PedalLED {
+public:
+    static const crgb_t L_RED = 0xff0000;
+    static const crgb_t L_GREEN = 0x00ff00;
+    static const crgb_t L_BLUE = 0x0000ff;
+    static const crgb_t L_WHITE = 0xe0e0e0;
+    static const crgb_t L_YELLOW = 0xffde21;
+    static const crgb_t L_ORANGE = 0xffa500;
+    static const crgb_t L_CYAN = 0x00ffff;
+    static const crgb_t L_PURPLE = 0x800080;
+
 private:
 #ifdef USING_LED
     Adafruit_NeoPixel pixels;
