@@ -932,6 +932,7 @@ void setup()
   
 
   pedalLED.begin();
+  pedalLED.setBrightness(20);
   pedalLED.setPixelColor(0,0xff,0xff,0xff);
   pedalLED.show(); 
 
@@ -1076,7 +1077,7 @@ void setup()
   loadcell->estimateBiasAndVariance();
   */
 
-  pedalLED.setPixelColor(0,0x00,0x00,0x00);
+  pedalLED.setPixelColor(0,0x5f,0x5f,0x00);//yellow
   pedalLED.show();
 
   bool invMotorDir = dap_config_st_local.payloadPedalConfig_st.invertMotorDirection_u8 > 0;
@@ -1123,7 +1124,7 @@ void setup()
   kalman_2nd_order = new KalmanFilter2ndOrder(loadcell->getVarianceEstimate());
 
 
-  pedalLED.setPixelColor(0, 0xff, 0xff, 0xff);
+  pedalLED.setPixelColor(0, 0x80, 0x00, 0x80);//purple
   pedalLED.show();
 
   
