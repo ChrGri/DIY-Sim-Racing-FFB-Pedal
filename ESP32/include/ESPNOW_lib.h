@@ -1,3 +1,6 @@
+#pragma once
+#ifdef ESPNOW_Enable
+static const bool IS_ESPNOW_ENABLED = true;
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include <Arduino.h>
@@ -71,8 +74,7 @@ volatile uint32_t g_lastEspnowOnSentTime_u32 = 0;
 
 /*
 struct ESPNow_Send_Struct
-
-{ 
+{
   uint16_t pedal_position;
   float pedal_position_ratio;
 };
@@ -88,7 +90,6 @@ typedef struct DAP_Joystick_Message
 } DAP_Joystick_Message;
 
 typedef struct EspPairingReg_t
-
 {
   uint8_t pairStatus_au8[4];
   uint8_t pairMac_aau8[4][6];
@@ -101,7 +102,6 @@ DAP_Joystick_Message _dap_joystick_message;
 EspPairingReg_t g_espPairingReg_st;
 
 inline bool macCheck(const uint8_t* Mac_A, const uint8_t* Mac_B)
-
 {
   return memcmp(Mac_A, Mac_B, 6) == 0;
 }
@@ -147,11 +147,11 @@ void ESPNow_Joystick_Broadcast(int32_t controllerValue)
   */
   
   /*if (result == ESP_OK)
- {
+  {
     ActiveSerial->println("Sent with success");
   }
   else
- {
+  {
     ActiveSerial->println("Error sending the data");
   }*/
 }
@@ -186,6 +186,24 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
   {
     return;
   }
+  
+  if (esp_now_info->rx_ctrl != NULL)
+  {
+    for (int i = 0; i < 3; i++)
+    {
+      if (macCheck((uint8_t*)esp_now_info->src_addr, g_pedalMac_aau8[i]))
+      {
+        g_rssi_ai32[i] = esp_now_info->rx_ctrl->rssi;
+        break; // Match found, exit loop
+      }
+    }
+    // Also check host
+    if (macCheck((uint8_t*)esp_now_info->src_addr, g_espHost_au8))
+    {
+      g_rssi_ai32[3] = esp_now_info->rx_ctrl->rssi;
+    }
+  }
+
   g_lastEspnowRecvTime_u32 = millis();
   g_isEspnowConnected_b = true;
   //uint8_t mac_addr[6]={0};
@@ -219,26 +237,22 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
         memcpy(&dapg_rudder_st_st_local, data, sizeof(DapRudder_t));
         // check if data is plausible  
         if ( dapg_rudder_st_st_local.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_ESPNOW_RUDDER_U8 )
-        
-{
+        {
           structChecker = false;
         }  
         if ( dapg_rudder_st_st_local.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8 )
-        
-{
+        {
           structChecker = false;
         }
         // checksum validation
         crc = checksumCalculator_u16((uint8_t*)(&(dapg_rudder_st_st_local.payloadHeader_st)), sizeof(dapg_rudder_st_st_local.payloadHeader_st) + sizeof(dapg_rudder_st_st_local.payloadRudderState_st));
         if (crc != dapg_rudder_st_st_local.payloadFooter_st.checkSum_u16)
-        
-{
+        {
           structChecker = false;
         }
         // if checks are successfull, overwrite global configuration struct
         if (structChecker == true)
-        
-{
+        {
           memcpy(&g_dapRudderReceiving_st, data, sizeof(DapRudder_t));
           g_espNowRudderUpdate_b=true;
         }
@@ -263,18 +277,15 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
 
           // check if data is plausible
           if (dap_config_espnow_recv_st.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_CONFIG_U8)
-          
-{
+          {
             structChecker = false;
             g_espNowErrorCode_u8 = 101;
           }
           if (dap_config_espnow_recv_st.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8)
-          
-{
+          {
             structChecker = false;
             if (g_espNowErrorCode_u8 == 0)
-            
-{
+            {
               g_espNowErrorCode_u8 = 102;
             }
           }
@@ -284,16 +295,14 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
           {
             structChecker = false;
             if (g_espNowErrorCode_u8 == 0)
-            
-{
+            {
               g_espNowErrorCode_u8 = 103;
             }
           }
 
           // if checks are successfull, overwrite global configuration struct
           if (structChecker == true)
-          
-{
+          {
             // ActiveSerial->println("Updating pedal config");
             configDataPackage_t configPackage_st;
             configPackage_st.config_st = dap_config_espnow_recv_st;
@@ -325,12 +334,10 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
           bool structChecker = true;
           uint16_t crc;
           if (dap_actions_st.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_ACTION_U8)
-          
-{
+          {
             structChecker = false;
             if (g_espNowErrorCode_u8 == 0)
-            
-{
+            {
               g_espNowErrorCode_u8 = 111;
             }
           }
@@ -338,8 +345,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
           {
             structChecker = false;
             if (g_espNowErrorCode_u8 == 0)
-            
-{
+            {
               g_espNowErrorCode_u8 = 112;
             }
           }
@@ -348,15 +354,13 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
           {
             structChecker = false;
             if (g_espNowErrorCode_u8 == 0)
-            
-{
+            {
               g_espNowErrorCode_u8 = 113;
             }
           }
 
           if (structChecker == true)
-          
-{
+          {
 
             // 2= restart pedal
             if (dap_actions_st.payloadPedalAction_st.systemAction_u8 == (uint8_t)PedalSystemAction::PEDAL_RESTART)
@@ -555,7 +559,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
         }
       }
       if(data_len==sizeof(DapActionOta_t))
-      {        
+      {
         memcpy(&dap_action_ota_st, data, sizeof(DapActionOta_t));
         g_otaUpdateAction_b=true;
       }
@@ -573,10 +577,9 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
         if (crc != received_servo_config.payloadFooter_st.checkSum_u16) structChecker = false;
         
         if (structChecker == true)
-        
-{
+        {
           if (s_servoConfigRxQueue != NULL)
- {
+          {
             xQueueSend(s_servoConfigRxQueue, &received_servo_config, (TickType_t)0);
           }
         }
@@ -627,45 +630,7 @@ inline bool checkEspnowConnection()
     return g_isEspnowConnected_b;
 }
 
-// The callback that does the magic
-void promiscuous_rx_cb(void *buf, wifi_promiscuous_pkt_type_t type)
- {
-  // All espnow traffic uses action frames which are a subtype of the mgmnt frames so filter out everything else.
-  if (type != WIFI_PKT_MGMT)
-    return;
 
-  const wifi_promiscuous_pkt_t *ppkt = (wifi_promiscuous_pkt_t *)buf;
-  //const wifi_ieee80211_packet_t *ipkt = (wifi_ieee80211_packet_t *)ppkt->payload;
-  //const wifi_ieee80211_mac_hdr_t *hdr = &ipkt->hdr;
-  const uint8_t* payload = ppkt->payload;
-  if (ppkt->rx_ctrl.sig_len > 24)
-  {
-    const uint8_t *addr_DESTINATION = payload + 4;   
-    const uint8_t *addr_SOURCE = payload + 10;  
-    uint8_t addr_package[6];
-    memcpy(addr_package, addr_SOURCE, 6);
-    if(macCheck(addr_package, g_pedalMac_aau8[0]))
-    {
-      g_rssi_ai32[0]=ppkt->rx_ctrl.rssi;
-    }
-    if(macCheck(addr_package, g_pedalMac_aau8[1]))
-    {
-      g_rssi_ai32[1]=ppkt->rx_ctrl.rssi;
-    }
-    if(macCheck(addr_package, g_pedalMac_aau8[2]))
-    {
-      g_rssi_ai32[2]=ppkt->rx_ctrl.rssi;
-    }
-    if(macCheck(addr_package, g_espHost_au8))
-    {
-      g_rssi_ai32[3]=ppkt->rx_ctrl.rssi;
-    }
-  }
-  
-  //int rssi = ppkt->rx_ctrl.rssi;
-  //rssi_display = rssi;
-  
-}
 void espNowInitialize()
 {
   DapConfig_t dap_config_espnow_init_st;
@@ -774,8 +739,6 @@ void espNowInitialize()
     ESPNow.reg_recv_cb(onRecv);
     ESPNow.reg_send_cb(onSent);
     //rssi calculate
-    esp_wifi_set_promiscuous(true);
-    esp_wifi_set_promiscuous_rx_cb(&promiscuous_rx_cb);
     g_espNowInitialStatus_b=true;
     g_espNowStatus_b=true;
     ActiveSerial->println("ESPNow Initialized");
@@ -825,8 +788,7 @@ void softwareAssignmentInitialize()
   DapConfig_t tmp;
   global_dap_config_class.getConfig(&tmp, 500);
   if(structChecker) 
-  
-{
+  {
     memcpy(&g_dapAssignmentReg_st, &dap_assignement_reg_local, sizeof(DapAssignmentReg_t));
     g_deviceIdStructChecker_b = true;
     ActiveSerial->print("Overwritting pedal assignment: ");
@@ -906,3 +868,44 @@ void clearAssignmentToEeprom()
   EEPROM.commit();
   delay(1000);
 }
+#else
+static const bool IS_ESPNOW_ENABLED = false;
+static uint8_t g_espNowErrorCode_u8 = 0;
+static bool g_espNowPairingAction_b = false;
+static bool g_updatePairingToEeprom_b = false;
+static bool g_hardwarePairingAction_b = false;
+static bool g_espNowRudderUpdate_b = false;
+static bool g_espNowRestart_b = false;
+static bool g_espNowOtaEnable_b = false;
+static bool g_printPedalInfo_b = false;
+static bool g_assignmentUpdate_b = false;
+static bool g_assignmentClear_b = false;
+static bool g_configUpdateBuzzer_b = false;
+static bool g_assignmentUpdateBuzzer_b = false;
+static bool g_deviceIdStructChecker_b = false;
+static unsigned long g_rudderInitializedTime_u32 = 0;
+static bool g_isEspnowConnected_b = false;
+static uint32_t g_lastEspnowRecvTime_u32 = 0;
+static uint32_t g_lastEspnowSendTime_u32 = 0;
+static uint32_t g_lastEspnowOnSentTime_u32 = 0;
+static volatile bool g_rudderInitializing_b = false;
+static volatile bool g_rudderDeinitializing_b = false;
+static volatile bool g_heliRudderInitializing_b = false;
+static volatile bool g_heliRudderDeinitializing_b = false;
+static bool g_espNowBootIntoDownloadMode_b = false;
+static bool g_getRudderAction_b = false;
+static bool g_getHeliRudderAction_b = false;
+
+typedef struct EspPairingReg_t {
+  uint8_t pairStatus_au8[4];
+  uint8_t pairMac_aau8[4][6];
+} EspPairingReg_t;
+static EspPairingReg_t g_espPairingReg_st;
+
+inline void espNowInitialize() {}
+inline void sendESPNOWLog(const char *log,...) {}
+inline void ESPNow_Joystick_Broadcast(int32_t controllerValue) {}
+inline void writeAssignmentToEeprom() {}
+inline void clearAssignmentToEeprom() {}
+inline void softwareAssignmentInitialize() {}
+#endif

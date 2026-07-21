@@ -355,29 +355,8 @@ char* g_apHost_pc;
   TaskHandle_t Task6;
 #endif
 
-#ifdef USING_LED
-  #include "soc/soc_caps.h"
-  #include <Adafruit_NeoPixel.h>
-  #define LEDS_COUNT 1
-  #ifdef LED_ENABLE_RGB
-    Adafruit_NeoPixel pixels(LEDS_COUNT, LED_GPIO_U8, NEO_RGB + NEO_KHZ800);
-  #else
-    Adafruit_NeoPixel pixels(LEDS_COUNT, LED_GPIO_U8, NEO_GRB + NEO_KHZ800);
-  #endif
-  #define CHANNEL 0
-  #define LED_BRIGHT 30
-  /*
-  static const crgb_t L_RED = 0xff0000;
-  static const crgb_t L_GREEN = 0x00ff00;
-  static const crgb_t L_BLUE = 0x0000ff;
-  static const crgb_t L_WHITE = 0xe0e0e0;
-  static const crgb_t L_YELLOW = 0xffde21;
-  static const crgb_t L_ORANGE = 0xffa500;
-  static const crgb_t L_CYAN = 0x00ffff;
-  static const crgb_t L_PURPLE = 0x800080;
-  */
-#endif
-
+#include "PedalLED.h"
+PedalLED pedalLED;
 
 #include "Buzzer.h"
 SimpleBuzzer Buzzer;
@@ -952,12 +931,9 @@ void setup()
 
   
 
-  #ifdef USING_LED
-    pixels.begin();
-    pixels.setBrightness(20);
-    pixels.setPixelColor(0,0xff,0xff,0xff);
-    pixels.show(); 
-  #endif
+  pedalLED.begin();
+  pedalLED.setPixelColor(0,0xff,0xff,0xff);
+  pedalLED.show(); 
 
   Buzzer.initialized(BUZZER_PIN_U8, 1);
   Buzzer.single_beep_tone(770, 100);
@@ -1001,10 +977,8 @@ void setup()
     pinMode(PAIRING_GPIO_U8, INPUT_PULLUP);
   #endif
 
-  #ifdef USING_LED
-    pixels.setPixelColor(0,0xff,0x00,0x00);
-    pixels.show(); 
-  #endif
+  pedalLED.setPixelColor(0, 0xff, 0xff, 0xff);
+  pedalLED.show();
 
 
   // Load config from EEPROM, if valid, overwrite initial config
@@ -1102,13 +1076,8 @@ void setup()
   loadcell->estimateBiasAndVariance();
   */
 
-
-  #ifdef USING_LED
-      //pixels.setBrightness(20);
-      pixels.setPixelColor(0,0x5f,0x5f,0x00);//yellow
-      pixels.show(); 
-      //delay(3000);
-  #endif
+  pedalLED.setPixelColor(0,0x00,0x00,0x00);
+  pedalLED.show();
 
   bool invMotorDir = dap_config_st_local.payloadPedalConfig_st.invertMotorDirection_u8 > 0;
   stepper = new StepperWithLimits(STEP_PIN_STEPPER_U8, DIR_PIN_STEPPER_U8, invMotorDir, dap_calculationVariables_st.stepsPerMotorRevolution_u32, dap_config_st_local.payloadPedalConfig_st.endstopDetectionThreshold_u8); 
@@ -1154,13 +1123,8 @@ void setup()
   kalman_2nd_order = new KalmanFilter2ndOrder(loadcell->getVarianceEstimate());
 
 
-  // LED signal 
-  #ifdef USING_LED
-      //pixels.setBrightness(20);
-      pixels.setPixelColor(0, 0x80, 0x00, 0x80);//purple
-      pixels.show(); 
-      //delay(3000);
-  #endif
+  pedalLED.setPixelColor(0, 0xff, 0xff, 0xff);
+  pedalLED.show();
 
   
 
@@ -1339,12 +1303,8 @@ xTaskCreatePinnedToCore(
     addScheduledTask(otaUpdateTask, "OTATask", REPETITION_INTERVAL_OTA_TASK_IN_US_I64, TASK_PRIORITY_OTA_TASK_UBASETYPE, CORE_ID_OTA_TASK_U8, 16000);
     delay(200);
   #endif
-  #ifdef USING_LED
-      //pixels.setBrightness(20);
-      pixels.setPixelColor(0,0x00,0x00,0xff);//Blue
-      pixels.show(); 
-      //delay(3000);
-  #endif
+  pedalLED.setPixelColor(0,0x00,0x00,0xff);
+  pedalLED.show();
 
   //print pedal role assignment
   if(dap_config_st_local.payloadPedalConfig_st.pedalType_u8!=PEDAL_ID_UNKNOWN)
@@ -1445,12 +1405,8 @@ xTaskCreatePinnedToCore(
       sendESPNOWLog("Pedal:%d Setup end.",dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
   #endif
   ActiveSerial->println("Setup end");
-  #ifdef USING_LED
-      //pixels.setBrightness(20);
-      pixels.setPixelColor(0,0x00,0xff,0x00);//Green
-      pixels.show(); 
-      //delay(3000);
-  #endif
+  pedalLED.setPixelColor(0,0x00,0xff,0x00);
+  pedalLED.show();
   
   // set brake resistor voltage
   float servoOperationVoltageInVolt_fl32 = stepper->getBrakeResistorActivationVoltage();
@@ -2078,10 +2034,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         stepper->servoStatus = SERVO_IDLE_NOT_CONNECTED;
         Buzzer.single_beep_tone(770, 100);
         delay(300);
-        #ifdef USING_LED
-          pixels.setPixelColor(0, 0xff, 0x00, 0x00); // show red
-          pixels.show();
-        #endif
+        pedalLED.setPixelColor(0, 0xff, 0x00, 0x00); // show red
+        pedalLED.show();
         Buzzer.single_beep_tone(770, 100);
         ActiveSerial->println("Servo idle timeout reached. To restart pedal, please apply pressure.");
       }
@@ -2094,10 +2048,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
           stepper->servoStatus = SERVO_FORCE_STOP;
           Buzzer.single_beep_tone(770, 100);
           delay(300);
-          #ifdef USING_LED
-            pixels.setPixelColor(0, 0xff, 0x00, 0x00); // show red
-            pixels.show();
-          #endif
+          pedalLED.setPixelColor(0, 0xff, 0x00, 0x00); // show red
+          pedalLED.show();
           Buzzer.single_beep_tone(770, 100);
           ActiveSerial->println("Servo force Stoped.");
         }
@@ -3396,14 +3348,12 @@ void otaUpdateTask( void * pvParameters )
               {
                 //show ota error
                 Buzzer.single_beep_tone(770,100);
-                #ifdef USING_LED
-                  pixels.setPixelColor(0,0xff,0x00,0x00);//red
-                  pixels.show(); 
-                  delay(500);
-                  pixels.setPixelColor(0,0x00,0x00,0x00);//no color
-                  pixels.show();
-                  delay(500);    
-                #endif 
+                pedalLED.setPixelColor(0,0xff,0x00,0x00);
+                pedalLED.show(); 
+                delay(500);
+                pedalLED.setPixelColor(0,0x00,0x00,0x00);
+                pedalLED.show();
+                delay(500); 
               }
 
             }
@@ -3440,12 +3390,8 @@ void otaUpdateTask( void * pvParameters )
             #ifdef OTA_update_ESP32
             ota_wifi_initialize(g_apHost_pc);
             #endif
-            #ifdef USING_LED
-                //pixels.setBrightness(20);
-                pixels.setPixelColor(0,0x00,0x00,0xff);//Blue
-                pixels.show(); 
-                //delay(3000);
-            #endif
+                pedalLED.setPixelColor(0,0x00,0x00,0xff);
+                pedalLED.show();
             #ifdef OTA_update
             wifi_initialized(g_SSID,g_PASS);
             delay(2000);
