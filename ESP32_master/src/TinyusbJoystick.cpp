@@ -21,7 +21,7 @@ bool TinyusbJoystick::IsReady()
     {
         returnValue_b = false;
     }
-    if (!usb_hid.ready())
+    if (!usb_hid.ready() || !usb_hid_vendor.ready())
     {
         returnValue_b = false;
     }
@@ -44,12 +44,17 @@ void TinyusbJoystick::begin(int VID, int PID)
         TinyUSBDevice.begin(0);
     }
 
-    // Setup HID
-    usb_hid.enableOutEndpoint(true); 
+    // Setup HID Gamepad
     usb_hid.setPollInterval(1); // time in ms
-    usb_hid.setReportDescriptor(desc_hid_report, sizeof(desc_hid_report));
+    usb_hid.setReportDescriptor(desc_hid_gamepad, sizeof(desc_hid_gamepad));
     usb_hid.begin();
-    usb_hid.setReportCallback(NULL, TinyusbJoystick::context_callback);
+
+    // Setup HID Vendor
+    usb_hid_vendor.enableOutEndpoint(true); 
+    usb_hid_vendor.setPollInterval(1); // time in ms
+    usb_hid_vendor.setReportDescriptor(desc_hid_vendor, sizeof(desc_hid_vendor));
+    usb_hid_vendor.begin();
+    usb_hid_vendor.setReportCallback(NULL, TinyusbJoystick::context_callback);
 
     // If already enumerated, additional class driverr begin() e.g msc, hid, midi won't take effect until re-enumeration
     if (TinyUSBDevice.mounted())
@@ -117,7 +122,7 @@ void TinyusbJoystick::sendData(uint8_t* data, size_t totalLen)
         memcpy(&report[3], &data[offset], chunkLen);
         uint32_t start_time = millis();
         uint32_t timeout_ms = 10;
-        while (!usb_hid.ready()) 
+        while (!usb_hid_vendor.ready()) 
         {
             if (millis() - start_time > timeout_ms) 
             {
@@ -125,7 +130,7 @@ void TinyusbJoystick::sendData(uint8_t* data, size_t totalLen)
             }
             delay(1);
         }
-        usb_hid.sendReport(HID_PAYLOAD_INPUT, report, PACKET_SIZE); 
+        usb_hid_vendor.sendReport(HID_PAYLOAD_INPUT, report, PACKET_SIZE); 
         offset += chunkLen;
     }
 }

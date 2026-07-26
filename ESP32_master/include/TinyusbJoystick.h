@@ -45,7 +45,7 @@ uint8_t const desc_hid_report_old[] = {
 #define HID_LOGICAL_MAX_32(n) 0x27, (uint8_t)((n) & 0xFF), (uint8_t)(((n) >> 8) & 0xFF), (uint8_t)(((n) >> 16) & 0xFF), (uint8_t)(((n) >> 24) & 0xFF)
 
 
-uint8_t const desc_hid_report[] = 
+uint8_t const desc_hid_gamepad[] = 
 {
     HID_USAGE_PAGE ( HID_USAGE_PAGE_DESKTOP     ),
     HID_USAGE      ( HID_USAGE_DESKTOP_JOYSTICK ),
@@ -69,7 +69,11 @@ uint8_t const desc_hid_report[] =
             HID_INPUT ( HID_DATA | HID_VARIABLE | HID_ABSOLUTE ),
         HID_COLLECTION_END,
         
-    HID_COLLECTION_END,
+    HID_COLLECTION_END
+};
+
+uint8_t const desc_hid_vendor[] = 
+{
     HID_USAGE_PAGE_N ( HID_USAGE_PAGE_VENDOR, 2 ),
     HID_USAGE        ( 0x01 ),
     HID_COLLECTION   ( HID_COLLECTION_APPLICATION ),
@@ -84,8 +88,7 @@ uint8_t const desc_hid_report[] =
         HID_REPORT_COUNT(63),
         HID_OUTPUT(HID_DATA | HID_VARIABLE | HID_ABSOLUTE),
         
-    HID_COLLECTION_END,
-    
+    HID_COLLECTION_END
 };
 
 class TinyusbJoystick {
@@ -120,6 +123,7 @@ public:
   bool isReceiving = false;
   bool isGetData=false;
   Adafruit_USBD_HID usb_hid;
+  Adafruit_USBD_HID usb_hid_vendor;
   bool isActionGet[8];
   bool isConfigGet[3];
   bool isTestConfigGet[3];
