@@ -668,7 +668,22 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Calculate local physical spring stiffness (N/m) for dynamic damping tuning (AOM and Tustin).
   // We strictly use the gradient of the static spline here to ensure controller stability.
   float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, displacement_01, false);
-  float localStiffness_N_m = max(localStiffness_kg_step * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG, 1.0f);
+
+  // FIX (non-monotonic curves, e.g. clutch over-center dip):
+  // The gradient becomes NEGATIVE in descending curve segments. The old code
+  // max(gradient * ..., 1.0f) clamped the stiffness to 1 N/m there, which collapsed
+  // the damping (c = 2*zeta*sqrt(m*k)) to nearly zero exactly where the admittance
+  // model is statically unstable -> violent snap-through / rebound.
+  // 1. Use the ABSOLUTE gradient so descending segments get full damping.
+  // 2. Add a floor of 30% of the average curve stiffness so damping cannot
+  //    collapse at the flat peak/valley points either (gradient == 0).
+  // Monotonic curves (throttle/brake) are unaffected: their gradient is positive
+  // and normally well above the floor.
+  // Original line:
+  // float localStiffness_N_m = max(localStiffness_kg_step * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG, 1.0f);
+  float gradStiffness_N_m = fabsf(localStiffness_kg_step) * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG;
+  float avgStiffness_N_m  = (calc_st->forceRange_fl32 * GRAVITY_N_KG) / max(totalTravel_m, 0.0001f);
+  float localStiffness_N_m = max(gradStiffness_N_m, max(0.3f * avgStiffness_N_m, 1.0f));
 
   // =========================================================
   // 3. VISCOELASTIC ELASTOMER HYSTERESIS (Hunt-Crossley model)
