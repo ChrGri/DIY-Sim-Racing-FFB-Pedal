@@ -69,12 +69,6 @@ public:
     int32_t readDiscreteRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32);
     int32_t readDiscreteRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32, int32_t numberOfBits_i32);
 
-    // Read Holding Register    0x03
-    int32_t readHoldingRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32);
-
-    // Read Input Register      0x04
-    int32_t readInputRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32);
-
     int16_t convertRxBufferToInt16(int32_t index_i32);
 };
 
