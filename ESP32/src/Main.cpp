@@ -1086,6 +1086,16 @@ void setup()
   motorRevolutionsPerSteps_fl32 = 1.0f / ( (float)dap_calculationVariables_st.stepsPerMotorRevolution_u32 );
   // ActiveSerial->printf("Steps per motor revolution: %d\n", dap_calculationVariables_st.stepsPerMotorRevolution_u32);
 
+  esp_timer_create_args_t homingTimerArgs_st = {};
+  homingTimerArgs_st.callback = &homingTimeoutCallback;
+  homingTimerArgs_st.name = "homing_timeout";
+  esp_timer_handle_t homingTimer_st;
+  esp_timer_create(&homingTimerArgs_st, &homingTimer_st);
+  esp_timer_start_once(homingTimer_st, 20000000); // 20 seconds in microseconds
+  
+  pedalLED.setPixelColor(0, 0x00, 0xFF, 0xFF); // Cyan / Aqua
+  pedalLED.show();
+
   #ifdef USES_ADS1220
     //Uses ADS1220
     loadcell = new LoadCellAds1220();
@@ -1100,13 +1110,6 @@ void setup()
 
 	// find the min & max endstops
   ActiveSerial->println("Start homing");
-
-  esp_timer_create_args_t homingTimerArgs_st = {};
-  homingTimerArgs_st.callback = &homingTimeoutCallback;
-  homingTimerArgs_st.name = "homing_timeout";
-  esp_timer_handle_t homingTimer_st;
-  esp_timer_create(&homingTimerArgs_st, &homingTimer_st);
-  esp_timer_start_once(homingTimer_st, 30000000); // 30 seconds in microseconds
 
   stepper->findMinMaxSensorless(dap_config_st_local);
 
