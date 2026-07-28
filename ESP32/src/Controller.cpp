@@ -43,7 +43,7 @@ Joystick_ joystick_(JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_JOYSTICK,
 void SetupController_USB(uint8_t pedal_ID)
 {
   int pid_i32;
-  char *apName_pc;
+  const char *apName_pc;
 
   pedalType_u16 = pedal_ID;
 
