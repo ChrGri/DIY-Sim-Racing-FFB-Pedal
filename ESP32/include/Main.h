@@ -295,6 +295,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
   #define OTA_update
   #define USING_BUZZER
   #define USE_CDC_INSTEAD_OF_UART
+  #define CONTROLLER_SPECIFIC_VIDPID
 #endif
 
 // PCBA V2
