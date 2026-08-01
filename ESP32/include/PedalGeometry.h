@@ -189,20 +189,14 @@ static inline IRAM_ATTR_FLAG float convertToPedalForce(float loadcellForce_fl32,
   float cosineDen_fl32 = 2 * pedalLengthA_fl32 * pedalLengthB_fl32;
   
   float cosineArg_fl32 = 0.0f;
-  if (fabsf(cosineDen_fl32) > 0.01f) {
-    cosineArg_fl32 = cosineNom_fl32 / cosineDen_fl32;
-    cosineArg_fl32 *= cosineArg_fl32;
-  }
+  if (fabsf(cosineDen_fl32) > 0.01f) cosineArg_fl32 = cosineNom_fl32 / cosineDen_fl32;
 
   // apply conversion factor to loadcell reading 
-  float oneMinusCosineArg_fl32 = 1.0f - cosineArg_fl32;
-  float pedalForce_fl32  = loadcellForce_fl32;
-  if ( (pedalLengthBPlusD_fl32 > 0.0f) && (oneMinusCosineArg_fl32 > 0.0f) )
-  {
-     pedalForce_fl32 *= pedalLengthB_fl32 / (pedalLengthBPlusD_fl32) * sqrtf( oneMinusCosineArg_fl32 );
-  }
+  float pedalForce_fl32  = 1.f;
+  if ( (pedalLengthBPlusD_fl32 > 0.0f) && (cosineArg_fl32 <= 1.f) )
+     pedalForce_fl32 = pedalLengthB_fl32 / (pedalLengthBPlusD_fl32) * sqrtf(1.f - cosineArg_fl32 * cosineArg_fl32);
   
   
-  return pedalForce_fl32;
+  return pedalForce_fl32 * loadcellForce_fl32;
 }
 
