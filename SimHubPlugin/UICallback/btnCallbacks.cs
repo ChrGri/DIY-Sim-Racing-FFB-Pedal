@@ -1404,5 +1404,11 @@ namespace DiyFfbPedal
             sideWindow.Top = screenHeight / 2 - sideWindow.Height / 2;
             sideWindow.Show();
         }
+        private void Btn_OpenLanguageDownload_Click(object sender, RoutedEventArgs e)
+        {
+            var languageWindow = new DiyFfbPedal.UIElement.LanguageDownloadWindow();
+            
+            languageWindow.ShowDialog();
+        }
     }
 }

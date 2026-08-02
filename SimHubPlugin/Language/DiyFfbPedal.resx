@@ -612,4 +612,10 @@
   <data name="DIYFFBPedalPlugin_TextWirelessCommunication" xml:space="preserve">
     <value>Wireless Communication</value>
   </data>
+  <data name="DIYFFBPedalPlugin_TextBtnLocalization" xml:space="preserve">
+    <value>Localization</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextBtnUsbFlash" xml:space="preserve">
+    <value>USB Flash</value>
+  </data>
 </root>

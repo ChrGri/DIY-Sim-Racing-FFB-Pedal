@@ -209,6 +209,9 @@
     <Compile Include="UIElement\NcalcScriptEditor.xaml.cs">
       <DependentUpon>NcalcScriptEditor.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIElement\LanguageDownloadWindow.xaml.cs">
+      <DependentUpon>LanguageDownloadWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIElement\NameInputWindow.xaml.cs">
       <DependentUpon>NameInputWindow.xaml</DependentUpon>
     </Compile>
@@ -374,6 +377,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIElement\NcalcScriptEditor.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UIElement\LanguageDownloadWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
