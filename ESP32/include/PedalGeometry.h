@@ -179,100 +179,24 @@ static inline IRAM_ATTR_FLAG float convertToPedalForce(float loadcellForce_fl32,
 
   float pedalLengthCVertical_fl32 = (float)config_pst->payloadPedalConfig_st.lengthPedalCVertical_i16;
   float pedalLengthCHorizontal_fl32 = (float)config_pst->payloadPedalConfig_st.lengthPedalCHorizontal_i16 + sledPositionMm_fl32;
-  float pedalLengthC_fl32 = sqrtf(pedalLengthCVertical_fl32 * pedalLengthCVertical_fl32 + pedalLengthCHorizontal_fl32 * pedalLengthCHorizontal_fl32);
+  float pedalLengthCSquared_fl32 = pedalLengthCVertical_fl32 * pedalLengthCVertical_fl32 + pedalLengthCHorizontal_fl32 * pedalLengthCHorizontal_fl32;
   
-
-
-  //ActiveSerial->print("a: ");    ActiveSerial->print(a);
-  //ActiveSerial->print(", b: ");  ActiveSerial->print(b);
-  //ActiveSerial->print(", c: ");  ActiveSerial->print(c);
-  //ActiveSerial->print(", d: ");  ActiveSerial->print(d);
-  //ActiveSerial->print(", sled: ");  ActiveSerial->print(sledPositionMM);
-  //ActiveSerial->print(", b_hor: ");  ActiveSerial->print(b_hor);
-  //ActiveSerial->println();
-
-
   // lower plus upper pedal plate length
   float pedalLengthBPlusD_fl32 = fabsf(pedalLengthB_fl32 + pedalLengthD_fl32);
 
   // compute gamma angle, see https://de.wikipedia.org/wiki/Kosinussatz
-  float cosineNom_fl32 = pedalLengthA_fl32 * pedalLengthA_fl32 + pedalLengthB_fl32 * pedalLengthB_fl32 - pedalLengthC_fl32 * pedalLengthC_fl32;
+  float cosineNom_fl32 = pedalLengthA_fl32 * pedalLengthA_fl32 + pedalLengthB_fl32 * pedalLengthB_fl32 - pedalLengthCSquared_fl32;
   float cosineDen_fl32 = 2 * pedalLengthA_fl32 * pedalLengthB_fl32;
   
   float cosineArg_fl32 = 0.0f;
-  if (fabsf(cosineDen_fl32) > 0.01f) {
-    cosineArg_fl32 = cosineNom_fl32 / cosineDen_fl32;
-    cosineArg_fl32 *= cosineArg_fl32;
-  }
+  if (fabsf(cosineDen_fl32) > 0.01f) cosineArg_fl32 = cosineNom_fl32 / cosineDen_fl32;
 
   // apply conversion factor to loadcell reading 
-  float oneMinusCosineArg_fl32 = 1.0f - cosineArg_fl32;
-  float pedalForce_fl32  = loadcellForce_fl32;
-  if ( (pedalLengthBPlusD_fl32 > 0.0f) && (oneMinusCosineArg_fl32 > 0.0f) )
-  {
-     pedalForce_fl32 *= pedalLengthB_fl32 / (pedalLengthBPlusD_fl32) * sqrtf( oneMinusCosineArg_fl32 );
-  }
+  float pedalForce_fl32  = 1.f;
+  if ( (pedalLengthBPlusD_fl32 > 0.0f) && (cosineArg_fl32 <= 1.f) )
+     pedalForce_fl32 = pedalLengthB_fl32 / (pedalLengthBPlusD_fl32) * sqrtf(1.f - cosineArg_fl32 * cosineArg_fl32);
   
   
-  return pedalForce_fl32;
+  return pedalForce_fl32 * loadcellForce_fl32;
 }
 
-
-// Calculate gradient of phi with respect to sled position.
-// This is done by taking the derivative of the force with respect to the sled position.
-static inline IRAM_ATTR_FLAG float convertToPedalForceGain(float sledPositionMm_fl32, DapConfig_t * config_pst) {
-  // see https://de.wikipedia.org/wiki/Kosinussatz
-  // A: is lower pedal pivot
-  // B: is rear pedal pivot
-  // C: is upper pedal pivot
-  // D: is foot rest
-  //
-  // a: is loadcell rod (connection CB)
-
-  // b: is lower pedal plate (connection AC)
-  // c: is sled line (connection AC)
-  // d: is upper pedal plate  (connection AC)
-
-  float pedalLengthA_fl32 = (float)config_pst->payloadPedalConfig_st.lengthPedalA_i16;
-  float pedalLengthB_fl32 = (float)config_pst->payloadPedalConfig_st.lengthPedalB_i16;
-  float pedalLengthD_fl32 = (float)config_pst->payloadPedalConfig_st.lengthPedalD_i16;
-
-  float pedalLengthCVertical_fl32 = (float)config_pst->payloadPedalConfig_st.lengthPedalCVertical_i16;
-  float pedalLengthCHorizontal_fl32 = (float)config_pst->payloadPedalConfig_st.lengthPedalCHorizontal_i16 + sledPositionMm_fl32;
-  float pedalLengthC_fl32 = sqrtf(pedalLengthCVertical_fl32 * pedalLengthCVertical_fl32 + pedalLengthCHorizontal_fl32 * pedalLengthCHorizontal_fl32);
-  
-
-  // float alpha = acos( (b*b + c*c - a*a) / (2.0f*b*c) );
-  // float alpha = fastAcos( (b*b + c*c - a*a) / (2.0f*b*c) );
-  float alpha_fl32 = iacos( (pedalLengthB_fl32 * pedalLengthB_fl32 + pedalLengthC_fl32 * pedalLengthC_fl32 - pedalLengthA_fl32 * pedalLengthA_fl32) / (2.0f * pedalLengthB_fl32 * pedalLengthC_fl32) ) * DEG_TO_RAD_FL32;
-
-
-  // float alphaPlus = atan2f(c_ver, c_hor); // y, x
-  float alphaPlus_fl32 = atan2Fast(pedalLengthCVertical_fl32, pedalLengthCHorizontal_fl32); // y, x
-
-  
-
-  // float sinAlpha = sin(alpha);
-  // float cosAlpha = cos(alpha);
-  // float sinAlphaPlus = sin(alphaPlus);
-  // float cosAlphaPlus = cos(alphaPlus);
-
-  float alphaInDeg_fl32 = alpha_fl32 * RAD_TO_DEG_FL32;
-  float alphaPlusInDeg_fl32 = alphaPlus_fl32 * RAD_TO_DEG_FL32;
-  float sinAlpha_fl32 = isin(alphaInDeg_fl32);
-  float cosAlpha_fl32 = icos(alphaInDeg_fl32);
-  // float sinAlphaPlus_fl32 = isin(alphaPlusInDeg_fl32);
-  float cosAlphaPlus_fl32 = icos(alphaPlusInDeg_fl32);
-
-  // d_alpha_d_x
-  float dAlphaDx_fl32 = - 1.0f / fabsf( sinAlpha_fl32 ) * ( 1.0f / pedalLengthB_fl32 - cosAlpha_fl32 / pedalLengthC_fl32) * cosAlphaPlus_fl32;
-
-  // d_alphaPlus_d_x
-  float dAlphaPlusDx_fl32 = - pedalLengthCVertical_fl32 / (pedalLengthC_fl32 * pedalLengthC_fl32);
-
-  float dPhiDx_fl32 = dAlphaDx_fl32 + dAlphaPlusDx_fl32;
-
-  // return in deg/mm
-  (void)pedalLengthD_fl32;
-  return dPhiDx_fl32 * RAD_TO_DEG_FL32;
-}
