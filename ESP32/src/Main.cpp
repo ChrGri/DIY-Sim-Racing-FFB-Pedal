@@ -1134,6 +1134,7 @@ void setup()
 
   // equalize pedal config for both tasks
   global_dap_config_class.getConfig(&dap_config_st_local, 500);
+  updatePedalCalcParameters(dap_config_st_local);
 
   // send to config handling task
   xQueueSend(s_configUpdateAvailableQueue, &dap_config_st_local, portMAX_DELAY);

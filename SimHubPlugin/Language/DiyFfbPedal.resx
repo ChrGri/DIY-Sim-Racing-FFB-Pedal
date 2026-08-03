@@ -618,4 +618,7 @@
   <data name="DIYFFBPedalPlugin_TextBtnUsbFlash" xml:space="preserve">
     <value>USB Flash</value>
   </data>
+  <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderCoulombFriction" xml:space="preserve">
+    <value>Coulomb Friction</value>
+  </data>
 </root>

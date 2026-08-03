@@ -139,7 +139,7 @@
     <value>OTA</value>
   </data>
   <data name="DIYFFBPedalPlugin_ButtonTextPedalRestart" xml:space="preserve">
-    <value>Retsart</value>
+    <value>Restart</value>
   </data>
   <data name="DIYFFBPedalPlugin_ButtonTextSerialMonitor" xml:space="preserve">
     <value>Serial Logs</value>
@@ -611,5 +611,14 @@
   </data>
   <data name="DIYFFBPedalPlugin_TextWirelessCommunication" xml:space="preserve">
     <value>Wireless Communication</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextBtnLocalization" xml:space="preserve">
+    <value>Localization</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextBtnUsbFlash" xml:space="preserve">
+    <value>USB Flash</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderCoulombFriction" xml:space="preserve">
+    <value>Coulomb Friction</value>
   </data>
 </root>
