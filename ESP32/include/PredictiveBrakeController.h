@@ -70,6 +70,19 @@ public:
         is_in_lockout_b = false;
     }
 
+    bool simpleVoltageCheck(float servoVoltage_fl32) {
+        float upperLimit_V = voltageThreshold_V_fl32 + BRAKE_RESISTOR_UPPER_THRESHOLD_VOLTAGE;
+        float lowerLimit_V = voltageThreshold_V_fl32 + BRAKE_RESISTOR_LOWER_THRESHOLD_VOLTAGE;
+
+        if (servoVoltage_fl32 >= upperLimit_V) {
+            is_voltage_fallback_active_b = true; 
+        } else if (servoVoltage_fl32 <= lowerLimit_V) {
+            is_voltage_fallback_active_b = false;
+        }
+
+        return is_voltage_fallback_active_b;
+    }
+
     bool Update(int32_t servoPositionError_i32
                 , float servoPositionErrorChangeRateInStepsPerSecond_fl32
                 , float forceVelEst_fl32

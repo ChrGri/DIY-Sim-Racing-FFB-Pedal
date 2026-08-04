@@ -2126,14 +2126,24 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       const uint32_t cached_servoCycleCounter_u32         = stepper->getServoCycleCounter();
       const int32_t  cached_servosInternalPosCorrected_i32 = stepper->getServosInternalPositionCorrected();
       uint32_t current_time_us = micros();
-      bool brake_state = brakeController.Update(
-          cached_servosPosError_i32
-          , stepper->getServosPosErrorChangeRateInStepsPerSecond()
-          , changeVelocity
-          , cached_currentSpeedInHz_i32
-          , ( (float)cached_servosVoltage_i16 ) * 0.1f
-          , current_time_us
-      );
+
+      bool brake_state = false;
+      // Decide whether to use predictive brake resistor control or simple voltage check based on compile-time flag.
+      #ifdef USE_PREDICTIVE_BRAKE_RESISTOR_CONTROL
+        brake_state = brakeController.Update(
+            cached_servosPosError_i32
+            , stepper->getServosPosErrorChangeRateInStepsPerSecond()
+            , changeVelocity
+            , cached_currentSpeedInHz_i32
+            , ( (float)cached_servosVoltage_i16 ) * 0.1f
+            , current_time_us
+        );
+      #else
+        brake_state = brakeController.simpleVoltageCheck(
+              ( (float)cached_servosVoltage_i16 ) * 0.1f
+          );
+      #endif
+
       #ifdef BRAKE_RESISTOR_PIN_U8
         if (brake_state) {
             digitalWrite(BRAKE_RESISTOR_PIN_U8, HIGH);
