@@ -446,13 +446,15 @@ namespace DiyFfbPedal.UIFunction
 
         private void Rangeslider_rudder_force_range_LowerValueChanged(object sender, MahApps.Metro.Controls.RangeParameterChangedEventArgs e)
         {
+            Settings.rudderMinForce = (float)e.NewValue;
             /*
             var tmp = dap_config_st;
             tmp.payloadPedalConfig_.preloadForce = (float)e.NewValue;
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
             */
-            Settings.rudderMinForce = (float)e.NewValue;
+            
+            
             try
             {
                 if(Label_min_force_rudder!=null) Label_min_force_rudder.Content = "Preload:\n" + Math.Round(Settings.rudderMinForce, 1) + "kg";
@@ -463,13 +465,14 @@ namespace DiyFfbPedal.UIFunction
 
         private void Rangeslider_rudder_force_range_UpperValueChanged(object sender, MahApps.Metro.Controls.RangeParameterChangedEventArgs e)
         {
+            Settings.rudderMaxForce = (float)e.NewValue;
             /*
             var tmp = dap_config_st;
             tmp.payloadPedalConfig_.maxForce = (float)e.NewValue;
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
             */
-            Settings.rudderMaxForce = (float)e.NewValue;
+            
             try
             {
                 if (Label_max_force_rudder != null) Label_max_force_rudder.Content = "Max force:\n" + Math.Round(Settings.rudderMaxForce, 1) + "kg";
@@ -480,13 +483,15 @@ namespace DiyFfbPedal.UIFunction
 
         private void Rangeslider_rudder_travel_range_LowerValueChanged(object sender, MahApps.Metro.Controls.RangeParameterChangedEventArgs e)
         {
+            Settings.rudderMinTravel = (byte)e.NewValue;
             /*
             var tmp = dap_config_st;
             tmp.payloadPedalConfig_.pedalStartPosition = (byte)e.NewValue;
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
             */
-            Settings.rudderMinTravel = (byte)e.NewValue;
+            
+            
             try
             {
                 if (Label_min_pos_rudder != null) Label_min_pos_rudder.Content = "MIN\n" + Settings.rudderMinTravel + "%";
@@ -497,13 +502,14 @@ namespace DiyFfbPedal.UIFunction
 
         private void Rangeslider_rudder_travel_range_UpperValueChanged(object sender, MahApps.Metro.Controls.RangeParameterChangedEventArgs e)
         {
+            Settings.rudderMaxTravel = (byte)e.NewValue;
             /*
             var tmp = dap_config_st;
             tmp.payloadPedalConfig_.pedalEndPosition = (byte)e.NewValue;
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
             */
-            Settings.rudderMaxTravel = (byte)e.NewValue;
+            
             try
             {
                 if (Label_max_pos_rudder != null) Label_max_pos_rudder.Content = "MAX\n" + Settings.rudderMaxTravel + "%";

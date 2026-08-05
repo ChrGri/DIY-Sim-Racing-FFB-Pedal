@@ -30,12 +30,6 @@
                     <Label x:Name="Label_PASS" Content="" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="2,0,0,0"/>
                 </StackPanel>
                 <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal" Width="540" Height="20">
-                    <Label Content="Update Channel:" Height="15" Width="80" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="72,0,0,0" FontSize="10"/>
-                    <RadioButton x:Name="OTAChannel_Sel_1" Content="Release-Latest" GroupName="OTAChannel_options"  Width="100" Height="20" BorderThickness="0,0,0,0" IsChecked="True" FontSize="10" Checked="OTAChannel_Sel_Checked"/>
-                    <RadioButton x:Name="OTAChannel_Sel_2" Content="DevBuild-Latest" GroupName="OTAChannel_options"  Width="100" Height="20" Margin="5,0,0,0" BorderThickness="0,0,0,0" FontSize="10" Checked="OTAChannel_Sel_Checked"/>
-                    <RadioButton x:Name="OTAChannel_Sel_3" Content="Daily-Build" GroupName="OTAChannel_options"  Width="100" Height="20" Margin="5,0,0,0" BorderThickness="0,0,0,0" FontSize="10" Checked="OTAChannel_Sel_Checked"/>
-                </StackPanel>
-                <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal" Width="540" Height="20">
                     <Label x:Name="Label_update_channel_notice" HorizontalAlignment="Center" Margin="72,0,0,0" Width="400" FontFamily="Arial" Foreground="Red" FontSize="8" Padding="0,0,0,0" />
                 </StackPanel>
                 <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="70,0,0,0">

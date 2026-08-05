@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Windows.Media.Converters;
 
 namespace DiyFfbPedal
@@ -74,11 +74,18 @@ namespace DiyFfbPedal
         public byte rudderRPMMaxFrequency = 40;
         public byte rudderRPMMinFrequency = 15;
         public uint rudderMode { get; set; } = 0;
-        public int updateChannel = 0;
         public string[] DefaultConfig = new string[3] { string.Empty, string.Empty, string.Empty };
         public bool profileAutoChange = false;
         public string[] ProfileShortcut { get; set; } = new string[6] { string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty };
         public string[] ProfileShortcutName { get; set; } = new string[6] { string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty };
+        
+        // Rudder Dynamics
+        public byte rudderVirtualPedalMass = 150;
+        public byte rudderCoulombFriction = 30;
+        public byte rudderVirtualDamping = 100;
+        public byte rudderDampingProgression = 0;
+        public byte rudderEndstopTravelRange = 0;
+        public byte rudderEndstopStiffness = 10;
 
     }
         

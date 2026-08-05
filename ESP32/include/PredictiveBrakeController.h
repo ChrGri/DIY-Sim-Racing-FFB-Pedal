@@ -70,6 +70,19 @@ public:
         is_in_lockout_b = false;
     }
 
+    bool simpleVoltageCheck(float servoVoltage_fl32) {
+        float upperLimit_V = voltageThreshold_V_fl32 + BRAKE_RESISTOR_UPPER_THRESHOLD_VOLTAGE;
+        float lowerLimit_V = voltageThreshold_V_fl32 + BRAKE_RESISTOR_LOWER_THRESHOLD_VOLTAGE;
+
+        if (servoVoltage_fl32 >= upperLimit_V) {
+            is_voltage_fallback_active_b = true; 
+        } else if (servoVoltage_fl32 <= lowerLimit_V) {
+            is_voltage_fallback_active_b = false;
+        }
+
+        return is_voltage_fallback_active_b;
+    }
+
     bool Update(int32_t servoPositionError_i32
                 , float servoPositionErrorChangeRateInStepsPerSecond_fl32
                 , float forceVelEst_fl32
@@ -99,8 +112,10 @@ public:
         }
 
         // --- 2. Foot Dynamics & Kinetic Checks ---
-        //bool foot_is_escaping_b = (forceVelEst_fl32 < FOOT_ESCAPE_RATE_KG_S);
-        bool high_kinetic_energy_b = (abs(currentSpeedInHz_i32) > MIN_SPEED_HZ);
+        //bool high_kinetic_energy_b = (abs(currentSpeedInHz_i32) > MIN_SPEED_HZ);
+
+        // The motor has kinetic energy, when ESP fires OR servo reduces error massively!
+        bool high_kinetic_energy_b = (abs(currentSpeedInHz_i32) > MIN_SPEED_HZ) || (fabsf(d_error_fl32) > (float)MIN_SPEED_HZ);
 
         // overwerite foot escaping value. Sometimes positive values have been seen here too. 
         bool foot_is_dynamic_b = ( fabsf(forceVelEst_fl32) > fabsf(FOOT_ESCAPE_RATE_KG_S) );
@@ -111,9 +126,9 @@ public:
         bool trigger_b = foot_is_dynamic_b && high_kinetic_energy_b && (ttz_s_fl32 < TTZ_WARNING_S) && errorWasLarge_b;
 
         // --- 4. Rollover-Safe Timer Logic ---
-        if (trigger_b) {
+        if (trigger_b && !is_timer_active_b) {
             is_timer_active_b = true;
-            timer_start_time_us_u32 = currentTimeUs_u32; // Simply reset the start time
+            timer_start_time_us_u32 = currentTimeUs_u32; // Setze Startzeit nur einmal!
         }
 
         prev_error_fl32 = current_error_fl32;

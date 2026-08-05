@@ -21,18 +21,6 @@
                     <PasswordBox x:Name="textbox_PASS"   PasswordChanged="textbox_PASS_PasswordChanged" Height="20" Width="150" Padding="0,0,0,0" FontFamily="Arial" HorizontalAlignment="Left" BorderThickness="0,0,0,0" MaxLength="64" MinHeight="15" VerticalAlignment="Center"/>
                     <Label x:Name="Label_PASS" Content="" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="2,0,0,0"/>
                 </StackPanel>
-                <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal" Width="400" Height="20">
-                    <Label Content="{SLoc DIYFFBPedalPlugin_TextUpdateChannel, 'Update Channel:'}" Height="15" Width="80" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="2,0,0,0" FontSize="10"/>
-                    <RadioButton x:Name="OTAChannel_Sel_1" Content="Stable" GroupName="OTAChannel_options"  Width="60" Height="20" BorderThickness="0,0,0,0" IsChecked="True" FontSize="10" Checked="OTAChannel_Sel_Checked"/>
-                    <RadioButton x:Name="OTAChannel_Sel_2" Content="Dev build" GroupName="OTAChannel_options"  Width="85" Height="20" Margin="5,0,0,0" BorderThickness="0,0,0,0" FontSize="10" Checked="OTAChannel_Sel_Checked"/>
-                    <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
-                        <styles:SHToggleButton x:Name="Checkbox_TestBuild" Content="" Checked="Checkbox_TestBuild_Checked" Unchecked="Checkbox_TestBuild_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                        <Label Content="{SLoc DIYFFBPedalPlugin_TextUpdateTestBuildWarning, 'Test Build DO NOT USE'}" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                    </StackPanel>
-                </StackPanel>
-                <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal" Width="400" Height="20">
-                    <Label x:Name="Label_update_channel_notice" HorizontalAlignment="Center" Margin="2,0,0,0" Width="400" FontFamily="Arial" Foreground="Red" FontSize="8" Padding="0,0,0,0" />
-                </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                         <styles:SHToggleButton x:Name="Checkbox_Force_flash" Content="" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Force update to the selected version" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" Checked="Checkbox_Force_flash_Checked" Unchecked="Checkbox_Force_flash_Unchecked"/>
@@ -48,7 +36,7 @@
                     <styles:SHButtonPrimary x:Name="Btn_Apply" Click="Btn_Apply_Click" Width="80" Content="Update" Height="25" Margin="0,0,0,0" HorizontalAlignment="Left" Padding="0,0,0,0" VerticalContentAlignment="Center" />
                     <styles:SHButtonPrimary x:Name="Btn_Leave"  Click="Btn_Leave_Click" Width="80" Content="Leave" Height="25" Margin="10,0,0,0" HorizontalAlignment="Left" Padding="15,0,15,0" VerticalContentAlignment="Center" />
                 </StackPanel>
-                <TextBox x:Name="textBox_changelog" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,5,0,0" Height="300"/>
+                <TextBox x:Name="textBox_changelog" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,5,0,0" Height="335"/>
             </StackPanel>
         </Border>
     </Grid>

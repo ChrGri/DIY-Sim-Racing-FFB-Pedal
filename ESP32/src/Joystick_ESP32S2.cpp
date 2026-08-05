@@ -15,18 +15,18 @@
 #define JOYSTICK_SIMULATOR_MINIMUM 0
 #define JOYSTICK_SIMULATOR_MAXIMUM 65535
 
-#define JOYSTICK_INCLUDE_X_AXIS  B00000001
-#define JOYSTICK_INCLUDE_Y_AXIS  B00000010
-#define JOYSTICK_INCLUDE_Z_AXIS  B00000100
-#define JOYSTICK_INCLUDE_RX_AXIS B00001000
-#define JOYSTICK_INCLUDE_RY_AXIS B00010000
-#define JOYSTICK_INCLUDE_RZ_AXIS B00100000
+#define JOYSTICK_INCLUDE_X_AXIS  0b00000001
+#define JOYSTICK_INCLUDE_Y_AXIS  0b00000010
+#define JOYSTICK_INCLUDE_Z_AXIS  0b00000100
+#define JOYSTICK_INCLUDE_RX_AXIS 0b00001000
+#define JOYSTICK_INCLUDE_RY_AXIS 0b00010000
+#define JOYSTICK_INCLUDE_RZ_AXIS 0b00100000
 
-#define JOYSTICK_INCLUDE_RUDDER      B00000001
-#define JOYSTICK_INCLUDE_THROTTLE    B00000010
-#define JOYSTICK_INCLUDE_ACCELERATOR B00000100
-#define JOYSTICK_INCLUDE_BRAKE       B00001000
-#define JOYSTICK_INCLUDE_STEERING    B00010000
+#define JOYSTICK_INCLUDE_RUDDER      0b00000001
+#define JOYSTICK_INCLUDE_THROTTLE    0b00000010
+#define JOYSTICK_INCLUDE_ACCELERATOR 0b00000100
+#define JOYSTICK_INCLUDE_BRAKE       0b00001000
+#define JOYSTICK_INCLUDE_STEERING    0b00010000
 
 Joystick_::Joystick_(
     uint8_t hidReportId,
@@ -355,7 +355,7 @@ Joystick_::Joystick_(
         tempHidReportDescriptor[hidReportDescriptorSize++] = 0x00;
 
         if (includeRudder == true) {
-            // USAGE (Rudder)
+            // USAGE (Rudder_t)
             tempHidReportDescriptor[hidReportDescriptorSize++] = 0x09;
             tempHidReportDescriptor[hidReportDescriptorSize++] = 0xBA;
         }
@@ -418,7 +418,7 @@ Joystick_::Joystick_(
     _yAxisRotation = 0;
     _zAxisRotation = 0;
     _throttle = 0;
-    _rudder = 0;
+    g_rudder_st = 0;
     _accelerator = 0;
     _brake = 0;
     _steering = 0;
@@ -514,7 +514,7 @@ void Joystick_::setRzAxis(int32_t value) {
 }
 
 void Joystick_::setRudder(int32_t value) {
-    _rudder = value;
+    g_rudder_st = value;
     if (_autoSendState) sendState();
 }
 
@@ -598,7 +598,7 @@ void Joystick_::sendState() {
                 convertedHatSwitch[hatSwitchIndex] = (_hatSwitchValues[hatSwitchIndex] % 360) / 45;
             }
         }
-        data[index++] = (convertedHatSwitch[1] << 4) | (B00001111 & convertedHatSwitch[0]);
+        data[index++] = (convertedHatSwitch[1] << 4) | (0b00001111 & convertedHatSwitch[0]);
     }
 
     // Set Axis Values
@@ -610,7 +610,7 @@ void Joystick_::sendState() {
     index += buildAndSetAxisValue(_includeAxisFlags & JOYSTICK_INCLUDE_RZ_AXIS, _zAxisRotation, _rzAxisMinimum, _rzAxisMaximum, &(data[index]));
 
     // Set Simulation Values
-    index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_RUDDER, _rudder, _rudderMinimum, _rudderMaximum, &(data[index]));
+    index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_RUDDER, g_rudder_st, g_rudder_stMinimum, g_rudder_stMaximum, &(data[index]));
     index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_THROTTLE, _throttle, _throttleMinimum, _throttleMaximum, &(data[index]));
     index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_ACCELERATOR, _accelerator, _acceleratorMinimum, _acceleratorMaximum, &(data[index]));
     index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_BRAKE, _brake, _brakeMinimum, _brakeMaximum, &(data[index]));

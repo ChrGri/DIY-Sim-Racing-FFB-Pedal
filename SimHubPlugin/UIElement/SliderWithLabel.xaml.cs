@@ -1,27 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace DiyFfbPedal.UIElement
 {
-
     public partial class SliderWithLabel : UserControl
     {
         public SliderWithLabel()
         {
             InitializeComponent();
         }
+
         // Dependency Property for slider_name
         public static readonly DependencyProperty SliderNameProperty =
             DependencyProperty.Register(nameof(SliderName), typeof(string), typeof(SliderWithLabel),
@@ -47,7 +36,7 @@ namespace DiyFfbPedal.UIElement
         // Dependency Property for Value
         public static readonly DependencyProperty ValueProperty =
             DependencyProperty.Register(nameof(SliderValue), typeof(double), typeof(SliderWithLabel),
-                /*new PropertyMetadata(0.0, OnPropertyChanged),*/ new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPropertyChanged));
+                new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPropertyChanged));
 
         public double SliderValue
         {
@@ -121,8 +110,7 @@ namespace DiyFfbPedal.UIElement
 
         private void UpdateLabelContent()
         {
-            //LabelContent = $"{SliderName}: {SliderValue} {Unit}";
-            LabelContent = SliderName+": "+ Math.Round(SliderValue,4)+" "+Unit;
+            LabelContent = SliderName + ": " + Math.Round(SliderValue, 4) + " " + Unit;
         }
 
         // Event to notify the main window of slider value changes
@@ -130,6 +118,9 @@ namespace DiyFfbPedal.UIElement
 
         private void SliderElement_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            // 忽略初始化期間因 MinValue 設定造成的自動校正雜訊
+            if (!this.IsLoaded) return;
+
             SliderValue = e.NewValue;
             SliderValueChanged?.Invoke(this, e);
         }

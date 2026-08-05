@@ -23,7 +23,7 @@
                 Minimum="{Binding MinValue, RelativeSource={RelativeSource AncestorType=UserControl}}"
                 Maximum="{Binding MaxValue, RelativeSource={RelativeSource AncestorType=UserControl}}"
                 TickFrequency="{Binding TickFrequency, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                Value="{Binding SliderValue, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
+                Value="{Binding SliderValue, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
                 Width="{Binding SliderLength, RelativeSource={RelativeSource AncestorType=UserControl}}"
                 IsSnapToTickEnabled="True"
                 ValueChanged="SliderElement_ValueChanged"

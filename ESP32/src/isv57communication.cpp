@@ -148,8 +148,8 @@ void Isv57Communication::disableAxis()
   delay(30);
 
   // read routine
-  modbus.readHoldingRegisterFromDevice(slaveId, 0x0085);
-  modbus.readHoldingRegisterFromDevice(slaveId, 0x0139);
+  modbus.readHoldingRegisterFromDevice(0x0085);
+  modbus.readHoldingRegisterFromDevice(0x0139);
   delay(5);
 }
 
@@ -165,8 +165,8 @@ void Isv57Communication::enableAxis()
   delay(30);
 
   // read routine
-  modbus.readHoldingRegisterFromDevice(slaveId, 0x0085);
-  modbus.readHoldingRegisterFromDevice(slaveId, 0x0139);
+  modbus.readHoldingRegisterFromDevice(0x0085);
+  modbus.readHoldingRegisterFromDevice(0x0139);
   delay(5);
 
   // modbus.holdingRegisterRead(0x0085);

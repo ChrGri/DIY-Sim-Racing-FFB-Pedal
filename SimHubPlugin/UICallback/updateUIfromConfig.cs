@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -43,7 +43,7 @@ namespace DiyFfbPedal
                 {
                     if (!Plugin.Settings.Pedal_ESPNow_Sync_flag[i])
                     {
-                        if (!Plugin._serialPort[indexOfSelectedPedal_u].IsOpen)
+                        if (!Plugin._serialPort[i].IsOpen)
                         {
                             Plugin._calculations.ServoStatus[i] = 0;
                             Plugin._calculations.PedalFirmwareVersion[i, 2] = 0;
@@ -84,7 +84,7 @@ namespace DiyFfbPedal
                 PedalSettingsSection.dap_config_st = tmp_struct;
                 var tmp_rudder = dap_config_st_rudder;
                 CurveRudderForce_Tab.dap_config_st = tmp_rudder;
-                RudderSetting_Tab.dap_config_st = tmp_rudder;
+                RudderDynamics_Tab.dap_config_st = tmp_rudder;
                 EffectsRPMRudder_Tab.dap_config_st = tmp_rudder;
 
 
@@ -103,7 +103,7 @@ namespace DiyFfbPedal
                 EffectsRPMRudder_Tab.Settings = Plugin.Settings;
                 CurveRudderForce_Tab.Settings = Plugin.Settings;
                 EffectRudderACC_Tab.Settings = Plugin.Settings;
-                RudderSetting_Tab.Settings = Plugin.Settings;
+                //RudderDynamics_Tab.Settings = Plugin.Settings;
                 //SettingOTA_Tab.Settings = Plugin.Settings;
                 SystemLicense_Tab.Settings = Plugin.Settings;
                 SystemSetting_Section.Settings = Plugin.Settings;
@@ -231,22 +231,14 @@ namespace DiyFfbPedal
             {
                 if (Plugin._calculations.verisonCreate_b == false)
                 {
-                    if (Plugin.Settings.updateChannel == 0)
-                    {
-                        Plugin._calculations.updateVerison = new Version(Plugin._calculations.pluginVersionReading[0]);
-                    }
-                    else
-                    {
-                        Plugin._calculations.updateVerison = new Version(Plugin._calculations.pluginVersionReading[1]);
-                    }
-
+                    Plugin._calculations.updateVerison = new Version(Plugin._calculations.pluginVersionReading[0]);
                     Plugin._calculations.pluginVersion = new Version(Constants.pluginVersion);
                     Plugin._calculations.verisonCreate_b = true;
                 }
 
                 if (Plugin._calculations.updateVerison > Plugin._calculations.pluginVersion)
                 {
-                    string tmpUpdateChannel = Plugin.Settings.updateChannel == 0 ? "Stable release" : "Nightly build";
+                    string tmpUpdateChannel =  "Stable release" ;
 
                     textBox_VersionUpdate.Text = "New "+tmpUpdateChannel+" available:" + Plugin._calculations.updateVerison;
                     textBox_VersionUpdate.Foreground=System.Windows.Media.Brushes.Red;

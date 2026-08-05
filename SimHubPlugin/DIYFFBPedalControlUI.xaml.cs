@@ -1,4 +1,4 @@
-﻿﻿//using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
+﻿//using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
 using System;
 using System.Collections.Generic;
 using System.IO.Ports;
@@ -155,7 +155,9 @@ namespace DiyFfbPedal
                 _basic_wifi_info.WIFI_SSID[i] = 0;
             }
             InitializeComponent();
-            
+            this.Loaded += RootLayout_Loaded;
+            this.SizeChanged += RootLayout_SizeChanged;
+
             //setting drawing color with Simhub theme workaround
             //SolidColorBrush buttonBackground_ = btn_update.Background as SolidColorBrush;
             SolidColorBrush buttonBackground_ = btn_pedal_connect.Background as SolidColorBrush;
@@ -183,6 +185,42 @@ namespace DiyFfbPedal
             CheckForUpdateAsync();
         }
 
+        private const double RootScale_DesignWidth_d = 810.0;
+        private const double RootScale_DesignHeight_d = 910.0;
+        private const double RootScale_MaxScale_d = 1.75;
+        private const double RootScale_Deadband_d = 0.005;
+
+        private void RootLayout_Loaded(object sender, RoutedEventArgs e)
+        {
+            UpdateRootScale();
+        }
+
+        private void RootLayout_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateRootScale();
+        }
+
+        private void UpdateRootScale()
+        {
+            if (ScaleTransform_RootScale == null) return;
+
+            double availableWidth_d = this.ActualWidth;
+            double availableHeight_d = this.ActualHeight;
+            if (double.IsNaN(availableWidth_d) || availableWidth_d <= 0) return;
+            if (double.IsNaN(availableHeight_d) || availableHeight_d <= 0) return;
+
+            double scale_d = availableWidth_d / RootScale_DesignWidth_d;
+            double scaleFromHeight_d = availableHeight_d / RootScale_DesignHeight_d;
+            if (scaleFromHeight_d < scale_d) scale_d = scaleFromHeight_d;
+
+            if (scale_d > RootScale_MaxScale_d) scale_d = RootScale_MaxScale_d;
+
+            if (scale_d >= 1.0 && Math.Abs(scale_d - ScaleTransform_RootScale.ScaleX) < RootScale_Deadband_d) return;
+            if (scale_d <= 1.0) return;
+            ScaleTransform_RootScale.ScaleX = scale_d;
+            ScaleTransform_RootScale.ScaleY = scale_d;
+        }
+
 
 
         
@@ -192,6 +230,7 @@ namespace DiyFfbPedal
         public DIYFFBPedalControlUI(DIY_FFB_Pedal plugin) : this()
         {
             this.Plugin = plugin;
+            if (RudderDynamics_Tab != null) RudderDynamics_Tab.Settings = plugin.Settings;
             plugin.testValue = 1;
             plugin.wpfHandle = this;
             UpdateSerialPortList_click();
@@ -502,6 +541,7 @@ namespace DiyFfbPedal
             {
                 //_serial_monitor_window.TextBox_SerialMonitor.Text += "\n\nDefaultConfig Hash:" + hash+"\n";
                 PrintUnknownStructParameters(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_);
+                PrintUnknownStructParameters(dap_config_st_rudder.payloadPedalConfig_);
                 UpdateSerialPortList_click();
                 _serial_monitor_window.TextBox_SerialMonitor.Text += "\nCom port count: " + Plugin.comportList.Count;
                 foreach (var items in Plugin.comportList)

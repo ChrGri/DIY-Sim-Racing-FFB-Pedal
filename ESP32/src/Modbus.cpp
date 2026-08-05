@@ -359,16 +359,6 @@ int32_t Modbus::readDiscreteRegisterFromDevice(int32_t slaveId_i32, int32_t regi
     }
 }
 
-int32_t Modbus::readHoldingRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32)
-{
-    return 0; // Not implemented
-}
-
-int32_t Modbus::readInputRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32)
-{
-    return 0; // Not implemented
-}
-
 int16_t Modbus::convertRxBufferToInt16(int32_t index_i32)
 {
     int32_t address_i32 = (index_i32 * 2) + 3;

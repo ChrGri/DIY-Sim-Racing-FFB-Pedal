@@ -24,8 +24,8 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-	<Prefer32Bit>false</Prefer32Bit>
-	<PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <PlatformTarget>x86</PlatformTarget>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
@@ -165,7 +165,7 @@
     <Compile Include="DIYFFBPedal.cs" />
     <Compile Include="DIYFFBPedalSettings.cs" />
     <Compile Include="EspFlasher.cs" />
-<Compile Include="Generated\ServoTunedParameters.cs">
+    <Compile Include="Generated\ServoTunedParameters.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>ServoTunedParameters.tt</DependentUpon>
@@ -208,6 +208,9 @@
     </Compile>
     <Compile Include="UIElement\NcalcScriptEditor.xaml.cs">
       <DependentUpon>NcalcScriptEditor.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIElement\LanguageDownloadWindow.xaml.cs">
+      <DependentUpon>LanguageDownloadWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="UIElement\NameInputWindow.xaml.cs">
       <DependentUpon>NameInputWindow.xaml</DependentUpon>
@@ -267,6 +270,9 @@
       <DependentUpon>EffectsTab_WheelSlip.xaml</DependentUpon>
     </Compile>
     <Compile Include="UIFunction\FirmwareFlasherWindow.xaml.cs" />
+    <Compile Include="UIFunction\GeneralSetting_RudderDynamics.xaml.cs">
+      <DependentUpon>GeneralSetting_RudderDynamics.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\GeneralSetting_Servo.xaml.cs">
       <DependentUpon>GeneralSetting_Servo.xaml</DependentUpon>
     </Compile>
@@ -374,6 +380,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="UIElement\LanguageDownloadWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="UIElement\NameInputWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -451,6 +461,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\FirmwareFlasherWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UIFunction\GeneralSetting_RudderDynamics.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -546,7 +560,7 @@
   <ItemGroup>
     <Content Include=".gitignore" />
     <EmbeddedResource Include="Resources\esptool.exe" />
- <Content Include="Generated\ServoTunedParameters.tt">
+    <Content Include="Generated\ServoTunedParameters.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>ServoTunedParameters.cs</LastGenOutput>
     </Content>
@@ -582,7 +596,10 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <Target Name="EmbedDynamicFirmware" BeforeTargets="BeforeBuild">
+  <Target Name="UpdatePluginVersion" BeforeTargets="BeforeBuild" Condition="!$(MSBuildProjectName.Contains('_wpftmp'))">
+    <Exec Command="powershell.exe -ExecutionPolicy Bypass -NoProfile -NonInteractive -File &quot;$(ProjectDir)update_version.ps1&quot;" WorkingDirectory="$(ProjectDir)" />
+  </Target>
+  <Target Name="EmbedDynamicFirmware" BeforeTargets="BeforeBuild" Condition="!$(MSBuildProjectName.Contains('_wpftmp'))">
     <Exec Command="$(ProjectDir)..\copy_firmwares.bat" WorkingDirectory="$(ProjectDir).." />
     <ItemGroup>
       <EmbeddedResource Include="Resources\Firmware\**\*.*" />

@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -217,7 +217,7 @@ namespace DiyFfbPedal
 
         public void DAP_config_set_default_rudder()
         {
-
+            
             dap_config_st_rudder.payloadHeader_.payloadType = (byte)Constants.pedalConfigPayload_type;
             dap_config_st_rudder.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition = 5;
@@ -338,11 +338,11 @@ namespace DiyFfbPedal
             dap_config_st_rudder.payloadPedalConfig_.minForceForEffects = 0;
             dap_config_st_rudder.payloadPedalConfig_.configHash_u32 = 393938365;
             dap_config_st_rudder.payloadPedalConfig_.virtualPedalMass_u8 = 150;
-            dap_config_st_rudder.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = 0;
-            dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8 = 200;
+            dap_config_st_rudder.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = 30;
+            dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8 = 100;
             dap_config_st_rudder.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = 10;
             dap_config_st_rudder.payloadPedalConfig_.endstopTravelRange_mm_u8 = 0;
-            dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = 10;
+            dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = 0;
         }
         public byte[] getBytesPayload(payloadPedalConfig aux)
         {
@@ -651,7 +651,7 @@ namespace DiyFfbPedal
             tmp.payloadPedalAction_.returnPedalConfig_u8 = 1;
             waiting_for_pedal_config[i] = true;
             Plugin.SendPedalAction(tmp, (byte)i);
-            /*
+        /*
             tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
             tmp.payloadHeader_.PedalTag = (byte)i;
@@ -709,6 +709,15 @@ namespace DiyFfbPedal
             }
             */
 
+        }
+
+        unsafe public void Reading_config_auto_wireless(uint i)
+        {
+            // compute checksum
+            DAP_action_st tmp = default;
+            tmp.payloadPedalAction_.returnPedalConfig_u8 = 1;
+            waiting_for_pedal_config[i] = true;
+            Plugin.SendPedalActionWireless(tmp, (byte)i);
         }
 
         public string[] STOPCHAR = { "\r\n" };
@@ -1173,6 +1182,14 @@ namespace DiyFfbPedal
             dap_config_st_rudder.payloadPedalConfig_.relativeTravel10 = Plugin.Settings.rudderTravel[10];
 
             dap_config_st_rudder.payloadPedalConfig_.maxForce = Plugin.Settings.rudderMaxForce;
+
+            dap_config_st_rudder.payloadPedalConfig_.virtualPedalMass_u8 = Plugin.Settings.rudderVirtualPedalMass;
+            dap_config_st_rudder.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = Plugin.Settings.rudderCoulombFriction;
+            dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8 = Plugin.Settings.rudderVirtualDamping;
+            dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = Plugin.Settings.rudderDampingProgression;
+            dap_config_st_rudder.payloadPedalConfig_.endstopTravelRange_mm_u8 = Plugin.Settings.rudderEndstopTravelRange;
+            dap_config_st_rudder.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = Plugin.Settings.rudderEndstopStiffness;
+            
             dap_config_st_rudder.payloadPedalConfig_.preloadForce = Plugin.Settings.rudderMinForce;
             dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition = Plugin.Settings.rudderMinTravel;
             dap_config_st_rudder.payloadPedalConfig_.pedalEndPosition = Plugin.Settings.rudderMaxTravel;
@@ -1208,6 +1225,14 @@ namespace DiyFfbPedal
             Plugin.Settings.rudderTravel[10] = dap_config_st_rudder.payloadPedalConfig_.relativeTravel10;
 
             Plugin.Settings.rudderMaxForce = dap_config_st_rudder.payloadPedalConfig_.maxForce;
+
+            Plugin.Settings.rudderVirtualPedalMass = dap_config_st_rudder.payloadPedalConfig_.virtualPedalMass_u8;
+            Plugin.Settings.rudderCoulombFriction = dap_config_st_rudder.payloadPedalConfig_.coulombFrictionIn0p1N_u8;
+            Plugin.Settings.rudderVirtualDamping = dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8;
+            Plugin.Settings.rudderDampingProgression = dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8;
+            Plugin.Settings.rudderEndstopTravelRange = dap_config_st_rudder.payloadPedalConfig_.endstopTravelRange_mm_u8;
+            Plugin.Settings.rudderEndstopStiffness = dap_config_st_rudder.payloadPedalConfig_.endstopStiffness_kg_mm_u8;
+
             Plugin.Settings.rudderMinForce = dap_config_st_rudder.payloadPedalConfig_.preloadForce;
             Plugin.Settings.rudderMinTravel = dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition;
             Plugin.Settings.rudderMaxTravel = dap_config_st_rudder.payloadPedalConfig_.pedalEndPosition;

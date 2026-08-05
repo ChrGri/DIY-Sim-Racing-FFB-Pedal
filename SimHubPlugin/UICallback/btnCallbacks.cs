@@ -82,18 +82,10 @@ namespace DiyFfbPedal
                 string SSID = Plugin.Settings.SSID_string;
                 string PASS = Plugin.Settings.PASS_string;
                 bool SSID_PASS_check = true;
-
+                tmp_2.payloadOtaInfo_.mode_select = 0;
                 if (Plugin._calculations.ForceUpdate_b == true)
                 {
                     tmp_2.payloadOtaInfo_.ota_action = 1;
-                }
-                if (Plugin.Settings.updateChannel == 0)
-                {
-                    tmp_2.payloadOtaInfo_.mode_select = 1;
-                }
-                if (Plugin.Settings.updateChannel == 1)
-                {
-                    tmp_2.payloadOtaInfo_.mode_select = 2;
                 }
                 if (SSID.Length > 64 || PASS.Length > 64)
                 {
@@ -733,7 +725,6 @@ namespace DiyFfbPedal
         {
             Plugin._calculations.ForceUpdate_b = false;
             Plugin._calculations.IsOtaUploadFromPlatformIO = false;
-            Plugin._calculations.IsTestBuild = false;
             UpdateSettingWindow sideWindow = new UpdateSettingWindow(Plugin.Settings, Plugin._calculations);
             double screenWidth = SystemParameters.PrimaryScreenWidth;
             double screenHeight = SystemParameters.PrimaryScreenHeight;
@@ -756,18 +747,7 @@ namespace DiyFfbPedal
                 {
                     tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_UPLOAD_FROM_PLATFORMIO;
                 }
-                if (Plugin.Settings.updateChannel == 0)
-                {
-                    tmp_2.payloadOtaInfo_.mode_select = 1;
-                }
-                if (Plugin.Settings.updateChannel == 1)
-                {
-                    tmp_2.payloadOtaInfo_.mode_select = 2;
-                }
-                if (Plugin._calculations.IsTestBuild)
-                {
-                    tmp_2.payloadOtaInfo_.mode_select = 3;
-                }
+                tmp_2.payloadOtaInfo_.mode_select = 1;
                 if (SSID.Length > 64 || PASS.Length > 64)
                 {
                     SSID_PASS_check = false;
@@ -1280,7 +1260,9 @@ namespace DiyFfbPedal
             {
                 string downloadUrl;
                 string rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyFfbPedal.resx";
-                string MSG_tmp = "Plugin will update from ";
+                downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyFfbPedal.dll";
+                string MSG_tmp = "Plugin will update from Stable release channel";
+                /*
                 switch (Plugin.Settings.updateChannel)
                 {
                     case 0:
@@ -1299,6 +1281,7 @@ namespace DiyFfbPedal
                         MSG_tmp += "Mainline release channel. ";
                         break;
                 }
+                */
 
                 string targetPath = Directory.GetCurrentDirectory() + "\\";
                 //System.Windows.MessageBox.Show(targetPath);
@@ -1420,6 +1403,12 @@ namespace DiyFfbPedal
             sideWindow.Left = screenWidth / 2 - sideWindow.Width / 2;
             sideWindow.Top = screenHeight / 2 - sideWindow.Height / 2;
             sideWindow.Show();
+        }
+        private void Btn_OpenLanguageDownload_Click(object sender, RoutedEventArgs e)
+        {
+            var languageWindow = new DiyFfbPedal.UIElement.LanguageDownloadWindow();
+            
+            languageWindow.ShowDialog();
         }
     }
 }

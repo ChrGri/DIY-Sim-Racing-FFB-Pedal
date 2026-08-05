@@ -87,6 +87,13 @@ float g_filteredPhysicalVel_mps = 0.0f;
 float g_filteredPhysicalAcc_mps2 = 0.0f;
 float g_prevFilteredPhysicalVel_mps = 0.0f;
 
+// NEW: Filter states for internal Effect Feedforward (Velocity & Acceleration)
+float g_smoothedEffectPos_m = 0.0f;
+float g_prevSmoothedEffectPos_m = 0.0f;
+float g_smoothedEffectVel_mps = 0.0f;
+float g_prevSmoothedEffectVel_mps = 0.0f;
+float g_smoothedEffectAcc_mps2 = 0.0f;
+
 // =========================================================
 // HELPER SUB-FUNCTIONS FOR ENCAPSULATION
 // =========================================================
@@ -116,7 +123,7 @@ static inline IRAM_ATTR_FLAG void CalcDynamicTravelLimits(
         float ext_steps = ext_A + ext_B;
 
         lowerTravelLimit_01 = min(0.0f, ext_steps);
-        upperTravelLimit_01 = 1.0f + max(0.0f, ext_steps);
+        upperTravelLimit_01 = 1.0f + ext_steps; // Modified to allow dynamic boundary shift
     }
 }
 
@@ -534,7 +541,7 @@ static inline IRAM_ATTR_FLAG void ApplyRegenPowerClamping(
  * @param config_st Pointer to the pedal's configuration structure.
  * @param effectOffsets_st High-frequency offsets (ABS vibrations, etc.).
  * @param endstopBehavior_st Configuration for the soft endstop feel.
- * @param rudderOffsets_st Rudder specific offset parameters.
+ * @param rudderOffsets_st Rudder_t specific offset parameters.
  * @param debugState_st Optional pointer to a struct to output internal variables for debugging. Default is nullptr.
  * @return int32_t The next absolute target position in steps for the stepper motor driver.
  */
@@ -661,7 +668,22 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Calculate local physical spring stiffness (N/m) for dynamic damping tuning (AOM and Tustin).
   // We strictly use the gradient of the static spline here to ensure controller stability.
   float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, displacement_01, false);
-  float localStiffness_N_m = max(localStiffness_kg_step * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG, 1.0f);
+
+  // FIX (non-monotonic curves, e.g. clutch over-center dip):
+  // The gradient becomes NEGATIVE in descending curve segments. The old code
+  // max(gradient * ..., 1.0f) clamped the stiffness to 1 N/m there, which collapsed
+  // the damping (c = 2*zeta*sqrt(m*k)) to nearly zero exactly where the admittance
+  // model is statically unstable -> violent snap-through / rebound.
+  // 1. Use the ABSOLUTE gradient so descending segments get full damping.
+  // 2. Add a floor of 30% of the average curve stiffness so damping cannot
+  //    collapse at the flat peak/valley points either (gradient == 0).
+  // Monotonic curves (throttle/brake) are unaffected: their gradient is positive
+  // and normally well above the floor.
+  // Original line:
+  // float localStiffness_N_m = max(localStiffness_kg_step * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG, 1.0f);
+  float gradStiffness_N_m = fabsf(localStiffness_kg_step) * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG;
+  float avgStiffness_N_m  = (calc_st->forceRange_fl32 * GRAVITY_N_KG) / max(totalTravel_m, 0.0001f);
+  float localStiffness_N_m = max(gradStiffness_N_m, max(0.3f * avgStiffness_N_m, 1.0f));
 
   // =========================================================
   // 3. VISCOELASTIC ELASTOMER HYSTERESIS (Hunt-Crossley model)
@@ -690,10 +712,52 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // =========================================================
 
   // --- 6. EFFECT OFFSETS & TOTAL FORCE ---
-  // convert position offset to force offset using the local stiffness at the current position on the force curve
+  // NEW: Feedforward Control (Inverse Dynamics)
+  // We derive velocity and acceleration internally from the effect step offset
+  // using cascaded EMA filters to avoid numerical explosions.
+  
+  // 1. Convert effect steps to task-space meters
+  float metersPerStep = 0.0f;
+  if (travelSteps_cnt > 0.0001f) {
+      metersPerStep = totalTravel_m / travelSteps_cnt;
+  }
+  float rawEffectPos_m = effectOffsets_st.forceOffset_Steps_fl32 * metersPerStep;
+
+  // 2. Smooth the position to avoid 60Hz staircase Dirac delta spikes
+  const float EFFECT_TAU_POS = 0.005f; // 5ms smoothing
+  float alpha_pos = 1.0f - expf(-dt_s / EFFECT_TAU_POS);
+  g_smoothedEffectPos_m = (alpha_pos * rawEffectPos_m) + ((1.0f - alpha_pos) * g_smoothedEffectPos_m);
+
+  // 3. Derive and smooth Velocity
+  float rawEffectVel_mps = (g_smoothedEffectPos_m - g_prevSmoothedEffectPos_m) / dt_s;
+  g_prevSmoothedEffectPos_m = g_smoothedEffectPos_m;
+  
+  const float EFFECT_TAU_VEL = 0.005f; // 5ms smoothing
+  float alpha_vel = 1.0f - expf(-dt_s / EFFECT_TAU_VEL);
+  g_smoothedEffectVel_mps = (alpha_vel * rawEffectVel_mps) + ((1.0f - alpha_vel) * g_smoothedEffectVel_mps);
+
+  // 4. Derive and smooth Acceleration
+  float rawEffectAcc_mps2 = (g_smoothedEffectVel_mps - g_prevSmoothedEffectVel_mps) / dt_s;
+  g_prevSmoothedEffectVel_mps = g_smoothedEffectVel_mps;
+
+  const float EFFECT_TAU_ACC = 0.010f; // 10ms smoothing
+  float alpha_acc = 1.0f - expf(-dt_s / EFFECT_TAU_ACC);
+  g_smoothedEffectAcc_mps2 = (alpha_acc * rawEffectAcc_mps2) + ((1.0f - alpha_acc) * g_smoothedEffectAcc_mps2);
+
+  // 5. Calculate Inverse Dynamics Feedforward Force (Newton)
+  // F_effekt = K*x + C*v + M*a
+  float idealBaseDamping_Ns_m_ff = dampingRatio_zeta * 2.0f * sqrtf(virtualMass_kg * localStiffness_N_m);
+  
+  float effectInjectedForce_N = (g_smoothedEffectPos_m * localStiffness_N_m) 
+                              + (g_smoothedEffectVel_mps * idealBaseDamping_Ns_m_ff)
+                              + (g_smoothedEffectAcc_mps2 * virtualMass_kg);
+
+  // 6. Keep legacy variable for downstream logic (e.g., disabling tracking error damping)
   float effectPositionToForceConversion_kg = effectOffsets_st.forceOffset_Steps_fl32 * localStiffness_kg_step;
   float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32;// + effectPositionToForceConversion_kg;
-  float externalForce_N = (loadCellReadingKg_fl32 + effectForceOffset_fl32) * GRAVITY_N_KG;
+
+  // 7. Final total force (Loadcell + Static Effect Weight + Dynamic Effect Force)
+  float externalForce_N = (loadCellReadingKg_fl32 * GRAVITY_N_KG) + (effectOffsets_st.forceOffset_kg_fl32 * GRAVITY_N_KG) + effectInjectedForce_N;
 
   // --- 7. DYNAMIC TRAVEL LIMITS ---
   float lowerTravelLimit_01 = 0.0f;
@@ -1044,18 +1108,24 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       targetSledPos_mm = c_hor_mm - c_hor_0_mm;
   }
 
-  // Clamp the solved sled position to safe physical bounds
-  targetSledPos_mm = constrain(targetSledPos_mm, 0.0f, maxSledPos_mm);
+  // Limit dynamic expansion to a maximum of +/- 5% of total travel for safety
+  float limitExt = travelSteps_cnt * 0.05f;
+  float maxExt = constrain(max(0.0f, effectOffsets_st.forceOffset_Steps_fl32), 0.0f, limitExt);
+  float minExt = constrain(min(0.0f, effectOffsets_st.forceOffset_Steps_fl32), -limitExt, 0.0f);
+
+  // Calculate equivalent expansion in millimeters for the sled position clamp
+  float maxExt_mm = maxExt * (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm);
+  float minExt_mm = minExt * (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm);
+
+  // Clamp the solved sled position to safe physical bounds (with dynamic expansion)
+  targetSledPos_mm = constrain(targetSledPos_mm, 0.0f + minExt_mm, maxSledPos_mm + maxExt_mm);
   
   // 3. Convert target sled position (mm) back to absolute stepper steps
   float targetPosSteps_fl32 = (targetSledPos_mm / (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm)) + (float)calc_st->softEndstopMinStepperPos_i32;
 
-  // Bypass effect position offset (Inject ABS/vibrations purely into the actuator space)
-  targetPosSteps_fl32 += effectOffsets_st.forceOffset_Steps_fl32;
-
-  // Final safety clamp to hard hardware limits
+  // Clamp to software limits (with dynamic expansion for high-frequency effects)
   float finalTargetPos_fl32 = targetPosSteps_fl32;
-  finalTargetPos_fl32 = constrain(finalTargetPos_fl32, stepper->getHardEndstopMinPosition(), stepper->getHardEndstopMaxPosition());
+  finalTargetPos_fl32 = constrain(finalTargetPos_fl32, calc_st->softEndstopMinStepperPos_i32 + minExt, calc_st->softEndstopMaxStepperPos_i32 + maxExt);
 
   if (admittanceStates_pst != nullptr) {
     admittanceStates_pst->physicalPos_m = g_vModelPos_01 * totalTravel_m; // Logged natively in Task Space
