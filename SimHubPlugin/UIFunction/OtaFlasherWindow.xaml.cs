@@ -169,7 +169,7 @@ namespace DiyFfbPedal.UIFunction
                 {
                     DAP_action_ota_st tmp_2 = default;
 
-                    tmp_2.payloadOtaInfo_.ota_action = (byte)1; // Entspricht otaAction.OTA_ACTION_NORMAL
+                    tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_UPLOAD_FROM_PLATFORMIO;
 
                     if (_plugin._calculations != null)
                     {
@@ -184,17 +184,12 @@ namespace DiyFfbPedal.UIFunction
                     tmp_2.payloadOtaInfo_.PASS_Length = (byte)PASS.Length;
                     tmp_2.payloadOtaInfo_.device_ID = pedalId;
 
-                    // Header und Footer 
-                    tmp_2.payloadHeader_.payloadType = 0x05; // Constants.OtaPayloadType
-
-                    // Arrays für Start und End Chars (passe diese ggf. an deine Constants/Variablen an)
-                    byte[] startChars = { 0x55, 0xAA }; // Beispielwerte für STARTOFFRAMCHAR
-                    byte[] endChars = { 0x0D, 0x0A };   // Beispielwerte für ENDOFFRAMCHAR
-
-                    tmp_2.payloadHeader_.startOfFrame0_u8 = startChars[0];
-                    tmp_2.payloadHeader_.startOfFrame1_u8 = startChars[1];
-                    tmp_2.payloadFooter_.enfOfFrame0_u8 = endChars[0];
-                    tmp_2.payloadFooter_.enfOfFrame1_u8 = endChars[1];
+                    // Header und Footer aus den Projekt-Konstanten setzen
+                    tmp_2.payloadHeader_.payloadType = (byte)Constants.OtaPayloadType;
+                    tmp_2.payloadHeader_.startOfFrame0_u8 = _plugin.STARTOFFRAMCHAR[0];
+                    tmp_2.payloadHeader_.startOfFrame1_u8 = _plugin.STARTOFFRAMCHAR[1];
+                    tmp_2.payloadFooter_.enfOfFrame0_u8 = _plugin.ENDOFFRAMCHAR[0];
+                    tmp_2.payloadFooter_.enfOfFrame1_u8 = _plugin.ENDOFFRAMCHAR[1];
 
                     byte[] array_ssid = Encoding.ASCII.GetBytes(SSID);
                     for (int i = 0; i < SSID.Length; i++)
