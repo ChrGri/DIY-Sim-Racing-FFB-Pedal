@@ -20,7 +20,7 @@ namespace DiyFfbPedal.UIFunction
             InitializeComponent();
             _plugin = plugin;
 
-            // Die gespeicherten WLAN-Daten aus den Plugin-Settings in die neuen Textboxen laden
+            // Load the saved WiFi data from the plugin settings into the new text boxes
             if (_plugin.Settings != null)
             {
                 TxtSSID.Text = _plugin.Settings.SSID_string;
@@ -62,7 +62,7 @@ namespace DiyFfbPedal.UIFunction
             }
             catch (Exception ex)
             {
-                TxtLog.AppendText($"Fehler beim Lesen des Manifests: {ex.Message}\n");
+                TxtLog.AppendText($"Error reading manifest: {ex.Message}\n");
             }
 
             CboFirmware.ItemsSource = firmwareOptions;
@@ -98,7 +98,7 @@ namespace DiyFfbPedal.UIFunction
             var assembly = Assembly.GetExecutingAssembly();
             using (Stream stream = assembly.GetManifestResourceStream(resourceName))
             {
-                if (stream == null) throw new FileNotFoundException($"Resource {resourceName} nicht gefunden.");
+                if (stream == null) throw new FileNotFoundException($"Resource {resourceName} not found.");
                 using (FileStream fs = new FileStream(outPath, FileMode.Create, FileAccess.Write))
                 {
                     stream.CopyTo(fs);
@@ -117,7 +117,7 @@ namespace DiyFfbPedal.UIFunction
                 var assembly = Assembly.GetExecutingAssembly();
                 using (Stream stream = assembly.GetManifestResourceStream(resourceName))
                 {
-                    if (stream == null) throw new FileNotFoundException("espota.exe nicht in den Ressourcen gefunden!");
+                    if (stream == null) throw new FileNotFoundException("espota.exe not found in resources!");
                     using (FileStream fs = new FileStream(outPath, FileMode.Create, FileAccess.Write))
                     {
                         stream.CopyTo(fs);
@@ -138,17 +138,17 @@ namespace DiyFfbPedal.UIFunction
 
             if (selectedBoardFolder == "CUSTOM_LOCAL" && string.IsNullOrWhiteSpace(TxtBinPath.Text))
             {
-                MessageBox.Show("Bitte wähle eine lokale firmware.bin aus.");
+                MessageBox.Show("Please select a local firmware.bin.");
                 return;
             }
 
             if (SSID.Length > 64 || PASS.Length > 64)
             {
-                MessageBox.Show("ERROR! SSID oder Passwort dürfen maximal 64 Zeichen lang sein.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show("ERROR! SSID or password must be a maximum of 64 characters long.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            // WLAN-Daten in den Einstellungen speichern
+            // Save WiFi data in settings
             if (_plugin.Settings != null)
             {
                 _plugin.Settings.SSID_string = SSID;
@@ -160,11 +160,11 @@ namespace DiyFfbPedal.UIFunction
 
             try
             {
-                TxtLog.AppendText("Sende OTA Wake-Up Kommando inkl. WLAN-Daten an das Pedal...\n");
+                TxtLog.AppendText("Sending OTA Wake-Up command incl. WiFi data to the pedal...\n");
 
                 byte pedalId = (byte)(_plugin.Settings?.table_selected ?? 0);
 
-                // Den speicherkritischen Teil kapseln wir in einen unsafe-Block
+                // We encapsulate the memory-critical part in an unsafe block
                 unsafe
                 {
                     DAP_action_ota_st tmp_2 = default;
@@ -184,7 +184,7 @@ namespace DiyFfbPedal.UIFunction
                     tmp_2.payloadOtaInfo_.PASS_Length = (byte)PASS.Length;
                     tmp_2.payloadOtaInfo_.device_ID = pedalId;
 
-                    // Header und Footer aus den Projekt-Konstanten setzen
+                    // Set header and footer from project constants
                     tmp_2.payloadHeader_.payloadType = (byte)Constants.OtaPayloadType;
                     tmp_2.payloadHeader_.startOfFrame0_u8 = _plugin.STARTOFFRAMCHAR[0];
                     tmp_2.payloadHeader_.startOfFrame1_u8 = _plugin.STARTOFFRAMCHAR[1];
@@ -206,11 +206,11 @@ namespace DiyFfbPedal.UIFunction
                     _plugin.SendOTAActionPedal(tmp_2, pedalId);
                 }
 
-                // 2. Dem ESP Zeit geben, Motor zu stoppen, WLAN zu verbinden und ArduinoOTA zu starten
-                TxtLog.AppendText("Warte auf WLAN-Verbindung und Initialisierung des OTA-Modus am ESP32 (5 Sekunden)...\n");
+                // 2. Give the ESP time to stop the motor, connect to WiFi and start ArduinoOTA
+                TxtLog.AppendText("Waiting for WiFi connection and initialization of OTA mode on ESP32 (5 seconds)...\n");
                 await Task.Delay(5000);
 
-                // 3. Datei auflösen (nur firmware.bin!)
+                // 3. Resolve file (firmware.bin only!)
                 string firmwarePath;
                 if (selectedBoardFolder == "CUSTOM_LOCAL")
                 {
@@ -218,17 +218,17 @@ namespace DiyFfbPedal.UIFunction
                 }
                 else
                 {
-                    TxtLog.AppendText($"Entpacke {selectedBoardFolder} firmware.bin...\n");
+                    TxtLog.AppendText($"Extracting {selectedBoardFolder} firmware.bin...\n");
                     firmwarePath = ExtractFirmwareResource(selectedBoardFolder, "firmware.bin");
                 }
 
-                // 4. espota.exe entpacken
+                // 4. Extract espota.exe
                 string espotaPath = ExtractEspota();
 
-                // 5. OTA Prozess starten
-                TxtLog.AppendText($"Starte Upload via WLAN an {targetHostname}...\n");
+                // 5. Start OTA process
+                TxtLog.AppendText($"Starting upload via WiFi to {targetHostname}...\n");
 
-                //Hostname vor dem Flashen sicher in eine IP-Adresse auflösen
+                // Safely resolve hostname to an IP address before flashing
                 string resolvedIp = targetHostname;
 
                 if (targetHostname.EndsWith(".local", StringComparison.OrdinalIgnoreCase))
@@ -236,26 +236,26 @@ namespace DiyFfbPedal.UIFunction
                     try
                     {
                         // Native mDNS resolution via UDP Multicast (C# Implementation)
-                        TxtLog.AppendText($"Sende mDNS-Anfrage an 224.0.0.251:5353 für {targetHostname}...\n");
+                        TxtLog.AppendText($"Sending mDNS request to 224.0.0.251:5353 for {targetHostname}...\n");
                         string foundIp = await ResolveMdnsIpv4Async(targetHostname);
 
                         if (!string.IsNullOrEmpty(foundIp))
                         {
                             resolvedIp = foundIp;
-                            TxtLog.AppendText($"Erfolgreich aufgelöst zu IP: {resolvedIp}\n");
+                            TxtLog.AppendText($"Successfully resolved to IP: {resolvedIp}\n");
                         }
                         else
                         {
-                            TxtLog.AppendText("Warnung: Konnte den .local Namen nicht auflösen. ESP32 nicht im Netzwerk gefunden.\n");
+                            TxtLog.AppendText("Warning: Could not resolve .local name. ESP32 not found on network.\n");
                         }
                     }
                     catch (Exception ex)
                     {
-                        TxtLog.AppendText($"Warnung: mDNS-Auflösung fehlgeschlagen ({ex.Message}).\n");
+                        TxtLog.AppendText($"Warning: mDNS resolution failed ({ex.Message}).\n");
                     }
                 }
 
-                // espota.exe bekommt jetzt zwingend die aufgelöste IP-Adresse (resolvedIp) serviert!
+                // espota.exe now obligatorily gets the resolved IP address (resolvedIp) served!
                 string args = $"-i {resolvedIp} -p 3232 -f \"{firmwarePath}\"";
 
                 ProcessStartInfo psi = new ProcessStartInfo
@@ -273,8 +273,8 @@ namespace DiyFfbPedal.UIFunction
                     process.OutputDataReceived += (s, ev) => {
                         if (ev.Data != null) Dispatcher.Invoke(() => { TxtLog.AppendText(ev.Data + "\n"); TxtLog.ScrollToEnd(); });
                     };
-                    // espota.exe schreibt Statusmeldungen und Fortschritt (Uploading...) in den StandardError (stderr).
-                    // Deshalb dürfen wir hier NICHT pauschal "ERROR: " voranstellen.
+                    // espota.exe writes status messages and progress (Uploading...) to StandardError (stderr).
+                    // Therefore we must NOT blindly prepend "ERROR: " here.
                     process.ErrorDataReceived += (s, ev) => {
                         if (ev.Data != null) Dispatcher.Invoke(() => { TxtLog.AppendText(ev.Data + "\n"); TxtLog.ScrollToEnd(); });
                     };
@@ -287,11 +287,11 @@ namespace DiyFfbPedal.UIFunction
 
                     if (process.ExitCode == 0)
                     {
-                        MessageBox.Show("WLAN-Update erfolgreich!", "Erfolg", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show("WiFi Update successful!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                     else
                     {
-                        MessageBox.Show("OTA Update fehlgeschlagen. Siehe Logs.", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show("OTA Update failed. See logs.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }
@@ -309,14 +309,14 @@ namespace DiyFfbPedal.UIFunction
         {
             try
             {
-                // 1. Versuche zuerst die native DNS-Auflösung
+                // 1. Try native DNS resolution first
                 try {
                     var hostEntry = await System.Net.Dns.GetHostEntryAsync(hostname);
                     var ip = hostEntry.AddressList.FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
                     if (ip != null) return ip.ToString();
                 } catch { }
 
-                // 2. Fallback: Robuste mDNS Abfrage über alle Netzwerkschnittstellen
+                // 2. Fallback: Robust mDNS query across all network interfaces
                 List<byte> query = new List<byte>();
                 query.AddRange(new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
                 foreach (string part in hostname.Split('.'))
@@ -332,7 +332,7 @@ namespace DiyFfbPedal.UIFunction
                 var udpClients = new List<System.Net.Sockets.UdpClient>();
                 var receiveTasks = new List<Task<System.Net.Sockets.UdpReceiveResult>>();
 
-                // Binde an alle verfuegbaren IPv4 Schnittstellen, um VirtualBox/VPN Adapter Probleme zu umgehen
+                // Bind to all available IPv4 interfaces to avoid VirtualBox/VPN adapter issues
                 var interfaces = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
                     .Where(n => n.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up && 
                                 n.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback);
@@ -359,14 +359,14 @@ namespace DiyFfbPedal.UIFunction
 
                 if (udpClients.Count == 0)
                 {
-                    // Fallback falls Interfaces nicht gelesen werden konnten
+                    // Fallback in case interfaces could not be read
                     var udp = new System.Net.Sockets.UdpClient();
                     udp.Client.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.Any, 0));
                     udpClients.Add(udp);
                 }
 
                 DateTime start = DateTime.Now;
-                // Warte bis zu 15 Sekunden auf den ESP32 (braucht oft länger für den WLAN-Connect)
+                // Wait up to 15 seconds for the ESP32 (often takes longer to connect to WiFi)
                 while ((DateTime.Now - start).TotalMilliseconds < 15000)
                 {
                     receiveTasks.Clear();
