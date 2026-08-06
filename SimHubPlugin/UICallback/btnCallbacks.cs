@@ -720,81 +720,112 @@ namespace DiyFfbPedal
             }
 
         }
-
-        unsafe private void btn_OTA_enable_Click(object sender, RoutedEventArgs e)
+        private string ExtractEmbeddedFirmware(string fileName)
         {
-            Plugin._calculations.ForceUpdate_b = false;
-            Plugin._calculations.IsOtaUploadFromPlatformIO = false;
-            UpdateSettingWindow sideWindow = new UpdateSettingWindow(Plugin.Settings, Plugin._calculations);
-            double screenWidth = SystemParameters.PrimaryScreenWidth;
-            double screenHeight = SystemParameters.PrimaryScreenHeight;
-            sideWindow.Left = screenWidth / 2 - sideWindow.Width / 2;
-            sideWindow.Top = screenHeight / 2 - sideWindow.Height / 2;
-            if (sideWindow.ShowDialog() == true)
-            {
-                DAP_action_ota_st tmp_2 = default;
-                int length;
-                string SSID = Plugin.Settings.SSID_string;
-                string PASS = Plugin.Settings.PASS_string;
-                string MSG_tmp = "";
-                bool SSID_PASS_check = true;
-                tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_NORMAL;
-                if (Plugin._calculations.ForceUpdate_b == true)
-                {
-                    tmp_2.payloadOtaInfo_.ota_action = (byte) otaAction.OTA_ACTION_FORCE_UPDATE;
-                }
-                if (Plugin._calculations.IsOtaUploadFromPlatformIO)
-                {
-                    tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_UPLOAD_FROM_PLATFORMIO;
-                }
-                tmp_2.payloadOtaInfo_.mode_select = 1;
-                if (SSID.Length > 64 || PASS.Length > 64)
-                {
-                    SSID_PASS_check = false;
+            // Der Namespace-Pfad zur Ressource. Ordner-Slashes werden in C# zu Punkten!
+            // Beispiel: Resources\Firmware\update.bin -> DiyFfbPedal.Resources.Firmware.update.bin
+            string resourceName = $"DiyFfbPedal.Resources.Firmware.{fileName}";
 
-                    MSG_tmp = "ERROR! SSID or Password length must less than 30 bytes";
-                    System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-                //MSG_tmp = "OTA action:" + tmp_2.payloadOtaInfo_.ota_action;
-                MSG_tmp = "Please confirm whether you want to proceed with the OTA update.";
-                //System.Windows.MessageBox.Show(MSG_tmp, "OTA warning", MessageBoxButton.OK, MessageBoxImage.Warning);
-                var result = System.Windows.MessageBox.Show(MSG_tmp, "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);
-                if (result == MessageBoxResult.OK)
+            string tempFolder = Path.GetTempPath();
+            string binPath = Path.Combine(tempFolder, fileName);
+
+            var assembly = Assembly.GetExecutingAssembly();
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+            {
+                if (stream == null)
+                    throw new FileNotFoundException($"Die eingebettete Firmware '{resourceName}' wurde nicht gefunden.");
+
+                using (FileStream fileStream = new FileStream(binPath, FileMode.Create, FileAccess.Write))
                 {
-                    if (SSID_PASS_check)
-                    {
-                        tmp_2.payloadOtaInfo_.SSID_Length = (byte)SSID.Length;
-                        tmp_2.payloadOtaInfo_.PASS_Length = (byte)PASS.Length;
-                        tmp_2.payloadOtaInfo_.device_ID = (byte)indexOfSelectedPedal_u;
-                        tmp_2.payloadHeader_.payloadType = (Byte)Constants.OtaPayloadType;
-                        tmp_2.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
-                        tmp_2.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
-                        tmp_2.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
-                        tmp_2.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
-                        byte[] array_ssid = Encoding.ASCII.GetBytes(SSID);
-                        //TextBox_serialMonitor_bridge.Text += "SSID:";
-                        for (int i = 0; i < SSID.Length; i++)
-                        {
-                            tmp_2.payloadOtaInfo_.WIFI_SSID[i] = array_ssid[i];
-                            //TextBox_serialMonitor_bridge.Text += tmp_2.WIFI_SSID[i] + ",";
-                        }
-                        //TextBox_serialMonitor_bridge.Text += "\nPASS:";
-                        byte[] array_pass = Encoding.ASCII.GetBytes(PASS);
-                        for (int i = 0; i < PASS.Length; i++)
-                        {
-                            tmp_2.payloadOtaInfo_.WIFI_PASS[i] = array_pass[i];
-                            //TextBox_serialMonitor_bridge.Text += tmp_2.WIFI_PASS[i] + ",";
-                        }
-                        TextBox_serialMonitor_bridge.Text += "\nSending OTA info to Pedal:" + indexOfSelectedPedal_u + "\n";
-                        Plugin.SendOTAActionPedal(tmp_2, (byte)indexOfSelectedPedal_u);
-                    }
+                    stream.CopyTo(fileStream);
                 }
             }
 
-            
-            
+            return binPath;
         }
+
+
+        private void btn_OTA_enable_Click(object sender, RoutedEventArgs e)
+        {
+            // Öffnet das neue OTA-Flasher Fenster und übergibt die Plugin-Referenz
+            var otaWindow = new DiyFfbPedal.UIFunction.OtaFlasherWindow(Plugin);
+            otaWindow.ShowDialog();
+        }
+
+        //unsafe private void btn_OTA_enable_Click(object sender, RoutedEventArgs e)
+        //{
+        //    Plugin._calculations.ForceUpdate_b = false;
+        //    Plugin._calculations.IsOtaUploadFromPlatformIO = false;
+        //    UpdateSettingWindow sideWindow = new UpdateSettingWindow(Plugin.Settings, Plugin._calculations);
+        //    double screenWidth = SystemParameters.PrimaryScreenWidth;
+        //    double screenHeight = SystemParameters.PrimaryScreenHeight;
+        //    sideWindow.Left = screenWidth / 2 - sideWindow.Width / 2;
+        //    sideWindow.Top = screenHeight / 2 - sideWindow.Height / 2;
+        //    if (sideWindow.ShowDialog() == true)
+        //    {
+        //        DAP_action_ota_st tmp_2 = default;
+        //        int length;
+        //        string SSID = Plugin.Settings.SSID_string;
+        //        string PASS = Plugin.Settings.PASS_string;
+        //        string MSG_tmp = "";
+        //        bool SSID_PASS_check = true;
+        //        tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_NORMAL;
+        //        if (Plugin._calculations.ForceUpdate_b == true)
+        //        {
+        //            tmp_2.payloadOtaInfo_.ota_action = (byte) otaAction.OTA_ACTION_FORCE_UPDATE;
+        //        }
+        //        if (Plugin._calculations.IsOtaUploadFromPlatformIO)
+        //        {
+        //            tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_UPLOAD_FROM_PLATFORMIO;
+        //        }
+        //        tmp_2.payloadOtaInfo_.mode_select = 1;
+        //        if (SSID.Length > 64 || PASS.Length > 64)
+        //        {
+        //            SSID_PASS_check = false;
+
+        //            MSG_tmp = "ERROR! SSID or Password length must less than 30 bytes";
+        //            System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+        //            return;
+        //        }
+        //        //MSG_tmp = "OTA action:" + tmp_2.payloadOtaInfo_.ota_action;
+        //        MSG_tmp = "Please confirm whether you want to proceed with the OTA update.";
+        //        //System.Windows.MessageBox.Show(MSG_tmp, "OTA warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+        //        var result = System.Windows.MessageBox.Show(MSG_tmp, "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+        //        if (result == MessageBoxResult.OK)
+        //        {
+        //            if (SSID_PASS_check)
+        //            {
+        //                tmp_2.payloadOtaInfo_.SSID_Length = (byte)SSID.Length;
+        //                tmp_2.payloadOtaInfo_.PASS_Length = (byte)PASS.Length;
+        //                tmp_2.payloadOtaInfo_.device_ID = (byte)indexOfSelectedPedal_u;
+        //                tmp_2.payloadHeader_.payloadType = (Byte)Constants.OtaPayloadType;
+        //                tmp_2.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
+        //                tmp_2.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
+        //                tmp_2.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
+        //                tmp_2.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
+        //                byte[] array_ssid = Encoding.ASCII.GetBytes(SSID);
+        //                //TextBox_serialMonitor_bridge.Text += "SSID:";
+        //                for (int i = 0; i < SSID.Length; i++)
+        //                {
+        //                    tmp_2.payloadOtaInfo_.WIFI_SSID[i] = array_ssid[i];
+        //                    //TextBox_serialMonitor_bridge.Text += tmp_2.WIFI_SSID[i] + ",";
+        //                }
+        //                //TextBox_serialMonitor_bridge.Text += "\nPASS:";
+        //                byte[] array_pass = Encoding.ASCII.GetBytes(PASS);
+        //                for (int i = 0; i < PASS.Length; i++)
+        //                {
+        //                    tmp_2.payloadOtaInfo_.WIFI_PASS[i] = array_pass[i];
+        //                    //TextBox_serialMonitor_bridge.Text += tmp_2.WIFI_PASS[i] + ",";
+        //                }
+        //                TextBox_serialMonitor_bridge.Text += "\nSending OTA info to Pedal:" + indexOfSelectedPedal_u + "\n";
+        //                Plugin.SendOTAActionPedal(tmp_2, (byte)indexOfSelectedPedal_u);
+        //            }
+        //        }
+        //    }
+
+
+
+        //}
 
         public void btn_Bridge_restart_Click(object sender, RoutedEventArgs e)
         {

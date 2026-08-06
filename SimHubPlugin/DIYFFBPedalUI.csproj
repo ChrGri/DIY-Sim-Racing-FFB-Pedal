@@ -336,6 +336,9 @@
     <Compile Include="UIFunction\UpdateSettingWindow.xaml.cs">
       <DependentUpon>UpdateSettingWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\OtaFlasherWindow.xaml.cs">
+      <DependentUpon>OtaFlasherWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="VariablesStruct\Basic_WIfi_info.cs" />
     <Compile Include="VariablesStruct\CalculationVariables.cs" />
     <Compile Include="VariablesStruct\constants.cs" />
@@ -552,6 +555,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="UIFunction\OtaFlasherWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="UIStyles\DefaultStyles.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -564,6 +571,7 @@
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>ServoTunedParameters.cs</LastGenOutput>
     </Content>
+    <EmbeddedResource Include="Resources\espota.exe" />
     <Content Include="sdkmenuicon.png" />
   </ItemGroup>
   <ItemGroup>
