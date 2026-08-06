@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -233,41 +233,25 @@ namespace DiyFfbPedal.UIFunction
 
                 if (targetHostname.EndsWith(".local", StringComparison.OrdinalIgnoreCase))
                 {
-                    TxtLog.AppendText($"Löse Hostname {targetHostname} über Windows-Ping auf...\n");
                     try
                     {
-                        // Wir nutzen den Windows-Ping, da dieser .local besser auflöst als C# nativ
-                        Process pingProc = new Process
-                        {
-                            StartInfo = new ProcessStartInfo
-                            {
-                                FileName = "ping",
-                                Arguments = $"-n 1 -w 2000 -4 {targetHostname}", // 1 Ping, max 2 Sek warten, IPv4 erzwingen
-                                UseShellExecute = false,
-                                RedirectStandardOutput = true,
-                                CreateNoWindow = true
-                            }
-                        };
-                        pingProc.Start();
-                        string output = pingProc.StandardOutput.ReadToEnd();
-                        pingProc.WaitForExit();
+                        // Native mDNS resolution via UDP Multicast (C# Implementation)
+                        TxtLog.AppendText($"Sende mDNS-Anfrage an 224.0.0.251:5353 für {targetHostname}...\n");
+                        string foundIp = await ResolveMdnsIpv4Async(targetHostname);
 
-                        // Sucht mit Regex nach einer typischen IPv4-Adresse im Ping-Ergebnis (z.B. "[192.168.178.198]")
-                        var match = System.Text.RegularExpressions.Regex.Match(output, @"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b");
-
-                        if (match.Success)
+                        if (!string.IsNullOrEmpty(foundIp))
                         {
-                            resolvedIp = match.Value;
+                            resolvedIp = foundIp;
                             TxtLog.AppendText($"Erfolgreich aufgelöst zu IP: {resolvedIp}\n");
                         }
                         else
                         {
-                            TxtLog.AppendText("Warnung: Windows konnte den .local Namen nicht in eine IP auflösen. (Ist Bonjour installiert?)\n");
+                            TxtLog.AppendText("Warnung: Konnte den .local Namen nicht auflösen. ESP32 nicht im Netzwerk gefunden.\n");
                         }
                     }
                     catch (Exception ex)
                     {
-                        TxtLog.AppendText($"Warnung: Ping-Auflösung fehlgeschlagen ({ex.Message}).\n");
+                        TxtLog.AppendText($"Warnung: mDNS-Auflösung fehlgeschlagen ({ex.Message}).\n");
                     }
                 }
 
@@ -289,8 +273,10 @@ namespace DiyFfbPedal.UIFunction
                     process.OutputDataReceived += (s, ev) => {
                         if (ev.Data != null) Dispatcher.Invoke(() => { TxtLog.AppendText(ev.Data + "\n"); TxtLog.ScrollToEnd(); });
                     };
+                    // espota.exe schreibt Statusmeldungen und Fortschritt (Uploading...) in den StandardError (stderr).
+                    // Deshalb dürfen wir hier NICHT pauschal "ERROR: " voranstellen.
                     process.ErrorDataReceived += (s, ev) => {
-                        if (ev.Data != null) Dispatcher.Invoke(() => { TxtLog.AppendText("ERROR: " + ev.Data + "\n"); TxtLog.ScrollToEnd(); });
+                        if (ev.Data != null) Dispatcher.Invoke(() => { TxtLog.AppendText(ev.Data + "\n"); TxtLog.ScrollToEnd(); });
                     };
 
                     process.Start();
@@ -317,6 +303,105 @@ namespace DiyFfbPedal.UIFunction
             {
                 BtnFlash.IsEnabled = true;
             }
+        }
+
+        private async Task<string> ResolveMdnsIpv4Async(string hostname)
+        {
+            try
+            {
+                // 1. Versuche zuerst die native DNS-Auflösung
+                try {
+                    var hostEntry = await System.Net.Dns.GetHostEntryAsync(hostname);
+                    var ip = hostEntry.AddressList.FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+                    if (ip != null) return ip.ToString();
+                } catch { }
+
+                // 2. Fallback: Robuste mDNS Abfrage über alle Netzwerkschnittstellen
+                List<byte> query = new List<byte>();
+                query.AddRange(new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+                foreach (string part in hostname.Split('.'))
+                {
+                    query.Add((byte)part.Length);
+                    query.AddRange(Encoding.ASCII.GetBytes(part));
+                }
+                query.Add(0x00);
+                query.AddRange(new byte[] { 0x00, 0x01, 0x00, 0x01 });
+                byte[] req = query.ToArray();
+                var mcastEp = new System.Net.IPEndPoint(System.Net.IPAddress.Parse("224.0.0.251"), 5353);
+
+                var udpClients = new List<System.Net.Sockets.UdpClient>();
+                var receiveTasks = new List<Task<System.Net.Sockets.UdpReceiveResult>>();
+
+                // Binde an alle verfuegbaren IPv4 Schnittstellen, um VirtualBox/VPN Adapter Probleme zu umgehen
+                var interfaces = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces()
+                    .Where(n => n.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up && 
+                                n.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback);
+
+                foreach (var iface in interfaces)
+                {
+                    var props = iface.GetIPProperties();
+                    var ipv4Props = props.GetIPv4Properties();
+                    if (ipv4Props == null) continue;
+
+                    foreach (var ip in props.UnicastAddresses)
+                    {
+                        if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                        {
+                            try {
+                                var udp = new System.Net.Sockets.UdpClient();
+                                udp.Client.Bind(new System.Net.IPEndPoint(ip.Address, 0));
+                                udp.JoinMulticastGroup(System.Net.IPAddress.Parse("224.0.0.251"), ip.Address);
+                                udpClients.Add(udp);
+                            } catch { }
+                        }
+                    }
+                }
+
+                if (udpClients.Count == 0)
+                {
+                    // Fallback falls Interfaces nicht gelesen werden konnten
+                    var udp = new System.Net.Sockets.UdpClient();
+                    udp.Client.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.Any, 0));
+                    udpClients.Add(udp);
+                }
+
+                DateTime start = DateTime.Now;
+                // Warte bis zu 15 Sekunden auf den ESP32 (braucht oft länger für den WLAN-Connect)
+                while ((DateTime.Now - start).TotalMilliseconds < 15000)
+                {
+                    receiveTasks.Clear();
+                    foreach (var udp in udpClients)
+                    {
+                        try {
+                            udp.Send(req, req.Length, mcastEp);
+                            receiveTasks.Add(udp.ReceiveAsync());
+                        } catch { }
+                    }
+
+                    if (receiveTasks.Count > 0)
+                    {
+                        var completedTask = await Task.WhenAny(Task.WhenAny(receiveTasks), Task.Delay(2000));
+                        if (completedTask is Task<Task<System.Net.Sockets.UdpReceiveResult>> wrappedTask)
+                        {
+                            var result = await wrappedTask.Result;
+                            byte[] res = result.Buffer;
+                            for (int i = 0; i < res.Length - 13; i++)
+                            {
+                                if (res[i] == 0x00 && res[i + 1] == 0x01 && 
+                                    (res[i + 2] == 0x00 || res[i + 2] == 0x80) && res[i + 3] == 0x01 &&
+                                    res[i + 8] == 0x00 && res[i + 9] == 0x04)
+                                {
+                                    foreach (var c in udpClients) { try { c.Close(); } catch { } }
+                                    return $"{res[i + 10]}.{res[i + 11]}.{res[i + 12]}.{res[i + 13]}";
+                                }
+                            }
+                        }
+                    }
+                }
+                foreach (var c in udpClients) { try { c.Close(); } catch { } }
+            }
+            catch { }
+            return null;
         }
     }
 }

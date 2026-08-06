@@ -65,5 +65,10 @@ namespace DiyFfbPedal.UIFunction
         {
             btn_test_Click_event?.Invoke(this, EventArgs.Empty);
         }
+        public event EventHandler btn_OtaTest_Click_event;
+        private void btn_OtaTest_Click(object sender, RoutedEventArgs e)
+        {
+            btn_OtaTest_Click_event?.Invoke(this, EventArgs.Empty);
+        }
     }
 }

@@ -733,7 +733,7 @@
                                                     <Label Content="License"  FontFamily="Arial Black" FontSize="10" Height="30" Width="120" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <localFunction:SystemSetting_License x:Name="SystemLicense_Tab" btn_test_Click_event="SystemLicense_Tab_btn_test_Click_event"/>
+                                            <localFunction:SystemSetting_License x:Name="SystemLicense_Tab" btn_test_Click_event="SystemLicense_Tab_btn_test_Click_event" btn_OtaTest_Click_event="btn_OtaTest_Click"/>
                                         </TabItem>
 
                                     </TabControl>
