@@ -227,7 +227,52 @@ namespace DiyFfbPedal.UIFunction
 
                 // 5. OTA Prozess starten
                 TxtLog.AppendText($"Starte Upload via WLAN an {targetHostname}...\n");
-                string args = $"-i {targetHostname} -p 3232 -f \"{firmwarePath}\"";
+
+                //Hostname vor dem Flashen sicher in eine IP-Adresse auflösen
+                string resolvedIp = targetHostname;
+
+                if (targetHostname.EndsWith(".local", StringComparison.OrdinalIgnoreCase))
+                {
+                    TxtLog.AppendText($"Löse Hostname {targetHostname} über Windows-Ping auf...\n");
+                    try
+                    {
+                        // Wir nutzen den Windows-Ping, da dieser .local besser auflöst als C# nativ
+                        Process pingProc = new Process
+                        {
+                            StartInfo = new ProcessStartInfo
+                            {
+                                FileName = "ping",
+                                Arguments = $"-n 1 -w 2000 -4 {targetHostname}", // 1 Ping, max 2 Sek warten, IPv4 erzwingen
+                                UseShellExecute = false,
+                                RedirectStandardOutput = true,
+                                CreateNoWindow = true
+                            }
+                        };
+                        pingProc.Start();
+                        string output = pingProc.StandardOutput.ReadToEnd();
+                        pingProc.WaitForExit();
+
+                        // Sucht mit Regex nach einer typischen IPv4-Adresse im Ping-Ergebnis (z.B. "[192.168.178.198]")
+                        var match = System.Text.RegularExpressions.Regex.Match(output, @"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b");
+
+                        if (match.Success)
+                        {
+                            resolvedIp = match.Value;
+                            TxtLog.AppendText($"Erfolgreich aufgelöst zu IP: {resolvedIp}\n");
+                        }
+                        else
+                        {
+                            TxtLog.AppendText("Warnung: Windows konnte den .local Namen nicht in eine IP auflösen. (Ist Bonjour installiert?)\n");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        TxtLog.AppendText($"Warnung: Ping-Auflösung fehlgeschlagen ({ex.Message}).\n");
+                    }
+                }
+
+                // espota.exe bekommt jetzt zwingend die aufgelöste IP-Adresse (resolvedIp) serviert!
+                string args = $"-i {resolvedIp} -p 3232 -f \"{firmwarePath}\"";
 
                 ProcessStartInfo psi = new ProcessStartInfo
                 {
