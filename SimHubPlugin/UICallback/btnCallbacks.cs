@@ -745,8 +745,19 @@ namespace DiyFfbPedal
         }
 
 
+        //private void btn_OTA_enable_Click(object sender, RoutedEventArgs e)
+        //{
+        //    // Öffnet das neue OTA-Flasher Fenster und übergibt die Plugin-Referenz
+        //    var otaWindow = new DiyFfbPedal.UIFunction.OtaFlasherWindow(Plugin);
+        //    otaWindow.ShowDialog();
+        //}
+
         private void btn_OTA_enable_Click(object sender, RoutedEventArgs e)
         {
+            // Status-Flags für das Update zurücksetzen
+            Plugin._calculations.ForceUpdate_b = false;
+            Plugin._calculations.IsOtaUploadFromPlatformIO = false;
+
             // Öffnet das neue OTA-Flasher Fenster und übergibt die Plugin-Referenz
             var otaWindow = new DiyFfbPedal.UIFunction.OtaFlasherWindow(Plugin);
             otaWindow.ShowDialog();
@@ -772,7 +783,7 @@ namespace DiyFfbPedal
         //        tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_NORMAL;
         //        if (Plugin._calculations.ForceUpdate_b == true)
         //        {
-        //            tmp_2.payloadOtaInfo_.ota_action = (byte) otaAction.OTA_ACTION_FORCE_UPDATE;
+        //            tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_FORCE_UPDATE;
         //        }
         //        if (Plugin._calculations.IsOtaUploadFromPlatformIO)
         //        {
@@ -822,9 +833,6 @@ namespace DiyFfbPedal
         //            }
         //        }
         //    }
-
-
-
         //}
 
         public void btn_Bridge_restart_Click(object sender, RoutedEventArgs e)

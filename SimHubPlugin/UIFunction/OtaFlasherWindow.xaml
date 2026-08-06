@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="WLAN OTA Firmware Flasher" Height="480" Width="500"
+        Title="WLAN OTA Firmware Flasher" Height="580" Width="500"
         WindowStartupLocation="CenterScreen"
         Background="#FF252525" Foreground="White">
 
@@ -12,6 +12,10 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- Hostname -->
+            <RowDefinition Height="Auto"/>
+            <!-- SSID -->
+            <RowDefinition Height="Auto"/>
+            <!-- PASS -->
             <RowDefinition Height="Auto"/>
             <!-- Firmware Selection -->
             <RowDefinition Height="Auto"/>
@@ -29,15 +33,26 @@
             <TextBlock Text="Standard: pedal_ota.local (Alternativ die IP eingeben, z.B. 192.168.178.50)" FontSize="10" Foreground="#FF888888" Margin="0,4,0,0"/>
         </StackPanel>
 
-        <!-- 2. Firmware Dropdown -->
+        <!-- 2. WLAN SSID -->
         <StackPanel Grid.Row="1" Margin="0,0,0,15">
+            <TextBlock Text="WLAN SSID:" FontWeight="Bold" Margin="0,0,0,5" Foreground="#FFCCCCCC"/>
+            <TextBox x:Name="TxtSSID" Height="28" VerticalContentAlignment="Center" Padding="5,0" Background="#FF333333" Foreground="White" BorderBrush="#FF555555"/>
+        </StackPanel>
+
+        <!-- 3. WLAN Passwort -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,15">
+            <TextBlock Text="WLAN Passwort:" FontWeight="Bold" Margin="0,0,0,5" Foreground="#FFCCCCCC"/>
+            <TextBox x:Name="TxtPASS" Height="28" VerticalContentAlignment="Center" Padding="5,0" Background="#FF333333" Foreground="White" BorderBrush="#FF555555"/>
+        </StackPanel>
+
+        <!-- 4. Firmware Dropdown -->
+        <StackPanel Grid.Row="3" Margin="0,0,0,15">
             <TextBlock Text="Firmware Version:" FontWeight="Bold" Margin="0,0,0,5" Foreground="#FFCCCCCC"/>
-            <!-- DisplayMemberPath und SelectedValuePath greifen auf das Dictionary im C# Code zu -->
             <ComboBox x:Name="CboFirmware" Height="28" SelectionChanged="CboFirmware_SelectionChanged" DisplayMemberPath="Key" SelectedValuePath="Value" Background="#FF333333" Foreground="Black" />
         </StackPanel>
 
-        <!-- 3. Custom File Panel (standardmäßig ausgeblendet) -->
-        <StackPanel x:Name="PnlCustomFile" Grid.Row="2" Margin="0,0,0,15" Visibility="Collapsed">
+        <!-- 5. Custom File Panel (standardmäßig ausgeblendet) -->
+        <StackPanel x:Name="PnlCustomFile" Grid.Row="4" Margin="0,0,0,15" Visibility="Collapsed">
             <TextBlock Text="Lokale firmware.bin auswählen:" FontWeight="Bold" Margin="0,0,0,5" Foreground="#FFCCCCCC"/>
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -49,11 +64,11 @@
             </Grid>
         </StackPanel>
 
-        <!-- 4. Flash Button -->
-        <Button x:Name="BtnFlash" Grid.Row="3" Content="🚀 WLAN OTA Update Starten" Height="45" FontSize="14" FontWeight="Bold" Click="BtnFlash_Click" Margin="0,5,0,15" Background="#FF007ACC" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+        <!-- 6. Flash Button -->
+        <Button x:Name="BtnFlash" Grid.Row="5" Content="🚀 WLAN OTA Update Starten" Height="45" FontSize="14" FontWeight="Bold" Click="BtnFlash_Click" Margin="0,5,0,15" Background="#FF007ACC" Foreground="White" BorderThickness="0" Cursor="Hand"/>
 
-        <!-- 5. Log Output Area -->
-        <Border Grid.Row="4" BorderBrush="#FF555555" BorderThickness="1" Background="#FF1E1E1E" CornerRadius="3">
+        <!-- 7. Log Output Area -->
+        <Border Grid.Row="6" BorderBrush="#FF555555" BorderThickness="1" Background="#FF1E1E1E" CornerRadius="3">
             <Grid>
                 <TextBlock Text="Flash Log:" Foreground="#FF888888" Margin="5,2,0,0" FontSize="10" VerticalAlignment="Top"/>
                 <TextBox x:Name="TxtLog" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Background="Transparent" Foreground="#FF4CAF50" FontFamily="Consolas" BorderThickness="0" Margin="5,15,5,5"/>

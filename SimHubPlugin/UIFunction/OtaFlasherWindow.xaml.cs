@@ -7,6 +7,7 @@ using System.Linq;
 using Microsoft.Win32;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Text;
 
 namespace DiyFfbPedal.UIFunction
 {
@@ -19,12 +20,12 @@ namespace DiyFfbPedal.UIFunction
             InitializeComponent();
             _plugin = plugin;
 
-            // XAML-Elemente (müssen im XAML definiert sein):
-            // CboFirmware (ComboBox)
-            // TxtHostname (TextBox, Default: "pedal_ota.local")
-            // TxtBinPath (TextBox für CUSTOM_LOCAL)
-            // TxtLog (TextBox für den Output)
-            // BtnFlash (Button)
+            // Die gespeicherten WLAN-Daten aus den Plugin-Settings in die neuen Textboxen laden
+            if (_plugin.Settings != null)
+            {
+                TxtSSID.Text = _plugin.Settings.SSID_string;
+                TxtPASS.Text = _plugin.Settings.PASS_string;
+            }
 
             PopulateFirmwareDropdown();
         }
@@ -69,7 +70,6 @@ namespace DiyFfbPedal.UIFunction
             else if (CboFirmware.Items.Count > 0) CboFirmware.SelectedIndex = 0;
         }
 
-        // Wird aufgerufen, wenn im Dropdown etwas geändert wird
         private void CboFirmware_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             if (PnlCustomFile == null) return;
@@ -109,7 +109,7 @@ namespace DiyFfbPedal.UIFunction
 
         private string ExtractEspota()
         {
-            string resourceName = "DiyFfbPedal.Resources.espota.exe"; // Stelle sicher, dass espota.exe als Embedded Resource im Projekt liegt!
+            string resourceName = "DiyFfbPedal.Resources.espota.exe";
             string outPath = Path.Combine(Path.GetTempPath(), "espota_simhub.exe");
 
             if (!File.Exists(outPath))
@@ -132,7 +132,9 @@ namespace DiyFfbPedal.UIFunction
             if (CboFirmware.SelectedItem == null) return;
 
             string selectedBoardFolder = CboFirmware.SelectedValue.ToString();
-            string targetHostname = TxtHostname.Text; // z.B. "pedal_ota.local" oder eine IP-Adresse
+            string targetHostname = TxtHostname.Text;
+            string SSID = TxtSSID.Text;
+            string PASS = TxtPASS.Text;
 
             if (selectedBoardFolder == "CUSTOM_LOCAL" && string.IsNullOrWhiteSpace(TxtBinPath.Text))
             {
@@ -140,23 +142,78 @@ namespace DiyFfbPedal.UIFunction
                 return;
             }
 
+            if (SSID.Length > 64 || PASS.Length > 64)
+            {
+                MessageBox.Show("ERROR! SSID oder Passwort dürfen maximal 64 Zeichen lang sein.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // WLAN-Daten in den Einstellungen speichern
+            if (_plugin.Settings != null)
+            {
+                _plugin.Settings.SSID_string = SSID;
+                _plugin.Settings.PASS_string = PASS;
+            }
+
             BtnFlash.IsEnabled = false;
             TxtLog.Clear();
 
             try
             {
-                // 1. Wake-Up Signal an das Pedal senden (Versetzt das Pedal in den OTA-Modus)
-                TxtLog.AppendText("Sende Wake-Up Kommando an das Pedal...\n");
-                DAP_action_st tmp = new DAP_action_st();
-                tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
-                tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
-                tmp.payloadPedalAction_.system_action_u8 = (byte)PedalSystemAction.ENABLE_OTA;
-                // Hier deine bestehende Methode aufrufen, um das Paket zu senden:
-                // _plugin.SendPedalAction(tmp, _plugin.Settings.table_selected);
+                TxtLog.AppendText("Sende OTA Wake-Up Kommando inkl. WLAN-Daten an das Pedal...\n");
 
-                // 2. Dem ESP Zeit geben, Motor zu stoppen und ArduinoOTA zu starten
-                TxtLog.AppendText("Warte auf Initialisierung des OTA-Modus am ESP32...\n");
-                await Task.Delay(4000);
+                byte pedalId = (byte)(_plugin.Settings?.table_selected ?? 0);
+
+                // Den speicherkritischen Teil kapseln wir in einen unsafe-Block
+                unsafe
+                {
+                    DAP_action_ota_st tmp_2 = default;
+
+                    tmp_2.payloadOtaInfo_.ota_action = (byte)1; // Entspricht otaAction.OTA_ACTION_NORMAL
+
+                    if (_plugin._calculations != null)
+                    {
+                        if (_plugin._calculations.ForceUpdate_b)
+                            tmp_2.payloadOtaInfo_.ota_action = (byte)2; // OTA_ACTION_FORCE_UPDATE
+                        if (_plugin._calculations.IsOtaUploadFromPlatformIO)
+                            tmp_2.payloadOtaInfo_.ota_action = (byte)3; // OTA_ACTION_UPLOAD_FROM_PLATFORMIO
+                    }
+
+                    tmp_2.payloadOtaInfo_.mode_select = 1;
+                    tmp_2.payloadOtaInfo_.SSID_Length = (byte)SSID.Length;
+                    tmp_2.payloadOtaInfo_.PASS_Length = (byte)PASS.Length;
+                    tmp_2.payloadOtaInfo_.device_ID = pedalId;
+
+                    // Header und Footer 
+                    tmp_2.payloadHeader_.payloadType = 0x05; // Constants.OtaPayloadType
+
+                    // Arrays für Start und End Chars (passe diese ggf. an deine Constants/Variablen an)
+                    byte[] startChars = { 0x55, 0xAA }; // Beispielwerte für STARTOFFRAMCHAR
+                    byte[] endChars = { 0x0D, 0x0A };   // Beispielwerte für ENDOFFRAMCHAR
+
+                    tmp_2.payloadHeader_.startOfFrame0_u8 = startChars[0];
+                    tmp_2.payloadHeader_.startOfFrame1_u8 = startChars[1];
+                    tmp_2.payloadFooter_.enfOfFrame0_u8 = endChars[0];
+                    tmp_2.payloadFooter_.enfOfFrame1_u8 = endChars[1];
+
+                    byte[] array_ssid = Encoding.ASCII.GetBytes(SSID);
+                    for (int i = 0; i < SSID.Length; i++)
+                    {
+                        tmp_2.payloadOtaInfo_.WIFI_SSID[i] = array_ssid[i];
+                    }
+
+                    byte[] array_pass = Encoding.ASCII.GetBytes(PASS);
+                    for (int i = 0; i < PASS.Length; i++)
+                    {
+                        tmp_2.payloadOtaInfo_.WIFI_PASS[i] = array_pass[i];
+                    }
+
+                    _plugin.SendOTAActionPedal(tmp_2, pedalId);
+                }
+
+                // 2. Dem ESP Zeit geben, Motor zu stoppen, WLAN zu verbinden und ArduinoOTA zu starten
+                TxtLog.AppendText("Warte auf WLAN-Verbindung und Initialisierung des OTA-Modus am ESP32 (5 Sekunden)...\n");
+                await Task.Delay(5000);
 
                 // 3. Datei auflösen (nur firmware.bin!)
                 string firmwarePath;
