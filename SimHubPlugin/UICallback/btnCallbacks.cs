@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -66,8 +66,17 @@ namespace DiyFfbPedal
             }
         }
 
+        unsafe private void btn_Bridge_OTA_Click(object sender, RoutedEventArgs e)
+        {
+            // Status-Flags für das Update zurücksetzen
+            Plugin._calculations.ForceUpdate_b = false;
+            Plugin._calculations.IsOtaUploadFromPlatformIO = false;
 
-
+            // Öffnet das neue OTA-Flasher Fenster und übergibt die Plugin-Referenz
+            var otaWindow = new DiyFfbPedal.UIFunction.OtaFlasherWindow(Plugin);
+            otaWindow.ShowDialog();
+        }
+        /*
         unsafe private void btn_Bridge_OTA_Click(object sender, RoutedEventArgs e)
         {
             UpdateSettingWindow sideWindow = new UpdateSettingWindow(Plugin.Settings, Plugin._calculations);
@@ -106,18 +115,14 @@ namespace DiyFfbPedal
                     tmp_2.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
                     tmp_2.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
                     byte[] array_ssid = Encoding.ASCII.GetBytes(SSID);
-                    //TextBox_serialMonitor_bridge.Text += "SSID:";
                     for (int i = 0; i < SSID.Length; i++)
                     {
                         tmp_2.payloadOtaInfo_.WIFI_SSID[i] = array_ssid[i];
-                        //TextBox_serialMonitor_bridge.Text += tmp_2.WIFI_SSID[i] + ",";
                     }
-                    //TextBox_serialMonitor_bridge.Text += "\nPASS:";
                     byte[] array_pass = Encoding.ASCII.GetBytes(PASS);
                     for (int i = 0; i < PASS.Length; i++)
                     {
                         tmp_2.payloadOtaInfo_.WIFI_PASS[i] = array_pass[i];
-                        //TextBox_serialMonitor_bridge.Text += tmp_2.WIFI_PASS[i] + ",";
                     }
                     if (Plugin.ESPsync_serialPort.IsOpen)  Plugin.SendOTAActionBridge(tmp_2);
                     
@@ -126,6 +131,7 @@ namespace DiyFfbPedal
             
 
         }
+        */
 
         private async void btn_OnlineProfile_Click(object sender, RoutedEventArgs e)
         {
@@ -763,8 +769,8 @@ namespace DiyFfbPedal
             otaWindow.ShowDialog();
         }
 
-        //unsafe private void btn_OtaTest_Click(object sender, RoutedEventArgs e)
-        unsafe private void btn_OtaTest_Click(object sender, EventArgs e)
+        unsafe private void btn_OtaHidden_Click(object sender, RoutedEventArgs e)
+        //unsafe private void btn_OtaTest_Click(object sender, EventArgs e)
         {
             Plugin._calculations.ForceUpdate_b = false;
             Plugin._calculations.IsOtaUploadFromPlatformIO = false;
@@ -1300,8 +1306,8 @@ namespace DiyFfbPedal
             {
                 string downloadUrl;
                 string rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyFfbPedal.resx";
-                downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyFfbPedal.dll";
-                string MSG_tmp = "Plugin will update from Stable release channel";
+                downloadUrl = "https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/releases/latest/download/DiyFfbPedal.dll";
+                string MSG_tmp = "Plugin will update to the latest release version";
                 /*
                 switch (Plugin.Settings.updateChannel)
                 {

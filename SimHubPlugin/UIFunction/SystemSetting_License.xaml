@@ -23,7 +23,7 @@
 
                         <Label Content="LICENSE"  FontFamily="Arial Black" FontSize="20" Height="25" Width="150" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" RenderTransformOrigin="0,0" VerticalContentAlignment="Center" Margin="15,0,0,0"  />
                         <styles:SHButtonPrimary x:Name="btn_test" Click="btn_test_Click" Width="30" Content="TEST" Height="20" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="6" MinHeight="20" Background="{x:Null}" />
-                        <styles:SHButtonPrimary x:Name="btn_OtaTest" Click="btn_OtaTest_Click" Width="60" Content="OTA from PlatformIO" Height="20" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="6" MinHeight="20" Background="{x:Null}" />
+                        
                     </StackPanel>
                     <TextBlock HorizontalAlignment="Center" Width="510" Height="10" FontFamily="Arial" FontSize="10" VerticalAlignment="Center" Foreground="White" Margin="0,10,0,0">           
                         This work is licensed under a

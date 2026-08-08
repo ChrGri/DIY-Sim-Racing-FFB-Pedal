@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -97,23 +97,19 @@ namespace DiyFfbPedal.UIFunction
             {
                 using (var client = new HttpClient())
                 {
-                    string json = await client.GetStringAsync(Constants.version_control_url);
+                    client.DefaultRequestHeaders.Add("User-Agent", "SimHub-Plugin");
+                    string json = await client.GetStringAsync("https://api.github.com/repos/ChrGri/DIY-Sim-Racing-FFB-Pedal/releases/latest");
                     JObject obj = JObject.Parse(json);
-                    var results = new List<string>();
+                    
+                    string tagName = (string)obj["tag_name"];
+                    string body = (string)obj["body"];
+                    string cleanedVersion = System.Text.RegularExpressions.Regex.Match(tagName ?? "", @"\d+(\.\d+)+").Value;
+                    if (string.IsNullOrEmpty(cleanedVersion)) cleanedVersion = "0.0.0.0";
 
                     for (int i = 0; i < channels.Length; i++)
                     {
-                        string channel = channels[i];
-                        if (obj.ContainsKey(channel))
-                        {
-                            versions[i] = (string)obj[channel]["version"];
-                            changelogs[i] = (string)obj[channel]["changelog"];
-                        }
-                        else
-                        {
-                            versions[i] = "N/A";
-                            changelogs[i] = "Channel not found.";
-                        }
+                        versions[i] = cleanedVersion;
+                        changelogs[i] = body;
                     }
                     if (textBox_changelog != null) textBox_changelog.Text = "Version:" + versions[0] + "\n" + changelogs[0];
 

@@ -74,7 +74,7 @@ namespace DiyFfbPedal.UIFunction
         {
             if (PnlCustomFile == null) return;
             PnlCustomFile.Visibility = (CboFirmware.SelectedValue != null && CboFirmware.SelectedValue.ToString() == "CUSTOM_LOCAL")
-                                       ? Visibility.Visible : Visibility.Collapsed;
+                                       ? Visibility.Visible : Visibility.Collapsed; 
         }
 
         private void BtnBrowse_Click(object sender, RoutedEventArgs e)
