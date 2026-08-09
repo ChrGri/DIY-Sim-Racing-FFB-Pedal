@@ -1305,7 +1305,7 @@ namespace DiyFfbPedal
             if (sideWindow.ShowDialog() == true)
             {
                 string downloadUrl;
-                string rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyFfbPedal.resx";
+                string rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/SimHubPlugin/Language/DiyFfbPedal.resx";
                 downloadUrl = "https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/releases/latest/download/DiyFfbPedal.dll";
                 string MSG_tmp = "Plugin will update to the latest release version";
                 /*
