@@ -209,7 +209,7 @@
                                                         </StackPanel>
                                                     </Button>
 
-                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_OTA_enable_Click" ToolTip="OTA update" Margin="5,5,5,0">
+                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_OTA_enable_Click" MouseRightButtonUp="btn_OtaHidden_Click" ToolTip="OTA update" Margin="5,5,5,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource OTA}" />
                                                             <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextPedalOta, 'OTA'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
@@ -636,10 +636,10 @@
                                                         <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnBridgeRestart, 'Retsart'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
-                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Bridge_OTA_Click" ToolTip="Bridge OTA update" Margin="5,0,5,0">
+                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_USB_Flash_Click" ToolTip="USB Flash" Margin="5,0,5,0">
                                                     <StackPanel>
-                                                        <Image Width="30" Height="30" Source="{StaticResource OTA}" />
-                                                        <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnBridgeOTA, 'Bridge OTA'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                        <Image Width="30" Height="30" Source="{StaticResource Monitor}" />
+                                                        <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnUsbFlash, 'USB Flash'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
                                                 <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Plugin_OTA_Click" ToolTip="Plugin Update">
@@ -656,13 +656,8 @@
                                                         <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnBridgeDebug, 'Bridge Debug'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
-                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_USB_Flash_Click" ToolTip="USB Flash" Margin="5,0,5,0">
-                                                    <StackPanel>
-                                                        <Image Width="30" Height="30" Source="{StaticResource Monitor}" />
-                                                        <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnUsbFlash, 'USB Flash'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
-                                                    </StackPanel>
-                                                </Button>
-                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="Btn_OpenLanguageDownload_Click" ToolTip="Localization">
+
+                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="Btn_OpenLanguageDownload_Click" ToolTip="Localization" Margin="5,0,5,0">
                                                     <StackPanel>
                                                         <Image Width="30" Height="30" Source="{StaticResource Localization}" />
                                                         <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnLocalization, 'Localization'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>

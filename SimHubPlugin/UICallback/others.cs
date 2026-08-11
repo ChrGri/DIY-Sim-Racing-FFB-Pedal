@@ -1125,21 +1125,17 @@ namespace DiyFfbPedal
             {
                 using (var client = new HttpClient())
                 {
-                    string json = await client.GetStringAsync(Constants.version_control_url);
+                    client.DefaultRequestHeaders.Add("User-Agent", "SimHub-Plugin");
+                    string json = await client.GetStringAsync("https://api.github.com/repos/ChrGri/DIY-Sim-Racing-FFB-Pedal/releases/latest");
                     JObject obj = JObject.Parse(json);
-                    var results = new List<string>();
+                    
+                    string tagName = (string)obj["tag_name"];
+                    string cleanedVersion = System.Text.RegularExpressions.Regex.Match(tagName ?? "", @"\d+(\.\d+)+").Value;
+                    if (string.IsNullOrEmpty(cleanedVersion)) cleanedVersion = "0.0.0.0";
 
                     for (int i = 0; i < Plugin._calculations.updateChannelString.Length; i++)
                     {
-                        string channel = Plugin._calculations.updateChannelString[i];
-                        if (obj.ContainsKey(channel))
-                        {
-                            Plugin._calculations.pluginVersionReading[i] = (string)obj[channel]["version"];
-                        }
-                        else
-                        {
-                            Plugin._calculations.pluginVersionReading[i] = "N/A";
-                        }
+                        Plugin._calculations.pluginVersionReading[i] = cleanedVersion;
                     }
                     Plugin._calculations.versionCheck_b = true;
                     

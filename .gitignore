@@ -27,6 +27,7 @@ obj/
 !OTA/ReleaseBuild/Plugin/DiyFfbPedal.dll
 *.exe
 !SimHubPlugin/Resources/esptool.exe
+!SimHubPlugin/Resources/espota.exe
 *.pdb
 *.cache
 *.ilk

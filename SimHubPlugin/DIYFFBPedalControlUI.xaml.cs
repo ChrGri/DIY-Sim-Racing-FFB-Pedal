@@ -534,7 +534,7 @@ namespace DiyFfbPedal
         private void SystemLicense_Tab_btn_test_Click_event(object sender, EventArgs e)
         {
             //uint hash =Plugin.ConfigService.ConfigHashMap.Fnv1aHash("RudderConfig");
-            ToastNotification("Debug", "Print All parameter and available com portin Serial log");
+            ToastNotification("Debug", "Print All parameter and available com portin Serial log\n"+"current Plugin version:" + Plugin._calculations.pluginVersionReading[0]);
             //readRudderSettingToConfig();
             //PrintUnknownStructParameters(dap_config_st_rudder.payloadPedalConfig_);
             if (_serial_monitor_window != null)

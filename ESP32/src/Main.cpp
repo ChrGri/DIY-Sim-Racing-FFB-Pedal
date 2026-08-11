@@ -1134,6 +1134,7 @@ void setup()
 
   // equalize pedal config for both tasks
   global_dap_config_class.getConfig(&dap_config_st_local, 500);
+  delay(100);
   updatePedalCalcParameters(dap_config_st_local);
 
   // send to config handling task
@@ -3348,16 +3349,29 @@ void otaUpdateTask( void * pvParameters )
             }
             else
             {
-              if(dap_action_ota_st.payloadOtaInfo_st.otaAction_u8==OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD)
+              if(dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 == OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD)
               {
-                //updload ota from platformio
-                //sendESPNOWLog("Upload from platformIO");
-                ArduinoOTA.handle(); 
-                if(millis()-ota_debug_messaage_last>1000)
-                {
-                  ActiveSerial->println("Wait for ota update...");
-                }
-                
+                  ActiveSerial->println("Entering dedicated OTA mode... stopping hardware tasks.");
+                  
+                  // (Optional, aber empfohlen: Hier den Motor einmalig disablen, 
+                  // damit das Pedal nicht unerwartet zuckt, während der Chip blockiert ist)
+
+                  // Wir fangen das Programm in einer Endlosschleife.
+                  // KEINE Sensor- oder FFB-Logik wird ab hier mehr ausgeführt!
+                  while(true) 
+                  {
+                      ArduinoOTA.handle(); 
+                      
+                      if(millis() - ota_debug_messaage_last > 1000)
+                      {
+                          ActiveSerial->println("Wait for ota update...");
+                          ota_debug_messaage_last = millis();
+                      }
+                      
+                      // LEBENSWICHTIG: Gibt dem FreeRTOS-Betriebssystem 10 Millisekunden Zeit, 
+                      // um die WLAN-Pakete vom PC fehlerfrei in den Flash-Speicher zu schreiben.
+                      delay(10); 
+                  }
               }
               else
               {
