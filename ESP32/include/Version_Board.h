@@ -1,3 +1,4 @@
+
 const char *DAP_FIRMWARE_VERSION = "26.32.06";
 
 #if PCB_VERSION==3

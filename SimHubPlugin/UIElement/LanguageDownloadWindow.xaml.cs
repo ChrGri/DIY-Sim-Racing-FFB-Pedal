@@ -41,6 +41,27 @@ namespace DiyFfbPedal.UIElement
                     
                     var files = JsonConvert.DeserializeObject<List<GithubFile>>(response);
                     
+                    try
+                    {
+                        var contributorsResponse = await client.GetStringAsync($"https://raw.githubusercontent.com/tcfshcrw/DIYFFBPedalPluginLocalization/main/contributors.json?t={DateTime.Now.Ticks}");
+                        var contributors = JsonConvert.DeserializeObject<List<Contributor>>(contributorsResponse);
+                        if (files != null && contributors != null)
+                        {
+                            foreach (var file in files)
+                            {
+                                var contributor = contributors.Find(c => c.Filename == file.Name);
+                                if (contributor != null)
+                                {
+                                    file.Author = contributor.Author;
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore contributor fetch error
+                    }
+                    
                     if (files != null)
                     {
                         Listbox_Languages.ItemsSource = files;
@@ -173,5 +194,21 @@ namespace DiyFfbPedal.UIElement
 
         [JsonProperty("download_url")]
         public string DownloadUrl { get; set; }
+
+        public string Author { get; set; }
+
+        public string DisplayText => string.IsNullOrEmpty(Author) ? Name : $"{Name} (by {Author})";
+    }
+
+    public class Contributor
+    {
+        [JsonProperty("language_code")]
+        public string LanguageCode { get; set; }
+        
+        [JsonProperty("filename")]
+        public string Filename { get; set; }
+        
+        [JsonProperty("author")]
+        public string Author { get; set; }
     }
 }

@@ -1,14 +1,14 @@
 {
   "main": {
-    "version":"26.19.06",
-    "changelog": "26.19.06:\n\nImportant: Due to a file name change, please update the plugin directly from the GitHub repository.\n\nPedal:\n1. Implemented a new admittance control algorithm for pedal movement, which reduces noise and improves vibration control by allowing the parameterization of virtual mass and damping factors.\n2. Tuned servo register settings with a much higher PID (roughly 6 times). Note: Servo whine is currently present and will be tuned down in future updates.\n3. Added parameterizable endstop behavior (supports hard or soft endstops).\n4. Added predictive brake circuit activation.\n5. Introduced Automatic Oscillation Mitigation (detects oscillation and automatically increases damping to stop it).\n6. Applied admittance control to the rudder.\n7. Updated the FstAccStepper library.\n8. DAP Version: 171\n9. Firmware Version: 26.19.06\n\nBridge:\n1. X, Y, and Z axes now default to the center position.\n2. Transitioned communication between the bridge and plugin from Serial to HID.\n3. DAP Version: 171\n4. Firmware Version: 26.19.06\n\nPlugin:\n1. Tweaked the UI for the new Dynamics tab.\n2. Removed the damping slider and moved the servo idle timeout to the Servo tab.\n3. Adjusted rudder configurations (parameters will be further tuned in the future).\n4. Updated the Plugin Update tool to now pull the DiyFfbPedal.rsex language file.\n5. Introduced a new Config and Profile list.\n6. Updated the plugin's overall appearance.\n7. Added support for SimHub localization.\n8. Added a new Custom Effects page.\n9. Implemented a new connection flow control.\n10. The plugin now searches for and connects to the bridge automatically. The manual connect button is now reserved only for bridges using an external joystick or a Fanatec bridge.\n11. DAP Version: 171\n12. Plugin Version: 26.19.06"
+    "version": "26.32.03",
+    "changelog": "26.32.04:\n\nFeatures & Enhancements:\n- UI & Localization: Added language download window, localization support, and show language author in download list.\n- UI Enhancements: Added simple UI scaling.\n- Configuration UI: Added input text fields for Max Force, Min Travel, etc.\n- Hardware Integration: Added predictive voltage-based brake resistor support for PCBAs.\n- Physics / Dynamics: Position-based effect update and added pedal dynamics to rudder.\n- Connectivity: Added wireless config support.\n- LED & Safety: Added homing timeout and PedalLED class.\n- Geometry & Curves: Force curve and pedal geometry changes.\n- Build System: Auto-update pluginVersion during build.\n\nBug Fixes & Stability:\n- Wireless/ESPNOW: Fix ESPNOW random hanging issues and connection stability.\n- Hardware/Motor: Reduce velocity loop gain to minimize noise.\n- Safety: Limit soft endstop dynamic expansion.\n- Calculations: Prevent curve calculation errors.\n- UI Adjustments: Fix layout shifting and trigger mapping.\n- Hardware Timing: Removed delays after endstop hit, added WDT resets.\n- Data Integrity: Defer EEPROM writes until motor idle.\n- Other Fixes: Fix serial-port index bug, rudder config clearing, LED brightness, crash detection.\n\nRefactoring & Cleanup:\n- Refactored USB HID, ESPNOW_lib.h, Main.cpp, and LED usage.\n- Code optimization and aligned naming with guidelines.\n\nMaintenance & Version Bumps:\n- Bumped firmware to 26.30.07 and updated payload config versions.\n- Removed dev/test build options in the update window.\n"
   },
   "dev-build": {
-    "version": "26.19.06",
+    "version": "26.32.03",
     "changelog": "SAME AS RELEASE"
   },
   "daily-build": {
-    "version": "26.19.06",
+    "version": "26.32.03",
     "changelog": "\n"
   }
 }
