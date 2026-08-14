@@ -138,6 +138,15 @@ namespace DiyFfbPedal
                             break;
                     }
                     Textbox_Online_Profile_Description.Text += "KF :" + tmp_config.payloadPedalConfig_.kf_modelNoise + "\n";
+                    if (tmp_config.payloadHeader_.version > 161)
+                    {
+                        Textbox_Online_Profile_Description.Text += "Virtual Mass :" + tmp_config.payloadPedalConfig_.virtualPedalMass_u8 + "\n";
+                        Textbox_Online_Profile_Description.Text += "Virtual Damping :" + tmp_config.payloadPedalConfig_.virtualPedalDamping_u8 + "\n";
+                        Textbox_Online_Profile_Description.Text += "Endstop Stiffness :" + tmp_config.payloadPedalConfig_.endstopStiffness_kg_mm_u8 + "\n";
+                        Textbox_Online_Profile_Description.Text += "Endstop Travel :" + tmp_config.payloadPedalConfig_.endstopTravelRange_mm_u8 + "\n";
+                        Textbox_Online_Profile_Description.Text += "Damping Progression :" + tmp_config.payloadPedalConfig_.dampingProgression_u8 + "\n";
+                        Textbox_Online_Profile_Description.Text += "Coulmb Friction :" + tmp_config.payloadPedalConfig_.coulombFrictionIn0p1N_u8 + "\n";
+                    }
 
 
                 }

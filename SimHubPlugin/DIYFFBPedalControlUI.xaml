@@ -642,7 +642,7 @@
                                                         <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnUsbFlash, 'USB Flash'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
-                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Plugin_OTA_Click" ToolTip="Plugin Update">
+                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Plugin_OTA_Click" MouseRightButtonUp="btn_PluginUpdate_Click" ToolTip="Left-Click for update to Latest, RIght-Click to open Rollback window">
                                                     <StackPanel>
                                                         <Image Width="30" Height="30" Source="{StaticResource PluginUpdate}" />
                                                         <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnPluginUpdate, 'Plugin Update'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>

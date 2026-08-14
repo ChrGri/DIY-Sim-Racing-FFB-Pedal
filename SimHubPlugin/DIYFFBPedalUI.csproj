@@ -339,6 +339,9 @@
     <Compile Include="UIFunction\OtaFlasherWindow.xaml.cs">
       <DependentUpon>OtaFlasherWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\PluginUpdaterWindow.xaml.cs">
+      <DependentUpon>PluginUpdaterWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="VariablesStruct\Basic_WIfi_info.cs" />
     <Compile Include="VariablesStruct\CalculationVariables.cs" />
     <Compile Include="VariablesStruct\constants.cs" />
@@ -556,6 +559,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\OtaFlasherWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\PluginUpdaterWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

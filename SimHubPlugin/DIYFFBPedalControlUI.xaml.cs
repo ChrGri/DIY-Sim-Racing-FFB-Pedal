@@ -1,4 +1,4 @@
-﻿//using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
+//using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
 using System;
 using System.Collections.Generic;
 using System.IO.Ports;
@@ -557,13 +557,6 @@ namespace DiyFfbPedal
         }
 		
 		
-		private void btn_USB_Flash_Click(object sender, RoutedEventArgs e)
-		{
-			// Open the new flasher window and pass the plugin reference to handle serial port locks
-			var flasherWindow = new DiyFfbPedal.UIFunction.FirmwareFlasherWindow(Plugin);
-			flasherWindow.ShowDialog();
-		}
-
 
     }
     

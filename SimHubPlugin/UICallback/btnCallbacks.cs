@@ -148,14 +148,15 @@ namespace DiyFfbPedal
 
                 try
                 {
-                    bool compatibleMode = false;
+                    bool compatibleMode_150 = false;
+                    bool compatibleMode_160 = false;
                     DAP_config_st tmp_config;
                     int version = 0;
                     byte[] compatibleForce = new byte[6];
                     tmp_config = await GetProfileDataAsync(jsonUrl);
                     if (tmp_config.payloadHeader_.version < 150)
                     {
-                        compatibleMode = true;
+                        compatibleMode_150 = true;
                         System.Windows.MessageBox.Show($"This config created in DAP{tmp_config.payloadHeader_.version}, compatible mode is on", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
 
                         try
@@ -172,7 +173,7 @@ namespace DiyFfbPedal
                             if (version < 150)
                             {
                                 //MessageBox.Show($"This config is created in DAP{version}, Compatible Mode on");
-                                compatibleMode = true;
+                                compatibleMode_150 = true;
                                 compatibleForce[0] = (byte)data["payloadPedalConfig_"]["relativeForce_p000"];
                                 compatibleForce[1] = (byte)data["payloadPedalConfig_"]["relativeForce_p020"];
                                 compatibleForce[2] = (byte)data["payloadPedalConfig_"]["relativeForce_p040"];
@@ -186,7 +187,12 @@ namespace DiyFfbPedal
                         {
 
                         }
-                    } 
+                    }
+                    if (tmp_config.payloadHeader_.version < 160)
+                    {
+                        compatibleMode_160 = true;
+
+                    }
                     float travel = (tmp_config.payloadPedalConfig_.pedalEndPosition - tmp_config.payloadPedalConfig_.pedalStartPosition) / 100.0f * (float)tmp_config.payloadPedalConfig_.lengthPedal_travel;
                     byte max_pos = (byte)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalStartPosition + (travel / (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.lengthPedal_travel * 100.0f));
                     if (max_pos > 95)
@@ -235,10 +241,10 @@ namespace DiyFfbPedal
                         dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeTravel09 = tmp_config.payloadPedalConfig_.relativeTravel09;
                         dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeTravel10 = tmp_config.payloadPedalConfig_.relativeTravel10;
 
-                        if (compatibleMode)
+                        if (compatibleMode_150)
                         {
                             //get old verison file, auto convert to new config
-                            compatibleMode = false;
+                            compatibleMode_150 = false;
                             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.quantityOfControl = 6;
                             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce00 = compatibleForce[0];
                             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce01 = compatibleForce[1];
@@ -252,6 +258,24 @@ namespace DiyFfbPedal
                             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeTravel03 = 60;
                             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeTravel04 = 80;
                             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeTravel05 = 100;
+                        }
+                        if (compatibleMode_160)
+                        {
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.virtualPedalMass_u8 = Plugin.DefaultConfig.payloadPedalConfig_.virtualPedalMass_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.virtualPedalDamping_u8 = Plugin.DefaultConfig.payloadPedalConfig_.virtualPedalDamping_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.endstopStiffness_kg_mm_u8 = Plugin.DefaultConfig.payloadPedalConfig_.endstopStiffness_kg_mm_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.endstopTravelRange_mm_u8 = Plugin.DefaultConfig.payloadPedalConfig_.endstopTravelRange_mm_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.dampingProgression_u8 = Plugin.DefaultConfig.payloadPedalConfig_.dampingProgression_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.coulombFrictionIn0p1N_u8 = Plugin.DefaultConfig.payloadPedalConfig_.coulombFrictionIn0p1N_u8;
+                        }
+                        else
+                        {
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.virtualPedalMass_u8 = tmp_config.payloadPedalConfig_.virtualPedalMass_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.virtualPedalDamping_u8 = tmp_config.payloadPedalConfig_.virtualPedalDamping_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.endstopStiffness_kg_mm_u8 = tmp_config.payloadPedalConfig_.endstopStiffness_kg_mm_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.endstopTravelRange_mm_u8 = tmp_config.payloadPedalConfig_.endstopTravelRange_mm_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.dampingProgression_u8 = tmp_config.payloadPedalConfig_.dampingProgression_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.coulombFrictionIn0p1N_u8 = tmp_config.payloadPedalConfig_.coulombFrictionIn0p1N_u8;
                         }
                         updateTheGuiFromConfig();
                     }
@@ -1455,6 +1479,19 @@ namespace DiyFfbPedal
             var languageWindow = new DiyFfbPedal.UIElement.LanguageDownloadWindow();
             
             languageWindow.ShowDialog();
+        }
+
+        private void btn_USB_Flash_Click(object sender, RoutedEventArgs e)
+        {
+            // Open the new flasher window and pass the plugin reference to handle serial port locks
+            var flasherWindow = new DiyFfbPedal.UIFunction.FirmwareFlasherWindow(Plugin);
+            flasherWindow.ShowDialog();
+        }
+
+        private void btn_PluginUpdate_Click(object sender, RoutedEventArgs e)
+        {
+            var updaterWindow = new DiyFfbPedal.UIFunction.PluginUpdaterWindow(Plugin);
+            updaterWindow.ShowDialog();
         }
     }
 }
