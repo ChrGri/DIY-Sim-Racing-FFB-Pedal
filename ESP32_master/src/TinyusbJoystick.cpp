@@ -1,4 +1,4 @@
-#include "TinyusbJoystick.h"
+﻿#include "TinyusbJoystick.h"
 #include <cstdint>
 #include <cstring>
 #include <cstdarg>
@@ -225,7 +225,7 @@ void TinyusbJoystick::ProcessFullData(uint8_t *rxBuffer, uint8_t totalLen)
         if(structChecker)
         {
             memcpy(&tmpBridgeAction, &tmp, totalLen);
-            isBridgeActionGet= true;
+            isBridgeActionGet = true;
         }
         
     }
