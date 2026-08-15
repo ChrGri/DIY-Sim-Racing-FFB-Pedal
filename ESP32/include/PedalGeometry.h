@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "DiyActivePedal_types.h"
 #include "StepperWithLimits.h"
@@ -122,18 +122,8 @@ static inline IRAM_ATTR_FLAG float pedalInclineAngleDeg(float sledPositionMm_fl3
   // Check for division by zero / singularity
   if ((pivotXx_fl32 == 0.0f) && (pivotXy_fl32 == 0.0f)) return NAN;
 
-  // Inline approximation of atan2(pivotXy_fl32, pivotXx_fl32)
-  const bool isYGreater_b = fabsf(pivotXy_fl32) >= fabsf(pivotXx_fl32);
-  float angleBase_fl32 = isYGreater_b ? 90.0f : (pivotXx_fl32 >= 0.0f) ? 0.0f : 180.0f;
-  if (pivotXy_fl32 < 0.0f) angleBase_fl32 = -angleBase_fl32;
-  
-  const float ratioZ_fl32 = isYGreater_b ? (pivotXx_fl32 / pivotXy_fl32) : (pivotXy_fl32 / pivotXx_fl32);
-  const float angleSign_fl32 = isYGreater_b ? -RAD_TO_DEG_FL32 : RAD_TO_DEG_FL32;
-  const float ratioZSq_fl32 = ratioZ_fl32 * ratioZ_fl32;
-  
-  // Polynomial approximation for the angle calculation in degrees
-  //return (((0.079331f * ratioZSq_fl32) - 0.288679f) * ratioZSq_fl32 + 0.995354f) * ratioZ_fl32 * angleSign_fl32 + angleBase_fl32;
-  return ((((-0.0389929f * ratioZSq_fl32) + 0.1462766f) * ratioZSq_fl32 - 0.3211819f) * ratioZSq_fl32 + 0.9992150f) * ratioZ_fl32 * angleSign_fl32 + angleBase_fl32;
+  // Exact calculation to perfectly round-trip with Inverse Kinematics
+  return atan2f(pivotXy_fl32, pivotXx_fl32) * RAD_TO_DEG_FL32;
 }
 
 
@@ -157,8 +147,8 @@ static inline IRAM_ATTR_FLAG float pedalArcPercentage(StepperWithLimits* stepper
   float angleAtMaxSled_deg = pedalInclineAngleDeg(maxSledPos_mm, config_pst);
   float currentAngle_deg = pedalInclineAngleDeg(actualSledPos_mm, config_pst);
 
-  float actualPosFraction_01 = fabsf( (currentAngle_deg - angleAtMinSled_deg) / (angleAtMaxSled_deg - angleAtMinSled_deg) );
-  return actualPosFraction_01 = constrain(actualPosFraction_01, 0.0f, 1.0f);
+  float actualPosFraction_01 = (currentAngle_deg - angleAtMinSled_deg) / (angleAtMaxSled_deg - angleAtMinSled_deg);
+  return constrain(actualPosFraction_01, 0.0f, 1.0f);
 }
 
 static inline IRAM_ATTR_FLAG float convertToPedalForce(float loadcellForce_fl32, float sledPositionMm_fl32, DapConfig_t * config_pst) {
