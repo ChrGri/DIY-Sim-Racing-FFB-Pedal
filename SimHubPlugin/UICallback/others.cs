@@ -770,30 +770,27 @@ namespace DiyFfbPedal
                 // serial port settings
                 //Plugin._serialPort[pedalIdx].BaudRate = 921600;
                 var serialInfo = ComPortHelper.GetVidPidFromComPort(Plugin._serialPort[pedalIdx].PortName);
+                if (serialInfo.Vid == "1A86" && serialInfo.Pid == "55D3")
+                {
+                    //target CH343
+                    //change baud here
+                    
+                    //MessageBox.Show("CH343 connected");
+                }
+                Plugin._serialPort[pedalIdx].Handshake = Handshake.None;
+                Plugin._serialPort[pedalIdx].Parity = Parity.None;
+                Plugin._serialPort[pedalIdx].BaudRate = Constants.BAUD3M;
                 if (serialInfo.Vid == "303A")// && serialInfo.Pid == "1001")
                 {
                     //CDC serial enabled
                     Plugin.isCdcSerial[pedalIdx] = true;
+                    Plugin._serialPort[pedalIdx].BaudRate = Constants.DEFAULTBAUD;
                     //MessageBox.Show("CDC connected");
                 }
                 else
                 {
                     Plugin.isCdcSerial[pedalIdx] = false;
                 }
-
-                if (serialInfo.Vid == "1A86" && serialInfo.Pid == "55D3")
-                {
-                    //target CH343
-                    //change baud here
-                    Plugin._serialPort[pedalIdx].BaudRate = Constants.BAUD3M;
-                    //MessageBox.Show("CH343 connected");
-                }
-                else
-                {
-                    Plugin._serialPort[pedalIdx].BaudRate = Constants.DEFAULTBAUD;
-                }
-                Plugin._serialPort[pedalIdx].Handshake = Handshake.None;
-                Plugin._serialPort[pedalIdx].Parity = Parity.None;
                 //_serialPort[pedalIdx].StopBits = StopBits.None;
 
 
@@ -836,17 +833,7 @@ namespace DiyFfbPedal
                         }
 
                         Plugin._serialPort[pedalIdx].Open();
-
-
-
-                        
-
-
-
                         System.Threading.Thread.Sleep(200);
-
-
-
                         Plugin.Settings.connect_status[pedalIdx] = 1;
                         // read callback
                         if (pedal_serial_read_timer[pedalIdx] != null)

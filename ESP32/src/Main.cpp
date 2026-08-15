@@ -1062,6 +1062,7 @@ void setup()
   ActiveSerial->println("Config sent successfully");
   // interprete config values
   dap_calculationVariables_st.updateFromConfig(dap_config_st_local);
+  //updatePedalCalcParameters(dap_config_st_local);
   //loadcell
   /*
   #ifdef USES_ADS1220
@@ -1110,7 +1111,9 @@ void setup()
 
 	// find the min & max endstops
   ActiveSerial->println("Start homing");
-
+  global_dap_config_class.getConfig(&dap_config_st_local, 500);
+  delay(100);
+  updatePedalCalcParameters(dap_config_st_local);
   stepper->findMinMaxSensorless(dap_config_st_local);
 
   esp_timer_stop(homingTimer_st);
