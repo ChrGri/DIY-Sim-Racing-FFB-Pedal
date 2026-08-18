@@ -99,7 +99,9 @@ static inline IRAM_ATTR_FLAG float pedalInclineAngleDeg(float sledPositionMm_fl3
   // Basic geometric lengths from configuration
   const float pedalLengthA_fl32 = (float)config_pst->payloadPedalConfig_st.lengthPedalA_i16;
   const float pedalLengthB_fl32 = (float)config_pst->payloadPedalConfig_st.lengthPedalB_i16;
-  const float lengthCVertical_fl32 = (float)config_pst->payloadPedalConfig_st.lengthPedalCVertical_i16;
+  // Add a 0.01mm phantom offset to prevent mathematical singularity if slider is perfectly inline
+  float cVert_raw = (float)config_pst->payloadPedalConfig_st.lengthPedalCVertical_i16;
+  const float lengthCVertical_fl32 = (fabsf(cVert_raw) < 0.01f) ? 0.01f : cVert_raw;
   const float lengthCHorizontal_fl32 = (float)config_pst->payloadPedalConfig_st.lengthPedalCHorizontal_i16 + sledPositionMm_fl32;
 
   // Squared lengths for the circle equations
@@ -113,17 +115,30 @@ static inline IRAM_ATTR_FLAG float pedalInclineAngleDeg(float sledPositionMm_fl3
   // Calculate discriminant (det)
   const float detArg1_fl32 = cSq_fl32 - (pedalLengthA_fl32 - pedalLengthB_fl32) * (pedalLengthA_fl32 - pedalLengthB_fl32);
   const float detArg2_fl32 = cSq_fl32 - (pedalLengthA_fl32 + pedalLengthB_fl32) * (pedalLengthA_fl32 + pedalLengthB_fl32);
-  const float determinant_fl32 = sqrtf(-cVertSq_fl32 * detArg1_fl32 * detArg2_fl32);
+  const float determinant_fl32 = sqrtf(fmaxf(0.0f, -cVertSq_fl32 * detArg1_fl32 * detArg2_fl32));
+
+  // Determine the sign of C_Vertical to prevent 180-degree vector flips
+  const float signCV_fl32 = (lengthCVertical_fl32 < 0.0f) ? -1.0f : 1.0f;
   
-  // Unscaled coordinates (Xx, Xy) of the intersection point
-  const float pivotXx_fl32 = lengthCVertical_fl32 * (lengthCHorizontal_fl32 * termT_fl32 - determinant_fl32);
-  const float pivotXy_fl32 = cVertSq_fl32 * termT_fl32 + lengthCHorizontal_fl32 * determinant_fl32;
+  // Unscaled coordinates (Xx, Xy) multiplied by an absolute (positive) scalar
+  const float pivotXx_fl32 = fabsf(lengthCVertical_fl32) * (lengthCHorizontal_fl32 * termT_fl32 - determinant_fl32);
+  const float pivotXy_fl32 = signCV_fl32 * (cVertSq_fl32 * termT_fl32 + lengthCHorizontal_fl32 * determinant_fl32);
 
   // Check for division by zero / singularity
   if ((pivotXx_fl32 == 0.0f) && (pivotXy_fl32 == 0.0f)) return NAN;
 
-  // Exact calculation to perfectly round-trip with Inverse Kinematics
-  return atan2f(pivotXy_fl32, pivotXx_fl32) * RAD_TO_DEG_FL32;
+  // Inline approximation of atan2(pivotXy_fl32, pivotXx_fl32)
+  const bool isYGreater_b = fabsf(pivotXy_fl32) >= fabsf(pivotXx_fl32);
+  float angleBase_fl32 = isYGreater_b ? 90.0f : (pivotXx_fl32 >= 0.0f) ? 0.0f : 180.0f;
+  if (pivotXy_fl32 < 0.0f) angleBase_fl32 = -angleBase_fl32;
+  
+  const float ratioZ_fl32 = isYGreater_b ? (pivotXx_fl32 / pivotXy_fl32) : (pivotXy_fl32 / pivotXx_fl32);
+  const float angleSign_fl32 = isYGreater_b ? -RAD_TO_DEG_FL32 : RAD_TO_DEG_FL32;
+  const float ratioZSq_fl32 = ratioZ_fl32 * ratioZ_fl32;
+  
+  // Polynomial approximation for the angle calculation in degrees
+  //return (((0.079331f * ratioZSq_fl32) - 0.288679f) * ratioZSq_fl32 + 0.995354f) * ratioZ_fl32 * angleSign_fl32 + angleBase_fl32;
+  return ((((-0.0389929f * ratioZSq_fl32) + 0.1462766f) * ratioZSq_fl32 - 0.3211819f) * ratioZSq_fl32 + 0.9992150f) * ratioZ_fl32 * angleSign_fl32 + angleBase_fl32;
 }
 
 
@@ -147,7 +162,11 @@ static inline IRAM_ATTR_FLAG float pedalArcPercentage(StepperWithLimits* stepper
   float angleAtMaxSled_deg = pedalInclineAngleDeg(maxSledPos_mm, config_pst);
   float currentAngle_deg = pedalInclineAngleDeg(actualSledPos_mm, config_pst);
 
-  float actualPosFraction_01 = (currentAngle_deg - angleAtMinSled_deg) / (angleAtMaxSled_deg - angleAtMinSled_deg);
+  float angleDelta = angleAtMaxSled_deg - angleAtMinSled_deg;
+  if (fabsf(angleDelta) < 0.001f) {
+   return 0.0f; // Return 0% if endstops are identical or uncalibrated
+  }
+  float actualPosFraction_01 = (currentAngle_deg - angleAtMinSled_deg) / angleDelta;
   return constrain(actualPosFraction_01, 0.0f, 1.0f);
 }
 
@@ -183,10 +202,9 @@ static inline IRAM_ATTR_FLAG float convertToPedalForce(float loadcellForce_fl32,
 
   // apply conversion factor to loadcell reading 
   float pedalForce_fl32  = 1.f;
-  if ( (pedalLengthBPlusD_fl32 > 0.0f) && (cosineArg_fl32 <= 1.f) )
+  if ( (pedalLengthBPlusD_fl32 > 0.0f) && (fabsf(cosineArg_fl32) <= 1.f) )
      pedalForce_fl32 = pedalLengthB_fl32 / (pedalLengthBPlusD_fl32) * sqrtf(1.f - cosineArg_fl32 * cosineArg_fl32);
   
   
   return pedalForce_fl32 * loadcellForce_fl32;
 }
-
