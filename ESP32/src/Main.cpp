@@ -1140,6 +1140,9 @@ void setup()
   delay(100);
   updatePedalCalcParameters(dap_config_st_local);
 
+  // move slowly to the configured soft min position
+  stepper->moveSlowlyToPos(stepper->getMinPosition());
+
   // send to config handling task
   xQueueSend(s_configUpdateAvailableQueue, &dap_config_st_local, portMAX_DELAY);
 
@@ -1436,8 +1439,7 @@ xTaskCreatePinnedToCore(
 /**********************************************************************************************/
 void updatePedalCalcParameters(const DapConfig_t& newConfig)
 {
-  DapConfig_t dap_config_st_local;  
-  global_dap_config_class.getConfig(&dap_config_st_local, 500);
+  DapConfig_t dap_config_st_local = newConfig;
 
   dap_calculationVariables_st.updateFromConfig(dap_config_st_local);
   dap_calculationVariables_st.updateEndstops(stepper->getLimitMin(), stepper->getLimitMax());
@@ -2383,9 +2385,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // Move to new position
       if (doMovement_b)
       {
+        static float Position_Last_fl32 = (float)stepper->getMinPosition();
         if (!moveSlowlyToPosition_b)
         {
-          static float Position_Last_fl32 = 0.0f;
           static int32_t s_lastCommandedTarget_i32 = -1;
           static uint32_t s_lastCommandedSpeed_u32 = 0;
 
@@ -2440,6 +2442,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         {
           moveSlowlyToPosition_b = false;
           stepper->moveSlowlyToPos(Position_Next);
+          Position_Last_fl32 = Position_Next_fl32;
         }
       }
     

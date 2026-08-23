@@ -1,4 +1,4 @@
-﻿#include "DiyActivePedal_types.h"
+#include "DiyActivePedal_types.h"
 
 
 #include "PedalGeometry.h"
@@ -358,7 +358,9 @@ void IRAM_ATTR_FLAG DapCalculationVariables_t::updateEndstops(int32_t newMinEnds
   softEndstopMinStepperPos_i32 = stepperPosEndstopRange_i32 * startPosRel_fl32;
   softEndstopMaxStepperPos_i32 = stepperPosEndstopRange_i32 * endPosRel_fl32;
   stepperPosMinDefault_i32 = softEndstopMinStepperPos_i32;
+  stepperPosMaxDefault_i32 = softEndstopMaxStepperPos_i32;
   stepperPosRange_fl32 = softEndstopMaxStepperPos_i32 - softEndstopMinStepperPos_i32;
+  stepperPosRangeDefault_fl32 = stepperPosRange_fl32;
   //currentPedalPositionRatio_fl32=((float)(currentPedalPosition_u32-stepperPosMinDefault_i32))/((float)stepperPosRangeDefault_fl32);
 
 }
