@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <Main.h>
 #include <limits>
-#include <String>
+#include <string>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
