@@ -123,7 +123,7 @@ static inline IRAM_ATTR_FLAG void CalcDynamicTravelLimits(
         float ext_steps = ext_A + ext_B;
 
         lowerTravelLimit_01 = min(0.0f, ext_steps);
-        upperTravelLimit_01 = 1.0f + ext_steps; // Modified to allow dynamic boundary shift
+        upperTravelLimit_01 = max(1.0f, 1.0f + ext_steps); // Only allow dynamic boundary expansion, never contract below 1.0
     }
 }
 
@@ -759,7 +759,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   // 6. Keep legacy variable for downstream logic (e.g., disabling tracking error damping)
   float effectPositionToForceConversion_kg = effectOffsets_st.forceOffset_Steps_fl32 * localStiffness_kg_step;
-  float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32;// + effectPositionToForceConversion_kg;
+  float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32 + effectPositionToForceConversion_kg;
 
   // 7. Final total force (Loadcell + Static Effect Weight + Dynamic Effect Force)
   float externalForce_N = (loadCellReadingKg_fl32 * GRAVITY_N_KG) + (effectOffsets_st.forceOffset_kg_fl32 * GRAVITY_N_KG) + effectInjectedForce_N;
@@ -780,7 +780,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Use the exact restoring force (spline + endstop) instead of linear stiffness assumption
   float totalSpringReaction_N = springForce_N + softEndstopForce_N;
   
-  bool hasActiveEffect = (effectOffsets_st.forceOffset_kg_fl32 != 0.0f) && (effectOffsets_st.forceOffset_Steps_fl32 != 0);
+  bool hasActiveEffect = (effectOffsets_st.forceOffset_kg_fl32 != 0.0f) || (effectOffsets_st.forceOffset_Steps_fl32 != 0.0f);
 
   // Call the detector with max force from config to calculate dynamic threshold
   bool isOscillating = DetectAdmittanceOscillation(
@@ -818,10 +818,12 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // =========================================================
   // Wenn das Pedal tief im Soft-Endstop ist, müssen wir die massive gespeicherte 
   // Federenergie dämpfen, um den "Trampolin-Kickback" zu verhindern.
-  if (g_vModelPos_01 > 1.0f && upperTravelLimit_01 > 1.001f) {
+  if (g_vModelPos_01 > 1.0f && endstopBehavior_st.travelRange_mm_fl32 > 0.01f) {
       
       // Wie tief sind wir im Endanschlag? (0.0 = Start, 1.0 = absolutes Limit)
-      float endstopDepth_01 = constrain((g_vModelPos_01 - 1.0f) / (upperTravelLimit_01 - 1.0f), 0.0f, 1.0f);
+      float softEndstopTravel_m = endstopBehavior_st.travelRange_mm_fl32 * 0.001f;
+      float deflection_m = (g_vModelPos_01 - 1.0f) * totalTravel_m;
+      float endstopDepth_01 = constrain(deflection_m / max(softEndstopTravel_m, 0.001f), 0.0f, 1.0f);
       
       // Berechne die kritische Dämpfung exakt für die harte Endanschlag-Feder
       float endstopStiffness_N_m = endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32 * 1000.0f;
