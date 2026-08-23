@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
-#include <arduino.h>
+#include <Arduino.h>
 // #include <task.h>
 
 #define PI_FL32         3.1415926535897932384626433832795f
