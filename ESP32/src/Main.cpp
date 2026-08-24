@@ -1062,6 +1062,7 @@ void setup()
   ActiveSerial->println("Config sent successfully");
   // interprete config values
   dap_calculationVariables_st.updateFromConfig(dap_config_st_local);
+  //updatePedalCalcParameters(dap_config_st_local);
   //loadcell
   /*
   #ifdef USES_ADS1220
@@ -1110,7 +1111,9 @@ void setup()
 
 	// find the min & max endstops
   ActiveSerial->println("Start homing");
-
+  global_dap_config_class.getConfig(&dap_config_st_local, 500);
+  delay(100);
+  updatePedalCalcParameters(dap_config_st_local);
   stepper->findMinMaxSensorless(dap_config_st_local);
 
   esp_timer_stop(homingTimer_st);
@@ -1134,7 +1137,11 @@ void setup()
 
   // equalize pedal config for both tasks
   global_dap_config_class.getConfig(&dap_config_st_local, 500);
+  delay(100);
   updatePedalCalcParameters(dap_config_st_local);
+
+  // move slowly to the configured soft min position
+  stepper->moveSlowlyToPos(stepper->getMinPosition());
 
   // send to config handling task
   xQueueSend(s_configUpdateAvailableQueue, &dap_config_st_local, portMAX_DELAY);
@@ -1432,8 +1439,7 @@ xTaskCreatePinnedToCore(
 /**********************************************************************************************/
 void updatePedalCalcParameters(const DapConfig_t& newConfig)
 {
-  DapConfig_t dap_config_st_local;  
-  global_dap_config_class.getConfig(&dap_config_st_local, 500);
+  DapConfig_t dap_config_st_local = newConfig;
 
   dap_calculationVariables_st.updateFromConfig(dap_config_st_local);
   dap_calculationVariables_st.updateEndstops(stepper->getLimitMin(), stepper->getLimitMax());
@@ -1954,7 +1960,6 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       float sledPosition = sledPositionInMM(stepper, &dap_config_pedalUpdateTask_st, motorRevolutionsPerSteps_fl32);
       float pedalInclineAngleInDeg_fl32 = pedalInclineAngleDeg(sledPosition, &dap_config_pedalUpdateTask_st);
       float pedalForce_fl32 = convertToPedalForce(loadcellReading, sledPosition, &dap_config_pedalUpdateTask_st);
-      // float d_phi_d_x = convertToPedalForceGain(sledPosition, &dap_config_pedalUpdateTask_st);
       float pedalArcPercentage_fl32 = pedalArcPercentage(stepper, &dap_config_pedalUpdateTask_st, motorRevolutionsPerSteps_fl32, &dap_calculationVariables_st);
 
       // compute gain for horizontal foot model
@@ -2380,9 +2385,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
       // Move to new position
       if (doMovement_b)
       {
+        static float Position_Last_fl32 = (float)stepper->getMinPosition();
         if (!moveSlowlyToPosition_b)
         {
-          static float Position_Last_fl32 = 0.0f;
           static int32_t s_lastCommandedTarget_i32 = -1;
           static uint32_t s_lastCommandedSpeed_u32 = 0;
 
@@ -2437,6 +2442,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         {
           moveSlowlyToPosition_b = false;
           stepper->moveSlowlyToPos(Position_Next);
+          Position_Last_fl32 = Position_Next_fl32;
         }
       }
     
@@ -3348,16 +3354,29 @@ void otaUpdateTask( void * pvParameters )
             }
             else
             {
-              if(dap_action_ota_st.payloadOtaInfo_st.otaAction_u8==OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD)
+              if(dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 == OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD)
               {
-                //updload ota from platformio
-                //sendESPNOWLog("Upload from platformIO");
-                ArduinoOTA.handle(); 
-                if(millis()-ota_debug_messaage_last>1000)
-                {
-                  ActiveSerial->println("Wait for ota update...");
-                }
-                
+                  ActiveSerial->println("Entering dedicated OTA mode... stopping hardware tasks.");
+                  
+                  // (Optional, aber empfohlen: Hier den Motor einmalig disablen, 
+                  // damit das Pedal nicht unerwartet zuckt, während der Chip blockiert ist)
+
+                  // Wir fangen das Programm in einer Endlosschleife.
+                  // KEINE Sensor- oder FFB-Logik wird ab hier mehr ausgeführt!
+                  while(true) 
+                  {
+                      ArduinoOTA.handle(); 
+                      
+                      if(millis() - ota_debug_messaage_last > 1000)
+                      {
+                          ActiveSerial->println("Wait for ota update...");
+                          ota_debug_messaage_last = millis();
+                      }
+                      
+                      // LEBENSWICHTIG: Gibt dem FreeRTOS-Betriebssystem 10 Millisekunden Zeit, 
+                      // um die WLAN-Pakete vom PC fehlerfrei in den Flash-Speicher zu schreiben.
+                      delay(10); 
+                  }
               }
               else
               {

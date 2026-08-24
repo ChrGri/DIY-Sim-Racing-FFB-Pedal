@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -66,8 +66,17 @@ namespace DiyFfbPedal
             }
         }
 
+        unsafe private void btn_Bridge_OTA_Click(object sender, RoutedEventArgs e)
+        {
+            // Status-Flags für das Update zurücksetzen
+            Plugin._calculations.ForceUpdate_b = false;
+            Plugin._calculations.IsOtaUploadFromPlatformIO = false;
 
-
+            // Öffnet das neue OTA-Flasher Fenster und übergibt die Plugin-Referenz
+            var otaWindow = new DiyFfbPedal.UIFunction.OtaFlasherWindow(Plugin);
+            otaWindow.ShowDialog();
+        }
+        /*
         unsafe private void btn_Bridge_OTA_Click(object sender, RoutedEventArgs e)
         {
             UpdateSettingWindow sideWindow = new UpdateSettingWindow(Plugin.Settings, Plugin._calculations);
@@ -106,18 +115,14 @@ namespace DiyFfbPedal
                     tmp_2.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
                     tmp_2.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
                     byte[] array_ssid = Encoding.ASCII.GetBytes(SSID);
-                    //TextBox_serialMonitor_bridge.Text += "SSID:";
                     for (int i = 0; i < SSID.Length; i++)
                     {
                         tmp_2.payloadOtaInfo_.WIFI_SSID[i] = array_ssid[i];
-                        //TextBox_serialMonitor_bridge.Text += tmp_2.WIFI_SSID[i] + ",";
                     }
-                    //TextBox_serialMonitor_bridge.Text += "\nPASS:";
                     byte[] array_pass = Encoding.ASCII.GetBytes(PASS);
                     for (int i = 0; i < PASS.Length; i++)
                     {
                         tmp_2.payloadOtaInfo_.WIFI_PASS[i] = array_pass[i];
-                        //TextBox_serialMonitor_bridge.Text += tmp_2.WIFI_PASS[i] + ",";
                     }
                     if (Plugin.ESPsync_serialPort.IsOpen)  Plugin.SendOTAActionBridge(tmp_2);
                     
@@ -126,6 +131,7 @@ namespace DiyFfbPedal
             
 
         }
+        */
 
         private async void btn_OnlineProfile_Click(object sender, RoutedEventArgs e)
         {
@@ -142,14 +148,15 @@ namespace DiyFfbPedal
 
                 try
                 {
-                    bool compatibleMode = false;
+                    bool compatibleMode_150 = false;
+                    bool compatibleMode_160 = false;
                     DAP_config_st tmp_config;
                     int version = 0;
                     byte[] compatibleForce = new byte[6];
                     tmp_config = await GetProfileDataAsync(jsonUrl);
                     if (tmp_config.payloadHeader_.version < 150)
                     {
-                        compatibleMode = true;
+                        compatibleMode_150 = true;
                         System.Windows.MessageBox.Show($"This config created in DAP{tmp_config.payloadHeader_.version}, compatible mode is on", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
 
                         try
@@ -166,7 +173,7 @@ namespace DiyFfbPedal
                             if (version < 150)
                             {
                                 //MessageBox.Show($"This config is created in DAP{version}, Compatible Mode on");
-                                compatibleMode = true;
+                                compatibleMode_150 = true;
                                 compatibleForce[0] = (byte)data["payloadPedalConfig_"]["relativeForce_p000"];
                                 compatibleForce[1] = (byte)data["payloadPedalConfig_"]["relativeForce_p020"];
                                 compatibleForce[2] = (byte)data["payloadPedalConfig_"]["relativeForce_p040"];
@@ -180,7 +187,12 @@ namespace DiyFfbPedal
                         {
 
                         }
-                    } 
+                    }
+                    if (tmp_config.payloadHeader_.version < 160)
+                    {
+                        compatibleMode_160 = true;
+
+                    }
                     float travel = (tmp_config.payloadPedalConfig_.pedalEndPosition - tmp_config.payloadPedalConfig_.pedalStartPosition) / 100.0f * (float)tmp_config.payloadPedalConfig_.lengthPedal_travel;
                     byte max_pos = (byte)(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.pedalStartPosition + (travel / (float)dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.lengthPedal_travel * 100.0f));
                     if (max_pos > 95)
@@ -229,10 +241,10 @@ namespace DiyFfbPedal
                         dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeTravel09 = tmp_config.payloadPedalConfig_.relativeTravel09;
                         dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeTravel10 = tmp_config.payloadPedalConfig_.relativeTravel10;
 
-                        if (compatibleMode)
+                        if (compatibleMode_150)
                         {
                             //get old verison file, auto convert to new config
-                            compatibleMode = false;
+                            compatibleMode_150 = false;
                             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.quantityOfControl = 6;
                             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce00 = compatibleForce[0];
                             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeForce01 = compatibleForce[1];
@@ -246,6 +258,24 @@ namespace DiyFfbPedal
                             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeTravel03 = 60;
                             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeTravel04 = 80;
                             dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.relativeTravel05 = 100;
+                        }
+                        if (compatibleMode_160)
+                        {
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.virtualPedalMass_u8 = Plugin.DefaultConfig.payloadPedalConfig_.virtualPedalMass_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.virtualPedalDamping_u8 = Plugin.DefaultConfig.payloadPedalConfig_.virtualPedalDamping_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.endstopStiffness_kg_mm_u8 = Plugin.DefaultConfig.payloadPedalConfig_.endstopStiffness_kg_mm_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.endstopTravelRange_mm_u8 = Plugin.DefaultConfig.payloadPedalConfig_.endstopTravelRange_mm_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.dampingProgression_u8 = Plugin.DefaultConfig.payloadPedalConfig_.dampingProgression_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.coulombFrictionIn0p1N_u8 = Plugin.DefaultConfig.payloadPedalConfig_.coulombFrictionIn0p1N_u8;
+                        }
+                        else
+                        {
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.virtualPedalMass_u8 = tmp_config.payloadPedalConfig_.virtualPedalMass_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.virtualPedalDamping_u8 = tmp_config.payloadPedalConfig_.virtualPedalDamping_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.endstopStiffness_kg_mm_u8 = tmp_config.payloadPedalConfig_.endstopStiffness_kg_mm_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.endstopTravelRange_mm_u8 = tmp_config.payloadPedalConfig_.endstopTravelRange_mm_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.dampingProgression_u8 = tmp_config.payloadPedalConfig_.dampingProgression_u8;
+                            dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.coulombFrictionIn0p1N_u8 = tmp_config.payloadPedalConfig_.coulombFrictionIn0p1N_u8;
                         }
                         updateTheGuiFromConfig();
                     }
@@ -720,8 +750,51 @@ namespace DiyFfbPedal
             }
 
         }
+        private string ExtractEmbeddedFirmware(string fileName)
+        {
+            // Der Namespace-Pfad zur Ressource. Ordner-Slashes werden in C# zu Punkten!
+            // Beispiel: Resources\Firmware\update.bin -> DiyFfbPedal.Resources.Firmware.update.bin
+            string resourceName = $"DiyFfbPedal.Resources.Firmware.{fileName}";
 
-        unsafe private void btn_OTA_enable_Click(object sender, RoutedEventArgs e)
+            string tempFolder = Path.GetTempPath();
+            string binPath = Path.Combine(tempFolder, fileName);
+
+            var assembly = Assembly.GetExecutingAssembly();
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+            {
+                if (stream == null)
+                    throw new FileNotFoundException($"Die eingebettete Firmware '{resourceName}' wurde nicht gefunden.");
+
+                using (FileStream fileStream = new FileStream(binPath, FileMode.Create, FileAccess.Write))
+                {
+                    stream.CopyTo(fileStream);
+                }
+            }
+
+            return binPath;
+        }
+
+
+        //private void btn_OTA_enable_Click(object sender, RoutedEventArgs e)
+        //{
+        //    // Öffnet das neue OTA-Flasher Fenster und übergibt die Plugin-Referenz
+        //    var otaWindow = new DiyFfbPedal.UIFunction.OtaFlasherWindow(Plugin);
+        //    otaWindow.ShowDialog();
+        //}
+
+        private void btn_OTA_enable_Click(object sender, RoutedEventArgs e)
+        {
+            // Status-Flags für das Update zurücksetzen
+            Plugin._calculations.ForceUpdate_b = false;
+            Plugin._calculations.IsOtaUploadFromPlatformIO = false;
+
+            // Öffnet das neue OTA-Flasher Fenster und übergibt die Plugin-Referenz
+            var otaWindow = new DiyFfbPedal.UIFunction.OtaFlasherWindow(Plugin);
+            otaWindow.ShowDialog();
+        }
+
+        unsafe private void btn_OtaHidden_Click(object sender, RoutedEventArgs e)
+        //unsafe private void btn_OtaTest_Click(object sender, EventArgs e)
         {
             Plugin._calculations.ForceUpdate_b = false;
             Plugin._calculations.IsOtaUploadFromPlatformIO = false;
@@ -741,11 +814,11 @@ namespace DiyFfbPedal
                 tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_NORMAL;
                 if (Plugin._calculations.ForceUpdate_b == true)
                 {
-                    tmp_2.payloadOtaInfo_.ota_action = (byte) otaAction.OTA_ACTION_FORCE_UPDATE;
+                    tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_FORCE_UPDATE;
                 }
                 if (Plugin._calculations.IsOtaUploadFromPlatformIO)
                 {
-                    tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_UPLOAD_FROM_PLATFORMIO;
+                  tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_UPLOAD_FROM_PLATFORMIO;
                 }
                 tmp_2.payloadOtaInfo_.mode_select = 1;
                 if (SSID.Length > 64 || PASS.Length > 64)
@@ -791,9 +864,6 @@ namespace DiyFfbPedal
                     }
                 }
             }
-
-            
-            
         }
 
         public void btn_Bridge_restart_Click(object sender, RoutedEventArgs e)
@@ -1259,9 +1329,9 @@ namespace DiyFfbPedal
             if (sideWindow.ShowDialog() == true)
             {
                 string downloadUrl;
-                string rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyFfbPedal.resx";
-                downloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/ReleaseBuild/Plugin/DiyFfbPedal.dll";
-                string MSG_tmp = "Plugin will update from Stable release channel";
+                string rsexDownloadUrl = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/SimHubPlugin/Language/DiyFfbPedal.resx";
+                downloadUrl = "https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/releases/latest/download/DiyFfbPedal.dll";
+                string MSG_tmp = "Plugin will update to the latest release version";
                 /*
                 switch (Plugin.Settings.updateChannel)
                 {
@@ -1409,6 +1479,19 @@ namespace DiyFfbPedal
             var languageWindow = new DiyFfbPedal.UIElement.LanguageDownloadWindow();
             
             languageWindow.ShowDialog();
+        }
+
+        private void btn_USB_Flash_Click(object sender, RoutedEventArgs e)
+        {
+            // Open the new flasher window and pass the plugin reference to handle serial port locks
+            var flasherWindow = new DiyFfbPedal.UIFunction.FirmwareFlasherWindow(Plugin);
+            flasherWindow.ShowDialog();
+        }
+
+        private void btn_PluginUpdate_Click(object sender, RoutedEventArgs e)
+        {
+            var updaterWindow = new DiyFfbPedal.UIFunction.PluginUpdaterWindow(Plugin);
+            updaterWindow.ShowDialog();
         }
     }
 }

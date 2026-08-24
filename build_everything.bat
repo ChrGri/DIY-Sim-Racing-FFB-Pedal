@@ -61,7 +61,7 @@ if exist "CommonResources\UpdateVersionStrings.bat" (
 )
 echo.
 
-pause
+if not defined CI pause
 
 :: -----------------------------------------------------
 :: Step 1: Build ESP32 Firmwares

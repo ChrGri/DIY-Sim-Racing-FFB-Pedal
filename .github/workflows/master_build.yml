@@ -3,86 +3,188 @@ name: Master Build & Release
 on:
   push:
     branches: [ main, develop ]
-  workflow_dispatch: # Erlaubt dir, die Action auch manuell über den "Run workflow" Button zu starten
+  workflow_dispatch:
 
 jobs:
-  build-and-release:
-    runs-on: windows-latest # Zwingend Windows für MSBuild und die .bat Datei
-    
+  # ============================================================================
+  # Stage 1: Build all ESP32 and ESP32_master firmware variants in parallel
+  # ============================================================================
+  build-firmware:
+    name: Build ${{ matrix.env }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # --- ESP32 Environments ---
+          - project: ESP32
+            env: ControlBoard_V4
+          - project: ESP32
+            env: ControlBoard_V5
+          - project: ESP32
+            env: ControlBoard_V5_without_espnow
+          - project: ESP32
+            env: ControlBoard_V6
+          - project: ESP32
+            env: ControlBoard_V6_without_espnow
+          - project: ESP32
+            env: ControlBoard_V7
+          - project: ESP32
+            env: ControlBoard_V7_without_espnow
+          - project: ESP32
+            env: ControlBoard_PCBA_V1X
+          - project: ESP32
+            env: ControlBoard_PCBA_V2X
+          - project: ESP32
+            env: ControlBoard_PCBA_V2X_without_espnow
+
+          # --- ESP32_master Environments ---
+          - project: ESP32_master
+            env: Bridge_esp32s3usbotg
+          - project: ESP32_master
+            env: Bridge_esp32s3usbotg_lowTxPower
+          - project: ESP32_master
+            env: Bridge_Fanatec
+          - project: ESP32_master
+            env: Bridge_Dongle_V1
+          - project: ESP32_master
+            env: Bridge_esp32s3_external_joystick
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # --- 1. PlatformIO Setup ---
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          
+
+      - name: Cache PlatformIO Core & Platforms
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+          key: ${{ runner.os }}-pio-${{ matrix.env }}-${{ hashFiles('**/platformio.ini', '**/platformio.envs/*.ini') }}
+          restore-keys: |
+            ${{ runner.os }}-pio-${{ matrix.env }}-
+            ${{ runner.os }}-pio-
+
       - name: Install PlatformIO
         run: pip install --upgrade platformio
 
-      # --- 2. MSBuild & NuGet Setup ---
+      - name: Build Firmware (${{ matrix.env }})
+        working-directory: ${{ matrix.project }}
+        run: pio run -e ${{ matrix.env }}
+
+      - name: Upload Firmware Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fw-${{ matrix.project }}-${{ matrix.env }}
+          path: |
+            ${{ matrix.project }}/.pio/build/${{ matrix.env }}/bootloader.bin
+            ${{ matrix.project }}/.pio/build/${{ matrix.env }}/partitions.bin
+            ${{ matrix.project }}/.pio/build/${{ matrix.env }}/boot_app0.bin
+            ${{ matrix.project }}/.pio/build/${{ matrix.env }}/firmware.bin
+          retention-days: 1
+
+  # ============================================================================
+  # Stage 2: Collect firmware binaries, build SimHub Plugin DLL & Release
+  # ============================================================================
+  build-and-release:
+    name: Build SimHub Plugin & Release
+    needs: build-firmware
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # --- 1. Download all parallel firmware artifacts ---
+      - name: Download all firmware artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: fw-*
+          path: artifacts_temp
+
+      # --- 2. Move firmware files into expected .pio/build locations ---
+      - name: Organize Firmware Binaries
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path artifacts_temp -Directory | ForEach-Object {
+            $folderName = $_.Name
+            if ($folderName -match '^fw-(ESP32|ESP32_master)-(.*)$') {
+              $project = $Matches[1]
+              $envName = $Matches[2]
+              $targetDir = "$project/.pio/build/$envName"
+              New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
+              Copy-Item -Path "$($_.FullName)/*" -Destination $targetDir -Force
+              Write-Host "Placed firmware for $envName into $targetDir"
+            }
+          }
+
+      # --- 3. MSBuild & NuGet Setup ---
       - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v2
 
       - name: Setup NuGet
-        uses: NuGet/setup-nuget@v1.0.5
+        uses: NuGet/setup-nuget@v2
 
-      # --- 3. SimHub Referenzen vorbereiten ---
+      # --- 4. SimHub Requirements Setup ---
       - name: Download & Extract SimHub Requirements
-        run: | 
+        run: |
           aria2c -j1 -o SimHub.zip "https://github.com/SHWotever/SimHub/releases/download/9.11.12/SimHub.9.11.12.zip"
           7z x SimHub.zip
-          
-          # Installer finden
           $installer = Get-ChildItem -Filter SimHubSetup_*.exe | Select-Object -First 1
-          Write-Host "Gefundener Installer: $($installer.Name)"
-          
-          # Führe das echte Setup lautlos (ohne UI) aus und installiere es in den Zielordner
-          Write-Host "Installiere SimHub lautlos... (das dauert ein paar Sekunden)"
+          Write-Host "Found installer: $($installer.Name)"
+          Write-Host "Installing SimHub silently..."
           Start-Process -FilePath $installer.FullName -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /DIR=`"C:\Program Files (x86)\SimHub`"" -Wait -NoNewWindow
-          
-          Write-Host "Installation abgeschlossen!"
+          Write-Host "Installation complete!"
 
       - name: Restore NuGet Packages
         run: nuget restore "SimHubPlugin/DiyFfbPedal.sln"
 
-      # --- 4. Ausführen deines Master Batch Skripts ---
-      - name: Run Master Build Script
-        # Das Skript baut alle ESPs und am Ende die DLL (wobei es intern copy_firmwares.bat aufruft)
-        run: cmd /c build_everything.bat
+      # --- 5. Generate Version Strings & Build Plugin DLL ---
+      - name: Update Version Strings
+        shell: cmd
+        run: |
+          cd CommonResources
+          call GenerateNewVersion.bat
+          call UpdateVersionStrings.bat
 
-      # --- 5. Release-Version aus verisonDefines.txt auslesen ---
+      - name: Build SimHub Plugin DLL
+        run: msbuild "SimHubPlugin\DIYFFBPedalUI.csproj" -p:Configuration=Release -t:Rebuild
+
+      # --- 6. Extract Release Version ---
       - name: Extract Version
         id: version
+        shell: pwsh
         run: |
           $ver = (Get-Content CommonResources\verisonDefines.txt -First 1).Replace('"', '').Trim()
-          echo "Extracted version: $ver"
-          echo "version=$ver" >> $env:GITHUB_OUTPUT
+          Write-Host "Extracted version: $ver"
+          "version=$ver" >> $env:GITHUB_OUTPUT
 
-      # --- Neu: Wir kopieren die DLL in einen sauberen Ordner, um die Unterordner loszuwerden ---
+      # --- 7. Prepare Artifact Folder ---
       - name: Prepare Artifact Folder
+        shell: pwsh
         run: |
-          mkdir Staging
-          # Sucht die DLL (egal ob in bin oder obj) und kopiert sie direkt in den "Staging"-Ordner
+          New-Item -ItemType Directory -Force -Path Staging | Out-Null
           Get-ChildItem -Path SimHubPlugin -Filter DiyFfbPedal.dll -Recurse | Select-Object -First 1 | Copy-Item -Destination Staging\
 
-      # Speichert IMMER ein Artefakt zum Testen (jetzt flach und ohne Unterordner)
+      # --- 8. Upload DLL as Build Artifact ---
       - name: Upload DLL as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: DiyFfbPedal-DLL
           path: Staging/
 
-      # Macht NUR ein echtes Release, wenn der Branch "main" ist
+      # --- 9. Create Public Release (main branch only) ---
       - name: Create Public Release
         if: github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: Build_${{ steps.version.outputs.version }}
           name: Official Release ${{ steps.version.outputs.version }}
-          # Wir greifen jetzt einfach auf die Datei im Staging-Ordner zu!
           files: Staging/DiyFfbPedal.dll
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

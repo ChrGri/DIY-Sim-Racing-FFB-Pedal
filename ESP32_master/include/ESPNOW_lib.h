@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include <Arduino.h>
@@ -7,6 +7,7 @@
 #include "Main.h"
 #include <list>
 #include <iterator>
+
 
 //#define ESPNow_debug
 #define ESPNOW_LOG_MAGIC_KEY_U8 0x99

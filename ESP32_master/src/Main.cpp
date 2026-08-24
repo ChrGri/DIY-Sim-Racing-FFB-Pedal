@@ -1,4 +1,4 @@
-
+﻿
 /* Todo*/
 // https://github.com/espressif/arduino-esp32/issues/7779
 
@@ -79,6 +79,7 @@ DAP_servo_config_st_t dap_servo_config_st[3];          // packets from host to s
 DAP_servo_config_st_t dap_servo_config_response_st[3]; // packets from servo to host (responses)
 bool update_servo_config[3] = {false, false, false};
 bool send_servo_config_to_host[3] = {false, false, false}; // Muss in ESPNOW_lib.cpp bei RX gesetzt werden
+bool firstDebugMessage_b = false;
 
 
 #define EEPROM_offset 15
@@ -991,6 +992,7 @@ void serialCommunicationRxTask( void * pvParameters)
                   {
                     // aciton=4 print pedal update interval
                     ActiveSerial->println("[L]Bridge debug mode on.");
+                    firstDebugMessage_b = true;
                     isBridgeInDebugMode_b = true;
                   }
                 }
@@ -1939,6 +1941,7 @@ void hidCommunicaitonRxTask(void *pvParameters)
             {
               // aciton=4 print pedal update interval
               tinyusbJoystick_.printf("Bridge debug mode on.");
+              firstDebugMessage_b = true;
               isBridgeInDebugMode_b = true;
             }
           }
@@ -2150,6 +2153,16 @@ void hidCommunicaitonTxTask(void *pvParameters)
         {
           if(isBridgeInDebugMode_b)
           {
+            if(firstDebugMessage_b)
+            {
+              firstDebugMessage_b = false;
+              tinyusbJoystick_.printf("Bridge Board:%s, Version:%s.", BRIDGE_BOARD, BRIDGE_FIRMWARE_VERSION); 
+              tinyusbJoystick_.printf("Bridge Original Mac: %02X:%02X:%02X:%02X:%02X:%02X", g_espMac_au8[0], g_espMac_au8[1], g_espMac_au8[2], g_espMac_au8[3], g_espMac_au8[4], g_espMac_au8[5]);
+              uint8_t espMac_au8[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+              WiFi.macAddress(espMac_au8);  
+              tinyusbJoystick_.printf("Bridge Mac OverWritted: %02X:%02X:%02X:%02X:%02X:%02X", espMac_au8[0], espMac_au8[1], espMac_au8[2], espMac_au8[3], espMac_au8[4], espMac_au8[5]);
+              
+            }
             for(int pedalIDX=0;pedalIDX<3;pedalIDX++)
             {
               if(dap_bridge_state_st.payloadBridgeState_st.pedalAvailability_au8[pedalIDX]==1)

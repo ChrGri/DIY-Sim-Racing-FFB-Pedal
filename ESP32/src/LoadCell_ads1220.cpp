@@ -98,7 +98,14 @@ ADS1220_WE& getADC()
     s_adc_awe.setNonBlockingMode(true); // switch ton non-blocking mode
     
     // assign interrupt to DRDY falling edge to make waiting more efficient
-    attachInterrupt(digitalPinToInterrupt(FFB_ADS1220_DRDY), drdyInterrupt, FALLING);
+    // Workaround for ESP32 IPC1 stack overflow when attaching interrupt from Core 0
+    xTaskCreatePinnedToCore(
+        [](void* pvParameters) {
+            attachInterrupt(digitalPinToInterrupt(FFB_ADS1220_DRDY), drdyInterrupt, FALLING);
+            vTaskDelete(NULL);
+        },
+        "attachInt", 2048, NULL, configMAX_PRIORITIES - 1, NULL, 1);
+    delay(50); // give the task time to execute
 
 
     ActiveSerial->println("ADC Started");

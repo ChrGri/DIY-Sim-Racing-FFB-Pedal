@@ -165,6 +165,7 @@ namespace DiyFfbPedal
                 {
                     btn_connect_espnow_port.Content = "Connect";
                 }
+                btn_connect_espnow_port.IsEnabled = Plugin.Settings.IsFanatecAndPicoSupport;
             }
 
             //// Select serial port accordingly

@@ -1,4 +1,4 @@
-﻿//using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
+//using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
 using System;
 using System.Collections.Generic;
 using System.IO.Ports;
@@ -534,7 +534,7 @@ namespace DiyFfbPedal
         private void SystemLicense_Tab_btn_test_Click_event(object sender, EventArgs e)
         {
             //uint hash =Plugin.ConfigService.ConfigHashMap.Fnv1aHash("RudderConfig");
-            ToastNotification("Debug", "Print All parameter and available com portin Serial log");
+            ToastNotification("Debug", "Print All parameter and available com portin Serial log\n"+"current Plugin version:" + Plugin._calculations.pluginVersionReading[0]);
             //readRudderSettingToConfig();
             //PrintUnknownStructParameters(dap_config_st_rudder.payloadPedalConfig_);
             if (_serial_monitor_window != null)
@@ -557,13 +557,6 @@ namespace DiyFfbPedal
         }
 		
 		
-		private void btn_USB_Flash_Click(object sender, RoutedEventArgs e)
-		{
-			// Open the new flasher window and pass the plugin reference to handle serial port locks
-			var flasherWindow = new DiyFfbPedal.UIFunction.FirmwareFlasherWindow(Plugin);
-			flasherWindow.ShowDialog();
-		}
-
 
     }
     

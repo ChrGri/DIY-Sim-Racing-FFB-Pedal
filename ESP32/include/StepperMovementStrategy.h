@@ -123,7 +123,7 @@ static inline IRAM_ATTR_FLAG void CalcDynamicTravelLimits(
         float ext_steps = ext_A + ext_B;
 
         lowerTravelLimit_01 = min(0.0f, ext_steps);
-        upperTravelLimit_01 = 1.0f + ext_steps; // Modified to allow dynamic boundary shift
+        upperTravelLimit_01 = max(1.0f, 1.0f + ext_steps); // Only allow dynamic boundary expansion, never contract below 1.0
     }
 }
 
@@ -136,16 +136,22 @@ static inline IRAM_ATTR_FLAG float CalcSoftEndstopForce(
 {
     float softEndstopForce_N = 0.0f;
     if (endstopBehavior_st.travelRange_mm_fl32 > 0.01f) {
+        float softEndstopTravel_m = endstopBehavior_st.travelRange_mm_fl32 * 0.001f;
+        
         if (vModelPos_01 > 1.0f) {
             float softEndstopStiffness_N_m = endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32 * 1000.0f;
             float deflection_m = (vModelPos_01 - 1.0f) * totalTravel_m;
-            softEndstopForce_N = softEndstopStiffness_N_m * deflection_m;
             
-            // Update local stiffness for damping calculation to prevent endstop bouncing
-            currentStiffness_N_m = softEndstopStiffness_N_m;
+            float penetration_01 = constrain(deflection_m / max(softEndstopTravel_m, 0.001f), 0.0f, 1.0f);
+            softEndstopForce_N = (softEndstopStiffness_N_m * deflection_m) * (0.5f + 0.5f * penetration_01);
+            
+            // NEUER FIX: Dämpfung weich und quadratisch hochfahren!
+            // Das absorbiert die Aufprallenergie bei schnellen Tritten perfekt,
+            // ohne den Tustin-Filter durch einen plötzlichen Sprung abstürzen zu lassen.
+            currentStiffness_N_m += (softEndstopStiffness_N_m * (penetration_01 * penetration_01));
         }
-        // Expand upper limit to allow the virtual model to penetrate the soft endstop
-        upperTravelLimit_01 += (endstopBehavior_st.travelRange_mm_fl32 / 1000.0f) / totalTravel_m;
+        
+        upperTravelLimit_01 += (softEndstopTravel_m / totalTravel_m);
     }
     return softEndstopForce_N;
 }
@@ -469,20 +475,19 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
  * @brief Predictive EMF Reduction (Regenerative Power Clamping)
  */
 static inline IRAM_ATTR_FLAG void ApplyRegenPowerClamping(
-    float virtualMass_kg, float vModelVel_mps, float& acceleration_mps2)
+    float virtualMass_kg, float vModelVel_mps, float& acceleration_mps2, float vModelPos_01)
 {
-    // If acceleration and velocity have opposite signs, the system is braking (Generator Mode).
+    // NEUER FIX: Bypass im Endanschlag. 
+    // Hier MUSS das Physikmodell hart bremsen dürfen, sonst schlägt es durch.
+    if (vModelPos_01 > 1.0f) return;
+
     if ((acceleration_mps2 > 0.0f && vModelVel_mps < 0.0f) || 
         (acceleration_mps2 < 0.0f && vModelVel_mps > 0.0f)) {
         
-        // Mechanical braking power P = |m * a * v| (in Watts)
         float predictedRegenPower_W = fabsf((virtualMass_kg * acceleration_mps2) * vModelVel_mps);
-        
-        // Max. allowed regenerative power (Tuning-Parameter! Default 1.0W)
         const float MAX_REGEN_POWER_W = 1.0f; 
 
         if (predictedRegenPower_W > MAX_REGEN_POWER_W) {
-            // Clamp acceleration to softly cut off the power peak
             float powerScale = MAX_REGEN_POWER_W / predictedRegenPower_W;
             acceleration_mps2 *= powerScale;
         }
@@ -754,7 +759,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   // 6. Keep legacy variable for downstream logic (e.g., disabling tracking error damping)
   float effectPositionToForceConversion_kg = effectOffsets_st.forceOffset_Steps_fl32 * localStiffness_kg_step;
-  float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32;// + effectPositionToForceConversion_kg;
+  float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32 + effectPositionToForceConversion_kg;
 
   // 7. Final total force (Loadcell + Static Effect Weight + Dynamic Effect Force)
   float externalForce_N = (loadCellReadingKg_fl32 * GRAVITY_N_KG) + (effectOffsets_st.forceOffset_kg_fl32 * GRAVITY_N_KG) + effectInjectedForce_N;
@@ -775,7 +780,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Use the exact restoring force (spline + endstop) instead of linear stiffness assumption
   float totalSpringReaction_N = springForce_N + softEndstopForce_N;
   
-  bool hasActiveEffect = (effectOffsets_st.forceOffset_kg_fl32 != 0.0f) && (effectOffsets_st.forceOffset_Steps_fl32 != 0);
+  bool hasActiveEffect = (effectOffsets_st.forceOffset_kg_fl32 != 0.0f) || (effectOffsets_st.forceOffset_Steps_fl32 != 0.0f);
 
   // Call the detector with max force from config to calculate dynamic threshold
   bool isOscillating = DetectAdmittanceOscillation(
@@ -805,8 +810,38 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
     , config_st->payloadPedalConfig_st.dampingProgression_u8
     , springForce_N
     , g_vModelVel_mps
-    , ELASTOMER_MODEL_HUNT_CROSSLEY//ELASTOMER_MODEL_STRESS_PROPORTIONAL // Defaulting to the new advanced model
+    , ELASTOMER_MODEL_HUNT_CROSSLEY
     , config_st->payloadPedalConfig_st.maxForce_fl32); 
+
+  // =========================================================
+  // NEUER FIX: Bump-Stop Hysteresis (Kinetische Energie absorbieren)
+  // =========================================================
+  // Wenn das Pedal tief im Soft-Endstop ist, müssen wir die massive gespeicherte 
+  // Federenergie dämpfen, um den "Trampolin-Kickback" zu verhindern.
+  if (g_vModelPos_01 > 1.0f && endstopBehavior_st.travelRange_mm_fl32 > 0.01f) {
+      
+      // Wie tief sind wir im Endanschlag? (0.0 = Start, 1.0 = absolutes Limit)
+      float softEndstopTravel_m = endstopBehavior_st.travelRange_mm_fl32 * 0.001f;
+      float deflection_m = (g_vModelPos_01 - 1.0f) * totalTravel_m;
+      float endstopDepth_01 = constrain(deflection_m / max(softEndstopTravel_m, 0.001f), 0.0f, 1.0f);
+      
+      // Berechne die kritische Dämpfung exakt für die harte Endanschlag-Feder
+      float endstopStiffness_N_m = endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32 * 1000.0f;
+      float endstopCriticalDamping_Ns_m = 2.0f * sqrtf(virtualMass_kg * endstopStiffness_N_m);
+      
+      // ASYMMETRISCHE DÄMPFUNG (Das Geheimnis gegen Kickback):
+      // Beim Hineintreten (v > 0) dämpfen wir leicht (Zeta 0.3), damit der Aufprall nicht wie eine Mauer wirkt.
+      // Beim Zurückfedern (v < 0) dämpfen wir extrem stark (Zeta 1.5 -> überdämpft).
+      // Dadurch kriecht das Pedal sanft aus dem Endanschlag heraus, anstatt zurückzufeuern.
+      float targetZeta = (g_vModelVel_mps < 0.0f) ? 1.5f : 0.3f; 
+      
+      float requiredBumpDamping_Ns_m = targetZeta * endstopCriticalDamping_Ns_m * endstopDepth_01;
+      
+      // Überschreibe die globale Dämpfung, wenn der Bump-Stop mehr Dämpfung erfordert
+      if (activeDamping_Ns_m < requiredBumpDamping_Ns_m) {
+          activeDamping_Ns_m = requiredBumpDamping_Ns_m;
+      }
+  }
 
   g_lastActiveDamping_Ns_m = activeDamping_Ns_m;
 
@@ -1003,7 +1038,8 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Predictive EMF Reduction (Regenerative Power Clamping)
   ApplyRegenPowerClamping(virtualMass_kg
     , g_vModelVel_mps
-    , acceleration_mps2);
+    , acceleration_mps2
+    , g_vModelPos_01);
 
   // Velocity Integration
   g_vModelVel_mps += acceleration_mps2 * dt_s;
@@ -1030,14 +1066,14 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float currentPos_m = (g_vModelPos_01 * totalTravel_m) + (g_vModelVel_mps * dt_s);
   g_vModelPos_01 = (totalTravel_m > 0.0001f) ? (currentPos_m / totalTravel_m) : 0.0f;
 
-  // Apply boundary constraints (including dynamic expansion for effects and endstops)
-  // Hard constraint at mechanical boundaries (inelastic collision)
-  if (g_vModelPos_01 <= lowerTravelLimit_01) {
+  // Apply boundary constraints (with soft wall instead of hard velocity zeroing)
+  if (g_vModelPos_01 < lowerTravelLimit_01) {
       g_vModelPos_01 = lowerTravelLimit_01;
       if (g_vModelVel_mps < 0.0f) g_vModelVel_mps = 0.0f;
-  } else if (g_vModelPos_01 >= upperTravelLimit_01) {
+  } else if (g_vModelPos_01 > upperTravelLimit_01) {
       g_vModelPos_01 = upperTravelLimit_01;
-      if (g_vModelVel_mps > 0.0f) g_vModelVel_mps = 0.0f;
+      // FIX: Dampen velocity rather than hard zeroing to prevent step excitation in Tustin
+      if (g_vModelVel_mps > 0.0f) g_vModelVel_mps *= 0.5f; 
   }
   
   // SOFT LEASH: Synchronize the virtual model with the actual stepper command position
@@ -1117,15 +1153,19 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float maxExt_mm = maxExt * (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm);
   float minExt_mm = minExt * (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm);
 
-  // Clamp the solved sled position to safe physical bounds (with dynamic expansion)
-  targetSledPos_mm = constrain(targetSledPos_mm, 0.0f + minExt_mm, maxSledPos_mm + maxExt_mm);
+  // Add the soft endstop travel allowance to the physical bounds
+  float endstopTravel_mm = (endstopBehavior_st.travelRange_mm_fl32 > 0.01f) ? endstopBehavior_st.travelRange_mm_fl32 : 0.0f;
+  float endstopTravel_steps = endstopTravel_mm / (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm);
+
+  // Clamp the solved sled position to safe physical bounds (with dynamic expansion AND soft endstop)
+  targetSledPos_mm = constrain(targetSledPos_mm, 0.0f + minExt_mm, maxSledPos_mm + maxExt_mm + endstopTravel_mm);
   
   // 3. Convert target sled position (mm) back to absolute stepper steps
   float targetPosSteps_fl32 = (targetSledPos_mm / (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm)) + (float)calc_st->softEndstopMinStepperPos_i32;
 
-  // Clamp to software limits (with dynamic expansion for high-frequency effects)
+  // Clamp to software limits (with dynamic expansion for high-frequency effects AND soft endstops)
   float finalTargetPos_fl32 = targetPosSteps_fl32;
-  finalTargetPos_fl32 = constrain(finalTargetPos_fl32, calc_st->softEndstopMinStepperPos_i32 + minExt, calc_st->softEndstopMaxStepperPos_i32 + maxExt);
+  finalTargetPos_fl32 = constrain(finalTargetPos_fl32, calc_st->softEndstopMinStepperPos_i32 + minExt, calc_st->softEndstopMaxStepperPos_i32 + maxExt + endstopTravel_steps);
 
   if (admittanceStates_pst != nullptr) {
     admittanceStates_pst->physicalPos_m = g_vModelPos_01 * totalTravel_m; // Logged natively in Task Space

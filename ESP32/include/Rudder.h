@@ -34,10 +34,11 @@ class Rudder_t{
   {
     currentPedalPosition_i32=calcVars_st->currentPedalPosition_u32;
     positionRatioSync_fl32=calcVars_st->syncPedalPositionRatio_fl32;
-    endPosTravel_fl32=(float)calcVars_st->stepperPosRange_fl32;
-    positionRatioCurrent_fl32=((float)(currentPedalPosition_i32-calcVars_st->softEndstopMinStepperPos_i32))/endPosTravel_fl32;
+    endPosTravel_fl32=(float)calcVars_st->stepperPosRangeDefault_fl32;
+    if (endPosTravel_fl32 <= 0.0f) endPosTravel_fl32 = 1.0f;
+    positionRatioCurrent_fl32=((float)(currentPedalPosition_i32-calcVars_st->stepperPosMinDefault_i32))/endPosTravel_fl32;
     deadZone_i32=20;
-    centerOffset_i32=calcVars_st->softEndstopMinStepperPos_i32+ calcVars_st->stepperPosRange_fl32/2.0f;
+    centerOffset_i32=calcVars_st->stepperPosMinDefault_i32 + (int32_t)(calcVars_st->stepperPosRangeDefault_fl32/2.0f);
     float centerDeadzone_fl32 = 0.51f;
     if(calcVars_st->rudderStatus_b)
     {
@@ -61,25 +62,26 @@ class Rudder_t{
     }
     else
     {
-      offsetFilter_i32=calcVars_st->softEndstopMinStepperPos_i32;
+      offsetFilter_i32=calcVars_st->stepperPosMinDefault_i32;
     }
 
   }
   void forceOffsetCalculate(DapCalculationVariables_t* calcVars_st)
   {
     deadZone_i32=20;
-    centerOffset_i32=calcVars_st->stepperPosRange_fl32/2.0f;
+    centerOffset_i32=(int32_t)(calcVars_st->stepperPosRangeDefault_fl32/2.0f);
     deadZoneUpper_i32=centerOffset_i32+deadZone_i32/2.0f;
     deadZoneLower_i32=centerOffset_i32-deadZone_i32/2.0f;
     syncPedalPosition_i32=calcVars_st->syncPedalPosition_u32;
     currentPedalPosition_i32=calcVars_st->currentPedalPosition_u32;
-    stepperRange_i32=calcVars_st->stepperPosRange_fl32;
+    stepperRange_i32=(int32_t)calcVars_st->stepperPosRangeDefault_fl32;
     forceRange_fl32 = calcVars_st->forceRange_fl32;
-    forceCenterOffset_fl32 = forceRange_fl32 / 2 + calcVars_st->forceMin_fl32;
-    endPosTravel_fl32=(float)calcVars_st->stepperPosRange_fl32;
+    forceCenterOffset_fl32 = forceRange_fl32 / 2.0f + calcVars_st->forceMin_fl32;
+    endPosTravel_fl32=(float)calcVars_st->stepperPosRangeDefault_fl32;
+    if (endPosTravel_fl32 <= 0.0f) endPosTravel_fl32 = 1.0f;
     //endpos_travel=((float)(calcVars_st->currentPedalPosition_u32-calcVars_st->softEndstopMinStepperPos_i32))/((float)calcVars_st->stepperPosRange_fl32);
     positionRatioSync_fl32=calcVars_st->syncPedalPositionRatio_fl32;
-    positionRatioCurrent_fl32=((float)(currentPedalPosition_i32-calcVars_st->softEndstopMinStepperPos_i32))/endPosTravel_fl32;
+    positionRatioCurrent_fl32=((float)(currentPedalPosition_i32-calcVars_st->stepperPosMinDefault_i32))/endPosTravel_fl32;
     
 
     float centerDeadzone_fl32 = 0.51f;
@@ -120,8 +122,8 @@ class RudderGForce_t{
   long stepperPosMax_l;
   void offsetCalculate(DapCalculationVariables_t* calcVars_st)
   {
-    stepperPosMax_l=(float)calcVars_st->softEndstopMaxStepperPos_i32;
-    stepperRange_fl32=(float)calcVars_st->stepperPosRange_fl32;
+    stepperPosMax_l=(long)calcVars_st->stepperPosMaxDefault_i32;
+    stepperRange_fl32=(float)calcVars_st->stepperPosRangeDefault_fl32;
     float ampMax_fl32=0.3f*stepperRange_fl32;
     if(calcVars_st->rudderStatus_b)
     {
@@ -131,7 +133,7 @@ class RudderGForce_t{
     }
     else
     {
-      offsetFilter_l=calcVars_st->softEndstopMaxStepperPos_i32;
+      offsetFilter_l=calcVars_st->stepperPosMaxDefault_i32;
     }
 
   }
@@ -172,12 +174,13 @@ class HelicoptersRudder_t{
   {
     currentPedalPosition_i32=calcVars_st->currentPedalPosition_u32;
     positionRatioSync_fl32=calcVars_st->syncPedalPositionRatio_fl32;
-    endPosTravel_fl32=(float)calcVars_st->stepperPosRange_fl32;
+    endPosTravel_fl32=(float)calcVars_st->stepperPosRangeDefault_fl32;
+    if (endPosTravel_fl32 <= 0.0f) endPosTravel_fl32 = 1.0f;
     currentForceReading_fl32=(float)calcVars_st->currentForceReading_fl32;
     pedalPreload_fl32=(float)calcVars_st->forceMin_fl32;
-    positionRatioCurrent_fl32=((float)(currentPedalPosition_i32-calcVars_st->softEndstopMinStepperPos_i32))/endPosTravel_fl32;
+    positionRatioCurrent_fl32=((float)(currentPedalPosition_i32-calcVars_st->stepperPosMinDefault_i32))/endPosTravel_fl32;
     deadZone_i32=20;
-    centerOffset_i32=calcVars_st->softEndstopMinStepperPos_i32+ calcVars_st->stepperPosRange_fl32/2.0f;
+    centerOffset_i32=calcVars_st->stepperPosMinDefault_i32 + (int32_t)(calcVars_st->stepperPosRangeDefault_fl32/2.0f);
     float centerDeadzone_fl32 = 0.51f;
     if(calcVars_st->helicopterRudderStatus_b)
     {
@@ -226,7 +229,7 @@ class HelicoptersRudder_t{
     }
     else
     {
-      offsetFilter_i32=calcVars_st->softEndstopMinStepperPos_i32;
+      offsetFilter_i32=calcVars_st->stepperPosMinDefault_i32;
     }
     /*
     if(debugPrintLast-millis()>200)
