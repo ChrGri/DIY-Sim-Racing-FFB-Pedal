@@ -469,18 +469,16 @@ void DapConfigClass::setConfig(DapConfig_t config_st)
 
 uint16_t DapConfigClass::checksumCalculator_u16(uint8_t *data_pu8, uint16_t length_u16)
 {
-  uint16_t currentCrc_u16 = 0x0000U;
-  uint8_t sum1_u8 = (uint8_t)currentCrc_u16;
-  uint8_t sum2_u8 = (uint8_t)(currentCrc_u16 >> 8U);
-  int index_i32;
+  uint32_t sum1 = 0;
+  uint32_t sum2 = 0;
 
-  for (index_i32 = 0; index_i32 < length_u16; index_i32 = index_i32 + 1)
+  for (uint16_t i = 0; i < length_u16; i++)
   {
-    sum1_u8 = (sum1_u8 + data_pu8[index_i32]) % 255U;
-    sum2_u8 = (sum2_u8 + sum1_u8) % 255U;
+    sum1 += data_pu8[i];
+    sum2 += sum1;
   }
 
-  return (uint16_t)((sum2_u8 << 8U) | sum1_u8);
+  return (uint16_t)(((sum2 % 255U) << 8U) | (sum1 % 255U));
 }
 
 void DapConfigClass::loadConfigFromEeprom()
