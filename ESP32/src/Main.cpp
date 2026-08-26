@@ -453,11 +453,11 @@ void IRAM_ATTR_FLAG loadcellReadingTask( void * pvParameters )
         ActiveSerial->println("Update config: loadcell task");
       }     
 
-      // start profiler 0, overall function
-      profiler_loadcellReading.start(0);
-
-      // no need for delay, since getReadingKg will block until DRDY edge down is detected
+      // Read loadcell weight (blocks on DRDY semaphore at 0% CPU until sample is ready)
       loadcellReading_fl32 = loadcell->readLoadcellWeightInKg();
+
+      // Start profiler 0 for active processing time
+      profiler_loadcellReading.start(0);
 
       // Invert the loadcell reading digitally if desired
       if (loadcellTask_dap_config_st.payloadPedalConfig_st.invertLoadcellReading_u8 == 1)
@@ -514,10 +514,8 @@ void IRAM_ATTR_FLAG loadcellReadingTask( void * pvParameters )
         // send joystick data to queue
         if (s_loadcellDataQueue != NULL)
         {
-
           // Package the new state data into a single struct
           loadcellDataPackage_t newLoadcellPackage;
-          newLoadcellPackage.loadcellReadingInKg_fl32 = loadcellReading_fl32;
           newLoadcellPackage.loadcellReadingInKg_fl32 = medianReading_fl32;
 
             // Send the package to the queue. Use a timeout of 0 (non-blocking).
@@ -526,10 +524,6 @@ void IRAM_ATTR_FLAG loadcellReadingTask( void * pvParameters )
           xQueueSend(s_loadcellDataQueue, &newLoadcellPackage, (TickType_t)0);
         }
       }
-      
-      
-      
-
 
       profiler_loadcellReading.end(0);
 

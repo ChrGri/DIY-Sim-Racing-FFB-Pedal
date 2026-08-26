@@ -83,25 +83,15 @@ void printDecodedAlarmString(uint16_t alarm_code)
 // initialize the communication
 Isv57Communication::Isv57Communication()
 {
-  
-  
-
-  //Serial1.begin(38400, SERIAL_8N2, ISV57_RXPIN, ISV57_TXPIN, true); // Modbus serial
   #if PCB_VERSION == 10 || PCB_VERSION == 9 || PCB_VERSION == 12 || PCB_VERSION == 13 || PCB_VERSION == 14
     Serial2.begin(38400, SERIAL_8N1, ISV57_RXPIN, ISV57_TXPIN, false); // Modbus serial
   #else
     Serial2.begin(38400, SERIAL_8N1, ISV57_RXPIN, ISV57_TXPIN, true); // Modbus serial
   #endif
 
-
-  // #ifdef USE_CDC_INSTEAD_OF_UART
-  //   ActiveSerialForServoCommunication = &Serial2;
-  // #else
-  //   ActiveSerialForServoCommunication = &Serial2;
-  // #endif
+  Serial2.setTimeout(12); // 12 ms timeout for ISR-driven non-blocking reception
 
   ActiveSerialForServoCommunication = &Serial2;
-
 
   modbus.initialize(true);
 }
@@ -168,11 +158,9 @@ void Isv57Communication::enableAxis()
   modbus.readHoldingRegisterFromDevice(0x0085);
   modbus.readHoldingRegisterFromDevice(0x0139);
   delay(5);
-
+}
   // modbus.holdingRegisterRead(0x0085);
   // modbus.holdingRegisterRead(0x0139);
-  
-}
 
 
 // void isv57communication::resetAxisCounter() 
@@ -397,84 +385,65 @@ uint32_t Isv57Communication::getServoCycleTimestamp()
 }
 
 
-// read servo states
+// read servo states (immediate UART ISR-driven reception)
 void Isv57Communication::readServoStates() {
+  const uint8_t expectedRegisters = NUMBER_OF_ISV57_REGISTERS_TO_READ_IN_CYCLIC_READ; // 4
+  const uint8_t expectedDataBytes = expectedRegisters * 2; // 8 bytes
+  const uint8_t expectedTotalBytes = 1 + 1 + 1 + expectedDataBytes + 2; // 13 bytes
 
-  // initialize with -1 to indicate non-trustworthiness
-  for (uint8_t i = 0; i < NUMBER_OF_ISV57_REGISTERS_TO_READ_IN_CYCLIC_READ; i++) {
-    regArray[i] = -1;
+  // 1. Drain any stale noise from RX FIFO before transmitting request
+  while (Serial2.available() > 0) {
+    Serial2.read();
   }
 
-  // read the four registers simultaneously
-  int8_t numberOfRegistersToRead_u8 = NUMBER_OF_ISV57_REGISTERS_TO_READ_IN_CYCLIC_READ;
-  int bytesReceived_i = modbus.sendRequestAndReceiveResponse(slaveId, 0x03, ref_cyclic_read_0, numberOfRegistersToRead_u8);
+  // 2. Transmit pre-assembled 8-byte request frame directly to hardware UART TX FIFO (< 1 µs)
+  if (!cachedCyclicTxValid_ || cachedSlaveId_ != slaveId) {
+    cachedCyclicTxFrame_[0] = (uint8_t)slaveId;
+    cachedCyclicTxFrame_[1] = 0x03;
+    cachedCyclicTxFrame_[2] = (ref_cyclic_read_0 >> 8) & 0xFF;
+    cachedCyclicTxFrame_[3] = ref_cyclic_read_0 & 0xFF;
+    cachedCyclicTxFrame_[4] = 0x00;
+    cachedCyclicTxFrame_[5] = expectedRegisters;
+    int32_t crc = Modbus::computeCrc(cachedCyclicTxFrame_, 6);
+    cachedCyclicTxFrame_[6] = crc & 0xFF;
+    cachedCyclicTxFrame_[7] = (crc >> 8) & 0xFF;
+    cachedCyclicTxValid_ = true;
+    cachedSlaveId_ = slaveId;
+  }
+
+  Serial2.write(cachedCyclicTxFrame_, 8);
+
+  // 3. Block on FreeRTOS UART ring buffer (0% CPU load).
+  // The hardware UART ISR unblocks this task the microsecond the 13th byte arrives!
+  uint8_t rxBuffer[16];
+  size_t bytesReceived = Serial2.readBytes((char*)rxBuffer, expectedTotalBytes);
 
   isv57dynamicStates_.servo_receivedPacketIsValid_b = false;
 
-  if(bytesReceived_i == (numberOfRegistersToRead_u8*2))
-  {
-    modbus.getRawRxBuffer(raw,  len);
-    for (uint8_t regIdx = 0; regIdx < numberOfRegistersToRead_u8; regIdx++)
-    { 
-      regArray[regIdx] = modbus.convertRxBufferToInt16(regIdx);
+  // 4. Verify frame and decode immediately upon arrival
+  if (bytesReceived == expectedTotalBytes) {
+    if (rxBuffer[0] == (uint8_t)slaveId && rxBuffer[1] == 0x03 && rxBuffer[2] == expectedDataBytes) {
+      int32_t receivedCrc = ((uint16_t)rxBuffer[expectedTotalBytes - 1] << 8) | rxBuffer[expectedTotalBytes - 2];
+      int32_t computedCrc = Modbus::computeCrc(rxBuffer, expectedTotalBytes - 2);
+
+      if (receivedCrc == computedCrc) {
+        for (uint8_t regIdx = 0; regIdx < expectedRegisters; regIdx++) {
+          regArray[regIdx] = (int16_t)(((uint16_t)rxBuffer[3 + regIdx * 2] << 8) | rxBuffer[3 + regIdx * 2 + 1]);
+        }
+
+        // Update dynamic states immediately
+        isv57dynamicStates_.servo_pos_given_p = regArray[0];
+        isv57dynamicStates_.servo_current_percent = regArray[1];
+        isv57dynamicStates_.servo_pos_error_p = regArray[2];
+        isv57dynamicStates_.servoVoltage0p1V_i16 = regArray[3];
+
+        isv57dynamicStates_.lastUpdateTimeInMS_u32 = millis();
+        isv57dynamicStates_.servo_cycleCounter_u32++;
+        isv57dynamicStates_.servo_receivedPacketIsValid_b = (isv57dynamicStates_.servoVoltage0p1V_i16 >= 50);
+      }
     }
-
-    // write to public variables
-    isv57dynamicStates_.servo_pos_given_p = regArray[0];
-    isv57dynamicStates_.servo_current_percent = regArray[1];
-    isv57dynamicStates_.servo_pos_error_p = regArray[2];
-    isv57dynamicStates_.servoVoltage0p1V_i16 = regArray[3];
-
-    isv57dynamicStates_.lastUpdateTimeInMS_u32 = millis();
-    isv57dynamicStates_.servo_cycleCounter_u32++;
-    isv57dynamicStates_.servo_receivedPacketIsValid_b = true;
-
-
-    // check if signals are in valid ranges
-    if((isv57dynamicStates_.servoVoltage0p1V_i16 < 50) )
-    {
-      isv57dynamicStates_.servo_receivedPacketIsValid_b = false;
-    }
-    
   }
-
-  
-  
-  
-  //#define ENABLE_SERVO_STATE_PRINTING
-  #ifdef ENABLE_SERVO_STATE_PRINTING
-  // print registers
-  // print only every 100ms to avoid flooding the serial monitor, since the servo states are read every 10ms^
-  static uint32_t lastTimePrintedServoStatesInMS_u32 = 0;
-  if (millis() - lastTimePrintedServoStatesInMS_u32 > 200)
-  {
-    lastTimePrintedServoStatesInMS_u32 = millis();
-
-    ActiveSerial->print("Bytes :");
-    ActiveSerial->println(bytesReceived_i);
-
-    ActiveSerial->print("Pos_given:");
-    ActiveSerial->print(isv57dynamicStates_.servo_pos_given_p);
-
-    ActiveSerial->print(",Pos_error:");
-    ActiveSerial->print(isv57dynamicStates_.servo_pos_error_p);
-
-    ActiveSerial->print(",Cur_given:");
-    ActiveSerial->print(isv57dynamicStates_.servo_current_percent);
-
-    ActiveSerial->print(",Voltage:");
-    ActiveSerial->print(isv57dynamicStates_.servoVoltage0p1V_i16);
-
-    ActiveSerial->print(",Velocity_given:");
-    ActiveSerial->print(isv57dynamicStates_.servo_velocity_given_rpm_i16);
-
-    ActiveSerial->println(" "); 
-  }
-  #endif
-  
 }
-
-
 
 int Isv57Communication::readRegisters(
         uint16_t startAddr_u16, uint8_t count_u8, int16_t* out_pi16)
