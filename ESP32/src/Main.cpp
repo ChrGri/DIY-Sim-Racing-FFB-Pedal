@@ -687,6 +687,9 @@ void setup() {
     pinMode(ISV57_TXPIN, OUTPUT);
     digitalWrite(ISV57_TXPIN, HIGH); // HIGH is the idle state for UART (Marking)
   #endif
+  #if defined(ISV57_RXPIN) && (ISV57_RXPIN >= 0)
+    pinMode(ISV57_RXPIN, INPUT_PULLUP); // Pull up RX line to prevent floating UART noise
+  #endif
   #if defined(STEP_PIN_STEPPER_U8) && (STEP_PIN_STEPPER_U8 >= 0)
     pinMode(STEP_PIN_STEPPER_U8, OUTPUT);
     digitalWrite(STEP_PIN_STEPPER_U8, LOW);
@@ -698,6 +701,9 @@ void setup() {
   #if defined(BRAKE_RESISTOR_PIN_U8) && (BRAKE_RESISTOR_PIN_U8 >= 0)
     pinMode(BRAKE_RESISTOR_PIN_U8, OUTPUT);
     digitalWrite(BRAKE_RESISTOR_PIN_U8, LOW);
+  #endif
+  #if defined(ALM_PORT_GPIO) && (ALM_PORT_GPIO >= 0)
+    pinMode(ALM_PORT_GPIO, INPUT_PULLUP);
   #endif
 
 #ifdef DEBUG_KEEP_USB_SERIAL_JTAG

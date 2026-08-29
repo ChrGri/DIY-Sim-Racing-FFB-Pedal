@@ -245,7 +245,7 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st) {
         bool servoRadingsTrustworthy_36VRange_b = false;
         bool servoRadingsTrustworthy_48VRange_b = false;
         
-        for (uint16_t waitTillServoCounterWasReset_Idx = 0; waitTillServoCounterWasReset_Idx < 10; waitTillServoCounterWasReset_Idx++) {
+        for (uint16_t waitTillServoCounterWasReset_Idx = 0; waitTillServoCounterWasReset_Idx < 30; waitTillServoCounterWasReset_Idx++) {
             delay(100);
             //esp_task_wdt_reset();
             // Voltage is reported in 0.1V units (e.g. 360 = 36.0V)
