@@ -682,6 +682,23 @@ static void homingTimeoutCallback(void *arg) {
 }
 
 void setup() {
+  // 1. Immediately clamp all control & communication pins to prevent floating state / glitches
+  #if defined(ISV57_TXPIN) && (ISV57_TXPIN >= 0)
+    pinMode(ISV57_TXPIN, OUTPUT);
+    digitalWrite(ISV57_TXPIN, HIGH); // HIGH is the idle state for UART (Marking)
+  #endif
+  #if defined(STEP_PIN_STEPPER_U8) && (STEP_PIN_STEPPER_U8 >= 0)
+    pinMode(STEP_PIN_STEPPER_U8, OUTPUT);
+    digitalWrite(STEP_PIN_STEPPER_U8, LOW);
+  #endif
+  #if defined(DIR_PIN_STEPPER_U8) && (DIR_PIN_STEPPER_U8 >= 0)
+    pinMode(DIR_PIN_STEPPER_U8, OUTPUT);
+    digitalWrite(DIR_PIN_STEPPER_U8, LOW);
+  #endif
+  #if defined(BRAKE_RESISTOR_PIN_U8) && (BRAKE_RESISTOR_PIN_U8 >= 0)
+    pinMode(BRAKE_RESISTOR_PIN_U8, OUTPUT);
+    digitalWrite(BRAKE_RESISTOR_PIN_U8, LOW);
+  #endif
 
 #ifdef DEBUG_KEEP_USB_SERIAL_JTAG
   // For ESP32-S3, the USB Serial is shared with JTAG. To allow debugging via
@@ -691,10 +708,6 @@ void setup() {
   // startup.
   delay(5000); // Gibt dem Debugger 5 Sekunden Zeit, sich in Ruhe zu verbinden!
 #endif
-
-  // stabilize RS232 pins, so servo doesnt go into alarm on startup
-  pinMode(ISV57_TXPIN, OUTPUT);
-  digitalWrite(ISV57_TXPIN, HIGH); // HIGH ist der Idle-State für UART
 
 // disable WIFI & Bluetooth to improve loadcell reading.
 // HINT: The ESP32 S3 zero board doen't have strong 5V signal smoothing hardware

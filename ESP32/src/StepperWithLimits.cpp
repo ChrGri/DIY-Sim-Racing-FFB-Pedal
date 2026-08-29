@@ -144,16 +144,33 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool
     // ==============================================================================
 #endif
 
-    // 3. Attempt to discover the Modbus Slave ID of the connected iSV57 servo
-    bool isv57slaveIdFound_b = isv57.findServosSlaveId();
+    // 3. Attempt to discover the Modbus Slave ID of the connected iSV57 servo with retry window
+    if (ActiveSerial) ActiveSerial->println("Connecting to iSV57 servo (waiting for power-up)...");
+    bool isv57slaveIdFound_b = false;
+    uint32_t startDiscoveryTime = millis();
+    // Allow up to 3.5 seconds for the servo power supply and internal DSP to stabilize
+    while ((millis() - startDiscoveryTime < 3500) && !isv57slaveIdFound_b) {
+        if (isv57.findServosSlaveId()) {
+            isv57slaveIdFound_b = true;
+            break;
+        }
+        delay(100);
+    }
+
     ActiveSerial->print("iSV57 slaveId found:  ");
     ActiveSerial->println( isv57slaveIdFound_b );
     
-    // Critical failure: If the servo isn't found, the system cannot function. Restart ESP.
+    // Critical failure: If the servo isn't found after retry window, restart ESP.
     if (!isv57slaveIdFound_b) {
-        ActiveSerial->println("No servo found! Restarting ESP");
+        ActiveSerial->println("No servo found after retry window! Restarting ESP");
         ESP.restart();
     }
+
+    // Reset any transient power-on / line noise alarms immediately
+    isv57.clearServoAlarms();
+    delay(50);
+    isv57.clearServoAlarms(); // Send twice to ensure transient startup faults are wiped
+    delay(50);
 
     // 4. Verify the communication lifeline
     setLifelineSignal();

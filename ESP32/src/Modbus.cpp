@@ -271,6 +271,7 @@ int32_t Modbus::sendRequestAndReceiveResponse(int32_t slaveId_i32, int32_t funct
     }
 
     this->serial_pHS->write(txBuffer_au8, 8);
+    this->serial_pHS->flush();
 
     uint32_t startTime_u32 = millis();
     rawRxBufferLength_i32   = 0;
@@ -446,6 +447,7 @@ int32_t Modbus::writeHoldingRegisterToDevice(int32_t slaveId_i32, int32_t regist
     }
 
     this->serial_pHS->write(txBuffer_au8, 8);
+    this->serial_pHS->flush();
 
     uint32_t startTime_u32 = millis();
     int32_t echoMatchCount_i32 = 0;
@@ -507,6 +509,7 @@ int32_t Modbus::writeHoldingRegistersToDevice(int32_t slaveId_i32, int32_t regis
 
     // 2. Transmit the packet directly into hardware UART TX FIFO
     this->serial_pHS->write(localTxBuffer, length + 2);
+    this->serial_pHS->flush();
 
     // 3. Read exact 8-byte response and verify CRC
     uint32_t startTime_u32 = millis();
