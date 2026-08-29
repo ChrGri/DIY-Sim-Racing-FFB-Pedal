@@ -2042,6 +2042,7 @@ void hidCommunicaitonTxTask(void *pvParameters)
             {
               ActiveSerial->print("[L]Found Pedal:");
               ActiveSerial->println(dap_state_basic_st[i].payloadHeader_st.pedalTag_u8);
+              tinyusbJoystick_.printf("Found Pedal: %d",dap_state_basic_st[i].payloadHeader_st.pedalTag_u8);
             }
             dap_bridge_state_st.payloadBridgeState_st.pedalAvailability_au8[dap_state_basic_st[i].payloadHeader_st.pedalTag_u8]=1;
             //g_pedalLastUpdate_au32[dap_state_basic_st[i].payloadHeader_st.pedalTag_u8]=millis();
@@ -2051,6 +2052,7 @@ void hidCommunicaitonTxTask(void *pvParameters)
               ActiveSerial->print(dap_state_basic_st[i].payloadHeader_st.pedalTag_u8);
               ActiveSerial->print(" E:");
               ActiveSerial->println(dap_state_basic_st[i].payloadPedalStateBasic_st.errorCode_u8);
+              tinyusbJoystick_.printf("Pedal: %d E: %d",dap_state_basic_st[i].payloadHeader_st.pedalTag_u8,dap_state_basic_st[i].payloadPedalStateBasic_st.errorCode_u8);
               g_espNowError_ab[i]=false;    
             }
           }

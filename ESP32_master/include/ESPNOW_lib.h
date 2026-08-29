@@ -178,18 +178,14 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
   //only recieve the package from registed mac address
   if(macCheck((uint8_t*)esp_now_info->src_addr, g_pedalMac_aau8[0])||macCheck((uint8_t*)esp_now_info->src_addr, g_pedalMac_aau8[1])||macCheck((uint8_t*)esp_now_info->src_addr, g_pedalMac_aau8[2]))
   {
-    if(esp_now_info->rx_ctrl != NULL)
- {
-      if(macCheck((uint8_t*)esp_now_info->src_addr, g_pedalMac_aau8[0]))
- {
+    if(esp_now_info->rx_ctrl != NULL){
+      if(macCheck((uint8_t*)esp_now_info->src_addr, g_pedalMac_aau8[0])){
         g_rssi_ai32[0] = esp_now_info->rx_ctrl->rssi;
         g_rssiDisplay_i32 = g_rssi_ai32[0];
-      } else if(macCheck((uint8_t*)esp_now_info->src_addr, g_pedalMac_aau8[1]))
- {
+      } else if(macCheck((uint8_t*)esp_now_info->src_addr, g_pedalMac_aau8[1])){
         g_rssi_ai32[1] = esp_now_info->rx_ctrl->rssi;
         g_rssiDisplay_i32 = g_rssi_ai32[1];
-      } else if(macCheck((uint8_t*)esp_now_info->src_addr, g_pedalMac_aau8[2]))
- {
+      } else if(macCheck((uint8_t*)esp_now_info->src_addr, g_pedalMac_aau8[2])){
         g_rssi_ai32[2] = esp_now_info->rx_ctrl->rssi;
         g_rssiDisplay_i32 = g_rssi_ai32[2];
       }
@@ -227,12 +223,9 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
       if(crcChecker!=dap_state_basic_st_lcl.payloadFooter_st.checkSum_u16) structChecker=false;
       
       //fill the joystick value
-      if(structChecker)
-      
-{
+      if(structChecker){
         uint8_t pedalTag=dap_state_basic_st_lcl.payloadHeader_st.pedalTag_u8;
-        if(pedalTag < 3)
- {
+        if(pedalTag < 3){
           memcpy(&dap_state_basic_st[pedalTag], data, sizeof(DapStateBasic_t));
           g_updateBasicState_ab[pedalTag]=true;
           g_pedalLastUpdate_au32[pedalTag]=millis();
@@ -275,11 +268,8 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
       if(dap_state_extend_st_lcl.payloadHeader_st.payloadType_u8!=DAP_PAYLOAD_TYPE_STATE_EXTENDED_U8) structChecker=false;
       uint16_t crcChecker = checksumCalculator((uint8_t*)(&(dap_state_extend_st_lcl.payloadHeader_st)), sizeof(dap_state_extend_st_lcl.payloadHeader_st) + sizeof(dap_state_extend_st_lcl.payloadPedalStateExtended_st));
       if(crcChecker!=dap_state_extend_st_lcl.payloadFooter_st.checkSum_u16) structChecker=false;
-      if(structChecker)
-      
-{
-        if(pedalTag < 3)
- {
+      if(structChecker){
+        if(pedalTag < 3){
           memcpy(&dap_state_extended_st[pedalTag], data, sizeof(DapStateExtended_t));
           g_updateExtendState_ab[pedalTag]=true;
         }
@@ -290,19 +280,15 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
     if(data_len==sizeof(DapConfig_t))
     {
       memcpy(&dap_config_st_Temp, data, sizeof(DapConfig_t));
-      if(dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8 < 3)
- {
+      if(dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8 < 3){
         g_espNowRequestConfig_ab[dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8]=true;
-        if(dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8==0)
-        {
+        if(dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8==0){
           memcpy(&dap_config_st_Clu, &dap_config_st_Temp, sizeof(DapConfig_t));
         }
-        if(dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8==1)
-        {
+        if(dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8==1){
           memcpy(&dap_config_st_Brk, &dap_config_st_Temp, sizeof(DapConfig_t));
         }
-        if(dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8==2)
-        {
+        if(dap_config_st_Temp.payloadPedalConfig_st.pedalType_u8==2){
           memcpy(&dap_config_st_Gas, &dap_config_st_Temp, sizeof(DapConfig_t));
         }
       }
@@ -317,13 +303,9 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
       if(received_servo_config.payloadHeader_st.payloadType_u8!=DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8) structChecker=false;
       uint16_t crcChecker = checksumCalculator((uint8_t*)(&(received_servo_config.payloadHeader_st)), sizeof(received_servo_config.payloadHeader_st) + sizeof(received_servo_config.payloadServoConfig_st));
       if(crcChecker!=received_servo_config.payloadFooter_st.checkSum_u16) structChecker=false;
-      
-      if(structChecker)
-      
-{
+      if(structChecker){
         uint8_t pedalTag = received_servo_config.payloadHeader_st.pedalTag_u8;
-        if(pedalTag < 3)
- {
+        if(pedalTag < 3){
           memcpy(&dap_servo_config_response_st[pedalTag], &received_servo_config, sizeof(DAP_servo_config_st_t));
           send_servo_config_to_host[pedalTag] = true;
         }
