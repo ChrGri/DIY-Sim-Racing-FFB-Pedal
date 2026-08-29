@@ -87,6 +87,9 @@ Isv57Communication::Isv57Communication()
     pinMode(ISV57_TXPIN, OUTPUT);
     digitalWrite(ISV57_TXPIN, HIGH); // Assert idle UART state before serial controller init
   #endif
+  #if defined(ISV57_RXPIN) && (ISV57_RXPIN >= 0)
+    pinMode(ISV57_RXPIN, INPUT_PULLUP); // Pull up RX line to prevent floating UART noise
+  #endif
 
   #if PCB_VERSION == 10 || PCB_VERSION == 9 || PCB_VERSION == 12 || PCB_VERSION == 13 || PCB_VERSION == 14
     Serial2.begin(38400, SERIAL_8N1, ISV57_RXPIN, ISV57_TXPIN, false); // Modbus serial
@@ -298,8 +301,6 @@ void Isv57Communication::sendTunedServoParameters(bool commandRotationDirection,
     isv57_update_parameter_b=true;
     delay(1000);
   }
-
-
 }
 
 bool Isv57Communication::findServosSlaveId()
