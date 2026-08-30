@@ -554,7 +554,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float loadCellReadingKg_fl32, 
   StepperWithLimits* stepper, 
   ForceCurveInterpolated* forceCurve, 
-  const DapCalculationVariables_t* calc_st, 
+  DapCalculationVariables_t* calc_st, 
   DapConfig_t* config_st, 
   EffectOffsets_t effectOffsets_st, 
   EndstopBehavior_t endstopBehavior_st, 
@@ -598,12 +598,16 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   // --- 2. RUDDER CONFIG ---
   float rudderForce_N = 0.0f;
+  float rudderPedalOpposingForce_N = 0.0f;
   if (rudderOffsets_st.isRudderMode) 
   { 
-    float rudderCenter = rudderOffsets_st.centerPosition_01 + rudderOffsets_st.trimOffset_01;
+    //float rudderCenter = rudderOffsets_st.centerPosition_01 + rudderOffsets_st.trimOffset_01;
 
-    float rudderForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(rudderCenter, 0.0f, 1.0f));
-    rudderForce_N = rudderForceRaw_kg * GRAVITY_N_KG;
+    //float rudderForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(rudderCenter, 0.0f, 1.0f));
+    //rudderForce_N = rudderForceRaw_kg * GRAVITY_N_KG;
+
+    // add inverse of opposite pedal force
+    rudderPedalOpposingForce_N = -1 * calc_st->syncPedalForce_N_fl32;
 
   }
 
@@ -763,6 +767,12 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   // 7. Final total force (Loadcell + Static Effect Weight + Dynamic Effect Force)
   float externalForce_N = (loadCellReadingKg_fl32 * GRAVITY_N_KG) + (effectOffsets_st.forceOffset_kg_fl32 * GRAVITY_N_KG) + effectInjectedForce_N;
+    
+  // save current pedal force for transmission to synced rudder pedal
+  calc_st->currentPedalForce_N_fl32 = externalForce_N;
+   //add opposite pedal force (zero if rudder mode is not active)
+  externalForce_N += rudderPedalOpposingForce_N;
+
 
   // --- 7. DYNAMIC TRAVEL LIMITS ---
   float lowerTravelLimit_01 = 0.0f;
@@ -858,7 +868,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   const float VELOCITY_BAND_MPS = 0.030f; // Verbreitert für weicheren Nulldurchgang (verhindert Ruckeln/Schläge bei Richtungswechsel)
   float frictionBlend = constrain(g_vModelVel_mps / VELOCITY_BAND_MPS, -1.0f, 1.0f);
   netForce_N -= (FRICTION_N * frictionBlend);
-
+  
   // =========================================================
   // Integration approaches (Start)
   // =========================================================
