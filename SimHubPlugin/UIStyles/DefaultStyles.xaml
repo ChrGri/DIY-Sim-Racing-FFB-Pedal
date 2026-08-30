@@ -160,6 +160,13 @@
             </DrawingGroup>
         </DrawingImage.Drawing>
     </DrawingImage>
+    <DrawingImage x:Key="FirmwareDownload">
+        <DrawingImage.Drawing>
+            <DrawingGroup ClipGeometry="M0,0 V24 H24 V0 H0 Z">
+                <GeometryDrawing Brush="White" Geometry="F1 M24,24z M0,0z M19,9H15V3H9V9H5L12,16L19,9Z M5,18V20H19V18H5Z" />
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
     <Style x:Key="IconGridButtonStyle" TargetType="Button">
         <Setter Property="Width" Value="50"/>
         <Setter Property="Height" Value="50"/>
