@@ -2083,6 +2083,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       float forceWakeupThreshold_fl32 = max(STEPPER_WAKEUP_FORCE, 
                                             dap_config_pedalUpdateTask_st.payloadPedalConfig_st.preloadForce_fl32 + STEPPER_WAKEUP_FORCE);
 
+      if ((filteredReading > forceWakeupThreshold_fl32) &&
           (stepper->servoStatus == SERVO_IDLE_NOT_CONNECTED)) {
         ActiveSerial->println(
             "Physical pedal press detected -> waking up servo");
