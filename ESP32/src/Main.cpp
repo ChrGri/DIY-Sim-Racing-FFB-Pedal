@@ -1278,8 +1278,6 @@ void setup() {
       TASK_PRIORITY_OTA_TASK_UBASETYPE, CORE_ID_OTA_TASK_U8, 16000);
   delay(200);
 #endif
-  pedalLED.setPixelColor(0, 0x00, 0x00, 0xff);
-  pedalLED.show();
 
   // print pedal role assignment
   if (dap_config_st_local.payloadPedalConfig_st.pedalType_u8 !=
@@ -1396,7 +1394,11 @@ void setup() {
                 dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
 #endif
   ActiveSerial->println("Setup end");
-  pedalLED.setPixelColor(0, 0x00, 0xff, 0x00);
+  if (g_pedalOperationalState_u8 == (uint8_t)PEDAL_STATE_STANDBY_WAITING_FOR_WAKEUP_E) {
+    pedalLED.setPixelColor(0, 0x00, 0x20, 0x80); // Soft Blue (standby)
+  } else {
+    pedalLED.setPixelColor(0, 0x00, 0xff, 0x00); // Green (ready)
+  }
   pedalLED.show();
 
   // set brake resistor voltage
@@ -2078,7 +2080,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       }
 
       // wakeup process on physical force
-      if ((filteredReading > STEPPER_WAKEUP_FORCE) &&
+      float forceWakeupThreshold_fl32 = max(STEPPER_WAKEUP_FORCE, 
+                                            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.preloadForce_fl32 + STEPPER_WAKEUP_FORCE);
+
           (stepper->servoStatus == SERVO_IDLE_NOT_CONNECTED)) {
         ActiveSerial->println(
             "Physical pedal press detected -> waking up servo");
