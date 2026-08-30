@@ -81,6 +81,8 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool
     _stepper->begin();
     _stepper->setExpectedCycleTimeUs(REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64);
 
+    invertMotorDir_global_b = invertMotorDir_b;
+
     // Clamp the endstop detection threshold to safe limits (10% to 50% current load)
     endstopDetectionThreshold_u8 = constrain(endstopDetectionThreshold_u8, 10, 50);
     Serial.printf("InvertStepperDir: %d\n", invertMotorDir_b);
@@ -173,26 +175,16 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection, bool
     isv57.clearServoAlarms(); // Send twice to ensure transient startup faults are wiped
     delay(50);
 
-    // 4. Verify the communication lifeline
+    // 4. Verify the communication lifeline and configure servo parameters
     setLifelineSignal();
     if (getLifelineSignal() == false) {
         ActiveSerial->println("No lifeline detected! Restarting ESP");
         ESP.restart();
     } else {
-        // 5. Read historical alarms and configure the servo parameters
-        isv57.readAlarmHistory();
+        // 5. Configure servo registers, cyclic telemetry, parameters, and enable axis
+        configureServoRegistersAfterPowerOn();
         ActiveSerial->print("iSV57 communication state:  ");
         ActiveSerial->println(getLifelineSignal());
-
-        // Prepare the telemetry read structure and push tuned parameters
-        isv57.setupServoStateReading();
-        invertMotorDir_global_b = invertMotorDir_b;
-        isv57.sendTunedServoParameters(invertMotorDir_global_b, stepsPerMotorRev_u32);
-
-        // Clear axis state and enable the motor
-        delay(30);
-        isv57.enableAxis();
-        delay(100);
 
         // 6. Spawn the dedicated FreeRTOS task for continuous Modbus telemetry polling
         xTaskCreatePinnedToCore(
@@ -642,6 +634,9 @@ void IRAM_ATTR StepperWithLimits::processPendingCommands() {
 
 // Periodically validates that the Modbus serial connection is alive
 void IRAM_ATTR StepperWithLimits::updateLifeline() {
+    if (servoStatus == SERVO_IDLE_NOT_CONNECTED) {
+        return;
+    }
     if ((timeNow_isv57SerialCommunicationTask_l - cycleTimeLastCall_lifelineCheck) > LIFELINE_CHECK_INTERVAL_MS) {
         cycleTimeLastCall_lifelineCheck = timeNow_isv57SerialCommunicationTask_l;
         setLifelineSignal();
@@ -650,7 +645,10 @@ void IRAM_ATTR StepperWithLimits::updateLifeline() {
 
 // Failsafe sequence triggered when the serial connection is lost
 void IRAM_ATTR StepperWithLimits::handleConnectionLoss() {
-    if (servoStatus != SERVO_IDLE_NOT_CONNECTED && servoStatus != SERVO_FORCE_STOP) {
+    if (servoStatus == SERVO_IDLE_NOT_CONNECTED) {
+        return;
+    }
+    if (servoStatus != SERVO_FORCE_STOP) {
         servoStatus = SERVO_NOT_CONNECTED;
     }
 
@@ -906,13 +904,53 @@ bool IRAM_ATTR StepperWithLimits::getBrakeResistorState() {
     return brakeResistorState_b;
 }
 
+// Reconfigures all servo registers, alarm history, cyclic telemetry readings,
+// tuned parameters, voltage limits, and lifeline after a power cycle.
+void StepperWithLimits::configureServoRegistersAfterPowerOn() {
+    // 1. Reset any transient power-on / line noise alarms immediately
+    isv57.clearServoAlarms();
+    delay(50);
+    isv57.clearServoAlarms(); // Send twice to ensure transient startup faults are wiped
+    delay(50);
+
+    // 2. Read historical alarms
+    isv57.readAlarmHistory();
+
+    // 3. Prepare the telemetry read structure (registers 0x0191 - 0x0194)
+    isv57.setupServoStateReading();
+    delay(30);
+
+    // 4. Push tuned parameters (microsteps, gains, alarm masks, etc.)
+    isv57.sendTunedServoParameters(invertMotorDir_global_b, stepsPerMotorRev_u32);
+    delay(30);
+
+    // 5. Configure internal voltage limits dynamically if parameterized
+    if (!s_servoBusVoltageParameterized_b) {
+        isv57.setServoVoltage(s_servoBusVoltageParameterized_fl32);
+        s_servoBusVoltageParameterized_b = true;
+        delay(30);
+    }
+
+    // 6. Verify and establish the communication lifeline
+    setLifelineSignal();
+    previousIsv57LifeSignal_b = true;
+
+    // 7. Clear axis state and enable the motor
+    delay(30);
+    isv57.enableAxis();
+    delay(50);
+}
+
 // Triggers the sleep phase of the servo. Uses hardware pin if defined, 
 // else sets a software flag for the orchestrator task.
 bool IRAM_ATTR StepperWithLimits::servoIdleAction() {
     bool returnValue_b = false;
     #ifdef SERVO_POWER_PIN
         gpio_set_level((gpio_num_t)SERVO_POWER_PIN, 0);
-        delay(500);
+        servoStatus = SERVO_IDLE_NOT_CONNECTED;
+        isv57LifeSignal_b = false;
+        previousIsv57LifeSignal_b = false;
+        delay(300);
         returnValue_b = true;
     #else
         setServoToSleep_b = true;
@@ -925,10 +963,46 @@ bool IRAM_ATTR StepperWithLimits::servoWakeAction()
 {
     bool returnValue_b = false;
     #ifdef SERVO_POWER_PIN
+        if (ActiveSerial) ActiveSerial->println("Powering on servo via SERVO_POWER_PIN...");
         gpio_set_level((gpio_num_t)SERVO_POWER_PIN, 1);
-        delay(500);
-        servoStatus = SERVO_CONNECTED;
-        returnValue_b = true;
+        delay(500); // Allow power supply rail to stabilize
+
+        #ifdef ALM_PORT_GPIO
+        pinMode(ALM_PORT_GPIO, INPUT_PULLUP);
+        uint32_t srdyWaitStart = millis();
+        uint32_t readyStableStartTime = 0;
+        bool isStableReady = false;
+        while (!isStableReady && (millis() - srdyWaitStart < 3500)) {
+            if (digitalRead(ALM_PORT_GPIO) == LOW) {
+                if (readyStableStartTime == 0) readyStableStartTime = millis();
+                else if (millis() - readyStableStartTime >= 300) isStableReady = true;
+            } else {
+                readyStableStartTime = 0;
+            }
+            delay(10);
+        }
+        #endif
+
+        // Discover / wait for iSV57 Modbus response with retry window
+        bool isv57Found_b = false;
+        uint32_t startDiscoveryTime = millis();
+        while ((millis() - startDiscoveryTime < 3500) && !isv57Found_b) {
+            if (isv57.findServosSlaveId()) {
+                isv57Found_b = true;
+                break;
+            }
+            delay(100);
+        }
+
+        if (isv57Found_b) {
+            configureServoRegistersAfterPowerOn();
+            servoStatus = SERVO_CONNECTED;
+            returnValue_b = getLifelineSignal();
+            if (ActiveSerial) ActiveSerial->println("Servo re-initialized and registers configured successfully");
+        } else {
+            if (ActiveSerial) ActiveSerial->println("Failed to discover servo after power pin activation!");
+            returnValue_b = false;
+        }
     #else
         setServoToWake_b = true;
         uint32_t waitStart_u32 = millis();

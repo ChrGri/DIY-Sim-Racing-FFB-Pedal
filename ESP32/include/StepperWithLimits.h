@@ -96,6 +96,7 @@ private:
     int64_t timeDiff = 0;
 
     // --- Private Helper Methods ---
+    void configureServoRegistersAfterPowerOn();
     void setLifelineSignal();
     void processPendingCommands();
     void updateLifeline();
