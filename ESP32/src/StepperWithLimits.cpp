@@ -941,78 +941,22 @@ void StepperWithLimits::configureServoRegistersAfterPowerOn() {
     delay(50);
 }
 
-// Triggers the sleep phase of the servo. Uses hardware pin if defined, 
-// else sets a software flag for the orchestrator task.
+// Triggers the sleep phase of the servo using software axis disable.
 bool IRAM_ATTR StepperWithLimits::servoIdleAction() {
-    bool returnValue_b = false;
-    #ifdef SERVO_POWER_PIN
-        gpio_set_level((gpio_num_t)SERVO_POWER_PIN, 0);
-        servoStatus = SERVO_IDLE_NOT_CONNECTED;
-        isv57LifeSignal_b = false;
-        previousIsv57LifeSignal_b = false;
-        delay(300);
-        returnValue_b = true;
-    #else
-        setServoToSleep_b = true;
-        returnValue_b = true;
-    #endif
-    return returnValue_b;
+    setServoToSleep_b = true;
+    return true;
 }
 
+// Triggers the wake phase of the servo using software axis enable.
 bool IRAM_ATTR StepperWithLimits::servoWakeAction()
 {
-    bool returnValue_b = false;
-    #ifdef SERVO_POWER_PIN
-        if (ActiveSerial) ActiveSerial->println("Powering on servo via SERVO_POWER_PIN...");
-        gpio_set_level((gpio_num_t)SERVO_POWER_PIN, 1);
-        delay(500); // Allow power supply rail to stabilize
-
-        #ifdef ALM_PORT_GPIO
-        pinMode(ALM_PORT_GPIO, INPUT_PULLUP);
-        uint32_t srdyWaitStart = millis();
-        uint32_t readyStableStartTime = 0;
-        bool isStableReady = false;
-        while (!isStableReady && (millis() - srdyWaitStart < 3500)) {
-            if (digitalRead(ALM_PORT_GPIO) == LOW) {
-                if (readyStableStartTime == 0) readyStableStartTime = millis();
-                else if (millis() - readyStableStartTime >= 300) isStableReady = true;
-            } else {
-                readyStableStartTime = 0;
-            }
-            delay(10);
-        }
-        #endif
-
-        // Discover / wait for iSV57 Modbus response with retry window
-        bool isv57Found_b = false;
-        uint32_t startDiscoveryTime = millis();
-        while ((millis() - startDiscoveryTime < 3500) && !isv57Found_b) {
-            if (isv57.findServosSlaveId()) {
-                isv57Found_b = true;
-                break;
-            }
-            delay(100);
-        }
-
-        if (isv57Found_b) {
-            configureServoRegistersAfterPowerOn();
-            servoStatus = SERVO_CONNECTED;
-            returnValue_b = getLifelineSignal();
-            if (ActiveSerial) ActiveSerial->println("Servo re-initialized and registers configured successfully");
-        } else {
-            if (ActiveSerial) ActiveSerial->println("Failed to discover servo after power pin activation!");
-            returnValue_b = false;
-        }
-    #else
-        setServoToWake_b = true;
-        uint32_t waitStart_u32 = millis();
-        while (setServoToWake_b && (millis() - waitStart_u32 < 1000))
-        {
-            delay(10);
-        }
-        returnValue_b = (servoStatus == SERVO_CONNECTED);
-    #endif
-    return returnValue_b;
+    setServoToWake_b = true;
+    uint32_t waitStart_u32 = millis();
+    while (setServoToWake_b && (millis() - waitStart_u32 < 1000))
+    {
+        delay(10);
+    }
+    return (servoStatus == SERVO_CONNECTED);
 }
 
 float IRAM_ATTR StepperWithLimits::getBrakeResistorActivationVoltage(void) {
