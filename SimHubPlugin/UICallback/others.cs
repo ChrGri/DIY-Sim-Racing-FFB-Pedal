@@ -649,6 +649,7 @@ namespace DiyFfbPedal
             // compute checksum
             DAP_action_st tmp = default;
             tmp.payloadPedalAction_.returnPedalConfig_u8 = 1;
+            tmp.payloadPedalAction_.system_action_u8 = (byte)PedalSystemAction.WAKEUP_PEDAL;
             waiting_for_pedal_config[i] = true;
             Plugin.SendPedalAction(tmp, (byte)i);
         /*
@@ -716,6 +717,7 @@ namespace DiyFfbPedal
             // compute checksum
             DAP_action_st tmp = default;
             tmp.payloadPedalAction_.returnPedalConfig_u8 = 1;
+            tmp.payloadPedalAction_.system_action_u8 = (byte)PedalSystemAction.WAKEUP_PEDAL;
             waiting_for_pedal_config[i] = true;
             Plugin.SendPedalActionWireless(tmp, (byte)i);
         }
@@ -849,6 +851,7 @@ namespace DiyFfbPedal
                         System.Threading.Thread.Sleep(100);
                         Serial_connect_status[pedalIdx] = true;
                         Plugin._calculations.pedalSerialStatus[pedalIdx] = ConnectStateEnum.PEDAL_ENTRY_CONNECT;
+                        Reading_config_auto(pedalIdx);
                     }
                     catch (Exception ex)
                     {

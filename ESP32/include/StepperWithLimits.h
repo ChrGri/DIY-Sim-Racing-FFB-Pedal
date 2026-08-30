@@ -196,6 +196,7 @@ public:
     static void servoCommunicationTask(void * pvParameters);
     void pauseTask();
     bool servoIdleAction();
+    bool servoWakeAction();
 };
 
 void setDirection(bool forwardDir_b);

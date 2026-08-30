@@ -7,7 +7,7 @@
              xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="190" d:DesignWidth="540">
+             d:DesignHeight="225" d:DesignWidth="540">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -16,8 +16,8 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border Background="#7F4E4E4E" Height="190" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
-            <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540">
+        <Border Background="#7F4E4E4E" Height="225" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0" >
+            <StackPanel HorizontalAlignment="Left" Height="225" VerticalAlignment="Top" Width="540">
                 <StackPanel Height="20" Width="540" Orientation="Horizontal">
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextGeneralSetting, 'General Settings'}" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
                 </StackPanel>
@@ -59,6 +59,12 @@
                     <StackPanel Height="20" Width="140" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="2,0,0,0">
                         <styles:SHToggleButton x:Name="CheckBox_InvertMotorDir" Content="" Checked="CheckBox_InvertMotorDir_Checked" Unchecked="CheckBox_InvertMotorDir_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" Margin="-10,0,0,0" ToolTip="The effects only applied after you set config as default and restart pedal" />
                         <Label x:Name="Label_reverse_servo" Content="{SLoc DIYFFBPedalPlugin_TextGeneralSettingReverseServoDirection, 'Reverse Servo Direction'}" Height="20" Width="120" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Height="35" Width="540" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,0">
+                    <StackPanel Height="20" Width="250" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="70,0,0,0">
+                        <styles:SHToggleButton x:Name="CheckBox_WakeOnPluginOnly" Content="" Checked="CheckBox_WakeOnPluginOnly_Checked" Unchecked="CheckBox_WakeOnPluginOnly_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="When enabled, the pedal will stay in standby on power-up and only initialize/home when SimHub connects or triggers wakeup" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
+                        <Label Content="{SLoc DIYFFBPedalPlugin_TextGeneralSettingWakeOnPluginOnly, 'Wakeup only by plugin trigger'}" Height="20" Width="200" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
             </StackPanel>

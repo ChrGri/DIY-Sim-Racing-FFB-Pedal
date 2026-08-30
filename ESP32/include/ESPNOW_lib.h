@@ -381,6 +381,13 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
             {
               g_printPedalInfo_b = true;
             }
+            if (dap_actions_st.payloadPedalAction_st.systemAction_u8 == (uint8_t)PedalSystemAction::WAKEUP_PEDAL)
+            {
+              if (g_pedalOperationalState_u8 == (uint8_t)PEDAL_STATE_STANDBY_WAITING_FOR_WAKEUP_E)
+              {
+                g_pedalOperationalState_u8 = (uint8_t)PEDAL_STATE_HOMING_E;
+              }
+            }
             if (dap_actions_st.payloadPedalAction_st.systemAction_u8 == (uint8_t)PedalSystemAction::SET_ASSIGNMENT_0 && commandForAssignment_b)
             {
               g_dapAssignmentReg_st.deviceId_u8 = PEDAL_ID_CLUTCH;

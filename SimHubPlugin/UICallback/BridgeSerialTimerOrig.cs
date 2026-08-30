@@ -160,6 +160,7 @@ namespace DiyFfbPedal
                                         || Plugin._calculations.pedalWirelessStatus[pedalSelected] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
                                     {
                                         Plugin._calculations.pedalWirelessStatus[pedalSelected] = WirelessConnectStateEnum.PEDAL_GET_BASIC_PACKETS_OVER_ESPNOW;
+                                        Reading_config_auto_wireless((uint)pedalSelected);
                                     }
                                     Plugin._calculations.pedalWirelessConnetionlastTime[pedalSelected] = DateTime.Now;
                                     //if (Plugin.Rudder_enable_flag == false)

@@ -565,6 +565,10 @@ namespace DiyFfbPedal
                                             || Plugin._calculations.pedalSerialStatus[pedalSelected] == ConnectStateEnum.PEDAL_DISCONNECT)
                                         {
                                             Plugin._calculations.pedalSerialStatus[pedalSelected] = ConnectStateEnum.PEDAL_GET_BASIC_PACKETS;
+                                            if (!Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalSelected])
+                                            {
+                                                Reading_config_auto((uint)pedalSelected);
+                                            }
                                         }
                                         Plugin._calculations.pedalSerialConnetionlastTime[pedalSelected]=DateTime.Now;
                                         // write vJoy data

@@ -266,7 +266,7 @@ namespace DiyFfbPedal
 
             connect_timer = new System.Windows.Forms.Timer();
             connect_timer.Tick += new EventHandler(connection_timmer_tick);
-            connect_timer.Interval = 5000; // in miliseconds try connect every 5s
+            connect_timer.Interval = 1000; // in miliseconds try connect every 1s
             connect_timer.Start();
             System.Threading.Thread.Sleep(50);
             Plugin.BridgeHidService.OnDataReceived += HidRecieveCallback;

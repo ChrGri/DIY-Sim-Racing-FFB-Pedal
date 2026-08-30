@@ -144,6 +144,7 @@ void DapConfig_t::initializeDefaults()
   payloadPedalConfig_st.endstopTravelRange_mm_u8 = 10;
 
   payloadPedalConfig_st.coulombFrictionIn0p1N_u8 = 0;
+  payloadPedalConfig_st.wakeOnPluginOnly_u8 = 0;
 }
 
 

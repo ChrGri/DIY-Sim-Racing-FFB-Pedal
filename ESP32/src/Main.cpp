@@ -63,6 +63,7 @@ DRAM_ATTR DapCalculationVariables_t dap_calculationVariables_st;
 DapEspPairing_t dap_esppairing_st;  // saving
 DapEspPairing_t dap_esppairing_lcl; // sending
 DapActionOta_t dap_action_ota_st;   // OTA command(do not check version)
+volatile uint8_t g_pedalOperationalState_u8 = (uint8_t)PEDAL_STATE_ACTIVE_E;
 
 /**********************************************************************************************/
 /*                                                                                            */
@@ -683,6 +684,46 @@ static void homingTimeoutCallback(void *arg) {
   ESP.restart();
 }
 
+void performPedalHomingSequence(DapConfig_t dap_config_st_homing) {
+  pedalLED.setPixelColor(0, 0x00, 0xFF, 0xFF); // Cyan / Aqua
+  pedalLED.show();
+
+  if (stepper != nullptr) {
+    stepper->servoWakeAction();
+    delay(100);
+  }
+
+  esp_timer_create_args_t homingTimerArgs_st = {};
+  homingTimerArgs_st.callback = &homingTimeoutCallback;
+  homingTimerArgs_st.name = "homing_timeout";
+  esp_timer_handle_t homingTimer_st;
+  esp_timer_create(&homingTimerArgs_st, &homingTimer_st);
+  esp_timer_start_once(homingTimer_st, 20000000); // 20 seconds in microseconds
+
+  // find the min & max endstops
+  ActiveSerial->println("Start homing");
+  updatePedalCalcParameters(dap_config_st_homing);
+  stepper->findMinMaxSensorless(dap_config_st_homing);
+
+  esp_timer_stop(homingTimer_st);
+  esp_timer_delete(homingTimer_st);
+  ActiveSerial->print("Min Position is ");
+  ActiveSerial->println(stepper->getLimitMin());
+  ActiveSerial->print("Max Position is ");
+  ActiveSerial->println(stepper->getLimitMax());
+
+  pedalLED.setPixelColor(0, 0x80, 0x00, 0x80); // purple
+  pedalLED.show();
+
+  updatePedalCalcParameters(dap_config_st_homing);
+
+  // move slowly to the configured soft min position
+  stepper->moveSlowlyToPos(stepper->getMinPosition());
+
+  pedalLED.setPixelColor(0, 0x00, 0xFF, 0x00); // Green (ready)
+  pedalLED.show();
+}
+
 void setup() {
 // 1. Immediately clamp all control & communication pins to prevent floating
 // state / glitches
@@ -1020,32 +1061,19 @@ void setup() {
   pedalLED.setPixelColor(0, 0x5f, 0x5f, 0x00); // yellow
   pedalLED.show();
 
-  bool invMotorDir =
+  bool invMotorDir_b =
       dap_config_st_local.payloadPedalConfig_st.invertMotorDirection_u8 > 0;
   stepper = new StepperWithLimits(
-      STEP_PIN_STEPPER_U8, DIR_PIN_STEPPER_U8, invMotorDir,
+      STEP_PIN_STEPPER_U8, DIR_PIN_STEPPER_U8, invMotorDir_b,
       dap_calculationVariables_st.stepsPerMotorRevolution_u32,
       dap_config_st_local.payloadPedalConfig_st.endstopDetectionThreshold_u8);
 
   motorRevolutionsPerSteps_fl32 =
       1.0f / ((float)dap_calculationVariables_st.stepsPerMotorRevolution_u32);
-  // ActiveSerial->printf("Steps per motor revolution: %d\n",
-  // dap_calculationVariables_st.stepsPerMotorRevolution_u32);
-
-  esp_timer_create_args_t homingTimerArgs_st = {};
-  homingTimerArgs_st.callback = &homingTimeoutCallback;
-  homingTimerArgs_st.name = "homing_timeout";
-  esp_timer_handle_t homingTimer_st;
-  esp_timer_create(&homingTimerArgs_st, &homingTimer_st);
-  esp_timer_start_once(homingTimer_st, 20000000); // 20 seconds in microseconds
-
-  pedalLED.setPixelColor(0, 0x00, 0xFF, 0xFF); // Cyan / Aqua
-  pedalLED.show();
 
 #ifdef USES_ADS1220
   // Uses ADS1220
   loadcell = new LoadCellAds1220();
-
 #else
   // Uses ADS1256
   loadcell = new LoadCellAds1256();
@@ -1056,37 +1084,25 @@ void setup() {
   loadcell->estimateBiasAndVariance(); // automatically identify sensor noise
                                        // for KF parameterization
 
-  // find the min & max endstops
-  ActiveSerial->println("Start homing");
-  global_dap_config_class.getConfig(&dap_config_st_local, 500);
-  delay(100);
-  updatePedalCalcParameters(dap_config_st_local);
-  stepper->findMinMaxSensorless(dap_config_st_local);
-
-  esp_timer_stop(homingTimer_st);
-  esp_timer_delete(homingTimer_st);
-  ActiveSerial->print("Min Position is ");
-  ActiveSerial->println(stepper->getLimitMin());
-  ActiveSerial->print("Max Position is ");
-  ActiveSerial->println(stepper->getLimitMax());
-
   // setup Kalman filters
-  // ActiveSerial->print("Given loadcell variance: ");
-  // ActiveSerial->println(loadcell->getVarianceEstimate(), 5);
   kalman = new KalmanFilter1stOrder(loadcell->getVarianceEstimate());
   kalman_joystick = new KalmanFilter1stOrder(0.1f);
   kalman_2nd_order = new KalmanFilter2ndOrder(loadcell->getVarianceEstimate());
 
-  pedalLED.setPixelColor(0, 0x80, 0x00, 0x80); // purple
-  pedalLED.show();
-
-  // equalize pedal config for both tasks
-  global_dap_config_class.getConfig(&dap_config_st_local, 500);
-  delay(100);
-  updatePedalCalcParameters(dap_config_st_local);
-
-  // move slowly to the configured soft min position
-  stepper->moveSlowlyToPos(stepper->getMinPosition());
+  // Check if wakeup only by plugin trigger is requested
+  if (dap_config_st_local.payloadPedalConfig_st.wakeOnPluginOnly_u8 == 1) {
+    stepper->servoIdleAction();
+    stepper->servoStatus = SERVO_IDLE_NOT_CONNECTED;
+    g_pedalOperationalState_u8 =
+        (uint8_t)PEDAL_STATE_STANDBY_WAITING_FOR_WAKEUP_E;
+    pedalLED.setPixelColor(0, 0x00, 0x20, 0x80); // Soft Blue (standby)
+    pedalLED.show();
+    ActiveSerial->println("Pedal in STANDBY: Waiting for plugin wakeup trigger "
+                          "or pedal press...");
+  } else {
+    g_pedalOperationalState_u8 = (uint8_t)PEDAL_STATE_ACTIVE_E;
+    performPedalHomingSequence(dap_config_st_local);
+  }
 
   // send to config handling task
   xQueueSend(s_configUpdateAvailableQueue, &dap_config_st_local, portMAX_DELAY);
@@ -1552,6 +1568,13 @@ void IRAM_ATTR_FLAG handleIncomingActions(const DapActions_t &action,
     g_customVibration3_st.trigger();
   if (action.payloadPedalAction_st.triggerCv4_u8)
     g_customVibration4_st.trigger();
+  if (action.payloadPedalAction_st.systemAction_u8 ==
+      (uint8_t)PedalSystemAction::WAKEUP_PEDAL) {
+    if (g_pedalOperationalState_u8 ==
+        (uint8_t)PEDAL_STATE_STANDBY_WAITING_FOR_WAKEUP_E) {
+      g_pedalOperationalState_u8 = (uint8_t)PEDAL_STATE_HOMING_E;
+    }
+  }
 }
 
 /**********************************************************************************************/
@@ -2041,15 +2064,26 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         servoActionLast = millis();
       }
 
-      // wakeup process
-      if ((filteredReading > STEPPER_WAKEUP_FORCE) &&
-          (stepper->servoStatus == SERVO_IDLE_NOT_CONNECTED)) {
+      // Check if pedal needs to wake up from standby / homing request
+      if (g_pedalOperationalState_u8 == (uint8_t)PEDAL_STATE_HOMING_E) {
         Buzzer.single_beep_tone(770, 100);
         delay(300);
         Buzzer.single_beep_tone(770, 100);
-        ActiveSerial->println("Wake up servo, restart esp.");
-        delay(1000);
-        ESP.restart();
+        delay(100);
+        ActiveSerial->println("Waking up pedal -> running homing sequence");
+        performPedalHomingSequence(dap_config_pedalUpdateTask_st);
+        stepper->servoStatus = SERVO_CONNECTED;
+        g_pedalOperationalState_u8 = (uint8_t)PEDAL_STATE_ACTIVE_E;
+        servoActionLast = millis();
+      }
+
+      // wakeup process on physical force
+      if ((filteredReading > STEPPER_WAKEUP_FORCE) &&
+          (stepper->servoStatus == SERVO_IDLE_NOT_CONNECTED)) {
+        ActiveSerial->println(
+            "Physical pedal press detected -> waking up servo");
+        delay(500);
+        g_pedalOperationalState_u8 = (uint8_t)PEDAL_STATE_HOMING_E;
       }
 
       // pedal not in action, disable pedal power
@@ -2068,7 +2102,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         pedalLED.setPixelColor(0, 0xff, 0x00, 0x00); // show red
         pedalLED.show();
         Buzzer.single_beep_tone(770, 100);
-        ActiveSerial->println("Servo idle timeout reached. To restart pedal, "
+        ActiveSerial->println("Servo idle timeout reached. To wake up pedal, "
                               "please apply pressure.");
       }
       // emergency button
@@ -3095,6 +3129,15 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                        dap_calculationVariables_st.stepperPosMaxEndstop_i32,
                        dap_calculationVariables_st.currentPedalPosition_u32);
               ActiveSerial->println(logString);
+            }
+
+            if (received_action.payloadPedalAction_st.systemAction_u8 ==
+                (uint8_t)PedalSystemAction::WAKEUP_PEDAL) {
+              if (g_pedalOperationalState_u8 ==
+                  (uint8_t)PEDAL_STATE_STANDBY_WAITING_FOR_WAKEUP_E) {
+                ActiveSerial->println("Wakeup command received from plugin");
+                g_pedalOperationalState_u8 = (uint8_t)PEDAL_STATE_HOMING_E;
+              }
             }
 
             // Send action to pedalUpdateTask via Queue

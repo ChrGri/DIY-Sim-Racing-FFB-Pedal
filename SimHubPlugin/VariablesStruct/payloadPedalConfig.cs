@@ -169,5 +169,6 @@ namespace DiyFfbPedal
 
         // friction parameters
         public byte coulombFrictionIn0p1N_u8;
+        public byte wakeOnPluginOnly_u8;
     }
 }

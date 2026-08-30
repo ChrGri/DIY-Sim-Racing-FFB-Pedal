@@ -44,6 +44,7 @@ static float s_servoBusVoltageParameterized_fl32 = SERVO_MAX_VOLTAGE_IN_V_36V;
 static bool s_servoBusVoltageParameterized_b = true;
 static bool s_printProfilingFlag_b = false;
 bool setServoToSleep_b = false;
+volatile bool setServoToWake_b = false;
 
 // ==============================================================================
 // RAII Mutex Guard Class
@@ -481,6 +482,14 @@ void IRAM_ATTR StepperWithLimits::processPendingCommands() {
         isSleeping = true;
         setServoToSleep_b = false;
     }
+
+    if (setServoToWake_b) {
+        isv57.enableAxis();
+        servoStatus = SERVO_CONNECTED;
+        isSleeping = false;
+        setServoToWake_b = false;
+        delay(30);
+    }
     
     // Evaluate if sleep timeout is reached (simulating delay(500) asynchronously)
     if (isSleeping && (millis() - sleepTimerStart >= 500)) {
@@ -908,6 +917,26 @@ bool IRAM_ATTR StepperWithLimits::servoIdleAction() {
     #else
         setServoToSleep_b = true;
         returnValue_b = true;
+    #endif
+    return returnValue_b;
+}
+
+bool IRAM_ATTR StepperWithLimits::servoWakeAction()
+{
+    bool returnValue_b = false;
+    #ifdef SERVO_POWER_PIN
+        gpio_set_level((gpio_num_t)SERVO_POWER_PIN, 1);
+        delay(500);
+        servoStatus = SERVO_CONNECTED;
+        returnValue_b = true;
+    #else
+        setServoToWake_b = true;
+        uint32_t waitStart_u32 = millis();
+        while (setServoToWake_b && (millis() - waitStart_u32 < 1000))
+        {
+            delay(10);
+        }
+        returnValue_b = (servoStatus == SERVO_CONNECTED);
     #endif
     return returnValue_b;
 }

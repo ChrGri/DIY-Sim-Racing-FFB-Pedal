@@ -608,3 +608,10 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 extern Stream *ActiveSerial;
 
 #define BAUDRATE_U32 3000000U
+
+enum PedalOperationalState_e
+{
+  PEDAL_STATE_STANDBY_WAITING_FOR_WAKEUP_E = 0,
+  PEDAL_STATE_HOMING_E,
+  PEDAL_STATE_ACTIVE_E
+};
