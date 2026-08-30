@@ -22,43 +22,39 @@ The pedal firmware operates as a FreeRTOS-driven state machine managed by `g_ped
 ```mermaid
 stateDiagram-v2
     [*] --> Boot_Initialization: Power On / Reset
+    Boot_Initialization --> Standby_Mode: wakeOnPluginOnly == 1
+    Boot_Initialization --> Homing_Sequence: wakeOnPluginOnly == 0
 
-    state Boot_Initialization {
-        [*] --> Hardware_Init: Clamp GPIOs & Read EEPROM
-        Hardware_Init --> Loadcell_Calibration: Silent Bias & Variance Estimate
-        Loadcell_Calibration --> Tasks_Spawned: Start FreeRTOS Tasks (USB Rx/Tx, Telemetry, ESP-NOW)
-    }
-
-    Tasks_Spawned --> Standby_Waiting: wakeOnPluginOnly == 1
-    Tasks_Spawned --> Homing_Sequence: wakeOnPluginOnly == 0
-
-    state Standby_Waiting {
-        description: LED = Soft Blue | Motor = Disabled | USB/ESP-NOW = Online
-    }
-
-    Standby_Waiting --> Homing_Sequence: SimHub connected (WAKEUP_PEDAL)
-    Standby_Waiting --> Homing_Sequence: Foot pressure > 1.0 kg (500ms delay)
-
-    state Homing_Sequence {
-        [*] --> Double_Beep: Play 770 Hz tone
-        Double_Beep --> Servo_Wake: Core 0 enables iSV57 axis
-        Servo_Wake --> Find_Limits: Sensorless Min/Max search
-        Find_Limits --> Move_To_Zero: Set zero & move to soft min
-    }
+    Standby_Mode --> Homing_Sequence: SimHub Connected (WAKEUP_PEDAL)
+    Standby_Mode --> Homing_Sequence: Foot Pressure > 1.0 kg (500ms delay)
 
     Homing_Sequence --> Active_Operation: Homing Complete (LED = Green)
 
-    state Active_Operation {
-        description: 4 kHz Closed-Loop FFB | USB Joystick Output
-    }
-
     Active_Operation --> Idle_Sleep: Inactivity > servoIdleTimeout
-    
-    state Idle_Sleep {
-        description: LED = Red | Motor = Disabled | USB/Joystick = Online (No Disconnect)
-    }
+    Idle_Sleep --> Homing_Sequence: Foot Pressure > 1.0 kg / SimHub Wake
+```
 
-    Idle_Sleep --> Homing_Sequence: Foot pressure > 1.0 kg / SimHub wake
+### Flowchart Architecture
+```mermaid
+flowchart TD
+    A(["Power On / Reset"]) --> B["Boot & Hardware Init<br/>Clamp GPIOs & Load EEPROM"]
+    B --> C["Loadcell Calibration<br/>Silent Bias & Variance Estimation"]
+    C --> D["Start FreeRTOS Tasks<br/>USB, Telemetry, ESP-NOW"]
+    
+    D --> E{"wakeOnPluginOnly == 1?"}
+    
+    E -- "Yes" --> F["STANDBY MODE<br/>LED: Soft Blue | Motor: Off | USB: Online"]
+    E -- "No" --> G["HOMING SEQUENCE<br/>Double-Beep Tone 770Hz"]
+    
+    F -->|"SimHub WAKEUP_PEDAL"| G
+    F -->|"Foot Press > 1.0 kg"| G
+    
+    G --> H["Servo Wakeup<br/>Core 0 safely enables axis"]
+    H --> I["Sensorless Min/Max Search<br/>Move to Soft Min Position"]
+    I --> J["ACTIVE OPERATION<br/>4 kHz FFB Control & USB Joystick"]
+    
+    J -->|"Inactivity > Timeout"| K["IDLE / SLEEP MODE<br/>LED: Red | Motor: Off | USB: Connected"]
+    K -->|"Foot Press > 1.0 kg / SimHub Wake"| G
 ```
 
 ### ASCII State Flow
