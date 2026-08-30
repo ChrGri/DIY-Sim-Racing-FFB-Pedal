@@ -3104,15 +3104,19 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
 
             if (received_action.payloadPedalAction_st.systemAction_u8 ==
                 (uint8_t)PedalSystemAction::ESP_BOOT_INTO_DOWNLOAD_MODE) {
-#ifdef ESPNow_S3
-              ActiveSerial->println("Restart into Download mode");
-              delay(1000);
-              REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
-              ESP.restart();
-#else
-              ActiveSerial->println("Command not supported");
-              delay(1000);
-#endif
+              #ifdef ESPNow_S3
+                ActiveSerial->println("Restart into Download mode");
+                Buzzer.single_beep_tone(700, 100);
+                ActiveSerial->println("Restart into Download mode");
+                pedalLED.setPixelColor(0, 0x00, 0xFF, 0xFF); // Cyan / Aqua
+                pedalLED.show();
+                delay(1000);
+                REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+                ESP.restart();
+              #else
+                ActiveSerial->println("Command not supported");
+                delay(1000);
+              #endif
               // g_espNowBootIntoDownloadMode_b = false;
             }
             if (received_action.payloadPedalAction_st.systemAction_u8 ==
@@ -4026,18 +4030,21 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
           Buzzer.single_beep_tone(700, 100);
         }
         if (g_espNowBootIntoDownloadMode_b && !noAssignmentStatus) {
-#ifdef ESPNow_S3
-          ActiveSerial->println("Restart into Download mode");
-          sendESPNOWLog(
-              "Pedal:%d restart into Download mode",
-              espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8);
-          delay(1000);
-          REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
-          ESP.restart();
-#else
-          ActiveSerial->println("Command not supported");
-          delay(1000);
-#endif
+          #ifdef ESPNow_S3
+            ActiveSerial->println("Restart into Download mode");
+            Buzzer.single_beep_tone(700, 100);
+            pedalLED.setPixelColor(0, 0x00, 0xFF, 0xFF); // Cyan / Aqua
+            pedalLED.show();            
+            sendESPNOWLog(
+                "Pedal:%d restart into Download mode",
+                espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8);
+            delay(1000);
+            REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+            ESP.restart();
+          #else
+            ActiveSerial->println("Command not supported");
+            delay(1000);
+          #endif
           g_espNowBootIntoDownloadMode_b = false;
         }
         // send out rudder packet after rudder initialized

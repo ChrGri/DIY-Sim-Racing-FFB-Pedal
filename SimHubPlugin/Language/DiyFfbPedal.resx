@@ -423,9 +423,6 @@
   <data name="DIYFFBPedalPlugin_TextGeneralSettingServoIdleTimeout" xml:space="preserve">
     <value>Servo Idle Timeout</value>
   </data>
-  <data name="DIYFFBPedalPlugin_TextGeneralSettingWakeOnPluginOnly" xml:space="preserve">
-    <value>Wakeup only by plugin trigger</value>
-  </data>
   <data name="DIYFFBPedalPlugin_TextGeneralSettingStepLossRecor" xml:space="preserve">
     <value>Enable step loss recov.</value>
   </data>
@@ -623,5 +620,11 @@
   </data>
   <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderCoulombFriction" xml:space="preserve">
     <value>Coulomb Friction</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_ButtonTextFWFlash" xml:space="preserve">
+    <value>FW Flash</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextGeneralSettingWakeOnPluginOnly" xml:space="preserve">
+    <value>Wakeup only by plugin trigger</value>
   </data>
 </root>

@@ -222,6 +222,14 @@
                                                         </StackPanel>
                                                     </Button>
                                                 </StackPanel>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_PedalBootMode_Click" ToolTip="Get Pedal Sensor Info" Margin="0,5,0,0">
+                                                        <StackPanel>
+                                                            <Image Width="30" Height="30" Source="{StaticResource FirmwareDownload}" />
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextFWFlash, 'FW Flash'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Button>
+                                                </StackPanel>
                                                 <Border Background="#FF4E4E4E" Height="50" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="160" HorizontalAlignment="Center" Margin="0,5,0,0" >
                                                     <TextBox x:Name="TextBox2" TextWrapping="Wrap" Width="160" AutomationProperties.Name="TextBox2" Height="50" FontSize="9" Background="#004E4E4E" BorderBrush="#00CCCCCC" IsHitTestVisible="False" AllowDrop="True" HorizontalAlignment="Center"/>
                                                 </Border>

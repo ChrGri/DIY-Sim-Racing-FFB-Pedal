@@ -312,7 +312,7 @@ namespace DiyFfbPedal
 
         unsafe private void btn_PedalBootMode_Click(object sender, RoutedEventArgs e)
         {
-            System.Windows.MessageBox.Show("Pedal will restart into download mode, only work with V4/V5 control board(This function will support GIlphilbert board V2 in the future, but not V1.2).");
+            System.Windows.MessageBox.Show("Pedal will restart into download mode, only support V4/V5/V6/pcba V2.x board. After restart, an Esp32S3 port will popup, you can flash from this port.");
             DAP_action_st tmp;
             tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
