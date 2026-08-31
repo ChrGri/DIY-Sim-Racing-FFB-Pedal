@@ -91,6 +91,10 @@ private:
     uint32_t servoLastTimeStampInMs_u32 = 0;
     int32_t lastTrackingError_i32 = 0;
     float trackingErrorChangeInStepsPerS_fl32 = 0;
+    bool servoPosInitialized_b = false;            // True once unwrapper has synchronized with servo
+    uint32_t servoLastUnwrapCycleCounter_u32 = 0;  // Tracks servo cycle count to guard against stale frames
+    int16_t servoLastRawPos_i16 = 0;               // Previous raw 16-bit servo position reading
+    int32_t servoLastEspPos_i32 = 0;               // Previous 32-bit ESP pulse generator position
     int16_t servoPos_last_i16 = 0;
     int64_t timeSinceLastServoPosChange_l = 0;
     int64_t timeDiff = 0;
