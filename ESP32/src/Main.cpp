@@ -2171,7 +2171,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask( void * pvParameters )
         
 
         // rudder variables
-        rudderOffsets_st.isRudderMode = false;
+        rudderOffsets_st.isRudderMode = true;
         rudderOffsets_st.centerPosition_01 = 0.0f;
         rudderOffsets_st.deadzone_01 = 0.0f;
         rudderOffsets_st.trimOffset_01 = 0.0f;
@@ -3894,6 +3894,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
             {              
                g_dapRudderSending_st.payloadRudderState_st.pedalPositionRatio_fl32=dap_calculationVariables_st.currentPedalPositionRatio_fl32;
                g_dapRudderSending_st.payloadRudderState_st.pedalPosition_u16=dap_calculationVariables_st.currentPedalPosition_u32;
+               g_dapRudderSending_st.payloadRudderState_st.pedalForce_N_fl32=dap_calculationVariables_st.currentPedalForce_N_fl32;
               g_dapRudderSending_st.payloadHeader_st.payloadType_u8=DAP_PAYLOAD_TYPE_ESPNOW_RUDDER_U8;
               g_dapRudderSending_st.payloadHeader_st.pedalTag_u8 = espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8;
               g_dapRudderSending_st.payloadHeader_st.version_u8=DAP_VERSION_CONFIG_U8;
@@ -3912,6 +3913,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx( void * pvParameters )
                 //dap_calculationVariables_st.syncPedalPosition_u32=ESPNow_recieve;
                 dap_calculationVariables_st.syncPedalPosition_u32=g_dapRudderReceiving_st.payloadRudderState_st.pedalPosition_u16;
                 dap_calculationVariables_st.syncPedalPositionRatio_fl32=g_dapRudderReceiving_st.payloadRudderState_st.pedalPositionRatio_fl32;
+                dap_calculationVariables_st.syncPedalForce_N_fl32=g_dapRudderReceiving_st.payloadRudderState_st.pedalForce_N_fl32;
                 g_espNowRudderUpdate_b=false;
               }                
             }
