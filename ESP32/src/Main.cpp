@@ -1347,6 +1347,8 @@ void setup() {
 
   // enable ESP-NOW
 #ifdef ESPNOW_Enable
+  dap_calculationVariables_st.rudderStatus_b = false;
+  dap_calculationVariables_st.helicopterRudderStatus_b = false;
   dap_calculationVariables_st.rudderBrakeStatus_b = false;
   ActiveSerial->println("Starting ESP now tasks");
   espNowInitialize();
@@ -1910,19 +1912,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         }
       }
 
-      if (dap_calculationVariables_st.rudderStatus_b) {
-        g_rudderGForce_st.offsetCalculate(&dap_calculationVariables_st);
-        dap_calculationVariables_st.updateStepperMaxPos(
-            g_rudderGForce_st.offsetFilter_l);
-        g_rudder_st.offsetCalculate(&dap_calculationVariables_st);
-        dap_calculationVariables_st.updateStepperMinPos(
-            g_rudder_st.offsetFilter_i32);
-      }
-      if (dap_calculationVariables_st.helicopterRudderStatus_b) {
-        g_helicopterRudder_st.offsetCalculate(&dap_calculationVariables_st);
-        dap_calculationVariables_st.updateStepperMinPos(
-            g_helicopterRudder_st.offsetFilter_i32);
-      }
+      // In admittance rudder mode, endstops remain at physical bounds.
+      // Force coupling and centering are handled natively by MoveByAdmittanceStrategy.
 #ifdef ESPNow_debugg_rudder_st
       if (dap_calculationVariables_st.rudderStatus_b ||
           dap_calculationVariables_st.helicopterRudderStatus_b) {
@@ -2236,10 +2227,18 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             10.0f); // constrain the stiffness to a max value for safety
 
         // rudder variables
-        rudderOffsets_st.isRudderMode = false;
-        rudderOffsets_st.centerPosition_01 = 0.0f;
-        rudderOffsets_st.deadzone_01 = 0.0f;
-        rudderOffsets_st.trimOffset_01 = 0.0f;
+        rudderOffsets_st.isRudderMode = true;
+        if (dap_calculationVariables_st.helicopterRudderStatus_b) {
+          rudderOffsets_st.rudderMode_u8 = RUDDER_MODE_HELICOPTER;
+          rudderOffsets_st.centerPosition_01 = 0.50f;
+          rudderOffsets_st.deadzone_01 = 0.0f;
+          rudderOffsets_st.trimOffset_01 = 0.0f;
+        } else {
+          rudderOffsets_st.rudderMode_u8 = RUDDER_MODE_PLANE;
+          rudderOffsets_st.centerPosition_01 = 0.50f;
+          rudderOffsets_st.deadzone_01 = 0.02f;
+          rudderOffsets_st.trimOffset_01 = 0.0f;
+        }
 
         // Pedal control algorithm
         Position_Next_fl32 = MoveByAdmittanceStrategy(
@@ -2280,8 +2279,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             endstopBehavior_st.travelRange_mm_fl32, 0.0f,
             10.0f); // constrain the stiffness to a max value for safety
 
-        // rudder variables
+        // rudder variables (disabled in normal sim racing mode)
         rudderOffsets_st.isRudderMode = false;
+        rudderOffsets_st.rudderMode_u8 = RUDDER_MODE_DISABLED;
         rudderOffsets_st.centerPosition_01 = 0.0f;
         rudderOffsets_st.deadzone_01 = 0.0f;
         rudderOffsets_st.trimOffset_01 = 0.0f;
@@ -2292,6 +2292,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             &dap_config_pedalUpdateTask_st, effectOffsets_st,
             endstopBehavior_st, rudderOffsets_st, &admittanceDebugInfo_st,
             &admittanceStates_st);
+        positionWithoutEffect = (int32_t)Position_Next_fl32;
       }
       // end profiler 4, movement strategy
       profiler_pedalUpdateTask.end(5);
@@ -2303,7 +2304,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       Position_Next_fl32 =
           constrain(Position_Next_fl32, stepper->getHardEndstopMinPosition(),
                     stepper->getHardEndstopMaxPosition());
-      Position_Next = Position_Next_fl32;
+      Position_Next = (int32_t)Position_Next_fl32;
 
       // rudder helper
       Rudder_real_poisiton =
@@ -2318,99 +2319,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           ((float)(dap_calculationVariables_st.currentPedalPosition_u32 -
                    dap_calculationVariables_st.stepperPosMinDefault_i32)) /
           ((float)dap_calculationVariables_st.stepperPosRangeDefault_fl32);
-// Rudder_t initialzing and de initializing
-#ifdef ESPNOW_Enable
-      if (dap_calculationVariables_st.rudderStatus_b) {
-        if (g_rudderInitializing_b) {
-          moveSlowlyToPosition_b = true;
-          /*
-          ActiveSerial->print("current position ratio: ");
-          ActiveSerial->print(dap_calculationVariables_st.currentPedalPositionRatio_fl32);
-          ActiveSerial->print(" ,currentPedalPosition_u32: ");
-          ActiveSerial->print(dap_calculationVariables_st.currentPedalPosition_u32);
-          ActiveSerial->print(" ,stepperPosMinDefault_i32: ");
-          ActiveSerial->print(dap_calculationVariables_st.stepperPosMinDefault_i32);
-          ActiveSerial->print(" ,stepperPosRangeDefault_fl32: ");
-          ActiveSerial->println(dap_calculationVariables_st.stepperPosRangeDefault_fl32);
-          */
-          // ActiveSerial->println("moving to center");
-        }
-        if (g_rudderInitializing_b &&
-            (Rudder_real_poisiton < 52 && Rudder_real_poisiton > 48)) {
-          if (g_rudderInitializedTime_u32 == 0) {
-            g_rudderInitializedTime_u32 = millis();
-          } else {
-            unsigned long Rudder_initialzing_time_Now = millis();
-            // wait 3s for the initializing
-            // ActiveSerial->print("Rudder_t initializing...");
-            // ActiveSerial->println(Rudder_initialzing_time_Now-g_rudderInitializedTime_u32);
-            if ((Rudder_initialzing_time_Now - g_rudderInitializedTime_u32) >
-                Rudder_timeout) {
-              g_rudderInitializing_b = false;
-              moveSlowlyToPosition_b = false;
-              ActiveSerial->println("Rudder_t initialized");
-              dap_calculationVariables_st.isRudderInitialized_b = true;
-              g_rudderInitializedTime_u32 = 0;
-              Buzzer.play_melody_tone(melody_Airship_theme,
-                                      sizeof(melody_Airship_theme) /
-                                          sizeof(melody_Airship_theme[0]),
-                                      melody_Airship_theme_duration);
-            }
-          }
-        }
-      }
-      if (g_rudderDeinitializing_b) {
-        moveSlowlyToPosition_b = true;
-        // ActiveSerial->println("moving to min end stop");
-      }
-      if (g_rudderDeinitializing_b && (Rudder_real_poisiton < 2)) {
-        g_rudderDeinitializing_b = false;
-        moveSlowlyToPosition_b = false;
-        ActiveSerial->println("Rudder_t deinitialized");
-        dap_calculationVariables_st.isRudderInitialized_b = false;
-      }
-      // helicopter rudder initialzied
-      if (dap_calculationVariables_st.helicopterRudderStatus_b) {
-        if (g_heliRudderInitializing_b) {
-          moveSlowlyToPosition_b = true;
-          // ActiveSerial->println("moving to center");
-        }
-        if (g_heliRudderInitializing_b &&
-            (Rudder_real_poisiton < 52 && Rudder_real_poisiton > 48)) {
-          if (g_rudderInitializedTime_u32 == 0) {
-            g_rudderInitializedTime_u32 = millis();
-          } else {
-            unsigned long Rudder_initialzing_time_Now = millis();
-            // wait 3s for the initializing
-            // ActiveSerial->print("Rudder_t initializing...");
-            // ActiveSerial->println(Rudder_initialzing_time_Now-g_rudderInitializedTime_u32);
-            if ((Rudder_initialzing_time_Now - g_rudderInitializedTime_u32) >
-                Rudder_timeout) {
-              g_heliRudderInitializing_b = false;
-              moveSlowlyToPosition_b = false;
-              ActiveSerial->println("HeliRudder initialized");
-              dap_calculationVariables_st.isHelicopterRudderInitialized_b =
-                  true;
-              g_rudderInitializedTime_u32 = 0;
-              Buzzer.play_melody_tone(melodyAirwolfTheme,
-                                      sizeof(melodyAirwolfTheme) /
-                                          sizeof(melodyAirwolfTheme[0]),
-                                      melodyAirwolfThemeDuration);
-            }
-          }
-        }
-      }
-      if (g_heliRudderDeinitializing_b) {
-        moveSlowlyToPosition_b = true;
-        // ActiveSerial->println("moving to min end stop");
-      }
-      if (g_heliRudderDeinitializing_b && (Rudder_real_poisiton < 2)) {
-        g_heliRudderDeinitializing_b = false;
-        moveSlowlyToPosition_b = false;
-        ActiveSerial->println("HeliRudder deinitialized");
-        dap_calculationVariables_st.isHelicopterRudderInitialized_b = false;
-      }
-#endif
+      // Admittance model natively handles centering and transitions at 4000 Hz
 
       // if pedal in min position, recalibrate position --> automatic step loss
       // compensation
@@ -2500,7 +2409,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           }
         } else {
           moveSlowlyToPosition_b = false;
-          stepper->moveSlowlyToPos(Position_Next);
+          stepper->moveSlowlyToPos((int32_t)Position_Next_fl32);
           Position_Last_fl32 = Position_Next_fl32;
         }
       }
@@ -3176,48 +3085,45 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
             }
 
 #ifdef ESPNOW_Enable
-            if (received_action.payloadPedalAction_st.rudderAction_u8 ==
-                1) // Enable Rudder_t
-            {
+            uint8_t rudderAct = received_action.payloadPedalAction_st.rudderAction_u8;
+            if (rudderAct == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_BRAKE || 
+                rudderAct == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_CLUTCH) {
               if (dap_calculationVariables_st.rudderStatus_b == false) {
                 dap_calculationVariables_st.rudderStatus_b = true;
-                ActiveSerial->println("Rudder_t on");
-                g_rudderInitializing_b = true;
-                moveSlowlyToPosition_b = true;
-                // ActiveSerial->print("status:");
-                // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
+                dap_calculationVariables_st.helicopterRudderStatus_b = false;
+                ActiveSerial->println("Rudder Plane on");
               } else {
                 dap_calculationVariables_st.rudderStatus_b = false;
-                ActiveSerial->println("Rudder_t off");
-                g_rudderDeinitializing_b = true;
-                moveSlowlyToPosition_b = true;
-
-                // ActiveSerial->print("status:");
-                // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
+                dap_calculationVariables_st.helicopterRudderStatus_b = false;
+                ActiveSerial->println("Rudder Plane off");
               }
+            } else if (rudderAct == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_BRAKE || 
+                       rudderAct == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_CLUTCH) {
+              if (dap_calculationVariables_st.helicopterRudderStatus_b == false) {
+                dap_calculationVariables_st.helicopterRudderStatus_b = true;
+                dap_calculationVariables_st.rudderStatus_b = false;
+                ActiveSerial->println("Rudder Helicopter on");
+              } else {
+                dap_calculationVariables_st.helicopterRudderStatus_b = false;
+                dap_calculationVariables_st.rudderStatus_b = false;
+                ActiveSerial->println("Rudder Helicopter off");
+              }
+            } else if (rudderAct == (uint8_t)RudderAction::RUDDER_CLEAR_RUDDER_STATUS) {
+              dap_calculationVariables_st.rudderStatus_b = false;
+              dap_calculationVariables_st.helicopterRudderStatus_b = false;
+              dap_calculationVariables_st.rudderBrakeStatus_b = false;
+              ActiveSerial->println("Rudder Status Clear");
             }
-            if (received_action.payloadPedalAction_st.rudderBrakeAction_u8 ==
-                1) {
+
+            if (received_action.payloadPedalAction_st.rudderBrakeAction_u8 == 1) {
               if (dap_calculationVariables_st.rudderBrakeStatus_b == false &&
-                  dap_calculationVariables_st.rudderStatus_b == true) {
+                  (dap_calculationVariables_st.rudderStatus_b == true || dap_calculationVariables_st.helicopterRudderStatus_b == true)) {
                 dap_calculationVariables_st.rudderBrakeStatus_b = true;
-                ActiveSerial->println("Rudder_t brake on");
-                // ActiveSerial->print("status:");
-                // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
+                ActiveSerial->println("Rudder brake on");
               } else {
                 dap_calculationVariables_st.rudderBrakeStatus_b = false;
-                ActiveSerial->println("Rudder_t brake off");
-                // ActiveSerial->print("status:");
-                // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
+                ActiveSerial->println("Rudder brake off");
               }
-            }
-            // clear rudder status
-            if (received_action.payloadPedalAction_st.rudderAction_u8 == 2) {
-              dap_calculationVariables_st.rudderStatus_b = false;
-              dap_calculationVariables_st.rudderBrakeStatus_b = false;
-              ActiveSerial->println("Rudder_t Status Clear");
-              g_rudderDeinitializing_b = true;
-              moveSlowlyToPosition_b = true;
             }
 #endif
           }
@@ -4055,14 +3961,15 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
         // send out rudder packet after rudder initialized
         if (millis() - rudderPacketsUpdateLast > rudderPacketInterval &&
             !noAssignmentStatus && !isEspnowBusy()) {
-          if ((dap_calculationVariables_st.rudderStatus_b ||
-               dap_calculationVariables_st.helicopterRudderStatus_b) &&
-              (!g_rudderInitializing_b && !g_heliRudderInitializing_b)) {
+          if (dap_calculationVariables_st.rudderStatus_b ||
+              dap_calculationVariables_st.helicopterRudderStatus_b) {
             g_dapRudderSending_st.payloadRudderState_st
                 .pedalPositionRatio_fl32 =
                 dap_calculationVariables_st.currentPedalPositionRatio_fl32;
             g_dapRudderSending_st.payloadRudderState_st.pedalPosition_u16 =
                 dap_calculationVariables_st.currentPedalPosition_u32;
+            g_dapRudderSending_st.payloadRudderState_st.pedalForce_N_fl32 =
+                dap_calculationVariables_st.currentPedalForce_N_fl32;
             g_dapRudderSending_st.payloadHeader_st.payloadType_u8 =
                 DAP_PAYLOAD_TYPE_ESPNOW_RUDDER_U8;
             g_dapRudderSending_st.payloadHeader_st.pedalTag_u8 =
@@ -4092,6 +3999,9 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
               dap_calculationVariables_st.syncPedalPositionRatio_fl32 =
                   g_dapRudderReceiving_st.payloadRudderState_st
                       .pedalPositionRatio_fl32;
+              dap_calculationVariables_st.syncPedalForce_N_fl32 =
+                  g_dapRudderReceiving_st.payloadRudderState_st
+                      .pedalForce_N_fl32;
               g_espNowRudderUpdate_b = false;
             }
           }

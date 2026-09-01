@@ -472,10 +472,12 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               ActiveSerial->print("\r\n");
               */
             }
-            if (dap_actions_st.payloadPedalAction_st.rudderAction_u8 == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_BRAKE || dap_actions_st.payloadPedalAction_st.rudderAction_u8 == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_CLUTCH)
+            uint8_t rudderAct = dap_actions_st.payloadPedalAction_st.rudderAction_u8;
+            if (rudderAct == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_BRAKE || 
+                rudderAct == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_CLUTCH)
             {
               g_getRudderAction_b = true;
-              if (dap_actions_st.payloadPedalAction_st.rudderAction_u8 == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_CLUTCH)
+              if (rudderAct == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_CLUTCH)
               {
                 if (dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8 == 2)
                 {
@@ -487,26 +489,25 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               if (dap_calculationVariables_st.rudderStatus_b == false)
               {
                 dap_calculationVariables_st.rudderStatus_b = true;
-                g_rudderInitializing_b = true;
+                dap_calculationVariables_st.helicopterRudderStatus_b = false;
                 // ActiveSerial->println("Rudder_t on");
-                moveSlowlyToPosition_b = true;
                 // ActiveSerial->print("status:");
                 // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
               }
               else
               {
                 dap_calculationVariables_st.rudderStatus_b = false;
+                dap_calculationVariables_st.helicopterRudderStatus_b = false;
                 // ActiveSerial->println("Rudder_t off");
-                g_rudderDeinitializing_b = true;
-                moveSlowlyToPosition_b = true;
                 // ActiveSerial->print("status:");
                 // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
               }
             }
-            if (dap_actions_st.payloadPedalAction_st.rudderAction_u8 == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_BRAKE || dap_actions_st.payloadPedalAction_st.rudderAction_u8 == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_CLUTCH)
+            else if (rudderAct == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_BRAKE || 
+                     rudderAct == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_CLUTCH)
             {
               g_getHeliRudderAction_b = true;
-              if (dap_actions_st.payloadPedalAction_st.rudderAction_u8 == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_CLUTCH)
+              if (rudderAct == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_CLUTCH)
               {
                 if (dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8 == 2)
                 {
@@ -517,26 +518,33 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               if (dap_calculationVariables_st.helicopterRudderStatus_b == false)
               {
                 dap_calculationVariables_st.helicopterRudderStatus_b = true;
-                g_heliRudderInitializing_b = true;
+                dap_calculationVariables_st.rudderStatus_b = false;
                 // ActiveSerial->println("Rudder_t on");
-                moveSlowlyToPosition_b = true;
                 // ActiveSerial->print("status:");
                 // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
               }
               else
               {
                 dap_calculationVariables_st.helicopterRudderStatus_b = false;
+                dap_calculationVariables_st.rudderStatus_b = false;
                 // ActiveSerial->println("Rudder_t off");
-                g_heliRudderDeinitializing_b = true;
-                moveSlowlyToPosition_b = true;
                 // ActiveSerial->print("status:");
                 // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
               }
             }
+            else if (rudderAct == (uint8_t)RudderAction::RUDDER_CLEAR_RUDDER_STATUS)
+            {
+              dap_calculationVariables_st.rudderStatus_b = false;
+              dap_calculationVariables_st.helicopterRudderStatus_b = false;
+              dap_calculationVariables_st.rudderBrakeStatus_b = false;
+              // ActiveSerial->println("Rudder_t Status Clear");
+            }
+
             if (dap_actions_st.payloadPedalAction_st.rudderBrakeAction_u8 == 1)
             {
               g_getRudderAction_b = true;
-              if (dap_calculationVariables_st.rudderBrakeStatus_b == false && dap_calculationVariables_st.rudderStatus_b == true)
+              if (dap_calculationVariables_st.rudderBrakeStatus_b == false && 
+                  (dap_calculationVariables_st.rudderStatus_b == true || dap_calculationVariables_st.helicopterRudderStatus_b == true))
               {
                 dap_calculationVariables_st.rudderBrakeStatus_b = true;
                 // ActiveSerial->println("Rudder_t brake on");
@@ -550,17 +558,6 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
                 // ActiveSerial->print("status:");
                 // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
               }
-            }
-            // clear rudder status
-            if (dap_actions_st.payloadPedalAction_st.rudderAction_u8 == (uint8_t)RudderAction::RUDDER_CLEAR_RUDDER_STATUS)
-            {
-              dap_calculationVariables_st.rudderStatus_b = false;
-              dap_calculationVariables_st.helicopterRudderStatus_b = false;
-              dap_calculationVariables_st.rudderBrakeStatus_b = false;
-              // ActiveSerial->println("Rudder_t Status Clear");
-              g_rudderDeinitializing_b = true;
-              g_heliRudderDeinitializing_b = true;
-              moveSlowlyToPosition_b = true;
             }
           }
         }
