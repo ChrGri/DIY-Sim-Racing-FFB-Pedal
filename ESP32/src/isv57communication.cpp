@@ -109,6 +109,9 @@ void Isv57Communication::setupServoStateReading() {
   // can write, which values we want to obtain cyclicly These registers can be
   // obtained by sending e.g. the command: 0x63, 0x03, 0x0191, target_sate, CRC
   // tell the modbus slave, which registers will be read cyclicly
+
+  // Channel Selectors (Slot Pointers): 0x0191, 0x0192, 0x0193, 0x0194
+  // Real-time Data Output Registers: 0x01F3, 0x01F4, 0x01F5, 0x01F6 (Data 1–4)
   modbus.writeAndVerifyDeviceParameter(slaveId, 0x0191,
                                        reg_add_position_given_p);
   modbus.writeAndVerifyDeviceParameter(

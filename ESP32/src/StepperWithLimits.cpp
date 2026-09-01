@@ -46,10 +46,6 @@ static SemaphoreHandle_t getReadServoValuesSemaphore() {
   static SemaphoreHandle_t sem = xSemaphoreCreateMutex();
   return sem;
 }
-static SemaphoreHandle_t getCorrectedServoPosSemaphore() {
-  static SemaphoreHandle_t sem = xSemaphoreCreateMutex();
-  return sem;
-}
 
 // --- Global Parameters ---
 static float s_servoBusVoltageParameterized_fl32 = SERVO_MAX_VOLTAGE_IN_V_36V;
@@ -276,10 +272,10 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st) {
       // Check if voltage falls into expected 36V or 48V power supply brackets
       servoRadingsTrustworthy_36VRange_b =
           (servosBusVoltageInVolt_fl32 >= 16.0f) &&
-          (servosBusVoltageInVolt_fl32 < SERVO_MAX_VOLTAGE_IN_V_36V);
+          (servosBusVoltageInVolt_fl32 <= 40.0f);
       servoRadingsTrustworthy_48VRange_b =
-          (servosBusVoltageInVolt_fl32 >= 16.0f) &&
-          (servosBusVoltageInVolt_fl32 < SERVO_MAX_VOLTAGE_IN_V_48V);
+          (servosBusVoltageInVolt_fl32 > 40.0f) &&
+          (servosBusVoltageInVolt_fl32 <= 55.0f);
 
       if (servoRadingsTrustworthy_36VRange_b) {
         s_servoBusVoltageParameterized_fl32 = SERVO_MAX_VOLTAGE_IN_V_36V;
@@ -337,10 +333,25 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st) {
     _stepper->keepRunningBackward(endstopApproachingSpeed_fl32);
     _stepper->setSpeedLive(endstopApproachingSpeed_fl32);
 
+    uint32_t homingStartTime_u32 = millis();
+    int32_t homingStartPos_i32 = _stepper->getCurrentPosition();
+    float maxHomingSteps_fl32 = max(
+        (float)dap_config_st.payloadPedalConfig_st.lengthPedalTravel_i16 /
+            spindlePitch * (float)stepsPerMotorRev_u32 * 1.5f,
+        50000.0f);
+
     while ((!endPosDetected) && (getLifelineSignal())) {
       delay(1);
       // esp_task_wdt_reset();
       endPosDetected = abs(getServosCurrent()) > endstopDetectionThreshold_u8;
+      // Safety guard: abort if swept too far backward or homing timed out (10s)
+      if (abs(_stepper->getCurrentPosition() - homingStartPos_i32) >
+              (int32_t)maxHomingSteps_fl32 ||
+          (millis() - homingStartTime_u32 > 10000)) {
+        ActiveSerial->println(
+            "Min endstop search reached max distance / timeout!");
+        endPosDetected = true;
+      }
     }
     _stepper->forceStop();
 
@@ -894,9 +905,13 @@ void IRAM_ATTR StepperWithLimits::calculateTrackingErrorChange() {
 
     int32_t currentTrackingError_i32 = getServosPosError();
     // Calculate change in steps per second
-    trackingErrorChangeInStepsPerS_fl32 =
-        (currentTrackingError_i32 - lastTrackingError_i32) /
-        (timeStampDiffInMs_fl32 * 1e-3f);
+    if (timeStampDiffInMs_fl32 > 0.0f) {
+      trackingErrorChangeInStepsPerS_fl32 =
+          (currentTrackingError_i32 - lastTrackingError_i32) /
+          (timeStampDiffInMs_fl32 * 1e-3f);
+    } else {
+      trackingErrorChangeInStepsPerS_fl32 = 0.0f;
+    }
     lastTrackingError_i32 = currentTrackingError_i32;
   } else {
     // Fallback if data is missing or stale
@@ -912,14 +927,11 @@ void IRAM_ATTR StepperWithLimits::calculateTrackingErrorChange() {
 void IRAM_ATTR StepperWithLimits::performSafetyChecks() {
   int32_t espPos_i32 = getCurrentPosition();
   int32_t servoPosCorrected_i32 = getServosInternalPositionCorrected();
-  static uint32_t servoLastCycleCounter_u32 = 0;
-  static uint32_t servoLastCycleCounterWhenPositionWasCorrected_u32 = 0;
-
   bool cycleCounterAdvanced_b = false;
   uint32_t servosCycleCount_u32 =
       getServoCycleCounter(); // Ensure we have the latest data for current and
                               // position before making safety decisions
-  if (servoLastCycleCounter_u32 != servosCycleCount_u32) {
+  if (servoLastSafetyCycleCounter_u32 != servosCycleCount_u32) {
     cycleCounterAdvanced_b = true;
   }
 
@@ -940,7 +952,7 @@ void IRAM_ATTR StepperWithLimits::performSafetyChecks() {
   bool cond_cyclesSinceServoPosCorrected =
       cyclesSinceCorrection_u32 >= CYCLES_SINCE_SERVO_POS_CORREECTED;
 
-  servoLastCycleCounter_u32 = servosCycleCount_u32;
+  servoLastSafetyCycleCounter_u32 = servosCycleCount_u32;
 
   bool cond_stepperIsAtMinPos = isAtMinPos();
   bool cond_crash_detected = false;
