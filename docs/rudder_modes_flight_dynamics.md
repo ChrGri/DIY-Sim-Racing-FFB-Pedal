@@ -497,7 +497,63 @@ typedef struct __attribute__((packed)) {
 
 ---
 
-## 9. Summary & Next Steps for Implementation
+## 9. Flight Rudder User Interface (GUI) Design Concept
+
+To ensure intuitive configuration for both fixed-wing aircraft and helicopters, the Rudder UI in SimHub must adapt dynamically based on the selected flight operation mode.
+
+### 9.1 Mode-Adaptive Interface Layout
+
+```text
++-----------------------------------------------------------------------------------------------+
+|  RUDDER FFB CONTROL                                                                           |
++----------------------+------------------------------------------------------------------------+
+| [ SYSTEM STATUS ]    | [ FLIGHT RUDDER FORCE GRAPH ] (Nur im Airplane-Modus aktiv)            |
+| Left Pedal:  [OK]    |   Force                                                                |
+| Right Pedal: [OK]    |   10kg|                 / \                                            |
+| Bridge:      [OK]    |       |                /   \                                           |
+|                      |       |               /     \                                          |
+| [ OPERATION MODE ]   |    0kg+--------------+---+---+----------------                          |
+| (o) Airplane         |      -50% (Left)         0% (Center)       +50% (Right)                |
+| ( ) Helicopter       |                                                                        |
+|                      +------------------------------------------------------------------------+
+|                      | [ FLIGHT DYNAMICS & SETTINGS ]                                         |
+| [ FFB ACTION ]       |                                                                        |
+| +------------------+ | Airplane Modus:                                                        |
+| |    [ ENABLE ]    | | * Aerodynamic Centering Force: [====|=========] 10.0 kg                |
+| +------------------+ | * Centering Profile:           [ Linear ] [ Progressive ] [ S-Curve ]  |
+|                      | * Centering Deadzone:          [==|===========] 0.0 %                  |
+| [ TRAVEL LIMITS ]    |                                                                        |
+| Min: [ 5% ]          | Helicopter Modus (Zentrierfeder inaktiv / Free-Floating):              |
+| Max: [ 95% ]         | * Hydraulic Viscous Damping:   [======|=======] 45 %                   |
+|                      | * Mechanical Friction:         [===|==========] 3.0 N                  |
+|                      |                                                                        |
+|                      | Gemeinsame Parameter:                                                  |
+|                      | * Bilateral Push-Pull Sync:    [=========|====] 80 N                   |
+|                      | * Rudder Trim Offset:          [<----|----->  ] 0.0 %                  |
++----------------------+------------------------------------------------------------------------+
+```
+
+### 9.2 Key GUI Principles by Operational Mode
+
+1. **Airplane (Fixed-Wing) Mode**:
+   * **Bipolar Symmetric Force Graph**: Displays centering force symmetrically from Neutral ($0\%$) to Left ($-50\%$) and Right ($+50\%$).
+   * **Aerodynamic Centering Force**: Slider ($0\text{--}25\text{ kg}$) setting maximum centering resistance at full deflection.
+   * **Centering Profile**: Switch between **Linear** (standard flight), **Progressive** (high-speed/jet feel), and **S-Curve**.
+   * **Trim Offset**: Physical trim slider shifting the zero-force aerodynamic neutral point.
+
+2. **Helicopter (Anti-Torque) Mode**:
+   * **Free-Floating Status Badge**: Centering force curve is replaced by an indicator showing that the return spring is inactive ($0\text{ N}$).
+   * **Hydraulic Viscous Damping**: Controls smooth pedal resistance without spring return.
+   * **Mechanical Friction (Coulomb Friction)**: Adjusts hold-in-place clamping friction so pedals do not move under their own weight.
+   * **Trim Offset / Hover Bias**: Sets the continuous offset required for anti-torque hover.
+
+3. **Shared Bilateral Kinematics**:
+   * **Bilateral Push-Pull Sync**: Defines the mechanical coupling stiffness ($x_2 = 1.0 - x_1$) between both pedals.
+   * **Travel Limits**: Calibrated soft endstops ($5\%\text{--}95\%$) ensuring identical full physical strokes on both pedals.
+
+---
+
+## 10. Summary & Next Steps for Implementation
 
 1. **Dual-Pedal Kinematic Coupling**: Use PR #99's force-sync foundation to establish the complete anti-symmetric admittance model ($x_R = 1.0 - x_L$ with $K_{\text{link}}$ opposing force).
 2. **Flight Mode Dispatcher**: Implement a mode-selectable admittance stage in `StepperMovementStrategy.h` branching between Plane Reversible (Q-feel), Plane FBW (spring+breakout), Heli Friction (non-centering), and Heli Force Trim (FTR-anchored).
