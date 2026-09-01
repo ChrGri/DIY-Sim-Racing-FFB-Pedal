@@ -509,11 +509,11 @@ To ensure intuitive configuration for both fixed-wing aircraft and helicopters, 
 +----------------------+------------------------------------------------------------------------+
 | [ SYSTEM STATUS ]    | [ FLIGHT RUDDER FORCE GRAPH ] (Nur im Airplane-Modus aktiv)            |
 | Left Pedal:  [OK]    |   Force                                                                |
-| Right Pedal: [OK]    |   10kg|                 / \                                            |
-| Bridge:      [OK]    |       |                /   \                                           |
-|                      |       |               /     \                                          |
-| [ OPERATION MODE ]   |    0kg+--------------+---+---+----------------                          |
-| (o) Airplane         |      -50% (Left)         0% (Center)       +50% (Right)                |
+| Right Pedal: [OK]    |   10kg| \                                 /                            |
+| Bridge:      [OK]    |       |  \                               /                             |
+|                      |       |   \                             /                              |
+| [ OPERATION MODE ]   |    0kg+----+-------------+-------------+----                            |
+| (o) Airplane         |          -50% (Left)   0% (Center)   +50% (Right)                      |
 | ( ) Helicopter       |                                                                        |
 |                      +------------------------------------------------------------------------+
 |                      | [ FLIGHT DYNAMICS & SETTINGS ]                                         |
