@@ -2236,7 +2236,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             10.0f); // constrain the stiffness to a max value for safety
 
         // rudder variables
-        rudderOffsets_st.isRudderMode = false;
+        rudderOffsets_st.isRudderMode = true;
         rudderOffsets_st.centerPosition_01 = 0.0f;
         rudderOffsets_st.deadzone_01 = 0.0f;
         rudderOffsets_st.trimOffset_01 = 0.0f;
@@ -4063,6 +4063,8 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
                 dap_calculationVariables_st.currentPedalPositionRatio_fl32;
             g_dapRudderSending_st.payloadRudderState_st.pedalPosition_u16 =
                 dap_calculationVariables_st.currentPedalPosition_u32;
+            g_dapRudderSending_st.payloadRudderState_st.pedalForce_N_fl32 = 
+                dap_calculationVariables_st.currentPedalForce_N_fl32;
             g_dapRudderSending_st.payloadHeader_st.payloadType_u8 =
                 DAP_PAYLOAD_TYPE_ESPNOW_RUDDER_U8;
             g_dapRudderSending_st.payloadHeader_st.pedalTag_u8 =
@@ -4092,6 +4094,9 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
               dap_calculationVariables_st.syncPedalPositionRatio_fl32 =
                   g_dapRudderReceiving_st.payloadRudderState_st
                       .pedalPositionRatio_fl32;
+              dap_calculationVariables_st.syncPedalForce_N_fl32 =
+                  g_dapRudderReceiving_st.payloadRudderState_st
+                      .pedalForce_N_fl32;
               g_espNowRudderUpdate_b = false;
             }
           }
