@@ -612,13 +612,23 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // --- 2. DYNAMIC RUDDER SETPOINT & STABILIZED BILATERAL COUPLING ---
   static float s_activeCenterPos_01 = 0.0f;
   static float s_filteredSyncForce_N = 0.0f;
+  static bool s_wasRudderMode = false;
+
+  // On transition out of rudder mode, reset model states cleanly for normal sim racing mode
+  if (s_wasRudderMode && !rudderOffsets_st.isRudderMode) {
+    g_vModelPos_01 = 0.0f;
+    g_vModelVel_mps = 0.0f;
+    s_activeCenterPos_01 = 0.0f;
+    s_filteredSyncForce_N = 0.0f;
+  }
+  s_wasRudderMode = rudderOffsets_st.isRudderMode;
 
   float targetCenter_01 = 0.0f;
   if (rudderOffsets_st.isRudderMode) {
     targetCenter_01 = constrain(rudderOffsets_st.centerPosition_01 + rudderOffsets_st.trimOffset_01, 0.05f, 0.95f);
   }
 
-  // Smooth slew towards target center to prevent sudden snaps on enable/disable (0.4/sec = 1.25s transition)
+  // Smooth slew towards target center when enabling rudder (0.4/sec = 1.25s transition)
   const float CENTER_SLEW_RATE = 0.4f;
   float maxCenterStep = CENTER_SLEW_RATE * dt_s;
   if (s_activeCenterPos_01 < targetCenter_01) {
@@ -700,8 +710,6 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float localStiffness_kg_step = 0.0f;
   float localStiffness_N_m = 1.0f;
 
-  bool isTransitioningToRest = (!rudderOffsets_st.isRudderMode && s_activeCenterPos_01 > 0.005f);
-
   if (rudderOffsets_st.isRudderMode && rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) {
     // Mode 2: Helicopter Anti-Torque (Pure Friction / Non-Centering)
     // Individual pedal curves are completely ignored.
@@ -709,58 +717,19 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
     localStiffness_kg_step = 0.0f;
     localStiffness_N_m = max(0.3f * avgStiffness_N_m, 10.0f);
   } else if (rudderOffsets_st.isRudderMode && rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_PLANE) {
-    // Mode 1: Fixed-Wing Airplane (Symmetric Linear Aerodynamic Centering Spring)
+    // Mode 1: Fixed-Wing Airplane (Symmetric Continuous Linear Aerodynamic Centering Spring)
     // Individual Brake/Throttle curves are completely ignored!
     float deltaPos = g_vModelPos_01 - s_activeCenterPos_01;
-    float deadzone = 0.02f;
-
-    // Symmetric 10kg rudder centering force on BOTH pedals
     const float RUDDER_MAX_FORCE_KG = 10.0f;
 
-    if (fabsf(deltaPos) <= deadzone) {
-      springForce_N = 0.0f;
-      localStiffness_kg_step = 0.0f;
-      localStiffness_N_m = max(0.3f * avgStiffness_N_m, 10.0f);
-    } else if (deltaPos > deadzone) {
-      // Forward deflection from active center: linear spring opposing forward motion
-      float u = constrain((deltaPos - deadzone) / max(1.0f - s_activeCenterPos_01 - deadzone, 0.01f), 0.0f, 1.0f);
-      float springForceRaw_kg = RUDDER_MAX_FORCE_KG * u;
-      springForce_N = springForceRaw_kg * GRAVITY_N_KG;
+    // Linear continuous aerodynamic centering force through neutral (zero notch / zero deadzone jump)
+    float u = deltaPos / max(0.5f, 0.01f);
+    u = constrain(u, -1.0f, 1.0f);
+    springForce_N = (RUDDER_MAX_FORCE_KG * u) * GRAVITY_N_KG;
 
-      float gradStiffness_N_m = (RUDDER_MAX_FORCE_KG * GRAVITY_N_KG) / max(0.5f * totalTravel_m, 0.001f);
-      localStiffness_N_m = max(gradStiffness_N_m, 10.0f);
-      localStiffness_kg_step = (RUDDER_MAX_FORCE_KG / max(0.5f * travelSteps_cnt, 1.0f));
-    } else {
-      // Aft deflection from active center: linear spring pulling forward toward center
-      float u = constrain((-deltaPos - deadzone) / max(s_activeCenterPos_01 - deadzone, 0.01f), 0.0f, 1.0f);
-      float springForceRaw_kg = RUDDER_MAX_FORCE_KG * u;
-      springForce_N = -1.0f * springForceRaw_kg * GRAVITY_N_KG;
-
-      float gradStiffness_N_m = (RUDDER_MAX_FORCE_KG * GRAVITY_N_KG) / max(0.5f * totalTravel_m, 0.001f);
-      localStiffness_N_m = max(gradStiffness_N_m, 10.0f);
-      localStiffness_kg_step = (RUDDER_MAX_FORCE_KG / max(0.5f * travelSteps_cnt, 1.0f));
-    }
-  } else if (isTransitioningToRest) {
-    // Smooth slew back to rest position (0.0) when disabling rudder
-    float deltaPos = g_vModelPos_01 - s_activeCenterPos_01;
-    float deadzone = 0.015f;
-    float returnForce_kg = 5.0f; // Gentle 5kg return force during transition
-
-    if (fabsf(deltaPos) <= deadzone) {
-      springForce_N = 0.0f;
-      localStiffness_kg_step = 0.0f;
-      localStiffness_N_m = max(0.3f * avgStiffness_N_m, 10.0f);
-    } else if (deltaPos > deadzone) {
-      float u = constrain((deltaPos - deadzone) / max(1.0f - s_activeCenterPos_01 - deadzone, 0.01f), 0.0f, 1.0f);
-      springForce_N = (returnForce_kg * u) * GRAVITY_N_KG;
-      localStiffness_N_m = 50.0f;
-      localStiffness_kg_step = 0.001f;
-    } else {
-      float u = constrain((-deltaPos - deadzone) / max(s_activeCenterPos_01 - deadzone, 0.01f), 0.0f, 1.0f);
-      springForce_N = -1.0f * (returnForce_kg * u) * GRAVITY_N_KG;
-      localStiffness_N_m = 50.0f;
-      localStiffness_kg_step = 0.001f;
-    }
+    float gradStiffness_N_m = (RUDDER_MAX_FORCE_KG * GRAVITY_N_KG) / max(0.5f * totalTravel_m, 0.001f);
+    localStiffness_N_m = max(gradStiffness_N_m, 10.0f);
+    localStiffness_kg_step = (RUDDER_MAX_FORCE_KG / max(0.5f * travelSteps_cnt, 1.0f));
   } else {
     // Standard Sim Racing Pedal (Throttle / Brake / Clutch)
     float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, displacement_01);
