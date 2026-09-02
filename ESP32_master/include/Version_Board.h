@@ -2,7 +2,7 @@
 #pragma once
 #include "Arduino.h"
 //const char *BRIDGE_FIRMWARE_VERSION = "0.90.32";
-#define BRIDGE_FIRMWARE_VERSION "26.36.02"
+#define BRIDGE_FIRMWARE_VERSION "26.36.03"
 #if PCB_VERSION==5
 	#define BRIDGE_BOARD "Bridge_FANATEC"
 #endif

@@ -875,6 +875,40 @@ namespace DiyFfbPedal
             Plugin.SendBridgeAction(tmp_2);
 
         }
+        private void RudderMode_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            try
+            {
+                uint mode = 0;
+                if (combo_rudderMode != null)
+                {
+                    if (combo_rudderMode.SelectedIndex >= 0)
+                        mode = (uint)combo_rudderMode.SelectedIndex;
+                    else if (combo_rudderMode.SelectedValue != null)
+                        mode = Convert.ToUInt32(combo_rudderMode.SelectedValue);
+                }
+                if (Plugin?.Settings != null)
+                {
+                    Plugin.Settings.rudderMode = mode;
+                }
+                if (CurveRudderForce_Tab != null)
+                {
+                    if (Plugin?.Settings != null) CurveRudderForce_Tab.Settings = Plugin.Settings;
+                    CurveRudderForce_Tab.updateUI();
+                }
+                if (RudderDynamics_Tab != null)
+                {
+                    if (Plugin?.Settings != null) RudderDynamics_Tab.Settings = Plugin.Settings;
+                    RudderDynamics_Tab.updateUI();
+                }
+                if (Plugin?.Rudder_status == true)
+                {
+                    RudderParameterLiveUpdate();
+                }
+            }
+            catch { }
+        }
+
         unsafe private void btn_rudder_initialize_Click(object sender, RoutedEventArgs e)
         {
             
@@ -902,16 +936,16 @@ namespace DiyFfbPedal
                     {
 
 
-                        CurveRudderForce_Tab.text_rudder_log.Clear();
-                        CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
+                        text_rudder_log.Clear();
+                        text_rudder_log.Visibility = Visibility.Visible;
                         Plugin.Rudder_enable_flag = true;
                         //Plugin.Rudder_status = false;
-                        CurveRudderForce_Tab.text_rudder_log.Text += "Disabling Rudder\n";
+                        text_rudder_log.Text += "Disabling Rudder\n";
                         btn_rudder_initialize.Content = "Enable";
 
                         DelayCall(300, () =>
                         {
-                            CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
+                            text_rudder_log.Visibility = Visibility.Visible;
 
                             DAP_config_st tmp = dap_config_st[Plugin.Rudder_Pedal_idx[0]];
                             tmp.payloadHeader_.storeToEeprom = 0;
@@ -925,12 +959,12 @@ namespace DiyFfbPedal
                             Plugin.SendConfigWithoutSaveToEEPROM(tmp, Plugin.Rudder_Pedal_idx[0]);
                             //Sendconfig(Plugin.Rudder_Pedal_idx[0]);
 
-                            CurveRudderForce_Tab.text_rudder_log.Text += "Send Original config back to" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[0]] + "\n";
+                            text_rudder_log.Text += "Send Original config back to" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[0]] + "\n";
 
                         });
                         DelayCall(600, () =>
                         {
-                            CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
+                            text_rudder_log.Visibility = Visibility.Visible;
                             DAP_config_st tmp = dap_config_st[Plugin.Rudder_Pedal_idx[1]];
                             tmp.payloadHeader_.storeToEeprom = 0;
                             DAP_config_st* v = &tmp;
@@ -943,12 +977,12 @@ namespace DiyFfbPedal
                             Plugin.SendConfigWithoutSaveToEEPROM(tmp, Plugin.Rudder_Pedal_idx[1]);
                             //Sendconfig(Plugin.Rudder_Pedal_idx[1]);
 
-                            CurveRudderForce_Tab.text_rudder_log.Text += "Send Original config back to" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[1]] + "\n";
+                            text_rudder_log.Text += "Send Original config back to" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[1]] + "\n";
 
                         });
                         DelayCall(1600, () =>
                         {
-                            CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Hidden;
+                            text_rudder_log.Text += "Rudder Disabled.\n";
                         });
 
                     }
@@ -963,18 +997,18 @@ namespace DiyFfbPedal
                             System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                         }
 
-                        CurveRudderForce_Tab.text_rudder_log.Clear();
-                        CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
+                        text_rudder_log.Clear();
+                        text_rudder_log.Visibility = Visibility.Visible;
                         DelayCall(100, () =>
                         {
-                            CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
-                            CurveRudderForce_Tab.text_rudder_log.Text += "Initializing Rudder\n";
+                            text_rudder_log.Visibility = Visibility.Visible;
+                            text_rudder_log.Text += "Initializing Rudder\n";
                         });
                         Rudder_Initialized();
                         DelayCall(1300, () =>
                         {
-                            CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
-                            CurveRudderForce_Tab.text_rudder_log.Text += "Rudder initialized\n";
+                            text_rudder_log.Visibility = Visibility.Visible;
+                            text_rudder_log.Text += "Rudder initialized\n";
                             Plugin.Rudder_enable_flag = true;
                             //Plugin.Rudder_status = true;
                             btn_rudder_initialize.Content = "Disable";

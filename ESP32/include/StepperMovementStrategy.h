@@ -553,9 +553,9 @@ static inline IRAM_ATTR_FLAG void ApplyRegenPowerClamping(
  * @param config_st Pointer to the pedal's configuration structure.
  * @param effectOffsets_st High-frequency offsets (ABS vibrations, etc.).
  * @param endstopBehavior_st Configuration for the soft endstop feel.
- * @param rudderOffsets_st Rudder_t specific offset parameters.
  * @param debugState_st Optional pointer to a struct to output internal variables for debugging. Default is nullptr.
- * @return int32_t The next absolute target position in steps for the stepper motor driver.
+ * @param admittanceStates_pst Optional pointer to state tracking struct.
+ * @return float The next absolute target position in steps for the stepper motor driver.
  */
 float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float loadCellReadingKg_fl32, 
@@ -565,29 +565,9 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   DapConfig_t* config_st, 
   EffectOffsets_t effectOffsets_st, 
   EndstopBehavior_t endstopBehavior_st, 
-  RudderOffsets_t rudderOffsets_st,
   AdmittanceDebugState_t* debugState_st = nullptr,
   AdmittanceStates_t *admittanceStates_pst = nullptr)
 {
-
-  
-
-  // Time step for integration (seconds), but use actual loop time for better performance and stability.
-  // But make sure to protect against wrapsound of the timer by using uint64_t and checking for large dt values.
-  /*uint64_t currentTimeUs = esp_timer_get_time();
-  static uint64_t lastTimeUs = 0;
-  if (lastTimeUs == 0) {
-    lastTimeUs = currentTimeUs;
-  }
-  float dt_s = ((float)currentTimeUs - (float)lastTimeUs) * 1e-6f;
-  if (dt_s > 1.0f || dt_s <= 0.0f) {
-    // If the time step is too large (e.g., due to timer wraparound or long loop delay), reset it to a default value to prevent instability.
-    dt_s = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
-  }
-  lastTimeUs = currentTimeUs;
-  */
-
-
   // --- 1. PHYSICAL PARAMETERS & CONFIGURATION ---
   // Time step for integration (seconds). We use a constant interval for improved numerical stability.
   float dt_s = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
@@ -601,68 +581,8 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   virtualMass_kg = constrain(virtualMass_kg, 0.2f, 5.0f);
   dampingRatio_zeta = constrain(dampingRatio_zeta, 0.5f, 5.0f); 
 
-  // In rudder mode, standardize virtual mass and damping for a perfectly balanced rudder pair
-  if (rudderOffsets_st.isRudderMode) {
-    virtualMass_kg = 1.0f;
-    dampingRatio_zeta = 1.4f;
-  }
-
-
-
-  // --- 2. DYNAMIC RUDDER SETPOINT & STABILIZED BILATERAL COUPLING ---
-  static float s_activeCenterPos_01 = 0.0f;
-  static float s_filteredSyncForce_N = 0.0f;
-  static bool s_wasRudderMode = false;
-
-  // On transition out of rudder mode, reset model states cleanly for normal sim racing mode
-  if (s_wasRudderMode && !rudderOffsets_st.isRudderMode) {
-    g_vModelPos_01 = 0.0f;
-    g_vModelVel_mps = 0.0f;
-    s_activeCenterPos_01 = 0.0f;
-    s_filteredSyncForce_N = 0.0f;
-  }
-  s_wasRudderMode = rudderOffsets_st.isRudderMode;
-
-  float targetCenter_01 = 0.0f;
-  if (rudderOffsets_st.isRudderMode) {
-    targetCenter_01 = constrain(rudderOffsets_st.centerPosition_01 + rudderOffsets_st.trimOffset_01, 0.05f, 0.95f);
-  }
-
-  // Smooth slew towards target center when enabling rudder (0.4/sec = 1.25s transition)
-  const float CENTER_SLEW_RATE = 0.4f;
-  float maxCenterStep = CENTER_SLEW_RATE * dt_s;
-  if (s_activeCenterPos_01 < targetCenter_01) {
-    s_activeCenterPos_01 = min(s_activeCenterPos_01 + maxCenterStep, targetCenter_01);
-  } else if (s_activeCenterPos_01 > targetCenter_01) {
-    s_activeCenterPos_01 = max(s_activeCenterPos_01 - maxCenterStep, targetCenter_01);
-  }
-
-  // Low-pass filter remote sync force (cutoff ~8 Hz) with 1.5 N deadband
-  float rawSyncForce_N = calc_st->syncPedalForce_N_fl32;
-  float cleanSyncForce_N = 0.0f;
-  if (fabsf(rawSyncForce_N) > 1.5f) {
-    cleanSyncForce_N = (rawSyncForce_N > 0.0f) ? (rawSyncForce_N - 1.5f) : (rawSyncForce_N + 1.5f);
-  }
-  const float SYNC_FORCE_TAU = 0.035f; // 35ms filter time constant
-  float sync_alpha = 1.0f - expf(-dt_s / SYNC_FORCE_TAU);
-  s_filteredSyncForce_N = (sync_alpha * cleanSyncForce_N) + ((1.0f - sync_alpha) * s_filteredSyncForce_N);
-
-  float rudderPedalOpposingForce_N = 0.0f;
-  float syncTrackingForce_N = 0.0f;
-  if (rudderOffsets_st.isRudderMode) {
-    // Opposing force from remote pedal (push-pull opposition)
-    rudderPedalOpposingForce_N = -1.0f * s_filteredSyncForce_N;
-
-    // Kinematic position coupling: passive pedal follows inverse of remote pedal in real time
-    if (calc_st->syncPedalPositionRatio_fl32 >= 0.0f && calc_st->syncPedalPositionRatio_fl32 <= 1.0f) {
-      float syncTargetPos_01 = 1.0f - calc_st->syncPedalPositionRatio_fl32;
-      float posError = syncTargetPos_01 - g_vModelPos_01;
-      syncTrackingForce_N = 80.0f * posError;
-    }
-  }
-
   // =========================================================
-  // --- 4. PHYSICAL GEOMETRY (FORWARD KINEMATICS & TASK SPACE) ---
+  // --- 2. PHYSICAL GEOMETRY (FORWARD KINEMATICS & TASK SPACE) ---
   // =========================================================
   // We transform the Actuator Space (Linear Sled Position) into Task Space 
   // (Rotational Pedal Arc Length). This allows the entire Admittance Model 
@@ -702,46 +622,20 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   }
   actualPosFraction_01 = constrain(actualPosFraction_01, 0.0f, 1.0f);
 
-
-  // --- 5. ELASTOMER PHYSICS & SPRING REACTION (Hunt-Crossley Model) ---
+  // --- 3. ELASTOMER PHYSICS & SPRING REACTION (Hunt-Crossley Model) ---
   float displacement_01 = constrain(g_vModelPos_01, 0.0f, 1.0f);
   float avgStiffness_N_m = (calc_st->forceRange_fl32 * GRAVITY_N_KG) / max(totalTravel_m, 0.0001f);
-  float springForce_N = 0.0f;
-  float localStiffness_kg_step = 0.0f;
-  float localStiffness_N_m = 1.0f;
 
-  if (rudderOffsets_st.isRudderMode && rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) {
-    // Mode 2: Helicopter Anti-Torque (Pure Friction / Non-Centering)
-    // Individual pedal curves are completely ignored.
-    springForce_N = 0.0f;
-    localStiffness_kg_step = 0.0f;
-    localStiffness_N_m = max(0.3f * avgStiffness_N_m, 10.0f);
-  } else if (rudderOffsets_st.isRudderMode && rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_PLANE) {
-    // Mode 1: Fixed-Wing Airplane (Symmetric Continuous Linear Aerodynamic Centering Spring)
-    // Individual Brake/Throttle curves are completely ignored!
-    float deltaPos = g_vModelPos_01 - s_activeCenterPos_01;
-    const float RUDDER_MAX_FORCE_KG = 10.0f;
+  // Standard Sim Racing Pedal (Throttle / Brake / Clutch)
+  float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, displacement_01);
+  float springForce_N = max(springForceRaw_kg * GRAVITY_N_KG, 0.0f);
 
-    // Linear continuous aerodynamic centering force through neutral (zero notch / zero deadzone jump)
-    float u = deltaPos / max(0.5f, 0.01f);
-    u = constrain(u, -1.0f, 1.0f);
-    springForce_N = (RUDDER_MAX_FORCE_KG * u) * GRAVITY_N_KG;
-
-    float gradStiffness_N_m = (RUDDER_MAX_FORCE_KG * GRAVITY_N_KG) / max(0.5f * totalTravel_m, 0.001f);
-    localStiffness_N_m = max(gradStiffness_N_m, 10.0f);
-    localStiffness_kg_step = (RUDDER_MAX_FORCE_KG / max(0.5f * travelSteps_cnt, 1.0f));
-  } else {
-    // Standard Sim Racing Pedal (Throttle / Brake / Clutch)
-    float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, displacement_01);
-    springForce_N = max(springForceRaw_kg * GRAVITY_N_KG, 0.0f);
-
-    localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, displacement_01, false);
-    float gradStiffness_N_m = fabsf(localStiffness_kg_step) * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG;
-    localStiffness_N_m = max(gradStiffness_N_m, max(0.3f * avgStiffness_N_m, 1.0f));
-  }
+  float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, displacement_01, false);
+  float gradStiffness_N_m = fabsf(localStiffness_kg_step) * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG;
+  float localStiffness_N_m = max(gradStiffness_N_m, max(0.3f * avgStiffness_N_m, 1.0f));
 
   // =========================================================
-  // 3. VISCOELASTIC ELASTOMER HYSTERESIS (Hunt-Crossley model)
+  // --- 4. VISCOELASTIC ELASTOMER HYSTERESIS (Hunt-Crossley model) ---
   // =========================================================
   float progressionRatio = (float)constrain( config_st->payloadPedalConfig_st.dampingProgression_u8, 0, 100) ;
   float progression_01 = progressionRatio * progressionRatio; 
@@ -750,14 +644,8 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float ELASTOMER_VISCOSITY_COEFFICIENT = progression_01 * (MAX_ELASTOMER_MULTIPLIER * localCriticalDamping_Ns_m);
   float elastomerDamping_Ns_m = ELASTOMER_VISCOSITY_COEFFICIENT * displacement_01;
 
-  // In rudder mode, disable elastomer rubber progression for clean flight control feel
-  if (rudderOffsets_st.isRudderMode) {
-    elastomerDamping_Ns_m = 0.0f;
-  }
-  // =========================================================
-
-  // --- 6. EFFECT OFFSETS & TOTAL FORCE ---
-  // NEW: Feedforward Control (Inverse Dynamics)
+  // --- 5. EFFECT OFFSETS & TOTAL FORCE ---
+  // Feedforward Control (Inverse Dynamics)
   // We derive velocity and acceleration internally from the effect step offset
   // using cascaded EMA filters to avoid numerical explosions.
   
@@ -816,9 +704,6 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   calc_st->currentPedalForce_N_fl32 = s_filteredPilotForce_N;
 
   float externalForce_N = (loadCellReadingKg_fl32 * GRAVITY_N_KG) + (effectOffsets_st.forceOffset_kg_fl32 * GRAVITY_N_KG) + effectInjectedForce_N;
-  if (rudderOffsets_st.isRudderMode) {
-    externalForce_N += rudderPedalOpposingForce_N + syncTrackingForce_N;
-  }
 
   // --- 7. DYNAMIC TRAVEL LIMITS ---
   float lowerTravelLimit_01 = 0.0f;

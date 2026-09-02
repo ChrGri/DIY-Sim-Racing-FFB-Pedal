@@ -230,7 +230,8 @@ namespace DiyFfbPedal
         public DIYFFBPedalControlUI(DIY_FFB_Pedal plugin) : this()
         {
             this.Plugin = plugin;
-            if (RudderDynamics_Tab != null) RudderDynamics_Tab.Settings = plugin.Settings;
+            if (CurveRudderForce_Tab != null && plugin?.Settings != null) CurveRudderForce_Tab.Settings = plugin.Settings;
+            if (RudderDynamics_Tab != null && plugin?.Settings != null) RudderDynamics_Tab.Settings = plugin.Settings;
             plugin.testValue = 1;
             plugin.wpfHandle = this;
             UpdateSerialPortList_click();
@@ -505,14 +506,24 @@ namespace DiyFfbPedal
 
         private void Tab_SettingsChanged(object sender, DIYFFBPedalSettings e)
         {
-            Plugin.Settings = e;
-            updateTheGuiFromConfig();
+            if (Plugin != null)
+            {
+                Plugin.Settings = e;
+                updateTheGuiFromConfig();
+                if (Plugin.Rudder_status)
+                {
+                    RudderParameterLiveUpdate();
+                }
+            }
         }
 
         private void Tab_CalculationChanged(object sender, CalculationVariables e)
         {
-            Plugin._calculations = e;
-            updateTheGuiFromConfig();
+            if (Plugin != null)
+            {
+                Plugin._calculations = e;
+                updateTheGuiFromConfig();
+            }
         }
 
         private void Rudder_ConfigChanged(object sender, DAP_config_st e)
@@ -524,6 +535,10 @@ namespace DiyFfbPedal
                 {
                     updateTheGuiFromConfig();
                     Plugin._calculations.IsUIRefreshNeeded = false;
+                }
+                if (Plugin.Rudder_status)
+                {
+                    RudderParameterLiveUpdate();
                 }
             }
         }
@@ -558,6 +573,13 @@ namespace DiyFfbPedal
 		
 		
 
+        private void btn_RudderDocs_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/blob/rudder_test/docs/rudder_modes_flight_dynamics.md") { UseShellExecute = true });
+            }
+            catch { }
+        }
     }
-    
 }

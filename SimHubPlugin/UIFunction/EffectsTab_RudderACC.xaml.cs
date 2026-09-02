@@ -146,24 +146,28 @@ namespace DiyFfbPedal.UIFunction
 
         private void checkbox_Rudder_ACC_effect_Checked(object sender, RoutedEventArgs e)
         {
+            if (Settings == null) return;
             Settings.Rudder_ACC_effect_b = true;
             SettingsChangedEvent(Settings);
         }
 
         private void checkbox_Rudder_ACC_effect_Unchecked(object sender, RoutedEventArgs e)
         {
+            if (Settings == null) return;
             Settings.Rudder_ACC_effect_b = false;
             SettingsChangedEvent(Settings);
         }
 
         private void Checkbox_Rudder_ACC_WindForce_Checked(object sender, RoutedEventArgs e)
         {
+            if (Settings == null) return;
             Settings.Rudder_ACC_WindForce = true;
             SettingsChangedEvent(Settings);
         }
 
         private void Checkbox_Rudder_ACC_WindForce_Unchecked(object sender, RoutedEventArgs e)
         {
+            if (Settings == null) return;
             Settings.Rudder_ACC_WindForce = false;
             SettingsChangedEvent(Settings);
         }

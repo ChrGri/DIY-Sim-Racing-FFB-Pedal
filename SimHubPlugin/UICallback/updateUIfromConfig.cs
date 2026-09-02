@@ -103,7 +103,9 @@ namespace DiyFfbPedal
                 EffectsRPMRudder_Tab.Settings = Plugin.Settings;
                 CurveRudderForce_Tab.Settings = Plugin.Settings;
                 EffectRudderACC_Tab.Settings = Plugin.Settings;
-                //RudderDynamics_Tab.Settings = Plugin.Settings;
+                RudderDynamics_Tab.Settings = Plugin.Settings;
+                CurveRudderForce_Tab.updateUI();
+                RudderDynamics_Tab.updateUI();
                 //SettingOTA_Tab.Settings = Plugin.Settings;
                 SystemLicense_Tab.Settings = Plugin.Settings;
                 SystemSetting_Section.Settings = Plugin.Settings;

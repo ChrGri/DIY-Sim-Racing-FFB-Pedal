@@ -1031,13 +1031,13 @@ namespace DiyFfbPedal
             DelayCall(400, () =>
             {
                 Reading_config_auto(Plugin.Rudder_Pedal_idx[0]);//read brk config from pedal
-                CurveRudderForce_Tab.text_rudder_log.Text += "Read Config from" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[0]] + "\n";
+                text_rudder_log.Text += "Read Config from" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[0]] + "\n";
             });
 
             DelayCall(600, () =>
             {
                 Reading_config_auto(Plugin.Rudder_Pedal_idx[1]);//read gas config from pedal
-                CurveRudderForce_Tab.text_rudder_log.Text += "Read Config from" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[1]] + "\n";
+                text_rudder_log.Text += "Read Config from" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[1]] + "\n";
             });
             //System.Threading.Thread.Sleep(200);
             DelayCall((int)(900), () =>
@@ -1046,9 +1046,9 @@ namespace DiyFfbPedal
                 for (uint idx = 0; idx < 2; idx++)
                 {   
                     uint i = Plugin.Rudder_Pedal_idx[idx];
-                    CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
+                    text_rudder_log.Visibility = Visibility.Visible;
                     //read pedal kinematic
-                    CurveRudderForce_Tab.text_rudder_log.Text += "Create Rudder config for Pedal: " + i + "\n";
+                    text_rudder_log.Text += "Create Rudder config for Pedal: " + i + "\n";
                     dap_config_st_rudder.payloadPedalConfig_.lengthPedal_a = dap_config_st[i].payloadPedalConfig_.lengthPedal_a;
                     dap_config_st_rudder.payloadPedalConfig_.lengthPedal_b = dap_config_st[i].payloadPedalConfig_.lengthPedal_b;
                     dap_config_st_rudder.payloadPedalConfig_.lengthPedal_c_horizontal = dap_config_st[i].payloadPedalConfig_.lengthPedal_c_horizontal;
@@ -1063,7 +1063,7 @@ namespace DiyFfbPedal
                     dap_config_st_rudder.payloadPedalConfig_.Simulate_ABS_value = dap_config_st[i].payloadPedalConfig_.Simulate_ABS_value;
                     Sendconfig_Rudder(i);
                     System.Threading.Thread.Sleep(200);
-                    CurveRudderForce_Tab.text_rudder_log.Text += "Send Rudder config to Pedal: " + i + "\n";
+                    text_rudder_log.Text += "Send Rudder config to Pedal: " + i + "\n";
                 }
             });
 
@@ -1142,46 +1142,104 @@ namespace DiyFfbPedal
 
         public void readRudderSettingToConfig()
         {
-            dap_config_st_rudder.payloadPedalConfig_.quantityOfControl=Plugin.Settings.rudderControlQuantity;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce00 = Plugin.Settings.rudderForce[0];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce01 = Plugin.Settings.rudderForce[1];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce02 = Plugin.Settings.rudderForce[2];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce03 = Plugin.Settings.rudderForce[3];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce04 = Plugin.Settings.rudderForce[4];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce05 = Plugin.Settings.rudderForce[5];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce06 = Plugin.Settings.rudderForce[6];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce07 = Plugin.Settings.rudderForce[7];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce08 = Plugin.Settings.rudderForce[8];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce09 = Plugin.Settings.rudderForce[9];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce10 = Plugin.Settings.rudderForce[10];
+            dap_config_st_rudder.payloadPedalConfig_.quantityOfControl = 6;
+            dap_config_st_rudder.payloadPedalConfig_.relativeTravel00 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.relativeTravel01 = 20;
+            dap_config_st_rudder.payloadPedalConfig_.relativeTravel02 = 40;
+            dap_config_st_rudder.payloadPedalConfig_.relativeTravel03 = 60;
+            dap_config_st_rudder.payloadPedalConfig_.relativeTravel04 = 80;
+            dap_config_st_rudder.payloadPedalConfig_.relativeTravel05 = 100;
 
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel00 = Plugin.Settings.rudderTravel[0];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel01 = Plugin.Settings.rudderTravel[1];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel02 = Plugin.Settings.rudderTravel[2];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel03 = Plugin.Settings.rudderTravel[3];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel04 = Plugin.Settings.rudderTravel[4];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel05 = Plugin.Settings.rudderTravel[5];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel06 = Plugin.Settings.rudderTravel[6];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel07 = Plugin.Settings.rudderTravel[7];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel08 = Plugin.Settings.rudderTravel[8];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel09 = Plugin.Settings.rudderTravel[9];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel10 = Plugin.Settings.rudderTravel[10];
+            uint profile = Plugin.Settings.rudderCenteringProfile;
+            double deadzone = Plugin.Settings.rudderDeadzone / 100.0;
 
-            dap_config_st_rudder.payloadPedalConfig_.maxForce = Plugin.Settings.rudderMaxForce;
+            double[] travels = new double[6] { 0.0, 0.2, 0.4, 0.6, 0.8, 1.0 };
+            byte[] forces = new byte[6];
+
+            for (int i = 0; i < 6; i++)
+            {
+                double u = travels[i];
+                double effectiveU = 0.0;
+                if (u > deadzone)
+                {
+                    effectiveU = (u - deadzone) / Math.Max(0.01, 1.0 - deadzone);
+                    effectiveU = Math.Min(1.0, Math.Max(0.0, effectiveU));
+                }
+                double forceFraction = 0.0;
+                if (profile == 0) // Linear
+                {
+                    forceFraction = effectiveU;
+                }
+                else if (profile == 1) // Progressive
+                {
+                    forceFraction = Math.Pow(effectiveU, 1.8);
+                }
+                else if (profile == 2) // S-Curve
+                {
+                    forceFraction = 0.5 * (1.0 - Math.Cos(effectiveU * Math.PI));
+                }
+                forces[i] = (byte)Math.Round(forceFraction * 100.0);
+            }
+
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce00 = forces[0];
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce01 = forces[1];
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce02 = forces[2];
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce03 = forces[3];
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce04 = forces[4];
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce05 = forces[5];
+
+            if (Plugin.Settings.rudderMode == 1)
+            {
+                // Helicopter Mode: Zero Centering Force (0 N Return Spring)
+                dap_config_st_rudder.payloadPedalConfig_.maxForce = 0.0f;
+                dap_config_st_rudder.payloadPedalConfig_.preloadForce = 0.0f;
+                dap_config_st_rudder.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = (byte)Math.Round(Plugin.Settings.rudderHeliFriction * 10);
+                dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8 = Plugin.Settings.rudderHeliDamping;
+            }
+            else
+            {
+                // Airplane Mode: Configured Aerodynamic Centering Force
+                dap_config_st_rudder.payloadPedalConfig_.maxForce = Plugin.Settings.rudderCenteringForce;
+                dap_config_st_rudder.payloadPedalConfig_.preloadForce = 0.0f;
+                dap_config_st_rudder.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = Plugin.Settings.rudderCoulombFriction;
+                dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8 = Plugin.Settings.rudderVirtualDamping;
+            }
 
             dap_config_st_rudder.payloadPedalConfig_.virtualPedalMass_u8 = Plugin.Settings.rudderVirtualPedalMass;
-            dap_config_st_rudder.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = Plugin.Settings.rudderCoulombFriction;
-            dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8 = Plugin.Settings.rudderVirtualDamping;
-            dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = Plugin.Settings.rudderDampingProgression;
+            dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = 0; // Disabled in rudder for linear response
             dap_config_st_rudder.payloadPedalConfig_.endstopTravelRange_mm_u8 = Plugin.Settings.rudderEndstopTravelRange;
             dap_config_st_rudder.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = Plugin.Settings.rudderEndstopStiffness;
             
-            dap_config_st_rudder.payloadPedalConfig_.preloadForce = Plugin.Settings.rudderMinForce;
             dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition = Plugin.Settings.rudderMinTravel;
             dap_config_st_rudder.payloadPedalConfig_.pedalEndPosition = Plugin.Settings.rudderMaxTravel;
-            dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq= Plugin.Settings.rudderRPMMaxFrequency;
+            dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq = Plugin.Settings.rudderRPMMaxFrequency;
             dap_config_st_rudder.payloadPedalConfig_.RPM_min_freq = Plugin.Settings.rudderRPMMinFrequency;
             dap_config_st_rudder.payloadPedalConfig_.RPM_AMP = Plugin.Settings.rudderRPMAmp;
+        }
+
+        public void RudderParameterLiveUpdate()
+        {
+            if (Plugin != null && Plugin.Rudder_status)
+            {
+                readRudderSettingToConfig();
+                for (uint idx = 0; idx < 2; idx++)
+                {
+                    uint pedalIdx = Plugin.Rudder_Pedal_idx[idx];
+                    dap_config_st_rudder.payloadPedalConfig_.lengthPedal_a = dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_a;
+                    dap_config_st_rudder.payloadPedalConfig_.lengthPedal_b = dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_b;
+                    dap_config_st_rudder.payloadPedalConfig_.lengthPedal_c_horizontal = dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_c_horizontal;
+                    dap_config_st_rudder.payloadPedalConfig_.lengthPedal_c_vertical = dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_c_vertical;
+                    dap_config_st_rudder.payloadPedalConfig_.lengthPedal_travel = dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_travel;
+                    dap_config_st_rudder.payloadPedalConfig_.spindlePitch_mmPerRev_u8 = dap_config_st[pedalIdx].payloadPedalConfig_.spindlePitch_mmPerRev_u8;
+                    dap_config_st_rudder.payloadPedalConfig_.invertLoadcellReading_u8 = dap_config_st[pedalIdx].payloadPedalConfig_.invertLoadcellReading_u8;
+                    dap_config_st_rudder.payloadPedalConfig_.invertMotorDirection_u8 = dap_config_st[pedalIdx].payloadPedalConfig_.invertMotorDirection_u8;
+                    dap_config_st_rudder.payloadPedalConfig_.loadcell_rating = dap_config_st[pedalIdx].payloadPedalConfig_.loadcell_rating;
+                    dap_config_st_rudder.payloadPedalConfig_.stepLossFunctionFlags_u8 = dap_config_st[pedalIdx].payloadPedalConfig_.stepLossFunctionFlags_u8;
+                    dap_config_st_rudder.payloadPedalConfig_.Simulate_ABS_value = dap_config_st[pedalIdx].payloadPedalConfig_.Simulate_ABS_value;
+                    
+                    Sendconfig_Rudder(pedalIdx);
+                }
+            }
         }
         public void writeRudderConfigToSetting()
         {

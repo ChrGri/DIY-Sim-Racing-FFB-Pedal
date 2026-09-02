@@ -74,6 +74,7 @@ namespace DiyFfbPedal
         public bool Rudder_brake_enable_flag = false;
         public bool Rudder_brake_status = false;
         public byte pedal_state_in_ratio = 0;
+        public ushort[] rawPedalPos = new ushort[3] { 0, 0, 0 };
         //public bool Sync_esp_connection_flag=false;
         public byte PedalErrorCode = 0;
         public byte PedalErrorIndex = 0;

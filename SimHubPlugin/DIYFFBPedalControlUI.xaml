@@ -516,10 +516,10 @@
                                     <Border Background="#7F4E4E4E" Height="498" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="168" HorizontalAlignment="Center" >
                                         <StackPanel HorizontalAlignment="Center" Height="498" VerticalAlignment="Top" Width="160" Margin="0,5,0,0">
                                             <localFunction:InfoSection_Rudder x:Name="RudderInfo" />
-                                            <TextBox x:Name="TextBox_rudder_debug" HorizontalAlignment="Left" Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="160" Height="25" AutomationProperties.Name="TextBox2" BorderBrush="#00CCCCCC" Background="#00252525" FontSize="8" FontFamily="Arial" />
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                                                <ComboBox SelectedValuePath="Tag" Width="100" SelectedValue="{Binding Plugin.Settings.rudderMode, Mode=TwoWay}" Height="20" Padding="0,0,0,0" BorderThickness="0,0,0,0" MinHeight="20">
-                                                    <ComboBoxItem Content="Flight">
+                                            <Button x:Name="btn_SidebarRudderDocs" Click="btn_RudderDocs_Click" Content="📖 Flight Docs ↗" Width="158" Height="18" Margin="0,2,0,4" Background="#2600AAFF" Foreground="#00CCFF" BorderBrush="#3300CCFF" BorderThickness="1" FontSize="9" FontFamily="Arial" Cursor="Hand" ToolTip="Open Rudder Flight Dynamics Documentation on GitHub" HorizontalAlignment="Center"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,0">
+                                                <ComboBox x:Name="combo_rudderMode" SelectedValuePath="Tag" Width="98" SelectedValue="{Binding Plugin.Settings.rudderMode, Mode=TwoWay}" SelectionChanged="RudderMode_SelectionChanged" Height="22" Padding="2,0,0,0" BorderThickness="0,0,0,0" MinHeight="20">
+                                                    <ComboBoxItem Content="Airplane">
                                                         <ComboBoxItem.Tag>
                                                             <sys:UInt32>0</sys:UInt32>
                                                         </ComboBoxItem.Tag>
@@ -530,8 +530,10 @@
                                                         </ComboBoxItem.Tag>
                                                     </ComboBoxItem>
                                                 </ComboBox>
-                                                <styles:SHButtonPrimary x:Name="btn_rudder_initialize" Click="btn_rudder_initialize_Click" Width="55" Height="20" Content="Rudder" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" HorizontalContentAlignment="Center" MinHeight="20" />
+                                                <styles:SHButtonPrimary x:Name="btn_rudder_initialize" Click="btn_rudder_initialize_Click" Width="56" Height="22" Content="Rudder" Margin="6,0,0,0" HorizontalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" HorizontalContentAlignment="Center" MinHeight="20" />
                                             </StackPanel>
+                                            <!-- Rudder Status & Operation Monitor Box -->
+                                            <TextBox x:Name="text_rudder_log" HorizontalAlignment="Center" VerticalAlignment="Top" Text="Rudder Monitor Ready..." Width="158" Foreground="#00FFCC" Height="365" Margin="0,8,0,0" FontSize="9" FontFamily="Consolas" Background="#EE141720" BorderBrush="#3300FFCC" BorderThickness="1" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="4"/>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>

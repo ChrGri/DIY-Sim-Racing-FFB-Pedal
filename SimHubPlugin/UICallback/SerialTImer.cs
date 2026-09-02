@@ -621,6 +621,16 @@ namespace DiyFfbPedal
                                         Plugin.PedalStatusInstance.PedalMaxForce[pedalSelected] = (int)dap_config_st[pedalSelected].payloadPedalConfig_.maxForce;
                                         Plugin.PedalStatusInstance.PedalMinForce[pedalSelected] = (int)dap_config_st[pedalSelected].payloadPedalConfig_.preloadForce;
                                         Plugin.PedalStatusInstance.UpdatePedalStatus();
+                                        Plugin.rawPedalPos[pedalSelected] = pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16;
+                                        if (CurveRudderForce_Tab != null)
+                                        {
+                                            uint leftIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 0) ? (uint)Plugin.Rudder_Pedal_idx[0] : 1;
+                                            uint rightIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 1) ? (uint)Plugin.Rudder_Pedal_idx[1] : 2;
+                                            double leftNorm = (double)Plugin.rawPedalPos[leftIdx] / 65535.0;
+                                            double rightNorm = (double)Plugin.rawPedalPos[rightIdx] / 65535.0;
+                                            float rudderRatio = (float)Math.Max(0.0, Math.Min(1.0, 0.5 - 0.5 * leftNorm + 0.5 * rightNorm));
+                                            CurveRudderForce_Tab.UpdateLiveDeflection(rudderRatio);
+                                        }
 
                                         // GUI update
                                         if ((pedalStateHasAlreadyBeenUpdated_b == false) && (indexOfSelectedPedal_u == pedalSelected))

@@ -147,49 +147,39 @@ namespace DiyFfbPedal.UIFunction
 
         private void checkbox_enable_RPM_rudder_Checked(object sender, RoutedEventArgs e)
         {
+            if (Settings == null) return;
             if (checkbox_enable_RPM_rudder != null) Settings.Rudder_RPM_effect_b = true;
             SettingsChangedEvent(Settings);
         }
 
         private void checkbox_enable_RPM_rudder_Unchecked(object sender, RoutedEventArgs e)
         {
+            if (Settings == null) return;
             if (checkbox_enable_RPM_rudder != null) Settings.Rudder_RPM_effect_b = false;
             SettingsChangedEvent(Settings);
         }
 
         private void Slider_RPM_AMP_rudder_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            /*
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.RPM_AMP = (Byte)(e.NewValue * 100);
-            dap_config_st = tmp;
-            ConfigChangedEvent(dap_config_st);
-            */
+            if (Settings == null) return;
             Settings.rudderRPMAmp = (Byte)(e.NewValue *5000.0d/100.0d);
+            SettingsChangedEvent(Settings);
         }
 
         private void Rangeslider_RPM_freq_rudder_LowerValueChanged(object sender, MahApps.Metro.Controls.RangeParameterChangedEventArgs e)
         {
-            /*
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.RPM_min_freq = (byte)e.NewValue;
-            dap_config_st = tmp;
-            ConfigChangedEvent(dap_config_st);
-            */
+            if (Settings == null) return;
             Settings.rudderRPMMinFrequency = (byte)e.NewValue;
             if (label_RPM_freq_min_rudder!=null) label_RPM_freq_min_rudder.Content = "MIN:" + Settings.rudderRPMMinFrequency + "Hz";
+            SettingsChangedEvent(Settings);
         }
 
         private void Rangeslider_RPM_freq_rudder_UpperValueChanged(object sender, MahApps.Metro.Controls.RangeParameterChangedEventArgs e)
         {
-            /*
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.RPM_max_freq = (byte)e.NewValue;
-            dap_config_st = tmp;
-            ConfigChangedEvent(dap_config_st);
-            */
+            if (Settings == null) return;
             Settings.rudderRPMMaxFrequency = (byte)e.NewValue;
             if (label_RPM_freq_max_rudder != null) label_RPM_freq_max_rudder.Content = "MAX:" + Settings.rudderRPMMaxFrequency + "Hz";
+            SettingsChangedEvent(Settings);
         }
     }
 }

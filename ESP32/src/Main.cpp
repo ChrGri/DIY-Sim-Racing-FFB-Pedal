@@ -274,6 +274,7 @@ StepperWithLimits *stepper = NULL;
 
 #include "ChatterReduction.h"
 #include "StepperMovementStrategy.h"
+#include "StepperMovementStrategy_Rudder.h"
 #include "StepperMovementStrategy_MPC.h"
 
 volatile bool moveSlowlyToPosition_b = true;
@@ -2240,28 +2241,17 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           rudderOffsets_st.trimOffset_01 = 0.0f;
         }
 
-        // Pedal control algorithm
-        Position_Next_fl32 = MoveByAdmittanceStrategy(
-            filteredReading, stepper, &forceCurve, &dap_calculationVariables_st,
+        // Flight Rudder control algorithm
+        Position_Next_fl32 = MoveByRudderStrategy(
+            filteredReading, stepper, &dap_calculationVariables_st,
             &dap_config_pedalUpdateTask_st, effectOffsets_st,
             endstopBehavior_st, rudderOffsets_st, &admittanceDebugInfo_st,
             &admittanceStates_st);
-        // Rudder_t only
-        // Position_Next = MoveByForceTargetingStrategy(filteredReading,
-        // stepper, &forceCurve, &dap_calculationVariables_st,
-        // &dap_config_pedalUpdateTask_st, 0.0f/*effect_force*/, changeVelocity,
-        // d_phi_d_x, d_x_hor_d_phi);
-        positionWithoutEffect =
-            Position_Next_fl32; // send the value without rpm effect
+
+        positionWithoutEffect = Position_Next_fl32;
         if (effectsCalculated_b) {
-          // float effectsOffsetFiltered=
-          // effectOffsetPID.computeEffectOffset(effect_pos_fl32,
-          // &dap_calculationVariables_st); Position_Next -=
-          // effectsOffsetFiltered;
           Position_Next_fl32 -= effect_pos_fl32;
         }
-        // if(effectsCalculated_b) Position_Next -=
-        // g_rpmOscillation_st.RPM_position_offset;
       } else {
 
         endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32 =
@@ -2279,18 +2269,11 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             endstopBehavior_st.travelRange_mm_fl32, 0.0f,
             10.0f); // constrain the stiffness to a max value for safety
 
-        // rudder variables (disabled in normal sim racing mode)
-        rudderOffsets_st.isRudderMode = false;
-        rudderOffsets_st.rudderMode_u8 = RUDDER_MODE_DISABLED;
-        rudderOffsets_st.centerPosition_01 = 0.0f;
-        rudderOffsets_st.deadzone_01 = 0.0f;
-        rudderOffsets_st.trimOffset_01 = 0.0f;
-
-        // Pedal control algorithm
+        // Racing Pedal control algorithm (Throttle / Brake / Clutch)
         Position_Next_fl32 = MoveByAdmittanceStrategy(
             filteredReading, stepper, &forceCurve, &dap_calculationVariables_st,
             &dap_config_pedalUpdateTask_st, effectOffsets_st,
-            endstopBehavior_st, rudderOffsets_st, &admittanceDebugInfo_st,
+            endstopBehavior_st, &admittanceDebugInfo_st,
             &admittanceStates_st);
         positionWithoutEffect = (int32_t)Position_Next_fl32;
       }
