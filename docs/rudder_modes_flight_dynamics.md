@@ -270,7 +270,7 @@ Simulates General Aviation aircraft where stiffness and travel limits scale dyna
    x_{\text{full}} \cdot \left( \frac{V_{\text{corner}}}{V_{\text{IAS}}} \right), & V_{\text{IAS}} > V_{\text{corner}}
    \end{cases}$$
 3. **Aerodynamic Trim Offset**:
-   $$x_{\text{neutral}} = 0.5 + x_{\text{trim\_offset}}$$
+   $$x_{\text{neutral}} = 0.5 + x_{\text{trim}}$$
    $$F_{\text{centering}} = -K(V_{\text{IAS}}) \cdot (x_L - x_{\text{neutral}})$$
 
 ---
@@ -317,25 +317,12 @@ Simulates light helicopters (e.g. R22/R44) with zero return-to-center spring and
 Simulates turbine helicopters (e.g. UH-60, H145) with electro-magnetic clutch trim release.
 
 ```mermaid
-stateDiagram-v2
-    [*] --> Trimmed_Hold: System Active
-    
-    Trimmed_Hold --> FTR_Free_Float: Pilot Holds FTR Switch (Button Down)
-    FTR_Free_Float --> Trimmed_Hold: Pilot Releases FTR Switch (Button Up)
-    
-    state Trimmed_Hold {
-        direction LR
-        Magnetic_Brake: LOCKED
-        Centering_Spring: Active around x_trim
-        Feel: Spring Resistance
-    }
-    
-    state FTR_Free_Float {
-        direction LR
-        Magnetic_Brake: RELEASED
-        Centering_Spring: ZERO (x_trim tracks current pos)
-        Feel: Pure Light Damping
-    }
+graph LR
+    A["<b>Trimmed Hold</b><br/>Magnetic Brake: LOCKED<br/>Centering Spring: Active around x_trim<br/>Feel: Spring Resistance"]
+    B["<b>FTR Free-Float</b><br/>Magnetic Brake: RELEASED<br/>Centering Spring: 0 N (tracks pos)<br/>Feel: Pure Light Damping"]
+
+    A -->|"Pilot Holds FTR Switch<br/>(Button Down)"| B
+    B -->|"Pilot Releases FTR Switch<br/>(Button Up)"| A
 ```
 
 #### Mathematical Formulation:
