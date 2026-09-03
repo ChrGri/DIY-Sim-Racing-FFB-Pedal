@@ -1219,12 +1219,15 @@ namespace DiyFfbPedal
 
         public void RudderParameterLiveUpdate()
         {
-            if (Plugin != null && Plugin.Rudder_status)
+            if (Plugin != null && (Plugin.Rudder_status || Plugin._calculations.Rudder_status))
             {
                 readRudderSettingToConfig();
                 for (uint idx = 0; idx < 2; idx++)
                 {
-                    uint pedalIdx = Plugin.Rudder_Pedal_idx[idx];
+                    uint pedalIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > idx)
+                                    ? Plugin.Rudder_Pedal_idx[idx]
+                                    : (idx == 0 ? 1u : 2u);
+
                     dap_config_st_rudder.payloadPedalConfig_.lengthPedal_a = dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_a;
                     dap_config_st_rudder.payloadPedalConfig_.lengthPedal_b = dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_b;
                     dap_config_st_rudder.payloadPedalConfig_.lengthPedal_c_horizontal = dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_c_horizontal;
@@ -1236,8 +1239,17 @@ namespace DiyFfbPedal
                     dap_config_st_rudder.payloadPedalConfig_.loadcell_rating = dap_config_st[pedalIdx].payloadPedalConfig_.loadcell_rating;
                     dap_config_st_rudder.payloadPedalConfig_.stepLossFunctionFlags_u8 = dap_config_st[pedalIdx].payloadPedalConfig_.stepLossFunctionFlags_u8;
                     dap_config_st_rudder.payloadPedalConfig_.Simulate_ABS_value = dap_config_st[pedalIdx].payloadPedalConfig_.Simulate_ABS_value;
-                    
-                    Sendconfig_Rudder(pedalIdx);
+
+                    DAP_config_st cfg = dap_config_st_rudder;
+                    cfg.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
+                    cfg.payloadHeader_.payloadType = (byte)Constants.pedalConfigPayload_type;
+                    cfg.payloadHeader_.PedalTag = (byte)pedalIdx;
+                    cfg.payloadHeader_.storeToEeprom = 0;
+                    cfg.payloadPedalConfig_.pedal_type = (byte)pedalIdx;
+
+                    Plugin.BufferConfig_st[pedalIdx] = cfg;
+                    Plugin.IsGetConfigSendRequest[pedalIdx] = true;
+                    Plugin.ConfigBufferGet_lastTime[pedalIdx] = DateTime.Now;
                 }
             }
         }

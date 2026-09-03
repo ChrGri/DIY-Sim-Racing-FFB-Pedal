@@ -147,34 +147,43 @@ namespace DiyFfbPedal
                     }
                 }
             }
+            private static readonly System.Threading.SemaphoreSlim _sendLock = new System.Threading.SemaphoreSlim(1, 1);
             public async Task SendLargeDataAsync(byte[] data)
             {
                 if (!IsConnected) return;
 
-                int totalLen = data.Length;
-                int offset = 0;
-                while (offset < totalLen)
+                await _sendLock.WaitAsync();
+                try
                 {
-                    byte[] buffer = new byte[ReportLength];
-                    int chunkLen = Math.Min(PayloadSize, totalLen - offset);
+                    int totalLen = data.Length;
+                    int offset = 0;
+                    while (offset < totalLen)
+                    {
+                        byte[] buffer = new byte[ReportLength];
+                        int chunkLen = Math.Min(PayloadSize, totalLen - offset);
 
-                    byte type;
-                    
-                    if (offset == 0)
-                        type = PKT_TYPE_START;
-                    else
-                        type = PKT_TYPE_CONT; 
+                        byte type;
+                        
+                        if (offset == 0)
+                            type = PKT_TYPE_START;
+                        else
+                            type = PKT_TYPE_CONT; 
 
-                    buffer[0] = ReportId_OUTPUT;
-                    buffer[1] = type;
-                    buffer[2] = (byte)totalLen; 
-                    buffer[3] = (byte)chunkLen;
+                        buffer[0] = ReportId_OUTPUT;
+                        buffer[1] = type;
+                        buffer[2] = (byte)totalLen; 
+                        buffer[3] = (byte)chunkLen;
 
-                    Array.Copy(data, offset, buffer, HeaderOffset, chunkLen);
-                    Write(buffer);
+                        Array.Copy(data, offset, buffer, HeaderOffset, chunkLen);
+                        Write(buffer);
 
-                    offset += chunkLen;
-                    await Task.Delay(1);
+                        offset += chunkLen;
+                        await Task.Delay(2);
+                    }
+                }
+                finally
+                {
+                    _sendLock.Release();
                 }
             }
 

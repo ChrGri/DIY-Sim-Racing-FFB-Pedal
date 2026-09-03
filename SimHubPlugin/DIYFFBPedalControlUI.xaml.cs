@@ -499,7 +499,10 @@ namespace DiyFfbPedal
                     updateTheGuiFromConfig();
                     Plugin._calculations.IsUIRefreshNeeded = false;
                 }
-                PedalParameterLiveUpdate();
+                if (!Plugin.Rudder_status && !Plugin._calculations.Rudder_status)
+                {
+                    PedalParameterLiveUpdate();
+                }
             }
             
         }
@@ -509,10 +512,13 @@ namespace DiyFfbPedal
             if (Plugin != null)
             {
                 Plugin.Settings = e;
-                updateTheGuiFromConfig();
-                if (Plugin.Rudder_status)
+                if (Plugin.Rudder_status || Plugin._calculations.Rudder_status)
                 {
                     RudderParameterLiveUpdate();
+                }
+                else
+                {
+                    updateTheGuiFromConfig();
                 }
             }
         }
@@ -536,7 +542,7 @@ namespace DiyFfbPedal
                     updateTheGuiFromConfig();
                     Plugin._calculations.IsUIRefreshNeeded = false;
                 }
-                if (Plugin.Rudder_status)
+                if (Plugin.Rudder_status || Plugin._calculations.Rudder_status)
                 {
                     RudderParameterLiveUpdate();
                 }
