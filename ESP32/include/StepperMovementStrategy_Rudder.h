@@ -80,22 +80,21 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   const float GRAVITY_N_KG = 9.81f;
 
   // 2. Physical Parameters & Flight Feel Tuning
-  float virtualMass_kg = 1.0f;
-  float dampingRatio_zeta = 1.4f;
-
-  if (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) {
-    virtualMass_kg = 1.5f;
-    dampingRatio_zeta = 2.5f; // High damping for smooth non-spring helicopter feel
+  float virtualMass_kg = ((float)config_st->payloadPedalConfig_st.virtualPedalMassInPercent_u8) / 100.0f;
+  if (virtualMass_kg < 0.2f) {
+    virtualMass_kg = (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) ? 1.5f : 1.0f;
   }
+  float dampingRatio_zeta = (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) ? 2.5f : 1.4f;
 
   // 3. Dynamic Rudder Setpoint & Bilateral Push-Pull Synchronization
   if (!s_wasRudderActive) {
-    g_vRudderModelPos_01 = 0.50f;
+    float initialCenter_01 = constrain(rudderOffsets_st.centerPosition_01 + rudderOffsets_st.trimOffset_01, 0.05f, 0.95f);
+    g_vRudderModelPos_01 = initialCenter_01;
     g_vRudderModelVel_mps = 0.0f;
-    s_activeCenterPos_01 = 0.50f;
+    s_activeCenterPos_01 = initialCenter_01;
     s_filteredSyncForce_N = 0.0f;
     s_filteredPilotForce_N = 0.0f;
-    s_smoothedSyncTargetPos_01 = 0.50f;
+    s_smoothedSyncTargetPos_01 = initialCenter_01;
     s_wasRudderActive = true;
   }
 
@@ -104,10 +103,14 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   // Smooth slew towards trim setpoint (0.4/sec transition)
   const float CENTER_SLEW_RATE = 0.4f;
   float maxCenterStep = CENTER_SLEW_RATE * dt_s;
-  if (s_activeCenterPos_01 < targetCenter_01) {
-    s_activeCenterPos_01 = min(s_activeCenterPos_01 + maxCenterStep, targetCenter_01);
-  } else if (s_activeCenterPos_01 > targetCenter_01) {
-    s_activeCenterPos_01 = max(s_activeCenterPos_01 - maxCenterStep, targetCenter_01);
+  float centerDelta = targetCenter_01 - s_activeCenterPos_01;
+  if (fabsf(centerDelta) > 0.0001f) {
+    float centerStep = constrain(centerDelta, -maxCenterStep, maxCenterStep);
+    s_activeCenterPos_01 += centerStep;
+    if (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) {
+      // When hover bias slider is adjusted in Helicopter mode, smoothly shift pedal position
+      g_vRudderModelPos_01 = constrain(g_vRudderModelPos_01 + centerStep, 0.05f, 0.95f);
+    }
   }
 
   // Low-pass filter remote sync force from opposite pedal (cutoff ~8 Hz) with 1.5 N deadband
@@ -133,15 +136,18 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
     float pos_alpha = 1.0f - expf(-dt_s / SYNC_POS_TAU);
     float desiredDelta_01 = pos_alpha * (rawSyncTargetPos_01 - s_smoothedSyncTargetPos_01);
 
-    // Limit maximum slew rate of remote sync target in Helicopter mode to eliminate rapid catch-up jumps
-    float maxSyncSlew_01 = (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) ? (2.5f * dt_s) : (10.0f * dt_s);
+    // Slew rate of remote sync target: fast enough to eliminate phase lag and maintain rigid coupling
+    float maxSyncSlew_01 = (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) ? (6.0f * dt_s) : (10.0f * dt_s);
     desiredDelta_01 = constrain(desiredDelta_01, -maxSyncSlew_01, maxSyncSlew_01);
     s_smoothedSyncTargetPos_01 += desiredDelta_01;
 
     float posError = s_smoothedSyncTargetPos_01 - g_vRudderModelPos_01;
 
-    // Soften tracking gain in Helicopter mode to eliminate bilateral delayed feedback limit cycle oscillations
-    float trackingGain_N = (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) ? 40.0f : 80.0f;
+    // Rigid Bilateral Push-Pull Sync tracking gain
+    float trackingGain_N = (float)config_st->payloadPedalConfig_st.minForceForEffects_u8;
+    if (trackingGain_N < 20.0f) {
+      trackingGain_N = (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) ? 60.0f : 80.0f;
+    }
     syncTrackingForce_N = trackingGain_N * posError;
   }
 
@@ -177,7 +183,7 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   float localStiffness_kg_step = 0.01f;
 
   if (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) {
-    // Mode 2: Helicopter Anti-Torque (Pure Friction / Zero Centering Spring)
+    // Mode 2: Helicopter Anti-Torque (Pure Friction / Position-Hold / Zero Centering Spring)
     springForce_N = 0.0f;
     localStiffness_N_m = 15.0f;
     localStiffness_kg_step = 0.001f;
@@ -251,8 +257,12 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   float frictionForce_N = coulombFriction_N * tanhf(g_vRudderModelVel_mps / VELOCITY_EPSILON_MPS);
 
   // 9. Soft Endstops
-  float lowerTravelLimit_01 = 0.05f;
-  float upperTravelLimit_01 = 0.95f;
+  float lowerTravelLimit_01 = (float)config_st->payloadPedalConfig_st.pedalStartPosition_u8 * 0.01f;
+  float upperTravelLimit_01 = (float)config_st->payloadPedalConfig_st.pedalEndPosition_u8 * 0.01f;
+  if (upperTravelLimit_01 <= lowerTravelLimit_01 + 0.10f) {
+    lowerTravelLimit_01 = 0.05f;
+    upperTravelLimit_01 = 0.95f;
+  }
   float softEndstopForce_N = 0.0f;
   if (g_vRudderModelPos_01 > upperTravelLimit_01) {
     float penetration_m = (g_vRudderModelPos_01 - upperTravelLimit_01) * totalTravel_m;

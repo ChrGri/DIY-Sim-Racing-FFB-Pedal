@@ -630,6 +630,12 @@ namespace DiyFfbPedal
             dap_config_st_rudder.payloadHeader_.PedalTag = (byte)pedalIdx;
             dap_config_st_rudder.payloadHeader_.storeToEeprom = 0;
             dap_config_st_rudder.payloadPedalConfig_.pedal_type = (byte)pedalIdx;
+
+            // Push-pull differential trim offset:
+            // Left pedal (index 0) gets +trim, Right pedal (index 1) gets -trim
+            bool isLeft = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 0 && pedalIdx == Plugin.Rudder_Pedal_idx[0]);
+            float trimForPedal = isLeft ? -Plugin.Settings.rudderTrimOffset : Plugin.Settings.rudderTrimOffset;
+            dap_config_st_rudder.payloadPedalConfig_.preloadForce = trimForPedal;
             dap_config_st_rudder.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
             dap_config_st_rudder.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
             dap_config_st_rudder.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
@@ -1206,7 +1212,10 @@ namespace DiyFfbPedal
             }
 
             dap_config_st_rudder.payloadPedalConfig_.virtualPedalMass_u8 = Plugin.Settings.rudderVirtualPedalMass;
-            dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = 0; // Disabled in rudder for linear response
+            // Pack rudderDeadzone into dampingProgression_u8 (e.g. 0 to 50 representing 0.0% to 5.0%)
+            dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = (byte)Math.Round(Plugin.Settings.rudderDeadzone * 10.0);
+            // Pack bilateral sync stiffness into minForceForEffects_u8 (e.g. 20 to 150 N)
+            dap_config_st_rudder.payloadPedalConfig_.minForceForEffects = (byte)Math.Round(Plugin.Settings.rudderBilateralSyncForce);
             dap_config_st_rudder.payloadPedalConfig_.endstopTravelRange_mm_u8 = Plugin.Settings.rudderEndstopTravelRange;
             dap_config_st_rudder.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = Plugin.Settings.rudderEndstopStiffness;
             
@@ -1246,6 +1255,11 @@ namespace DiyFfbPedal
                     cfg.payloadHeader_.PedalTag = (byte)pedalIdx;
                     cfg.payloadHeader_.storeToEeprom = 0;
                     cfg.payloadPedalConfig_.pedal_type = (byte)pedalIdx;
+
+                    // Push-pull differential trim offset:
+                    // Left pedal (idx == 0) gets +trim, Right pedal (idx == 1) gets -trim
+                    float trimForPedal = (idx == 0) ? -Plugin.Settings.rudderTrimOffset : Plugin.Settings.rudderTrimOffset;
+                    cfg.payloadPedalConfig_.preloadForce = trimForPedal;
 
                     Plugin.BufferConfig_st[pedalIdx] = cfg;
                     Plugin.IsGetConfigSendRequest[pedalIdx] = true;

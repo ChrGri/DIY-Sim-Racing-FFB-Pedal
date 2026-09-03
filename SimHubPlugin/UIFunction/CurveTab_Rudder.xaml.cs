@@ -144,24 +144,46 @@ namespace DiyFfbPedal.UIFunction
                 else
                 {
                     // Airplane Mode: Symmetric Bipolar Centering Spring Curve
-                    int samplePoints = 40;
+                    int samplePoints = 200; // High resolution for silky smooth rendering
                     double maxForce = Math.Max(Settings.rudderCenteringForce, 1.0);
                     double deadzone = Settings.rudderDeadzone / 100.0; // 0.0 to 0.05
                     uint profile = Settings.rudderCenteringProfile;     // 0=Linear, 1=Progressive, 2=S-Curve
 
                     polygonPoints.Add(new Point(0, canvasH));
 
+                    // Generate a dense set of points, specifically including exact critical points
+                    List<double> xCoords = new List<double>();
                     for (int i = 0; i <= samplePoints; i++)
                     {
-                        double x = (double)i / samplePoints * canvasW;
-                        double normalizedX = (x - effectiveCenterX) / (canvasW / 2.0); // -1.0 to +1.0 relative to trim center
+                        xCoords.Add((double)i / samplePoints * canvasW);
+                    }
+
+                    // Add exact critical feature points: effectiveCenterX and deadzone edges
+                    double halfW = canvasW / 2.0;
+                    double deadzonePx = deadzone * halfW;
+                    xCoords.Add(effectiveCenterX);
+                    if (deadzonePx > 0.5)
+                    {
+                        xCoords.Add(Math.Max(0, effectiveCenterX - deadzonePx));
+                        xCoords.Add(Math.Min(canvasW, effectiveCenterX + deadzonePx));
+                    }
+
+                    xCoords.Sort();
+
+                    double prevX = -1.0;
+                    foreach (double x in xCoords)
+                    {
+                        if (Math.Abs(x - prevX) < 0.25) continue; // remove duplicates
+                        prevX = x;
+
+                        double normalizedX = (x - effectiveCenterX) / halfW; // -1.0 to +1.0 relative to trim center
                         double absNormX = Math.Abs(normalizedX);
 
                         // Apply Deadzone
                         double effectiveU = 0.0;
                         if (absNormX > deadzone)
                         {
-                            effectiveU = (absNormX - deadzone) / Math.Max(0.01, 1.0 - deadzone);
+                            effectiveU = (absNormX - deadzone) / Math.Max(0.001, 1.0 - deadzone);
                             effectiveU = Math.Min(1.0, Math.Max(0.0, effectiveU));
                         }
 
