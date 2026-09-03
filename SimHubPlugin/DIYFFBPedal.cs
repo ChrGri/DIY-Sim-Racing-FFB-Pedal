@@ -978,26 +978,33 @@ namespace DiyFfbPedal
                 tmp.payloadPedalAction_.impact_value = 0;
                 tmp.payloadPedalAction_.Trigger_CV_1 = 0;
                 tmp.payloadPedalAction_.Trigger_CV_2 = 0;
-                if (Settings.rudderMode == 0)
+                if (!Rudder_status)
                 {
-                    if (Rudder_Pedal_idx[0] == 0)
-                    {
-                        tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableRudderThreePedals;
-                    }
-                    else
-                    {
-                        tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableRudderTwoPedals;
-                    }
+                    tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.ClearRudderStatus;
                 }
-                if (Settings.rudderMode == 1)
+                else
                 {
-                    if (Rudder_Pedal_idx[0] == 0)
+                    if (Settings.rudderMode == 0)
                     {
-                        tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableHeliRudderThreePedals;
+                        if (Rudder_Pedal_idx[0] == 0)
+                        {
+                            tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableRudderThreePedals;
+                        }
+                        else
+                        {
+                            tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableRudderTwoPedals;
+                        }
                     }
-                    else
+                    if (Settings.rudderMode == 1)
                     {
-                        tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableHeliRudderTwoPedals;
+                        if (Rudder_Pedal_idx[0] == 0)
+                        {
+                            tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableHeliRudderThreePedals;
+                        }
+                        else
+                        {
+                            tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableHeliRudderTwoPedals;
+                        }
                     }
                 }
 

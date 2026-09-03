@@ -6,6 +6,7 @@ static const bool IS_ESPNOW_ENABLED = true;
 #include <Arduino.h>
 #include "ESPNowW.h"
 #include "DiyActivePedal_types.h"
+#include "StepperMovementStrategy_Rudder.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -499,6 +500,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
                 dap_calculationVariables_st.rudderStatus_b = false;
                 dap_calculationVariables_st.helicopterRudderStatus_b = false;
                 moveSlowlyToPosition_b = true;
+                ResetRudderStrategyState();
                 // ActiveSerial->println("Rudder_t off");
                 // ActiveSerial->print("status:");
                 // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
@@ -529,6 +531,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
                 dap_calculationVariables_st.helicopterRudderStatus_b = false;
                 dap_calculationVariables_st.rudderStatus_b = false;
                 moveSlowlyToPosition_b = true;
+                ResetRudderStrategyState();
                 // ActiveSerial->println("Rudder_t off");
                 // ActiveSerial->print("status:");
                 // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
@@ -540,6 +543,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               dap_calculationVariables_st.helicopterRudderStatus_b = false;
               dap_calculationVariables_st.rudderBrakeStatus_b = false;
               moveSlowlyToPosition_b = true;
+              ResetRudderStrategyState();
               // ActiveSerial->println("Rudder_t Status Clear");
             }
 

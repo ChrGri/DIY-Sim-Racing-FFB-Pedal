@@ -3079,6 +3079,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                 dap_calculationVariables_st.rudderStatus_b = false;
                 dap_calculationVariables_st.helicopterRudderStatus_b = false;
                 moveSlowlyToPosition_b = true;
+                ResetRudderStrategyState();
                 ActiveSerial->println("Rudder Plane off");
               }
             } else if (rudderAct == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_BRAKE || 
@@ -3091,6 +3092,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                 dap_calculationVariables_st.helicopterRudderStatus_b = false;
                 dap_calculationVariables_st.rudderStatus_b = false;
                 moveSlowlyToPosition_b = true;
+                ResetRudderStrategyState();
                 ActiveSerial->println("Rudder Helicopter off");
               }
             } else if (rudderAct == (uint8_t)RudderAction::RUDDER_CLEAR_RUDDER_STATUS) {
@@ -3098,6 +3100,7 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
               dap_calculationVariables_st.helicopterRudderStatus_b = false;
               dap_calculationVariables_st.rudderBrakeStatus_b = false;
               moveSlowlyToPosition_b = true;
+              ResetRudderStrategyState();
               ActiveSerial->println("Rudder Status Clear");
             }
 

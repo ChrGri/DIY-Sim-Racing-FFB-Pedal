@@ -13,6 +13,30 @@ static float g_smoothedRudderEffectVel_mps = 0.0f;
 static float g_prevSmoothedRudderEffectVel_mps = 0.0f;
 static float g_smoothedRudderEffectAcc_mps2 = 0.0f;
 
+// Rudder dynamic setpoint and filtering states
+static float s_activeCenterPos_01 = 0.50f;
+static float s_filteredSyncForce_N = 0.0f;
+static float s_filteredPilotForce_N = 0.0f;
+static bool s_wasRudderActive = false;
+
+/**
+ * @brief Resets all virtual admittance states and filters for rudder flight mode.
+ * Call whenever rudder mode is disabled or cleared.
+ */
+inline void ResetRudderStrategyState() {
+  s_wasRudderActive = false;
+  g_vRudderModelPos_01 = 0.50f;
+  g_vRudderModelVel_mps = 0.0f;
+  s_activeCenterPos_01 = 0.50f;
+  s_filteredSyncForce_N = 0.0f;
+  s_filteredPilotForce_N = 0.0f;
+  g_smoothedRudderEffectPos_m = 0.0f;
+  g_prevSmoothedRudderEffectPos_m = 0.0f;
+  g_smoothedRudderEffectVel_mps = 0.0f;
+  g_prevSmoothedRudderEffectVel_mps = 0.0f;
+  g_smoothedRudderEffectAcc_mps2 = 0.0f;
+}
+
 /**
  * @brief Dedicated Flight Dynamics & Rudder Admittance Control Strategy.
  *
@@ -63,15 +87,12 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   }
 
   // 3. Dynamic Rudder Setpoint & Bilateral Push-Pull Synchronization
-  static float s_activeCenterPos_01 = 0.50f;
-  static float s_filteredSyncForce_N = 0.0f;
-  static bool s_wasRudderActive = false;
-
   if (!s_wasRudderActive) {
     g_vRudderModelPos_01 = 0.50f;
     g_vRudderModelVel_mps = 0.0f;
     s_activeCenterPos_01 = 0.50f;
     s_filteredSyncForce_N = 0.0f;
+    s_filteredPilotForce_N = 0.0f;
     s_wasRudderActive = true;
   }
 
@@ -191,7 +212,6 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   float rawPilotForce_N = (loadCellReadingKg_fl32 * GRAVITY_N_KG);
   float cleanPilotForce_N = (rawPilotForce_N > 1.5f) ? (rawPilotForce_N - 1.5f) : 0.0f;
   
-  static float s_filteredPilotForce_N = 0.0f;
   const float PILOT_FORCE_TAU = 0.025f;
   float pilot_alpha = 1.0f - expf(-dt_s / PILOT_FORCE_TAU);
   s_filteredPilotForce_N = (pilot_alpha * cleanPilotForce_N) + ((1.0f - pilot_alpha) * s_filteredPilotForce_N);
