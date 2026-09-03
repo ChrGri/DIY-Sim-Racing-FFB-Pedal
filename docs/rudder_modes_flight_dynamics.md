@@ -25,61 +25,11 @@ In virtually all real-world manned aircraft, the left and right rudder/anti-torq
 
 ---
 
-### 1.2 The Two Distinct Axes: Yaw vs. Toe Brakes
-Fixed-wing aircraft pedals feature **two independent axes of motion**:
-
-```text
-      [ Toe Brake Axis ] ──► (Tilts forward independently around ankle pivot)
-            │
-         ┌──┴──┐
-         │ ┌─┐ │
-         │ └─┘ │
-         └──┬──┘
-            │
-      [ Yaw / Rudder Axis ] ──► (Whole assembly slides / swings push-pull)
-```
-
-| Axis | Mechanism | Motion Type | Coupling | Purpose |
-|---|---|---|---|---|
-| **Rudder / Yaw** | Sliding sled or parallelogram swing | Push-pull (opposing) | **Coupled**: Left forward $\leftrightarrow$ Right backward | Aerodynamic yaw control in flight; nosewheel/tailwheel steering during taxi |
-| **Toe Brakes** | Angular tilt / footplate pivot on top of pedal | Independent forward tilt | **Uncoupled**: Left and right press independently | Differential main wheel braking for runway deceleration and tight ground turns |
-
-> [!NOTE]
-> **Helicopter Anti-Torque Pedals** almost never have toe brakes. They operate purely along the single yaw/collective-pitch axis.
-
----
-
-### 1.3 Why Simultaneous Pressing Only Exists for Toe Brakes
-A common point of confusion when transitioning from sim racing pedals to flight simulation is whether pressing both pedals simultaneously is a valid action.
-
-```text
-        YAW / RUDDER MOVEMENT                   WHEEL BRAKING (TOE BRAKES)
-        (Sliding Push-Pull Axis)                 (Ankle-Tilt Pivot Axis)
-
-      Left Pedal       Right Pedal             Left Pedal       Right Pedal
-      ┌────────┐       ┌────────┐              ┌────────┐       ┌────────┐
-      │   ▲    │       │   │    │              │  Tilt  │       │  Tilt  │
-      │   │    │       │   ▼    │              │   /    │       │   /    │
-      │  Push  │  <═>  │ Retract│              │  /     │  AND  │  /     │
-      └────────┘       └────────┘              └────────┘       └────────┘
-       Coupled (Anti-Symmetric)                Independent (Symmetric or Differential)
-```
-
-#### Real-World Operational Context:
-1. **In Flight (Yaw / Aerodynamic Control)**:
-   * Pushing both pedals forward simultaneously **never happens and serves no aerodynamic purpose**. 
-   * The mechanical linkage physically locks any common-mode forward travel. Pilots rest their heels on the cockpit floor or pedal stirrups and apply force only to the intended side.
-2. **On the Ground (Runway Deceleration & Engine Run-Ups)**:
-   * The **ONLY** time both pedals are pushed forward simultaneously is when applying **wheel brakes** via the upper toe-tilt pivots.
-   * **Symmetrical Braking**: Pressing both toes forward applies equal hydraulic pressure to both left and right main gear brakes (used during landing rollout, rejected takeoff, or holding stationary during engine run-up).
-   * **Differential Braking**: Pressing only the left toe brakes the left main wheel, allowing tight castering turns during taxi.
-
-#### The Sim Racing Hardware Dilemma (1-DOF vs. 2-DOF):
-* **Real Aviation Pedals (2-DOF per pedal)**: Sled slides push-pull for yaw + upper plate tilts for brake.
-* **DIY Active Sim Racing Pedals (1-DOF per pedal)**: Actuators provide single-axis linear travel along the sled.
-* **Conclusion**: 
-  * If configured in **Pure Rudder Mode**, pressing both pedals must be **physically blocked** by the virtual linkage (as implemented in PR #99).
-  * If the user wishes to use single-axis pedals for both rudder and wheel braking without extra hardware, software-level emulation (such as dual-press force threshold detection) is required.
+### 1.2 Mechanical Linkage Emulation & Mutual Lock
+In a real aircraft cockpit, rudder and anti-torque pedals are mechanically slaved together via pushrods, torque tubes, or cables:
+* **Anti-Symmetric Push-Pull Motion**: Pushing the **left pedal forward** forces the **right pedal backward** by the exact same distance ($x_R = 1.0 - x_L$).
+* **Rigid Mutual Lock**: Attempting to push **both pedals forward simultaneously** is blocked by a solid 1200 N virtual barrier, exactly replicating a rigid mechanical teeter-totter bar.
+* **Pure Rudder Axis**: The pedals act as a single, differential yaw-control degree of freedom distributed across two footplates.
 
 ---
 
@@ -425,136 +375,71 @@ Beyond kinematic centering and friction, the active FFB pedal injects tactile cu
 
 ---
 
-## 7. Toe Brake Emulation Strategies for Single-Axis Hardware
+## 7. Flight Rudder User Interface (GUI) & Parameter Reference
 
-Because DIY active pedals currently operate as single-axis linear actuators (one motor per pedal), simulating both **Yaw (differential push-pull)** and **Toe Brakes (independent tilt)** on the same pair of pedals requires thoughtful software mapping:
-
-```text
-                                 [ Dual Active Pedals ]
-                                            │
-                    ┌───────────────────────┴───────────────────────┐
-                    ▼                                               ▼
-         [ Approach A: Dedicated Modes ]                [ Approach B: Split Travel ]
-         ├─ Flight Mode: Coupled Yaw                    ├─ First 50% Travel: Linked Yaw (Opposing)
-         └─ Taxi/Brake Mode: Independent Brakes         └─ Top 50% Travel / Force Threshold: Toe Brake
-```
-
-### Strategy Options:
-
-1. **Option A: Pure Rudder Mode (Recommended for Dedicated Setups & Realism)**:
-   * Pedals operate exclusively as coupled anti-symmetric yaw pedals.
-   * Pressing both pedals simultaneously is completely blocked by the virtual mechanical linkage (as implemented in PR #99).
-   * Wheel braking is mapped to a dedicated hand lever, joystick button, or an external analog axis.
-2. **Option B: Force-Threshold Dual Press Detection (Hybrid Taxi Braking)**:
-   * **Differential Push-Pull ($F_L 
-eq F_R$)**: System behaves as pure linked rudder.
-   * **Simultaneous Press ($F_L > F_{\text{thresh}}$ AND $F_R > F_{\text{thresh}}$, e.g. $> 80\text{ N}$)**: The firmware recognizes that the pilot is applying symmetrical braking. It temporarily decouples the yaw link or outputs symmetrical Left/Right Brake axis commands to the flight simulator proportional to the applied force.
-3. **Option C: Hardware 3-Axis Upgrade**:
-   * Mechanical sub-assembly adding an angular load-cell pivot on top of the pedal faceplate for independent toe-brake axes.
+The SimHub Flight Rudder interface provides dynamic, mode-adaptive control over the dual-pedal bilateral admittance system. The UI automatically reconfigures its force-deflection curve, parameter sliders, and visual telemetry depending on whether **Airplane** or **Helicopter** mode is selected.
 
 ---
 
-## 8. Proposed Firmware Architecture & Configuration Data Structures
+### 7.1 Airplane (Fixed-Wing) Mode Interface
 
-To support these real-world modes in the firmware and SimHub plugin, the following configuration architecture is recommended for subsequent implementation:
+In Airplane mode, the interface displays the full bipolar centering spring curve with dynamic Q-feel scaling, deadzones, and aerodynamic trim offsets.
 
-### 8.1 Flight Mode Enumeration
-```cpp
-typedef enum {
-  RUDDER_FLIGHT_MODE_DISABLED_E = 0,
-  RUDDER_FLIGHT_MODE_PLANE_REVERSIBLE_E = 1,    // GA / Aerodynamic Q-feel (quad-speed scaling)
-  RUDDER_FLIGHT_MODE_PLANE_FBW_AIRLINER_E = 2,  // Constant spring gradient + high breakout
-  RUDDER_FLIGHT_MODE_HELI_FRICTION_E = 3,       // Light helis (pure friction, zero centering)
-  RUDDER_FLIGHT_MODE_HELI_FORCE_TRIM_E = 4      // Turbine helis (dynamic magnetic brake + FTR)
-} RudderFlightMode_e;
-```
+![SimHub Plugin Rudder Interface - Airplane Mode](media/images/plugin_rudder_mode_airplane_0.png)
 
-### 8.2 Proposed Configuration Payload (`PayloadRudderConfig_t`)
-```cpp
-typedef struct __attribute__((packed)) {
-  uint8_t  flightMode_u8;            // RudderFlightMode_e
-  uint8_t  virtualLinkStiffness_u8;  // Interconnect rigidity (0-100%)
-  uint8_t  breakoutForce_N_u8;       // Center breakout detent force (0-100 N)
-  uint8_t  baseCenteringStiffness_u8;// Zero-airspeed / base centering (N/mm)
-  uint8_t  aeroQGain_u8;             // Speed-squared stiffness scaling factor
-  uint8_t  viscousDamping_u8;        // Hydraulic / airflow damping (0-100%)
-  uint8_t  coulombFriction_u8;       // Mechanical friction clamping (0-100 N)
-  uint8_t  ftrReleaseSlewRate_u8;    // Heli FTR anchor slew speed (mm/s)
-  uint16_t dynamicTravelLimit_pct_u16;// Speed-dependent travel stop limit (0-10000 -> 0.0-100.0%)
-} PayloadRudderConfig_t;
-```
+#### Airplane Mode Parameter Breakdown:
 
-### 8.3 ESP-NOW Real-Time Synchronization State (`PayloadRudderState_t`)
-```cpp
-typedef struct __attribute__((packed)) {
-  uint16_t pedalPosition_u16;       // 0 - 65535 absolute position
-  float    pedalPositionRatio_fl32;  // 0.0 - 1.0 normalized position
-  float    pedalForce_N_fl32;        // Instantaneous load cell force (Newtons)
-  float    pedalVelocity_mps_fl32;   // Current pedal velocity (m/s)
-  uint8_t  forceTrimState_u8;        // Bit 0: FTR active, Bit 1: Beep trim active
-} PayloadRudderState_t;
-```
+| Parameter | UI Control | Range / Units | Firmware Register / Variable | Aviation Physics & Implementation Function |
+|---|---|---|---|---|
+| **Rudder Mode Selector** | Dropdown | `Airplane` / `Helicopter` | `rudderOffsets_st.rudderMode_u8 = 0` | Activates the aerodynamic self-centering admittance strategy with linear/progressive spring return and speed-dependent force scaling. |
+| **Max Centering Force** | Vertical Slider (Right) | $0\text{--}25\text{ kg}$ ($0\text{--}245\text{ N}$) | `config_st->payloadPedalConfig_st.maxForce` | Peak aerodynamic resistance at full deflection ($\pm 50\%$). Emulates rudder surface hinge moments at cruising airspeed. |
+| **Center Breakout Force** | Vertical Slider (Lower) | $0\text{--}5\text{ kg}$ ($0\text{--}49\text{ N}$) | `config_st->payloadPedalConfig_st.preloadForce` | Preload / breakout force required to move pedals off aerodynamic neutral ($0\%$). Simulates control cable tension and aerodynamic detent feel. |
+| **Centering Profile** | Button Switcher | `Linear` / `Progressive` / `S-Curve` | Spline interpolation in `ForceCurve.cpp` | **Linear**: Constant aerodynamic spring rate (General Aviation).<br/>**Progressive**: Force increases quadratically near end of stroke (Jet / High-Speed).<br/>**S-Curve**: Soft breakout with progressive high-speed cushioning. |
+| **Centering Deadzone** | Horizontal Slider | $0\text{--}15\text{ \%}$ | `rudderOffsets_st.deadzone_01` | Center deadband where aerodynamic spring force is zero ($0\text{ N}$). Prevents unintentional rudder inputs from pilot feet resting on the pedals. |
+| **Rudder Trim Offset** | Horizontal Slider | $-25\text{\%}\text{ to }+25\text{\%}$ | `rudderOffsets_st.trimOffset_01` | Shifts the physical zero-force aerodynamic neutral point without moving hardware stops. Emulates cockpit rudder trim wheel or yaw trim tab. |
+| **Airspeed Q-Feel Gain** | Horizontal Slider | $0\text{--}100\text{ \%}$ | Dynamic scaling factor in SimHub | Sensitivity factor for aerodynamic dynamic pressure $q = \frac{1}{2}\rho V^2$. Determines how aggressively pedal stiffness increases with simulator airspeed ($V_{\text{IAS}}$). |
+| **Enable Dynamic Q-Feel** | Checkbox | `Enabled` / `Disabled` | Real-time payload force scaling | When enabled, automatically stiffens pedals as airspeed increases and softens them during slow taxi ($V_{\text{IAS}} \approx 0$). |
+| **Travel Limits (MIN / MAX)**| Dual Slider | $5\%\text{--}95\%$ Travel | `softEndstopMinStepperPos_i32` / `Max` | Calibrated software travel limits preventing mechanical collisions with physical endstops. |
 
 ---
 
-## 9. Flight Rudder User Interface (GUI) Design Concept
+### 7.2 Helicopter (Anti-Torque) Mode Interface
 
-To ensure intuitive configuration for both fixed-wing aircraft and helicopters, the Rudder UI in SimHub must adapt dynamically based on the selected flight operation mode.
+In Helicopter mode, the aerodynamic centering spring is completely disabled ($K_{\text{spring}} = 0\text{ N}$). The pedal functions as a **Free-Floating, Continuous Position-Hold** anti-torque pedal driven purely by viscous damping and mechanical clamping friction.
 
-### 9.1 Mode-Adaptive Interface Layout
+![SimHub Plugin Rudder Interface - Helicopter Mode](media/images/plugin_rudder_mode_helicopter_0.png)
 
-```text
-+-----------------------------------------------------------------------------------------------+
-|  RUDDER FFB CONTROL                                                                           |
-+----------------------+------------------------------------------------------------------------+
-| [ SYSTEM STATUS ]    | [ FLIGHT RUDDER FORCE GRAPH ] (Nur im Airplane-Modus aktiv)            |
-| Left Pedal:  [OK]    |   Force                                                                |
-| Right Pedal: [OK]    |   10kg| \                                 /                            |
-| Bridge:      [OK]    |       |  \                               /                             |
-|                      |       |   \                             /                              |
-| [ OPERATION MODE ]   |    0kg+----+-------------+-------------+----                            |
-| (o) Airplane         |          -50% (Left)   0% (Center)   +50% (Right)                      |
-| ( ) Helicopter       |                                                                        |
-|                      +------------------------------------------------------------------------+
-|                      | [ FLIGHT DYNAMICS & SETTINGS ]                                         |
-| [ FFB ACTION ]       |                                                                        |
-| +------------------+ | Airplane Modus:                                                        |
-| |    [ ENABLE ]    | | * Aerodynamic Centering Force: [====|=========] 10.0 kg                |
-| +------------------+ | * Centering Profile:           [ Linear ] [ Progressive ] [ S-Curve ]  |
-|                      | * Centering Deadzone:          [==|===========] 0.0 %                  |
-| [ TRAVEL LIMITS ]    |                                                                        |
-| Min: [ 5% ]          | Helicopter Modus (Zentrierfeder inaktiv / Free-Floating):              |
-| Max: [ 95% ]         | * Hydraulic Viscous Damping:   [======|=======] 45 %                   |
-|                      | * Mechanical Friction:         [===|==========] 3.0 N                  |
-|                      |                                                                        |
-|                      | Gemeinsame Parameter:                                                  |
-|                      | * Bilateral Push-Pull Sync:    [=========|====] 80 N                   |
-|                      | * Rudder Trim Offset:          [<----|----->  ] 0.0 %                  |
-+----------------------+------------------------------------------------------------------------+
-```
+#### Helicopter Mode Parameter Breakdown:
 
-### 9.2 Key GUI Principles by Operational Mode
-
-1. **Airplane (Fixed-Wing) Mode**:
-   * **Bipolar Symmetric Force Graph**: Displays centering force symmetrically from Neutral ($0\%$) to Left ($-50\%$) and Right ($+50\%$).
-   * **Aerodynamic Centering Force**: Slider ($0\text{--}25\text{ kg}$) setting maximum centering resistance at full deflection.
-   * **Centering Profile**: Switch between **Linear** (standard flight), **Progressive** (high-speed/jet feel), and **S-Curve**.
-   * **Trim Offset**: Physical trim slider shifting the zero-force aerodynamic neutral point.
-
-2. **Helicopter (Anti-Torque) Mode**:
-   * **Free-Floating Status Badge**: Centering force curve is replaced by an indicator showing that the return spring is inactive ($0\text{ N}$).
-   * **Hydraulic Viscous Damping**: Controls smooth pedal resistance without spring return.
-   * **Mechanical Friction (Coulomb Friction)**: Adjusts hold-in-place clamping friction so pedals do not move under their own weight.
-   * **Trim Offset / Hover Bias**: Sets the continuous offset required for anti-torque hover.
-
-3. **Shared Bilateral Kinematics**:
-   * **Bilateral Push-Pull Sync**: Defines the mechanical coupling stiffness ($x_2 = 1.0 - x_1$) between both pedals.
-   * **Travel Limits**: Calibrated soft endstops ($5\%\text{--}95\%$) ensuring identical full physical strokes on both pedals.
+| Parameter | UI Control | Range / Units | Firmware Register / Variable | Aviation Physics & Implementation Function |
+|---|---|---|---|---|
+| **Free-Floating Status Badge** | Top Banner | Readout | `RUDDER_MODE_HELICOPTER (1)` | Visually confirms that the return spring is inactive ($0\text{ N}$). Moving the pedal into any position and releasing the foot leaves it locked at that exact position. |
+| **Hydraulic Viscous Damping** | Horizontal Slider | $0\text{--}100\text{ \%}$ | `virtualPedalDampingInPercent_u8` | Simulates the hydraulic damper attached to helicopter anti-torque pedals. Governs $D_{\text{heli}} \cdot \dot{x}$ ($30\text{--}110\text{ N}\cdot\text{s/m}$), preventing erratic pedal flutter during high-rate yaw inputs. |
+| **Mechanical Friction** | Horizontal Slider | $0.5\text{--}5.0\text{ N}$ | `coulombFrictionIn0p1N_u8` | Coulomb clamping friction ($F_{\text{coulomb}}$). Provides static holding force so pedals do not sag or shift under cable tension or the passive weight of pilot feet. |
+| **Hover Bias / Anti-Torque Trim** | Horizontal Slider | $-25\text{\%}\text{ to }+25\text{\%}$ | `rudderOffsets_st.trimOffset_01` | Pre-positions the pedals for trimmed hover (e.g. left pedal forward for American counter-clockwise rotors; right pedal forward for European clockwise rotors), avoiding pilot leg fatigue. |
 
 ---
 
-## 10. Summary & Next Steps for Implementation
+### 7.3 Shared Bilateral Coupling & Admittance Parameters
 
-1. **Dual-Pedal Kinematic Coupling**: Use PR #99's force-sync foundation to establish the complete anti-symmetric admittance model ($x_R = 1.0 - x_L$ with $K_{\text{link}}$ opposing force).
-2. **Flight Mode Dispatcher**: Implement a mode-selectable admittance stage in `StepperMovementStrategy.h` branching between Plane Reversible (Q-feel), Plane FBW (spring+breakout), Heli Friction (non-centering), and Heli Force Trim (FTR-anchored).
-3. **Telemetry Ingestion**: Extend SimHub plugin to pass telemetry parameters ($V_{\text{IAS}}$, AoA, engine state, FTR button states) down to the ESP32 via USB and ESP-NOW.
+Both Airplane and Helicopter modes share the underlying 4 kHz bilateral admittance mechanics and push-pull interconnect:
+
+| Parameter | UI Control | Range / Units | Firmware Implementation | Mechanical & Simulation Function |
+|---|---|---|---|---|
+| **Bilateral Push-Pull Sync** | Slider | $20\text{--}400\text{ N}$ | `trackingGain_N = 250.0f` | Rigid virtual linkage gain ($x_{\text{remote}} = 1.0 - x_{\text{local}}$). Replicates a solid mechanical pushrod connecting left and right pedals. |
+| **Hard Common-Mode Lock** | Firmware Active | $1200\text{ N}$ barrier | `K_COMMON_LOCK_N = 1200.0f` | Solid mechanical barrier that instantly stops dual forward travel if the pilot presses both pedals simultaneously ($(x_L + x_R) > 1.0$). |
+| **Virtual Pedal Mass** | Slider | $0.5\text{--}5.0\text{ kg}$ | `virtualMass_kg` | Virtual inertia $M$ in the admittance differential equation ($M\ddot{x} + C\dot{x} + Kx = F$). Sets the tactile heft and physical momentum of the pedal assembly. |
+| **Soft Endstop Travel** | Slider | $0\text{--}10\text{ mm}$ | `penetration_m` | Elastic deceleration zone before hard physical limits. |
+| **Soft Endstop Stiffness** | Slider | $5\text{--}25\text{ kg/mm}$ | `stiffnessAtMaxTravel_Npermm` | Progressive spring rate at the end of travel, ensuring smooth cushioning without mechanical clatter. |
+
+---
+
+### 7.4 ESP-NOW Wireless Telemetry & Diagnostics
+
+The bottom panel provides real-time latency and packet transmission diagnostics for the peer-to-peer wireless link:
+
+* **Delay (ms)**: Round-trip handshake latency (optimized to $\le 2\text{ ms}$ via high-speed ESP-NOW streaming).
+* **Rate (Hz)**: Live packet exchange rate (boosted to $350\text{--}500\text{ Hz}$ with $2\text{ ms}$ update intervals).
+* **Jitter (ms)**: Packet arrival timing variance (typically $\le \pm 1\text{ ms}$).
+* **Real-time Latency Scope**: Live rolling waveform visualizing jitter stability and signal integrity.
+
