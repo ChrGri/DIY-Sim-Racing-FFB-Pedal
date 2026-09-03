@@ -581,5 +581,118 @@ namespace DiyFfbPedal
             }
             catch { }
         }
+
+        #region Rudder ESP-NOW Latency & Stability Monitor
+        private readonly Queue<double> _latencyHistory = new Queue<double>();
+        private const int MAX_LATENCY_HISTORY_POINTS = 80;
+        private DateTime _lastLatencyPacketTime = DateTime.MinValue;
+        private double _smoothedJitter_ms = 0.0;
+        private double _smoothedRate_hz = 0.0;
+        private double _prevDelay_ms = 0.0;
+
+        public void UpdateRudderLatency(byte delay_ms)
+        {
+            if (Dispatcher.CheckAccess())
+            {
+                UpdateRudderLatencyInternal(delay_ms);
+            }
+            else
+            {
+                Dispatcher.BeginInvoke(new Action(() => UpdateRudderLatencyInternal(delay_ms)));
+            }
+        }
+
+        private void UpdateRudderLatencyInternal(byte delay_ms)
+        {
+            if (poly_rudder_latency_trace == null || canvas_rudder_latency_graph == null) return;
+
+            double d = (double)delay_ms;
+
+            // Packet rate calculation
+            DateTime now = DateTime.UtcNow;
+            if (_lastLatencyPacketTime != DateTime.MinValue)
+            {
+                double dtSec = (now - _lastLatencyPacketTime).TotalSeconds;
+                if (dtSec > 0.001 && dtSec < 1.0)
+                {
+                    double instRate = 1.0 / dtSec;
+                    _smoothedRate_hz = (_smoothedRate_hz == 0.0) ? instRate : (_smoothedRate_hz * 0.9 + instRate * 0.1);
+                }
+            }
+            _lastLatencyPacketTime = now;
+
+            // Jitter calculation
+            double delta = Math.Abs(d - _prevDelay_ms);
+            _smoothedJitter_ms = (_smoothedJitter_ms == 0.0) ? delta : (_smoothedJitter_ms * 0.92 + delta * 0.08);
+            _prevDelay_ms = d;
+
+            // Push to history
+            _latencyHistory.Enqueue(d);
+            while (_latencyHistory.Count > MAX_LATENCY_HISTORY_POINTS)
+            {
+                _latencyHistory.Dequeue();
+            }
+
+            // Update Text Badges
+            if (tb_rudder_sync_delay != null)
+            {
+                tb_rudder_sync_delay.Text = $"Delay: {d:F0} ms";
+                if (d <= 10.0)
+                    tb_rudder_sync_delay.Foreground = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0xCC));
+                else if (d <= 20.0)
+                    tb_rudder_sync_delay.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xD7, 0x00));
+                else
+                    tb_rudder_sync_delay.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0x55, 0x55));
+            }
+
+            if (tb_rudder_sync_rate != null)
+            {
+                tb_rudder_sync_rate.Text = $"Rate: {_smoothedRate_hz:F0} Hz";
+            }
+
+            if (tb_rudder_sync_jitter != null)
+            {
+                tb_rudder_sync_jitter.Text = $"Jitter: ±{_smoothedJitter_ms:F1} ms";
+            }
+
+            // Draw Graph
+            double canvasWidth = canvas_rudder_latency_graph.ActualWidth;
+            double canvasHeight = canvas_rudder_latency_graph.ActualHeight;
+            if (canvasWidth <= 0) canvasWidth = 520;
+            if (canvasHeight <= 0) canvasHeight = 135;
+
+            // Scale: 0 to 30 ms
+            const double MAX_DISPLAY_MS = 30.0;
+            double xStep = canvasWidth / Math.Max(1, MAX_LATENCY_HISTORY_POINTS - 1);
+
+            PointCollection points = new PointCollection();
+            PointCollection fillPoints = new PointCollection();
+            fillPoints.Add(new Point(0, canvasHeight));
+
+            int idx = 0;
+            foreach (double val in _latencyHistory)
+            {
+                double x = idx * xStep;
+                double clampedVal = Math.Min(Math.Max(val, 0.0), MAX_DISPLAY_MS);
+                double y = canvasHeight - (clampedVal / MAX_DISPLAY_MS * (canvasHeight - 15.0)) - 5.0;
+
+                Point pt = new Point(x, y);
+                points.Add(pt);
+                fillPoints.Add(pt);
+                idx++;
+            }
+
+            if (points.Count > 0)
+            {
+                fillPoints.Add(new Point((points.Count - 1) * xStep, canvasHeight));
+            }
+
+            poly_rudder_latency_trace.Points = points;
+            if (poly_rudder_latency_fill != null)
+            {
+                poly_rudder_latency_fill.Points = fillPoints;
+            }
+        }
+        #endregion
     }
 }

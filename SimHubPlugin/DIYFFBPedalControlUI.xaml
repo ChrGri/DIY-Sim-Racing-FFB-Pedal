@@ -602,6 +602,55 @@
                                             <localFunction:EffectsTab_RudderACC x:Name="EffectRudderACC_Tab" SettingsChanged="Tab_SettingsChanged"/>
                                         </TabItem>
                                     </TabControl>
+
+                                    <!-- Wireless Sync Latency & Stability Monitor -->
+                                    <Border Background="#7F4E4E4E" CornerRadius="5" Height="175" Width="540" Margin="0,6,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                        <Grid Margin="8,6,8,6">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Header & Live Badges -->
+                                            <DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,4">
+                                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                                                    <TextBlock Text="📡" FontSize="11" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                    <TextBlock Text="ESP-NOW WIRELESS SYNC LATENCY &amp; STABILITY" FontFamily="Arial Black" FontSize="10" Foreground="#00E5FF" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                
+                                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                                    <Border Background="#3300FFCC" BorderBrush="#6600FFCC" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="3,0">
+                                                        <TextBlock x:Name="tb_rudder_sync_delay" Text="Delay: -- ms" FontFamily="Consolas" FontSize="10" Foreground="#00FFCC" FontWeight="Bold"/>
+                                                    </Border>
+                                                    <Border Background="#22FFFFFF" BorderBrush="#44FFFFFF" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="3,0">
+                                                        <TextBlock x:Name="tb_rudder_sync_rate" Text="Rate: -- Hz" FontFamily="Consolas" FontSize="10" Foreground="#E0E0E0"/>
+                                                    </Border>
+                                                    <Border Background="#22FFFFFF" BorderBrush="#44FFFFFF" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="3,0">
+                                                        <TextBlock x:Name="tb_rudder_sync_jitter" Text="Jitter: ±-- ms" FontFamily="Consolas" FontSize="10" Foreground="#AAAAAA"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </DockPanel>
+
+                                            <!-- Oscilloscope Graph Frame -->
+                                            <Border Grid.Row="1" Background="#EE141720" BorderBrush="#3300E5FF" BorderThickness="1" CornerRadius="4" ClipToBounds="True">
+                                                <Canvas x:Name="canvas_rudder_latency_graph" Height="135" Width="520" Margin="0" ClipToBounds="True">
+                                                    <!-- Reference Grid Lines -->
+                                                    <Line X1="0" Y1="27" X2="520" Y2="27" Stroke="#20FFFFFF" StrokeDashArray="3 3"/>
+                                                    <TextBlock Text="20ms" Foreground="#44FFFFFF" FontSize="8" Canvas.Left="4" Canvas.Top="20"/>
+
+                                                    <Line X1="0" Y1="67" X2="520" Y2="67" Stroke="#20FFFFFF" StrokeDashArray="3 3"/>
+                                                    <TextBlock Text="10ms" Foreground="#44FFFFFF" FontSize="8" Canvas.Left="4" Canvas.Top="60"/>
+
+                                                    <Line X1="0" Y1="107" X2="520" Y2="107" Stroke="#20FFFFFF" StrokeDashArray="3 3"/>
+                                                    <TextBlock Text="5ms" Foreground="#44FFFFFF" FontSize="8" Canvas.Left="4" Canvas.Top="100"/>
+
+                                                    <!-- Live Polyline Graph -->
+                                                    <Polygon x:Name="poly_rudder_latency_fill" Fill="#1500FFCC"/>
+                                                    <Polyline x:Name="poly_rudder_latency_trace" Stroke="#00FFCC" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                                </Canvas>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
                                     
                                 </StackPanel>
                                 

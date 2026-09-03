@@ -207,6 +207,20 @@ namespace DiyFfbPedal
                                     float rudderRatio = (float)Math.Max(0.0, Math.Min(1.0, 0.5 - 0.5 * leftNorm + 0.5 * rightNorm));
                                     CurveRudderForce_Tab.UpdateLiveDeflection(rudderRatio);
                                 }
+
+                                if (Plugin.Rudder_status)
+                                {
+                                    uint leftIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 0) ? (uint)Plugin.Rudder_Pedal_idx[0] : 1;
+                                    uint rightIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 1) ? (uint)Plugin.Rudder_Pedal_idx[1] : 2;
+                                    if (pedalSelected == leftIdx || pedalSelected == rightIdx)
+                                    {
+                                        byte syncDelay = pedalState_read_st.payloadPedalBasicState_.rudderSyncDelay_ms;
+                                        if (syncDelay > 0)
+                                        {
+                                            UpdateRudderLatency(syncDelay);
+                                        }
+                                    }
+                                }
                                 if ((pedalStateHasAlreadyBeenUpdated_b == false) && (indexOfSelectedPedal_u == pedalSelected))
                                 {
                                     double control_rect_value_max = 65535;

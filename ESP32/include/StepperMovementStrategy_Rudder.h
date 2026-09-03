@@ -17,6 +17,7 @@ static float g_smoothedRudderEffectAcc_mps2 = 0.0f;
 static float s_activeCenterPos_01 = 0.50f;
 static float s_filteredSyncForce_N = 0.0f;
 static float s_filteredPilotForce_N = 0.0f;
+static float s_smoothedSyncTargetPos_01 = 0.50f;
 static bool s_wasRudderActive = false;
 
 /**
@@ -30,6 +31,7 @@ inline void ResetRudderStrategyState() {
   s_activeCenterPos_01 = 0.50f;
   s_filteredSyncForce_N = 0.0f;
   s_filteredPilotForce_N = 0.0f;
+  s_smoothedSyncTargetPos_01 = 0.50f;
   g_smoothedRudderEffectPos_m = 0.0f;
   g_prevSmoothedRudderEffectPos_m = 0.0f;
   g_smoothedRudderEffectVel_mps = 0.0f;
@@ -93,6 +95,7 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
     s_activeCenterPos_01 = 0.50f;
     s_filteredSyncForce_N = 0.0f;
     s_filteredPilotForce_N = 0.0f;
+    s_smoothedSyncTargetPos_01 = 0.50f;
     s_wasRudderActive = true;
   }
 
@@ -120,12 +123,21 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   // Opposing push-pull reaction force
   float rudderPedalOpposingForce_N = -1.0f * s_filteredSyncForce_N;
 
-  // Real-time kinematic position coupling (x_R = 1.0 - x_L)
+  // Real-time kinematic position coupling (x_R = 1.0 - x_L) with continuous trajectory smoothing
   float syncTrackingForce_N = 0.0f;
   if (calc_st->syncPedalPositionRatio_fl32 >= 0.0f && calc_st->syncPedalPositionRatio_fl32 <= 1.0f) {
-    float syncTargetPos_01 = 1.0f - calc_st->syncPedalPositionRatio_fl32;
-    float posError = syncTargetPos_01 - g_vRudderModelPos_01;
-    syncTrackingForce_N = 80.0f * posError;
+    float rawSyncTargetPos_01 = 1.0f - calc_st->syncPedalPositionRatio_fl32;
+
+    // Continuous EMA trajectory filter (cutoff ~18-20 Hz) converts discrete wireless packet steps into a fluid path
+    const float SYNC_POS_TAU = 0.018f; // 18ms smoothing time constant
+    float pos_alpha = 1.0f - expf(-dt_s / SYNC_POS_TAU);
+    s_smoothedSyncTargetPos_01 += pos_alpha * (rawSyncTargetPos_01 - s_smoothedSyncTargetPos_01);
+
+    float posError = s_smoothedSyncTargetPos_01 - g_vRudderModelPos_01;
+
+    // Soften tracking gain in Helicopter mode to eliminate bilateral delayed feedback limit cycle oscillations
+    float trackingGain_N = (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) ? 50.0f : 80.0f;
+    syncTrackingForce_N = trackingGain_N * posError;
   }
 
   // 4. Physical Geometry & Task-Space Conversion (Arc Length in Meters)
@@ -224,7 +236,7 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   float coulombFriction_N = ((float)config_st->payloadPedalConfig_st.coulombFrictionIn0p1N_u8) * 0.1f;
   if (coulombFriction_N < 0.5f) coulombFriction_N = 1.5f;
 
-  const float VELOCITY_EPSILON_MPS = 0.005f;
+  const float VELOCITY_EPSILON_MPS = (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) ? 0.015f : 0.005f;
   float frictionForce_N = coulombFriction_N * tanhf(g_vRudderModelVel_mps / VELOCITY_EPSILON_MPS);
 
   // 9. Soft Endstops

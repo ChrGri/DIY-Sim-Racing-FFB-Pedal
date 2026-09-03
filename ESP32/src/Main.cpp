@@ -2569,11 +2569,16 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             .servoStatus_u8 = stepper->servoStatus;
 
 #ifdef ESPNOW_Enable
+        dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st
+            .rudderSyncDelay_ms = g_currentSyncDelay_ms;
         if (g_espNowErrorCode_u8 != 0) {
           dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st
               .errorCode_u8 = g_espNowErrorCode_u8;
           g_espNowErrorCode_u8 = 0;
         }
+#else
+        dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st
+            .rudderSyncDelay_ms = 0;
 #endif
 
         if ((stepper->getLifelineSignal() == false) &&
@@ -3528,7 +3533,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
   profiler_espNow.setName("EspNow");
 
   uint Pairing_timeout = 20000;
-  uint rudderPacketInterval = 12;
+  uint rudderPacketInterval = 6;
   uint joystickPacketInterval = 3;
   uint basicStateUpdateIntervalBase[3] = {8, 7, 6};
   uint extendStateUpdateInterval = 10;
@@ -3959,6 +3964,8 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
                 dap_calculationVariables_st.currentPedalPosition_u32;
             g_dapRudderSending_st.payloadRudderState_st.pedalForce_N_fl32 =
                 dap_calculationVariables_st.currentPedalForce_N_fl32;
+            g_dapRudderSending_st.payloadRudderState_st.sendTimestamp_ms = millis();
+            g_dapRudderSending_st.payloadRudderState_st.echoTimestamp_ms = g_lastPartnerTimestamp_ms;
             g_dapRudderSending_st.payloadHeader_st.payloadType_u8 =
                 DAP_PAYLOAD_TYPE_ESPNOW_RUDDER_U8;
             g_dapRudderSending_st.payloadHeader_st.pedalTag_u8 =
@@ -3971,7 +3978,22 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
                 sizeof(g_dapRudderSending_st.payloadHeader_st) +
                     sizeof(g_dapRudderSending_st.payloadRudderState_st));
             g_dapRudderSending_st.payloadFooter_st.checkSum_u16 = crc;
-            ESPNow.send_message(g_broadcastMac_au8,
+            uint8_t *targetMac = g_broadcastMac_au8;
+            bool isRecvMacValid = false;
+            for (int m = 0; m < 6; m++) {
+              if (g_recvMac_au8[m] != 0) {
+                isRecvMacValid = true;
+                break;
+              }
+            }
+            if (isRecvMacValid) {
+              if (!esp_now_is_peer_exist(g_recvMac_au8)) {
+                ESPNow.add_peer(g_recvMac_au8);
+              }
+              targetMac = g_recvMac_au8;
+            }
+            g_lastEspnowSendTime_u32 = millis();
+            ESPNow.send_message(targetMac,
                                 (uint8_t *)&g_dapRudderSending_st,
                                 sizeof(g_dapRudderSending_st));
             // ESPNow_send=dap_calculationVariables_st.currentPedalPosition_u32;

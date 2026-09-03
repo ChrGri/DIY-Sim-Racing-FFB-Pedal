@@ -28,8 +28,8 @@ uint8_t g_pedalMac_aau8[3][6] = {
 };
 uint8_t g_broadcastMac_au8[]={0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 uint8_t g_espHost_au8[] = {0x36, 0x33, 0x33, 0x33, 0x33, 0x35};
-uint8_t g_espMac_au8[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-uint8_t g_recvMac_au8[]={0};
+uint8_t g_espMac_au8[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+uint8_t g_recvMac_au8[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 uint16_t g_espNowSend_u16=0;
 uint16_t g_espNowReceive_u16=0;
 int32_t g_rssi_ai32[4]={0,0,0,0};//clutch, brake,throttle,bridge
@@ -72,6 +72,8 @@ volatile uint32_t g_lastEspnowRecvTime_u32 = 0;
 volatile bool g_isEspnowConnected_b = false;
 volatile uint32_t g_lastEspnowSendTime_u32 = 0;
 volatile uint32_t g_lastEspnowOnSentTime_u32 = 0;
+volatile uint32_t g_lastPartnerTimestamp_ms = 0;
+volatile uint8_t g_currentSyncDelay_ms = 0;
 
 /*
 struct ESPNow_Send_Struct
@@ -227,7 +229,11 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
   if(g_espNowStatus_b)
   {
     //rudder message
-    if(macCheck(g_recvMac_au8,(uint8_t *)esp_now_info->src_addr))
+    bool isRudderSender = macCheck(g_recvMac_au8, (uint8_t *)esp_now_info->src_addr) ||
+                          macCheck(g_pedalMac_aau8[0], (uint8_t *)esp_now_info->src_addr) ||
+                          macCheck(g_pedalMac_aau8[1], (uint8_t *)esp_now_info->src_addr) ||
+                          macCheck(g_pedalMac_aau8[2], (uint8_t *)esp_now_info->src_addr);
+    if(isRudderSender)
     {
       if(data_len==sizeof(DapRudder_t))
       {
@@ -256,6 +262,32 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
         {
           memcpy(&g_dapRudderReceiving_st, data, sizeof(DapRudder_t));
           g_espNowRudderUpdate_b=true;
+
+          // Lock onto partner pedal's MAC for unicast
+          memcpy(g_recvMac_au8, esp_now_info->src_addr, 6);
+          if (!esp_now_is_peer_exist(g_recvMac_au8)) {
+            ESPNow.add_peer(g_recvMac_au8);
+          }
+
+          // 1. Immediate zero-latency update to calculation variables for 4000 Hz physics loop
+          dap_calculationVariables_st.syncPedalPosition_u32 = dapg_rudder_st_st_local.payloadRudderState_st.pedalPosition_u16;
+          dap_calculationVariables_st.syncPedalPositionRatio_fl32 = dapg_rudder_st_st_local.payloadRudderState_st.pedalPositionRatio_fl32;
+          dap_calculationVariables_st.syncPedalForce_N_fl32 = dapg_rudder_st_st_local.payloadRudderState_st.pedalForce_N_fl32;
+
+          // 2. RTT and Latency computation
+          uint32_t incomingSendTime = dapg_rudder_st_st_local.payloadRudderState_st.sendTimestamp_ms;
+          uint32_t incomingEchoTime = dapg_rudder_st_st_local.payloadRudderState_st.echoTimestamp_ms;
+          g_lastPartnerTimestamp_ms = incomingSendTime;
+
+          if (incomingEchoTime > 0) {
+            uint32_t now_ms = millis();
+            if (now_ms >= incomingEchoTime) {
+              uint32_t rtt = now_ms - incomingEchoTime;
+              if (rtt < 255) {
+                g_currentSyncDelay_ms = (uint8_t)(rtt / 2); // One-way wireless delay in ms
+              }
+            }
+          }
         }
 
       }
