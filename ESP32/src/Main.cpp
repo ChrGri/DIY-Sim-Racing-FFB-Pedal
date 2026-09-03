@@ -2370,8 +2370,10 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             float targetPosFraction_fl32 =
                 stepper->getCurrentPositionFractionFromExternalPos(
                     Position_Next_fl32 - stepper->getMinPosition());
+            bool isRudderModeActive = dap_calculationVariables_st.rudderStatus_b ||
+                                      dap_calculationVariables_st.helicopterRudderStatus_b;
             if ((fabsf(requiredSpeed) < 10) &&
-                (targetPosFraction_fl32 <= 0.05f)) {
+                (targetPosFraction_fl32 <= 0.05f || isRudderModeActive)) {
               if (abs(hardwareDistance_i32) > 1) {
                 float catchUpKp = 400.0f;
                 catchUpSpeedHz =
