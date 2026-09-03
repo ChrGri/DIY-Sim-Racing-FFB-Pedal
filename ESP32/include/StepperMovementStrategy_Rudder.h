@@ -84,8 +84,8 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   float dampingRatio_zeta = 1.4f;
 
   if (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) {
-    virtualMass_kg = 1.2f;
-    dampingRatio_zeta = 2.0f; // High damping for smooth non-spring helicopter feel
+    virtualMass_kg = 1.5f;
+    dampingRatio_zeta = 2.5f; // High damping for smooth non-spring helicopter feel
   }
 
   // 3. Dynamic Rudder Setpoint & Bilateral Push-Pull Synchronization
@@ -131,12 +131,17 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
     // Continuous EMA trajectory filter (cutoff ~18-20 Hz) converts discrete wireless packet steps into a fluid path
     const float SYNC_POS_TAU = 0.018f; // 18ms smoothing time constant
     float pos_alpha = 1.0f - expf(-dt_s / SYNC_POS_TAU);
-    s_smoothedSyncTargetPos_01 += pos_alpha * (rawSyncTargetPos_01 - s_smoothedSyncTargetPos_01);
+    float desiredDelta_01 = pos_alpha * (rawSyncTargetPos_01 - s_smoothedSyncTargetPos_01);
+
+    // Limit maximum slew rate of remote sync target in Helicopter mode to eliminate rapid catch-up jumps
+    float maxSyncSlew_01 = (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) ? (2.5f * dt_s) : (10.0f * dt_s);
+    desiredDelta_01 = constrain(desiredDelta_01, -maxSyncSlew_01, maxSyncSlew_01);
+    s_smoothedSyncTargetPos_01 += desiredDelta_01;
 
     float posError = s_smoothedSyncTargetPos_01 - g_vRudderModelPos_01;
 
     // Soften tracking gain in Helicopter mode to eliminate bilateral delayed feedback limit cycle oscillations
-    float trackingGain_N = (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) ? 50.0f : 80.0f;
+    float trackingGain_N = (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) ? 40.0f : 80.0f;
     syncTrackingForce_N = trackingGain_N * posError;
   }
 
@@ -231,6 +236,12 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
 
   // 8. Friction and Damping Forces
   float viscousDamping_Ns_m = idealBaseDamping_Ns_m;
+  if (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) {
+    // Mode 2: Helicopter hydraulic viscous damper feel (connected to UI Viscous Damping slider)
+    float dampingSlider = (float)config_st->payloadPedalConfig_st.virtualPedalDampingInPercent_u8;
+    if (dampingSlider < 5.0f) dampingSlider = 45.0f; // Default 45% if unconfigured
+    viscousDamping_Ns_m = 30.0f + (dampingSlider * 0.8f); // 34 to 110 N*s/m
+  }
   float dampingForce_N = viscousDamping_Ns_m * g_vRudderModelVel_mps;
 
   float coulombFriction_N = ((float)config_st->payloadPedalConfig_st.coulombFrictionIn0p1N_u8) * 0.1f;
@@ -262,7 +273,8 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   float accel_mps2 = netForce_N / virtualMass_kg;
 
   g_vRudderModelVel_mps += accel_mps2 * dt_s;
-  g_vRudderModelVel_mps = constrain(g_vRudderModelVel_mps, -1.5f, 1.5f);
+  float maxPedalVel_mps = (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) ? 0.12f : 0.80f;
+  g_vRudderModelVel_mps = constrain(g_vRudderModelVel_mps, -maxPedalVel_mps, maxPedalVel_mps);
 
   g_vRudderModelPos_01 += (g_vRudderModelVel_mps * dt_s) / totalTravel_m;
   g_vRudderModelPos_01 = constrain(g_vRudderModelPos_01, 0.01f, 0.99f);
