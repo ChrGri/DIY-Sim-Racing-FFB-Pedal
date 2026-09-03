@@ -3536,7 +3536,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
   profiler_espNow.setName("EspNow");
 
   uint Pairing_timeout = 20000;
-  uint rudderPacketInterval = 6;
+  uint rudderPacketInterval = 2;
   uint joystickPacketInterval = 3;
   uint basicStateUpdateIntervalBase[3] = {8, 7, 6};
   uint extendStateUpdateInterval = 10;

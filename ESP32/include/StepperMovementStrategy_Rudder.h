@@ -129,57 +129,58 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
     }
   }
 
-  // Low-pass filter remote sync force from opposite pedal (cutoff ~8 Hz)
-  // with 1.5 N deadband
+  // Filtered remote sync force from opposite pedal (15ms tau eliminates loadcell micro-vibrations)
   float rawSyncForce_N = calc_st->syncPedalForce_N_fl32;
   float cleanSyncForce_N = 0.0f;
-  if (fabsf(rawSyncForce_N) > 1.5f) {
-    cleanSyncForce_N = (rawSyncForce_N > 0.0f) ? (rawSyncForce_N - 1.5f)
-                                               : (rawSyncForce_N + 1.5f);
+  if (fabsf(rawSyncForce_N) > 1.0f) {
+    cleanSyncForce_N = (rawSyncForce_N > 0.0f) ? (rawSyncForce_N - 1.0f)
+                                               : (rawSyncForce_N + 1.0f);
   }
-  const float SYNC_FORCE_TAU = 0.035f; // 35ms filter time constant
+  const float SYNC_FORCE_TAU = 0.015f; // 15ms filter: fast response without high-frequency buzzing
   float sync_alpha = 1.0f - expf(-dt_s / SYNC_FORCE_TAU);
   s_filteredSyncForce_N = (sync_alpha * cleanSyncForce_N) +
                           ((1.0f - sync_alpha) * s_filteredSyncForce_N);
 
-  // Opposing push-pull reaction force
+  // 1. Direct opposing push-pull reaction force (cancels common-mode foot pressure)
   float rudderPedalOpposingForce_N = -1.0f * s_filteredSyncForce_N;
 
   // Real-time kinematic position coupling (x_R = 1.0 - x_L) with continuous
   // trajectory smoothing
   float syncTrackingForce_N = 0.0f;
+  float commonModeForce_N = 0.0f;
   if (calc_st->syncPedalPositionRatio_fl32 >= 0.0f &&
       calc_st->syncPedalPositionRatio_fl32 <= 1.0f) {
     float rawSyncTargetPos_01 = 1.0f - calc_st->syncPedalPositionRatio_fl32;
 
-    // Continuous EMA trajectory filter (cutoff ~18-20 Hz) converts discrete
-    // wireless packet steps into a fluid path
-    const float SYNC_POS_TAU = 0.018f; // 18ms smoothing time constant
+    // Smooth EMA trajectory filter (14ms smoothing converts packet arrivals into an analog motion)
+    const float SYNC_POS_TAU = 0.014f;
     float pos_alpha = 1.0f - expf(-dt_s / SYNC_POS_TAU);
     float desiredDelta_01 =
         pos_alpha * (rawSyncTargetPos_01 - s_smoothedSyncTargetPos_01);
 
-    // Slew rate of remote sync target: fast enough to eliminate phase lag and
-    // maintain rigid coupling
+    // Fast sync slew rate: maintains rigid coupling without phase lag
     float maxSyncSlew_01 =
         (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER)
-            ? (6.0f * dt_s)
-            : (10.0f * dt_s);
+            ? (8.0f * dt_s)
+            : (12.0f * dt_s);
     desiredDelta_01 =
         constrain(desiredDelta_01, -maxSyncSlew_01, maxSyncSlew_01);
     s_smoothedSyncTargetPos_01 += desiredDelta_01;
 
     float posError = s_smoothedSyncTargetPos_01 - g_vRudderModelPos_01;
 
-    // Rigid Bilateral Push-Pull Sync tracking gain
-    float trackingGain_N =
-        (float)config_st->payloadPedalConfig_st.minForceForEffects_u8;
-    if (trackingGain_N < 20.0f) {
-      trackingGain_N =
-          (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) ? 60.0f
-                                                                     : 80.0f;
-    }
+    // 2. Rigid Bilateral Push-Pull Sync tracking gain (250 N: rock-solid feel without graininess)
+    float trackingGain_N = 250.0f;
     syncTrackingForce_N = trackingGain_N * posError;
+
+    // 3. Hard Common-Mode Lock on smoothed trajectory: Blocks pushing both pedals forward simultaneously
+    // For a rigid linkage: x_local + x_remote_smoothed = 1.0. If sum > 1.0, both feet are pushing forward!
+    float remoteSmoothedPos_01 = 1.0f - s_smoothedSyncTargetPos_01;
+    float commonModeCompression_01 = (g_vRudderModelPos_01 + remoteSmoothedPos_01) - 1.0f;
+    if (commonModeCompression_01 > 0.003f) {
+      const float K_COMMON_LOCK_N = 1200.0f; // Immense rigid linkage barrier stiffness
+      commonModeForce_N = -K_COMMON_LOCK_N * (commonModeCompression_01 - 0.003f);
+    }
   }
 
   // 4. Physical Geometry & Task-Space Conversion (Arc Length in Meters)
@@ -353,7 +354,8 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   float totalExternalForce_N =
       (loadCellReadingKg_fl32 * GRAVITY_N_KG) +
       (effectOffsets_st.forceOffset_kg_fl32 * GRAVITY_N_KG) +
-      effectInjectedForce_N + rudderPedalOpposingForce_N + syncTrackingForce_N;
+      effectInjectedForce_N + rudderPedalOpposingForce_N + syncTrackingForce_N +
+      commonModeForce_N;
 
   float netForce_N = totalExternalForce_N - springForce_N - dampingForce_N -
                      frictionForce_N - softEndstopForce_N;
