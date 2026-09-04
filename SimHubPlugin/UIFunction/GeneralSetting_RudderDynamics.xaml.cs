@@ -157,7 +157,7 @@ namespace DiyFfbPedal.UIFunction
         private void Slider_VirtualPedalMassChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (Settings == null) return;
-            Settings.rudderVirtualPedalMass = (byte)(e.NewValue * 100);
+            Settings.rudderVirtualPedalMass = (byte)Math.Min(255, Math.Max(0, (int)Math.Round(e.NewValue * 100)));
             SettingsChangedEvent(Settings);
         }
 

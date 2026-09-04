@@ -50,7 +50,7 @@
                 <!-- Shared Bilateral Kinematics (Push-Pull Coupling & Endstops) -->
                 <StackPanel Height="36" Width="540" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0,2,0,0">
                     <localUI:SliderWithLabel x:Name="Slider_PushPullSyncForce" SliderLength="180" SliderName="{SLoc DIYFFBPedalPlugin_TextPushPullSync, 'Bilateral Push-Pull Sync'}" Width="210" Height="36" MinValue="20" MaxValue="150" TickFrequency="1" Unit="N" SliderValueChanged="Slider_PushPullSyncForce_ValueChanged" ToolTip="Opposing push-pull link stiffness stopping dual-forward pedal press (default: 80 N)." Margin="40,0,0,0" SliderValue="80"/>
-                    <localUI:SliderWithLabel x:Name="Slider_VirtualPedalMass" SliderLength="180" SliderName="{SLoc DIYFFBPedalPlugin_TextDynamicsSettingSliderVirtualPedalMass, 'Virtual Pedal Mass'}" Width="210" Height="36" MinValue="0.5" MaxValue="3.0" TickFrequency="0.05" Unit="kg" SliderValueChanged="Slider_VirtualPedalMassChanged" ToolTip="Apparent physical mass of the rudder pedal." Margin="10,0,0,0" SliderValue="1.0"/>
+                    <localUI:SliderWithLabel x:Name="Slider_VirtualPedalMass" SliderLength="180" SliderName="{SLoc DIYFFBPedalPlugin_TextDynamicsSettingSliderVirtualPedalMass, 'Virtual Pedal Mass'}" Width="210" Height="36" MinValue="0.5" MaxValue="2.55" TickFrequency="0.05" Unit="kg" SliderValueChanged="Slider_VirtualPedalMassChanged" ToolTip="Apparent physical mass of the rudder pedal." Margin="10,0,0,0" SliderValue="1.0"/>
                 </StackPanel>
 
                 <StackPanel Height="36" Width="540" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0,2,0,0">
