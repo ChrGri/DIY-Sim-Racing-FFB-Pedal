@@ -34,7 +34,6 @@ namespace DiyFfbPedal
         public int rectCount = 0;
         public List<double> rectPositionX = new List<double>();
         public List<double> rectPositionY = new List<double>();
-        bool compatibleMode = false;
         public OnlineProfile()
         {
             InitializeComponent();
@@ -181,7 +180,6 @@ namespace DiyFfbPedal
                     if (version < 150)
                     {
                         //MessageBox.Show($"This config is created in DAP{version}, Compatible Mode on");
-                        compatibleMode = true;
                         compatibleForce[0] = (byte)data["payloadPedalConfig_"]["relativeForce_p000"];
                         compatibleForce[1] = (byte)data["payloadPedalConfig_"]["relativeForce_p020"];
                         compatibleForce[2] = (byte)data["payloadPedalConfig_"]["relativeForce_p040"];
@@ -190,7 +188,7 @@ namespace DiyFfbPedal
                         compatibleForce[5] = (byte)data["payloadPedalConfig_"]["relativeForce_p100"];
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
 
                 }

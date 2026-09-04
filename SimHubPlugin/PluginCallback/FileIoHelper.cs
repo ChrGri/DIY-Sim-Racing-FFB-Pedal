@@ -44,7 +44,7 @@ namespace DiyFfbPedal
                 {
                     Directory.CreateDirectory(baseFolderPath);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     return;
                 }
@@ -55,7 +55,7 @@ namespace DiyFfbPedal
                 {
                     Directory.CreateDirectory(configFolderPath);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     return;
                 }
@@ -66,7 +66,7 @@ namespace DiyFfbPedal
                 {
                     Directory.CreateDirectory(profileFolderPath);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     return;
                 }
@@ -77,7 +77,7 @@ namespace DiyFfbPedal
                 {
                     Directory.CreateDirectory(logFolderPath);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     return;
                 }

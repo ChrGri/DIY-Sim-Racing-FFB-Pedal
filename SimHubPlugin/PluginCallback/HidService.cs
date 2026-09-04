@@ -35,9 +35,11 @@ namespace DiyFfbPedal
             private int _vid;
             private int _pid;
             private ushort _targetUsagePage;
-            private SynchronizationContext _uiContext;
             public event Action<byte[]> OnDataReceived;
+            #pragma warning disable CS0067
             public event Action OnDeviceDisconnected;
+#pragma warning restore CS0067
+
             public bool IsConnected;
             public bool IsDeviceAttached;
             public HidDeviceController(int VID, int PID, ushort targetUsagePage)

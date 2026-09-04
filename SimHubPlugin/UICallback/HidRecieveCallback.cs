@@ -16,7 +16,6 @@ namespace DiyFfbPedal
         private int _expectedTotalLen = 0; 
         private bool _isReceiving = false;
         private byte PKT_TYPE_START = 0x01;
-        private byte PKT_TYPE_CONT = 0x02;
         public void HidRecieveCallback(byte[] buffer)
         {
             if (buffer == null || buffer.Length < 4) return;
@@ -198,28 +197,31 @@ namespace DiyFfbPedal
                                 Plugin.PedalStatusInstance.PedalMinForce[pedalSelected] = (int)dap_config_st[pedalSelected].payloadPedalConfig_.preloadForce;
                                 Plugin.PedalStatusInstance.UpdatePedalStatus();
                                 Plugin.rawPedalPos[pedalSelected] = pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16;
-                                if (CurveRudderForce_Tab != null)
+                                if (Tab_Rudder != null && Tab_Rudder.IsSelected)
                                 {
-                                    uint leftIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 0) ? (uint)Plugin.Rudder_Pedal_idx[0] : 1;
-                                    uint rightIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 1) ? (uint)Plugin.Rudder_Pedal_idx[1] : 2;
-                                    double leftNorm = (double)Plugin.rawPedalPos[leftIdx] / 65535.0;
-                                    double rightNorm = (double)Plugin.rawPedalPos[rightIdx] / 65535.0;
-                                    double leftRel = Math.Max(0.0, Math.Min(1.0, leftNorm));
-                                    double rightRel = Math.Max(0.0, Math.Min(1.0, rightNorm));
-                                    float rudderRatio = (float)Math.Max(0.0, Math.Min(1.0, 0.5 - 0.5 * leftRel + 0.5 * rightRel));
-                                    CurveRudderForce_Tab.UpdateLiveDeflection(rudderRatio);
-                                }
-
-                                if (Plugin.Rudder_status)
-                                {
-                                    uint leftIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 0) ? (uint)Plugin.Rudder_Pedal_idx[0] : 1;
-                                    uint rightIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 1) ? (uint)Plugin.Rudder_Pedal_idx[1] : 2;
-                                    if (pedalSelected == leftIdx || pedalSelected == rightIdx)
+                                    if (CurveRudderForce_Tab != null)
                                     {
-                                        byte syncDelay = pedalState_read_st.payloadPedalBasicState_.rudderSyncDelay_ms;
-                                        if (syncDelay > 0)
+                                        uint leftIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 0) ? (uint)Plugin.Rudder_Pedal_idx[0] : 1;
+                                        uint rightIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 1) ? (uint)Plugin.Rudder_Pedal_idx[1] : 2;
+                                        double leftNorm = (double)Plugin.rawPedalPos[leftIdx] / 65535.0;
+                                        double rightNorm = (double)Plugin.rawPedalPos[rightIdx] / 65535.0;
+                                        double leftRel = Math.Max(0.0, Math.Min(1.0, leftNorm));
+                                        double rightRel = Math.Max(0.0, Math.Min(1.0, rightNorm));
+                                        float rudderRatio = (float)Math.Max(0.0, Math.Min(1.0, 0.5 - 0.5 * leftRel + 0.5 * rightRel));
+                                        CurveRudderForce_Tab.UpdateLiveDeflection(rudderRatio);
+                                    }
+
+                                    if (Plugin.Rudder_status)
+                                    {
+                                        uint leftIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 0) ? (uint)Plugin.Rudder_Pedal_idx[0] : 1;
+                                        uint rightIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 1) ? (uint)Plugin.Rudder_Pedal_idx[1] : 2;
+                                        if (pedalSelected == leftIdx || pedalSelected == rightIdx)
                                         {
-                                            UpdateRudderLatency(syncDelay);
+                                            byte syncDelay = pedalState_read_st.payloadPedalBasicState_.rudderSyncDelay_ms;
+                                            if (syncDelay > 0)
+                                            {
+                                                UpdateRudderLatency(syncDelay);
+                                            }
                                         }
                                     }
                                 }
@@ -228,6 +230,10 @@ namespace DiyFfbPedal
                                     double control_rect_value_max = 65535;
                                     pedalStateHasAlreadyBeenUpdated_b = true;
                                     PedalForceTravel_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16, pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
+                                            if (pedalKinematicTab != null && pedalKinematicTab.IsSelected)
+                                            {
+                                                PedalKinematics_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16);
+                                            }
                                     if (Plugin.Settings.advanced_b)
                                     {
                                         int round_x = (int)(100 * pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16 / control_rect_value_max) - 1;

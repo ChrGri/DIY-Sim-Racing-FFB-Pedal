@@ -105,8 +105,6 @@ namespace DiyFfbPedal
         private SolidColorBrush color_RSSI_4;
         private SolidColorBrush Red_Warning;
         private SolidColorBrush White_Default;
-        private string info_text_connection;
-        private string system_info_text_connection;
         private int current_pedal_travel_state= 0;
         //private int gridline_kinematic_count_original = 0;
         private double[] Pedal_position_reading=new double[3];
@@ -611,6 +609,7 @@ namespace DiyFfbPedal
 
         public void UpdateRudderLatency(byte delay_ms)
         {
+            if (Tab_Rudder == null || !Tab_Rudder.IsSelected) return;
             int c = 0, b = 0, t = 0;
             try
             {
@@ -665,6 +664,7 @@ namespace DiyFfbPedal
 
         private void UpdateRudderTelemetryInternal(byte delay_ms, int clutchRssi, int brakeRssi, int throttleRssi, bool isPacket)
         {
+            if (Tab_Rudder == null || !Tab_Rudder.IsSelected) return;
             if (poly_rudder_latency_trace == null || canvas_rudder_latency_graph == null) return;
 
             DateTime now = DateTime.UtcNow;

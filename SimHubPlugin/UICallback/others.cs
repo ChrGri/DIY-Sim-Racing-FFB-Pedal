@@ -800,7 +800,7 @@ namespace DiyFfbPedal
                     Serial_connect_status[pedalIdx] = false;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             { }
 
 
@@ -1065,7 +1065,7 @@ namespace DiyFfbPedal
                 //textBox_VersionUpdate.Text = "Stable:"+ Plugin._calculations.pluginVersionReading[0]+" nightly:"+ Plugin._calculations.pluginVersionReading[1]; ;
 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 //MessageBox.Show($"Error:{ex.Message}");
                 Plugin._calculations.versionCheck_b = false;

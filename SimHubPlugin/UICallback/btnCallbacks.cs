@@ -183,7 +183,7 @@ namespace DiyFfbPedal
                             }
 
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
 
                         }
@@ -424,6 +424,7 @@ namespace DiyFfbPedal
                     string filePath = openFileDialog.FileName;
 
 
+                    #if false
                     if (false)
                     {
                         string text1 = System.IO.File.ReadAllText(filePath);
@@ -432,6 +433,7 @@ namespace DiyFfbPedal
                         dap_config_st[indexOfSelectedPedal_u] = (DAP_config_st)deserializer.ReadObject(ms);
                     }
                     else
+#endif
                     {
                         // https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/deserialization
 
@@ -462,7 +464,7 @@ namespace DiyFfbPedal
                                 compatibleForce[5] = (byte)data["payloadPedalConfig_"]["relativeForce_p100"];
                             }
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
                             
                         }
@@ -806,7 +808,6 @@ namespace DiyFfbPedal
             if (sideWindow.ShowDialog() == true)
             {
                 DAP_action_ota_st tmp_2 = default;
-                int length;
                 string SSID = Plugin.Settings.SSID_string;
                 string PASS = Plugin.Settings.PASS_string;
                 string MSG_tmp = "";
@@ -1051,6 +1052,7 @@ namespace DiyFfbPedal
                     string filePath = openFileDialog.FileName;
 
 
+                    #if false
                     if (false)
                     {
                         string text1 = System.IO.File.ReadAllText(filePath);
@@ -1059,6 +1061,7 @@ namespace DiyFfbPedal
                         dap_config_st_rudder = (DAP_config_st)deserializer.ReadObject(ms);
                     }
                     else
+#endif
                     {
                         // https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/deserialization
 
@@ -1090,7 +1093,7 @@ namespace DiyFfbPedal
                                 compatibleForce[5] = (byte)data["payloadPedalConfig_"]["relativeForce_p100"];
                             }
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
 
                         }
@@ -1236,7 +1239,6 @@ namespace DiyFfbPedal
         unsafe private void btn_Bridge_print_debug_Click(object sender, RoutedEventArgs e)
         {
             DAP_bridge_state_st tmp_2 = default;
-            int length;
             tmp_2.payloadBridgeState_.Bridge_action = (byte)bridgeAction.BRIDGE_ACTION_DEBUG; //print out debug message
             Plugin.SendBridgeAction(tmp_2);
         }
@@ -1454,7 +1456,7 @@ namespace DiyFfbPedal
                     {
                         Process.Start(psi);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         MSG_tmp = "The update not completed, please try again";
                         result = System.Windows.MessageBox.Show(MSG_tmp, "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);

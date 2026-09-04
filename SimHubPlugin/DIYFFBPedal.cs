@@ -1315,7 +1315,7 @@ namespace DiyFfbPedal
                     {
                         PedalRestartAction();
                     }
-                    catch (Exception caughtEx)
+                    catch (Exception)
                     {
                     }
                 }
@@ -1338,7 +1338,7 @@ namespace DiyFfbPedal
                     
                     
                 }
-                catch (Exception caughtEx)
+                catch (Exception)
                 { 
                 }
                 
@@ -1729,7 +1729,7 @@ namespace DiyFfbPedal
                     {
                         _serialPort[pedalIdx].PortName = Settings.selectedComPortNames[pedalIdx];
                     }
-                    catch (Exception caughtEx)
+                    catch (Exception)
                     {
                     }
                     

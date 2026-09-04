@@ -325,14 +325,6 @@ namespace DiyFfbPedal.UIFunction
             SettingsChangedEvent(Settings);
         }
 
-        private void btn_RudderDocs_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/blob/rudder_test/docs/rudder_modes_flight_dynamics.md") { UseShellExecute = true });
-            }
-            catch { }
-        }
 
         // Inline Keyboard / Numeric Input Editing Handlers
         private void Label_max_force_rudder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

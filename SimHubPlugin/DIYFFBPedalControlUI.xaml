@@ -241,7 +241,7 @@
                                     </StackPanel>
                                 </StackPanel>
 
-                                <StackPanel Height="900" Width="545" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-280,3,0,0">
+                                <StackPanel Height="900" Width="545" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-280,0,0,0">
                                     <TabControl x:Name="Tab_main_1" Grid.Column="0" SelectionChanged="Tab_main_1_SelectionChanged" HorizontalAlignment="Left" Height="305" Grid.Row="0" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Grid.RowSpan="2">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">

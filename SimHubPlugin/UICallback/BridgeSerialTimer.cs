@@ -63,7 +63,7 @@ namespace DiyFfbPedal
                         //receivedLength = sp.BytesToRead;
                         receivedLength = Math.Min(sp.BytesToRead, bufferSize);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         //TextBox_debugOutput.Text = ex.Message;
                         //ConnectToPedal.IsChecked = false;
@@ -99,10 +99,8 @@ namespace DiyFfbPedal
 
                         if (appendedBufferOffset[bridgeBufferIndex] > 0)
                         {
-                            int tmp = 5;
                         }
 
-                        bool inBufferDicarded = false;
                         int currentBufferLength = 0;
                         if (bufferSize > currentBufferLength)
                         {
@@ -129,7 +127,6 @@ namespace DiyFfbPedal
                         }
                         else
                         {
-                            inBufferDicarded = true;
                             sp.DiscardInBuffer();
                             appendedBufferOffset[bridgeBufferIndex] = 0;
                             return;
@@ -138,7 +135,6 @@ namespace DiyFfbPedal
 
                         if (!((buffer_appended[bridgeBufferIndex][0] == 170) && (buffer_appended[3][1] == 85)))
                         {
-                            int tmp = 5;
                         }
 
 
@@ -544,6 +540,10 @@ namespace DiyFfbPedal
                                             //TextBox_debugOutput.Text += ",  Servo pos: " + pedalState_read_st.payloadPedalState_.servoPosition_i32;
 
                                             PedalForceTravel_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16, pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
+                                            if (pedalKinematicTab != null && pedalKinematicTab.IsSelected)
+                                            {
+                                                PedalKinematics_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16);
+                                            }
 
                                             pedalStateHasAlreadyBeenUpdated_b = true;
 
@@ -1032,7 +1032,6 @@ namespace DiyFfbPedal
 
                                     if (!((buffer_appended[bridgeBufferIndex][0] == 170) && (buffer_appended[bridgeBufferIndex][1] == 85)))
                                     {
-                                        int tmp = 5;
                                     }
                                 }
                                 else

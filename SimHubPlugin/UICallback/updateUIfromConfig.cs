@@ -179,7 +179,7 @@ namespace DiyFfbPedal
                 //TextBox_debugOutput.Text = "Serial port selected: " + SerialPortSelection.SelectedValue;
 
             }
-            catch (Exception caughtEx)
+            catch (Exception)
             {
             }
 

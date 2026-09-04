@@ -25,7 +25,6 @@ namespace DiyFfbPedal.UIFunction
     {
         
         public vJoyInterfaceWrap.vJoy _joystick;
-        private bool IsJoystickInitialized = false;
         public SettingSection_Pedal()
         {
             InitializeComponent();

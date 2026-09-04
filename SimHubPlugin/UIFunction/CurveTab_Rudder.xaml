@@ -34,8 +34,6 @@
                         <TextBlock Text="FREE-FLOATING / 0 N SPRING" Foreground="White" FontSize="10" FontWeight="Bold" FontFamily="Arial"/>
                     </Border>
 
-                    <!-- Documentation Link Button -->
-                    <styles:SHButtonPrimary x:Name="btn_RudderDocs" Click="btn_RudderDocs_Click" Width="58" Content="Docs ↗" Height="18" Margin="10,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" MinHeight="16" VerticalContentAlignment="Center" ToolTip="Open Rudder Flight Dynamics Documentation on GitHub" />
                 </StackPanel>
 
                 <!-- Center Graph & Visualization -->
