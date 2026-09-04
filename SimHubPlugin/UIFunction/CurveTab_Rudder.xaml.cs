@@ -75,8 +75,9 @@ namespace DiyFfbPedal.UIFunction
                     if (Rangeslider_rudder_force_range != null)
                     {
                         Rangeslider_rudder_force_range.UpperValue = Settings.rudderCenteringForce;
-                        Rangeslider_rudder_force_range.LowerValue = 0;
+                        Rangeslider_rudder_force_range.LowerValue = Settings.rudderMinForce;
                     }
+                    if (Label_min_force_rudder != null) Label_min_force_rudder.Content = $"Center: {Math.Round(Settings.rudderMinForce, 1)} kg";
 
                     if (Rangeslider_rudder_travel_range != null)
                     {
@@ -145,6 +146,7 @@ namespace DiyFfbPedal.UIFunction
                 {
                     // Airplane Mode: Symmetric Bipolar Centering Spring Curve
                     int samplePoints = 200; // High resolution for silky smooth rendering
+                    double minForce = Math.Max(0.0, Settings.rudderMinForce);
                     double maxForce = Math.Max(Settings.rudderCenteringForce, 1.0);
                     double deadzone = Settings.rudderDeadzone / 100.0; // 0.0 to 0.05
                     uint profile = Settings.rudderCenteringProfile;     // 0=Linear, 1=Progressive, 2=S-Curve
@@ -179,7 +181,7 @@ namespace DiyFfbPedal.UIFunction
                         double normalizedX = (x - effectiveCenterX) / halfW; // -1.0 to +1.0 relative to trim center
                         double absNormX = Math.Abs(normalizedX);
 
-                        // Apply Deadzone
+                        // Apply Deadzone and Centering Spring Force
                         double effectiveU = 0.0;
                         if (absNormX > deadzone)
                         {
@@ -187,23 +189,25 @@ namespace DiyFfbPedal.UIFunction
                             effectiveU = Math.Min(1.0, Math.Max(0.0, effectiveU));
                         }
 
-                        // Apply Curve Profile
-                        double forceFraction = 0.0;
+                        double shapeFactor = 0.0;
                         if (profile == 0)
                         {
                             // Linear
-                            forceFraction = effectiveU;
+                            shapeFactor = effectiveU;
                         }
                         else if (profile == 1)
                         {
                             // Progressive (Cubic/Exponential ramp)
-                            forceFraction = Math.Pow(effectiveU, 1.8);
+                            shapeFactor = Math.Pow(effectiveU, 1.8);
                         }
                         else if (profile == 2)
                         {
                             // S-Curve (Sigmoid)
-                            forceFraction = 0.5 * (1.0 - Math.Cos(effectiveU * Math.PI));
+                            shapeFactor = 0.5 * (1.0 - Math.Cos(effectiveU * Math.PI));
                         }
+
+                        double actualForce = minForce + shapeFactor * Math.Max(0.0, maxForce - minForce);
+                        double forceFraction = Math.Min(1.0, actualForce / maxForce);
 
                         double y = canvasH - (forceFraction * (canvasH - 10)) - 2;
                         curvePoints.Add(new Point(x, y));
@@ -295,7 +299,14 @@ namespace DiyFfbPedal.UIFunction
             SettingsChangedEvent(Settings);
         }
 
-        private void Rangeslider_rudder_force_range_LowerValueChanged(object sender, RoutedEventArgs e) { }
+        private void Rangeslider_rudder_force_range_LowerValueChanged(object sender, RoutedEventArgs e)
+        {
+            if (Settings == null || Rangeslider_rudder_force_range == null) return;
+            Settings.rudderMinForce = (float)Rangeslider_rudder_force_range.LowerValue;
+            if (Label_min_force_rudder != null) Label_min_force_rudder.Content = $"Center: {Math.Round(Settings.rudderMinForce, 1)} kg";
+            Update_BrakeForceCurve();
+            SettingsChangedEvent(Settings);
+        }
 
         private void Rangeslider_rudder_travel_range_LowerValueChanged(object sender, RoutedEventArgs e)
         {

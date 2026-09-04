@@ -26,6 +26,7 @@ typedef struct {
   float centerPosition_01;     // normally 0.50 for center alignment
   float trimOffset_01;         // dynamic trim offset (-0.5 to +0.5)
   float deadzone_01;           // deadzone around center (e.g. 0.02)
+  float centerForce_kg;        // centering spring breakout / preload force in kg
 } RudderOffsets_t;
 
 

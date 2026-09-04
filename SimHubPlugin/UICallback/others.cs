@@ -1212,6 +1212,8 @@ namespace DiyFfbPedal
             }
 
             dap_config_st_rudder.payloadPedalConfig_.virtualPedalMass_u8 = Plugin.Settings.rudderVirtualPedalMass;
+            // Pack rudderMinForce (center force) into relativeForce00 (0.0 to 25.5 kg in 0.1 kg steps)
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce00 = (byte)Math.Round(Math.Max(0.0f, Math.Min(25.5f, Plugin.Settings.rudderMinForce)) * 10.0f);
             // Pack rudderDeadzone into dampingProgression_u8 (e.g. 0 to 50 representing 0.0% to 5.0%)
             dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = (byte)Math.Round(Plugin.Settings.rudderDeadzone * 10.0);
             // Pack bilateral sync stiffness into minForceForEffects_u8 (e.g. 20 to 150 N)
@@ -1303,7 +1305,7 @@ namespace DiyFfbPedal
             Plugin.Settings.rudderEndstopTravelRange = dap_config_st_rudder.payloadPedalConfig_.endstopTravelRange_mm_u8;
             Plugin.Settings.rudderEndstopStiffness = dap_config_st_rudder.payloadPedalConfig_.endstopStiffness_kg_mm_u8;
 
-            Plugin.Settings.rudderMinForce = dap_config_st_rudder.payloadPedalConfig_.preloadForce;
+            Plugin.Settings.rudderMinForce = ((float)dap_config_st_rudder.payloadPedalConfig_.relativeForce00) * 0.1f;
             Plugin.Settings.rudderMinTravel = dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition;
             Plugin.Settings.rudderMaxTravel = dap_config_st_rudder.payloadPedalConfig_.pedalEndPosition;
             Plugin.Settings.rudderRPMMaxFrequency = dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq;

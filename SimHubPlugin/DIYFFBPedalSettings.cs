@@ -63,7 +63,7 @@ namespace DiyFfbPedal
         public string SSID_string = "";
         public string PASS_string = "";
         public float rudderMaxForce = 10;
-        public float rudderMinForce = 1;
+        public float rudderMinForce = 0;
         public byte rudderMaxTravel = 95;
         public byte rudderMinTravel = 5;
         public byte[] rudderForce=new byte[11] { 0, 20, 40, 60, 80, 100, 0, 0, 0, 0, 0 };

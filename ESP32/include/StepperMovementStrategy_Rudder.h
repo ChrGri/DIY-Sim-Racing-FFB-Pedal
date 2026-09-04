@@ -99,7 +99,7 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
                                        0.05f, 0.95f);
     float currentPhysPos_01 = 0.50f;
     if (stepper != nullptr) {
-      currentPhysPos_01 = constrain(stepper->getCurrentPositionFraction(), 0.01f, 0.99f);
+      currentPhysPos_01 = constrain(stepper->getCurrentPositionFraction(), 0.0f, 1.0f);
     }
     g_vRudderModelPos_01 = currentPhysPos_01;
     g_vRudderModelVel_mps = 0.0f;
@@ -245,10 +245,18 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
     if (rudderMaxForceKg <= 0.5f)
       rudderMaxForceKg = 10.0f; // Default 10 kg aerodynamic resistance
 
+    float centerForceKg = rudderOffsets_st.centerForce_kg;
+    if (centerForceKg > rudderMaxForceKg) centerForceKg = rudderMaxForceKg;
+
     float halfTravel = max(0.5f - deadzone, 0.05f);
     float u = constrain(effectiveDelta / halfTravel, -1.0f, 1.0f);
 
-    springForce_N = (rudderMaxForceKg * u) * GRAVITY_N_KG;
+    float absU = fabsf(u);
+    float forceKg = 0.0f;
+    if (absU > 0.0001f) {
+      forceKg = centerForceKg + absU * (rudderMaxForceKg - centerForceKg);
+    }
+    springForce_N = (u > 0.0f ? 1.0f : (u < 0.0f ? -1.0f : 0.0f)) * forceKg * GRAVITY_N_KG;
 
     float gradStiffness_N_m =
         (rudderMaxForceKg * GRAVITY_N_KG) / max(0.5f * totalTravel_m, 0.001f);
@@ -328,14 +336,11 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
       coulombFriction_N * tanhf(g_vRudderModelVel_mps / VELOCITY_EPSILON_MPS);
 
   // 9. Soft Endstops
-  float lowerTravelLimit_01 =
-      (float)config_st->payloadPedalConfig_st.pedalStartPosition_u8 * 0.01f;
-  float upperTravelLimit_01 =
-      (float)config_st->payloadPedalConfig_st.pedalEndPosition_u8 * 0.01f;
-  if (upperTravelLimit_01 <= lowerTravelLimit_01 + 0.10f) {
-    lowerTravelLimit_01 = 0.05f;
-    upperTravelLimit_01 = 0.95f;
-  }
+  // Note: calc_st->softEndstopMinStepperPos_i32 and calc_st->softEndstopMaxStepperPos_i32
+  // are already defined by pedalStartPosition and pedalEndPosition.
+  // Thus g_vRudderModelPos_01 spans 0.0 to 1.0 across the configured travel range.
+  float lowerTravelLimit_01 = 0.0f;
+  float upperTravelLimit_01 = 1.0f;
   float softEndstopForce_N = 0.0f;
   if (g_vRudderModelPos_01 > upperTravelLimit_01) {
     float penetration_m =
@@ -369,7 +374,7 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
       constrain(g_vRudderModelVel_mps, -maxPedalVel_mps, maxPedalVel_mps);
 
   g_vRudderModelPos_01 += (g_vRudderModelVel_mps * dt_s) / totalTravel_m;
-  g_vRudderModelPos_01 = constrain(g_vRudderModelPos_01, 0.01f, 0.99f);
+  g_vRudderModelPos_01 = constrain(g_vRudderModelPos_01, -0.05f, 1.05f);
 
   // 11. Target Stepper Position Output
   float targetStepPos_fl32 = (float)calc_st->softEndstopMinStepperPos_i32 +

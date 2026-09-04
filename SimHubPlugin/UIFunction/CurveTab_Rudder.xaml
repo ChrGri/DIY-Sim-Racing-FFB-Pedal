@@ -98,7 +98,7 @@
                     <!-- Vertical Centering Force Range Slider -->
                     <StackPanel Width="65" Height="200" Margin="5,0,0,0">
                         <Label x:Name="Label_max_force_rudder" Width="65" Height="30" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Max Force:&#x0a;10.0 kg" Padding="0" Margin="0,0,0,0"/>
-                        <controls:RangeSlider x:Name="Rangeslider_rudder_force_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="1" Height="140" LowerValueChanged="Rangeslider_rudder_force_range_LowerValueChanged" UpperValueChanged="Rangeslider_rudder_force_range_UpperValueChanged" MinRange="1" IsSnapToTickEnabled="True" UpperValue="10" Width="20" Orientation="Vertical" Maximum="30" HorizontalAlignment="Left" LargeChange="0.5" Minimum="1" LowerValue="1" Value="1"/>
+                        <controls:RangeSlider x:Name="Rangeslider_rudder_force_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="0" Height="140" LowerValueChanged="Rangeslider_rudder_force_range_LowerValueChanged" UpperValueChanged="Rangeslider_rudder_force_range_UpperValueChanged" MinRange="0" IsSnapToTickEnabled="True" UpperValue="10" Width="20" Orientation="Vertical" Maximum="30" HorizontalAlignment="Left" LargeChange="0.5" Minimum="0" LowerValue="0" Value="0"/>
                         <Label x:Name="Label_min_force_rudder" Width="65" Height="25" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Center: 0 kg" Padding="0" Margin="0,2,0,0"/>
                     </StackPanel>
                 </StackPanel>
@@ -106,7 +106,7 @@
                 <!-- Soft Endstops Travel Limits (Min 5% to Max 95%) -->
                 <StackPanel Width="470" Height="32" Orientation="Horizontal" Margin="35,2,0,0">
                     <Label x:Name="Label_min_pos_rudder" Width="45" Height="30" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Center" Content="MIN&#x0a;5%" Padding="0" HorizontalContentAlignment="Center"/>
-                    <controls:RangeSlider x:Name="Rangeslider_rudder_travel_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="5" Height="18" LowerValueChanged="Rangeslider_rudder_travel_range_LowerValueChanged" UpperValueChanged="Rangeslider_rudder_travel_range_UpperValueChanged" MinRange="1" SmallChange="1" IsSnapToTickEnabled="True" UpperValue="95" Width="380" VerticalAlignment="Center" LowerValue="5" Minimum="5" Maximum="95" Value="85"/>
+                    <controls:RangeSlider x:Name="Rangeslider_rudder_travel_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="5" Height="18" LowerValueChanged="Rangeslider_rudder_travel_range_LowerValueChanged" UpperValueChanged="Rangeslider_rudder_travel_range_UpperValueChanged" MinRange="1" SmallChange="1" IsSnapToTickEnabled="True" UpperValue="95" Width="380" VerticalAlignment="Center" LowerValue="5" Minimum="0" Maximum="100" Value="85"/>
                     <Label x:Name="Label_max_pos_rudder" Width="45" Height="30" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Center" Content="MAX&#x0a;95%" Padding="0" HorizontalContentAlignment="Center"/>
                 </StackPanel>
             </StackPanel>

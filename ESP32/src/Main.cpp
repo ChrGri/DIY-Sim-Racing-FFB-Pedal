@@ -2231,10 +2231,12 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         rudderOffsets_st.isRudderMode = true;
         float trim_01 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.preloadForce_fl32 / 100.0f;
         float deadzone_01 = ((float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st.dampingProgression_u8) / 1000.0f;
+        float centerForce_kg = ((float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st.relativeForce00_u8) * 0.1f;
         
         rudderOffsets_st.centerPosition_01 = 0.50f;
         rudderOffsets_st.trimOffset_01 = constrain(trim_01, -0.45f, 0.45f);
         rudderOffsets_st.deadzone_01 = constrain(deadzone_01, 0.0f, 0.10f);
+        rudderOffsets_st.centerForce_kg = centerForce_kg;
 
         if (dap_calculationVariables_st.helicopterRudderStatus_b) {
           rudderOffsets_st.rudderMode_u8 = RUDDER_MODE_HELICOPTER;

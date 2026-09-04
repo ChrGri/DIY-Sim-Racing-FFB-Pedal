@@ -204,11 +204,8 @@ namespace DiyFfbPedal
                                     uint rightIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 1) ? (uint)Plugin.Rudder_Pedal_idx[1] : 2;
                                     double leftNorm = (double)Plugin.rawPedalPos[leftIdx] / 65535.0;
                                     double rightNorm = (double)Plugin.rawPedalPos[rightIdx] / 65535.0;
-                                    double minT = (Plugin.Settings != null) ? (Plugin.Settings.rudderMinTravel / 100.0) : 0.05;
-                                    double maxT = (Plugin.Settings != null) ? (Plugin.Settings.rudderMaxTravel / 100.0) : 0.95;
-                                    double rangeT = Math.Max(0.10, maxT - minT);
-                                    double leftRel = Math.Max(0.0, Math.Min(1.0, (leftNorm - minT) / rangeT));
-                                    double rightRel = Math.Max(0.0, Math.Min(1.0, (rightNorm - minT) / rangeT));
+                                    double leftRel = Math.Max(0.0, Math.Min(1.0, leftNorm));
+                                    double rightRel = Math.Max(0.0, Math.Min(1.0, rightNorm));
                                     float rudderRatio = (float)Math.Max(0.0, Math.Min(1.0, 0.5 - 0.5 * leftRel + 0.5 * rightRel));
                                     CurveRudderForce_Tab.UpdateLiveDeflection(rudderRatio);
                                 }
