@@ -582,7 +582,7 @@ namespace DiyFfbPedal
         {
             try
             {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/blob/rudder_test/docs/rudder_modes_flight_dynamics.md") { UseShellExecute = true });
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/blob/main/docs/rudder_modes_flight_dynamics.md") { UseShellExecute = true });
             }
             catch { }
         }
