@@ -344,118 +344,48 @@ namespace DiyFfbPedal
             dap_config_st_rudder.payloadPedalConfig_.endstopTravelRange_mm_u8 = 0;
             dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = 0;
         }
-        public byte[] getBytesPayload(payloadPedalConfig aux)
+        unsafe public byte[] getBytesPayload(payloadPedalConfig aux)
         {
-            int length = Marshal.SizeOf(aux);
-            IntPtr ptr = Marshal.AllocHGlobal(length);
-            byte[] myBuffer = new byte[length];
-
-            Marshal.StructureToPtr(aux, ptr, true);
-            Marshal.Copy(ptr, myBuffer, 0, length);
-            Marshal.FreeHGlobal(ptr);
-
+            byte[] myBuffer = new byte[sizeof(payloadPedalConfig)];
+            fixed (byte* p = myBuffer) { *(payloadPedalConfig*)p = aux; }
             return myBuffer;
         }
-
 
         unsafe public byte[] getBytes(DAP_config_st aux)
         {
-            int length = Marshal.SizeOf(aux);
-            IntPtr ptr = Marshal.AllocHGlobal(length);
-
-            //int length = sizeof(DAP_config_st);
-            byte[] myBuffer = new byte[length];
-
-            Marshal.StructureToPtr(aux, ptr, true);
-            Marshal.Copy(ptr, myBuffer, 0, length);
-            Marshal.FreeHGlobal(ptr);
-
-
-            //DAP_config_st* v = &aux;
-            //for (UInt16 ptrIdx = 0; ptrIdx < length; ptrIdx++)
-            //{
-            //    myBuffer[ptrIdx] = *((byte*)v + ptrIdx);
-            //}
-
+            byte[] myBuffer = new byte[sizeof(DAP_config_st)];
+            fixed (byte* p = myBuffer) { *(DAP_config_st*)p = aux; }
             return myBuffer;
         }
 
-        public DAP_config_st getConfigFromBytes(byte[] myBuffer)
+        unsafe public DAP_config_st getConfigFromBytes(byte[] myBuffer)
         {
-            DAP_config_st aux;
-
-            // see https://stackoverflow.com/questions/31045358/how-do-i-copy-bytes-into-a-struct-variable-in-c
-            int size = Marshal.SizeOf(typeof(DAP_config_st));
-            IntPtr ptr = Marshal.AllocHGlobal(size);
-
-            Marshal.Copy(myBuffer, 0, ptr, size);
-
-            aux = (DAP_config_st)Marshal.PtrToStructure(ptr, typeof(DAP_config_st));
-            Marshal.FreeHGlobal(ptr);
-
-            return aux;
-        }
-        public Dap_hidmessage_st getHidMessageFromBytes(byte[] myBuffer)
-        {
-            Dap_hidmessage_st aux;
-
-            // see https://stackoverflow.com/questions/31045358/how-do-i-copy-bytes-into-a-struct-variable-in-c
-            int size = Marshal.SizeOf(typeof(Dap_hidmessage_st));
-            IntPtr ptr = Marshal.AllocHGlobal(size);
-
-            Marshal.Copy(myBuffer, 0, ptr, size);
-
-            aux = (Dap_hidmessage_st)Marshal.PtrToStructure(ptr, typeof(Dap_hidmessage_st));
-            Marshal.FreeHGlobal(ptr);
-
-            return aux;
+            if (myBuffer == null || myBuffer.Length < sizeof(DAP_config_st)) return default(DAP_config_st);
+            fixed (byte* p = myBuffer) { return *(DAP_config_st*)p; }
         }
 
-        public DAP_state_basic_st getStateFromBytes(byte[] myBuffer)
+        unsafe public Dap_hidmessage_st getHidMessageFromBytes(byte[] myBuffer)
         {
-            DAP_state_basic_st aux;
-
-            // see https://stackoverflow.com/questions/31045358/how-do-i-copy-bytes-into-a-struct-variable-in-c
-            int size = Marshal.SizeOf(typeof(DAP_state_basic_st));
-            IntPtr ptr = Marshal.AllocHGlobal(size);
-
-            Marshal.Copy(myBuffer, 0, ptr, size);
-
-            aux = (DAP_state_basic_st)Marshal.PtrToStructure(ptr, typeof(DAP_state_basic_st));
-            Marshal.FreeHGlobal(ptr);
-
-            return aux;
+            if (myBuffer == null || myBuffer.Length < sizeof(Dap_hidmessage_st)) return default(Dap_hidmessage_st);
+            fixed (byte* p = myBuffer) { return *(Dap_hidmessage_st*)p; }
         }
 
-        public DAP_state_extended_st getStateExtFromBytes(byte[] myBuffer)
+        unsafe public DAP_state_basic_st getStateFromBytes(byte[] myBuffer)
         {
-            DAP_state_extended_st aux;
-
-            // see https://stackoverflow.com/questions/31045358/how-do-i-copy-bytes-into-a-struct-variable-in-c
-            int size = Marshal.SizeOf(typeof(DAP_state_extended_st));
-            IntPtr ptr = Marshal.AllocHGlobal(size);
-
-            Marshal.Copy(myBuffer, 0, ptr, size);
-
-            aux = (DAP_state_extended_st)Marshal.PtrToStructure(ptr, typeof(DAP_state_extended_st));
-            Marshal.FreeHGlobal(ptr);
-
-            return aux;
+            if (myBuffer == null || myBuffer.Length < sizeof(DAP_state_basic_st)) return default(DAP_state_basic_st);
+            fixed (byte* p = myBuffer) { return *(DAP_state_basic_st*)p; }
         }
-        public DAP_bridge_state_st getStateBridgeFromBytes(byte[] myBuffer)
+
+        unsafe public DAP_state_extended_st getStateExtFromBytes(byte[] myBuffer)
         {
-            DAP_bridge_state_st aux;
+            if (myBuffer == null || myBuffer.Length < sizeof(DAP_state_extended_st)) return default(DAP_state_extended_st);
+            fixed (byte* p = myBuffer) { return *(DAP_state_extended_st*)p; }
+        }
 
-            // see https://stackoverflow.com/questions/31045358/how-do-i-copy-bytes-into-a-struct-variable-in-c
-            int size = Marshal.SizeOf(typeof(DAP_bridge_state_st));
-            IntPtr ptr = Marshal.AllocHGlobal(size);
-
-            Marshal.Copy(myBuffer, 0, ptr, size);
-
-            aux = (DAP_bridge_state_st)Marshal.PtrToStructure(ptr, typeof(DAP_bridge_state_st));
-            Marshal.FreeHGlobal(ptr);
-
-            return aux;
+        unsafe public DAP_bridge_state_st getStateBridgeFromBytes(byte[] myBuffer)
+        {
+            if (myBuffer == null || myBuffer.Length < sizeof(DAP_bridge_state_st)) return default(DAP_bridge_state_st);
+            fixed (byte* p = myBuffer) { return *(DAP_bridge_state_st*)p; }
         }
         private void PedalParameterLiveUpdate()
         {

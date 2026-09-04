@@ -71,7 +71,7 @@ namespace DiyFfbPedal
             bool pedalStateHasAlreadyBeenUpdated_b = false;
             if (length > 0)
             {
-                Dispatcher.Invoke(() =>
+                Dispatcher.InvokeAsync(() =>
                 {
                     unsafe 
                     {
@@ -736,7 +736,7 @@ namespace DiyFfbPedal
                 }
 
                 hexString = sb.ToString().Trim();
-                Dispatcher.Invoke(() =>
+                Dispatcher.InvokeAsync(() =>
                 {
 
                     if (TextBox_serialMonitor_bridge.Text.Length > 2000)

@@ -24,6 +24,8 @@ namespace DiyFfbPedal
         static int destBufferSize = 1000;
         byte[][] buffer_appended = { new byte[bufferSize], new byte[bufferSize], new byte[bufferSize], new byte[bufferSize] };
         byte[][] buffer_appended_clone = { new byte[bufferSize], new byte[bufferSize], new byte[bufferSize], new byte[bufferSize] };
+        private readonly byte[] serial_bufferByteAssignedToStruct_class = new byte[bufferSize];
+        private readonly bool[] serial_bufferByteAssignedToStruct = new bool[bufferSize];
 
 
 
@@ -262,8 +264,10 @@ namespace DiyFfbPedal
                         var validPairsServoConfig = new List<Tuple<int, int>>();
 
                         bool sofHasBeenReceivedEofNotYet = false;
-                        byte[] bufferByteAssignedToStruct_class = new byte[bufferSize];
-                        bool[] bufferByteAssignedToStruct = new bool[bufferSize];
+                        byte[] bufferByteAssignedToStruct_class = serial_bufferByteAssignedToStruct_class;
+                        bool[] bufferByteAssignedToStruct = serial_bufferByteAssignedToStruct;
+                        Array.Clear(bufferByteAssignedToStruct_class, 0, bufferSize);
+                        Array.Clear(bufferByteAssignedToStruct, 0, bufferSize);
 
                         // Search for the basic struct
                         FindValidMessagePairs(

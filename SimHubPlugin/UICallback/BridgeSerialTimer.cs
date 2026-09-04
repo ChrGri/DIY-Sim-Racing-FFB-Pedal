@@ -13,6 +13,8 @@ namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
+        private readonly byte[] bridge_bufferByteAssignedToStruct_class = new byte[bufferSize];
+        private readonly bool[] bridge_bufferByteAssignedToStruct = new bool[bufferSize];
         
         unsafe public void timerCallback_serial_esphost(object sender, EventArgs e)
         {
@@ -106,7 +108,8 @@ namespace DiyFfbPedal
                         {
                             try
                             {
-                                // Safe non-blocking read: catch timeout and I/O errors immediately to avoid UI hang
+                                // Safe non-blocking read: catch timeout and I/O errors immediately to avoid UI hang
+
                                 int bytesActuallyRead = sp.Read(buffer_appended[bridgeBufferIndex], appendedBufferOffset[bridgeBufferIndex], receivedLength);
                                 if (bytesActuallyRead <= 0) return;
                                 receivedLength = bytesActuallyRead;
@@ -167,8 +170,10 @@ namespace DiyFfbPedal
                         var validPairsServoConfig = new List<Tuple<int, int>>();
 
                         bool sofHasBeenReceivedEofNotYet = false;
-                        byte[] bufferByteAssignedToStruct_class = new byte[bufferSize];
-                        bool[] bufferByteAssignedToStruct = new bool[bufferSize];
+                        byte[] bufferByteAssignedToStruct_class = bridge_bufferByteAssignedToStruct_class;
+                        bool[] bufferByteAssignedToStruct = bridge_bufferByteAssignedToStruct;
+                        Array.Clear(bufferByteAssignedToStruct_class, 0, bufferSize);
+                        Array.Clear(bufferByteAssignedToStruct, 0, bufferSize);
 
                         // Search for the basic struct
                         FindValidMessagePairs(

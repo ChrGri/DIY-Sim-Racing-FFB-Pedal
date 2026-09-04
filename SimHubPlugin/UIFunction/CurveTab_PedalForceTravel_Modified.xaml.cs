@@ -830,6 +830,7 @@ namespace DiyFfbPedal.UIFunction
 
         public void updatePedalState(ushort pedalPosition_u16, ushort pedalForce_u16)
         {
+            if (!this.IsVisible) return;
             text_point_pos.Visibility = Visibility.Hidden;
             double control_rect_value_max = 65535;
             double dyy = mainCanvas.Height / control_rect_value_max;

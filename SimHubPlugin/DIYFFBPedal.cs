@@ -103,7 +103,7 @@ namespace DiyFfbPedal
         public bool[] IsGetConfigSendRequest = new bool[3] { false, false, false };
         public DAP_config_st[] BufferConfig_st = new DAP_config_st[3] { new DAP_config_st(), new DAP_config_st(), new DAP_config_st() };
         public int ConfigSendInterval_ms = 100;
-        public DateTime[] ConfigBufferGet_lastTime = new DateTime[3] { DateTime.Now, DateTime.Now, DateTime.Now };
+        public DateTime[] ConfigBufferGet_lastTime = new DateTime[3] { DateTime.UtcNow, DateTime.UtcNow, DateTime.UtcNow };
         public PedalStatus PedalStatusInstance = new PedalStatus();
         //public vJoyInterfaceWrap.vJoy joystick;
 
@@ -113,19 +113,19 @@ namespace DiyFfbPedal
         
 
         // ABS trigger timer
-        DateTime absTrigger_currentTime = DateTime.Now;
-        DateTime absTrigger_lastTime = DateTime.Now;
+        DateTime absTrigger_currentTime = DateTime.UtcNow;
+        DateTime absTrigger_lastTime = DateTime.UtcNow;
 
         //G force timer
-        DateTime GTrigger_currentTime = DateTime.Now;
-        DateTime GTrigger_lastTime = DateTime.Now;
+        DateTime GTrigger_currentTime = DateTime.UtcNow;
+        DateTime GTrigger_lastTime = DateTime.UtcNow;
 
         //Road effect
-        DateTime RoadTrigger_currentTime = DateTime.Now;
-        DateTime RoadTrigger_lastTime = DateTime.Now;
+        DateTime RoadTrigger_currentTime = DateTime.UtcNow;
+        DateTime RoadTrigger_lastTime = DateTime.UtcNow;
         //Rudder update
-        DateTime Rudder_Action_currentTime = DateTime.Now;
-        DateTime Rudder_Action_lastTime = DateTime.Now;
+        DateTime Rudder_Action_currentTime = DateTime.UtcNow;
+        DateTime Rudder_Action_lastTime = DateTime.UtcNow;
 
         
 
@@ -184,133 +184,97 @@ namespace DiyFfbPedal
         /// 
         unsafe public UInt16 checksumCalc(byte* data, int length)
         {
-
-            UInt16 curr_crc = 0x0000;
-            byte sum1 = (byte)curr_crc;
-            byte sum2 = (byte)(curr_crc >> 8);
-            int index;
-            for (index = 0; index < length; index = index + 1)
+            uint sum1 = 0;
+            uint sum2 = 0;
+            while (length > 0)
             {
-                int v = (sum1 + (*data));
-                sum1 = (byte)v;
-                sum1 = (byte)(v % 255);
-
-                int w = (sum1 + sum2) % 255;
-                sum2 = (byte)w;
-
-                data++;// = data++;
+                int block = length > 20 ? 20 : length;
+                length -= block;
+                while (block-- > 0)
+                {
+                    sum1 += *data++;
+                    sum2 += sum1;
+                }
+                sum1 %= 255;
+                sum2 %= 255;
             }
-
-            int x = (sum2 << 8) | sum1;
-            return (UInt16)x;
+            return (UInt16)((sum2 << 8) | sum1);
         }
-
 
         unsafe public UInt16 checksumCalcArray(byte[] data, int length)
         {
-
-            UInt16 curr_crc = 0x0000;
-            byte sum1 = (byte)curr_crc;
-            byte sum2 = (byte)(curr_crc >> 8);
-            int index;
-            for (index = 0; index < length; index = index + 1)
+            if (data == null || length == 0) return 0;
+            fixed (byte* p = data)
             {
-                int v = (sum1 + data[index]);
-                sum1 = (byte)v;
-                sum1 = (byte)(v % 255);
-
-                int w = (sum1 + sum2) % 255;
-                sum2 = (byte)w;
-
+                return checksumCalc(p, length);
             }
-
-            int x = (sum2 << 8) | sum1;
-            return (UInt16)x;
         }
-
         unsafe public byte[] getBytesConfig(DAP_config_st aux)
         {
-            int length = Marshal.SizeOf(aux);
-            IntPtr ptr = Marshal.AllocHGlobal(length);
-
-            //int length = sizeof(DAP_config_st);
-            byte[] myBuffer = new byte[length];
-
-            Marshal.StructureToPtr(aux, ptr, true);
-            Marshal.Copy(ptr, myBuffer, 0, length);
-            Marshal.FreeHGlobal(ptr);
+            byte[] myBuffer = new byte[sizeof(DAP_config_st)];
+            fixed (byte* p = myBuffer) { *(DAP_config_st*)p = aux; }
             return myBuffer;
         }
-        public byte[] getBytes_Action(DAP_action_st aux)
+        unsafe public byte[] getBytes_Action(DAP_action_st aux)
         {
-            int length = Marshal.SizeOf(aux);
-            IntPtr ptr = Marshal.AllocHGlobal(length);
-            byte[] myBuffer = new byte[length];
-
-            Marshal.StructureToPtr(aux, ptr, true);
-            Marshal.Copy(ptr, myBuffer, 0, length);
-            Marshal.FreeHGlobal(ptr);
-
+            byte[] myBuffer = new byte[sizeof(DAP_action_st)];
+            fixed (byte* p = myBuffer) { *(DAP_action_st*)p = aux; }
             return myBuffer;
         }
-        public byte[] getBytes_Bridge(DAP_bridge_state_st aux)
+        unsafe public byte[] getBytes_Bridge(DAP_bridge_state_st aux)
         {
-            int length = Marshal.SizeOf(aux);
-            IntPtr ptr = Marshal.AllocHGlobal(length);
-            byte[] myBuffer = new byte[length];
-
-            Marshal.StructureToPtr(aux, ptr, true);
-            Marshal.Copy(ptr, myBuffer, 0, length);
-            Marshal.FreeHGlobal(ptr);
-
+            byte[] myBuffer = new byte[sizeof(DAP_bridge_state_st)];
+            fixed (byte* p = myBuffer) { *(DAP_bridge_state_st*)p = aux; }
             return myBuffer;
         }
 
-        public byte[] getBytes_HidMessage(Dap_hidmessage_st aux)
+        unsafe public byte[] getBytes_HidMessage(Dap_hidmessage_st aux)
         {
-            int length = Marshal.SizeOf(aux);
-            IntPtr ptr = Marshal.AllocHGlobal(length);
-            byte[] myBuffer = new byte[length];
-
-            Marshal.StructureToPtr(aux, ptr, true);
-            Marshal.Copy(ptr, myBuffer, 0, length);
-            Marshal.FreeHGlobal(ptr);
-
+            byte[] myBuffer = new byte[sizeof(Dap_hidmessage_st)];
+            fixed (byte* p = myBuffer) { *(Dap_hidmessage_st*)p = aux; }
             return myBuffer;
         }
 
-        public byte[] getBytes_Action_Ota(DAP_action_ota_st aux)
+        unsafe public byte[] getBytes_Action_Ota(DAP_action_ota_st aux)
         {
-            int length = Marshal.SizeOf(aux);
-            IntPtr ptr = Marshal.AllocHGlobal(length);
-            byte[] myBuffer = new byte[length];
-
-            Marshal.StructureToPtr(aux, ptr, true);
-            Marshal.Copy(ptr, myBuffer, 0, length);
-            Marshal.FreeHGlobal(ptr);
-
+            byte[] myBuffer = new byte[sizeof(DAP_action_ota_st)];
+            fixed (byte* p = myBuffer) { *(DAP_action_ota_st*)p = aux; }
             return myBuffer;
         }
+
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, NCalc.Expression> _ncalcExpressionCache =
+            new System.Collections.Concurrent.ConcurrentDictionary<string, NCalc.Expression>();
+
         public string Ncalc_reading(String expression)
         {
+            if (string.IsNullOrWhiteSpace(expression)) return "0";
             string value = "Error";
             try
             {
-                NCalc.Expression exp = new NCalc.Expression(expression);
-                exp.ResolveParameter += delegate (string name, ParameterResolveArgs rarg)
+                NCalc.Expression exp;
+                if (!_ncalcExpressionCache.TryGetValue(expression, out exp))
                 {
-                    rarg.Result = () => PluginManager.GetPropertyValue(name);
-                };
+                    exp = new NCalc.Expression(expression);
+                    exp.ResolveParameter += delegate (string name, ParameterResolveArgs rarg)
+                    {
+                        rarg.Result = () => PluginManager.GetPropertyValue(name);
+                    };
 
-                if (exp.HasErrors() == false)
-                {
-                    value = exp.Evaluate().ToString();
-                }
-                else
-                {
-                    value = "Error";
+                    if (!exp.HasErrors())
+                    {
+                        _ncalcExpressionCache.TryAdd(expression, exp);
+                    }
+                    else
+                    {
+                        return "Error";
+                    }
                 }
 
+                object evalResult = exp.Evaluate();
+                if (evalResult != null)
+                {
+                    value = evalResult.ToString();
+                }
             }
             catch (Exception ex)
             {
@@ -515,7 +479,7 @@ namespace DiyFfbPedal
 
 
 
-            absTrigger_currentTime = DateTime.Now;
+            absTrigger_currentTime = DateTime.UtcNow;
             TimeSpan diff = absTrigger_currentTime - absTrigger_lastTime;
             int millisceonds = (int)diff.TotalMilliseconds;
             if (millisceonds <= 10)
@@ -527,7 +491,7 @@ namespace DiyFfbPedal
             }
             else
             {
-                absTrigger_lastTime = DateTime.Now;
+                absTrigger_lastTime = DateTime.UtcNow;
             }
 
 
@@ -587,7 +551,7 @@ namespace DiyFfbPedal
                     if (pedalIdx == 1)
                     {
 
-                        GTrigger_currentTime = DateTime.Now;
+                        GTrigger_currentTime = DateTime.UtcNow;
                         TimeSpan diff_G = GTrigger_currentTime - GTrigger_lastTime;
                         int millisceonds_G = (int)diff_G.TotalMilliseconds;
                         if (millisceonds <= 10)
@@ -596,7 +560,7 @@ namespace DiyFfbPedal
                         }
                         else
                         {
-                            GTrigger_lastTime = DateTime.Now;
+                            GTrigger_lastTime = DateTime.UtcNow;
                         }
                         if (Settings.G_force_enable_flag[pedalIdx] == 1)
                         {
@@ -638,7 +602,7 @@ namespace DiyFfbPedal
                         {
                             Road_impact_value = Convert.ToByte(pluginManager.GetPropertyValue(Settings.Road_impact_bind));
 
-                            RoadTrigger_currentTime = DateTime.Now;
+                            RoadTrigger_currentTime = DateTime.UtcNow;
                             TimeSpan diff_Road = RoadTrigger_currentTime - RoadTrigger_lastTime;
                             int millisceonds_G = (int)diff_Road.TotalMilliseconds;
                             if (millisceonds <= 10)
@@ -647,7 +611,7 @@ namespace DiyFfbPedal
                             }
                             else
                             {
-                                RoadTrigger_lastTime = DateTime.Now;
+                                RoadTrigger_lastTime = DateTime.UtcNow;
                             }
                             if (true)
                             {
@@ -823,7 +787,7 @@ namespace DiyFfbPedal
                     // if connect with HID bridge, ignore the fps limit, update all the time.
                     if (update_flag && !BridgeHidService.IsConnected)
                     {
-                        Action_currentTime[pedalIdx] = DateTime.Now;
+                        Action_currentTime[pedalIdx] = DateTime.UtcNow;
                         TimeSpan diff_action = Action_currentTime[pedalIdx] - Action_lastTime[pedalIdx];
                         int millisceonds_action = (int)diff_action.TotalMilliseconds;
                         float time_interval= (1000.0f / Settings.Pedal_action_fps[pedalIdx])-actionIntervalTolerance;
@@ -833,7 +797,7 @@ namespace DiyFfbPedal
                         }
                         else
                         {
-                            Action_lastTime[pedalIdx] = DateTime.Now;
+                            Action_lastTime[pedalIdx] = DateTime.UtcNow;
                             
                         }
 
@@ -921,12 +885,12 @@ namespace DiyFfbPedal
                 for (uint PIDX = 0; PIDX < 3; PIDX++)
                 {
                     bool update_b = false;
-                    TimeSpan diff_action =  DateTime.Now - Action_lastTime[PIDX];
+                    TimeSpan diff_action =  DateTime.UtcNow - Action_lastTime[PIDX];
                     int millisceonds_action = (int)diff_action.TotalMilliseconds;
                     float time_interval = (1000.0f / Settings.Pedal_action_fps[PIDX]) - actionIntervalTolerance;
                     if ( millisceonds_action> 30)
                     {
-                        Action_lastTime[PIDX] = DateTime.Now;
+                        Action_lastTime[PIDX] = DateTime.UtcNow;
                         update_b = true;
                     }
 
@@ -1059,7 +1023,7 @@ namespace DiyFfbPedal
                     }
                     if (MSFS_status || Flight_running_simhub)
                     {
-                        Rudder_Action_currentTime = DateTime.Now;
+                        Rudder_Action_currentTime = DateTime.UtcNow;
                         TimeSpan diff_action = Rudder_Action_currentTime - Rudder_Action_lastTime;
                         int millisceonds_action = (int)diff_action.TotalMilliseconds;
                         
@@ -1105,7 +1069,7 @@ namespace DiyFfbPedal
                                 {
                                     tmp.payloadPedalAction_.RPM_u8 = Rudder_RPM_value;
                                     Rudder_Effect_update_b = true;
-                                    Rudder_Action_lastTime = DateTime.Now;
+                                    Rudder_Action_lastTime = DateTime.UtcNow;
                                     Rudder_RPM_Effect_last_value = Rudder_RPM_value;
                                 }
                             }
@@ -1165,7 +1129,7 @@ namespace DiyFfbPedal
                                 {
                                     tmp.payloadPedalAction_.impact_value = (Byte)Rudder_G_Wind_combined;
                                     Rudder_Effect_update_b = true;
-                                    Rudder_Action_lastTime = DateTime.Now;
+                                    Rudder_Action_lastTime = DateTime.UtcNow;
                                     Rudder_G_last_value = (Byte)Rudder_G_Wind_combined;
                                 }
                             }
@@ -1454,9 +1418,9 @@ namespace DiyFfbPedal
             for (uint pedali = 0; pedali < 3; pedali++)
             {
                 Action_currentTime[pedali] = new DateTime();
-                Action_currentTime[pedali] = DateTime.Now;
+                Action_currentTime[pedali] = DateTime.UtcNow;
                 Action_lastTime[pedali] = new DateTime();
-                Action_lastTime[pedali] = DateTime.Now;
+                Action_lastTime[pedali] = DateTime.UtcNow;
             }
 
             //get version length

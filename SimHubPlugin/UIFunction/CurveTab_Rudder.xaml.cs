@@ -228,7 +228,7 @@ namespace DiyFfbPedal.UIFunction
         {
             try
             {
-                if (canvas_rudder_curve == null || line_LiveDeflection == null) return;
+                if (!this.IsVisible || canvas_rudder_curve == null || line_LiveDeflection == null) return;
 
                 double canvasW = canvas_rudder_curve.Width;
                 if (canvasW <= 0 || double.IsNaN(canvasW)) canvasW = 430.0;
