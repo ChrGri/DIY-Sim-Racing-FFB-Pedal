@@ -124,7 +124,7 @@ namespace DiyFfbPedal.UIFunction
                         if (control.Slider_LC_rate != null) control.Slider_LC_rate.SliderValue = newData.payloadPedalConfig_.loadcell_rating * 2;
                         if (control.Slider_maxgame_output != null) control.Slider_maxgame_output.SliderValue = newData.payloadPedalConfig_.maxGameOutput;
                     }
-                    catch (Exception caughtEx)
+                    catch (Exception)
                     {
                     }
                     
@@ -144,13 +144,14 @@ namespace DiyFfbPedal.UIFunction
                         }
 
                     }
-                    catch (Exception caughtEx)
+                    catch (Exception)
                     {
                     }
                     try
                     {
                         //checkbox
                         if(control.CheckBox_JoystickOutput!=null) control.CheckBox_JoystickOutput.IsChecked = newData.payloadPedalConfig_.travelAsJoystickOutput_u8 == 1;
+                        if (control.CheckBox_WakeOnPluginOnly != null) control.CheckBox_WakeOnPluginOnly.IsChecked = newData.payloadPedalConfig_.wakeOnPluginOnly_u8 == 1;
                         if (control.CheckBox_InvertLoadcellReading != null) control.CheckBox_InvertLoadcellReading.IsChecked = newData.payloadPedalConfig_.invertLoadcellReading_u8 == 1;
                         if (control.CheckBox_InvertMotorDir != null) control.CheckBox_InvertMotorDir.IsChecked = newData.payloadPedalConfig_.invertMotorDirection_u8 == 1;
                         if (control.CheckBox_StepLossRecov != null)
@@ -178,7 +179,7 @@ namespace DiyFfbPedal.UIFunction
 
 
                     }
-                    catch (Exception caughtEx)
+                    catch (Exception)
                     {                         
                     }
 
@@ -334,6 +335,22 @@ namespace DiyFfbPedal.UIFunction
         {
             var tmp = dap_config_st;
             tmp.payloadPedalConfig_.invertMotorDirection_u8 = (byte)0;
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
+
+        private void CheckBox_WakeOnPluginOnly_Checked(object sender, RoutedEventArgs e)
+        {
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.wakeOnPluginOnly_u8 = (byte)1;
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
+
+        private void CheckBox_WakeOnPluginOnly_Unchecked(object sender, RoutedEventArgs e)
+        {
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.wakeOnPluginOnly_u8 = (byte)0;
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
         }

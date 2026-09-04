@@ -981,6 +981,12 @@ namespace User.PluginSdkDemo.Language {
         /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Enable step loss recov. ähnelt.
         /// </summary>
+        internal static string DIYFFBPedalPlugin_TextGeneralSettingWakeOnPluginOnly {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextGeneralSettingWakeOnPluginOnly", resourceCulture);
+            }
+        }
+        
         internal static string DIYFFBPedalPlugin_TextGeneralSettingStepLossRecor {
             get {
                 return ResourceManager.GetString("DIYFFBPedalPlugin_TextGeneralSettingStepLossRecor", resourceCulture);

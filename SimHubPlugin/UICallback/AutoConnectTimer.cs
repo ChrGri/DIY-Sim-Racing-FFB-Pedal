@@ -10,7 +10,6 @@ namespace DiyFfbPedal
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
         private uint count_timmer_count = 0;
-        private string Toast_tmp;
         private WirelessConnectStateEnum[] pedalWirelessStatusLast = new WirelessConnectStateEnum[3] { WirelessConnectStateEnum.PEDAL_DISCONNECT, WirelessConnectStateEnum.PEDAL_DISCONNECT, WirelessConnectStateEnum.PEDAL_DISCONNECT };
         private ConnectStateEnum[] pedalSerialStatusLast = new ConnectStateEnum[3] { ConnectStateEnum.PEDAL_DISCONNECT, ConnectStateEnum.PEDAL_DISCONNECT, ConnectStateEnum.PEDAL_DISCONNECT };
         public void connection_timmer_tick(object sender, EventArgs e)

@@ -25,7 +25,6 @@ namespace DiyFfbPedal.UIFunction
             public string Name { get; set; }
             public int Id { get; set; }
         }
-        private List<PedalItem> _pedalList;
         private List<PedalItem> _unassignedPedalList;
         private DIY_FFB_Pedal _plugin;
         private int _pedalSelect;

@@ -41,9 +41,15 @@
                     <StackPanel Width="400" Height="12" Orientation="Horizontal">
                         <Label x:Name="label_RPM_freq"  Width="250" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="{SLoc DIYFFBPedalPlugin_TextEffectEngineFreq, 'Effect Frequency:'}" Height="12" Padding="0,0,0,0"/>
                     </StackPanel>
-                    <StackPanel Width="400" Height="12" Orientation="Horizontal">
-                        <Label x:Name="label_RPM_freq_min"  Width="50" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="MIN:" Height="12" Padding="0,0,0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-                        <Label x:Name="label_RPM_freq_max"  Width="50" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="MAX:" Height="12" Padding="0,0,0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="300,0,0,0"/>
+                                        <StackPanel Width="400" Height="16" Orientation="Horizontal">
+                        <Grid Width="55" Height="16">
+                            <Label x:Name="label_RPM_freq_min" Width="55" Foreground="White" FontSize="10" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" Content="MIN:" Height="16" Padding="0,0,0,0" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Cursor="Hand" ToolTip="Click to type min frequency (Hz)" MouseLeftButtonDown="label_RPM_freq_min_MouseLeftButtonDown" Background="Transparent"/>
+                            <TextBox x:Name="TextBox_edit_RPM_freq_min" Width="45" Height="16" FontSize="9" FontFamily="Arial" VerticalAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus" Padding="1,0,1,0"/>
+                        </Grid>
+                        <Grid Width="55" Height="16" Margin="290,0,0,0">
+                            <Label x:Name="label_RPM_freq_max" Width="55" Foreground="White" FontSize="10" FontFamily="Arial" HorizontalAlignment="Right" VerticalAlignment="Top" Content="MAX:" Height="16" Padding="0,0,0,0" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" Cursor="Hand" ToolTip="Click to type max frequency (Hz)" MouseLeftButtonDown="label_RPM_freq_max_MouseLeftButtonDown" Background="Transparent"/>
+                            <TextBox x:Name="TextBox_edit_RPM_freq_max" Width="45" Height="16" FontSize="9" FontFamily="Arial" VerticalAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus" Padding="1,0,1,0"/>
+                        </Grid>
                     </StackPanel>
                     <controls:RangeSlider x:Name="Rangeslider_RPM_freq" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="1" Grid.Column="2" Height="10" LowerValueChanged="Rangeslider_RPM_freq_LowerValueChanged" UpperValueChanged="Rangeslider_RPM_freq_UpperValueChanged" MinRange="1" SmallChange="1" Maximum="50" IsSnapToTickEnabled="True" LowerValue="10" UpperValue="30"/>
                 </StackPanel>

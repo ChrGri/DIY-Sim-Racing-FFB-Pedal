@@ -222,6 +222,14 @@
                                                         </StackPanel>
                                                     </Button>
                                                 </StackPanel>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_PedalBootMode_Click" ToolTip="Get Pedal Sensor Info" Margin="0,5,0,0">
+                                                        <StackPanel>
+                                                            <Image Width="30" Height="30" Source="{StaticResource FirmwareDownload}" />
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextFWFlash, 'FW Flash'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Button>
+                                                </StackPanel>
                                                 <Border Background="#FF4E4E4E" Height="50" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="160" HorizontalAlignment="Center" Margin="0,5,0,0" >
                                                     <TextBox x:Name="TextBox2" TextWrapping="Wrap" Width="160" AutomationProperties.Name="TextBox2" Height="50" FontSize="9" Background="#004E4E4E" BorderBrush="#00CCCCCC" IsHitTestVisible="False" AllowDrop="True" HorizontalAlignment="Center"/>
                                                 </Border>
@@ -233,7 +241,7 @@
                                     </StackPanel>
                                 </StackPanel>
 
-                                <StackPanel Height="900" Width="545" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-280,3,0,0">
+                                <StackPanel Height="900" Width="545" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-280,0,0,0">
                                     <TabControl x:Name="Tab_main_1" Grid.Column="0" SelectionChanged="Tab_main_1_SelectionChanged" HorizontalAlignment="Left" Height="305" Grid.Row="0" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Grid.RowSpan="2">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
@@ -508,10 +516,10 @@
                                     <Border Background="#7F4E4E4E" Height="498" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="168" HorizontalAlignment="Center" >
                                         <StackPanel HorizontalAlignment="Center" Height="498" VerticalAlignment="Top" Width="160" Margin="0,5,0,0">
                                             <localFunction:InfoSection_Rudder x:Name="RudderInfo" />
-                                            <TextBox x:Name="TextBox_rudder_debug" HorizontalAlignment="Left" Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="160" Height="25" AutomationProperties.Name="TextBox2" BorderBrush="#00CCCCCC" Background="#00252525" FontSize="8" FontFamily="Arial" />
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                                                <ComboBox SelectedValuePath="Tag" Width="100" SelectedValue="{Binding Plugin.Settings.rudderMode, Mode=TwoWay}" Height="20" Padding="0,0,0,0" BorderThickness="0,0,0,0" MinHeight="20">
-                                                    <ComboBoxItem Content="Flight">
+                                            <Button x:Name="btn_SidebarRudderDocs" Click="btn_RudderDocs_Click" Content="📖 Flight Docs ↗" Width="158" Height="18" Margin="0,2,0,4" Background="#2600AAFF" Foreground="#00CCFF" BorderBrush="#3300CCFF" BorderThickness="1" FontSize="9" FontFamily="Arial" Cursor="Hand" ToolTip="Open Rudder Flight Dynamics Documentation on GitHub" HorizontalAlignment="Center"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,0">
+                                                <ComboBox x:Name="combo_rudderMode" SelectedValuePath="Tag" Width="98" SelectedValue="{Binding Plugin.Settings.rudderMode, Mode=TwoWay}" SelectionChanged="RudderMode_SelectionChanged" Height="22" Padding="2,0,0,0" BorderThickness="0,0,0,0" MinHeight="20">
+                                                    <ComboBoxItem Content="Airplane">
                                                         <ComboBoxItem.Tag>
                                                             <sys:UInt32>0</sys:UInt32>
                                                         </ComboBoxItem.Tag>
@@ -522,14 +530,16 @@
                                                         </ComboBoxItem.Tag>
                                                     </ComboBoxItem>
                                                 </ComboBox>
-                                                <styles:SHButtonPrimary x:Name="btn_rudder_initialize" Click="btn_rudder_initialize_Click" Width="55" Height="20" Content="Rudder" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" HorizontalContentAlignment="Center" MinHeight="20" />
+                                                <styles:SHButtonPrimary x:Name="btn_rudder_initialize" Click="btn_rudder_initialize_Click" Width="56" Height="22" Content="Rudder" Margin="6,0,0,0" HorizontalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" HorizontalContentAlignment="Center" MinHeight="20" />
                                             </StackPanel>
+                                            <!-- Rudder Status & Operation Monitor Box -->
+                                            <TextBox x:Name="text_rudder_log" HorizontalAlignment="Center" VerticalAlignment="Top" Text="Rudder Monitor Ready..." Width="158" Foreground="#00FFCC" Height="365" Margin="0,8,0,0" FontSize="9" FontFamily="Consolas" Background="#EE141720" BorderBrush="#3300FFCC" BorderThickness="1" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="4"/>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
                                 <StackPanel Width="540" Height="900" Margin="3,0,0,0">
                                     <StackPanel Width="540" Height="272" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="1,0,0,0">
-                                        <localFunction:CurveTab_Rudder x:Name="CurveRudderForce_Tab" ConfigChanged="Rudder_ConfigChanged" CalculationChanged="Tab_CalculationChanged"/>
+                                        <localFunction:CurveTab_Rudder x:Name="CurveRudderForce_Tab" SettingsChanged="Tab_SettingsChanged" ConfigChanged="Rudder_ConfigChanged" CalculationChanged="Tab_CalculationChanged"/>
                                     </StackPanel>
                                     <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="222" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,4,0,0">
                                         <TabControl.Resources>
@@ -592,6 +602,134 @@
                                             <localFunction:EffectsTab_RudderACC x:Name="EffectRudderACC_Tab" SettingsChanged="Tab_SettingsChanged"/>
                                         </TabItem>
                                     </TabControl>
+
+                                    <!-- Wireless Sync Latency & Stability Monitor with RSSI Subplot -->
+                                    <Border Background="#7F4E4E4E" CornerRadius="5" Height="200" Width="540" Margin="0,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                        <Grid Margin="8,4,8,4">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Header & Live Badges -->
+                                            <DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,3">
+                                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                                                    <!-- Clean Vector WiFi / Broadcast Icon (no emoji corruption) -->
+                                                    <Canvas Width="14" Height="12" Margin="0,0,6,0" VerticalAlignment="Center">
+                                                        <Path Data="M1,2.5 A9,9 0 0,1 13,2.5 M3,5.5 A6,6 0 0,1 11,5.5 M5.5,8.5 A3,3 0 0,1 8.5,8.5" Stroke="#00E5FF" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                                                        <Ellipse Width="2" Height="2" Fill="#00E5FF" Canvas.Left="6" Canvas.Top="9"/>
+                                                    </Canvas>
+                                                    <TextBlock Text="ESP-NOW WIRELESS TELEMETRY &amp; SYNC" FontFamily="Arial Black" FontSize="10" Foreground="#00E5FF" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                
+                                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                                                    <Border Background="#3300FFCC" BorderBrush="#6600FFCC" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="2,0">
+                                                        <TextBlock x:Name="tb_rudder_sync_delay" Text="Delay: -- ms" FontFamily="Consolas" FontSize="9" Foreground="#00FFCC" FontWeight="Bold"/>
+                                                    </Border>
+                                                    <Border Background="#22FFFFFF" BorderBrush="#44FFFFFF" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="2,0">
+                                                        <TextBlock x:Name="tb_rudder_sync_rate" Text="Rate: -- Hz" FontFamily="Consolas" FontSize="9" Foreground="#E0E0E0"/>
+                                                    </Border>
+                                                    <Border Background="#22FFFFFF" BorderBrush="#44FFFFFF" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="2,0">
+                                                        <TextBlock x:Name="tb_rudder_sync_jitter" Text="Jitter: Â±-- ms" FontFamily="Consolas" FontSize="9" Foreground="#AAAAAA"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </DockPanel>
+
+                                            <!-- Dual Subplot Frame -->
+                                            <Border Grid.Row="1" Background="#EE141720" BorderBrush="#3300E5FF" BorderThickness="1" CornerRadius="4" ClipToBounds="True">
+                                                <StackPanel Orientation="Vertical">
+                                                    <!-- Subplot 1: Latency -->
+                                                    <Canvas x:Name="canvas_rudder_latency_graph" Height="70" Width="520" Margin="0" ClipToBounds="True">
+                                                        <!-- Subplot Title Tag -->
+                                                        <TextBlock Text="LATENCY" Foreground="#5500E5FF" FontSize="8" FontFamily="Arial" FontWeight="Bold" Canvas.Left="5" Canvas.Top="2"/>
+
+                                                        <!-- Horizontal Reference Grid Lines (0 - 30ms scale) -->
+                                                        <Line X1="0" Y1="18" X2="520" Y2="18" Stroke="#18FFFFFF" StrokeDashArray="2 2"/>
+                                                        <TextBlock Text="20ms" Foreground="#44FFFFFF" FontSize="7" FontFamily="Consolas" Canvas.Left="4" Canvas.Top="12"/>
+
+                                                        <Line X1="0" Y1="38" X2="520" Y2="38" Stroke="#18FFFFFF" StrokeDashArray="2 2"/>
+                                                        <TextBlock Text="10ms" Foreground="#44FFFFFF" FontSize="7" FontFamily="Consolas" Canvas.Left="4" Canvas.Top="32"/>
+
+                                                        <Line X1="0" Y1="51" X2="520" Y2="51" Stroke="#18FFFFFF" StrokeDashArray="2 2"/>
+                                                        <TextBlock Text="5ms" Foreground="#44FFFFFF" FontSize="7" FontFamily="Consolas" Canvas.Left="4" Canvas.Top="45"/>
+
+                                                        <!-- Vertical Time Grid Lines (1s intervals across 5s window) -->
+                                                        <Line X1="104" Y1="0" X2="104" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
+                                                        <Line X1="208" Y1="0" X2="208" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
+                                                        <Line X1="312" Y1="0" X2="312" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
+                                                        <Line X1="416" Y1="0" X2="416" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
+
+                                                        <!-- Live Polyline Graph -->
+                                                        <Polygon x:Name="poly_rudder_latency_fill" Fill="#1200FFCC"/>
+                                                        <Polyline x:Name="poly_rudder_latency_trace" Stroke="#00FFCC" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                                    </Canvas>
+
+                                                    <!-- Divider between subplots -->
+                                                    <Line X1="0" Y1="0" X2="520" Y2="0" Stroke="#2600E5FF" StrokeThickness="1"/>
+
+                                                    <!-- Subplot 2: Pedals RSSI -->
+                                                    <Canvas x:Name="canvas_rudder_rssi_graph" Height="70" Width="520" Margin="0" ClipToBounds="True">
+                                                        <!-- Legend & Subplot Title Tag -->
+                                                        <StackPanel Orientation="Horizontal" Canvas.Left="5" Canvas.Top="2">
+                                                            <TextBlock Text="PEDAL RSSI" Foreground="#55FFFFFF" FontSize="8" FontFamily="Arial" FontWeight="Bold" Margin="0,0,8,0"/>
+                                                            <TextBlock Text="&#x25A0; Clutch: " Foreground="#FF4D4D" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
+                                                            <TextBlock x:Name="tb_rssi_clutch_val" Text="--" Foreground="#FF4D4D" FontSize="8" FontFamily="Consolas" Margin="0,0,8,0"/>
+                                                            <TextBlock Text="&#x25A0; Brake: " Foreground="#00E676" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
+                                                            <TextBlock x:Name="tb_rssi_brake_val" Text="--" Foreground="#00E676" FontSize="8" FontFamily="Consolas" Margin="0,0,8,0"/>
+                                                            <TextBlock Text="&#x25A0; Throttle: " Foreground="#2979FF" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
+                                                            <TextBlock x:Name="tb_rssi_throttle_val" Text="--" Foreground="#2979FF" FontSize="8" FontFamily="Consolas"/>
+                                                        </StackPanel>
+
+                                                        <!-- Horizontal Reference Grid Lines (-30 to -100 dBm scale) -->
+                                                        <Line X1="0" Y1="17" X2="520" Y2="17" Stroke="#18FFFFFF" StrokeDashArray="2 2"/>
+                                                        <TextBlock Text="-40dBm" Foreground="#44FFFFFF" FontSize="7" FontFamily="Consolas" Canvas.Left="4" Canvas.Top="11"/>
+
+                                                        <Line X1="0" Y1="37" X2="520" Y2="37" Stroke="#18FFFFFF" StrokeDashArray="2 2"/>
+                                                        <TextBlock Text="-65dBm" Foreground="#44FFFFFF" FontSize="7" FontFamily="Consolas" Canvas.Left="4" Canvas.Top="31"/>
+
+                                                        <Line X1="0" Y1="53" X2="520" Y2="53" Stroke="#18FFFFFF" StrokeDashArray="2 2"/>
+                                                        <TextBlock Text="-85dBm" Foreground="#44FFFFFF" FontSize="7" FontFamily="Consolas" Canvas.Left="4" Canvas.Top="47"/>
+
+                                                        <!-- Vertical Time Grid Lines -->
+                                                        <Line X1="104" Y1="0" X2="104" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
+                                                        <Line X1="208" Y1="0" X2="208" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
+                                                        <Line X1="312" Y1="0" X2="312" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
+                                                        <Line X1="416" Y1="0" X2="416" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
+
+                                                        <!-- Live RSSI Traces: Red=Clutch, Green=Brake, Blue=Throttle -->
+                                                        <Polyline x:Name="poly_rssi_clutch" Stroke="#FF4D4D" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                                        <Polyline x:Name="poly_rssi_brake" Stroke="#00E676" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                                        <Polyline x:Name="poly_rssi_throttle" Stroke="#2979FF" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                                    </Canvas>
+
+                                                    <!-- Divider before X-Axis -->
+                                                    <Line X1="0" Y1="0" X2="520" Y2="0" Stroke="#22FFFFFF" StrokeThickness="1"/>
+
+                                                    <!-- Subplot 3 / Bottom X-Axis (Ticks & Label "plot age cycle") -->
+                                                    <Canvas x:Name="canvas_rudder_xaxis" Height="20" Width="520" Margin="0" ClipToBounds="True">
+                                                        <!-- Tick Marks (3px tick height) -->
+                                                        <Line X1="0" Y1="0" X2="0" Y2="3" Stroke="#55FFFFFF"/>
+                                                        <Line X1="104" Y1="0" X2="104" Y2="3" Stroke="#55FFFFFF"/>
+                                                        <Line X1="208" Y1="0" X2="208" Y2="3" Stroke="#55FFFFFF"/>
+                                                        <Line X1="312" Y1="0" X2="312" Y2="3" Stroke="#55FFFFFF"/>
+                                                        <Line X1="416" Y1="0" X2="416" Y2="3" Stroke="#55FFFFFF"/>
+                                                        <Line X1="519" Y1="0" X2="519" Y2="3" Stroke="#55FFFFFF"/>
+
+                                                        <!-- Tick Labels -->
+                                                        <TextBlock Text="-5s" Foreground="#77FFFFFF" FontSize="7" FontFamily="Consolas" Canvas.Left="2" Canvas.Top="2"/>
+                                                        <TextBlock Text="-4s" Foreground="#77FFFFFF" FontSize="7.5" FontFamily="Consolas" Canvas.Left="96" Canvas.Top="2"/>
+                                                        <TextBlock Text="-3s" Foreground="#77FFFFFF" FontSize="7.5" FontFamily="Consolas" Canvas.Left="200" Canvas.Top="2"/>
+                                                        <TextBlock Text="-2s" Foreground="#77FFFFFF" FontSize="7.5" FontFamily="Consolas" Canvas.Left="304" Canvas.Top="2"/>
+                                                        <TextBlock Text="-1s" Foreground="#77FFFFFF" FontSize="7.5" FontFamily="Consolas" Canvas.Left="408" Canvas.Top="2"/>
+                                                        <TextBlock Text="0s (now)" Foreground="#77FFFFFF" FontSize="7.5" FontFamily="Consolas" Canvas.Left="476" Canvas.Top="2"/>
+
+                                                        <!-- Axis Title -->
+                                                        <TextBlock Text="plot age cycle" Foreground="#55FFFFFF" FontSize="7" FontFamily="Arial" FontStyle="Italic" Canvas.Left="224" Canvas.Top="9"/>
+                                                    </Canvas>
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
                                     
                                 </StackPanel>
                                 

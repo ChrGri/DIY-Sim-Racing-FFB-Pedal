@@ -31,7 +31,8 @@ enum class PedalSystemAction
   SET_ASSIGNMENT_1,
   SET_ASSIGNMENT_2,
   CLEAR_ASSIGNMENT,
-  ASSIGNMENT_CHECK_BEEP
+  ASSIGNMENT_CHECK_BEEP,
+  WAKEUP_PEDAL
 };
 
 using PedalSystemAction_t = PedalSystemAction;

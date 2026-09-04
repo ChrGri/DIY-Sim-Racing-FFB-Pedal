@@ -621,4 +621,10 @@
   <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderCoulombFriction" xml:space="preserve">
     <value>Coulomb Friction</value>
   </data>
+  <data name="DIYFFBPedalPlugin_ButtonTextFWFlash" xml:space="preserve">
+    <value>FW Flash</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextGeneralSettingWakeOnPluginOnly" xml:space="preserve">
+    <value>Wakeup only by plugin trigger</value>
+  </data>
 </root>

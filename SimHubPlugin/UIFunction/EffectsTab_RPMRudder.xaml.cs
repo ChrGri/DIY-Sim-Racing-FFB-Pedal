@@ -147,49 +147,126 @@ namespace DiyFfbPedal.UIFunction
 
         private void checkbox_enable_RPM_rudder_Checked(object sender, RoutedEventArgs e)
         {
+            if (Settings == null) return;
             if (checkbox_enable_RPM_rudder != null) Settings.Rudder_RPM_effect_b = true;
             SettingsChangedEvent(Settings);
         }
 
         private void checkbox_enable_RPM_rudder_Unchecked(object sender, RoutedEventArgs e)
         {
+            if (Settings == null) return;
             if (checkbox_enable_RPM_rudder != null) Settings.Rudder_RPM_effect_b = false;
             SettingsChangedEvent(Settings);
         }
 
         private void Slider_RPM_AMP_rudder_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            /*
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.RPM_AMP = (Byte)(e.NewValue * 100);
-            dap_config_st = tmp;
-            ConfigChangedEvent(dap_config_st);
-            */
+            if (Settings == null) return;
             Settings.rudderRPMAmp = (Byte)(e.NewValue *5000.0d/100.0d);
+            SettingsChangedEvent(Settings);
         }
 
         private void Rangeslider_RPM_freq_rudder_LowerValueChanged(object sender, MahApps.Metro.Controls.RangeParameterChangedEventArgs e)
         {
-            /*
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.RPM_min_freq = (byte)e.NewValue;
-            dap_config_st = tmp;
-            ConfigChangedEvent(dap_config_st);
-            */
+            if (Settings == null) return;
             Settings.rudderRPMMinFrequency = (byte)e.NewValue;
             if (label_RPM_freq_min_rudder!=null) label_RPM_freq_min_rudder.Content = "MIN:" + Settings.rudderRPMMinFrequency + "Hz";
+            SettingsChangedEvent(Settings);
         }
 
         private void Rangeslider_RPM_freq_rudder_UpperValueChanged(object sender, MahApps.Metro.Controls.RangeParameterChangedEventArgs e)
         {
-            /*
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.RPM_max_freq = (byte)e.NewValue;
-            dap_config_st = tmp;
-            ConfigChangedEvent(dap_config_st);
-            */
+            if (Settings == null) return;
             Settings.rudderRPMMaxFrequency = (byte)e.NewValue;
             if (label_RPM_freq_max_rudder != null) label_RPM_freq_max_rudder.Content = "MAX:" + Settings.rudderRPMMaxFrequency + "Hz";
+            SettingsChangedEvent(Settings);
+        }
+
+        // Inline Keyboard / Numeric Input Handlers
+        private void label_RPM_freq_min_rudder_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (Settings != null)
+                BeginInlineEdit(label_RPM_freq_min_rudder, TextBox_edit_RPM_freq_min, Settings.rudderRPMMinFrequency);
+            e.Handled = true;
+        }
+
+        private void label_RPM_freq_max_rudder_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (Settings != null)
+                BeginInlineEdit(label_RPM_freq_max_rudder, TextBox_edit_RPM_freq_max, Settings.rudderRPMMaxFrequency);
+            e.Handled = true;
+        }
+
+        private void BeginInlineEdit(FrameworkElement displayElem, System.Windows.Controls.TextBox box, double currentValue)
+        {
+            if (displayElem == null || box == null) return;
+            box.Text = currentValue.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+            displayElem.Visibility = Visibility.Collapsed;
+            box.Visibility = Visibility.Visible;
+            box.Focus();
+            box.SelectAll();
+        }
+
+        private void EditBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            var box = sender as System.Windows.Controls.TextBox;
+            if (box == null) return;
+            if (e.Key == System.Windows.Input.Key.Enter)
+            {
+                CommitInlineEdit(box);
+                e.Handled = true;
+            }
+            else if (e.Key == System.Windows.Input.Key.Escape)
+            {
+                EndInlineEdit(box);
+                e.Handled = true;
+            }
+        }
+
+        private void EditBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            var box = sender as System.Windows.Controls.TextBox;
+            if (box != null && box.Visibility == Visibility.Visible)
+                CommitInlineEdit(box);
+        }
+
+        private void CommitInlineEdit(System.Windows.Controls.TextBox box)
+        {
+            if (Settings == null || box == null) return;
+
+            string text = (box.Text ?? string.Empty).Trim().Replace(',', '.');
+            if (double.TryParse(text, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double value))
+            {
+                if (box == TextBox_edit_RPM_freq_min)
+                {
+                    // Clamp 1 to max frequency
+                    value = Math.Max(1, Math.Min(Settings.rudderRPMMaxFrequency, Math.Round(value)));
+                    Settings.rudderRPMMinFrequency = (byte)value;
+                    if (Rangeslider_RPM_freq_rudder != null) Rangeslider_RPM_freq_rudder.LowerValue = value;
+                    if (label_RPM_freq_min_rudder != null) label_RPM_freq_min_rudder.Content = "MIN:" + Settings.rudderRPMMinFrequency + "Hz";
+                    SettingsChangedEvent(Settings);
+                }
+                else if (box == TextBox_edit_RPM_freq_max)
+                {
+                    // Clamp min frequency to 50
+                    value = Math.Max(Settings.rudderRPMMinFrequency, Math.Min(50, Math.Round(value)));
+                    Settings.rudderRPMMaxFrequency = (byte)value;
+                    if (Rangeslider_RPM_freq_rudder != null) Rangeslider_RPM_freq_rudder.UpperValue = value;
+                    if (label_RPM_freq_max_rudder != null) label_RPM_freq_max_rudder.Content = "MAX:" + Settings.rudderRPMMaxFrequency + "Hz";
+                    SettingsChangedEvent(Settings);
+                }
+            }
+            EndInlineEdit(box);
+        }
+
+        private void EndInlineEdit(System.Windows.Controls.TextBox box)
+        {
+            if (box == null) return;
+            box.Visibility = Visibility.Collapsed;
+            FrameworkElement elem = null;
+            if (box == TextBox_edit_RPM_freq_min) elem = label_RPM_freq_min_rudder;
+            else if (box == TextBox_edit_RPM_freq_max) elem = label_RPM_freq_max_rudder;
+            if (elem != null) elem.Visibility = Visibility.Visible;
         }
     }
 }

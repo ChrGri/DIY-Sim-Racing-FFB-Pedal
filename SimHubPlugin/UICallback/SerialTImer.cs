@@ -24,6 +24,8 @@ namespace DiyFfbPedal
         static int destBufferSize = 1000;
         byte[][] buffer_appended = { new byte[bufferSize], new byte[bufferSize], new byte[bufferSize], new byte[bufferSize] };
         byte[][] buffer_appended_clone = { new byte[bufferSize], new byte[bufferSize], new byte[bufferSize], new byte[bufferSize] };
+        private readonly byte[] serial_bufferByteAssignedToStruct_class = new byte[bufferSize];
+        private readonly bool[] serial_bufferByteAssignedToStruct = new bool[bufferSize];
 
 
 
@@ -206,10 +208,8 @@ namespace DiyFfbPedal
 
                         if (appendedBufferOffset[pedalSelected] > 0)
                         {
-                            int tmp = 5;
                         }
 
-                        bool inBufferDicarded = false;
                         int currentBufferLength = appendedBufferOffset[pedalSelected];
                         if (bufferSize > (currentBufferLength + receivedLength) )
                         {
@@ -223,7 +223,6 @@ namespace DiyFfbPedal
                         }
                         else
                         {
-                            inBufferDicarded = true;
                             sp.DiscardInBuffer();
                             appendedBufferOffset[pedalSelected] = 0;
                             return;
@@ -232,7 +231,6 @@ namespace DiyFfbPedal
 
                         if (!((buffer_appended[pedalSelected][0] == 170) && (buffer_appended[pedalSelected][1] == 85)))
                         {
-                            int tmp = 5;
                         }
 
 
@@ -262,8 +260,10 @@ namespace DiyFfbPedal
                         var validPairsServoConfig = new List<Tuple<int, int>>();
 
                         bool sofHasBeenReceivedEofNotYet = false;
-                        byte[] bufferByteAssignedToStruct_class = new byte[bufferSize];
-                        bool[] bufferByteAssignedToStruct = new bool[bufferSize];
+                        byte[] bufferByteAssignedToStruct_class = serial_bufferByteAssignedToStruct_class;
+                        bool[] bufferByteAssignedToStruct = serial_bufferByteAssignedToStruct;
+                        Array.Clear(bufferByteAssignedToStruct_class, 0, bufferSize);
+                        Array.Clear(bufferByteAssignedToStruct, 0, bufferSize);
 
                         // Search for the basic struct
                         FindValidMessagePairs(
@@ -565,6 +565,10 @@ namespace DiyFfbPedal
                                             || Plugin._calculations.pedalSerialStatus[pedalSelected] == ConnectStateEnum.PEDAL_DISCONNECT)
                                         {
                                             Plugin._calculations.pedalSerialStatus[pedalSelected] = ConnectStateEnum.PEDAL_GET_BASIC_PACKETS;
+                                            if (!Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalSelected])
+                                            {
+                                                Reading_config_auto((uint)pedalSelected);
+                                            }
                                         }
                                         Plugin._calculations.pedalSerialConnetionlastTime[pedalSelected]=DateTime.Now;
                                         // write vJoy data
@@ -617,6 +621,35 @@ namespace DiyFfbPedal
                                         Plugin.PedalStatusInstance.PedalMaxForce[pedalSelected] = (int)dap_config_st[pedalSelected].payloadPedalConfig_.maxForce;
                                         Plugin.PedalStatusInstance.PedalMinForce[pedalSelected] = (int)dap_config_st[pedalSelected].payloadPedalConfig_.preloadForce;
                                         Plugin.PedalStatusInstance.UpdatePedalStatus();
+                                        Plugin.rawPedalPos[pedalSelected] = pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16;
+                                        if (Tab_Rudder != null && Tab_Rudder.IsSelected)
+                                        {
+                                            if (CurveRudderForce_Tab != null)
+                                            {
+                                                uint leftIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 0) ? (uint)Plugin.Rudder_Pedal_idx[0] : 1;
+                                                uint rightIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 1) ? (uint)Plugin.Rudder_Pedal_idx[1] : 2;
+                                                double leftNorm = (double)Plugin.rawPedalPos[leftIdx] / 65535.0;
+                                                double rightNorm = (double)Plugin.rawPedalPos[rightIdx] / 65535.0;
+                                                double leftRel = Math.Max(0.0, Math.Min(1.0, leftNorm));
+                                                double rightRel = Math.Max(0.0, Math.Min(1.0, rightNorm));
+                                                float rudderRatio = (float)Math.Max(0.0, Math.Min(1.0, 0.5 - 0.5 * leftRel + 0.5 * rightRel));
+                                                CurveRudderForce_Tab.UpdateLiveDeflection(rudderRatio);
+                                            }
+
+                                            if (Plugin.Rudder_status)
+                                            {
+                                                uint leftIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 0) ? (uint)Plugin.Rudder_Pedal_idx[0] : 1;
+                                                uint rightIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 1) ? (uint)Plugin.Rudder_Pedal_idx[1] : 2;
+                                                if (pedalSelected == leftIdx || pedalSelected == rightIdx)
+                                                {
+                                                    byte syncDelay = pedalState_read_st.payloadPedalBasicState_.rudderSyncDelay_ms;
+                                                    if (syncDelay > 0)
+                                                    {
+                                                        UpdateRudderLatency(syncDelay);
+                                                    }
+                                                }
+                                            }
+                                        }
 
                                         // GUI update
                                         if ((pedalStateHasAlreadyBeenUpdated_b == false) && (indexOfSelectedPedal_u == pedalSelected))
@@ -627,6 +660,10 @@ namespace DiyFfbPedal
                                             //TextBox_debugOutput.Text += ",  Servo pos: " + pedalState_read_st.payloadPedalState_.servoPosition_i32;
 
                                             PedalForceTravel_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16, pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
+                                            if (pedalKinematicTab != null && pedalKinematicTab.IsSelected)
+                                            {
+                                                PedalKinematics_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16);
+                                            }
 
                                             pedalStateHasAlreadyBeenUpdated_b = true;
 

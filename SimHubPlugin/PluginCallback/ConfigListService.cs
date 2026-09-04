@@ -164,13 +164,13 @@ namespace DiyFfbPedal
                         }
                         UpdateConfigLabelDefaultAndEditing();
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
 
                     }
 
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                 }
             }
@@ -209,7 +209,7 @@ namespace DiyFfbPedal
                             compatibleForce[5] = (byte)data["payloadPedalConfig_"]["relativeForce_p100"];
                         }
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
 
                     }

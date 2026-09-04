@@ -159,4 +159,7 @@ typedef struct __attribute__((packed)) PayloadPedalConfig
   // friction parameters
   uint8_t coulombFrictionIn0p1N_u8;
 
+  // wake on plugin trigger only (0 = auto-start on boot, 1 = standby on boot, wait for plugin)
+  uint8_t wakeOnPluginOnly_u8;
+
 } PayloadPedalConfig_t;

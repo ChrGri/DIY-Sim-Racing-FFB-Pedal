@@ -23,10 +23,9 @@ private:
     int32_t dataRxBufferLength_i32 = 0;
     int32_t slaveId_i32 = 0x01;
     uint8_t txBuffer_au8[9] = {0,0,0,0,0,0,0,0,0};
-
-    int32_t computeCrc(uint8_t *buffer_pu8, int32_t bufferLength_i32);
     
 public:
+    static int32_t computeCrc(const uint8_t *buffer_pu8, int32_t bufferLength_i32);
     
     Modbus();
     Modbus(HardwareSerial &serial_pHS);

@@ -16,10 +16,23 @@
     </UserControl.Resources>
     <Grid>
         <StackPanel>
-            <Label 
-                Content="{Binding LabelContent, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
-                VerticalAlignment="Center" HorizontalAlignment="Left" Height="12" Width="300" Margin="0,0,0,8" FontFamily="Arial" FontSize="10" Padding="0,0,0,0"/>
-            <Slider  
+            <Grid Height="16" Margin="0,0,0,4">
+                <Label x:Name="LabelDisplay"
+                    Content="{Binding LabelContent, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"
+                    VerticalAlignment="Center" HorizontalAlignment="Left" Height="16" Width="300"
+                    FontFamily="Arial" FontSize="10" Padding="0,0,0,0" Foreground="White"
+                    Cursor="Hand" ToolTip="Click to type a value"
+                    MouseLeftButtonDown="LabelDisplay_MouseLeftButtonDown"
+                    Background="Transparent"/>
+                <StackPanel x:Name="PanelEdit" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock x:Name="TxtEditPrefix" Text="Name: " FontFamily="Arial" FontSize="10" VerticalAlignment="Center" Foreground="White"/>
+                    <TextBox x:Name="BoxEditValue" Width="55" Height="16" FontSize="10" FontFamily="Arial" VerticalAlignment="Center"
+                             Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}"
+                             KeyDown="BoxEditValue_KeyDown" LostFocus="BoxEditValue_LostFocus" Padding="2,0,2,0"/>
+                    <TextBlock x:Name="TxtEditUnit" Text=" Unit" FontFamily="Arial" FontSize="10" VerticalAlignment="Center" Foreground="#AAAAAA" Margin="3,0,0,0"/>
+                </StackPanel>
+            </Grid>
+            <Slider x:Name="SliderElement"
                 Minimum="{Binding MinValue, RelativeSource={RelativeSource AncestorType=UserControl}}"
                 Maximum="{Binding MaxValue, RelativeSource={RelativeSource AncestorType=UserControl}}"
                 TickFrequency="{Binding TickFrequency, RelativeSource={RelativeSource AncestorType=UserControl}}"

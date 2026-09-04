@@ -158,6 +158,11 @@ class Isv57Communication {
     int16_t zeroPos;
     bool printProfilingFlag_b;
     //Modbus modbus;
+
+    // Cached cyclic request frame
+    uint8_t cachedCyclicTxFrame_[8] = {0};
+    bool cachedCyclicTxValid_ = false;
+    int16_t cachedSlaveId_ = -1;
   
 };
 

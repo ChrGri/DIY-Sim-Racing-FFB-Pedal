@@ -14,11 +14,19 @@ typedef struct {
   float forceOffset_Steps_fl32;
 } EffectOffsets_t;
 
+typedef enum {
+  RUDDER_MODE_DISABLED = 0,
+  RUDDER_MODE_PLANE = 1,
+  RUDDER_MODE_HELICOPTER = 2
+} RudderMode_e;
+
 typedef struct {
   bool isRudderMode;
-  float centerPosition_01;     // nomally 0.5 so alignment in center 
-  float trimOffset_01;         // dynamical displacement the 0-force psoition
-  float deadzone_01;           // small region without force around center
+  uint8_t rudderMode_u8;       // 0: Disabled, 1: Plane (centering spring), 2: Helicopter (friction hold)
+  float centerPosition_01;     // normally 0.50 for center alignment
+  float trimOffset_01;         // dynamic trim offset (-0.5 to +0.5)
+  float deadzone_01;           // deadzone around center (e.g. 0.02)
+  float centerForce_kg;        // centering spring breakout / preload force in kg
 } RudderOffsets_t;
 
 
@@ -546,41 +554,21 @@ static inline IRAM_ATTR_FLAG void ApplyRegenPowerClamping(
  * @param config_st Pointer to the pedal's configuration structure.
  * @param effectOffsets_st High-frequency offsets (ABS vibrations, etc.).
  * @param endstopBehavior_st Configuration for the soft endstop feel.
- * @param rudderOffsets_st Rudder_t specific offset parameters.
  * @param debugState_st Optional pointer to a struct to output internal variables for debugging. Default is nullptr.
- * @return int32_t The next absolute target position in steps for the stepper motor driver.
+ * @param admittanceStates_pst Optional pointer to state tracking struct.
+ * @return float The next absolute target position in steps for the stepper motor driver.
  */
 float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float loadCellReadingKg_fl32, 
   StepperWithLimits* stepper, 
   ForceCurveInterpolated* forceCurve, 
-  const DapCalculationVariables_t* calc_st, 
+  DapCalculationVariables_t* calc_st, 
   DapConfig_t* config_st, 
   EffectOffsets_t effectOffsets_st, 
   EndstopBehavior_t endstopBehavior_st, 
-  RudderOffsets_t rudderOffsets_st,
   AdmittanceDebugState_t* debugState_st = nullptr,
   AdmittanceStates_t *admittanceStates_pst = nullptr)
 {
-
-  
-
-  // Time step for integration (seconds), but use actual loop time for better performance and stability.
-  // But make sure to protect against wrapsound of the timer by using uint64_t and checking for large dt values.
-  /*uint64_t currentTimeUs = esp_timer_get_time();
-  static uint64_t lastTimeUs = 0;
-  if (lastTimeUs == 0) {
-    lastTimeUs = currentTimeUs;
-  }
-  float dt_s = ((float)currentTimeUs - (float)lastTimeUs) * 1e-6f;
-  if (dt_s > 1.0f || dt_s <= 0.0f) {
-    // If the time step is too large (e.g., due to timer wraparound or long loop delay), reset it to a default value to prevent instability.
-    dt_s = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
-  }
-  lastTimeUs = currentTimeUs;
-  */
-
-
   // --- 1. PHYSICAL PARAMETERS & CONFIGURATION ---
   // Time step for integration (seconds). We use a constant interval for improved numerical stability.
   float dt_s = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
@@ -594,21 +582,8 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   virtualMass_kg = constrain(virtualMass_kg, 0.2f, 5.0f);
   dampingRatio_zeta = constrain(dampingRatio_zeta, 0.5f, 5.0f); 
 
-
-
-  // --- 2. RUDDER CONFIG ---
-  float rudderForce_N = 0.0f;
-  if (rudderOffsets_st.isRudderMode) 
-  { 
-    float rudderCenter = rudderOffsets_st.centerPosition_01 + rudderOffsets_st.trimOffset_01;
-
-    float rudderForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(rudderCenter, 0.0f, 1.0f));
-    rudderForce_N = rudderForceRaw_kg * GRAVITY_N_KG;
-
-  }
-
   // =========================================================
-  // --- 4. PHYSICAL GEOMETRY (FORWARD KINEMATICS & TASK SPACE) ---
+  // --- 2. PHYSICAL GEOMETRY (FORWARD KINEMATICS & TASK SPACE) ---
   // =========================================================
   // We transform the Actuator Space (Linear Sled Position) into Task Space 
   // (Rotational Pedal Arc Length). This allows the entire Admittance Model 
@@ -648,76 +623,30 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   }
   actualPosFraction_01 = constrain(actualPosFraction_01, 0.0f, 1.0f);
 
-
-  // --- 5. ELASTOMER PHYSICS & SPRING REACTION (Hunt-Crossley Model) ---
+  // --- 3. ELASTOMER PHYSICS & SPRING REACTION (Hunt-Crossley Model) ---
   float displacement_01 = constrain(g_vModelPos_01, 0.0f, 1.0f);
+  float avgStiffness_N_m = (calc_st->forceRange_fl32 * GRAVITY_N_KG) / max(totalTravel_m, 0.0001f);
 
-  // 1. Static force from the Cubic Spline (Non-linear stiffness)
+  // Standard Sim Racing Pedal (Throttle / Brake / Clutch)
   float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, displacement_01);
-  float staticSpringForce_N = springForceRaw_kg * GRAVITY_N_KG;
+  float springForce_N = max(springForceRaw_kg * GRAVITY_N_KG, 0.0f);
 
-  // Subtract rudder spring force (if active)
-  if (rudderOffsets_st.isRudderMode) {
-      staticSpringForce_N -= rudderForce_N;
-  }
-
-  // The spring force is purely static from the spline now (hysteresis is handled via damping)
-  float springForce_N = staticSpringForce_N;
-
-  // Ensure springForce_N is not negative just in case rudder offsets push it below 0
-  if (springForce_N < 0.0f) {
-      springForce_N = 0.0f;
-  }
-  // =========================================================
-
-  // Calculate local physical spring stiffness (N/m) for dynamic damping tuning (AOM and Tustin).
-  // We strictly use the gradient of the static spline here to ensure controller stability.
   float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, displacement_01, false);
-
-  // FIX (non-monotonic curves, e.g. clutch over-center dip):
-  // The gradient becomes NEGATIVE in descending curve segments. The old code
-  // max(gradient * ..., 1.0f) clamped the stiffness to 1 N/m there, which collapsed
-  // the damping (c = 2*zeta*sqrt(m*k)) to nearly zero exactly where the admittance
-  // model is statically unstable -> violent snap-through / rebound.
-  // 1. Use the ABSOLUTE gradient so descending segments get full damping.
-  // 2. Add a floor of 30% of the average curve stiffness so damping cannot
-  //    collapse at the flat peak/valley points either (gradient == 0).
-  // Monotonic curves (throttle/brake) are unaffected: their gradient is positive
-  // and normally well above the floor.
-  // Original line:
-  // float localStiffness_N_m = max(localStiffness_kg_step * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG, 1.0f);
   float gradStiffness_N_m = fabsf(localStiffness_kg_step) * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG;
-  float avgStiffness_N_m  = (calc_st->forceRange_fl32 * GRAVITY_N_KG) / max(totalTravel_m, 0.0001f);
   float localStiffness_N_m = max(gradStiffness_N_m, max(0.3f * avgStiffness_N_m, 1.0f));
 
   // =========================================================
-  // 3. VISCOELASTIC ELASTOMER HYSTERESIS (Hunt-Crossley model)
+  // --- 4. VISCOELASTIC ELASTOMER HYSTERESIS (Hunt-Crossley model) ---
   // =========================================================
-  // Normalize the GUI parameter from [0, 100] to [0.0, 1.0].
-  // We square it (ratio * ratio) so the slider provides much finer control 
-  // at the lower end, where small damping changes are felt the most.
   float progressionRatio = (float)constrain( config_st->payloadPedalConfig_st.dampingProgression_u8, 0, 100) ;
   float progression_01 = progressionRatio * progressionRatio; 
-
-  // Calculate the critical damping of the system at this exact position: C_c = 2 * sqrt(m * k)
-  // This brilliantly scales the rubber friction to the user's chosen mass and local spline stiffness!
   float localCriticalDamping_Ns_m = 2.0f * sqrtf(virtualMass_kg * localStiffness_N_m);
-
-  // Tuning parameter: How many times the critical damping can the elastomer add 
-  // at 100% slider value and full pedal compression?
-  // 4.0x is a great sweet spot for simulating extremely heavy, dense elastomers.
   const float MAX_ELASTOMER_MULTIPLIER = 4.0f; 
-
-  // Final elastomer viscosity coefficient
   float ELASTOMER_VISCOSITY_COEFFICIENT = progression_01 * (MAX_ELASTOMER_MULTIPLIER * localCriticalDamping_Ns_m);
-
-  // Calculate equivalent damping: C_eq = C_elastomer * x
-  // This will be perfectly integrated by the Tustin solver later.
   float elastomerDamping_Ns_m = ELASTOMER_VISCOSITY_COEFFICIENT * displacement_01;
-  // =========================================================
 
-  // --- 6. EFFECT OFFSETS & TOTAL FORCE ---
-  // NEW: Feedforward Control (Inverse Dynamics)
+  // --- 5. EFFECT OFFSETS & TOTAL FORCE ---
+  // Feedforward Control (Inverse Dynamics)
   // We derive velocity and acceleration internally from the effect step offset
   // using cascaded EMA filters to avoid numerical explosions.
   
@@ -762,6 +691,19 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32 + effectPositionToForceConversion_kg;
 
   // 7. Final total force (Loadcell + Static Effect Weight + Dynamic Effect Force)
+  float rawPilotForce_N = (loadCellReadingKg_fl32 * GRAVITY_N_KG);
+  // Subtle deadzone on pilot force (1.5 N) to prevent transmitting baseline drift
+  float cleanPilotForce_N = 0.0f;
+  if (rawPilotForce_N > 1.5f) {
+    cleanPilotForce_N = rawPilotForce_N - 1.5f;
+  }
+  static float s_filteredPilotForce_N = 0.0f;
+  const float PILOT_FORCE_TAU = 0.025f; // 25ms smoothing
+  float pilot_alpha = 1.0f - expf(-dt_s / PILOT_FORCE_TAU);
+  s_filteredPilotForce_N = (pilot_alpha * cleanPilotForce_N) + ((1.0f - pilot_alpha) * s_filteredPilotForce_N);
+
+  calc_st->currentPedalForce_N_fl32 = s_filteredPilotForce_N;
+
   float externalForce_N = (loadCellReadingKg_fl32 * GRAVITY_N_KG) + (effectOffsets_st.forceOffset_kg_fl32 * GRAVITY_N_KG) + effectInjectedForce_N;
 
   // --- 7. DYNAMIC TRAVEL LIMITS ---

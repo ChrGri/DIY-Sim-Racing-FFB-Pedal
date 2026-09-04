@@ -144,6 +144,8 @@ typedef struct DapCalculationVariables
   uint32_t currentPedalPosition_u32;
   float currentPedalPositionRatio_fl32;
   float syncPedalPositionRatio_fl32;
+  float currentPedalForce_N_fl32;
+  float syncPedalForce_N_fl32;
   volatile bool rudderBrakeStatus_b;
   int32_t stepperPosMinDefault_i32;
   int32_t stepperPosMaxDefault_i32;

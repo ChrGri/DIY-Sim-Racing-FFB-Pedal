@@ -20,8 +20,12 @@ public static class Cubic
             inputDistances[i] = inputDistances[i - 1] + distance;
         }
 
-        double meanDistance = inputDistances.Last() / (count - 1);
-        double[] evenDistances = Enumerable.Range(0, count).Select(x => x * meanDistance).ToArray();
+        double meanDistance = inputDistances[inputPointCount - 1] / (count - 1);
+        double[] evenDistances = new double[count];
+        for (int i = 0; i < count; i++)
+        {
+            evenDistances[i] = i * meanDistance;
+        }
         (double[] ysOut, double[] c, double[] d) = Interpolate(xs, ys, evenDistances);
         return (evenDistances, ysOut, c, d);
     }

@@ -16,77 +16,114 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border  HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="5,5,5,5">
+        <Border HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="5,5,5,5">
             <StackPanel HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540">
-                <StackPanel Height="20" Width="540" VerticalAlignment="Top" HorizontalAlignment="Left" Orientation="Horizontal">
-                    <Label Content="{SLoc DIYFFBPedalPlugin_TextForceCurveAdjustment, 'FORCE CURVE ADJUSTMENT'}" Width="200" Foreground="White" FontFamily="Arial Black" HorizontalAlignment="Center" Margin="70,0,0,0" Height="20" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
-                    <styles:SHButtonPrimary x:Name="btn_linearcurve_rudder" Click="btn_linearcurve_rudder_Click" Width="40" Content="{SLoc DIYFFBPedalPlugin_BtnTextLinear, 'Linear'}" Height="15" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" MinHeight="15" VerticalContentAlignment="Center" />
-                    <styles:SHButtonPrimary x:Name="btn_Scurve_rudder" Click="btn_Scurve_rudder_Click" Width="45" Content="{SLoc DIYFFBPedalPlugin_BtnTextSCurve, 'S-Curve'}" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="15" />
-                    <styles:SHButtonPrimary x:Name="btn_10xcurve_rudder" Click="btn_10xcurve_rudder_Click" Width="50" Content="{SLoc DIYFFBPedalPlugin_BtnTextExponent, 'Exponent'}" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="15" />
-                    <styles:SHButtonPrimary x:Name="btn_logcurve_rudder" Click="btn_logcurve_rudder_Click" Width="50" Content="{SLoc DIYFFBPedalPlugin_BtnTextLogarithm, 'Logarithm'}" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" MinHeight="15" VerticalContentAlignment="Center" />
+                <!-- Mode & Profile Header -->
+                <StackPanel Height="24" Width="540" VerticalAlignment="Top" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0,2,0,0">
+                    <Label x:Name="lbl_CurveHeader" Content="{SLoc DIYFFBPedalPlugin_TextForceCurveAdjustment, 'RUDDER FORCE &amp; DYNAMICS'}" Width="190" Foreground="White" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="40,0,0,0" Height="24" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontSize="11"/>
+                    
+                    <!-- Airplane Profile Selection (Visible in Airplane Mode) -->
+                    <StackPanel x:Name="panel_AirplaneProfiles" Orientation="Horizontal" VerticalAlignment="Center" Margin="5,0,0,0">
+                        <styles:SHButtonPrimary x:Name="btn_linearcurve_rudder" Click="btn_linearcurve_rudder_Click" Width="48" Content="{SLoc DIYFFBPedalPlugin_BtnTextLinear, 'Linear'}" Height="18" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" MinHeight="16" VerticalContentAlignment="Center" />
+                        <styles:SHButtonPrimary x:Name="btn_progressive_rudder" Click="btn_progressive_rudder_Click" Width="68" Content="{SLoc DIYFFBPedalPlugin_BtnTextProgressive, 'Progressive'}" Height="18" Margin="4,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="16" />
+                        <styles:SHButtonPrimary x:Name="btn_Scurve_rudder" Click="btn_Scurve_rudder_Click" Width="52" Content="{SLoc DIYFFBPedalPlugin_BtnTextSCurve, 'S-Curve'}" Height="18" Margin="4,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="16" />
+                    </StackPanel>
+
+                    <!-- Helicopter Free-Floating Badge (Visible in Heli Mode) -->
+                    <Border x:Name="border_HeliBadge" Background="#CC1E7A3E" CornerRadius="3" Padding="6,2" Margin="5,0,0,0" VerticalAlignment="Center" Visibility="Collapsed">
+                        <TextBlock Text="FREE-FLOATING / 0 N SPRING" Foreground="White" FontSize="10" FontWeight="Bold" FontFamily="Arial"/>
+                    </Border>
 
                 </StackPanel>
-                <StackPanel Height="220" Width="540" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,5,0,0">
-                    <Canvas x:Name="canvas_rudder_curve" Height="200" Width="400" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="70,0,0,0" MouseRightButtonDown="Canvas_MouseRightButtonDown" ToolTip="Right-click on the canvas to add a control point, right-click a point to remove it">
-                        <Canvas.RenderTransform>
-                            <TransformGroup>
-                                <ScaleTransform ScaleX="1" ScaleY="1"/>
-                                <SkewTransform/>
-                                <RotateTransform/>
-                                <TranslateTransform/>
-                            </TransformGroup>
 
-                        </Canvas.RenderTransform>
-
-
-
-                        <TextBlock HorizontalAlignment="Center" 
-                           VerticalAlignment="Top" 
-                           Text="FORCE" 
-                           Width="60" 
-                           Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="-25" Canvas.Top="85" FontFamily="Arial Black" Height="13">
-                            <TextBlock.RenderTransform>
-                                <TransformGroup>
-                                    <ScaleTransform/>
-                                    <SkewTransform/>
+                <!-- Center Graph & Visualization -->
+                <StackPanel Height="205" Width="540" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,2,0,0">
+                    <Grid Height="200" Width="430" Margin="40,0,0,0">
+                        <Canvas x:Name="canvas_rudder_curve" Height="200" Width="430" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top">
+                            <!-- Axis Labels -->
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Top" Text="FORCE (KG)" Width="80" Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="-30" Canvas.Top="85" FontFamily="Arial Black" Height="13" FontSize="9">
+                                <TextBlock.RenderTransform>
                                     <RotateTransform Angle="-90"/>
-                                    <TranslateTransform/>
-                                </TransformGroup>
-                            </TextBlock.RenderTransform>
-                        </TextBlock>
+                                </TextBlock.RenderTransform>
+                            </TextBlock>
 
+                            <!-- Bipolar Travel Indicators -->
+                            <TextBlock Text="-50% (LEFT)" Foreground="#7FAAAAAA" Canvas.Left="10" Canvas.Top="184" FontSize="9" FontFamily="Arial" FontWeight="Bold"/>
+                            <TextBlock Text="0% (NEUTRAL)" Foreground="#7FAAAAAA" Canvas.Left="180" Canvas.Top="184" FontSize="9" FontFamily="Arial" FontWeight="Bold"/>
+                            <TextBlock Text="+50% (RIGHT)" Foreground="#7FAAAAAA" Canvas.Left="350" Canvas.Top="184" FontSize="9" FontFamily="Arial" FontWeight="Bold"/>
 
-                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="TRAVEL" Width="60" Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="170" Canvas.Top="186" FontFamily="Arial Black" TextAlignment="Center" Height="14"/>
+                            <!-- Shaded Force Polygon Background -->
+                            <Polygon x:Name="polygonCurveBackground" Height="200" Width="430" Opacity="0.20" StrokeThickness="2" RenderTransformOrigin="1,0.5" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                <Polygon.Fill>
+                                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                        <GradientStop Color="{DynamicResource AccentColor}" Offset="0"/>
+                                        <GradientStop Color="Transparent" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Polygon.Fill>
+                            </Polygon>
 
-                        <Polygon x:Name="polygonCurveBackground"  Height="200" Width="400" Opacity="0.15" Points="0,200 80,160 160,120 240,80 320,40 400,0 400,200 0,200" StrokeThickness="4" RenderTransformOrigin="1,0.5"  HorizontalAlignment="Left" VerticalAlignment="Center" >
-                            <Polygon.Fill>
-                                <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                                    <GradientStop Color="{DynamicResource AccentColor}" Offset="0"/>
-                                    <GradientStop Color="Transparent" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Polygon.Fill>
-                        </Polygon>
+                            <!-- Symmetrical Force Curve Line -->
+                            <Polyline x:Name="Polyline_RudderForceCurve" Stroke="{DynamicResource AccentColorBrush}" Height="200" Width="430" Opacity="0.85" StrokeThickness="2" Canvas.Top="0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
-                        <Polyline x:Name="Polyline_RudderForceCurve" Stroke="{DynamicResource AccentColorBrush}" Height="200" Width="400" Opacity="0.7" Points="0,200 80,160 160,120 240,80 320,40 400,0" StrokeThickness="1" RenderTransformOrigin="1,0.5" Canvas.Top="0" HorizontalAlignment="Left" VerticalAlignment="Center" />
-                        <TextBlock x:Name="text_point_pos_rudder" HorizontalAlignment="Left" VerticalAlignment="Top" Text="pos" Width="60" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Left="5" Canvas.Top="15" Height="40" FontSize="10" FontFamily="Arial"/>
-                        <TextBox x:Name="text_rudder_log" HorizontalAlignment="Left" VerticalAlignment="Top" Text="" Width="400" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Left="0" Canvas.Top="0" Height="100" FontSize="10" FontFamily="Arial" Background="{x:Null}" BorderBrush="{x:Null}" CaretBrush="{x:Null}" SelectionTextBrush="{x:Null}" BorderThickness="0,0,0,0" IsReadOnly="True" Visibility="Hidden"/>
+                            <!-- Center Trim Line Indicator -->
+                            <Line x:Name="line_CenterTrim" X1="215" Y1="0" X2="215" Y2="200" Stroke="#5500FFCC" StrokeThickness="1" StrokeDashArray="2,2"/>
 
+                            <!-- Live Pedal Deflection Marker -->
+                            <Line x:Name="line_LiveDeflection" X1="215" Y1="0" X2="215" Y2="200" Stroke="#FFFFCC00" StrokeThickness="2" Visibility="Visible"/>
 
+                            <!-- Helicopter Mode Visual Overlay Card -->
+                            <Border x:Name="border_HeliOverlay" Width="360" Height="140" Background="#CC151922" BorderBrush="#00FFCC" BorderThickness="1" CornerRadius="8" Canvas.Left="35" Canvas.Top="30" Visibility="Collapsed">
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <TextBlock Text="🚁 HELICOPTER ANTI-TORQUE MODE" Foreground="#00FFCC" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                                    <TextBlock Text="Continuous Position-Hold (0 N Return Spring)" Foreground="White" FontSize="11" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                        <Border Background="#33FFFFFF" CornerRadius="4" Padding="8,4" Margin="5,0" Cursor="Hand" ToolTip="Click to edit Heli Damping %" MouseLeftButtonDown="txt_HeliDampingDisplay_MouseLeftButtonDown">
+                                            <Grid>
+                                                <TextBlock x:Name="txt_HeliDampingDisplay" Text="Viscous Damping: 45%" Foreground="#E0E0E0" FontSize="10"/>
+                                                <TextBox x:Name="TextBox_edit_HeliDamping" Width="45" Height="16" FontSize="10" FontFamily="Arial" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+                                            </Grid>
+                                        </Border>
+                                        <Border Background="#33FFFFFF" CornerRadius="4" Padding="8,4" Margin="5,0" Cursor="Hand" ToolTip="Click to edit Heli Friction in N" MouseLeftButtonDown="txt_HeliFrictionDisplay_MouseLeftButtonDown">
+                                            <Grid>
+                                                <TextBlock x:Name="txt_HeliFrictionDisplay" Text="Coulomb Friction: 3.0 N" Foreground="#E0E0E0" FontSize="10"/>
+                                                <TextBox x:Name="TextBox_edit_HeliFriction" Width="45" Height="16" FontSize="10" FontFamily="Arial" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="Pedals will hold exact position upon release." Foreground="#888888" FontSize="9" HorizontalAlignment="Center" Margin="0,8,0,0" FontStyle="Italic"/>
+                                </StackPanel>
+                            </Border>
 
-                    </Canvas>
+                            <TextBlock x:Name="text_point_pos_rudder" HorizontalAlignment="Left" VerticalAlignment="Top" Text="" Width="60" Foreground="White" Canvas.Left="5" Canvas.Top="15" Height="40" FontSize="10" FontFamily="Arial" Visibility="Hidden"/>
+                            
+                        </Canvas>
+                    </Grid>
 
-                    <StackPanel Width="50" Height="230" Margin="10,-10,0,0">
-                        <Label x:Name="Label_max_force_rudder" Width="50" Height="24" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" Margin="0,-9,0,0"/>
-                        <controls:RangeSlider x:Name="Rangeslider_rudder_force_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="1" Grid.Column="2" Height="180" LowerValueChanged="Rangeslider_rudder_force_range_LowerValueChanged" UpperValueChanged="Rangeslider_rudder_force_range_UpperValueChanged" MinRange="3" IsSnapToTickEnabled="True" UpperValue="10" Width="20" Orientation="Vertical" Maximum="30" HorizontalAlignment="Left" LargeChange="0.1" Minimum="1" LowerValue="1" Value="1"/>
-                        <Label x:Name="Label_min_force_rudder" Width="50" Height="24" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0"/>
+                    <!-- Vertical Centering Force Range Slider -->
+                    <StackPanel Width="65" Height="200" Margin="5,0,0,0">
+                        <Grid Width="65" Height="30">
+                            <Label x:Name="Label_max_force_rudder" Width="65" Height="30" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Max Force:&#x0a;10.0 kg" Padding="0" Margin="0,0,0,0" Background="Transparent" Cursor="Hand" ToolTip="Click to type max force in kg" MouseLeftButtonDown="Label_max_force_rudder_MouseLeftButtonDown"/>
+                            <TextBox x:Name="TextBox_edit_max_force_rudder" Width="55" Height="20" FontSize="9" FontFamily="Arial" VerticalAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+                        </Grid>
+                        <controls:RangeSlider x:Name="Rangeslider_rudder_force_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="0" Height="140" LowerValueChanged="Rangeslider_rudder_force_range_LowerValueChanged" UpperValueChanged="Rangeslider_rudder_force_range_UpperValueChanged" MinRange="0" IsSnapToTickEnabled="True" UpperValue="10" Width="20" Orientation="Vertical" Maximum="30" HorizontalAlignment="Left" LargeChange="0.5" Minimum="0" LowerValue="0" Value="0"/>
+                        <Grid Width="65" Height="25" Margin="0,2,0,0">
+                            <Label x:Name="Label_min_force_rudder" Width="65" Height="25" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Center: 0 kg" Padding="0" Margin="0,0,0,0" Background="Transparent" Cursor="Hand" ToolTip="Click to type center force in kg" MouseLeftButtonDown="Label_min_force_rudder_MouseLeftButtonDown"/>
+                            <TextBox x:Name="TextBox_edit_min_force_rudder" Width="55" Height="20" FontSize="9" FontFamily="Arial" VerticalAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+                        </Grid>
                     </StackPanel>
                 </StackPanel>
 
-
-                <StackPanel Width="430" Height="40" Orientation="Horizontal" Margin="0,-10,0,0">
-                    <Label x:Name="Label_min_pos_rudder" Width="30" Height="40" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" HorizontalContentAlignment="Center"/>
-                    <controls:RangeSlider x:Name="Rangeslider_rudder_travel_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="1" Grid.Column="2" Height="20" LowerValueChanged="Rangeslider_rudder_travel_range_LowerValueChanged" UpperValueChanged="Rangeslider_rudder_travel_range_UpperValueChanged" MinRange="1" SmallChange="1" IsSnapToTickEnabled="True" UpperValue="95" Width="370" VerticalAlignment="Top" LowerValue="5" Minimum="5" Maximum="95" Value="85"/>
-                    <Label x:Name="Label_max_pos_rudder" Width="30" Height="40" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" HorizontalContentAlignment="Center"/>
+                <!-- Soft Endstops Travel Limits (Min 5% to Max 95%) -->
+                <StackPanel Width="470" Height="32" Orientation="Horizontal" Margin="35,2,0,0">
+                    <Grid Width="45" Height="30">
+                        <Label x:Name="Label_min_pos_rudder" Width="45" Height="30" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Center" Content="MIN&#x0a;5%" Padding="0" HorizontalContentAlignment="Center" Background="Transparent" Cursor="Hand" ToolTip="Click to type min travel %" MouseLeftButtonDown="Label_min_pos_rudder_MouseLeftButtonDown"/>
+                        <TextBox x:Name="TextBox_edit_min_pos_rudder" Width="40" Height="20" FontSize="9" FontFamily="Arial" VerticalAlignment="Center" HorizontalContentAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+                    </Grid>
+                    <controls:RangeSlider x:Name="Rangeslider_rudder_travel_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="5" Height="18" LowerValueChanged="Rangeslider_rudder_travel_range_LowerValueChanged" UpperValueChanged="Rangeslider_rudder_travel_range_UpperValueChanged" MinRange="1" SmallChange="1" IsSnapToTickEnabled="True" UpperValue="95" Width="380" VerticalAlignment="Center" LowerValue="5" Minimum="0" Maximum="100" Value="85"/>
+                    <Grid Width="45" Height="30">
+                        <Label x:Name="Label_max_pos_rudder" Width="45" Height="30" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Center" Content="MAX&#x0a;95%" Padding="0" HorizontalContentAlignment="Center" Background="Transparent" Cursor="Hand" ToolTip="Click to type max travel %" MouseLeftButtonDown="Label_max_pos_rudder_MouseLeftButtonDown"/>
+                        <TextBox x:Name="TextBox_edit_max_pos_rudder" Width="40" Height="20" FontSize="9" FontFamily="Arial" VerticalAlignment="Center" HorizontalContentAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+                    </Grid>
                 </StackPanel>
             </StackPanel>
         </Border>

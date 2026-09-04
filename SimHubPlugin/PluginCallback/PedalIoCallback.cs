@@ -210,7 +210,7 @@ namespace DiyFfbPedal
             {
                 serialUpdate = true;
             }
-            if (serialUpdate || wirelessUpdate) SendConfig(tmp, PedalIDX);
+            if (serialUpdate || wirelessUpdate || Rudder_status || _calculations.Rudder_status) SendConfig(tmp, PedalIDX);
         }
         public void SendBridgeAction(DAP_bridge_state_st tmp)
         {

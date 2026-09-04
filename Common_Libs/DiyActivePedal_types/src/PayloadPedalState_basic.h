@@ -10,4 +10,5 @@ typedef struct __attribute__((packed)) PayloadPedalStateBasic
   uint8_t servoStatus_u8;
   uint8_t pedalStatus_u8;
   uint8_t pedalControlBoardType_u8;
+  uint8_t rudderSyncDelay_ms;
 } PayloadPedalStateBasic_t;

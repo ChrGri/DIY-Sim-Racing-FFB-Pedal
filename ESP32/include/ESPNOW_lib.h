@@ -6,6 +6,7 @@ static const bool IS_ESPNOW_ENABLED = true;
 #include <Arduino.h>
 #include "ESPNowW.h"
 #include "DiyActivePedal_types.h"
+#include "StepperMovementStrategy_Rudder.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -27,8 +28,8 @@ uint8_t g_pedalMac_aau8[3][6] = {
 };
 uint8_t g_broadcastMac_au8[]={0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 uint8_t g_espHost_au8[] = {0x36, 0x33, 0x33, 0x33, 0x33, 0x35};
-uint8_t g_espMac_au8[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-uint8_t g_recvMac_au8[]={0};
+uint8_t g_espMac_au8[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+uint8_t g_recvMac_au8[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 uint16_t g_espNowSend_u16=0;
 uint16_t g_espNowReceive_u16=0;
 int32_t g_rssi_ai32[4]={0,0,0,0};//clutch, brake,throttle,bridge
@@ -71,6 +72,64 @@ volatile uint32_t g_lastEspnowRecvTime_u32 = 0;
 volatile bool g_isEspnowConnected_b = false;
 volatile uint32_t g_lastEspnowSendTime_u32 = 0;
 volatile uint32_t g_lastEspnowOnSentTime_u32 = 0;
+volatile uint32_t g_lastPartnerTimestamp_ms = 0;
+volatile uint8_t g_currentSyncDelay_ms = 0;
+
+// ESP-NOW in-flight state tracking and diagnostics
+volatile bool g_espnowTxInFlight_b = false;
+volatile uint32_t g_espnowTxFailCount_u32 = 0;
+volatile uint32_t g_espnowTxNoMemCount_u32 = 0;
+volatile uint32_t g_espnowSendFailCount_u32 = 0;
+volatile uint32_t g_espnowBasicStateStarvedCount_u32 = 0;
+volatile uint32_t g_lastEspnowDiagLogTime_u32 = 0;
+
+static uint8_t s_registeredPeerMac[6] = {0};
+inline esp_err_t safeRegisterEspNowPeer(const uint8_t *mac)
+{
+  if (mac == NULL) return ESP_ERR_INVALID_ARG;
+  bool isAllZero = true;
+  for (int i = 0; i < 6; i++) {
+    if (mac[i] != 0) { isAllZero = false; break; }
+  }
+  if (isAllZero) return ESP_ERR_INVALID_ARG;
+
+  // Fast-path: already registered peer, avoid taking ESPNOW_LOCK mutex
+  if (memcmp(s_registeredPeerMac, mac, 6) == 0) {
+    return ESP_OK;
+  }
+
+  if (esp_now_is_peer_exist(mac)) {
+    memcpy(s_registeredPeerMac, mac, 6);
+    return ESP_OK;
+  }
+
+  esp_now_peer_info_t peerInfo = {};
+  memcpy(peerInfo.peer_addr, mac, 6);
+  peerInfo.channel = 0;
+  peerInfo.ifidx = WIFI_IF_STA;
+  peerInfo.encrypt = false;
+  esp_err_t err = esp_now_add_peer(&peerInfo);
+  if (err == ESP_OK || err == ESP_ERR_ESPNOW_EXIST) {
+    memcpy(s_registeredPeerMac, mac, 6);
+    return ESP_OK;
+  }
+  return err;
+}
+
+inline esp_err_t espnowSendWrapper(const uint8_t *targetMac, const uint8_t *data, size_t len)
+{
+  g_lastEspnowSendTime_u32 = millis();
+  esp_err_t res = esp_now_send(targetMac, data, len);
+  if (res != ESP_OK)
+  {
+    g_espnowTxFailCount_u32 = g_espnowTxFailCount_u32 + 1;
+    if (res == ESP_ERR_ESPNOW_NO_MEM)
+    {
+      g_espnowTxNoMemCount_u32 = g_espnowTxNoMemCount_u32 + 1;
+    }
+  }
+  return res;
+}
 
 /*
 struct ESPNow_Send_Struct
@@ -180,6 +239,40 @@ void espNowPairingCallback(const uint8_t *mac_addr, const uint8_t *data, int dat
 
 }
 
+/**
+ * =========================================================================================
+ * ESP-NOW FreeRTOS Task Architecture & Best Practices
+ * =========================================================================================
+ * 
+ * Context & Problem:
+ * - In ESP-IDF and Arduino-ESP32, the ESP-NOW receive callback (esp_now_register_recv_cb)
+ *   executes directly within the context of the internal high-priority FreeRTOS WiFi driver task.
+ * 
+ * Espressif Design Rules for onRecv:
+ * - NEVER block inside the callback (no delay(), no prolonged busy loops).
+ * - NEVER wait on mutexes, semaphores, or queues with a non-zero timeout or portMAX_DELAY.
+ * 
+ * Root Cause of Previous System Freezes ("Bridge und SimHub friert ein"):
+ * - onRecv() previously invoked `global_dap_config_class.getConfig(&dap_config_espnow_recv_st, 500)`.
+ * - Internally, getConfig() calls `xSemaphoreTake(mutex_sh, pdMS_TO_TICKS(500))`.
+ * - Whenever another task (such as pedalUpdateTask on Core 1 during physics calculations or
+ *   an EEPROM/Flash write operation) held `mutex_sh`, the WiFi task was stalled for up to 500ms.
+ * - This repeatedly triggered FreeRTOS Task Watchdog Timeouts (TWDT) or priority inversion deadlocks,
+ *   causing the ESP32 to freeze, reboot, or drop ESP-NOW frames completely.
+ * - Similarly, calling `xQueueSend(..., portMAX_DELAY)` when the config queue was full would
+ *   permanently lock the WiFi driver task.
+ * 
+ * Implemented Solution:
+ * 1. Non-blocking Mutex Acquisition: `getConfig(..., 0)` is called with a 0 ms timeout.
+ *    If the mutex cannot be taken immediately, it falls back to `s_localPedalType_u8`.
+ * 2. Cached Pedal Role: `s_localPedalType_u8` caches the pedal type during initialization
+ *    and on verified incoming config updates, ensuring zero mutex contention.
+ * 3. Non-blocking Queue Dispatch: `xQueueSend(..., 0)` safely pushes updates to the queue
+ *    without stalling the WiFi stack.
+ * =========================================================================================
+ */
+static volatile uint8_t s_localPedalType_u8 = PEDAL_ID_UNKNOWN;
+
 void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int data_len) 
 {
   if(esp_now_info->src_addr==NULL || data==NULL || data_len<=0)
@@ -209,7 +302,11 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
   //uint8_t mac_addr[6]={0};
   DapConfig_t dap_config_espnow_recv_st;
   
-  global_dap_config_class.getConfig(&dap_config_espnow_recv_st, 500);
+  // Non-blocking snapshot of config (0 ms timeout). Never block the FreeRTOS WiFi task!
+  if (!global_dap_config_class.getConfig(&dap_config_espnow_recv_st, 0))
+  {
+    dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8 = s_localPedalType_u8;
+  }
 
   /*
   if(g_espNowStatus_b)
@@ -226,7 +323,11 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
   if(g_espNowStatus_b)
   {
     //rudder message
-    if(macCheck(g_recvMac_au8,(uint8_t *)esp_now_info->src_addr))
+    bool isRudderSender = macCheck(g_recvMac_au8, (uint8_t *)esp_now_info->src_addr) ||
+                          macCheck(g_pedalMac_aau8[0], (uint8_t *)esp_now_info->src_addr) ||
+                          macCheck(g_pedalMac_aau8[1], (uint8_t *)esp_now_info->src_addr) ||
+                          macCheck(g_pedalMac_aau8[2], (uint8_t *)esp_now_info->src_addr);
+    if(isRudderSender)
     {
       if(data_len==sizeof(DapRudder_t))
       {
@@ -255,6 +356,30 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
         {
           memcpy(&g_dapRudderReceiving_st, data, sizeof(DapRudder_t));
           g_espNowRudderUpdate_b=true;
+
+          // Lock onto partner pedal's MAC for unicast
+          memcpy(g_recvMac_au8, esp_now_info->src_addr, 6);
+          safeRegisterEspNowPeer(g_recvMac_au8);
+
+          // 1. Immediate zero-latency update to calculation variables for 4000 Hz physics loop
+          dap_calculationVariables_st.syncPedalPosition_u32 = dapg_rudder_st_st_local.payloadRudderState_st.pedalPosition_u16;
+          dap_calculationVariables_st.syncPedalPositionRatio_fl32 = dapg_rudder_st_st_local.payloadRudderState_st.pedalPositionRatio_fl32;
+          dap_calculationVariables_st.syncPedalForce_N_fl32 = dapg_rudder_st_st_local.payloadRudderState_st.pedalForce_N_fl32;
+
+          // 2. RTT and Latency computation
+          uint32_t incomingSendTime = dapg_rudder_st_st_local.payloadRudderState_st.sendTimestamp_ms;
+          uint32_t incomingEchoTime = dapg_rudder_st_st_local.payloadRudderState_st.echoTimestamp_ms;
+          g_lastPartnerTimestamp_ms = incomingSendTime;
+
+          if (incomingEchoTime > 0) {
+            uint32_t now_ms = millis();
+            if (now_ms >= incomingEchoTime) {
+              uint32_t rtt = now_ms - incomingEchoTime;
+              if (rtt < 255) {
+                g_currentSyncDelay_ms = (uint8_t)(rtt / 2); // One-way wireless delay in ms
+              }
+            }
+          }
         }
 
       }
@@ -306,7 +431,10 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
             // ActiveSerial->println("Updating pedal config");
             configDataPackage_t configPackage_st;
             configPackage_st.config_st = dap_config_espnow_recv_st;
-            xQueueSend(s_configUpdateAvailableQueue, &configPackage_st, portMAX_DELAY);
+            if (dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8 < 3) {
+              s_localPedalType_u8 = dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8;
+            }
+            xQueueSend(s_configUpdateAvailableQueue, &configPackage_st, 0);
             //global_dap_config_class.setConfig(dap_config_espnow_recv_st);
             if(dap_config_espnow_recv_st.payloadHeader_st.storeToEeprom_u8==1)
             {
@@ -380,6 +508,13 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
             if (dap_actions_st.payloadPedalAction_st.systemAction_u8 == (uint8_t)PedalSystemAction::PRINT_PEDAL_INFO)
             {
               g_printPedalInfo_b = true;
+            }
+            if (dap_actions_st.payloadPedalAction_st.systemAction_u8 == (uint8_t)PedalSystemAction::WAKEUP_PEDAL)
+            {
+              if (g_pedalOperationalState_u8 == (uint8_t)PEDAL_STATE_STANDBY_WAITING_FOR_WAKEUP_E)
+              {
+                g_pedalOperationalState_u8 = (uint8_t)PEDAL_STATE_HOMING_E;
+              }
             }
             if (dap_actions_st.payloadPedalAction_st.systemAction_u8 == (uint8_t)PedalSystemAction::SET_ASSIGNMENT_0 && commandForAssignment_b)
             {
@@ -465,10 +600,12 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               ActiveSerial->print("\r\n");
               */
             }
-            if (dap_actions_st.payloadPedalAction_st.rudderAction_u8 == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_BRAKE || dap_actions_st.payloadPedalAction_st.rudderAction_u8 == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_CLUTCH)
+            uint8_t rudderAct = dap_actions_st.payloadPedalAction_st.rudderAction_u8;
+            if (rudderAct == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_BRAKE || 
+                rudderAct == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_CLUTCH)
             {
               g_getRudderAction_b = true;
-              if (dap_actions_st.payloadPedalAction_st.rudderAction_u8 == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_CLUTCH)
+              if (rudderAct == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_CLUTCH)
               {
                 if (dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8 == 2)
                 {
@@ -480,26 +617,27 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               if (dap_calculationVariables_st.rudderStatus_b == false)
               {
                 dap_calculationVariables_st.rudderStatus_b = true;
-                g_rudderInitializing_b = true;
+                dap_calculationVariables_st.helicopterRudderStatus_b = false;
                 // ActiveSerial->println("Rudder_t on");
-                moveSlowlyToPosition_b = true;
                 // ActiveSerial->print("status:");
                 // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
               }
               else
               {
                 dap_calculationVariables_st.rudderStatus_b = false;
-                // ActiveSerial->println("Rudder_t off");
-                g_rudderDeinitializing_b = true;
+                dap_calculationVariables_st.helicopterRudderStatus_b = false;
                 moveSlowlyToPosition_b = true;
+                ResetRudderStrategyState();
+                // ActiveSerial->println("Rudder_t off");
                 // ActiveSerial->print("status:");
                 // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
               }
             }
-            if (dap_actions_st.payloadPedalAction_st.rudderAction_u8 == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_BRAKE || dap_actions_st.payloadPedalAction_st.rudderAction_u8 == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_CLUTCH)
+            else if (rudderAct == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_BRAKE || 
+                     rudderAct == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_CLUTCH)
             {
               g_getHeliRudderAction_b = true;
-              if (dap_actions_st.payloadPedalAction_st.rudderAction_u8 == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_CLUTCH)
+              if (rudderAct == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_CLUTCH)
               {
                 if (dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8 == 2)
                 {
@@ -510,26 +648,37 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               if (dap_calculationVariables_st.helicopterRudderStatus_b == false)
               {
                 dap_calculationVariables_st.helicopterRudderStatus_b = true;
-                g_heliRudderInitializing_b = true;
+                dap_calculationVariables_st.rudderStatus_b = false;
                 // ActiveSerial->println("Rudder_t on");
-                moveSlowlyToPosition_b = true;
                 // ActiveSerial->print("status:");
                 // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
               }
               else
               {
                 dap_calculationVariables_st.helicopterRudderStatus_b = false;
-                // ActiveSerial->println("Rudder_t off");
-                g_heliRudderDeinitializing_b = true;
+                dap_calculationVariables_st.rudderStatus_b = false;
                 moveSlowlyToPosition_b = true;
+                ResetRudderStrategyState();
+                // ActiveSerial->println("Rudder_t off");
                 // ActiveSerial->print("status:");
                 // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
               }
             }
+            else if (rudderAct == (uint8_t)RudderAction::RUDDER_CLEAR_RUDDER_STATUS)
+            {
+              dap_calculationVariables_st.rudderStatus_b = false;
+              dap_calculationVariables_st.helicopterRudderStatus_b = false;
+              dap_calculationVariables_st.rudderBrakeStatus_b = false;
+              moveSlowlyToPosition_b = true;
+              ResetRudderStrategyState();
+              // ActiveSerial->println("Rudder_t Status Clear");
+            }
+
             if (dap_actions_st.payloadPedalAction_st.rudderBrakeAction_u8 == 1)
             {
               g_getRudderAction_b = true;
-              if (dap_calculationVariables_st.rudderBrakeStatus_b == false && dap_calculationVariables_st.rudderStatus_b == true)
+              if (dap_calculationVariables_st.rudderBrakeStatus_b == false && 
+                  (dap_calculationVariables_st.rudderStatus_b == true || dap_calculationVariables_st.helicopterRudderStatus_b == true))
               {
                 dap_calculationVariables_st.rudderBrakeStatus_b = true;
                 // ActiveSerial->println("Rudder_t brake on");
@@ -543,17 +692,6 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
                 // ActiveSerial->print("status:");
                 // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
               }
-            }
-            // clear rudder status
-            if (dap_actions_st.payloadPedalAction_st.rudderAction_u8 == (uint8_t)RudderAction::RUDDER_CLEAR_RUDDER_STATUS)
-            {
-              dap_calculationVariables_st.rudderStatus_b = false;
-              dap_calculationVariables_st.helicopterRudderStatus_b = false;
-              dap_calculationVariables_st.rudderBrakeStatus_b = false;
-              // ActiveSerial->println("Rudder_t Status Clear");
-              g_rudderDeinitializing_b = true;
-              g_heliRudderDeinitializing_b = true;
-              moveSlowlyToPosition_b = true;
             }
           }
         }
@@ -595,18 +733,15 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
 void onSent(const esp_now_send_info_t *tx_info, esp_now_send_status_t status)
 {
     g_lastEspnowOnSentTime_u32 = millis();
+    g_espnowTxInFlight_b = false;
+    if (status != ESP_NOW_SEND_SUCCESS)
+    {
+        g_espnowSendFailCount_u32 = g_espnowSendFailCount_u32 + 1;
+    }
 }
 
 inline bool isEspnowBusy()
 {
-    uint32_t latency = millis() - g_lastEspnowSendTime_u32;
-    uint32_t onSentAgo = millis() - g_lastEspnowOnSentTime_u32;
-    // If last send is more recent than last onSent
-    if (latency < onSentAgo)
-    {
-        // 50ms timeout to prevent permanent lockup
-        if (latency < 50) return true;
-    }
     return false;
 }
 
@@ -635,6 +770,7 @@ void espNowInitialize()
 {
   DapConfig_t dap_config_espnow_init_st;
   global_dap_config_class.getConfig(&dap_config_espnow_init_st, 500);
+  s_localPedalType_u8 = dap_config_espnow_init_st.payloadPedalConfig_st.pedalType_u8;
   WiFi.mode(WIFI_MODE_STA);
   WiFi.setSleep(false);
   delay(1000);
@@ -665,7 +801,10 @@ void espNowInitialize()
   #endif
   ActiveSerial->println("Initializing ESP-NOW");
   ESPNow.init();
-  esp_wifi_set_channel(1, WIFI_SECOND_CHAN_NONE);
+  #ifndef ESPNOW_WIFI_CHANNEL
+    #define ESPNOW_WIFI_CHANNEL 11
+  #endif
+  esp_wifi_set_channel(ESPNOW_WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE);
   delay(3000);
   #ifdef ESPNow_S3
     #ifdef LOWER_WIFI_TRANSMISSION_POWER
@@ -674,8 +813,7 @@ void espNowInitialize()
     #endif
   #endif
   #ifdef ESPNow_ESP32
-    esp_wifi_config_espnow_rate(WIFI_IF_STA, WIFI_PHY_RATE_MCS0_LGI);
-    // esp_wifi_config_espnow_rate(WIFI_IF_STA, 	WIFI_PHY_RATE_54M);
+    esp_wifi_config_espnow_rate(WIFI_IF_STA, WIFI_PHY_RATE_11M_L);
   #endif
   #ifdef ESPNow_Pairing_function
     EspPairingReg_t ESP_pairing_reg_local;
@@ -749,30 +887,19 @@ void sendESPNOWLog(const char *log,...)
 {
   uint8_t buffer[250];
   uint8_t payloadType = DAP_PAYLOAD_TYPE_ESPNOW_LOG_U8;
-  //uint8_t logLen = strlen(log); 
+  char textBuf[240];
   va_list args;
-  char* result = NULL;
-  int needed_size;
-  va_start(args, log); // initialized va_list
-  needed_size = vsnprintf(NULL, 0, log, args);
-  va_end(args); 
-  if (needed_size < 0) return;
-  result = (char*)malloc(needed_size + 1);
-  // malloc error
-  if (result == NULL) return;
-  va_start(args, log); 
-  vsnprintf(result, needed_size + 1, log, args);
-  va_end(args); 
-  int logLen=strlen(result);
-  if (logLen > 240) logLen = 240;
+  va_start(args, log);
+  int len = vsnprintf(textBuf, sizeof(textBuf), log, args);
+  va_end(args);
+  if (len <= 0) return;
+  if (len > 240) len = 240;
   buffer[0] = payloadType;
   buffer[1] = ESPNOW_LOG_MAGIC_KEY_U8;
   buffer[2] = ESPNOW_LOG_MAGIC_KEY_2_U8;
-  buffer[3] = logLen;
-  memcpy(&buffer[4], result, logLen);
-  g_lastEspnowSendTime_u32 = millis();
-  ESPNow.send_message(g_broadcastMac_au8, (uint8_t *)buffer, 4 + logLen);
-  free(result);
+  buffer[3] = (uint8_t)len;
+  memcpy(&buffer[4], textBuf, len);
+  espnowSendWrapper(g_broadcastMac_au8, (uint8_t *)buffer, 4 + len);
 }
 
 void softwareAssignmentInitialize()
@@ -797,6 +924,7 @@ void softwareAssignmentInitialize()
     if (g_dapAssignmentReg_st.deviceId_u8 == PEDAL_ID_CLUTCH || g_dapAssignmentReg_st.deviceId_u8 == PEDAL_ID_BRAKE || g_dapAssignmentReg_st.deviceId_u8 == PEDAL_ID_THROTTLE)
     {
       tmp.payloadPedalConfig_st.pedalType_u8 = g_dapAssignmentReg_st.deviceId_u8;
+      s_localPedalType_u8 = g_dapAssignmentReg_st.deviceId_u8;
     }
     else
     {

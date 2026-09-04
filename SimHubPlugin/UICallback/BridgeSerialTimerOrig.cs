@@ -53,7 +53,7 @@ namespace DiyFfbPedal
                     {
                         receivedLength = sp.BytesToRead;
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         //TextBox_debugOutput.Text = ex.Message;
                         //ConnectToPedal.IsChecked = false;
@@ -82,7 +82,23 @@ namespace DiyFfbPedal
                         // check if buffer is large enough otherwise discard in buffer and set offset to 0
                         if ((bufferSize > currentBufferLength) && (appendedBufferOffset[3] >= 0))
                         {
-                            sp.Read(buffer_appended[3], appendedBufferOffset[3], receivedLength);
+                            try
+                            {
+                                // Safe non-blocking read: catch timeout and I/O errors immediately to avoid UI hang
+
+                                int bytesActuallyRead = sp.Read(buffer_appended[3], appendedBufferOffset[3], receivedLength);
+                                if (bytesActuallyRead <= 0) return;
+                                receivedLength = bytesActuallyRead;
+                                currentBufferLength = appendedBufferOffset[3] + receivedLength;
+                            }
+                            catch (TimeoutException)
+                            {
+                                return;
+                            }
+                            catch (IOException)
+                            {
+                                return;
+                            }
                         }
                         else
                         {
@@ -160,6 +176,7 @@ namespace DiyFfbPedal
                                         || Plugin._calculations.pedalWirelessStatus[pedalSelected] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
                                     {
                                         Plugin._calculations.pedalWirelessStatus[pedalSelected] = WirelessConnectStateEnum.PEDAL_GET_BASIC_PACKETS_OVER_ESPNOW;
+                                        Reading_config_auto_wireless((uint)pedalSelected);
                                     }
                                     Plugin._calculations.pedalWirelessConnetionlastTime[pedalSelected] = DateTime.Now;
                                     //if (Plugin.Rudder_enable_flag == false)
@@ -252,6 +269,10 @@ namespace DiyFfbPedal
                                     {
                                         pedalStateHasAlreadyBeenUpdated_b = true;
                                         PedalForceTravel_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16, pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
+                                            if (pedalKinematicTab != null && pedalKinematicTab.IsSelected)
+                                            {
+                                                PedalKinematics_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16);
+                                            }
 
 
                                         double control_rect_value_max = 65535;

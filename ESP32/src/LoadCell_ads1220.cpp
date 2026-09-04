@@ -37,11 +37,35 @@ void IRAM_ATTR drdyInterrupt()
     }
 }
 
+static SPIClass s_adsSPI_sc(FSPI);  // Or use VSPI or HSPI for ESP32
+static const SPISettings s_fastAdsSPISettings(4000000, MSBFIRST, SPI_MODE1);
+static float s_rawToKgConversionFactor_fl32 = 0.0f;
+
+static inline void updateRawToKgConversionFactor() {
+    // 24-bit full scale is 2^23 = 8388608. Gain is 128.
+    // result_mV = (raw24 / 8388608.0) * s_refVoltageInMv_fl32 / 128.0
+    // weight_kg = result_mV * s_updatedConversionFactor_fl32 * 0.001
+    // => weight_kg = raw24 * [ (s_refVoltageInMv_fl32 / (8388608.0f * 128.0f)) * s_updatedConversionFactor_fl32 * 0.001f ]
+    s_rawToKgConversionFactor_fl32 = (s_refVoltageInMv_fl32 / (8388608.0f * 128.0f)) * s_updatedConversionFactor_fl32 * 0.001f;
+}
+
+static inline int32_t IRAM_ATTR fastReadADS1220Raw() {
+    uint8_t rxBuf[3] = {0, 0, 0};
+    uint8_t txBuf[3] = {0, 0, 0};
+
+    s_adsSPI_sc.beginTransaction(s_fastAdsSPISettings);
+    digitalWrite(FFB_ADS1220_CS, LOW);
+    s_adsSPI_sc.transferBytes(txBuf, rxBuf, 3);
+    digitalWrite(FFB_ADS1220_CS, HIGH);
+    s_adsSPI_sc.endTransaction();
+
+    int32_t rawResult = ((int32_t)rxBuf[0] << 24) | ((int32_t)rxBuf[1] << 16) | ((int32_t)rxBuf[2] << 8);
+    return rawResult >> 8; // sign-extend 24-bit to signed 32-bit int
+}
+
 /* Provides a singleton instance of the ADS1220 ADC driver. */
 ADS1220_WE& getADC() 
 {
-  
-  static SPIClass s_adsSPI_sc(FSPI);  // Or use VSPI or HSPI for ESP32
   static ADS1220_WE s_adc_awe(&s_adsSPI_sc, FFB_ADS1220_CS, FFB_ADS1220_DRDY, true);
   
   //static ADS1220_WE adc(FFB_ADS1220_CS, FFB_ADS1220_DRDY);
@@ -53,6 +77,8 @@ ADS1220_WE& getADC()
 
     // Initialize custom SPI bus. This should be done only once.
     s_adsSPI_sc.begin(FFB_ADS1220_SCLK, FFB_ADS1220_DOUT, FFB_ADS1220_DIN, FFB_ADS1220_CS);
+    pinMode(FFB_ADS1220_CS, OUTPUT);
+    digitalWrite(FFB_ADS1220_CS, HIGH);
 
     // Initialize ADS1220
     if (!s_adc_awe.init()) 
@@ -74,6 +100,8 @@ ADS1220_WE& getADC()
 
     float refVolt_fl32 = s_adc_awe.getVRef_V();
     s_refVoltageInMv_fl32 = refVolt_fl32 * 1000.0f; // convert to mV
+    updateRawToKgConversionFactor();
+
     ActiveSerial->print("Reference voltage: ");
     ActiveSerial->print(refVolt_fl32);
     ActiveSerial->println("V");
@@ -145,14 +173,14 @@ void LoadCellAds1220::setLoadcellRating(uint8_t loadcellRating_u8) const
       s_updatedConversionFactor_fl32 = gramsPerMillivolt_fl32;
       s_updatedConversionFactor_fl32 *= 2.0f; // empirically identified
   }
+  updateRawToKgConversionFactor();
 }
 
 
 // #define LOADCELL_RADING_INTERVALL_IN_US (uint32_t)500
 float IRAM_ATTR LoadCellAds1220::readLoadcellWeightInKg() const 
 {
-  ADS1220_WE& adc_awe = getADC();
-  static float s_voltageMv_fl32;
+  static float s_lastWeightKg_fl32 = 0.0f;
 
   // wait for the timer to fire
   // This will block until the timer callback gives the semaphore. It won't consume CPU time while waiting.
@@ -160,22 +188,17 @@ float IRAM_ATTR LoadCellAds1220::readLoadcellWeightInKg() const
   {
     if (xSemaphoreTake(g_timerFireLoadcellReadingReady_sh, portMAX_DELAY) == pdTRUE) 
     {
-      
-      // final check if DRDY is low. If nor, just discard the measurement.
+      // final check if DRDY is low. If not, just retain previous measurement.
       if (digitalRead(FFB_ADS1220_DRDY) == LOW)
       {
-        // Read the voltage from the ADS1220
-        s_voltageMv_fl32 = adc_awe.getVoltage_mV();
+        int32_t raw24 = fastReadADS1220Raw();
+        s_lastWeightKg_fl32 = (float)raw24 * s_rawToKgConversionFactor_fl32;
       }
-      
     }
   }
 
-  float weightGrams_fl32 = s_voltageMv_fl32 * s_updatedConversionFactor_fl32;
-  float weightKg_fl32 = weightGrams_fl32 * 0.001f; // convert grams to kg
-  
   // correct bias, assume AWGN --> 3 * sigma is 99.9 %
-  return weightKg_fl32 - ( zeroPoint_fl32 + 3.0f * standardDeviationEstimate_fl32 );
+  return s_lastWeightKg_fl32 - ( zeroPoint_fl32 + 3.0f * standardDeviationEstimate_fl32 );
 }
 
 
