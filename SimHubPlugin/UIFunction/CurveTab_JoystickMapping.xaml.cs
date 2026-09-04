@@ -608,7 +608,8 @@ namespace DiyFfbPedal.UIFunction
                 RadiusX = 1,
                 RadiusY = 1,
                 Fill = System.Windows.Media.Brushes.Transparent,
-                Opacity = 1.0
+                Opacity = 1.0,
+                Cursor = System.Windows.Input.Cursors.Hand
             };
             rect.Tag = (int)-1;
             //rect.SetResourceReference(Shape.FillProperty, "AccentColorBrush");

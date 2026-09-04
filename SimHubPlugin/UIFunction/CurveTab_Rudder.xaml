@@ -79,11 +79,17 @@
                                     <TextBlock Text="🚁 HELICOPTER ANTI-TORQUE MODE" Foreground="#00FFCC" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" Margin="0,0,0,6"/>
                                     <TextBlock Text="Continuous Position-Hold (0 N Return Spring)" Foreground="White" FontSize="11" HorizontalAlignment="Center" Margin="0,0,0,8"/>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
-                                        <Border Background="#33FFFFFF" CornerRadius="4" Padding="8,4" Margin="5,0">
-                                            <TextBlock x:Name="txt_HeliDampingDisplay" Text="Viscous Damping: 45%" Foreground="#E0E0E0" FontSize="10"/>
+                                        <Border Background="#33FFFFFF" CornerRadius="4" Padding="8,4" Margin="5,0" Cursor="Hand" ToolTip="Click to edit Heli Damping %" MouseLeftButtonDown="txt_HeliDampingDisplay_MouseLeftButtonDown">
+                                            <Grid>
+                                                <TextBlock x:Name="txt_HeliDampingDisplay" Text="Viscous Damping: 45%" Foreground="#E0E0E0" FontSize="10"/>
+                                                <TextBox x:Name="TextBox_edit_HeliDamping" Width="45" Height="16" FontSize="10" FontFamily="Arial" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+                                            </Grid>
                                         </Border>
-                                        <Border Background="#33FFFFFF" CornerRadius="4" Padding="8,4" Margin="5,0">
-                                            <TextBlock x:Name="txt_HeliFrictionDisplay" Text="Coulomb Friction: 3.0 N" Foreground="#E0E0E0" FontSize="10"/>
+                                        <Border Background="#33FFFFFF" CornerRadius="4" Padding="8,4" Margin="5,0" Cursor="Hand" ToolTip="Click to edit Heli Friction in N" MouseLeftButtonDown="txt_HeliFrictionDisplay_MouseLeftButtonDown">
+                                            <Grid>
+                                                <TextBlock x:Name="txt_HeliFrictionDisplay" Text="Coulomb Friction: 3.0 N" Foreground="#E0E0E0" FontSize="10"/>
+                                                <TextBox x:Name="TextBox_edit_HeliFriction" Width="45" Height="16" FontSize="10" FontFamily="Arial" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+                                            </Grid>
                                         </Border>
                                     </StackPanel>
                                     <TextBlock Text="Pedals will hold exact position upon release." Foreground="#888888" FontSize="9" HorizontalAlignment="Center" Margin="0,8,0,0" FontStyle="Italic"/>
@@ -97,17 +103,29 @@
 
                     <!-- Vertical Centering Force Range Slider -->
                     <StackPanel Width="65" Height="200" Margin="5,0,0,0">
-                        <Label x:Name="Label_max_force_rudder" Width="65" Height="30" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Max Force:&#x0a;10.0 kg" Padding="0" Margin="0,0,0,0"/>
+                        <Grid Width="65" Height="30">
+                            <Label x:Name="Label_max_force_rudder" Width="65" Height="30" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Max Force:&#x0a;10.0 kg" Padding="0" Margin="0,0,0,0" Background="Transparent" Cursor="Hand" ToolTip="Click to type max force in kg" MouseLeftButtonDown="Label_max_force_rudder_MouseLeftButtonDown"/>
+                            <TextBox x:Name="TextBox_edit_max_force_rudder" Width="55" Height="20" FontSize="9" FontFamily="Arial" VerticalAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+                        </Grid>
                         <controls:RangeSlider x:Name="Rangeslider_rudder_force_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="0" Height="140" LowerValueChanged="Rangeslider_rudder_force_range_LowerValueChanged" UpperValueChanged="Rangeslider_rudder_force_range_UpperValueChanged" MinRange="0" IsSnapToTickEnabled="True" UpperValue="10" Width="20" Orientation="Vertical" Maximum="30" HorizontalAlignment="Left" LargeChange="0.5" Minimum="0" LowerValue="0" Value="0"/>
-                        <Label x:Name="Label_min_force_rudder" Width="65" Height="25" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Center: 0 kg" Padding="0" Margin="0,2,0,0"/>
+                        <Grid Width="65" Height="25" Margin="0,2,0,0">
+                            <Label x:Name="Label_min_force_rudder" Width="65" Height="25" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Center: 0 kg" Padding="0" Margin="0,0,0,0" Background="Transparent" Cursor="Hand" ToolTip="Click to type center force in kg" MouseLeftButtonDown="Label_min_force_rudder_MouseLeftButtonDown"/>
+                            <TextBox x:Name="TextBox_edit_min_force_rudder" Width="55" Height="20" FontSize="9" FontFamily="Arial" VerticalAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+                        </Grid>
                     </StackPanel>
                 </StackPanel>
 
                 <!-- Soft Endstops Travel Limits (Min 5% to Max 95%) -->
                 <StackPanel Width="470" Height="32" Orientation="Horizontal" Margin="35,2,0,0">
-                    <Label x:Name="Label_min_pos_rudder" Width="45" Height="30" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Center" Content="MIN&#x0a;5%" Padding="0" HorizontalContentAlignment="Center"/>
+                    <Grid Width="45" Height="30">
+                        <Label x:Name="Label_min_pos_rudder" Width="45" Height="30" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Center" Content="MIN&#x0a;5%" Padding="0" HorizontalContentAlignment="Center" Background="Transparent" Cursor="Hand" ToolTip="Click to type min travel %" MouseLeftButtonDown="Label_min_pos_rudder_MouseLeftButtonDown"/>
+                        <TextBox x:Name="TextBox_edit_min_pos_rudder" Width="40" Height="20" FontSize="9" FontFamily="Arial" VerticalAlignment="Center" HorizontalContentAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+                    </Grid>
                     <controls:RangeSlider x:Name="Rangeslider_rudder_travel_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="5" Height="18" LowerValueChanged="Rangeslider_rudder_travel_range_LowerValueChanged" UpperValueChanged="Rangeslider_rudder_travel_range_UpperValueChanged" MinRange="1" SmallChange="1" IsSnapToTickEnabled="True" UpperValue="95" Width="380" VerticalAlignment="Center" LowerValue="5" Minimum="0" Maximum="100" Value="85"/>
-                    <Label x:Name="Label_max_pos_rudder" Width="45" Height="30" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Center" Content="MAX&#x0a;95%" Padding="0" HorizontalContentAlignment="Center"/>
+                    <Grid Width="45" Height="30">
+                        <Label x:Name="Label_max_pos_rudder" Width="45" Height="30" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Center" Content="MAX&#x0a;95%" Padding="0" HorizontalContentAlignment="Center" Background="Transparent" Cursor="Hand" ToolTip="Click to type max travel %" MouseLeftButtonDown="Label_max_pos_rudder_MouseLeftButtonDown"/>
+                        <TextBox x:Name="TextBox_edit_max_pos_rudder" Width="40" Height="20" FontSize="9" FontFamily="Arial" VerticalAlignment="Center" HorizontalContentAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+                    </Grid>
                 </StackPanel>
             </StackPanel>
         </Border>

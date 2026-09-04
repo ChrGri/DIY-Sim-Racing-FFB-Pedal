@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace DiyFfbPedal.UIElement
 {
     public partial class SliderWithLabel : UserControl
     {
+        private bool _isCommittingEdit = false;
+
         public SliderWithLabel()
         {
             InitializeComponent();
@@ -120,9 +123,90 @@ namespace DiyFfbPedal.UIElement
         {
             // 忽略初始化期間因 MinValue 設定造成的自動校正雜訊
             if (!this.IsLoaded) return;
+            if (_isCommittingEdit) return;
 
             SliderValue = e.NewValue;
             SliderValueChanged?.Invoke(this, e);
+        }
+
+        private void LabelDisplay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (!this.IsEnabled) return;
+            BeginInlineEdit();
+            e.Handled = true;
+        }
+
+        public void BeginInlineEdit()
+        {
+            if (PanelEdit == null || LabelDisplay == null || BoxEditValue == null) return;
+            TxtEditPrefix.Text = (SliderName ?? "") + ": ";
+            TxtEditUnit.Text = string.IsNullOrEmpty(Unit) ? "" : " " + Unit;
+            BoxEditValue.Text = Math.Round(SliderValue, 4).ToString("0.####", System.Globalization.CultureInfo.InvariantCulture);
+            LabelDisplay.Visibility = Visibility.Collapsed;
+            PanelEdit.Visibility = Visibility.Visible;
+            BoxEditValue.Focus();
+            BoxEditValue.SelectAll();
+        }
+
+        private void CommitInlineEdit()
+        {
+            if (PanelEdit == null || PanelEdit.Visibility != Visibility.Visible) return;
+
+            string text = (BoxEditValue.Text ?? string.Empty).Trim().Replace(',', '.');
+            if (double.TryParse(text, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double value))
+            {
+                value = Math.Max(MinValue, Math.Min(MaxValue, value));
+                if (TickFrequency > 0)
+                {
+                    double ticks = Math.Round((value - MinValue) / TickFrequency);
+                    value = MinValue + ticks * TickFrequency;
+                    value = Math.Max(MinValue, Math.Min(MaxValue, value));
+                    value = Math.Round(value, 4);
+                }
+
+                _isCommittingEdit = true;
+                try
+                {
+                    double oldVal = SliderValue;
+                    SliderValue = value;
+                    if (SliderElement != null)
+                    {
+                        SliderElement.Value = value;
+                    }
+                    UpdateLabelContent();
+                    SliderValueChanged?.Invoke(this, new RoutedPropertyChangedEventArgs<double>(oldVal, value));
+                }
+                finally
+                {
+                    _isCommittingEdit = false;
+                }
+            }
+            EndInlineEdit();
+        }
+
+        private void EndInlineEdit()
+        {
+            if (PanelEdit != null) PanelEdit.Visibility = Visibility.Collapsed;
+            if (LabelDisplay != null) LabelDisplay.Visibility = Visibility.Visible;
+        }
+
+        private void BoxEditValue_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                CommitInlineEdit();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                EndInlineEdit();
+                e.Handled = true;
+            }
+        }
+
+        private void BoxEditValue_LostFocus(object sender, RoutedEventArgs e)
+        {
+            CommitInlineEdit();
         }
     }
 }

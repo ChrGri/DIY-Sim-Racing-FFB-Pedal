@@ -546,10 +546,24 @@ namespace DiyFfbPedal.UIFunction
             }
         }
 
+        private void Label_max_force_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (Rangeslider_force_range != null)
+                BeginInlineEdit(Label_max_force, TextBox_edit_max_force, Rangeslider_force_range.UpperValue);
+            e.Handled = true;
+        }
+
         private void Label_max_force_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (Rangeslider_force_range != null)
                 BeginInlineEdit(Label_max_force, TextBox_edit_max_force, Rangeslider_force_range.UpperValue);
+            e.Handled = true;
+        }
+
+        private void Label_min_force_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (Rangeslider_force_range != null)
+                BeginInlineEdit(Label_min_force, TextBox_edit_min_force, Rangeslider_force_range.LowerValue);
             e.Handled = true;
         }
 
@@ -560,10 +574,24 @@ namespace DiyFfbPedal.UIFunction
             e.Handled = true;
         }
 
+        private void Label_min_pos_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (Rangeslider_travel_range != null)
+                BeginInlineEdit(Label_min_pos, TextBox_edit_min_pos, CurrentTravelMm(Rangeslider_travel_range.LowerValue));
+            e.Handled = true;
+        }
+
         private void Label_min_pos_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (Rangeslider_travel_range != null)
                 BeginInlineEdit(Label_min_pos, TextBox_edit_min_pos, CurrentTravelMm(Rangeslider_travel_range.LowerValue));
+            e.Handled = true;
+        }
+
+        private void Label_max_pos_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (Rangeslider_travel_range != null)
+                BeginInlineEdit(Label_max_pos, TextBox_edit_max_pos, CurrentTravelMm(Rangeslider_travel_range.UpperValue));
             e.Handled = true;
         }
 
@@ -1058,7 +1086,8 @@ namespace DiyFfbPedal.UIFunction
                 RadiusX = 1,
                 RadiusY = 1,
                 Fill = System.Windows.Media.Brushes.Transparent,
-                Opacity = 1.0
+                Opacity = 1.0,
+                Cursor = System.Windows.Input.Cursors.Hand
             };
             rect.Tag = (int)-1;
             //rect.SetResourceReference(Shape.FillProperty, "AccentColorBrush");

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
@@ -323,13 +324,168 @@ namespace DiyFfbPedal.UIFunction
             if (Label_max_pos_rudder != null) Label_max_pos_rudder.Content = $"MAX\n{Settings.rudderMaxTravel}%";
             SettingsChangedEvent(Settings);
         }
-         private void btn_RudderDocs_Click(object sender, RoutedEventArgs e)
+
+        private void btn_RudderDocs_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/blob/rudder_test/docs/rudder_modes_flight_dynamics.md") { UseShellExecute = true });
             }
             catch { }
+        }
+
+        // Inline Keyboard / Numeric Input Editing Handlers
+        private void Label_max_force_rudder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (Settings != null)
+                BeginInlineEdit(Label_max_force_rudder, TextBox_edit_max_force_rudder, Settings.rudderCenteringForce);
+            e.Handled = true;
+        }
+
+        private void Label_min_force_rudder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (Settings != null)
+                BeginInlineEdit(Label_min_force_rudder, TextBox_edit_min_force_rudder, Settings.rudderMinForce);
+            e.Handled = true;
+        }
+
+        private void Label_min_pos_rudder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (Settings != null)
+                BeginInlineEdit(Label_min_pos_rudder, TextBox_edit_min_pos_rudder, Settings.rudderMinTravel);
+            e.Handled = true;
+        }
+
+        private void Label_max_pos_rudder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (Settings != null)
+                BeginInlineEdit(Label_max_pos_rudder, TextBox_edit_max_pos_rudder, Settings.rudderMaxTravel);
+            e.Handled = true;
+        }
+
+        private void txt_HeliDampingDisplay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (Settings != null)
+                BeginInlineEdit(txt_HeliDampingDisplay, TextBox_edit_HeliDamping, Settings.rudderHeliDamping);
+            e.Handled = true;
+        }
+
+        private void txt_HeliFrictionDisplay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (Settings != null)
+                BeginInlineEdit(txt_HeliFrictionDisplay, TextBox_edit_HeliFriction, Settings.rudderHeliFriction);
+            e.Handled = true;
+        }
+
+        private void BeginInlineEdit(FrameworkElement displayElem, TextBox box, double currentValue)
+        {
+            if (displayElem == null || box == null) return;
+            box.Text = currentValue.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+            displayElem.Visibility = Visibility.Collapsed;
+            box.Visibility = Visibility.Visible;
+            box.Focus();
+            box.SelectAll();
+        }
+
+        private void EditBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            var box = sender as TextBox;
+            if (box == null) return;
+            if (e.Key == Key.Enter)
+            {
+                CommitInlineEdit(box);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                EndInlineEdit(box);
+                e.Handled = true;
+            }
+        }
+
+        private void EditBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            var box = sender as TextBox;
+            if (box != null && box.Visibility == Visibility.Visible)
+                CommitInlineEdit(box);
+        }
+
+        private void CommitInlineEdit(TextBox box)
+        {
+            if (Settings == null || box == null) return;
+
+            string text = (box.Text ?? string.Empty).Trim().Replace(',', '.');
+            if (double.TryParse(text, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double value))
+            {
+                if (box == TextBox_edit_max_force_rudder)
+                {
+                    // Clamp 0 to 30 kg, must be >= min force
+                    value = Math.Max(Settings.rudderMinForce, Math.Min(30.0, value));
+                    Settings.rudderCenteringForce = (float)value;
+                    Settings.rudderMaxForce = Settings.rudderCenteringForce;
+                    if (Rangeslider_rudder_force_range != null) Rangeslider_rudder_force_range.UpperValue = value;
+                    if (Label_max_force_rudder != null) Label_max_force_rudder.Content = $"Max Force:\n{Math.Round(value, 1)} kg";
+                    Update_BrakeForceCurve();
+                    SettingsChangedEvent(Settings);
+                }
+                else if (box == TextBox_edit_min_force_rudder)
+                {
+                    // Clamp 0 to max force
+                    value = Math.Max(0.0, Math.Min(Settings.rudderCenteringForce, value));
+                    Settings.rudderMinForce = (float)value;
+                    if (Rangeslider_rudder_force_range != null) Rangeslider_rudder_force_range.LowerValue = value;
+                    if (Label_min_force_rudder != null) Label_min_force_rudder.Content = $"Center: {Math.Round(value, 1)} kg";
+                    Update_BrakeForceCurve();
+                    SettingsChangedEvent(Settings);
+                }
+                else if (box == TextBox_edit_min_pos_rudder)
+                {
+                    // Clamp 0 to (max travel - 1)
+                    value = Math.Max(0, Math.Min(Settings.rudderMaxTravel - 1, Math.Round(value)));
+                    Settings.rudderMinTravel = (byte)value;
+                    if (Rangeslider_rudder_travel_range != null) Rangeslider_rudder_travel_range.LowerValue = value;
+                    if (Label_min_pos_rudder != null) Label_min_pos_rudder.Content = $"MIN\n{Settings.rudderMinTravel}%";
+                    SettingsChangedEvent(Settings);
+                }
+                else if (box == TextBox_edit_max_pos_rudder)
+                {
+                    // Clamp (min travel + 1) to 100
+                    value = Math.Max(Settings.rudderMinTravel + 1, Math.Min(100, Math.Round(value)));
+                    Settings.rudderMaxTravel = (byte)value;
+                    if (Rangeslider_rudder_travel_range != null) Rangeslider_rudder_travel_range.UpperValue = value;
+                    if (Label_max_pos_rudder != null) Label_max_pos_rudder.Content = $"MAX\n{Settings.rudderMaxTravel}%";
+                    SettingsChangedEvent(Settings);
+                }
+                else if (box == TextBox_edit_HeliDamping)
+                {
+                    value = Math.Max(0, Math.Min(100, Math.Round(value)));
+                    Settings.rudderHeliDamping = (byte)value;
+                    if (txt_HeliDampingDisplay != null) txt_HeliDampingDisplay.Text = $"Viscous Damping: {Settings.rudderHeliDamping}%";
+                    SettingsChangedEvent(Settings);
+                }
+                else if (box == TextBox_edit_HeliFriction)
+                {
+                    value = Math.Max(0.0, Math.Min(10.0, value));
+                    Settings.rudderHeliFriction = (float)value;
+                    if (txt_HeliFrictionDisplay != null) txt_HeliFrictionDisplay.Text = $"Coulomb Friction: {Math.Round(Settings.rudderHeliFriction, 1)} N";
+                    SettingsChangedEvent(Settings);
+                }
+            }
+            EndInlineEdit(box);
+        }
+
+        private void EndInlineEdit(TextBox box)
+        {
+            if (box == null) return;
+            box.Visibility = Visibility.Collapsed;
+            FrameworkElement elem = null;
+            if (box == TextBox_edit_max_force_rudder) elem = Label_max_force_rudder;
+            else if (box == TextBox_edit_min_force_rudder) elem = Label_min_force_rudder;
+            else if (box == TextBox_edit_min_pos_rudder) elem = Label_min_pos_rudder;
+            else if (box == TextBox_edit_max_pos_rudder) elem = Label_max_pos_rudder;
+            else if (box == TextBox_edit_HeliDamping) elem = txt_HeliDampingDisplay;
+            else if (box == TextBox_edit_HeliFriction) elem = txt_HeliFrictionDisplay;
+            if (elem != null) elem.Visibility = Visibility.Visible;
         }
     }
 }

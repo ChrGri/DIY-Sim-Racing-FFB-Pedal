@@ -229,5 +229,92 @@ namespace DiyFfbPedal.UIFunction
             }
             this.Polyline_plot_RPM.Points = myPointCollection2;
         }
+        // Inline Keyboard / Numeric Input Handlers
+        private void label_RPM_freq_min_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            BeginInlineEdit(label_RPM_freq_min, TextBox_edit_RPM_freq_min, dap_config_st.payloadPedalConfig_.RPM_min_freq);
+            e.Handled = true;
+        }
+
+        private void label_RPM_freq_max_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            BeginInlineEdit(label_RPM_freq_max, TextBox_edit_RPM_freq_max, dap_config_st.payloadPedalConfig_.RPM_max_freq);
+            e.Handled = true;
+        }
+
+        private void BeginInlineEdit(FrameworkElement displayElem, System.Windows.Controls.TextBox box, double currentValue)
+        {
+            if (displayElem == null || box == null) return;
+            box.Text = currentValue.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+            displayElem.Visibility = Visibility.Collapsed;
+            box.Visibility = Visibility.Visible;
+            box.Focus();
+            box.SelectAll();
+        }
+
+        private void EditBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            var box = sender as System.Windows.Controls.TextBox;
+            if (box == null) return;
+            if (e.Key == System.Windows.Input.Key.Enter)
+            {
+                CommitInlineEdit(box);
+                e.Handled = true;
+            }
+            else if (e.Key == System.Windows.Input.Key.Escape)
+            {
+                EndInlineEdit(box);
+                e.Handled = true;
+            }
+        }
+
+        private void EditBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            var box = sender as System.Windows.Controls.TextBox;
+            if (box != null && box.Visibility == Visibility.Visible)
+                CommitInlineEdit(box);
+        }
+
+        private void CommitInlineEdit(System.Windows.Controls.TextBox box)
+        {
+            if (box == null) return;
+
+            string text = (box.Text ?? string.Empty).Trim().Replace(',', '.');
+            if (double.TryParse(text, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double value))
+            {
+                var tmp = dap_config_st;
+                if (box == TextBox_edit_RPM_freq_min)
+                {
+                    value = Math.Max(1, Math.Min(tmp.payloadPedalConfig_.RPM_max_freq, Math.Round(value)));
+                    tmp.payloadPedalConfig_.RPM_min_freq = (byte)value;
+                    if (Rangeslider_RPM_freq != null) Rangeslider_RPM_freq.LowerValue = value;
+                    if (label_RPM_freq_min != null) label_RPM_freq_min.Content = "MIN:" + tmp.payloadPedalConfig_.RPM_min_freq + "Hz";
+                    dap_config_st = tmp;
+                    ConfigChangedEvent(dap_config_st);
+                    update_plot_RPM();
+                }
+                else if (box == TextBox_edit_RPM_freq_max)
+                {
+                    value = Math.Max(tmp.payloadPedalConfig_.RPM_min_freq, Math.Min(50, Math.Round(value)));
+                    tmp.payloadPedalConfig_.RPM_max_freq = (byte)value;
+                    if (Rangeslider_RPM_freq != null) Rangeslider_RPM_freq.UpperValue = value;
+                    if (label_RPM_freq_max != null) label_RPM_freq_max.Content = "MAX:" + tmp.payloadPedalConfig_.RPM_max_freq + "Hz";
+                    dap_config_st = tmp;
+                    ConfigChangedEvent(dap_config_st);
+                    update_plot_RPM();
+                }
+            }
+            EndInlineEdit(box);
+        }
+
+        private void EndInlineEdit(System.Windows.Controls.TextBox box)
+        {
+            if (box == null) return;
+            box.Visibility = Visibility.Collapsed;
+            FrameworkElement elem = null;
+            if (box == TextBox_edit_RPM_freq_min) elem = label_RPM_freq_min;
+            else if (box == TextBox_edit_RPM_freq_max) elem = label_RPM_freq_max;
+            if (elem != null) elem.Visibility = Visibility.Visible;
+        }
     }
 }
