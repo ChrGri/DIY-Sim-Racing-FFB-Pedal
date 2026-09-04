@@ -337,6 +337,7 @@ void IRAM_ATTR_FLAG configHandlingTask(void *pvParameters) {
     // check if config update is available
     if (xQueueReceive(s_configUpdateAvailableQueue, &configPackage_st,
                       portMAX_DELAY) == pdPASS) {
+#ifdef ESPNOW_Enable
       if (configPackage_st.config_st.payloadPedalConfig_st.pedalType_u8 >= 3) {
         if (s_localPedalType_u8 < 3) {
           configPackage_st.config_st.payloadPedalConfig_st.pedalType_u8 = s_localPedalType_u8;
@@ -344,6 +345,7 @@ void IRAM_ATTR_FLAG configHandlingTask(void *pvParameters) {
           configPackage_st.config_st.payloadPedalConfig_st.pedalType_u8 = g_dapAssignmentReg_st.deviceId_u8;
         }
       }
+#endif
       global_dap_config_class.setConfig(configPackage_st.config_st);
 
       ActiveSerial->println("Config update received: config handling task");
