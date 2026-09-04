@@ -3567,8 +3567,10 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
   for (;;) {
     if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) {
 
-      DapConfig_t espnow_dap_config_st;
-      global_dap_config_class.getConfig(&espnow_dap_config_st, 500);
+      DapConfig_t espnow_dap_config_st = {};
+      if (!global_dap_config_class.getConfig(&espnow_dap_config_st, 50)) {
+        espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 = s_localPedalType_u8;
+      }
       // basic state sendout interval
       uint basicStateUpdateInterval = 8;
       int pedalId = espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8;
@@ -3581,6 +3583,8 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
       if (espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 ==
           PEDAL_ID_UNKNOWN) {
         noAssignmentStatus = true;
+      } else {
+        noAssignmentStatus = false;
       }
       // restart from espnow
       if (g_espNowRestart_b) {
@@ -3788,7 +3792,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
                               sizeof(DapAssignmentBroadcast_t));
         }
         // basic state packet send out
-        if (basic_state_send_b && !noAssignmentStatus && !isEspnowBusy()) {
+        if (basic_state_send_b && !noAssignmentStatus) {
           // update pedal states
           DapStateBasic_t dap_state_basic_st_lcl;
           // initialize with zeros in case semaphore couldn't be aquired
@@ -3804,10 +3808,9 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
                     sizeof(dap_state_basic_st_lcl.payloadHeader_st) +
                         sizeof(
                             dap_state_basic_st_lcl.payloadPedalStateBasic_st));
-            g_lastEspnowSendTime_u32 = millis();
-            ESPNow.send_message(g_broadcastMac_au8,
-                                (uint8_t *)&dap_state_basic_st_lcl,
-                                sizeof(dap_state_basic_st_lcl));
+            espnowSendWrapper(g_broadcastMac_au8,
+                              (uint8_t *)&dap_state_basic_st_lcl,
+                              sizeof(dap_state_basic_st_lcl));
           }
           basic_state_send_b = false;
         }
@@ -3959,7 +3962,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
         }
         // send out rudder packet after rudder initialized
         if (millis() - rudderPacketsUpdateLast > rudderPacketInterval &&
-            !noAssignmentStatus && !isEspnowBusy()) {
+            !noAssignmentStatus) {
           if (dap_calculationVariables_st.rudderStatus_b ||
               dap_calculationVariables_st.helicopterRudderStatus_b) {
             g_dapRudderSending_st.payloadRudderState_st
@@ -3992,15 +3995,12 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
               }
             }
             if (isRecvMacValid) {
-              if (!esp_now_is_peer_exist(g_recvMac_au8)) {
-                ESPNow.add_peer(g_recvMac_au8);
-              }
+              safeRegisterEspNowPeer(g_recvMac_au8);
               targetMac = g_recvMac_au8;
             }
-            g_lastEspnowSendTime_u32 = millis();
-            ESPNow.send_message(targetMac,
-                                (uint8_t *)&g_dapRudderSending_st,
-                                sizeof(g_dapRudderSending_st));
+            espnowSendWrapper(targetMac,
+                              (uint8_t *)&g_dapRudderSending_st,
+                              sizeof(g_dapRudderSending_st));
             // ESPNow_send=dap_calculationVariables_st.currentPedalPosition_u32;
             // esp_err_t result =ESPNow.send_message(Recv_mac,(uint8_t *)
             // &_ESPNow_Send,sizeof(_ESPNow_Send)); if (result == ESP_OK)
@@ -4022,6 +4022,19 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
             }
           }
           rudderPacketsUpdateLast = millis();
+        }
+
+        // Periodic diagnostic telemetry: Report RF health and heap to SimHub every 60s
+        if (millis() - g_lastEspnowDiagLogTime_u32 > 60000 && !noAssignmentStatus) {
+          g_lastEspnowDiagLogTime_u32 = millis();
+          uint32_t freeHeap = esp_get_free_heap_size();
+          uint32_t minHeap = esp_get_minimum_free_heap_size();
+          sendESPNOWLog("Pedal:%d Diag: Heap=%u MinHeap=%u TxFail=%u NoMem=%u RetFail=%u Starve=%u RTT=%u",
+                        espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8,
+                        freeHeap, minHeap,
+                        g_espnowTxFailCount_u32, g_espnowTxNoMemCount_u32,
+                        g_espnowSendFailCount_u32, g_espnowBasicStateStarvedCount_u32,
+                        (uint32_t)g_currentSyncDelay_ms * 2);
         }
       }
 

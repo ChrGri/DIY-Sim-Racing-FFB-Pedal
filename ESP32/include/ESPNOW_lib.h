@@ -75,6 +75,62 @@ volatile uint32_t g_lastEspnowOnSentTime_u32 = 0;
 volatile uint32_t g_lastPartnerTimestamp_ms = 0;
 volatile uint8_t g_currentSyncDelay_ms = 0;
 
+// ESP-NOW in-flight state tracking and diagnostics
+volatile bool g_espnowTxInFlight_b = false;
+volatile uint32_t g_espnowTxFailCount_u32 = 0;
+volatile uint32_t g_espnowTxNoMemCount_u32 = 0;
+volatile uint32_t g_espnowSendFailCount_u32 = 0;
+volatile uint32_t g_espnowBasicStateStarvedCount_u32 = 0;
+volatile uint32_t g_lastEspnowDiagLogTime_u32 = 0;
+
+static uint8_t s_registeredPeerMac[6] = {0};
+inline esp_err_t safeRegisterEspNowPeer(const uint8_t *mac)
+{
+  if (mac == NULL) return ESP_ERR_INVALID_ARG;
+  bool isAllZero = true;
+  for (int i = 0; i < 6; i++) {
+    if (mac[i] != 0) { isAllZero = false; break; }
+  }
+  if (isAllZero) return ESP_ERR_INVALID_ARG;
+
+  // Fast-path: already registered peer, avoid taking ESPNOW_LOCK mutex
+  if (memcmp(s_registeredPeerMac, mac, 6) == 0) {
+    return ESP_OK;
+  }
+
+  if (esp_now_is_peer_exist(mac)) {
+    memcpy(s_registeredPeerMac, mac, 6);
+    return ESP_OK;
+  }
+
+  esp_now_peer_info_t peerInfo = {};
+  memcpy(peerInfo.peer_addr, mac, 6);
+  peerInfo.channel = 0;
+  peerInfo.ifidx = WIFI_IF_STA;
+  peerInfo.encrypt = false;
+  esp_err_t err = esp_now_add_peer(&peerInfo);
+  if (err == ESP_OK || err == ESP_ERR_ESPNOW_EXIST) {
+    memcpy(s_registeredPeerMac, mac, 6);
+    return ESP_OK;
+  }
+  return err;
+}
+
+inline esp_err_t espnowSendWrapper(const uint8_t *targetMac, const uint8_t *data, size_t len)
+{
+  g_lastEspnowSendTime_u32 = millis();
+  esp_err_t res = esp_now_send(targetMac, data, len);
+  if (res != ESP_OK)
+  {
+    g_espnowTxFailCount_u32 = g_espnowTxFailCount_u32 + 1;
+    if (res == ESP_ERR_ESPNOW_NO_MEM)
+    {
+      g_espnowTxNoMemCount_u32 = g_espnowTxNoMemCount_u32 + 1;
+    }
+  }
+  return res;
+}
+
 /*
 struct ESPNow_Send_Struct
 {
@@ -303,9 +359,7 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
 
           // Lock onto partner pedal's MAC for unicast
           memcpy(g_recvMac_au8, esp_now_info->src_addr, 6);
-          if (!esp_now_is_peer_exist(g_recvMac_au8)) {
-            ESPNow.add_peer(g_recvMac_au8);
-          }
+          safeRegisterEspNowPeer(g_recvMac_au8);
 
           // 1. Immediate zero-latency update to calculation variables for 4000 Hz physics loop
           dap_calculationVariables_st.syncPedalPosition_u32 = dapg_rudder_st_st_local.payloadRudderState_st.pedalPosition_u16;
@@ -677,18 +731,15 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
 void onSent(const esp_now_send_info_t *tx_info, esp_now_send_status_t status)
 {
     g_lastEspnowOnSentTime_u32 = millis();
+    g_espnowTxInFlight_b = false;
+    if (status != ESP_NOW_SEND_SUCCESS)
+    {
+        g_espnowSendFailCount_u32 = g_espnowSendFailCount_u32 + 1;
+    }
 }
 
 inline bool isEspnowBusy()
 {
-    uint32_t latency = millis() - g_lastEspnowSendTime_u32;
-    uint32_t onSentAgo = millis() - g_lastEspnowOnSentTime_u32;
-    // If last send is more recent than last onSent
-    if (latency < onSentAgo)
-    {
-        // 50ms timeout to prevent permanent lockup
-        if (latency < 50) return true;
-    }
     return false;
 }
 
@@ -757,8 +808,7 @@ void espNowInitialize()
     #endif
   #endif
   #ifdef ESPNow_ESP32
-    esp_wifi_config_espnow_rate(WIFI_IF_STA, WIFI_PHY_RATE_MCS0_LGI);
-    // esp_wifi_config_espnow_rate(WIFI_IF_STA, 	WIFI_PHY_RATE_54M);
+    esp_wifi_config_espnow_rate(WIFI_IF_STA, WIFI_PHY_RATE_11M_L);
   #endif
   #ifdef ESPNow_Pairing_function
     EspPairingReg_t ESP_pairing_reg_local;
@@ -832,30 +882,19 @@ void sendESPNOWLog(const char *log,...)
 {
   uint8_t buffer[250];
   uint8_t payloadType = DAP_PAYLOAD_TYPE_ESPNOW_LOG_U8;
-  //uint8_t logLen = strlen(log); 
+  char textBuf[240];
   va_list args;
-  char* result = NULL;
-  int needed_size;
-  va_start(args, log); // initialized va_list
-  needed_size = vsnprintf(NULL, 0, log, args);
-  va_end(args); 
-  if (needed_size < 0) return;
-  result = (char*)malloc(needed_size + 1);
-  // malloc error
-  if (result == NULL) return;
-  va_start(args, log); 
-  vsnprintf(result, needed_size + 1, log, args);
-  va_end(args); 
-  int logLen=strlen(result);
-  if (logLen > 240) logLen = 240;
+  va_start(args, log);
+  int len = vsnprintf(textBuf, sizeof(textBuf), log, args);
+  va_end(args);
+  if (len <= 0) return;
+  if (len > 240) len = 240;
   buffer[0] = payloadType;
   buffer[1] = ESPNOW_LOG_MAGIC_KEY_U8;
   buffer[2] = ESPNOW_LOG_MAGIC_KEY_2_U8;
-  buffer[3] = logLen;
-  memcpy(&buffer[4], result, logLen);
-  g_lastEspnowSendTime_u32 = millis();
-  ESPNow.send_message(g_broadcastMac_au8, (uint8_t *)buffer, 4 + logLen);
-  free(result);
+  buffer[3] = (uint8_t)len;
+  memcpy(&buffer[4], textBuf, len);
+  espnowSendWrapper(g_broadcastMac_au8, (uint8_t *)buffer, 4 + len);
 }
 
 void softwareAssignmentInitialize()
