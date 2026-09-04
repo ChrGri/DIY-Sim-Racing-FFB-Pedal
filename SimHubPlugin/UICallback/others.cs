@@ -584,10 +584,6 @@ namespace DiyFfbPedal
                         Plugin.ESPsync_serialPort.DiscardOutBuffer();
                         // send data
                         Plugin.ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
-
-
-                        //Plugin._serialPort[indexOfSelectedPedal_u].Write("\n");
-                        System.Threading.Thread.Sleep(100);
                     }
                     catch (Exception caughtEx)
                     {
@@ -1325,16 +1321,16 @@ namespace DiyFfbPedal
                     Plugin.ESPsync_serialPort.Handshake = Handshake.None;
                     Plugin.ESPsync_serialPort.Parity = Parity.None;
                     //_serialPort[pedalIdx].StopBits = StopBits.None;
-                    Plugin.ESPsync_serialPort.ReadTimeout = 2000;
-                    Plugin.ESPsync_serialPort.WriteTimeout = 500;
+                    // Non-blocking timeouts: Timer runs on WPF UI thread; keep timeouts low (50ms)
+                    // to prevent SimHub from freezing ('Not Responding') if serial packets are delayed.
+                    Plugin.ESPsync_serialPort.ReadTimeout = 50;
+                    Plugin.ESPsync_serialPort.WriteTimeout = 50;
                     Plugin.ESPsync_serialPort.BaudRate = Bridge_baudrate;
                     // https://stackoverflow.com/questions/7178655/serialport-encoding-how-do-i-get-8-bit-ascii
                     Plugin.ESPsync_serialPort.Encoding = System.Text.Encoding.GetEncoding(28591);
                     Plugin.ESPsync_serialPort.NewLine = "\r\n";
                     Plugin.ESPsync_serialPort.ReadBufferSize = 40960;
                     Plugin.ESPsync_serialPort.Open();
-                    System.Threading.Thread.Sleep(200);
-                    //Plugin.Sync_esp_connection_flag = true;
                     // add timer
                     ESP_host_serial_timer = new System.Windows.Forms.Timer();
                     ESP_host_serial_timer.Tick += new EventHandler(timerCallback_serial_esphost_orig);
@@ -1342,7 +1338,6 @@ namespace DiyFfbPedal
                     ESP_host_serial_timer.Interval = 8; // in miliseconds
                     ESP_host_serial_timer.Start();
                     status = true;
-                    System.Threading.Thread.Sleep(100);
                 }
                 catch (Exception ex)
                 {

@@ -690,8 +690,10 @@ namespace DiyFfbPedal
                     //_serialPort[pedalIdx].StopBits = StopBits.None;
                     Plugin.ESPsync_serialPort.BaudRate = Bridge_baudrate;
 
-                    Plugin.ESPsync_serialPort.ReadTimeout = 2000;
-                    Plugin.ESPsync_serialPort.WriteTimeout = 500;
+                    // Non-blocking timeouts: Timer runs on WPF UI thread; keep timeouts low (50ms)
+                    // to prevent SimHub from freezing ('Not Responding') if serial packets are delayed.
+                    Plugin.ESPsync_serialPort.ReadTimeout = 50;
+                    Plugin.ESPsync_serialPort.WriteTimeout = 50;
 
                     // https://stackoverflow.com/questions/7178655/serialport-encoding-how-do-i-get-8-bit-ascii
                     Plugin.ESPsync_serialPort.Encoding = System.Text.Encoding.GetEncoding(28591);
@@ -702,7 +704,6 @@ namespace DiyFfbPedal
                         try
                         {
                             Plugin.ESPsync_serialPort.Open();
-                            System.Threading.Thread.Sleep(200);
                             Plugin.ESPsync_serialPort.RtsEnable = false;
                             Plugin.ESPsync_serialPort.DtrEnable = false;
 
@@ -714,7 +715,6 @@ namespace DiyFfbPedal
                             ESP_host_serial_timer.Tag = 3;
                             ESP_host_serial_timer.Interval = 8; // in miliseconds
                             ESP_host_serial_timer.Start();
-                            System.Threading.Thread.Sleep(100);
                             if (Plugin.Settings.IsBridgeAutoConnect)
                             {
                                 Plugin.Settings.ESPNow_port = Plugin.ESPsync_serialPort.PortName;

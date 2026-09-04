@@ -183,6 +183,40 @@ void espNowPairingCallback(const uint8_t *mac_addr, const uint8_t *data, int dat
 
 }
 
+/**
+ * =========================================================================================
+ * ESP-NOW FreeRTOS Task Architecture & Best Practices
+ * =========================================================================================
+ * 
+ * Context & Problem:
+ * - In ESP-IDF and Arduino-ESP32, the ESP-NOW receive callback (esp_now_register_recv_cb)
+ *   executes directly within the context of the internal high-priority FreeRTOS WiFi driver task.
+ * 
+ * Espressif Design Rules for onRecv:
+ * - NEVER block inside the callback (no delay(), no prolonged busy loops).
+ * - NEVER wait on mutexes, semaphores, or queues with a non-zero timeout or portMAX_DELAY.
+ * 
+ * Root Cause of Previous System Freezes ("Bridge und SimHub friert ein"):
+ * - onRecv() previously invoked `global_dap_config_class.getConfig(&dap_config_espnow_recv_st, 500)`.
+ * - Internally, getConfig() calls `xSemaphoreTake(mutex_sh, pdMS_TO_TICKS(500))`.
+ * - Whenever another task (such as pedalUpdateTask on Core 1 during physics calculations or
+ *   an EEPROM/Flash write operation) held `mutex_sh`, the WiFi task was stalled for up to 500ms.
+ * - This repeatedly triggered FreeRTOS Task Watchdog Timeouts (TWDT) or priority inversion deadlocks,
+ *   causing the ESP32 to freeze, reboot, or drop ESP-NOW frames completely.
+ * - Similarly, calling `xQueueSend(..., portMAX_DELAY)` when the config queue was full would
+ *   permanently lock the WiFi driver task.
+ * 
+ * Implemented Solution:
+ * 1. Non-blocking Mutex Acquisition: `getConfig(..., 0)` is called with a 0 ms timeout.
+ *    If the mutex cannot be taken immediately, it falls back to `s_localPedalType_u8`.
+ * 2. Cached Pedal Role: `s_localPedalType_u8` caches the pedal type during initialization
+ *    and on verified incoming config updates, ensuring zero mutex contention.
+ * 3. Non-blocking Queue Dispatch: `xQueueSend(..., 0)` safely pushes updates to the queue
+ *    without stalling the WiFi stack.
+ * =========================================================================================
+ */
+static volatile uint8_t s_localPedalType_u8 = PEDAL_ID_UNKNOWN;
+
 void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int data_len) 
 {
   if(esp_now_info->src_addr==NULL || data==NULL || data_len<=0)
@@ -212,7 +246,11 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
   //uint8_t mac_addr[6]={0};
   DapConfig_t dap_config_espnow_recv_st;
   
-  global_dap_config_class.getConfig(&dap_config_espnow_recv_st, 500);
+  // Non-blocking snapshot of config (0 ms timeout). Never block the FreeRTOS WiFi task!
+  if (!global_dap_config_class.getConfig(&dap_config_espnow_recv_st, 0))
+  {
+    dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8 = s_localPedalType_u8;
+  }
 
   /*
   if(g_espNowStatus_b)
@@ -339,7 +377,8 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
             // ActiveSerial->println("Updating pedal config");
             configDataPackage_t configPackage_st;
             configPackage_st.config_st = dap_config_espnow_recv_st;
-            xQueueSend(s_configUpdateAvailableQueue, &configPackage_st, portMAX_DELAY);
+            s_localPedalType_u8 = dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8;
+            xQueueSend(s_configUpdateAvailableQueue, &configPackage_st, 0);
             //global_dap_config_class.setConfig(dap_config_espnow_recv_st);
             if(dap_config_espnow_recv_st.payloadHeader_st.storeToEeprom_u8==1)
             {
@@ -678,6 +717,7 @@ void espNowInitialize()
 {
   DapConfig_t dap_config_espnow_init_st;
   global_dap_config_class.getConfig(&dap_config_espnow_init_st, 500);
+  s_localPedalType_u8 = dap_config_espnow_init_st.payloadPedalConfig_st.pedalType_u8;
   WiFi.mode(WIFI_MODE_STA);
   WiFi.setSleep(false);
   delay(1000);

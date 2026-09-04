@@ -104,13 +104,25 @@ namespace DiyFfbPedal
                         int currentBufferLength = 0;
                         if (bufferSize > currentBufferLength)
                         {
-                            sp.Read(buffer_appended[bridgeBufferIndex], appendedBufferOffset[bridgeBufferIndex], receivedLength);
+                            try
+                            {
+                                // Safe non-blocking read: catch timeout and I/O errors immediately to avoid UI hang
+                                int bytesActuallyRead = sp.Read(buffer_appended[bridgeBufferIndex], appendedBufferOffset[bridgeBufferIndex], receivedLength);
+                                if (bytesActuallyRead <= 0) return;
+                                receivedLength = bytesActuallyRead;
+                                appendedBufferOffset[bridgeBufferIndex] += receivedLength;
+                                currentBufferLength = appendedBufferOffset[bridgeBufferIndex];
 
-                            // calculate current buffer length
-                            appendedBufferOffset[bridgeBufferIndex] += receivedLength;
-                            currentBufferLength = appendedBufferOffset[bridgeBufferIndex];
-
-                            Array.Clear(buffer_appended[bridgeBufferIndex], currentBufferLength, bufferSize - currentBufferLength);
+                                Array.Clear(buffer_appended[bridgeBufferIndex], currentBufferLength, bufferSize - currentBufferLength);
+                            }
+                            catch (TimeoutException)
+                            {
+                                return;
+                            }
+                            catch (IOException)
+                            {
+                                return;
+                            }
                         }
                         else
                         {
