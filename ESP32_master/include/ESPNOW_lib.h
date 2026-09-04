@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include <Arduino.h>
@@ -335,7 +335,7 @@ void promiscuousRxCb(void *buf, wifi_promiscuous_pkt_type_t type)
   if (ppkt->rx_ctrl.sig_len > 24)
   {
     const uint8_t *addr_DESTINATION = payload + 4;   
-    const uint8_t *addr_SOURCE = payload + 10;  // å‚³é€ ç«¯ MAC
+    const uint8_t *addr_SOURCE = payload + 10;  // 傳� 端 MAC
     uint8_t addr_package[6];
     memcpy(addr_package, addr_SOURCE, 6);
     if (macCheck(addr_package, g_pedalMac_aau8[0]))
@@ -467,7 +467,7 @@ void espNowInitialize()
     ESPNow.reg_recv_cb(onRecv);
     ESPNow.reg_send_cb(onSent);
     //set wifi channel
-    esp_wifi_set_channel(1, WIFI_SECOND_CHAN_NONE);
+    esp_wifi_set_channel(11, WIFI_SECOND_CHAN_NONE);
     //g_rssi_ai32 calculate
     // esp_wifi_set_promiscuous(true);
     // esp_wifi_set_promiscuous_rx_cb(&promiscuousRxCb);

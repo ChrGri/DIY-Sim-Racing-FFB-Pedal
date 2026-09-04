@@ -799,7 +799,10 @@ void espNowInitialize()
   #endif
   ActiveSerial->println("Initializing ESP-NOW");
   ESPNow.init();
-  esp_wifi_set_channel(1, WIFI_SECOND_CHAN_NONE);
+  #ifndef ESPNOW_WIFI_CHANNEL
+    #define ESPNOW_WIFI_CHANNEL 11
+  #endif
+  esp_wifi_set_channel(ESPNOW_WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE);
   delay(3000);
   #ifdef ESPNow_S3
     #ifdef LOWER_WIFI_TRANSMISSION_POWER
