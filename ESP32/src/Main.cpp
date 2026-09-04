@@ -337,23 +337,24 @@ void IRAM_ATTR_FLAG configHandlingTask(void *pvParameters) {
     // check if config update is available
     if (xQueueReceive(s_configUpdateAvailableQueue, &configPackage_st,
                       portMAX_DELAY) == pdPASS) {
+      if (configPackage_st.config_st.payloadPedalConfig_st.pedalType_u8 >= 3) {
+        if (s_localPedalType_u8 < 3) {
+          configPackage_st.config_st.payloadPedalConfig_st.pedalType_u8 = s_localPedalType_u8;
+        } else if (g_dapAssignmentReg_st.deviceId_u8 < 3) {
+          configPackage_st.config_st.payloadPedalConfig_st.pedalType_u8 = g_dapAssignmentReg_st.deviceId_u8;
+        }
+      }
       global_dap_config_class.setConfig(configPackage_st.config_st);
 
       ActiveSerial->println("Config update received: config handling task");
 
-      // send queues to other tasks
-
-      // Send the package to the queue. Use a timeout of 0 (non-blocking).
-      // If the queue is full, the data is simply dropped. This prevents this
-      // high-priority control task from ever blocking on a full serial buffer.
+      // send queues to other tasks with bounded timeout to prevent deadlock
       xQueueSend(s_configUpdateSendToPedalUpdateTaskQueue, &configPackage_st,
-                 portMAX_DELAY);
+                 pdMS_TO_TICKS(50));
       xQueueSend(s_configUpdateSendToLoadcellTaskQueue, &configPackage_st,
-                 portMAX_DELAY);
-      // xQueueSend(configUpdateSendToJoystickTaskQueue, &configPackage_st,
-      // portMAX_DELAY);
+                 pdMS_TO_TICKS(50));
       xQueueSend(s_configUpdateSendToSerialRXTaskQueue, &configPackage_st,
-                 portMAX_DELAY);
+                 pdMS_TO_TICKS(50));
     }
   }
 }
@@ -2397,7 +2398,15 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           }
         } else {
           moveSlowlyToPosition_b = false;
-          stepper->moveSlowlyToPos((int32_t)Position_Next_fl32);
+          bool isRudderModeActive = dap_calculationVariables_st.rudderStatus_b ||
+                                    dap_calculationVariables_st.helicopterRudderStatus_b;
+          if (isRudderModeActive) {
+            // Non-blocking reposition in rudder mode: never block the 4kHz physics loop or stall telemetry!
+            stepper->moveToWithSpeed((int32_t)Position_Next_fl32,
+                                     (uint32_t)(MAXIMUM_STEPPER_SPEED_U32 / 4));
+          } else {
+            stepper->moveSlowlyToPos((int32_t)Position_Next_fl32);
+          }
           Position_Last_fl32 = Position_Next_fl32;
         }
       }
@@ -3570,6 +3579,14 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
       DapConfig_t espnow_dap_config_st = {};
       if (!global_dap_config_class.getConfig(&espnow_dap_config_st, 50)) {
         espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 = s_localPedalType_u8;
+      }
+      if (espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 == PEDAL_ID_UNKNOWN ||
+          espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 > 2) {
+        if (s_localPedalType_u8 < 3) {
+          espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 = s_localPedalType_u8;
+        } else if (g_dapAssignmentReg_st.deviceId_u8 < 3) {
+          espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 = g_dapAssignmentReg_st.deviceId_u8;
+        }
       }
       // basic state sendout interval
       uint basicStateUpdateInterval = 8;

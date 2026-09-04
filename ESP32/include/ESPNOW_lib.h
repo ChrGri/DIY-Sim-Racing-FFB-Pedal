@@ -431,7 +431,9 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
             // ActiveSerial->println("Updating pedal config");
             configDataPackage_t configPackage_st;
             configPackage_st.config_st = dap_config_espnow_recv_st;
-            s_localPedalType_u8 = dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8;
+            if (dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8 < 3) {
+              s_localPedalType_u8 = dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8;
+            }
             xQueueSend(s_configUpdateAvailableQueue, &configPackage_st, 0);
             //global_dap_config_class.setConfig(dap_config_espnow_recv_st);
             if(dap_config_espnow_recv_st.payloadHeader_st.storeToEeprom_u8==1)
@@ -922,6 +924,7 @@ void softwareAssignmentInitialize()
     if (g_dapAssignmentReg_st.deviceId_u8 == PEDAL_ID_CLUTCH || g_dapAssignmentReg_st.deviceId_u8 == PEDAL_ID_BRAKE || g_dapAssignmentReg_st.deviceId_u8 == PEDAL_ID_THROTTLE)
     {
       tmp.payloadPedalConfig_st.pedalType_u8 = g_dapAssignmentReg_st.deviceId_u8;
+      s_localPedalType_u8 = g_dapAssignmentReg_st.deviceId_u8;
     }
     else
     {
