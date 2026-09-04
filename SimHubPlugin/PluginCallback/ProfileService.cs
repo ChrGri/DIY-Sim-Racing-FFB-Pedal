@@ -311,13 +311,13 @@ namespace DiyFfbPedal
                         RebuildLookupDictionary();
                         UpdateProfileLabelDefaultAndEditing();
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
 
                     }
 
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                 }
             }

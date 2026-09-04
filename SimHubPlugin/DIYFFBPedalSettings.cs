@@ -63,7 +63,7 @@ namespace DiyFfbPedal
         public string SSID_string = "";
         public string PASS_string = "";
         public float rudderMaxForce = 10;
-        public float rudderMinForce = 1;
+        public float rudderMinForce = 0;
         public byte rudderMaxTravel = 95;
         public byte rudderMinTravel = 5;
         public byte[] rudderForce=new byte[11] { 0, 20, 40, 60, 80, 100, 0, 0, 0, 0, 0 };
@@ -79,13 +79,28 @@ namespace DiyFfbPedal
         public string[] ProfileShortcut { get; set; } = new string[6] { string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty };
         public string[] ProfileShortcutName { get; set; } = new string[6] { string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty };
         
-        // Rudder Dynamics
-        public byte rudderVirtualPedalMass = 150;
+        // Rudder Dynamics & Flight Parameters
+        public byte rudderVirtualPedalMass = 100;
         public byte rudderCoulombFriction = 30;
         public byte rudderVirtualDamping = 100;
         public byte rudderDampingProgression = 0;
         public byte rudderEndstopTravelRange = 0;
         public byte rudderEndstopStiffness = 10;
+        
+        // Mode 1: Airplane Centering Dynamics
+        public float rudderCenteringForce = 10.0f;
+        public uint rudderCenteringProfile = 0; // 0 = Linear, 1 = Progressive, 2 = S-Curve
+        public float rudderDeadzone = 0.0f;      // 0.0% to 5.0%
+        public float rudderTrimOffset = 0.0f;   // -50.0% to +50.0%
+        public bool rudderAeroQScaling = false; // Dynamic Q-Feel based on Airspeed
+        public byte rudderAeroQGain = 50;        // Q-Feel gain (0-100%)
+
+        // Mode 2: Helicopter Anti-Torque Dynamics
+        public float rudderHeliFriction = 3.0f; // Coulomb friction in N (0-10 N)
+        public byte rudderHeliDamping = 45;     // Viscous damping (0-100%)
+
+        // Shared Bilateral Push-Pull Kinematics
+        public float rudderBilateralSyncForce = 80.0f; // Push-pull sync stiffness in N (20-150 N)
 
     }
         

@@ -124,7 +124,7 @@ namespace DiyFfbPedal.UIFunction
                         if (control.Slider_LC_rate != null) control.Slider_LC_rate.SliderValue = newData.payloadPedalConfig_.loadcell_rating * 2;
                         if (control.Slider_maxgame_output != null) control.Slider_maxgame_output.SliderValue = newData.payloadPedalConfig_.maxGameOutput;
                     }
-                    catch (Exception caughtEx)
+                    catch (Exception)
                     {
                     }
                     
@@ -144,7 +144,7 @@ namespace DiyFfbPedal.UIFunction
                         }
 
                     }
-                    catch (Exception caughtEx)
+                    catch (Exception)
                     {
                     }
                     try
@@ -179,7 +179,7 @@ namespace DiyFfbPedal.UIFunction
 
 
                     }
-                    catch (Exception caughtEx)
+                    catch (Exception)
                     {                         
                     }
 

@@ -183,7 +183,7 @@ namespace DiyFfbPedal
                             }
 
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
 
                         }
@@ -424,6 +424,7 @@ namespace DiyFfbPedal
                     string filePath = openFileDialog.FileName;
 
 
+                    #if false
                     if (false)
                     {
                         string text1 = System.IO.File.ReadAllText(filePath);
@@ -432,6 +433,7 @@ namespace DiyFfbPedal
                         dap_config_st[indexOfSelectedPedal_u] = (DAP_config_st)deserializer.ReadObject(ms);
                     }
                     else
+#endif
                     {
                         // https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/deserialization
 
@@ -462,7 +464,7 @@ namespace DiyFfbPedal
                                 compatibleForce[5] = (byte)data["payloadPedalConfig_"]["relativeForce_p100"];
                             }
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
                             
                         }
@@ -690,8 +692,10 @@ namespace DiyFfbPedal
                     //_serialPort[pedalIdx].StopBits = StopBits.None;
                     Plugin.ESPsync_serialPort.BaudRate = Bridge_baudrate;
 
-                    Plugin.ESPsync_serialPort.ReadTimeout = 2000;
-                    Plugin.ESPsync_serialPort.WriteTimeout = 500;
+                    // Non-blocking timeouts: Timer runs on WPF UI thread; keep timeouts low (50ms)
+                    // to prevent SimHub from freezing ('Not Responding') if serial packets are delayed.
+                    Plugin.ESPsync_serialPort.ReadTimeout = 50;
+                    Plugin.ESPsync_serialPort.WriteTimeout = 50;
 
                     // https://stackoverflow.com/questions/7178655/serialport-encoding-how-do-i-get-8-bit-ascii
                     Plugin.ESPsync_serialPort.Encoding = System.Text.Encoding.GetEncoding(28591);
@@ -702,7 +706,6 @@ namespace DiyFfbPedal
                         try
                         {
                             Plugin.ESPsync_serialPort.Open();
-                            System.Threading.Thread.Sleep(200);
                             Plugin.ESPsync_serialPort.RtsEnable = false;
                             Plugin.ESPsync_serialPort.DtrEnable = false;
 
@@ -714,7 +717,6 @@ namespace DiyFfbPedal
                             ESP_host_serial_timer.Tag = 3;
                             ESP_host_serial_timer.Interval = 8; // in miliseconds
                             ESP_host_serial_timer.Start();
-                            System.Threading.Thread.Sleep(100);
                             if (Plugin.Settings.IsBridgeAutoConnect)
                             {
                                 Plugin.Settings.ESPNow_port = Plugin.ESPsync_serialPort.PortName;
@@ -806,7 +808,6 @@ namespace DiyFfbPedal
             if (sideWindow.ShowDialog() == true)
             {
                 DAP_action_ota_st tmp_2 = default;
-                int length;
                 string SSID = Plugin.Settings.SSID_string;
                 string PASS = Plugin.Settings.PASS_string;
                 string MSG_tmp = "";
@@ -875,6 +876,40 @@ namespace DiyFfbPedal
             Plugin.SendBridgeAction(tmp_2);
 
         }
+        private void RudderMode_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            try
+            {
+                uint mode = 0;
+                if (combo_rudderMode != null)
+                {
+                    if (combo_rudderMode.SelectedIndex >= 0)
+                        mode = (uint)combo_rudderMode.SelectedIndex;
+                    else if (combo_rudderMode.SelectedValue != null)
+                        mode = Convert.ToUInt32(combo_rudderMode.SelectedValue);
+                }
+                if (Plugin?.Settings != null)
+                {
+                    Plugin.Settings.rudderMode = mode;
+                }
+                if (CurveRudderForce_Tab != null)
+                {
+                    if (Plugin?.Settings != null) CurveRudderForce_Tab.Settings = Plugin.Settings;
+                    CurveRudderForce_Tab.updateUI();
+                }
+                if (RudderDynamics_Tab != null)
+                {
+                    if (Plugin?.Settings != null) RudderDynamics_Tab.Settings = Plugin.Settings;
+                    RudderDynamics_Tab.updateUI();
+                }
+                if (Plugin?.Rudder_status == true)
+                {
+                    RudderParameterLiveUpdate();
+                }
+            }
+            catch { }
+        }
+
         unsafe private void btn_rudder_initialize_Click(object sender, RoutedEventArgs e)
         {
             
@@ -902,16 +937,16 @@ namespace DiyFfbPedal
                     {
 
 
-                        CurveRudderForce_Tab.text_rudder_log.Clear();
-                        CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
+                        text_rudder_log.Clear();
+                        text_rudder_log.Visibility = Visibility.Visible;
                         Plugin.Rudder_enable_flag = true;
                         //Plugin.Rudder_status = false;
-                        CurveRudderForce_Tab.text_rudder_log.Text += "Disabling Rudder\n";
+                        text_rudder_log.Text += "Disabling Rudder\n";
                         btn_rudder_initialize.Content = "Enable";
 
                         DelayCall(300, () =>
                         {
-                            CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
+                            text_rudder_log.Visibility = Visibility.Visible;
 
                             DAP_config_st tmp = dap_config_st[Plugin.Rudder_Pedal_idx[0]];
                             tmp.payloadHeader_.storeToEeprom = 0;
@@ -925,12 +960,12 @@ namespace DiyFfbPedal
                             Plugin.SendConfigWithoutSaveToEEPROM(tmp, Plugin.Rudder_Pedal_idx[0]);
                             //Sendconfig(Plugin.Rudder_Pedal_idx[0]);
 
-                            CurveRudderForce_Tab.text_rudder_log.Text += "Send Original config back to" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[0]] + "\n";
+                            text_rudder_log.Text += "Send Original config back to" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[0]] + "\n";
 
                         });
                         DelayCall(600, () =>
                         {
-                            CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
+                            text_rudder_log.Visibility = Visibility.Visible;
                             DAP_config_st tmp = dap_config_st[Plugin.Rudder_Pedal_idx[1]];
                             tmp.payloadHeader_.storeToEeprom = 0;
                             DAP_config_st* v = &tmp;
@@ -943,12 +978,12 @@ namespace DiyFfbPedal
                             Plugin.SendConfigWithoutSaveToEEPROM(tmp, Plugin.Rudder_Pedal_idx[1]);
                             //Sendconfig(Plugin.Rudder_Pedal_idx[1]);
 
-                            CurveRudderForce_Tab.text_rudder_log.Text += "Send Original config back to" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[1]] + "\n";
+                            text_rudder_log.Text += "Send Original config back to" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[1]] + "\n";
 
                         });
                         DelayCall(1600, () =>
                         {
-                            CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Hidden;
+                            text_rudder_log.Text += "Rudder Disabled.\n";
                         });
 
                     }
@@ -963,18 +998,18 @@ namespace DiyFfbPedal
                             System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                         }
 
-                        CurveRudderForce_Tab.text_rudder_log.Clear();
-                        CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
+                        text_rudder_log.Clear();
+                        text_rudder_log.Visibility = Visibility.Visible;
                         DelayCall(100, () =>
                         {
-                            CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
-                            CurveRudderForce_Tab.text_rudder_log.Text += "Initializing Rudder\n";
+                            text_rudder_log.Visibility = Visibility.Visible;
+                            text_rudder_log.Text += "Initializing Rudder\n";
                         });
                         Rudder_Initialized();
                         DelayCall(1300, () =>
                         {
-                            CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
-                            CurveRudderForce_Tab.text_rudder_log.Text += "Rudder initialized\n";
+                            text_rudder_log.Visibility = Visibility.Visible;
+                            text_rudder_log.Text += "Rudder initialized\n";
                             Plugin.Rudder_enable_flag = true;
                             //Plugin.Rudder_status = true;
                             btn_rudder_initialize.Content = "Disable";
@@ -1017,6 +1052,7 @@ namespace DiyFfbPedal
                     string filePath = openFileDialog.FileName;
 
 
+                    #if false
                     if (false)
                     {
                         string text1 = System.IO.File.ReadAllText(filePath);
@@ -1025,6 +1061,7 @@ namespace DiyFfbPedal
                         dap_config_st_rudder = (DAP_config_st)deserializer.ReadObject(ms);
                     }
                     else
+#endif
                     {
                         // https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/deserialization
 
@@ -1056,7 +1093,7 @@ namespace DiyFfbPedal
                                 compatibleForce[5] = (byte)data["payloadPedalConfig_"]["relativeForce_p100"];
                             }
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
 
                         }
@@ -1202,7 +1239,6 @@ namespace DiyFfbPedal
         unsafe private void btn_Bridge_print_debug_Click(object sender, RoutedEventArgs e)
         {
             DAP_bridge_state_st tmp_2 = default;
-            int length;
             tmp_2.payloadBridgeState_.Bridge_action = (byte)bridgeAction.BRIDGE_ACTION_DEBUG; //print out debug message
             Plugin.SendBridgeAction(tmp_2);
         }
@@ -1420,7 +1456,7 @@ namespace DiyFfbPedal
                     {
                         Process.Start(psi);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         MSG_tmp = "The update not completed, please try again";
                         result = System.Windows.MessageBox.Show(MSG_tmp, "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);

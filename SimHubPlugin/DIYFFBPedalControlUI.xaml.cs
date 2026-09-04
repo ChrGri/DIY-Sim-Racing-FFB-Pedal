@@ -105,8 +105,6 @@ namespace DiyFfbPedal
         private SolidColorBrush color_RSSI_4;
         private SolidColorBrush Red_Warning;
         private SolidColorBrush White_Default;
-        private string info_text_connection;
-        private string system_info_text_connection;
         private int current_pedal_travel_state= 0;
         //private int gridline_kinematic_count_original = 0;
         private double[] Pedal_position_reading=new double[3];
@@ -157,6 +155,7 @@ namespace DiyFfbPedal
             InitializeComponent();
             this.Loaded += RootLayout_Loaded;
             this.SizeChanged += RootLayout_SizeChanged;
+            InitRudderTelemetryTimer();
 
             //setting drawing color with Simhub theme workaround
             //SolidColorBrush buttonBackground_ = btn_update.Background as SolidColorBrush;
@@ -230,7 +229,8 @@ namespace DiyFfbPedal
         public DIYFFBPedalControlUI(DIY_FFB_Pedal plugin) : this()
         {
             this.Plugin = plugin;
-            if (RudderDynamics_Tab != null) RudderDynamics_Tab.Settings = plugin.Settings;
+            if (CurveRudderForce_Tab != null && plugin?.Settings != null) CurveRudderForce_Tab.Settings = plugin.Settings;
+            if (RudderDynamics_Tab != null && plugin?.Settings != null) RudderDynamics_Tab.Settings = plugin.Settings;
             plugin.testValue = 1;
             plugin.wpfHandle = this;
             UpdateSerialPortList_click();
@@ -498,21 +498,37 @@ namespace DiyFfbPedal
                     updateTheGuiFromConfig();
                     Plugin._calculations.IsUIRefreshNeeded = false;
                 }
-                PedalParameterLiveUpdate();
+                if (!Plugin.Rudder_status && !Plugin._calculations.Rudder_status)
+                {
+                    PedalParameterLiveUpdate();
+                }
             }
             
         }
 
         private void Tab_SettingsChanged(object sender, DIYFFBPedalSettings e)
         {
-            Plugin.Settings = e;
-            updateTheGuiFromConfig();
+            if (Plugin != null)
+            {
+                Plugin.Settings = e;
+                if (Plugin.Rudder_status || Plugin._calculations.Rudder_status)
+                {
+                    RudderParameterLiveUpdate();
+                }
+                else
+                {
+                    updateTheGuiFromConfig();
+                }
+            }
         }
 
         private void Tab_CalculationChanged(object sender, CalculationVariables e)
         {
-            Plugin._calculations = e;
-            updateTheGuiFromConfig();
+            if (Plugin != null)
+            {
+                Plugin._calculations = e;
+                updateTheGuiFromConfig();
+            }
         }
 
         private void Rudder_ConfigChanged(object sender, DAP_config_st e)
@@ -524,6 +540,10 @@ namespace DiyFfbPedal
                 {
                     updateTheGuiFromConfig();
                     Plugin._calculations.IsUIRefreshNeeded = false;
+                }
+                if (Plugin.Rudder_status || Plugin._calculations.Rudder_status)
+                {
+                    RudderParameterLiveUpdate();
                 }
             }
         }
@@ -558,6 +578,255 @@ namespace DiyFfbPedal
 		
 		
 
+        private void btn_RudderDocs_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/blob/main/docs/rudder_modes_flight_dynamics.md") { UseShellExecute = true });
+            }
+            catch { }
+        }
+
+        #region Rudder ESP-NOW Latency, Stability & Pedal RSSI Telemetry Monitor
+        private struct RudderTelemetrySample
+        {
+            public DateTime Timestamp;
+            public double DelayMs;
+            public double ClutchRssi;
+            public double BrakeRssi;
+            public double ThrottleRssi;
+        }
+
+        private readonly List<RudderTelemetrySample> _telemetryHistory = new List<RudderTelemetrySample>();
+        private const double TELEMETRY_WINDOW_SECONDS = 5.0;
+        private const int MAX_TELEMETRY_POINTS = 600;
+        private DateTime _lastLatencyPacketTime = DateTime.MinValue;
+        private DateTime _lastSampleHistoryTime = DateTime.MinValue;
+        private double _smoothedJitter_ms = 0.0;
+        private double _smoothedRate_hz = 0.0;
+        private double _prevDelay_ms = 0.0;
+        private System.Windows.Threading.DispatcherTimer _rudderTelemetryTimer;
+
+        public void UpdateRudderLatency(byte delay_ms)
+        {
+            if (Tab_Rudder == null || !Tab_Rudder.IsSelected) return;
+            int c = 0, b = 0, t = 0;
+            try
+            {
+                if (Plugin != null && Plugin._calculations != null && Plugin._calculations.rssi != null && Plugin._calculations.rssi.Length >= 3)
+                {
+                    c = Plugin._calculations.rssi[0];
+                    b = Plugin._calculations.rssi[1];
+                    t = Plugin._calculations.rssi[2];
+                }
+            }
+            catch { }
+
+            if (Dispatcher.CheckAccess())
+            {
+                UpdateRudderTelemetryInternal(delay_ms, c, b, t, isPacket: true);
+            }
+            else
+            {
+                Dispatcher.BeginInvoke(new Action(() => UpdateRudderTelemetryInternal(delay_ms, c, b, t, isPacket: true)));
+            }
+        }
+
+        private void InitRudderTelemetryTimer()
+        {
+            if (_rudderTelemetryTimer != null) return;
+            _rudderTelemetryTimer = new System.Windows.Threading.DispatcherTimer();
+            _rudderTelemetryTimer.Interval = TimeSpan.FromMilliseconds(50); // 20 Hz periodic refresh
+            _rudderTelemetryTimer.Tick += (s, e) =>
+            {
+                if (Tab_Rudder != null && Tab_Rudder.IsSelected)
+                {
+                    // If no live packets received in last 100ms, push current RSSI reading to keep plot moving smoothly
+                    if ((DateTime.UtcNow - _lastLatencyPacketTime).TotalMilliseconds > 100)
+                    {
+                        int c = 0, b = 0, t = 0;
+                        try
+                        {
+                            if (Plugin != null && Plugin._calculations != null && Plugin._calculations.rssi != null && Plugin._calculations.rssi.Length >= 3)
+                            {
+                                c = Plugin._calculations.rssi[0];
+                                b = Plugin._calculations.rssi[1];
+                                t = Plugin._calculations.rssi[2];
+                            }
+                        }
+                        catch { }
+                        UpdateRudderTelemetryInternal(0, c, b, t, isPacket: false);
+                    }
+                }
+            };
+            _rudderTelemetryTimer.Start();
+        }
+
+        private void UpdateRudderTelemetryInternal(byte delay_ms, int clutchRssi, int brakeRssi, int throttleRssi, bool isPacket)
+        {
+            if (Tab_Rudder == null || !Tab_Rudder.IsSelected) return;
+            if (poly_rudder_latency_trace == null || canvas_rudder_latency_graph == null) return;
+
+            DateTime now = DateTime.UtcNow;
+            double d = (double)delay_ms;
+
+            if (isPacket)
+            {
+                // Packet rate calculation
+                if (_lastLatencyPacketTime != DateTime.MinValue)
+                {
+                    double dtSec = (now - _lastLatencyPacketTime).TotalSeconds;
+                    if (dtSec > 0.001 && dtSec < 1.0)
+                    {
+                        double instRate = 1.0 / dtSec;
+                        _smoothedRate_hz = (_smoothedRate_hz == 0.0) ? instRate : (_smoothedRate_hz * 0.9 + instRate * 0.1);
+                    }
+                }
+                _lastLatencyPacketTime = now;
+
+                // Jitter calculation
+                double delta = Math.Abs(d - _prevDelay_ms);
+                _smoothedJitter_ms = (_smoothedJitter_ms == 0.0) ? delta : (_smoothedJitter_ms * 0.92 + delta * 0.08);
+                _prevDelay_ms = d;
+
+                // Update Text Badges
+                if (tb_rudder_sync_delay != null)
+                {
+                    tb_rudder_sync_delay.Text = $"Delay: {d:F0} ms";
+                    if (d <= 10.0)
+                        tb_rudder_sync_delay.Foreground = new SolidColorBrush(Color.FromRgb(0x00, 0xFF, 0xCC));
+                    else if (d <= 20.0)
+                        tb_rudder_sync_delay.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xD7, 0x00));
+                    else
+                        tb_rudder_sync_delay.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0x55, 0x55));
+                }
+
+                if (tb_rudder_sync_rate != null)
+                {
+                    tb_rudder_sync_rate.Text = $"Rate: {_smoothedRate_hz:F0} Hz";
+                }
+
+                if (tb_rudder_sync_jitter != null)
+                {
+                    tb_rudder_sync_jitter.Text = $"Jitter: \u00B1{_smoothedJitter_ms:F1} ms";
+                }
+            }
+            else
+            {
+                // Decay rate if packets paused
+                if ((now - _lastLatencyPacketTime).TotalSeconds > 1.0)
+                {
+                    _smoothedRate_hz = Math.Max(0.0, _smoothedRate_hz * 0.85);
+                    if (tb_rudder_sync_rate != null) tb_rudder_sync_rate.Text = $"Rate: {_smoothedRate_hz:F0} Hz";
+                    if (tb_rudder_sync_delay != null && _smoothedRate_hz < 1.0) tb_rudder_sync_delay.Text = "Delay: -- ms";
+                }
+            }
+
+            // Update Live RSSI text readouts in legend
+            if (tb_rssi_clutch_val != null) tb_rssi_clutch_val.Text = FormatRssiString(clutchRssi);
+            if (tb_rssi_brake_val != null) tb_rssi_brake_val.Text = FormatRssiString(brakeRssi);
+            if (tb_rssi_throttle_val != null) tb_rssi_throttle_val.Text = FormatRssiString(throttleRssi);
+
+            // Throttle adding history points to ~66Hz (at most once every 15ms) so high packet rate (e.g. 267Hz)
+            // does NOT fill or crop the 5-second buffer prematurely!
+            double msSinceLastSample = (now - _lastSampleHistoryTime).TotalMilliseconds;
+            if (msSinceLastSample >= 15.0 || _telemetryHistory.Count == 0)
+            {
+                _lastSampleHistoryTime = now;
+                _telemetryHistory.Add(new RudderTelemetrySample
+                {
+                    Timestamp = now,
+                    DelayMs = (isPacket ? d : _prevDelay_ms),
+                    ClutchRssi = (double)clutchRssi,
+                    BrakeRssi = (double)brakeRssi,
+                    ThrottleRssi = (double)throttleRssi
+                });
+            }
+
+            // Purge samples older than TELEMETRY_WINDOW_SECONDS (5.0s)
+            DateTime cutoff = now.AddSeconds(-TELEMETRY_WINDOW_SECONDS);
+            while (_telemetryHistory.Count > 1 && _telemetryHistory[1].Timestamp < cutoff)
+            {
+                _telemetryHistory.RemoveAt(0);
+            }
+            if (_telemetryHistory.Count > MAX_TELEMETRY_POINTS)
+            {
+                _telemetryHistory.RemoveAt(0);
+            }
+
+            // Draw Graphs
+            double canvasWidth = canvas_rudder_latency_graph.ActualWidth;
+            if (canvasWidth <= 0) canvasWidth = 520;
+
+            double latHeight = canvas_rudder_latency_graph.ActualHeight;
+            if (latHeight <= 0) latHeight = 70;
+
+            double rssiHeight = (canvas_rudder_rssi_graph != null && canvas_rudder_rssi_graph.ActualHeight > 0)
+                ? canvas_rudder_rssi_graph.ActualHeight : 70;
+
+            const double MAX_DISPLAY_MS = 30.0;
+            const double RSSI_MAX = -30.0;
+            const double RSSI_MIN = -100.0;
+
+            PointCollection latPoints = new PointCollection();
+            PointCollection fillPoints = new PointCollection();
+            PointCollection clutchPoints = new PointCollection();
+            PointCollection brakePoints = new PointCollection();
+            PointCollection throttlePoints = new PointCollection();
+
+            for (int i = 0; i < _telemetryHistory.Count; i++)
+            {
+                var pt = _telemetryHistory[i];
+                double ageSec = (now - pt.Timestamp).TotalSeconds;
+                if (ageSec < 0) ageSec = 0;
+                // 0s is at canvasWidth (right edge), 5s is at 0 (left edge)
+                double x = canvasWidth * (1.0 - (ageSec / TELEMETRY_WINDOW_SECONDS));
+                x = Math.Max(0.0, Math.Min(canvasWidth, x));
+
+                // Latency Y coordinate
+                double clampedLat = Math.Min(Math.Max(pt.DelayMs, 0.0), MAX_DISPLAY_MS);
+                double yLat = latHeight - 5.0 - (clampedLat / MAX_DISPLAY_MS * (latHeight - 12.0));
+                Point pLat = new Point(x, yLat);
+                latPoints.Add(pLat);
+
+                // RSSI Y coordinates (Clutch Red, Brake Green, Throttle Blue)
+                clutchPoints.Add(new Point(x, MapRssiToY(pt.ClutchRssi, rssiHeight, RSSI_MIN, RSSI_MAX)));
+                brakePoints.Add(new Point(x, MapRssiToY(pt.BrakeRssi, rssiHeight, RSSI_MIN, RSSI_MAX)));
+                throttlePoints.Add(new Point(x, MapRssiToY(pt.ThrottleRssi, rssiHeight, RSSI_MIN, RSSI_MAX)));
+            }
+
+            // Form clean fill polygon under the latency curve only where data exists
+            if (latPoints.Count > 0)
+            {
+                fillPoints.Add(new Point(latPoints[0].X, latHeight));
+                for (int i = 0; i < latPoints.Count; i++)
+                {
+                    fillPoints.Add(latPoints[i]);
+                }
+                fillPoints.Add(new Point(latPoints[latPoints.Count - 1].X, latHeight));
+            }
+
+            poly_rudder_latency_trace.Points = latPoints;
+            if (poly_rudder_latency_fill != null) poly_rudder_latency_fill.Points = fillPoints;
+            if (poly_rssi_clutch != null) poly_rssi_clutch.Points = clutchPoints;
+            if (poly_rssi_brake != null) poly_rssi_brake.Points = brakePoints;
+            if (poly_rssi_throttle != null) poly_rssi_throttle.Points = throttlePoints;
+        }
+
+        private static double MapRssiToY(double val, double h, double minRssi, double maxRssi)
+        {
+            if (val >= 0 || val < -110.0) val = minRssi; // Disconnected or invalid mapped to bottom
+            else if (val > maxRssi) val = maxRssi;
+            else if (val < minRssi) val = minRssi;
+            double norm = (val - minRssi) / (maxRssi - minRssi); // 0.0 at -100dBm, 1.0 at -30dBm
+            return h - 5.0 - (norm * (h - 12.0));
+        }
+
+        private static string FormatRssiString(int val)
+        {
+            if (val < -20 && val > -105) return $"{val}dBm";
+            return "--";
+        }
+        #endregion
     }
-    
 }

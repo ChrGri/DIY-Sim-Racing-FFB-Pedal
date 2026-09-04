@@ -13,6 +13,8 @@ namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
+        private readonly byte[] bridge_bufferByteAssignedToStruct_class = new byte[bufferSize];
+        private readonly bool[] bridge_bufferByteAssignedToStruct = new bool[bufferSize];
         
         unsafe public void timerCallback_serial_esphost(object sender, EventArgs e)
         {
@@ -61,7 +63,7 @@ namespace DiyFfbPedal
                         //receivedLength = sp.BytesToRead;
                         receivedLength = Math.Min(sp.BytesToRead, bufferSize);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         //TextBox_debugOutput.Text = ex.Message;
                         //ConnectToPedal.IsChecked = false;
@@ -97,24 +99,34 @@ namespace DiyFfbPedal
 
                         if (appendedBufferOffset[bridgeBufferIndex] > 0)
                         {
-                            int tmp = 5;
                         }
 
-                        bool inBufferDicarded = false;
                         int currentBufferLength = 0;
                         if (bufferSize > currentBufferLength)
                         {
-                            sp.Read(buffer_appended[bridgeBufferIndex], appendedBufferOffset[bridgeBufferIndex], receivedLength);
+                            try
+                            {
+                                // Safe non-blocking read: catch timeout and I/O errors immediately to avoid UI hang
 
-                            // calculate current buffer length
-                            appendedBufferOffset[bridgeBufferIndex] += receivedLength;
-                            currentBufferLength = appendedBufferOffset[bridgeBufferIndex];
+                                int bytesActuallyRead = sp.Read(buffer_appended[bridgeBufferIndex], appendedBufferOffset[bridgeBufferIndex], receivedLength);
+                                if (bytesActuallyRead <= 0) return;
+                                receivedLength = bytesActuallyRead;
+                                appendedBufferOffset[bridgeBufferIndex] += receivedLength;
+                                currentBufferLength = appendedBufferOffset[bridgeBufferIndex];
 
-                            Array.Clear(buffer_appended[bridgeBufferIndex], currentBufferLength, bufferSize - currentBufferLength);
+                                Array.Clear(buffer_appended[bridgeBufferIndex], currentBufferLength, bufferSize - currentBufferLength);
+                            }
+                            catch (TimeoutException)
+                            {
+                                return;
+                            }
+                            catch (IOException)
+                            {
+                                return;
+                            }
                         }
                         else
                         {
-                            inBufferDicarded = true;
                             sp.DiscardInBuffer();
                             appendedBufferOffset[bridgeBufferIndex] = 0;
                             return;
@@ -123,7 +135,6 @@ namespace DiyFfbPedal
 
                         if (!((buffer_appended[bridgeBufferIndex][0] == 170) && (buffer_appended[3][1] == 85)))
                         {
-                            int tmp = 5;
                         }
 
 
@@ -155,8 +166,10 @@ namespace DiyFfbPedal
                         var validPairsServoConfig = new List<Tuple<int, int>>();
 
                         bool sofHasBeenReceivedEofNotYet = false;
-                        byte[] bufferByteAssignedToStruct_class = new byte[bufferSize];
-                        bool[] bufferByteAssignedToStruct = new bool[bufferSize];
+                        byte[] bufferByteAssignedToStruct_class = bridge_bufferByteAssignedToStruct_class;
+                        bool[] bufferByteAssignedToStruct = bridge_bufferByteAssignedToStruct;
+                        Array.Clear(bufferByteAssignedToStruct_class, 0, bufferSize);
+                        Array.Clear(bufferByteAssignedToStruct, 0, bufferSize);
 
                         // Search for the basic struct
                         FindValidMessagePairs(
@@ -527,6 +540,10 @@ namespace DiyFfbPedal
                                             //TextBox_debugOutput.Text += ",  Servo pos: " + pedalState_read_st.payloadPedalState_.servoPosition_i32;
 
                                             PedalForceTravel_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16, pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
+                                            if (pedalKinematicTab != null && pedalKinematicTab.IsSelected)
+                                            {
+                                                PedalKinematics_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16);
+                                            }
 
                                             pedalStateHasAlreadyBeenUpdated_b = true;
 
@@ -1015,7 +1032,6 @@ namespace DiyFfbPedal
 
                                     if (!((buffer_appended[bridgeBufferIndex][0] == 170) && (buffer_appended[bridgeBufferIndex][1] == 85)))
                                     {
-                                        int tmp = 5;
                                     }
                                 }
                                 else

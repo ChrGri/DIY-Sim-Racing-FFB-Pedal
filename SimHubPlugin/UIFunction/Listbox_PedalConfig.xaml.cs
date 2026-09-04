@@ -400,7 +400,7 @@ namespace DiyFfbPedal.UIFunction
                         System.Windows.MessageBox.Show("If the config is already set in porfile, please also rebind the config into profile", "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);
 
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
 
                     }

@@ -391,7 +391,7 @@ namespace DiyFfbPedal.UIFunction
                         _plugin.ProfileServicePlugin.UpdateProfileLabelDefaultAndEditing();
 
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         
                     }
