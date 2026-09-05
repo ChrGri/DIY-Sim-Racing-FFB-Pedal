@@ -1,4 +1,4 @@
-﻿#include "TinyusbJoystick.h"
+#include "TinyusbJoystick.h"
 #include <cstdint>
 #include <cstring>
 #include <cstdarg>
@@ -36,6 +36,7 @@ void TinyusbJoystick::begin(int VID, int PID)
     TinyUSBDevice.setID(VID, PID);
     TinyUSBDevice.setProductDescriptor("DIY_FFB_PEDAL_JOYSTICK");
     TinyUSBDevice.setManufacturerDescriptor("OPENSOURCE");
+    TinyUSBDevice.setSerialDescriptor("DIY_FFB_PEDAL_001");
     
     //ActiveSerial->
     // Manual begin() is required on core without built-in support e.g. mbed rp2040
