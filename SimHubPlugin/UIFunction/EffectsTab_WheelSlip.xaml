@@ -16,7 +16,7 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border Background="#7F4E4E4E" CornerRadius="5,5,5,5" BorderThickness="0,3,0,0" Height="240" VerticalAlignment="Top" >
+        <Border Background="#7F4E4E4E" CornerRadius="8,8,8,8" Padding="0,0,0,6" BorderThickness="0,3,0,0" Height="240" VerticalAlignment="Top" >
             <StackPanel HorizontalAlignment="Left" Height="240" VerticalAlignment="Top" Width="540" Margin="0,0,0,0">
                 <StackPanel Height="20" Width="540" Orientation="Horizontal">
                     <styles:SHToggleButton x:Name="checkbox_enable_wheelslip" Content="" Checked="checkbox_enable_wheelslip_Checked" Unchecked="checkbox_enable_wheelslip_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="60,0,0,0" ToolTip="The effect trigger was save in local, no need send config to Pedal"/>

@@ -16,11 +16,11 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="5,5,5,5">
-            <StackPanel HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540">
+        <Border HorizontalAlignment="Left" Height="276" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="8,8,8,8" Padding="0,0,0,6">
+            <StackPanel HorizontalAlignment="Left" Height="270" VerticalAlignment="Top" Width="540">
                 <!-- Mode & Profile Header -->
                 <StackPanel Height="24" Width="540" VerticalAlignment="Top" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0,2,0,0">
-                    <Label x:Name="lbl_CurveHeader" Content="{SLoc DIYFFBPedalPlugin_TextForceCurveAdjustment, 'RUDDER FORCE &amp; DYNAMICS'}" Width="190" Foreground="White" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="40,0,0,0" Height="24" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontSize="11"/>
+                    <Label x:Name="lbl_CurveHeader" Content="{SLoc DIYFFBPedalPlugin_TextForceCurveAdjustment, 'RUDDER FORCE &amp; DYNAMICS'}" Width="190" Foreground="White" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="15,0,0,0" Height="24" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontSize="11"/>
                     
                     <!-- Airplane Profile Selection (Visible in Airplane Mode) -->
                     <StackPanel x:Name="panel_AirplaneProfiles" Orientation="Horizontal" VerticalAlignment="Center" Margin="5,0,0,0">
@@ -38,8 +38,8 @@
 
                 <!-- Center Graph & Visualization -->
                 <StackPanel Height="205" Width="540" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,2,0,0">
-                    <Grid Height="200" Width="430" Margin="40,0,0,0">
-                        <Canvas x:Name="canvas_rudder_curve" Height="200" Width="430" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <Grid Height="200" Width="450" Margin="15,0,0,0">
+                        <Canvas x:Name="canvas_rudder_curve" Height="200" Width="450" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top">
                             <!-- Axis Labels -->
                             <TextBlock HorizontalAlignment="Center" VerticalAlignment="Top" Text="FORCE (KG)" Width="80" Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="-30" Canvas.Top="85" FontFamily="Arial Black" Height="13" FontSize="9">
                                 <TextBlock.RenderTransform>
@@ -48,12 +48,12 @@
                             </TextBlock>
 
                             <!-- Bipolar Travel Indicators -->
-                            <TextBlock Text="-50% (LEFT)" Foreground="#7FAAAAAA" Canvas.Left="10" Canvas.Top="184" FontSize="9" FontFamily="Arial" FontWeight="Bold"/>
-                            <TextBlock Text="0% (NEUTRAL)" Foreground="#7FAAAAAA" Canvas.Left="180" Canvas.Top="184" FontSize="9" FontFamily="Arial" FontWeight="Bold"/>
-                            <TextBlock Text="+50% (RIGHT)" Foreground="#7FAAAAAA" Canvas.Left="350" Canvas.Top="184" FontSize="9" FontFamily="Arial" FontWeight="Bold"/>
+                            <TextBlock Text="-50% (LEFT)" Foreground="#7FAAAAAA" Canvas.Left="15" Canvas.Top="184" FontSize="9" FontFamily="Arial" FontWeight="Bold"/>
+                            <TextBlock Text="0% (NEUTRAL)" Foreground="#7FAAAAAA" Canvas.Left="190" Canvas.Top="184" FontSize="9" FontFamily="Arial" FontWeight="Bold"/>
+                            <TextBlock Text="+50% (RIGHT)" Foreground="#7FAAAAAA" Canvas.Left="365" Canvas.Top="184" FontSize="9" FontFamily="Arial" FontWeight="Bold"/>
 
                             <!-- Shaded Force Polygon Background -->
-                            <Polygon x:Name="polygonCurveBackground" Height="200" Width="430" Opacity="0.20" StrokeThickness="2" RenderTransformOrigin="1,0.5" HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <Polygon x:Name="polygonCurveBackground" Height="200" Width="450" Opacity="0.20" StrokeThickness="2" RenderTransformOrigin="1,0.5" HorizontalAlignment="Left" VerticalAlignment="Center">
                                 <Polygon.Fill>
                                     <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
                                         <GradientStop Color="{DynamicResource AccentColor}" Offset="0"/>
@@ -63,16 +63,16 @@
                             </Polygon>
 
                             <!-- Symmetrical Force Curve Line -->
-                            <Polyline x:Name="Polyline_RudderForceCurve" Stroke="{DynamicResource AccentColorBrush}" Height="200" Width="430" Opacity="0.85" StrokeThickness="2" Canvas.Top="0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            <Polyline x:Name="Polyline_RudderForceCurve" Stroke="{DynamicResource AccentColorBrush}" Height="200" Width="450" Opacity="0.85" StrokeThickness="2" Canvas.Top="0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
                             <!-- Center Trim Line Indicator -->
-                            <Line x:Name="line_CenterTrim" X1="215" Y1="0" X2="215" Y2="200" Stroke="#5500FFCC" StrokeThickness="1" StrokeDashArray="2,2"/>
+                            <Line x:Name="line_CenterTrim" X1="225" Y1="0" X2="225" Y2="200" Stroke="#5500FFCC" StrokeThickness="1" StrokeDashArray="2,2"/>
 
                             <!-- Live Pedal Deflection Marker -->
-                            <Line x:Name="line_LiveDeflection" X1="215" Y1="0" X2="215" Y2="200" Stroke="#FFFFCC00" StrokeThickness="2" Visibility="Visible"/>
+                            <Line x:Name="line_LiveDeflection" X1="225" Y1="0" X2="225" Y2="200" Stroke="#FFFFCC00" StrokeThickness="2" Visibility="Visible"/>
 
                             <!-- Helicopter Mode Visual Overlay Card -->
-                            <Border x:Name="border_HeliOverlay" Width="360" Height="140" Background="#CC151922" BorderBrush="#00FFCC" BorderThickness="1" CornerRadius="8" Canvas.Left="35" Canvas.Top="30" Visibility="Collapsed">
+                            <Border x:Name="border_HeliOverlay" Width="360" Height="140" Background="#CC151922" BorderBrush="#00FFCC" BorderThickness="1" CornerRadius="8" Canvas.Left="45" Canvas.Top="30" Visibility="Collapsed">
                                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                     <TextBlock Text="🚁 HELICOPTER ANTI-TORQUE MODE" Foreground="#00FFCC" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" Margin="0,0,0,6"/>
                                     <TextBlock Text="Continuous Position-Hold (0 N Return Spring)" Foreground="White" FontSize="11" HorizontalAlignment="Center" Margin="0,0,0,8"/>
@@ -100,7 +100,7 @@
                     </Grid>
 
                     <!-- Vertical Centering Force Range Slider -->
-                    <StackPanel Width="65" Height="200" Margin="5,0,0,0">
+                    <StackPanel Width="60" Height="200" Margin="5,0,0,0">
                         <Grid Width="65" Height="30">
                             <Label x:Name="Label_max_force_rudder" Width="65" Height="30" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Max Force:&#x0a;10.0 kg" Padding="0" Margin="0,0,0,0" Background="Transparent" Cursor="Hand" ToolTip="Click to type max force in kg" MouseLeftButtonDown="Label_max_force_rudder_MouseLeftButtonDown"/>
                             <TextBox x:Name="TextBox_edit_max_force_rudder" Width="55" Height="20" FontSize="9" FontFamily="Arial" VerticalAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
@@ -114,12 +114,12 @@
                 </StackPanel>
 
                 <!-- Soft Endstops Travel Limits (Min 5% to Max 95%) -->
-                <StackPanel Width="470" Height="32" Orientation="Horizontal" Margin="35,2,0,0">
+                <StackPanel Width="450" Height="32" Orientation="Horizontal" Margin="15,2,0,0" HorizontalAlignment="Left">
                     <Grid Width="45" Height="30">
                         <Label x:Name="Label_min_pos_rudder" Width="45" Height="30" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Center" Content="MIN&#x0a;5%" Padding="0" HorizontalContentAlignment="Center" Background="Transparent" Cursor="Hand" ToolTip="Click to type min travel %" MouseLeftButtonDown="Label_min_pos_rudder_MouseLeftButtonDown"/>
                         <TextBox x:Name="TextBox_edit_min_pos_rudder" Width="40" Height="20" FontSize="9" FontFamily="Arial" VerticalAlignment="Center" HorizontalContentAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
                     </Grid>
-                    <controls:RangeSlider x:Name="Rangeslider_rudder_travel_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="5" Height="18" LowerValueChanged="Rangeslider_rudder_travel_range_LowerValueChanged" UpperValueChanged="Rangeslider_rudder_travel_range_UpperValueChanged" MinRange="1" SmallChange="1" IsSnapToTickEnabled="True" UpperValue="95" Width="380" VerticalAlignment="Center" LowerValue="5" Minimum="0" Maximum="100" Value="85"/>
+                    <controls:RangeSlider x:Name="Rangeslider_rudder_travel_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="5" Height="18" LowerValueChanged="Rangeslider_rudder_travel_range_LowerValueChanged" UpperValueChanged="Rangeslider_rudder_travel_range_UpperValueChanged" MinRange="1" SmallChange="1" IsSnapToTickEnabled="True" UpperValue="95" Width="360" VerticalAlignment="Center" LowerValue="5" Minimum="0" Maximum="100" Value="85"/>
                     <Grid Width="45" Height="30">
                         <Label x:Name="Label_max_pos_rudder" Width="45" Height="30" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Center" Content="MAX&#x0a;95%" Padding="0" HorizontalContentAlignment="Center" Background="Transparent" Cursor="Hand" ToolTip="Click to type max travel %" MouseLeftButtonDown="Label_max_pos_rudder_MouseLeftButtonDown"/>
                         <TextBox x:Name="TextBox_edit_max_pos_rudder" Width="40" Height="20" FontSize="9" FontFamily="Arial" VerticalAlignment="Center" HorizontalContentAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
