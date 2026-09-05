@@ -164,13 +164,13 @@
 
                                 </TabControl>
                                 <Canvas x:Name="canvas_Header_Tab_sub" Height="900" Width="6" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Grid.Row="0" Grid.ColumnSpan="3" Margin="-460,0,0,0" VerticalAlignment="Top" >
-                                    <Line  X1="3" Y1="2" X2="3" Y2="810" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="1" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
+                                    <Line  X1="3" Y1="2" X2="3" Y2="827" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="1" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
                                 </Canvas>
                                 <StackPanel Width="175" Height="900" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-455,0,0,0">
-                                    <StackPanel HorizontalAlignment="Center" Height="808" Grid.Row="3" VerticalAlignment="Top" Width="168" Grid.RowSpan="3">
+                                    <StackPanel HorizontalAlignment="Center" Height="827" Grid.Row="3" VerticalAlignment="Top" Width="168" Grid.RowSpan="3">
 
-                                        <Border Background="#7F4E4E4E" Height="808" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="168" HorizontalAlignment="Center" >
-                                            <StackPanel HorizontalAlignment="Center" Height="807" VerticalAlignment="Top" Width="160" Margin="0,5,0,0">
+                                        <Border Background="#7F4E4E4E" Height="827" CornerRadius="8,8,8,8" BorderThickness="0,0,0,0" Width="168" HorizontalAlignment="Center" >
+                                            <StackPanel HorizontalAlignment="Center" Height="822" VerticalAlignment="Top" Width="160" Margin="0,5,0,0">
                                                 <localFunction:InfoSection_Pedal x:Name="PedalInfo" />
                                                 <TextBox x:Name="textBox_VersionUpdate" HorizontalAlignment="Left" Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="160" Height="25" AutomationProperties.Name="TextBox2" BorderBrush="#00CCCCCC" Background="#00252525" FontSize="8" FontFamily="Arial" />
                                                 <StackPanel Height="30" Width="250" Orientation="Horizontal">
@@ -230,8 +230,8 @@
                                                         </StackPanel>
                                                     </Button>
                                                 </StackPanel>
-                                                <Border Background="#FF4E4E4E" Height="50" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="160" HorizontalAlignment="Center" Margin="0,5,0,0" >
-                                                    <TextBox x:Name="TextBox2" TextWrapping="Wrap" Width="160" AutomationProperties.Name="TextBox2" Height="50" FontSize="9" Background="#004E4E4E" BorderBrush="#00CCCCCC" IsHitTestVisible="False" AllowDrop="True" HorizontalAlignment="Center"/>
+                                                <Border Background="#FF4E4E4E" Height="250" CornerRadius="8,8,8,8" BorderThickness="0,0,0,0" Width="160" HorizontalAlignment="Center" Margin="0,5,0,0" >
+                                                    <TextBox x:Name="TextBox2" TextWrapping="Wrap" Width="160" AutomationProperties.Name="TextBox2" Height="250" FontSize="9" Background="#004E4E4E" BorderBrush="#00CCCCCC" IsHitTestVisible="False" AllowDrop="True" HorizontalAlignment="Center"/>
                                                 </Border>
                                                 
                                             </StackPanel>
@@ -242,7 +242,7 @@
                                 </StackPanel>
 
                                 <StackPanel Height="900" Width="545" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-280,0,0,0">
-                                    <TabControl x:Name="Tab_main_1" Grid.Column="0" SelectionChanged="Tab_main_1_SelectionChanged" HorizontalAlignment="Left" Height="305" Grid.Row="0" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Grid.RowSpan="2">
+                                    <TabControl x:Name="Tab_main_1" Grid.Column="0" SelectionChanged="Tab_main_1_SelectionChanged" HorizontalAlignment="Left" Height="310" Grid.Row="0" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Grid.RowSpan="2">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
                                                 <Setter Property="Template">
@@ -304,7 +304,7 @@
                                         </TabItem>
 
                                     </TabControl>
-                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="222" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,4,0,0">
+                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="235" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,4,0,0">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
                                                 <Setter Property="Template">
@@ -389,7 +389,7 @@
 
 
                                     </TabControl>
-                                    <TabControl Grid.Column="0" SelectionChanged="TabControl_SelectionChanged_1" HorizontalAlignment="Left" Height="272" Grid.Row="5" VerticalAlignment="Center" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,3,0,0">
+                                    <TabControl Grid.Column="0" SelectionChanged="TabControl_SelectionChanged_1" HorizontalAlignment="Left" Height="275" Grid.Row="5" VerticalAlignment="Center" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,3,0,0">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
                                                 <Setter Property="Template">
@@ -538,10 +538,10 @@
                                     </Border>
                                 </StackPanel>
                                 <StackPanel Width="540" Height="900" Margin="3,0,0,0">
-                                    <StackPanel Width="540" Height="272" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="1,0,0,0">
+                                    <StackPanel Width="540" Height="282" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="1,0,0,0">
                                         <localFunction:CurveTab_Rudder x:Name="CurveRudderForce_Tab" SettingsChanged="Tab_SettingsChanged" ConfigChanged="Rudder_ConfigChanged" CalculationChanged="Tab_CalculationChanged"/>
                                     </StackPanel>
-                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="222" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,4,0,0">
+                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="235" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,4,0,0">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
                                                 <Setter Property="Template">

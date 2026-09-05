@@ -907,7 +907,6 @@ namespace DiyFfbPedal
                         byte* p = (byte*)v;
                         tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
                         SendPedalAction(tmp, (byte)PIDX);
-                        Task.Delay(2);
                     }
 
                 }

@@ -605,58 +605,64 @@ namespace DiyFfbPedal
         private double _smoothedJitter_ms = 0.0;
         private double _smoothedRate_hz = 0.0;
         private double _prevDelay_ms = 0.0;
+        private volatile byte _pendingPacketDelay_ms = 0;
+        private volatile bool _hasPendingPacket = false;
         private System.Windows.Threading.DispatcherTimer _rudderTelemetryTimer;
 
         public void UpdateRudderLatency(byte delay_ms)
         {
             if (Tab_Rudder == null || !Tab_Rudder.IsSelected) return;
-            int c = 0, b = 0, t = 0;
-            try
+
+            DateTime now = DateTime.UtcNow;
+            double d = (double)delay_ms;
+
+            // Compute rate & jitter immediately on packet arrival (extremely cheap math in memory)
+            if (_lastLatencyPacketTime != DateTime.MinValue)
             {
-                if (Plugin != null && Plugin._calculations != null && Plugin._calculations.rssi != null && Plugin._calculations.rssi.Length >= 3)
+                double dtSec = (now - _lastLatencyPacketTime).TotalSeconds;
+                if (dtSec > 0.0005 && dtSec < 1.0)
                 {
-                    c = Plugin._calculations.rssi[0];
-                    b = Plugin._calculations.rssi[1];
-                    t = Plugin._calculations.rssi[2];
+                    double instRate = 1.0 / dtSec;
+                    _smoothedRate_hz = (_smoothedRate_hz == 0.0) ? instRate : (_smoothedRate_hz * 0.9 + instRate * 0.1);
                 }
             }
-            catch { }
+            _lastLatencyPacketTime = now;
 
-            if (Dispatcher.CheckAccess())
-            {
-                UpdateRudderTelemetryInternal(delay_ms, c, b, t, isPacket: true);
-            }
-            else
-            {
-                Dispatcher.BeginInvoke(new Action(() => UpdateRudderTelemetryInternal(delay_ms, c, b, t, isPacket: true)));
-            }
+            double delta = Math.Abs(d - _prevDelay_ms);
+            _smoothedJitter_ms = (_smoothedJitter_ms == 0.0) ? delta : (_smoothedJitter_ms * 0.92 + delta * 0.08);
+            _prevDelay_ms = d;
+
+            _pendingPacketDelay_ms = delay_ms;
+            _hasPendingPacket = true;
+            // No Dispatcher.InvokeAsync here! Graph rendering is throttled to 25Hz via _rudderTelemetryTimer
         }
 
         private void InitRudderTelemetryTimer()
         {
             if (_rudderTelemetryTimer != null) return;
             _rudderTelemetryTimer = new System.Windows.Threading.DispatcherTimer();
-            _rudderTelemetryTimer.Interval = TimeSpan.FromMilliseconds(50); // 20 Hz periodic refresh
+            _rudderTelemetryTimer.Interval = TimeSpan.FromMilliseconds(40); // 25 Hz periodic refresh
             _rudderTelemetryTimer.Tick += (s, e) =>
             {
                 if (Tab_Rudder != null && Tab_Rudder.IsSelected)
                 {
-                    // If no live packets received in last 100ms, push current RSSI reading to keep plot moving smoothly
-                    if ((DateTime.UtcNow - _lastLatencyPacketTime).TotalMilliseconds > 100)
+                    int c = 0, b = 0, t = 0;
+                    try
                     {
-                        int c = 0, b = 0, t = 0;
-                        try
+                        if (Plugin != null && Plugin._calculations != null && Plugin._calculations.rssi != null && Plugin._calculations.rssi.Length >= 3)
                         {
-                            if (Plugin != null && Plugin._calculations != null && Plugin._calculations.rssi != null && Plugin._calculations.rssi.Length >= 3)
-                            {
-                                c = Plugin._calculations.rssi[0];
-                                b = Plugin._calculations.rssi[1];
-                                t = Plugin._calculations.rssi[2];
-                            }
+                            c = Plugin._calculations.rssi[0];
+                            b = Plugin._calculations.rssi[1];
+                            t = Plugin._calculations.rssi[2];
                         }
-                        catch { }
-                        UpdateRudderTelemetryInternal(0, c, b, t, isPacket: false);
                     }
+                    catch { }
+
+                    bool isPacket = _hasPendingPacket;
+                    byte d = _pendingPacketDelay_ms;
+                    _hasPendingPacket = false;
+
+                    UpdateRudderTelemetryInternal(d, c, b, t, isPacket);
                 }
             };
             _rudderTelemetryTimer.Start();
@@ -672,23 +678,6 @@ namespace DiyFfbPedal
 
             if (isPacket)
             {
-                // Packet rate calculation
-                if (_lastLatencyPacketTime != DateTime.MinValue)
-                {
-                    double dtSec = (now - _lastLatencyPacketTime).TotalSeconds;
-                    if (dtSec > 0.001 && dtSec < 1.0)
-                    {
-                        double instRate = 1.0 / dtSec;
-                        _smoothedRate_hz = (_smoothedRate_hz == 0.0) ? instRate : (_smoothedRate_hz * 0.9 + instRate * 0.1);
-                    }
-                }
-                _lastLatencyPacketTime = now;
-
-                // Jitter calculation
-                double delta = Math.Abs(d - _prevDelay_ms);
-                _smoothedJitter_ms = (_smoothedJitter_ms == 0.0) ? delta : (_smoothedJitter_ms * 0.92 + delta * 0.08);
-                _prevDelay_ms = d;
-
                 // Update Text Badges
                 if (tb_rudder_sync_delay != null)
                 {
