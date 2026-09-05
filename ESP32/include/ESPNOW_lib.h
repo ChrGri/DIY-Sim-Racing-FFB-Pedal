@@ -82,6 +82,22 @@ volatile uint32_t g_espnowTxNoMemCount_u32 = 0;
 volatile uint32_t g_espnowSendFailCount_u32 = 0;
 volatile uint32_t g_espnowBasicStateStarvedCount_u32 = 0;
 volatile uint32_t g_lastEspnowDiagLogTime_u32 = 0;
+static volatile uint32_t s_espnowNoMemBackoffUntil_ms = 0;
+
+inline bool isEspnowBusy()
+{
+  if (g_espnowTxInFlight_b)
+  {
+    // Safety guard: If WiFi onSent callback was dropped or stalled for > 25ms, auto-recover
+    if (millis() - g_lastEspnowSendTime_u32 > 25)
+    {
+      g_espnowTxInFlight_b = false;
+      return false;
+    }
+    return true;
+  }
+  return false;
+}
 
 static uint8_t s_registeredPeerMac[6] = {0};
 inline esp_err_t safeRegisterEspNowPeer(const uint8_t *mac)
@@ -118,14 +134,32 @@ inline esp_err_t safeRegisterEspNowPeer(const uint8_t *mac)
 
 inline esp_err_t espnowSendWrapper(const uint8_t *targetMac, const uint8_t *data, size_t len)
 {
-  g_lastEspnowSendTime_u32 = millis();
+  uint32_t now_ms = millis();
+  if (s_espnowNoMemBackoffUntil_ms != 0)
+  {
+    if ((int32_t)(s_espnowNoMemBackoffUntil_ms - now_ms) > 0)
+    {
+      return ESP_ERR_ESPNOW_NO_MEM;
+    }
+    s_espnowNoMemBackoffUntil_ms = 0;
+  }
+
+  if (isEspnowBusy())
+  {
+    return ESP_ERR_ESPNOW_INTERNAL;
+  }
+
+  g_lastEspnowSendTime_u32 = now_ms;
+  g_espnowTxInFlight_b = true;
   esp_err_t res = esp_now_send(targetMac, data, len);
   if (res != ESP_OK)
   {
     g_espnowTxFailCount_u32 = g_espnowTxFailCount_u32 + 1;
+    g_espnowTxInFlight_b = false;
     if (res == ESP_ERR_ESPNOW_NO_MEM)
     {
       g_espnowTxNoMemCount_u32 = g_espnowTxNoMemCount_u32 + 1;
+      s_espnowNoMemBackoffUntil_ms = now_ms + 15;
     }
   }
   return res;
@@ -187,8 +221,7 @@ void ESPNow_Joystick_Broadcast(int32_t controllerValue)
   {
     _dap_joystick_message.pedal_status=0;
   }
-  g_lastEspnowSendTime_u32 = millis();
-  esp_now_send(g_broadcastMac_au8, (uint8_t *) &_dap_joystick_message, sizeof(_dap_joystick_message));
+  espnowSendWrapper(g_broadcastMac_au8, (uint8_t *) &_dap_joystick_message, sizeof(_dap_joystick_message));
 
   
   
@@ -740,10 +773,6 @@ void onSent(const esp_now_send_info_t *tx_info, esp_now_send_status_t status)
     }
 }
 
-inline bool isEspnowBusy()
-{
-    return false;
-}
 
 inline uint32_t getEspnowSendLatency()
 {
@@ -1030,6 +1059,8 @@ typedef struct EspPairingReg_t {
 } EspPairingReg_t;
 static EspPairingReg_t g_espPairingReg_st;
 
+inline bool isEspnowBusy() { return false; }
+inline esp_err_t espnowSendWrapper(const uint8_t *targetMac, const uint8_t *data, size_t len) { return ESP_OK; }
 inline void espNowInitialize() {}
 inline void sendESPNOWLog(const char *log,...) {}
 inline void ESPNow_Joystick_Broadcast(int32_t controllerValue) {}
