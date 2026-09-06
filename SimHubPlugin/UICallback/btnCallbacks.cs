@@ -313,6 +313,7 @@ namespace DiyFfbPedal
         unsafe private void btn_PedalBootMode_Click(object sender, RoutedEventArgs e)
         {
             System.Windows.MessageBox.Show("Pedal will restart into download mode, only support V4/V5/V6/pcba V2.x board. After restart, an Esp32S3 port will popup, you can flash from this port.");
+            /*
             DAP_action_st tmp;
             tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
@@ -326,6 +327,20 @@ namespace DiyFfbPedal
             byte* p = (byte*)v;
             tmp.payloadFooter_.checkSum = Plugin.checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
             Plugin.SendPedalAction(tmp, (byte)indexOfSelectedPedal_u);
+            */
+            DAP_action_ota_st tmp_st = default;
+            tmp_st.payloadOtaInfo_.SSID_Length = (byte)1;
+            tmp_st.payloadOtaInfo_.PASS_Length = (byte)1;
+            tmp_st.payloadOtaInfo_.device_ID = (byte)indexOfSelectedPedal_u;
+            tmp_st.payloadHeader_.payloadType = (Byte)Constants.OtaPayloadType;
+            tmp_st.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
+            tmp_st.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
+            tmp_st.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
+            tmp_st.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
+            tmp_st.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_ESP_BOOT_INTO_DOWNLOAD_MODE;
+            string timestamp = DateTime.Now.ToString("HH:mm:ss");
+            TextBox_serialMonitor_bridge.Text += "[" + timestamp + "] SYSTEM: Restart " + PedalConstStrings.PedalID[indexOfSelectedPedal_u] + " into Download mode\n";
+            Plugin.SendOTAActionPedal(tmp_st, (byte)indexOfSelectedPedal_u);
 
 
         }

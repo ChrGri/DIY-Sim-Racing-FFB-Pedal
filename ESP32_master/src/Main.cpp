@@ -1960,14 +1960,14 @@ void hidCommunicaitonRxTask(void *pvParameters)
               ActiveSerial->println("[L]JOYSTICK debug mode on");
               dap_joystickUART_state_lcl._payloadjoystick.JoystickAction = JOYSTICKACTION_DEBUG_MODE;
             #else
-              tinyusbJoystick_.printf("[L]The command is not supported");
+              tinyusbJoystick_.printf("The command is not supported");
             #endif
           }
           tinyusbJoystick_.isBridgeActionGet=false;
         }
         if(tinyusbJoystick_.isOtaActionGet)
         {
-          tinyusbJoystick_.printf("get OTA command and its info");
+          tinyusbJoystick_.printf("Get OTA Packet");
           memcpy(&dap_action_ota_st, &tinyusbJoystick_.tmpOtaAction, sizeof(DapActionOta_t));
           #ifdef OTA_Update
           bool structChecker_b = true;

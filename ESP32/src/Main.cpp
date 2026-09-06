@@ -3375,29 +3375,39 @@ void otaUpdateTask(void *pvParameters) {
         OTA_count++;
       }
 
-#if defined(OTA_update) || defined(OTA_update_ESP32)
-      if (g_OTA_enable_b) {
-        if (message_out_b) {
+      #if defined(OTA_update) || defined(OTA_update_ESP32)
+      if (g_OTA_enable_b) 
+      {
+        DapConfig_t ota_dap_config_st;
+        global_dap_config_class.getConfig(&ota_dap_config_st, 50);
+        if (message_out_b) 
+        {
           message_out_b = false;
           Serial1.println("OTA enable flag on");
         }
-        if (g_OTA_status) {
-#ifdef OTA_update_ESP32
+        if (g_OTA_status) 
+        {
+          #ifdef OTA_update_ESP32
           server.handleClient();
-#endif
-#ifdef OTA_update
-          if (OTA_update_status == 0) {
+          #endif
+          #ifdef OTA_update
+          if (OTA_update_status == 0) 
+          {
             Buzzer.play_melody_tone(melody_victory_theme,
                                     sizeof(melody_victory_theme) /
                                         sizeof(melody_victory_theme[0]),
                                     melody_durations_Victory_theme);
             ESP.restart();
-          } else {
+          } 
+          else 
+          {
             if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
                 OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD) {
               ActiveSerial->println(
                   "Entering dedicated OTA mode... stopping hardware tasks.");
-
+                sendESPNOWLog(
+                "Pedal:%d restart into Download mode",
+                ota_dap_config_st.payloadPedalConfig_st.pedalType_u8);
               // (Optional, aber empfohlen: Hier den Motor einmalig disablen,
               // damit das Pedal nicht unerwartet zuckt, während der Chip
               // blockiert ist)
@@ -3429,37 +3439,59 @@ void otaUpdateTask(void *pvParameters) {
             }
           }
 
-#endif
+          #endif
 
-        } else {
+        }
+        else 
+        {
+          if(dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 == OTA_ACTION_ESP_BOOT_INTO_DOWNLOAD_MODE)
+          {
+              #ifdef ESPNow_S3
+              ActiveSerial->println("Restart into Download mode");
+              Buzzer.single_beep_tone(700, 100);
+              pedalLED.setPixelColor(0, 0x00, 0xFF, 0xFF); // Cyan / Aqua
+              pedalLED.show();            
+              sendESPNOWLog(
+              "Pedal:%d restart into Download mode",
+              ota_dap_config_st.payloadPedalConfig_st.pedalType_u8);
+              delay(1000);
+              REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+              ESP.restart();
+            #else
+              ActiveSerial->println("Command not supported");
+              delay(1000);
+              ESP.restart();
+            #endif
+          }
           esp_err_t result;
           ActiveSerial->println("de-initialize espnow");
           ActiveSerial->println("wait...");
-#ifdef ESPNOW_Enable
+          #ifdef ESPNOW_Enable
           sendESPNOWLog("OTA enabled, de-initialize espnow");
           sendESPNOWLog("wait...");
           delay(1000);
           result = esp_now_deinit();
           g_espNowInitialStatus_b = false;
           g_espNowStatus_b = false;
-#else
+          #else
           result = ESP_OK;
-#endif
+          #endif
           // result = ESP_OK;
           delay(3000);
-          if (result == ESP_OK) {
+          if (result == ESP_OK) 
+          {
             g_OTA_status = true;
             // notify pedal task to stop movement
             uint8_t ota_event = 1;
             xQueueSend(s_systemControlQueue, &ota_event, (TickType_t)0);
             Buzzer.single_beep_tone(700, 100);
             delay(1000);
-#ifdef OTA_update_ESP32
+            #ifdef OTA_update_ESP32
             ota_wifi_initialize(g_apHost_pc);
-#endif
+            #endif
             pedalLED.setPixelColor(0, 0x00, 0x00, 0xff);
             pedalLED.show();
-#ifdef OTA_update
+            #ifdef OTA_update
             wifi_initialized(g_SSID, g_PASS);
             delay(2000);
             // sendESPNOWLog("Wifi Connected");
@@ -3528,7 +3560,7 @@ void otaUpdateTask(void *pvParameters) {
               ActiveSerial->println("OTA from platformIO");
               ota_arduinoota_initialize();
             }
-#endif
+            #endif
             delay(3000);
           }
         }
