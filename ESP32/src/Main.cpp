@@ -3405,9 +3405,6 @@ void otaUpdateTask(void *pvParameters) {
                 OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD) {
               ActiveSerial->println(
                   "Entering dedicated OTA mode... stopping hardware tasks.");
-                sendESPNOWLog(
-                "Pedal:%d restart into Download mode",
-                ota_dap_config_st.payloadPedalConfig_st.pedalType_u8);
               // (Optional, aber empfohlen: Hier den Motor einmalig disablen,
               // damit das Pedal nicht unerwartet zuckt, während der Chip
               // blockiert ist)
@@ -3446,7 +3443,7 @@ void otaUpdateTask(void *pvParameters) {
         {
           if(dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 == OTA_ACTION_ESP_BOOT_INTO_DOWNLOAD_MODE)
           {
-              #ifdef ESPNow_S3
+            #ifdef ESPNow_S3
               ActiveSerial->println("Restart into Download mode");
               Buzzer.single_beep_tone(700, 100);
               pedalLED.setPixelColor(0, 0x00, 0xFF, 0xFF); // Cyan / Aqua
