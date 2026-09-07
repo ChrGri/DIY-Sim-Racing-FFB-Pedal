@@ -1,4 +1,4 @@
-#include "TinyusbJoystick.h"
+﻿#include "TinyusbJoystick.h"
 #include <cstdint>
 #include <cstring>
 #include <cstdarg>
@@ -240,6 +240,21 @@ void TinyusbJoystick::ProcessFullData(uint8_t *rxBuffer, uint8_t totalLen)
         {
             memcpy(&tmpOtaAction, &tmp, totalLen);
             isOtaActionGet = true;
+        }
+    }
+        if(totalLen == sizeof(DapWifiChannel_t))
+    {
+        DapWifiChannel_t tmp;
+        memcpy(&tmp, rxBuffer, totalLen);
+        bool structChecker = true;
+        if(tmp.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_WIFI_CHANNEL_U8) structChecker = false;
+        if(tmp.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8) structChecker = false;
+        uint16_t crc = checksumCal((uint8_t*)(&(tmp.payloadHeader_st)), sizeof(tmp.payloadHeader_st) + sizeof(tmp.payloadWifiChannel_st));
+        if(crc != tmp.payloadFooter_st.checkSum_u16) structChecker = false;
+        if(structChecker)
+        {
+            memcpy(&tmpWifiChannel, &tmp, totalLen);
+            isWifiChannelGet = true;
         }
     }
     if(totalLen == sizeof(DAP_servo_config_st_t))

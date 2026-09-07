@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include <Arduino.h>
@@ -52,6 +52,36 @@ uint16_t g_pedalThrottleRudderValue_u16=0;
 uint8_t g_pedalStatus_u8=0;
 bool g_espNowPairingStatus_b = false;
 bool g_updatePairingToEeprom_b = false;
+#define WIFI_CH_EEPROM_MAGIC 0xA6
+#define WIFI_CH_EEPROM_OFFSET 60
+struct WifiChannelConfig_t {
+  uint8_t magic_u8;
+  uint8_t channel_u8;
+  uint8_t checksum_u8;
+};
+
+inline uint8_t loadWifiChannelFromEeprom() {
+  WifiChannelConfig_t cfg;
+  EEPROM.get(WIFI_CH_EEPROM_OFFSET, cfg);
+  if (cfg.magic_u8 == WIFI_CH_EEPROM_MAGIC &&
+      (uint8_t)(cfg.magic_u8 ^ cfg.channel_u8) == cfg.checksum_u8 &&
+      cfg.channel_u8 >= 1 && cfg.channel_u8 <= 14) {
+    return cfg.channel_u8;
+  }
+  return 11;
+}
+
+inline void saveWifiChannelToEeprom(uint8_t ch) {
+  if (ch < 1 || ch > 14) return;
+  WifiChannelConfig_t cfg;
+  cfg.magic_u8 = WIFI_CH_EEPROM_MAGIC;
+  cfg.channel_u8 = ch;
+  cfg.checksum_u8 = (uint8_t)(WIFI_CH_EEPROM_MAGIC ^ ch);
+  EEPROM.put(WIFI_CH_EEPROM_OFFSET, cfg);
+  EEPROM.commit();
+}
+
+extern uint8_t g_currentWifiChannel_u8;
 bool g_espNowPairingAction_b = false;
 bool g_softwarePairingAction_b = false;
 bool g_newUnassignedPedalDetected_ab[3]={false,false,false};
@@ -335,7 +365,7 @@ void promiscuousRxCb(void *buf, wifi_promiscuous_pkt_type_t type)
   if (ppkt->rx_ctrl.sig_len > 24)
   {
     const uint8_t *addr_DESTINATION = payload + 4;   
-    const uint8_t *addr_SOURCE = payload + 10;  // 傳� 端 MAC
+    const uint8_t *addr_SOURCE = payload + 10;  // å‚³é€ ç«¯ MAC
     uint8_t addr_package[6];
     memcpy(addr_package, addr_SOURCE, 6);
     if (macCheck(addr_package, g_pedalMac_aau8[0]))
@@ -467,7 +497,9 @@ void espNowInitialize()
     ESPNow.reg_recv_cb(onRecv);
     ESPNow.reg_send_cb(onSent);
     //set wifi channel
-    esp_wifi_set_channel(11, WIFI_SECOND_CHAN_NONE);
+    g_currentWifiChannel_u8 = loadWifiChannelFromEeprom();
+    esp_wifi_set_channel(g_currentWifiChannel_u8, WIFI_SECOND_CHAN_NONE);
+    ActiveSerial->printf("[L]ESPNow Channel: %d\n", g_currentWifiChannel_u8);
     //g_rssi_ai32 calculate
     // esp_wifi_set_promiscuous(true);
     // esp_wifi_set_promiscuous_rx_cb(&promiscuousRxCb);

@@ -18,6 +18,7 @@
 #include "PayloadFooter.h"
 #include "PayloadHidMessage.h"
 #include "PayloadServoConfig.h"
+#include "PayloadWifiChannel.h"
 
 // define the payload revision
 typedef struct __attribute__((packed)) DapActions

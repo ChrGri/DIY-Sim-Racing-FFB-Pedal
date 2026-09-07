@@ -306,6 +306,7 @@ char *g_apHost_pc;
 #ifdef ESPNOW_Enable
 #include "ESPNOW_lib.h"
 TaskHandle_t Task6;
+uint8_t g_currentWifiChannel_u8 = 11;
 #endif
 
 #include "PedalLED.h"
@@ -2830,6 +2831,8 @@ static inline size_t getExpectedPacketSize(uint8_t payloadType) {
     return sizeof(DapActionOta_t);
   case DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8:
     return sizeof(DAP_servo_config_st);
+  case DAP_PAYLOAD_TYPE_WIFI_CHANNEL_U8:
+    return sizeof(DapWifiChannel_t);
   // Add other packet types here in the future
   default:
     return 0;
@@ -3195,6 +3198,34 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
               xQueueSend(s_servoConfigRxQueue, &received_servo_config,
                          (TickType_t)0);
             }
+          }
+          break;
+        }
+        case DAP_PAYLOAD_TYPE_WIFI_CHANNEL_U8: {
+          DapWifiChannel_t received_wifi_channel;
+          memcpy(&received_wifi_channel, packet_start, sizeof(DapWifiChannel_t));
+          calculated_crc = checksumCalculator_u16(
+              (uint8_t *)(&(received_wifi_channel.payloadHeader_st)),
+              sizeof(received_wifi_channel.payloadHeader_st) +
+                  sizeof(received_wifi_channel.payloadWifiChannel_st));
+          received_crc = received_wifi_channel.payloadFooter_st.checkSum_u16;
+
+          if (calculated_crc != received_crc ||
+              received_wifi_channel.payloadHeader_st.version_u8 !=
+                  DAP_VERSION_CONFIG_U8) {
+            structIsValid = false;
+          } else {
+#ifdef ESPNOW_Enable
+            if (received_wifi_channel.payloadWifiChannel_st.command_u8 == WIFI_CH_CMD_SET_REQ) {
+              uint8_t newCh = received_wifi_channel.payloadWifiChannel_st.currentChannel_u8;
+              if (newCh >= 1 && newCh <= 14) {
+                g_currentWifiChannel_u8 = newCh;
+                saveWifiChannelToEeprom(newCh);
+                esp_wifi_set_channel(newCh, WIFI_SECOND_CHAN_NONE);
+                ActiveSerial->printf("Wi-Fi channel set to %d via Serial\n", newCh);
+              }
+            }
+#endif
           }
           break;
         }

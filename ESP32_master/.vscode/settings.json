@@ -67,5 +67,9 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp"
-    }
+    },
+    "clangd.arguments": [
+        "--compile-commands-dir=c:/Users/chris/OneDrive/Desktop/GIT/DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7/ESP32_master/.cache/clangd",
+        "--query-driver=C:/Users/chris/.platformio/packages/toolchain-*/bin/*,C:/Users/chris/.platformio/packages/tool-*/bin/*"
+    ]
 }

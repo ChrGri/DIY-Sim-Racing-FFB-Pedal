@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Arduino.h"
 #include <string>
 #include "Adafruit_TinyUSB.h"
@@ -134,6 +134,8 @@ public:
   DapConfig_t tmpConfig[3];
   DapBridgeState_t tmpBridgeAction;
   DapActionOta_t tmpOtaAction;
+  bool isWifiChannelGet;
+  DapWifiChannel_t tmpWifiChannel;
   uint8_t rawLength;
   static TinyusbJoystick* instance;
   TinyusbJoystick();

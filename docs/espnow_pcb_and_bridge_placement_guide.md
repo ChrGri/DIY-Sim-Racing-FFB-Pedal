@@ -60,3 +60,32 @@ Once installed, verify wireless connectivity directly in the SimHub plugin under
 | **Delay / Latency** | **~2 to 4 ms** | Check line-of-sight if latency spikes above 10 ms. |
 | **Telemetry Rate** | **~280 Hz** | Sustained rate confirms zero dropped frames. |
 | **Jitter** | **< ±0.5 ms** | Indicates clean RF environment without retransmission delays. |
+
+---
+
+## 4. 2.4 GHz Wi-Fi Interference & Dynamic Channel Switching
+
+Even with optimal co-polarized antenna orientation and clear line-of-sight mounting, wireless latency or jitter can degrade if local 2.4 GHz home Wi-Fi networks (routers, mesh nodes, access points) broadcast heavily on the same radio frequency.
+
+Under 802.11 CSMA/CA rules, ambient Wi-Fi traffic forces ESP-NOW to defer transmissions during Clear Channel Assessment (CCA), leading to latency spikes and packet delays.
+
+To resolve this without needing to reflash firmware, SimHub provides a built-in **Wi-Fi Spectrum & Channel Optimizer** directly on the **Rudder** tab:
+
+![Wi-Fi Spectrum & Channel Optimizer UI](media/images/wifi_channel_optimizer_ui.png)
+
+### Features & Live Feedback:
+* **Active & Recommended Badges**: Instantly display the currently active channel and the cleanest frequency recommended by the latest scan.
+* **3-Channel Congestion Cards (Channels 1, 6, 11)**: Shows detected AP count, peak RSSI (dBm), and a color-coded congestion percentage badge (Green $\le 25\%$, Orange $\le 60\%$, Red $> 60\%$).
+* **Target Dropdown & Apply**: Choose any standard non-overlapping 2.4 GHz channel (Ch 1, 6, or 11) and click **Apply**.
+* **Status Banner**: Real-time diagnostic guidance and scan recommendations.
+
+### Step-by-Step Optimization Workflow:
+1. Open the **RUDDER** tab in SimHub.
+2. Under **WI-FI SPECTRUM & CHANNEL OPTIMIZER**, click **"🔍 Scan Spectrum"**.
+3. Wait ~1 second while the ESP32 Master analyzes ambient RF traffic across 2.4 GHz channels.
+4. Review the detected access points and congestion scores for Channels 1, 6, and 11.
+5. The system automatically selects the cleanest recommended frequency in the **Target** dropdown.
+6. Click **"Apply"**:
+   * The Master broadcasts the new channel to all connected pedals over ESP-NOW.
+   * Both the Master and Pedals switch frequencies simultaneously.
+   * The new frequency is saved to EEPROM on all devices and preserved in SimHub settings, persisting across reboots and power cycles.

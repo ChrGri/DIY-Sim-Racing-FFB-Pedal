@@ -80,6 +80,7 @@ DAP_servo_config_st_t dap_servo_config_response_st[3]; // packets from servo to 
 bool update_servo_config[3] = {false, false, false};
 bool send_servo_config_to_host[3] = {false, false, false}; // Muss in ESPNOW_lib.cpp bei RX gesetzt werden
 bool firstDebugMessage_b = false;
+uint8_t g_currentWifiChannel_u8 = 11;
 
 
 #define EEPROM_offset 15
@@ -236,10 +237,10 @@ void setup()
     ActiveSerial->println("[L]Error during xqueue creation.");
     ESP.restart();
   }
+  EEPROM.begin(512);
   #ifdef ESPNow_Pairing_function
     //button read setup
     pinMode(Pairing_GPIO, INPUT_PULLUP);
-    EEPROM.begin(256);
   #endif
   #if !defined(CONFIG_IDF_TARGET_ESP32S3) && !defined(CONFIG_IDF_TARGET_ESP32C6)
     disableCore0WDT();
@@ -653,11 +654,141 @@ static inline size_t getExpectedPacketSize(uint8_t payloadType) {
             return sizeof(DapBridgeState_t);
         case DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8:
             return sizeof(DAP_servo_config_st_t);
+        case DAP_PAYLOAD_TYPE_WIFI_CHANNEL_U8:
+            return sizeof(DapWifiChannel_t);
         // Add other packet types here in the future
         default:
             return 0;
     }
 }
+void handleWifiScanRequest(bool isHid) {
+  ActiveSerial->println("[L]Scanning Wi-Fi channels...");
+  int n = WiFi.scanNetworks(false, true);
+  int apCount[15] = {0};
+  int bestRssi[15];
+  for (int i = 0; i < 15; i++) bestRssi[i] = -120;
+  int score[15] = {0};
+
+  for (int i = 0; i < n; i++) {
+    int ch = WiFi.channel(i);
+    int32_t rssi = WiFi.RSSI(i);
+    if (ch >= 1 && ch <= 13) {
+      apCount[ch]++;
+      if (rssi > bestRssi[ch]) {
+        bestRssi[ch] = rssi;
+      }
+      int weight = constrain((int)(rssi + 110) / 2, 5, 50);
+      score[ch] += weight;
+      if (ch > 1) score[ch - 1] += weight / 2;
+      if (ch < 13) score[ch + 1] += weight / 2;
+      if (ch > 2) score[ch - 2] += weight / 4;
+      if (ch < 12) score[ch + 2] += weight / 4;
+    }
+  }
+  WiFi.scanDelete();
+
+  esp_wifi_set_channel(g_currentWifiChannel_u8, WIFI_SECOND_CHAN_NONE);
+
+  uint8_t recommended = 1;
+  int minScore = score[1];
+  if (score[6] < minScore) {
+    minScore = score[6];
+    recommended = 6;
+  }
+  if (score[11] < minScore) {
+    minScore = score[11];
+    recommended = 11;
+  }
+
+  DapWifiChannel_t resp = {};
+  resp.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+  resp.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+  resp.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_WIFI_CHANNEL_U8;
+  resp.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
+  resp.payloadHeader_st.pedalTag_u8 = 3;
+  resp.payloadWifiChannel_st.command_u8 = WIFI_CH_CMD_SCAN_RES;
+  resp.payloadWifiChannel_st.currentChannel_u8 = g_currentWifiChannel_u8;
+  resp.payloadWifiChannel_st.recommendedChannel_u8 = recommended;
+  resp.payloadWifiChannel_st.channel1Rssi_i8 = (bestRssi[1] > -120) ? (int8_t)bestRssi[1] : (int8_t)0;
+  resp.payloadWifiChannel_st.channel6Rssi_i8 = (bestRssi[6] > -120) ? (int8_t)bestRssi[6] : (int8_t)0;
+  resp.payloadWifiChannel_st.channel11Rssi_i8 = (bestRssi[11] > -120) ? (int8_t)bestRssi[11] : (int8_t)0;
+  resp.payloadWifiChannel_st.channel1ApCount_u8 = (uint8_t)constrain(apCount[1], 0, 255);
+  resp.payloadWifiChannel_st.channel6ApCount_u8 = (uint8_t)constrain(apCount[6], 0, 255);
+  resp.payloadWifiChannel_st.channel11ApCount_u8 = (uint8_t)constrain(apCount[11], 0, 255);
+  resp.payloadWifiChannel_st.channel1ApScore_u8 = (uint8_t)constrain(score[1], 0, 100);
+  resp.payloadWifiChannel_st.channel6ApScore_u8 = (uint8_t)constrain(score[6], 0, 100);
+  resp.payloadWifiChannel_st.channel11ApScore_u8 = (uint8_t)constrain(score[11], 0, 100);
+  resp.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+  resp.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
+  resp.payloadFooter_st.checkSum_u16 = checksumCalculator((uint8_t*)(&(resp.payloadHeader_st)), sizeof(resp.payloadHeader_st) + sizeof(resp.payloadWifiChannel_st));
+
+  if (isHid) {
+    tinyusbJoystick_.sendData((uint8_t*)&resp, sizeof(DapWifiChannel_t));
+  } else {
+    ActiveSerial->write((uint8_t*)&resp, sizeof(DapWifiChannel_t));
+  }
+  ActiveSerial->printf("[L]Scan done. Best channel: %d (Score Ch1: %d, Ch6: %d, Ch11: %d)\n", recommended, score[1], score[6], score[11]);
+}
+
+void handleWifiSetChannelRequest(uint8_t newChannel, bool isHid) {
+  if (newChannel < 1 || newChannel > 14) return;
+  ActiveSerial->printf("[L]Switching Wi-Fi channel from %d to %d...\n", g_currentWifiChannel_u8, newChannel);
+
+  DapWifiChannel_t fwd = {};
+  fwd.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+  fwd.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+  fwd.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_WIFI_CHANNEL_U8;
+  fwd.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
+  fwd.payloadHeader_st.pedalTag_u8 = 3;
+  fwd.payloadWifiChannel_st.command_u8 = WIFI_CH_CMD_SET_REQ;
+  fwd.payloadWifiChannel_st.currentChannel_u8 = newChannel;
+  fwd.payloadWifiChannel_st.recommendedChannel_u8 = newChannel;
+  fwd.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+  fwd.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
+  fwd.payloadFooter_st.checkSum_u16 = checksumCalculator((uint8_t*)(&(fwd.payloadHeader_st)), sizeof(fwd.payloadHeader_st) + sizeof(fwd.payloadWifiChannel_st));
+
+  for (int k = 0; k < 5; k++) {
+    ESPNow.send_message(g_broadcastMac_au8, (uint8_t*)&fwd, sizeof(DapWifiChannel_t));
+    delay(15);
+  }
+
+  saveWifiChannelToEeprom(newChannel);
+  g_currentWifiChannel_u8 = newChannel;
+
+  delay(50);
+  esp_wifi_set_channel(newChannel, WIFI_SECOND_CHAN_NONE);
+
+  fwd.payloadWifiChannel_st.command_u8 = WIFI_CH_CMD_SET_ACK;
+  fwd.payloadWifiChannel_st.currentChannel_u8 = newChannel;
+  fwd.payloadFooter_st.checkSum_u16 = checksumCalculator((uint8_t*)(&(fwd.payloadHeader_st)), sizeof(fwd.payloadHeader_st) + sizeof(fwd.payloadWifiChannel_st));
+  if (isHid) {
+    tinyusbJoystick_.sendData((uint8_t*)&fwd, sizeof(DapWifiChannel_t));
+  } else {
+    ActiveSerial->write((uint8_t*)&fwd, sizeof(DapWifiChannel_t));
+  }
+  ActiveSerial->printf("[L]Wi-Fi channel successfully switched to %d.\n", newChannel);
+}
+
+void sendWifiChannelStatus(bool isHid) {
+  DapWifiChannel_t fwd = {};
+  fwd.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+  fwd.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+  fwd.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_WIFI_CHANNEL_U8;
+  fwd.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
+  fwd.payloadHeader_st.pedalTag_u8 = 3;
+  fwd.payloadWifiChannel_st.command_u8 = WIFI_CH_CMD_SET_ACK;
+  fwd.payloadWifiChannel_st.currentChannel_u8 = g_currentWifiChannel_u8;
+  fwd.payloadWifiChannel_st.recommendedChannel_u8 = g_currentWifiChannel_u8;
+  fwd.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+  fwd.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
+  fwd.payloadFooter_st.checkSum_u16 = checksumCalculator((uint8_t*)(&(fwd.payloadHeader_st)), sizeof(fwd.payloadHeader_st) + sizeof(fwd.payloadWifiChannel_st));
+  if (isHid) {
+    tinyusbJoystick_.sendData((uint8_t*)&fwd, sizeof(DapWifiChannel_t));
+  } else {
+    ActiveSerial->write((uint8_t*)&fwd, sizeof(DapWifiChannel_t));
+  }
+}
+
 void serialCommunicationRxTask( void * pvParameters)
 {
   // Buffer to accumulate incoming serial data
@@ -1893,6 +2024,27 @@ void hidCommunicaitonRxTask(void *pvParameters)
             }
             tinyusbJoystick_.isActionGet[i]=false;
           }
+        }
+                if(tinyusbJoystick_.isWifiChannelGet)
+        {
+          uint8_t cmd = tinyusbJoystick_.tmpWifiChannel.payloadWifiChannel_st.command_u8;
+          if (cmd == WIFI_CH_CMD_SCAN_REQ)
+          {
+            handleWifiScanRequest(true);
+          }
+          else if (cmd == WIFI_CH_CMD_SET_REQ)
+          {
+            uint8_t targetCh = tinyusbJoystick_.tmpWifiChannel.payloadWifiChannel_st.currentChannel_u8;
+            if (targetCh < 1 || targetCh > 14) {
+              targetCh = tinyusbJoystick_.tmpWifiChannel.payloadWifiChannel_st.recommendedChannel_u8;
+            }
+            handleWifiSetChannelRequest(targetCh, true);
+          }
+          else
+          {
+            sendWifiChannelStatus(true);
+          }
+          tinyusbJoystick_.isWifiChannelGet = false;
         }
         if(tinyusbJoystick_.isBridgeActionGet)
         {

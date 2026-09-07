@@ -387,6 +387,19 @@ namespace DiyFfbPedal
             if (myBuffer == null || myBuffer.Length < sizeof(DAP_bridge_state_st)) return default(DAP_bridge_state_st);
             fixed (byte* p = myBuffer) { return *(DAP_bridge_state_st*)p; }
         }
+
+        unsafe public byte[] getBytes_WifiChannel(DAP_wifi_channel_st aux)
+        {
+            byte[] myBuffer = new byte[sizeof(DAP_wifi_channel_st)];
+            fixed (byte* p = myBuffer) { *(DAP_wifi_channel_st*)p = aux; }
+            return myBuffer;
+        }
+
+        unsafe public DAP_wifi_channel_st getWifiChannelFromBytes(byte[] myBuffer)
+        {
+            if (myBuffer == null || myBuffer.Length < sizeof(DAP_wifi_channel_st)) return default(DAP_wifi_channel_st);
+            fixed (byte* p = myBuffer) { return *(DAP_wifi_channel_st*)p; }
+        }
         private void PedalParameterLiveUpdate()
         {
             if (Plugin != null)
@@ -665,6 +678,7 @@ namespace DiyFfbPedal
         public byte[] STARTOFFRAME_BRIDGE_BASIC_STRUCT = { 0xAA, 0x55, 210 };
         public byte[] STARTOFFRAME_CONFIG = { 0xAA, 0x55, 100 };
         public byte[] STARTOFFRAME_SERVO_CONFIG = { 0xAA, 0x55, 170 };
+        public byte[] STARTOFFRAME_WIFI_CHANNEL = { 0xAA, 0x55, 180 };
 
         public byte[] STARTOFFRAMCHAR_SOF_byte0 = { 0xAA};
         public byte[] STARTOFFRAMCHAR_SOF_byte1 = { 0x55};
@@ -1276,6 +1290,134 @@ namespace DiyFfbPedal
             }
             
             return status;
+        }
+
+        public void SendWifiChannelCommand(byte command, byte channel = 0)
+        {
+            DAP_wifi_channel_st pkt = new DAP_wifi_channel_st();
+            pkt.payloadHeader_.startOfFrame0_u8 = STARTOFFRAME_WIFI_CHANNEL[0];
+            pkt.payloadHeader_.startOfFrame1_u8 = STARTOFFRAME_WIFI_CHANNEL[1];
+            pkt.payloadHeader_.payloadType = (byte)Constants.wifiChannelPayloadType;
+            pkt.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
+            pkt.payloadHeader_.PedalTag = 3; // Master / Bridge
+
+            pkt.payloadWifiChannel_.command_u8 = command;
+            pkt.payloadWifiChannel_.currentChannel_u8 = channel;
+            pkt.payloadWifiChannel_.recommendedChannel_u8 = channel;
+
+            pkt.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
+            pkt.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
+
+            byte[] packet = getBytes_WifiChannel(pkt);
+            ushort crc = Plugin.checksumCalcArray(packet,
+                System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadHeader)) +
+                System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadWifiChannel)));
+            pkt.payloadFooter_.checkSum = crc;
+            packet = getBytes_WifiChannel(pkt);
+
+            if (Plugin.BridgeHidService != null && Plugin.BridgeHidService.IsConnected)
+            {
+                Task.Run(() => Plugin.BridgeHidService.SendLargeDataAsync(packet));
+            }
+            else if (Plugin.ESPsync_serialPort != null && Plugin.ESPsync_serialPort.IsOpen)
+            {
+                try { Plugin.ESPsync_serialPort.Write(packet, 0, packet.Length); }
+                catch (Exception ex) { SimHub.Logging.Current.Error("WifiChannel serial error: " + ex.Message); }
+            }
+        }
+
+        public void HandleWifiChannelResponse(DAP_wifi_channel_st wc)
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                if (wc.payloadWifiChannel_.command_u8 == Constants.WIFI_CH_CMD_SCAN_RES)
+                {
+                    if (tb_wifi_ch_active != null) tb_wifi_ch_active.Text = $"Active: Ch {wc.payloadWifiChannel_.currentChannel_u8}";
+                    if (tb_wifi_ch_rec != null) tb_wifi_ch_rec.Text = $"Rec: Ch {wc.payloadWifiChannel_.recommendedChannel_u8}";
+                    if (combo_wifi_channel != null)
+                    {
+                        combo_wifi_channel.SelectedValue = wc.payloadWifiChannel_.recommendedChannel_u8.ToString();
+                    }
+
+                    // Ch 1
+                    if (tb_ch1_aps != null) tb_ch1_aps.Text = $"{wc.payloadWifiChannel_.channel1ApCount_u8} APs";
+                    if (tb_ch1_rssi != null) tb_ch1_rssi.Text = wc.payloadWifiChannel_.channel1Rssi_i8 < 0 ? $"{wc.payloadWifiChannel_.channel1Rssi_i8} dBm" : "None";
+                    if (tb_ch1_score != null) tb_ch1_score.Text = $"{wc.payloadWifiChannel_.channel1ApScore_u8}%";
+                    if (border_ch1_badge != null) border_ch1_badge.Background = GetCongestionBrush(wc.payloadWifiChannel_.channel1ApScore_u8);
+
+                    // Ch 6
+                    if (tb_ch6_aps != null) tb_ch6_aps.Text = $"{wc.payloadWifiChannel_.channel6ApCount_u8} APs";
+                    if (tb_ch6_rssi != null) tb_ch6_rssi.Text = wc.payloadWifiChannel_.channel6Rssi_i8 < 0 ? $"{wc.payloadWifiChannel_.channel6Rssi_i8} dBm" : "None";
+                    if (tb_ch6_score != null) tb_ch6_score.Text = $"{wc.payloadWifiChannel_.channel6ApScore_u8}%";
+                    if (border_ch6_badge != null) border_ch6_badge.Background = GetCongestionBrush(wc.payloadWifiChannel_.channel6ApScore_u8);
+
+                    // Ch 11
+                    if (tb_ch11_aps != null) tb_ch11_aps.Text = $"{wc.payloadWifiChannel_.channel11ApCount_u8} APs";
+                    if (tb_ch11_rssi != null) tb_ch11_rssi.Text = wc.payloadWifiChannel_.channel11Rssi_i8 < 0 ? $"{wc.payloadWifiChannel_.channel11Rssi_i8} dBm" : "None";
+                    if (tb_ch11_score != null) tb_ch11_score.Text = $"{wc.payloadWifiChannel_.channel11ApScore_u8}%";
+                    if (border_ch11_badge != null) border_ch11_badge.Background = GetCongestionBrush(wc.payloadWifiChannel_.channel11ApScore_u8);
+
+                    if (tb_wifi_scan_status != null)
+                    {
+                        tb_wifi_scan_status.Text = $"Scan complete. Recommended: Channel {wc.payloadWifiChannel_.recommendedChannel_u8}. Click 'Apply' to switch.";
+                        tb_wifi_scan_status.Foreground = new SolidColorBrush(Color.FromRgb(0, 230, 118));
+                    }
+                }
+                else if (wc.payloadWifiChannel_.command_u8 == Constants.WIFI_CH_CMD_SET_ACK)
+                {
+                    if (tb_wifi_ch_active != null) tb_wifi_ch_active.Text = $"Active: Ch {wc.payloadWifiChannel_.currentChannel_u8}";
+                    if (Plugin?.Settings != null && wc.payloadWifiChannel_.currentChannel_u8 >= 1 && wc.payloadWifiChannel_.currentChannel_u8 <= 14)
+                    {
+                        Plugin.Settings.ActiveWifiChannel = wc.payloadWifiChannel_.currentChannel_u8;
+                        Plugin.SavePluginSettings();
+                    }
+                    if (tb_wifi_scan_status != null)
+                    {
+                        tb_wifi_scan_status.Text = $"Channel {wc.payloadWifiChannel_.currentChannel_u8} applied successfully! Master & Pedals synchronized.";
+                        tb_wifi_scan_status.Foreground = new SolidColorBrush(Color.FromRgb(0, 229, 255));
+                    }
+                    ToastNotification("Wi-Fi Channel Switch", $"Switched active channel to {wc.payloadWifiChannel_.currentChannel_u8}");
+                }
+            });
+        }
+
+        private Brush GetCongestionBrush(byte score)
+        {
+            if (score <= 25) return new SolidColorBrush(Color.FromRgb(0, 230, 118));
+            if (score <= 60) return new SolidColorBrush(Color.FromRgb(255, 167, 38));
+            return new SolidColorBrush(Color.FromRgb(255, 82, 82));
+        }
+
+        private void btn_scan_wifi_channels_Click(object sender, RoutedEventArgs e)
+        {
+            if (tb_wifi_scan_status != null)
+            {
+                tb_wifi_scan_status.Text = "Scanning 2.4 GHz channels 1, 6, 11... please wait (~1s)...";
+                tb_wifi_scan_status.Foreground = new SolidColorBrush(Color.FromRgb(255, 235, 59));
+            }
+            SendWifiChannelCommand(Constants.WIFI_CH_CMD_SCAN_REQ);
+        }
+
+        private void btn_apply_wifi_channel_Click(object sender, RoutedEventArgs e)
+        {
+            if (combo_wifi_channel != null && combo_wifi_channel.SelectedValue != null)
+            {
+                if (byte.TryParse(combo_wifi_channel.SelectedValue.ToString(), out byte targetCh))
+                {
+                    if (tb_wifi_ch_active != null) tb_wifi_ch_active.Text = $"Active: Ch {targetCh}";
+                    if (Plugin?.Settings != null)
+                    {
+                        Plugin.Settings.ActiveWifiChannel = targetCh;
+                        Plugin.SavePluginSettings();
+                    }
+                    if (tb_wifi_scan_status != null)
+                    {
+                        tb_wifi_scan_status.Text = $"Switching Master & Pedals to Channel {targetCh}...";
+                        tb_wifi_scan_status.Foreground = new SolidColorBrush(Color.FromRgb(0, 229, 255));
+                    }
+                    SendWifiChannelCommand(Constants.WIFI_CH_CMD_SET_REQ, targetCh);
+                }
+            }
         }
     }
 }

@@ -604,7 +604,7 @@
                                     </TabControl>
 
                                     <!-- Wireless Sync Latency & Stability Monitor with RSSI Subplot -->
-                                    <Border Background="#7F4E4E4E" CornerRadius="5" Height="200" Width="540" Margin="0,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                    <Border Background="#7F4E4E4E" CornerRadius="5" Height="175" Width="540" Margin="0,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
                                         <Grid Margin="8,4,8,4">
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto"/>
@@ -639,7 +639,7 @@
                                             <Border Grid.Row="1" Background="#EE141720" BorderBrush="#3300E5FF" BorderThickness="1" CornerRadius="4" ClipToBounds="True">
                                                 <StackPanel Orientation="Vertical">
                                                     <!-- Subplot 1: Latency -->
-                                                    <Canvas x:Name="canvas_rudder_latency_graph" Height="70" Width="520" Margin="0" ClipToBounds="True">
+                                                    <Canvas x:Name="canvas_rudder_latency_graph" Height="58" Width="520" Margin="0" ClipToBounds="True">
                                                         <!-- Subplot Title Tag -->
                                                         <TextBlock Text="LATENCY" Foreground="#5500E5FF" FontSize="8" FontFamily="Arial" FontWeight="Bold" Canvas.Left="5" Canvas.Top="2"/>
 
@@ -668,7 +668,7 @@
                                                     <Line X1="0" Y1="0" X2="520" Y2="0" Stroke="#2600E5FF" StrokeThickness="1"/>
 
                                                     <!-- Subplot 2: Pedals RSSI -->
-                                                    <Canvas x:Name="canvas_rudder_rssi_graph" Height="70" Width="520" Margin="0" ClipToBounds="True">
+                                                    <Canvas x:Name="canvas_rudder_rssi_graph" Height="58" Width="520" Margin="0" ClipToBounds="True">
                                                         <!-- Legend & Subplot Title Tag -->
                                                         <StackPanel Orientation="Horizontal" Canvas.Left="5" Canvas.Top="2">
                                                             <TextBlock Text="PEDAL RSSI" Foreground="#55FFFFFF" FontSize="8" FontFamily="Arial" FontWeight="Bold" Margin="0,0,8,0"/>
@@ -727,6 +727,123 @@
                                                         <TextBlock Text="plot age cycle" Foreground="#55FFFFFF" FontSize="7" FontFamily="Arial" FontStyle="Italic" Canvas.Left="224" Canvas.Top="9"/>
                                                     </Canvas>
                                                 </StackPanel>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- 2.4 GHz Wi-Fi Frequency & Channel Optimizer Card -->
+                                    <Border Background="#7F4E4E4E" CornerRadius="5" Height="118" Width="540" Margin="0,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                        <Grid Margin="8,5,8,5">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Row 0: Header & Current Channel Status Badges -->
+                                            <DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,3">
+                                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                                                    <Canvas Width="14" Height="12" Margin="0,0,6,0" VerticalAlignment="Center">
+                                                        <Path Data="M1,2.5 A9,9 0 0,1 13,2.5 M3,5.5 A6,6 0 0,1 11,5.5 M5.5,8.5 A3,3 0 0,1 8.5,8.5" Stroke="#00E5FF" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                                                        <Ellipse Width="2" Height="2" Fill="#00E5FF" Canvas.Left="6" Canvas.Top="9.5"/>
+                                                    </Canvas>
+                                                    <TextBlock Text="WI-FI SPECTRUM &amp; CHANNEL OPTIMIZER" FontFamily="Arial Black" FontSize="9.5" Foreground="#00E5FF" VerticalAlignment="Center"/>
+                                                </StackPanel>
+
+                                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                                                    <Border Background="#22FFFFFF" BorderBrush="#44FFFFFF" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="2,0">
+                                                        <TextBlock x:Name="tb_wifi_ch_active" Text="Active: Ch 11" FontFamily="Consolas" FontSize="8.5" Foreground="#00FFCC" FontWeight="Bold"/>
+                                                    </Border>
+                                                    <Border Background="#22FFFFFF" BorderBrush="#44FFFFFF" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="2,0">
+                                                        <TextBlock x:Name="tb_wifi_ch_rec" Text="Rec: --" FontFamily="Consolas" FontSize="8.5" Foreground="#E0E0E0"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </DockPanel>
+
+                                            <!-- Row 1: 3-Channel Spectrum Cards (Compact & Proportional) -->
+                                            <Grid Grid.Row="1" Margin="0,1,0,3">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="6"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="6"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Channel 1 Card -->
+                                                <Border Grid.Column="0" Background="#EE141720" BorderBrush="#22FFFFFF" BorderThickness="1" CornerRadius="4" Padding="6,3">
+                                                    <StackPanel>
+                                                        <DockPanel LastChildFill="False">
+                                                            <TextBlock Text="CHANNEL 1" FontFamily="Arial" FontWeight="Bold" FontSize="8" Foreground="#E0E0E0" DockPanel.Dock="Left"/>
+                                                            <Border x:Name="border_ch1_badge" CornerRadius="2" Padding="3,0" DockPanel.Dock="Right" Background="#33FFFFFF">
+                                                                <TextBlock x:Name="tb_ch1_score" Text="-- %" FontFamily="Consolas" FontSize="7.5" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                                            </Border>
+                                                        </DockPanel>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                            <TextBlock Text="APs: " FontFamily="Arial" FontSize="7.5" Foreground="#888888"/>
+                                                            <TextBlock x:Name="tb_ch1_aps" Text="-- APs" FontFamily="Consolas" FontSize="7.5" Foreground="#E0E0E0" Margin="0,0,6,0"/>
+                                                            <TextBlock Text="Peak: " FontFamily="Arial" FontSize="7.5" Foreground="#888888"/>
+                                                            <TextBlock x:Name="tb_ch1_rssi" Text="-- dBm" FontFamily="Consolas" FontSize="7.5" Foreground="#00E5FF"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <!-- Channel 6 Card -->
+                                                <Border Grid.Column="2" Background="#EE141720" BorderBrush="#22FFFFFF" BorderThickness="1" CornerRadius="4" Padding="6,3">
+                                                    <StackPanel>
+                                                        <DockPanel LastChildFill="False">
+                                                            <TextBlock Text="CHANNEL 6" FontFamily="Arial" FontWeight="Bold" FontSize="8" Foreground="#E0E0E0" DockPanel.Dock="Left"/>
+                                                            <Border x:Name="border_ch6_badge" CornerRadius="2" Padding="3,0" DockPanel.Dock="Right" Background="#33FFFFFF">
+                                                                <TextBlock x:Name="tb_ch6_score" Text="-- %" FontFamily="Consolas" FontSize="7.5" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                                            </Border>
+                                                        </DockPanel>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                            <TextBlock Text="APs: " FontFamily="Arial" FontSize="7.5" Foreground="#888888"/>
+                                                            <TextBlock x:Name="tb_ch6_aps" Text="-- APs" FontFamily="Consolas" FontSize="7.5" Foreground="#E0E0E0" Margin="0,0,6,0"/>
+                                                            <TextBlock Text="Peak: " FontFamily="Arial" FontSize="7.5" Foreground="#888888"/>
+                                                            <TextBlock x:Name="tb_ch6_rssi" Text="-- dBm" FontFamily="Consolas" FontSize="7.5" Foreground="#00E5FF"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <!-- Channel 11 Card -->
+                                                <Border Grid.Column="4" Background="#EE141720" BorderBrush="#22FFFFFF" BorderThickness="1" CornerRadius="4" Padding="6,3">
+                                                    <StackPanel>
+                                                        <DockPanel LastChildFill="False">
+                                                            <TextBlock Text="CHANNEL 11" FontFamily="Arial" FontWeight="Bold" FontSize="8" Foreground="#E0E0E0" DockPanel.Dock="Left"/>
+                                                            <Border x:Name="border_ch11_badge" CornerRadius="2" Padding="3,0" DockPanel.Dock="Right" Background="#33FFFFFF">
+                                                                <TextBlock x:Name="tb_ch11_score" Text="-- %" FontFamily="Consolas" FontSize="7.5" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                                            </Border>
+                                                        </DockPanel>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                            <TextBlock Text="APs: " FontFamily="Arial" FontSize="7.5" Foreground="#888888"/>
+                                                            <TextBlock x:Name="tb_ch11_aps" Text="-- APs" FontFamily="Consolas" FontSize="7.5" Foreground="#E0E0E0" Margin="0,0,6,0"/>
+                                                            <TextBlock Text="Peak: " FontFamily="Arial" FontSize="7.5" Foreground="#888888"/>
+                                                            <TextBlock x:Name="tb_ch11_rssi" Text="-- dBm" FontFamily="Consolas" FontSize="7.5" Foreground="#00E5FF"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+                                            </Grid>
+
+                                            <!-- Row 2: Action Controls (Scan Spectrum & Switch Channel Apply) -->
+                                            <DockPanel Grid.Row="2" LastChildFill="False" Margin="0,2,0,3">
+                                                <Button x:Name="btn_scan_wifi_channels" Click="btn_scan_wifi_channels_Click" DockPanel.Dock="Left" Content="🔍 Scan Spectrum" Width="108" Height="20" Background="#2600AAFF" Foreground="#00CCFF" BorderBrush="#3300CCFF" BorderThickness="1" FontSize="8.5" FontFamily="Arial" FontWeight="SemiBold" Cursor="Hand" ToolTip="Scan 2.4 GHz channels 1, 6, and 11 for RF interference"/>
+                                                
+                                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                                                    <TextBlock Text="Target:" FontFamily="Arial" FontSize="8.5" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                    <ComboBox x:Name="combo_wifi_channel" SelectedValuePath="Tag" Width="58" Height="20" FontSize="8.5" VerticalAlignment="Center" Padding="3,0">
+                                                        <ComboBoxItem Content="Ch 1" Tag="1"/>
+                                                        <ComboBoxItem Content="Ch 6" Tag="6"/>
+                                                        <ComboBoxItem Content="Ch 11" Tag="11" IsSelected="True"/>
+                                                    </ComboBox>
+                                                    <Button x:Name="btn_apply_wifi_channel" Click="btn_apply_wifi_channel_Click" Content="Apply" Width="54" Height="20" Margin="5,0,0,0" Background="#3300E676" Foreground="#00E676" BorderBrush="#5500E676" BorderThickness="1" FontSize="8.5" FontFamily="Arial" FontWeight="Bold" Cursor="Hand" ToolTip="Broadcast new Wi-Fi channel to pedals and switch master radio"/>
+                                                </StackPanel>
+                                            </DockPanel>
+
+                                            <!-- Row 3: Status & Recommendation Banner -->
+                                            <Border Grid.Row="3" Background="#1100E5FF" BorderBrush="#2200E5FF" BorderThickness="1" CornerRadius="3" Padding="6,2">
+                                                <TextBlock x:Name="tb_wifi_scan_status" Text="Ready. Click 'Scan Spectrum' to detect local Wi-Fi congestion and find the cleanest frequency." FontFamily="Consolas" FontSize="7.5" Foreground="#AAAAAA" TextTrimming="CharacterEllipsis"/>
                                             </Border>
                                         </Grid>
                                     </Border>

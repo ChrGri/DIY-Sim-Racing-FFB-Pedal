@@ -242,6 +242,13 @@ namespace DiyFfbPedal
             return myBuffer;
         }
 
+        unsafe public byte[] getBytes_WifiChannel(DAP_wifi_channel_st aux)
+        {
+            byte[] myBuffer = new byte[sizeof(DAP_wifi_channel_st)];
+            fixed (byte* p = myBuffer) { *(DAP_wifi_channel_st*)p = aux; }
+            return myBuffer;
+        }
+
         private readonly System.Collections.Concurrent.ConcurrentDictionary<string, NCalc.Expression> _ncalcExpressionCache =
             new System.Collections.Concurrent.ConcurrentDictionary<string, NCalc.Expression>();
 
@@ -1359,6 +1366,12 @@ namespace DiyFfbPedal
         }
 
 
+
+                public void SavePluginSettings()
+        {
+            try { this.SaveCommonSettings("GeneralSettings", Settings); }
+            catch (Exception ex) { SimHub.Logging.Current.Error("Error saving settings: " + ex.Message); }
+        }
 
         public bool PortExists(string portName)
         {

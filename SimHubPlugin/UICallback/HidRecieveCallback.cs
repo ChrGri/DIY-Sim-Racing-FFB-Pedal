@@ -688,6 +688,34 @@ namespace DiyFfbPedal
                         }
                         //
 
+                        if (length == System.Runtime.InteropServices.Marshal.SizeOf(typeof(DAP_wifi_channel_st)))
+                        {
+                            System.Runtime.InteropServices.GCHandle handle =
+                                System.Runtime.InteropServices.GCHandle.Alloc(data,
+                                    System.Runtime.InteropServices.GCHandleType.Pinned);
+                            try
+                            {
+                                DAP_wifi_channel_st wc = (DAP_wifi_channel_st)
+                                    System.Runtime.InteropServices.Marshal.PtrToStructure(
+                                        handle.AddrOfPinnedObject(), typeof(DAP_wifi_channel_st));
+
+                                bool validType = wc.payloadHeader_.payloadType == Constants.wifiChannelPayloadType;
+                                ushort calcCrc = Plugin.checksumCalcArray(data,
+                                    System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadHeader)) +
+                                    System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadWifiChannel)));
+                                bool validCrc = (calcCrc == wc.payloadFooter_.checkSum);
+
+                                if (validType && validCrc)
+                                {
+                                    HandleWifiChannelResponse(wc);
+                                }
+                            }
+                            finally
+                            {
+                                handle.Free();
+                            }
+                        }
+                        //
                         if (length == System.Runtime.InteropServices.Marshal.SizeOf(typeof(DAP_servo_config_st)))
                         {
                             System.Runtime.InteropServices.GCHandle handle =
