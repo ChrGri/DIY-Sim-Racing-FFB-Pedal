@@ -39,7 +39,6 @@ namespace DiyFfbPedal
                 {
                     if (BridgeHidService.IsConnected)
                     {
-                        Task.Delay(100);
                         Task.Run(() => BridgeHidService.SendLargeDataAsync(newBuffer));
                     }
                     else

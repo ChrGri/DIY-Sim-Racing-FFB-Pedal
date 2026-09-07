@@ -157,6 +157,7 @@ namespace DiyFfbPedal
                         List<int> indices_sof_bridge_basic_struct = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAME_BRIDGE_BASIC_STRUCT, currentBufferLength);
                         List<int> indices_sof_config = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAME_CONFIG, currentBufferLength);
                         List<int> indices_sof_servo_config = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAME_SERVO_CONFIG, currentBufferLength);
+                        List<int> indices_sof_wifi_channel = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAME_WIFI_CHANNEL, currentBufferLength);
                         List<int> indices_eof = FindAllOccurrences(buffer_appended[bridgeBufferIndex], ENDOFFRAMCHAR, currentBufferLength);
 
                         var validPairsExtendedStruct = new List<Tuple<int, int>>();
@@ -164,6 +165,7 @@ namespace DiyFfbPedal
                         var validPairsConfig = new List<Tuple<int, int>>();
                         var validPairsBridgeState = new List<Tuple<int, int>>();
                         var validPairsServoConfig = new List<Tuple<int, int>>();
+                        var validPairsWifiChannel = new List<Tuple<int, int>>();
 
                         bool sofHasBeenReceivedEofNotYet = false;
                         byte[] bufferByteAssignedToStruct_class = bridge_bufferByteAssignedToStruct_class;
@@ -218,6 +220,15 @@ namespace DiyFfbPedal
                             ref sofHasBeenReceivedEofNotYet,
                             bufferByteAssignedToStruct_class,
                             5);
+                        // Search for the wifi channel struct
+                        FindValidMessagePairs(
+                            indices_sof_wifi_channel,
+                            indices_eof,
+                            System.Runtime.InteropServices.Marshal.SizeOf(typeof(DAP_wifi_channel_st)),
+                            validPairsWifiChannel,
+                            ref sofHasBeenReceivedEofNotYet,
+                            bufferByteAssignedToStruct_class,
+                            6);
                         // check if at least SOF1 byte was received, but EOF was not for last packet
                         List<int> indices_sof1 = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAMCHAR_SOF_byte0, currentBufferLength);
                         List<int> indices_sof1_and_sof2 = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAMCHAR, currentBufferLength);
@@ -722,6 +733,57 @@ namespace DiyFfbPedal
                             }
 
                      
+
+                            // wifi channel response
+                            for (int pairId = 0; pairId < validPairsWifiChannel.Count; pairId++)
+                            {
+                                int srcBufferOffset_0 = validPairsWifiChannel[pairId].Item1;
+                                int srcBufferOffset_1 = validPairsWifiChannel[pairId].Item2;
+
+                                int destBuffLength = srcBufferOffset_1 - srcBufferOffset_0;
+                                int wifiChannelMarshalSize = System.Runtime.InteropServices.Marshal.SizeOf(typeof(DAP_wifi_channel_st));
+                                unsafe
+                                {
+                                    if (destBuffLength == wifiChannelMarshalSize)
+                                    {
+                                        byte[] destArr = new byte[destBuffLength];
+                                        Buffer.BlockCopy(buffer_appended[bridgeBufferIndex], srcBufferOffset_0, destArr, 0, destBuffLength);
+
+                                        System.Runtime.InteropServices.GCHandle handle =
+                                            System.Runtime.InteropServices.GCHandle.Alloc(destArr,
+                                                System.Runtime.InteropServices.GCHandleType.Pinned);
+                                        try
+                                        {
+                                            DAP_wifi_channel_st wc = (DAP_wifi_channel_st)
+                                                System.Runtime.InteropServices.Marshal.PtrToStructure(
+                                                    handle.AddrOfPinnedObject(), typeof(DAP_wifi_channel_st));
+
+                                            bool validType = wc.payloadHeader_.payloadType == Constants.wifiChannelPayloadType;
+                                            ushort calcCrc = Plugin.checksumCalcArray(destArr,
+                                                System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadHeader)) +
+                                                System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadWifiChannel)));
+                                            bool validCrc = (calcCrc == wc.payloadFooter_.checkSum);
+
+                                            if (validType && validCrc)
+                                            {
+                                                bufferByteAssignedToStruct.AsSpan(srcBufferOffset_0, destBuffLength).Fill(true);
+                                                bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, destBuffLength).Fill(6);
+                                                lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + destBuffLength);
+
+                                                HandleWifiChannelResponse(wc);
+                                            }
+                                            else
+                                            {
+                                                bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, destBuffLength).Fill(0);
+                                            }
+                                        }
+                                        finally
+                                        {
+                                            handle.Free();
+                                        }
+                                    }
+                                }
+                            }
 
                             //bridge states here
                             for (int pairId = 0; pairId < validPairsBridgeState.Count; pairId++)

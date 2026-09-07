@@ -306,6 +306,7 @@ char *g_apHost_pc;
 #ifdef ESPNOW_Enable
 #include "ESPNOW_lib.h"
 TaskHandle_t Task6;
+uint8_t g_currentWifiChannel_u8 = 11;
 #endif
 
 #include "PedalLED.h"
@@ -2830,6 +2831,8 @@ static inline size_t getExpectedPacketSize(uint8_t payloadType) {
     return sizeof(DapActionOta_t);
   case DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8:
     return sizeof(DAP_servo_config_st);
+  case DAP_PAYLOAD_TYPE_WIFI_CHANNEL_U8:
+    return sizeof(DapWifiChannel_t);
   // Add other packet types here in the future
   default:
     return 0;
@@ -3198,6 +3201,34 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
           }
           break;
         }
+        case DAP_PAYLOAD_TYPE_WIFI_CHANNEL_U8: {
+          DapWifiChannel_t received_wifi_channel;
+          memcpy(&received_wifi_channel, packet_start, sizeof(DapWifiChannel_t));
+          calculated_crc = checksumCalculator_u16(
+              (uint8_t *)(&(received_wifi_channel.payloadHeader_st)),
+              sizeof(received_wifi_channel.payloadHeader_st) +
+                  sizeof(received_wifi_channel.payloadWifiChannel_st));
+          received_crc = received_wifi_channel.payloadFooter_st.checkSum_u16;
+
+          if (calculated_crc != received_crc ||
+              received_wifi_channel.payloadHeader_st.version_u8 !=
+                  DAP_VERSION_CONFIG_U8) {
+            structIsValid = false;
+          } else {
+#ifdef ESPNOW_Enable
+            if (received_wifi_channel.payloadWifiChannel_st.command_u8 == WIFI_CH_CMD_SET_REQ) {
+              uint8_t newCh = received_wifi_channel.payloadWifiChannel_st.currentChannel_u8;
+              if (newCh >= 1 && newCh <= 14) {
+                g_currentWifiChannel_u8 = newCh;
+                saveWifiChannelToEeprom(newCh);
+                esp_wifi_set_channel(newCh, WIFI_SECOND_CHAN_NONE);
+                ActiveSerial->printf("Wi-Fi channel set to %d via Serial\n", newCh);
+              }
+            }
+#endif
+          }
+          break;
+        }
         } // end switch
 
         if (!structIsValid) {
@@ -3375,29 +3406,36 @@ void otaUpdateTask(void *pvParameters) {
         OTA_count++;
       }
 
-#if defined(OTA_update) || defined(OTA_update_ESP32)
-      if (g_OTA_enable_b) {
-        if (message_out_b) {
+      #if defined(OTA_update) || defined(OTA_update_ESP32)
+      if (g_OTA_enable_b) 
+      {
+        DapConfig_t ota_dap_config_st;
+        global_dap_config_class.getConfig(&ota_dap_config_st, 50);
+        if (message_out_b) 
+        {
           message_out_b = false;
           Serial1.println("OTA enable flag on");
         }
-        if (g_OTA_status) {
-#ifdef OTA_update_ESP32
+        if (g_OTA_status) 
+        {
+          #ifdef OTA_update_ESP32
           server.handleClient();
-#endif
-#ifdef OTA_update
-          if (OTA_update_status == 0) {
+          #endif
+          #ifdef OTA_update
+          if (OTA_update_status == 0) 
+          {
             Buzzer.play_melody_tone(melody_victory_theme,
                                     sizeof(melody_victory_theme) /
                                         sizeof(melody_victory_theme[0]),
                                     melody_durations_Victory_theme);
             ESP.restart();
-          } else {
+          } 
+          else 
+          {
             if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
                 OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD) {
               ActiveSerial->println(
                   "Entering dedicated OTA mode... stopping hardware tasks.");
-
               // (Optional, aber empfohlen: Hier den Motor einmalig disablen,
               // damit das Pedal nicht unerwartet zuckt, während der Chip
               // blockiert ist)
@@ -3429,37 +3467,59 @@ void otaUpdateTask(void *pvParameters) {
             }
           }
 
-#endif
+          #endif
 
-        } else {
+        }
+        else 
+        {
+          if(dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 == OTA_ACTION_ESP_BOOT_INTO_DOWNLOAD_MODE)
+          {
+            #ifdef ESPNow_S3
+              ActiveSerial->println("Restart into Download mode");
+              Buzzer.single_beep_tone(700, 100);
+              pedalLED.setPixelColor(0, 0x00, 0xFF, 0xFF); // Cyan / Aqua
+              pedalLED.show();            
+              sendESPNOWLog(
+              "Pedal:%d restart into Download mode",
+              ota_dap_config_st.payloadPedalConfig_st.pedalType_u8);
+              delay(1000);
+              REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+              ESP.restart();
+            #else
+              ActiveSerial->println("Command not supported");
+              delay(1000);
+              ESP.restart();
+            #endif
+          }
           esp_err_t result;
           ActiveSerial->println("de-initialize espnow");
           ActiveSerial->println("wait...");
-#ifdef ESPNOW_Enable
+          #ifdef ESPNOW_Enable
           sendESPNOWLog("OTA enabled, de-initialize espnow");
           sendESPNOWLog("wait...");
           delay(1000);
           result = esp_now_deinit();
           g_espNowInitialStatus_b = false;
           g_espNowStatus_b = false;
-#else
+          #else
           result = ESP_OK;
-#endif
+          #endif
           // result = ESP_OK;
           delay(3000);
-          if (result == ESP_OK) {
+          if (result == ESP_OK) 
+          {
             g_OTA_status = true;
             // notify pedal task to stop movement
             uint8_t ota_event = 1;
             xQueueSend(s_systemControlQueue, &ota_event, (TickType_t)0);
             Buzzer.single_beep_tone(700, 100);
             delay(1000);
-#ifdef OTA_update_ESP32
+            #ifdef OTA_update_ESP32
             ota_wifi_initialize(g_apHost_pc);
-#endif
+            #endif
             pedalLED.setPixelColor(0, 0x00, 0x00, 0xff);
             pedalLED.show();
-#ifdef OTA_update
+            #ifdef OTA_update
             wifi_initialized(g_SSID, g_PASS);
             delay(2000);
             // sendESPNOWLog("Wifi Connected");
@@ -3528,7 +3588,7 @@ void otaUpdateTask(void *pvParameters) {
               ActiveSerial->println("OTA from platformIO");
               ota_arduinoota_initialize();
             }
-#endif
+            #endif
             delay(3000);
           }
         }
@@ -3577,6 +3637,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
 
   for (;;) {
     if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) {
+      bool packetSentThisCycle = false;
 
       DapConfig_t espnow_dap_config_st = {};
       if (!global_dap_config_class.getConfig(&espnow_dap_config_st, 50)) {
@@ -3812,33 +3873,38 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
         }
         // basic state packet send out
         if (basic_state_send_b && !noAssignmentStatus) {
-          // update pedal states
-          DapStateBasic_t dap_state_basic_st_lcl;
-          // initialize with zeros in case semaphore couldn't be aquired
-          memset(&dap_state_basic_st_lcl, 0, sizeof(dap_state_basic_st_lcl));
+          if (!isEspnowBusy()) {
+            // update pedal states
+            DapStateBasic_t dap_state_basic_st_lcl;
+            // initialize with zeros in case semaphore couldn't be aquired
+            memset(&dap_state_basic_st_lcl, 0, sizeof(dap_state_basic_st_lcl));
 
-          PedalStatePackage_t statePkg;
-          if (s_espnowStateQueue != NULL &&
-              xQueuePeek(s_espnowStateQueue, &statePkg, 0) == pdTRUE) {
-            dap_state_basic_st_lcl = statePkg.basic_st;
-            dap_state_basic_st_lcl.payloadFooter_st.checkSum_u16 =
-                checksumCalculator_u16(
-                    (uint8_t *)(&(dap_state_basic_st_lcl.payloadHeader_st)),
-                    sizeof(dap_state_basic_st_lcl.payloadHeader_st) +
-                        sizeof(
-                            dap_state_basic_st_lcl.payloadPedalStateBasic_st));
-            espnowSendWrapper(g_broadcastMac_au8,
-                              (uint8_t *)&dap_state_basic_st_lcl,
-                              sizeof(dap_state_basic_st_lcl));
+            PedalStatePackage_t statePkg;
+            if (s_espnowStateQueue != NULL &&
+                xQueuePeek(s_espnowStateQueue, &statePkg, 0) == pdTRUE) {
+              dap_state_basic_st_lcl = statePkg.basic_st;
+              dap_state_basic_st_lcl.payloadFooter_st.checkSum_u16 =
+                  checksumCalculator_u16(
+                      (uint8_t *)(&(dap_state_basic_st_lcl.payloadHeader_st)),
+                      sizeof(dap_state_basic_st_lcl.payloadHeader_st) +
+                          sizeof(
+                              dap_state_basic_st_lcl.payloadPedalStateBasic_st));
+              esp_err_t res = espnowSendWrapper(g_broadcastMac_au8,
+                                                (uint8_t *)&dap_state_basic_st_lcl,
+                                                sizeof(dap_state_basic_st_lcl));
+              if (res == ESP_OK) {
+                packetSentThisCycle = true;
+              }
+            }
+            basic_state_send_b = false;
           }
-          basic_state_send_b = false;
         }
 
         profiler_espNow.end(2);
 
         profiler_espNow.start(3);
 
-        if (extend_state_send_b && !noAssignmentStatus && !isEspnowBusy()) {
+        if (extend_state_send_b && !noAssignmentStatus && !packetSentThisCycle && !isEspnowBusy()) {
           // update pedal states
           DapStateExtended_t dap_state_extended_st_espNow;
           // initialize with zeros in case semaphore couldn't be aquired
@@ -3856,9 +3922,12 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
                     sizeof(dap_state_extended_st_espNow.payloadHeader_st) +
                         sizeof(dap_state_extended_st_espNow
                                    .payloadPedalStateExtended_st));
-            ESPNow.send_message(g_broadcastMac_au8,
-                                (uint8_t *)&dap_state_extended_st_espNow,
-                                sizeof(dap_state_extended_st_espNow));
+            esp_err_t res = espnowSendWrapper(g_broadcastMac_au8,
+                                              (uint8_t *)&dap_state_extended_st_espNow,
+                                              sizeof(dap_state_extended_st_espNow));
+            if (res == ESP_OK) {
+              packetSentThisCycle = true;
+            }
           }
           extend_state_send_b = false;
         }
@@ -3984,48 +4053,48 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
             !noAssignmentStatus) {
           if (dap_calculationVariables_st.rudderStatus_b ||
               dap_calculationVariables_st.helicopterRudderStatus_b) {
-            g_dapRudderSending_st.payloadRudderState_st
-                .pedalPositionRatio_fl32 =
-                dap_calculationVariables_st.currentPedalPositionRatio_fl32;
-            g_dapRudderSending_st.payloadRudderState_st.pedalPosition_u16 =
-                dap_calculationVariables_st.currentPedalPosition_u32;
-            g_dapRudderSending_st.payloadRudderState_st.pedalForce_N_fl32 =
-                dap_calculationVariables_st.currentPedalForce_N_fl32;
-            g_dapRudderSending_st.payloadRudderState_st.sendTimestamp_ms = millis();
-            g_dapRudderSending_st.payloadRudderState_st.echoTimestamp_ms = g_lastPartnerTimestamp_ms;
-            g_dapRudderSending_st.payloadHeader_st.payloadType_u8 =
-                DAP_PAYLOAD_TYPE_ESPNOW_RUDDER_U8;
-            g_dapRudderSending_st.payloadHeader_st.pedalTag_u8 =
-                espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8;
-            g_dapRudderSending_st.payloadHeader_st.version_u8 =
-                DAP_VERSION_CONFIG_U8;
-            uint16_t crc = 0;
-            crc = checksumCalculator_u16(
-                (uint8_t *)(&(g_dapRudderSending_st.payloadHeader_st)),
-                sizeof(g_dapRudderSending_st.payloadHeader_st) +
-                    sizeof(g_dapRudderSending_st.payloadRudderState_st));
-            g_dapRudderSending_st.payloadFooter_st.checkSum_u16 = crc;
-            uint8_t *targetMac = g_broadcastMac_au8;
-            bool isRecvMacValid = false;
-            for (int m = 0; m < 6; m++) {
-              if (g_recvMac_au8[m] != 0) {
-                isRecvMacValid = true;
-                break;
+            if (!packetSentThisCycle && !isEspnowBusy()) {
+              rudderPacketsUpdateLast = millis();
+              g_dapRudderSending_st.payloadRudderState_st
+                  .pedalPositionRatio_fl32 =
+                  dap_calculationVariables_st.currentPedalPositionRatio_fl32;
+              g_dapRudderSending_st.payloadRudderState_st.pedalPosition_u16 =
+                  dap_calculationVariables_st.currentPedalPosition_u32;
+              g_dapRudderSending_st.payloadRudderState_st.pedalForce_N_fl32 =
+                  dap_calculationVariables_st.currentPedalForce_N_fl32;
+              g_dapRudderSending_st.payloadRudderState_st.sendTimestamp_ms = millis();
+              g_dapRudderSending_st.payloadRudderState_st.echoTimestamp_ms = g_lastPartnerTimestamp_ms;
+              g_dapRudderSending_st.payloadHeader_st.payloadType_u8 =
+                  DAP_PAYLOAD_TYPE_ESPNOW_RUDDER_U8;
+              g_dapRudderSending_st.payloadHeader_st.pedalTag_u8 =
+                  espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8;
+              g_dapRudderSending_st.payloadHeader_st.version_u8 =
+                  DAP_VERSION_CONFIG_U8;
+              uint16_t crc = 0;
+              crc = checksumCalculator_u16(
+                  (uint8_t *)(&(g_dapRudderSending_st.payloadHeader_st)),
+                  sizeof(g_dapRudderSending_st.payloadHeader_st) +
+                      sizeof(g_dapRudderSending_st.payloadRudderState_st));
+              g_dapRudderSending_st.payloadFooter_st.checkSum_u16 = crc;
+              uint8_t *targetMac = g_broadcastMac_au8;
+              bool isRecvMacValid = false;
+              for (int m = 0; m < 6; m++) {
+                if (g_recvMac_au8[m] != 0) {
+                  isRecvMacValid = true;
+                  break;
+                }
+              }
+              if (isRecvMacValid) {
+                safeRegisterEspNowPeer(g_recvMac_au8);
+                targetMac = g_recvMac_au8;
+              }
+              esp_err_t res = espnowSendWrapper(targetMac,
+                                                (uint8_t *)&g_dapRudderSending_st,
+                                                sizeof(g_dapRudderSending_st));
+              if (res == ESP_OK) {
+                packetSentThisCycle = true;
               }
             }
-            if (isRecvMacValid) {
-              safeRegisterEspNowPeer(g_recvMac_au8);
-              targetMac = g_recvMac_au8;
-            }
-            espnowSendWrapper(targetMac,
-                              (uint8_t *)&g_dapRudderSending_st,
-                              sizeof(g_dapRudderSending_st));
-            // ESPNow_send=dap_calculationVariables_st.currentPedalPosition_u32;
-            // esp_err_t result =ESPNow.send_message(Recv_mac,(uint8_t *)
-            // &_ESPNow_Send,sizeof(_ESPNow_Send)); if (result == ESP_OK)
-            //{
-            //   ActiveSerial->println("Error sending the data");
-            // }
             if (g_espNowRudderUpdate_b && !noAssignmentStatus) {
               // dap_calculationVariables_st.syncPedalPosition_u32=ESPNow_recieve;
               dap_calculationVariables_st.syncPedalPosition_u32 =
@@ -4039,8 +4108,9 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
                       .pedalForce_N_fl32;
               g_espNowRudderUpdate_b = false;
             }
+          } else {
+            rudderPacketsUpdateLast = millis();
           }
-          rudderPacketsUpdateLast = millis();
         }
 
         // Periodic diagnostic telemetry: Report RF health and heap to SimHub every 60s

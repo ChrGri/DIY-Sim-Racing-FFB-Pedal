@@ -40,7 +40,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr0.05", 0 },  // Command pulse input selection
             { "Pr0.06", 0 },  // Motor rotational direction setup
             { "Pr0.07", 3 },  // Reserved parameters
-            { "Pr0.08", 3750 },  // Microstep
+            { "Pr0.08", 3200 },  // Microstep (3200 steps/rev: 213.3 kHz @ 4000 RPM, 800
             { "Pr0.09", 1 },  // 1st numerator of electronic gear
             { "Pr0.10", 1 },  // Denominator of electronic gear
             { "Pr0.11", 4000 },  // Reserved parameters
@@ -67,7 +67,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr1.07", 10000 },  // 2nd time constant of velocity loop
             { "Pr1.08", 8 },  // 2nd filter of velocity detection
             { "Pr1.09", 200 },  // 2nd torque filter
-            { "Pr1.10", 0 },  // Velocity feed forward gain (Reduziert gegen aggressi?
+            { "Pr1.10", 0 },  // Velocity feed forward gain (Reduziert gegen aggressives
             { "Pr1.11", 0 },  // Velocity feed forward filter. Had better velocity er?
             { "Pr1.12", 0 },  // Torque feed forward gain
             { "Pr1.13", 1000 },  // Torque feed forward filter
@@ -97,7 +97,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr1.37", 1052 },  // Special function register
             { "Pr1.38", 0 },  // Reserved parameter
             { "Pr1.39", 0 },  // Reserved parameter
-            { "Pr2.00", 0 },  // Adaptive filter mode setup (Ausgeschaltet für konsta?
+            { "Pr2.00", 0 },  // Adaptive filter mode setup (Ausgeschaltet für konstante
             { "Pr2.01", 50 },  // 1st notch frequency
             { "Pr2.02", 20 },  // 1st notch width
             { "Pr2.03", 99 },  // 1st notch depth
@@ -120,7 +120,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr2.20", 0 },  // 4th damping frequency
             { "Pr2.21", 0 },  // 4th damping filter
             { "Pr2.22", 15 },  // Positional command smoothing filter (PT1). 1.5ms glä?
-            { "Pr2.23", 10 },  // Positional command FIR filter. 1.0ms Moving Average ?
+            { "Pr2.23", 10 },  // Positional command FIR filter. 1.0ms Moving Average für
             { "Pr2.24", 0 },  // Reserved parameter
             { "Pr2.25", 0 },  // Reserved parameter
             { "Pr2.26", 0 },  // Reserved parameter
@@ -167,7 +167,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr4.07", 3584 },  // Input selection SI8
             { "Pr4.08", 771 },  // Input selection SI9
             { "Pr4.09", 0 },  // Input selection SI10
-            { "Pr4.10", 257 },  // Output selection SO1 81: No ALARM ==> 2.4Ohm, ALARM ?
+            { "Pr4.10", 257 },  // Output selection SO1 81: No ALARM ==> 2.4Ohm,
             { "Pr4.11", 0 },  // Output selection SO2
             { "Pr4.12", 0 },  // Output selection SO3
             { "Pr4.13", 0 },  // Output selection SO4
@@ -270,8 +270,8 @@ namespace DiyFfbPedal.UIFunction
             { "Pr6.20", 10 },  // Trial running distance
             { "Pr6.21", 200 },  // Trial running wait time
             { "Pr6.22", 1 },  // Trial running cycle times
-            { "Pr6.23", 0 },  // Disturbance torque compensating gain
-            { "Pr6.24", 0 },  // Disturbance observer filter
+            { "Pr6.23", 30 },  // Disturbance torque compensating gain (30% Disturbance
+            { "Pr6.24", 15 },  // Disturbance observer filter (1.5ms filter time const?
             { "Pr6.25", 0 },  // Reserved parameter
             { "Pr6.26", 0 },  // Reserved parameter
             { "Pr6.27", 0 },  // Alarm latch time selection

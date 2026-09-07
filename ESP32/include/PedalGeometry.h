@@ -141,6 +141,7 @@ static inline IRAM_ATTR_FLAG float pedalInclineAngleDeg(float sledPositionMm_fl3
   //return ((((-0.0389929f * ratioZSq_fl32) + 0.1462766f) * ratioZSq_fl32 - 0.3211819f) * ratioZSq_fl32 + 0.9992150f) * ratioZ_fl32 * angleSign_fl32 + angleBase_fl32;
   // optimized approcimation to mitigate discontinuity at 45°
   return ((((-0.0389929f * ratioZSq_fl32) + 0.1462766f) * ratioZSq_fl32 - 0.3211819f) * ratioZSq_fl32 + 0.9992964f) * ratioZ_fl32 * angleSign_fl32 + angleBase_fl32;
+  //return atan2f(pivotXy_fl32, pivotXx_fl32) * RAD_TO_DEG_FL32;
 
 }
 

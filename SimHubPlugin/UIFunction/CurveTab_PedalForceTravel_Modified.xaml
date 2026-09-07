@@ -16,18 +16,18 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border  HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="5,5,5,5"  Margin="0,3,0,0">
-            <StackPanel HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540">
+        <Border  HorizontalAlignment="Left" Height="276" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="8,8,8,8"  Margin="0,2,0,0" Padding="0,0,0,6">
+            <StackPanel HorizontalAlignment="Left" Height="270" VerticalAlignment="Top" Width="540">
                 
                 <StackPanel Height="20" Width="540" VerticalAlignment="Top" HorizontalAlignment="Left" Orientation="Horizontal">
-                    <Label Content="{SLoc DIYFFBPedalPlugin_TextForceCurveAdjustment, 'FORCE CURVE ADJUSTMENT'}" Width="200" Foreground="White" FontFamily="Arial Black" HorizontalAlignment="Center" Margin="70,0,0,0" Height="20" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextForceCurveAdjustment, 'FORCE CURVE ADJUSTMENT'}" Width="200" Foreground="White" FontFamily="Arial Black" HorizontalAlignment="Center" Margin="15,0,0,0" Height="20" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                     <styles:SHButtonPrimary x:Name="btn_linearcurve" Click="btn_linearcurve_Click" Width="40" Content="{SLoc DIYFFBPedalPlugin_BtnTextLinear, 'Linear'}" Height="15" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" MinHeight="15" VerticalContentAlignment="Center" />
                     <styles:SHButtonPrimary x:Name="btn_Scurve" Click="btn_Scurve_Click" Width="45" Content="{SLoc DIYFFBPedalPlugin_BtnTextSCurve, 'S-Curve'}" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="15" />
                     <styles:SHButtonPrimary x:Name="btn_10xcurve" Click="btn_10xcurve_Click" Width="50" Content="{SLoc DIYFFBPedalPlugin_BtnTextExponent, 'Exponent'}" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="15" />
                     <styles:SHButtonPrimary x:Name="btn_logcurve" Click="btn_logcurve_Click" Width="50" Content="{SLoc DIYFFBPedalPlugin_BtnTextLogarithm, 'Logarithm'}" Height="15" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" MinHeight="15" VerticalContentAlignment="Center" />
                 </StackPanel>
                 <StackPanel Height="220" Width="540" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,5,0,0">
-                    <Canvas x:Name="mainCanvas" Height="200" Width="400" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="70,0,0,0" MouseRightButtonDown="Canvas_MouseRightButtonDown">
+                    <Canvas x:Name="mainCanvas" Height="200" Width="450" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="15,0,0,0" MouseRightButtonDown="Canvas_MouseRightButtonDown">
                         <Canvas.RenderTransform>
                             <TransformGroup>
                                 <ScaleTransform ScaleX="1" ScaleY="1"/>
@@ -50,9 +50,9 @@
                                 </TransformGroup>
                             </TextBlock.RenderTransform>
                         </TextBlock>
-                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="TRAVEL" Width="60" Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="170" Canvas.Top="186" FontFamily="Arial Black" TextAlignment="Center" Height="14" />
+                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="TRAVEL" Width="60" Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="195" Canvas.Top="186" FontFamily="Arial Black" TextAlignment="Center" Height="14" />
                         <TextBlock x:Name="text_point_pos" HorizontalAlignment="Left" VerticalAlignment="Top" Text="pos" Width="60" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Left="5" Canvas.Top="15" Height="40" FontSize="10" FontFamily="Arial"/>
-                        <Polygon x:Name="polygonCurveBackground"  Height="200" Width="400" Opacity="0.15" Points="0,200 80,160 160,120 240,80 320,40 400,0 400,200 0,200" StrokeThickness="4" RenderTransformOrigin="1,0.5"  HorizontalAlignment="Left" VerticalAlignment="Center" ToolTip="Right-click on the canvas to add a control point, right-click a point to remove it" >
+                        <Polygon x:Name="polygonCurveBackground"  Height="200" Width="450" Opacity="0.15" Points="0,200 80,160 160,120 240,80 320,40 400,0 400,200 0,200" StrokeThickness="4" RenderTransformOrigin="1,0.5"  HorizontalAlignment="Left" VerticalAlignment="Center" ToolTip="Right-click on the canvas to add a control point, right-click a point to remove it" >
                             <Polygon.Fill>
                                 <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
                                     <GradientStop Color="{DynamicResource AccentColor}" Offset="0"/>
@@ -60,7 +60,7 @@
                                 </LinearGradientBrush>
                             </Polygon.Fill>
                         </Polygon>
-                        <Polyline x:Name="Polyline_BrakeForceCurve" Stroke="{DynamicResource AccentColorBrush}" Height="200" Width="400" Opacity="0.7" Points="0,200 80,160 160,120 240,80 320,40 400,0" StrokeThickness="1" RenderTransformOrigin="1,0.5"  HorizontalAlignment="Left" VerticalAlignment="Center" />
+                        <Polyline x:Name="Polyline_BrakeForceCurve" Stroke="{DynamicResource AccentColorBrush}" Height="200" Width="450" Opacity="0.7" Points="0,200 80,160 160,120 240,80 320,40 400,0" StrokeThickness="1" RenderTransformOrigin="1,0.5"  HorizontalAlignment="Left" VerticalAlignment="Center" />
 
 
                         <TextBlock x:Name="text_SABS" HorizontalAlignment="Left" VerticalAlignment="Top" Text="Simulated ABS" Width="120" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Left="320" Canvas.Top="80.2" FontSize="8" Height="10">
@@ -73,8 +73,8 @@
                                 </TransformGroup>
                             </TextBlock.RenderTransform>
                         </TextBlock>
-                        <Rectangle x:Name="rect_SABS" Width="400" Height="40" Fill="#4C8B0000" Canvas.Left="0" Canvas.Top="0" />
-                        <Rectangle x:Name="rect_SABS_Control" Width="400" Height="6" Fill="#998B0000" Canvas.Left="0" Canvas.Top="37" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="rect_SABS_Control_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp"/>
+                        <Rectangle x:Name="rect_SABS" Width="450" Height="40" Fill="#4C8B0000" Canvas.Left="0" Canvas.Top="0" />
+                        <Rectangle x:Name="rect_SABS_Control" Width="450" Height="6" Fill="#998B0000" Canvas.Left="0" Canvas.Top="37" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="rect_SABS_Control_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp"/>
                         <Rectangle x:Name="rect_BP_Control" Width="32" Height="200" Fill="#990954CE" Canvas.Left="200" Canvas.Top="0" MouseLeftButtonDown="Rectangle_MouseLeftButtonDown" MouseMove="rect_BP_Control_MouseMove" MouseLeftButtonUp="Rectangle_MouseLeftButtonUp"/>
                         <Ellipse x:Name="rect_State" Width="10" Height="10" Canvas.Left="25" Canvas.Top="76" Stroke="#CCEF0707" StrokeThickness="2" />
                         <Line x:Name="StatusLineXBar" X1="0" Y1="81" X2="25" Y2="81" Stroke="#CCEF0707" StrokeThickness="0.5" Opacity="0.5" Visibility="Hidden"/>
@@ -116,10 +116,10 @@
                 </StackPanel>
 
 
-                <StackPanel Width="430" Height="40" Orientation="Horizontal" Margin="0,-10,0,0">
+                <StackPanel Width="450" Height="40" Orientation="Horizontal" Margin="15,-10,0,0" HorizontalAlignment="Left">
                     <Label x:Name="Label_min_pos" Width="30" Height="40" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" HorizontalContentAlignment="Center" Background="Transparent" Cursor="Hand" MouseLeftButtonDown="Label_min_pos_MouseLeftButtonDown" MouseDoubleClick="Label_min_pos_MouseDoubleClick" ToolTip="Click to type the travel in mm"/>
                     <TextBox x:Name="TextBox_edit_min_pos" Width="30" Height="20" FontSize="9" FontFamily="Arial" VerticalAlignment="Top" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
-                    <controls:RangeSlider x:Name="Rangeslider_travel_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="1" Grid.Column="2" Height="20" LowerValueChanged="Rangeslider_travel_range_LowerValueChanged" UpperValueChanged="Rangeslider_travel_range_UpperValueChanged" MinRange="1" SmallChange="1" IsSnapToTickEnabled="True" UpperValue="80" Width="365" VerticalAlignment="Top" LowerValue="35" Minimum="5" Maximum="95"/>
+                    <controls:RangeSlider x:Name="Rangeslider_travel_range" Style="{DynamicResource RangeSliderStyle}" MinRangeWidth="1" Grid.Column="2" Height="20" LowerValueChanged="Rangeslider_travel_range_LowerValueChanged" UpperValueChanged="Rangeslider_travel_range_UpperValueChanged" MinRange="1" SmallChange="1" IsSnapToTickEnabled="True" UpperValue="80" Width="390" VerticalAlignment="Top" LowerValue="35" Minimum="5" Maximum="95"/>
                     <Label x:Name="Label_max_pos" Width="30" Height="40" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Min" Padding="0,0,0,0" HorizontalContentAlignment="Center" Background="Transparent" Cursor="Hand" MouseLeftButtonDown="Label_max_pos_MouseLeftButtonDown" MouseDoubleClick="Label_max_pos_MouseDoubleClick" ToolTip="Click to type the travel in mm"/>
                     <TextBox x:Name="TextBox_edit_max_pos" Width="30" Height="20" FontSize="9" FontFamily="Arial" VerticalAlignment="Top" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
                 </StackPanel>

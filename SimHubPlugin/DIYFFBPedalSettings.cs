@@ -58,6 +58,7 @@ namespace DiyFfbPedal
         public byte[] Pedal_action_fps = new byte[3] { 20, 20, 20 };
         public bool Rudder_RPM_effect_b = false;
         public bool Rudder_ACC_effect_b = false;
+        public byte ActiveWifiChannel = 11;
         public bool Rudder_ACC_WindForce = false;
         public bool advanced_b = false;
         public string SSID_string = "";

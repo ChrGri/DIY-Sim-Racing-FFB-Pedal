@@ -622,7 +622,7 @@
     <value>Coulomb Friction</value>
   </data>
   <data name="DIYFFBPedalPlugin_ButtonTextFWFlash" xml:space="preserve">
-    <value>FW Flash</value>
+    <value>Flash Mode</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextGeneralSettingWakeOnPluginOnly" xml:space="preserve">
     <value>Wakeup only by plugin trigger</value>

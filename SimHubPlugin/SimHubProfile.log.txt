@@ -1,0 +1,893 @@
+[EXECUTING: PerfView /AcceptEULA /NoGui /Zip:true /MaxCollectSec:20 /DataFile:c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin\SimHubProfile.etl collect]
+Circular buffer size = 0, setting to 500.
+[Kernel Log: c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin\SimHubProfile.kernel.etl]
+Kernel keywords enabled: Default
+[User mode Log: c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin\SimHubProfile.etl]
+Enabling Provider:PerfViewLogger Level:Verbose Keywords:0xffffffffffffffff Stacks:0 Values: Guid:a8a71ac1-040f-54a2-07ca-00a89b5ab761
+Turning on more CLR GC, JScript and ASP.NET Events.
+Enabling Provider:DotNet Level:Verbose Keywords:0xffffffffffffffff Stacks:1 Values: Guid:319dc449-ada5-50f7-428e-957db6791668
+Enabling Provider:Microsoft-Windows-Kernel-EventTracing Level:Verbose Keywords:0x70 Stacks:1 Values: Guid:b675ec37-bdb6-4648-bc92-f3fdc74d3ca2
+Enabling Provider:Microsoft-Windows-Kernel-File Level:Verbose Keywords:0x80 Stacks:1 Values: Guid:edd08927-9cc4-4e65-b970-c2560fb5c289
+Enabling Provider:Microsoft-Windows-Kernel-Process Level:Informational Keywords:0x10 Stacks:1 Values: Guid:22fb2cd6-0e7b-422b-a0c7-2fad1fd0e716
+Enabling Provider:ASP.NET Level:Verbose Keywords:0xfffffffffffffffd Stacks:0 Values: Guid:aff081fe-0247-4275-9c4e-021f3dc1da35
+File C:\WINDOWS\System32\inetsrv\iiscore.dll does not exist, ASP.NET is not enabled on the machine
+Enabling Provider:*Microsoft-Windows-ASPNET Level:Informational Keywords:0xffffffffffffffff Stacks:1 Values: Guid:ee799f41-cfa5-550b-bf2c-344747c1c668
+Enabling Provider:Microsoft-Windows-IIS Level:Critical Keywords:0x0 Stacks:0 Values: Guid:de4649c9-15e8-4fea-9d85-1cdda520c334
+Enabling Provider:Microsoft-PerfTrack-IEFRAME Level:Verbose Keywords:0xffffffffffffffff Stacks:0 Values: Guid:b2a40f1f-a05a-4dfd-886a-4c4f18c4334c
+Enabling Provider:Microsoft-PerfTrack-MSHTML Level:Verbose Keywords:0xffffffffffffffff Stacks:0 Values: Guid:ffdb9886-80f3-4540-aa8b-b85192217ddf
+Enabling Provider:Microsoft-Windows-WinINet Level:Verbose Keywords:0x2 Stacks:0 Values: Guid:43d1a55c-76d6-4f7e-995c-64c711e5cafe
+Enabling Provider:Microsoft-Windows-Application Server-Applications Level:Informational Keywords:0xffffffffffffffff Stacks:0 Values: Guid:c651f5f6-1c0d-492e-8ae1-b4efd7c9d503
+Enabling Provider:Microsoft-IE Level:Informational Keywords:0x1300 Stacks:0 Values: Guid:9e3b3947-ca5d-4614-91a2-7b624e0e7244
+Enabling Provider:Microsoft-Windows-DNS-Client Level:Informational Keywords:0xffffffffffffffff Stacks:0 Values: Guid:1c95126e-7eea-49a9-a3fe-a378b03ddb4d
+Enabling Provider:Microsoft-Windows-DirectComposition Level:Verbose Keywords:0x4 Stacks:0 Values: Guid:c44219d0-f344-11df-a5e2-b307dfd72085
+Enabling Provider:Microsoft-Windows-Immersive-Shell Level:Informational Keywords:0xffffffffffffffff Stacks:0 Values: Guid:315a8872-923e-4ea2-9889-33cd4754bf64
+Enabling Provider:Microsoft-Windows-XAML Level:Informational Keywords:0xffffffffffffffff Stacks:0 Values: Guid:531a35ab-63ce-4bcf-aa98-f88c7a89e455
+Enabling Provider:Microsoft-JScript Level:Verbose Keywords:0xffffffffffffffff Stacks:0 Values: Guid:57277741-3638-4a4b-bdba-0ac6e45da56c
+Enabling Provider:ClrPrivateNative Level:Informational Keywords:0x4002000b Stacks:0 Values: Guid:1095638c-8748-4c7a-b39e-baea27b9c589
+Enabling Provider:CLRPrivate Level:Informational Keywords:0x4002000b Stacks:0 Values: Guid:763fd754-7086-4dfe-95eb-c01a46faf4ca
+Enabling Provider:.NETFramework Level:Verbose Keywords:0x16 Stacks:1 Values: Guid:8e9f5090-2d75-4d03-8a81-e5afbf85daf1
+Enabling Provider:Microsoft.Tasks.Nuget Level:Informational Keywords:0x80 Stacks:0 Values: Guid:b734069e-103c-5376-2080-4f009207881a
+Enabling Provider:Microsoft-AdoNet-SystemData Level:Informational Keywords:0x1 Stacks:1 Values: Guid:6a4dfe53-eb50-5332-8473-7b7e10a94fd1
+Enabling Provider:ETWCLrProfiler Diagnostics Level:Verbose Keywords:0xffffffffffffffff Stacks:0 Values: Guid:6652970f-1756-5d8d-0805-e9aad152aa79
+Enabling Provider:Microsoft-Diagnostics-DiagnosticSource Level:Informational Keywords:0xfffffffffffff7ff Stacks:1 Values:FilterAndPayloadSpecs=HttpHandlerDiagnosticListener/System.Net.Http.Request@Activity2Start:Request.RequestUri
+HttpHandlerDiagnosticListener/System.Net.Http.Response@Activity2Stop:Response.StatusCode Guid:adb401e1-5296-51f8-c125-5fda75826144
+Enabling Provider:Microsoft-AspNetCore-Hosting Level:Verbose Keywords:0xffffffffffffffff Stacks:0 Values: Guid:9e620d2a-55d4-5ade-deb7-c26046d245a8
+Enabling Provider:Microsoft-ApplicationInsights-Core Level:Verbose Keywords:0xffffffffffffffff Stacks:1 Values: Guid:74af9f20-af6a-5582-9382-f21f674fb271
+Enabling Provider:Microsoft-Windows-Kernel-Power Level:Informational Keywords:0xffb Stacks:0 Values: Guid:331c3b3a-2005-44c2-ac5e-77220c37d6b4
+Enabling Provider:Microsoft-Windows-Kernel-Processor-Power Level:Informational Keywords:0xe5d Stacks:0 Values: Guid:0f67e49f-fe51-4e9f-b490-6f2948cc6027
+Enabling Provider:Microsoft-Windows-PowerCpl Level:Informational Keywords:0xffffffffffffffff Stacks:0 Values: Guid:b1f90b27-4551-49d6-b2bd-dfc6453762a6
+Enabling Provider:Microsoft-Windows-PowerCfg Level:Informational Keywords:0xffffffffffffffff Stacks:0 Values: Guid:9f0c4ea8-ec01-4200-a00d-b9701cbea5d8
+Turning on VS CodeMarkers and MeasurementBlock Providers.
+Enabling Provider:MeasurementBlock Level:Verbose Keywords:0xffffffffffffffff Stacks:0 Values: Guid:143a31db-0372-40b6-b8f1-b4b16adb5f54
+Enabling Provider:CodeMarkers Level:Verbose Keywords:0xffffffffffffffff Stacks:0 Values: Guid:641d7f6c-481c-42e8-ab7e-d18dc5e5cb9e
+Enabling CLR Events: GC, Binder, Security, AppDomainResourceManagement, Contention, Exception, Threading, JITSymbols, Type, GCHeapSurvivalAndMovement, GCHeapAndTypeNames, Stack, ThreadTransfer, Codesymbols, Compilation
+Enabling Provider:ClrNative Level:Verbose Keywords:0x14c14fcc9d Stacks:1 Values: Guid:47c3ba0c-77f1-4eb0-8d4d-aef447f16a85
+Enabling Provider:CLR Level:Verbose Keywords:0x14c14fcc9d Stacks:0 Values: Guid:e13c0d23-ccbc-4e12-931b-d9cc2eee27e4
+Enabling Providers specified by the user.
+[Starting collection at 05.09.2026 06:22:53]
+[Collecting   10 sec: Size= 45,8 MB.]
+[Exceeded MaxCollectSec 20]
+Stopping tracing for sessions 'NT Kernel Logger' and 'PerfViewSession'.
+No Heap events were active for this trace.
+[Sending rundown command to CLR providers...]
+Enabling Provider:PerfViewLogger Level:Verbose Keywords:0xffffffffffffffff Stacks:0 Values: Guid:a8a71ac1-040f-54a2-07ca-00a89b5ab761
+Enabling Provider:CLRRundown Level:Verbose Keywords:0x108 Stacks:0 Values: Guid:a669021c-c450-4609-a035-5af59af4df18
+Enabling Provider:CLRRundown Level:Verbose Keywords:0x1080060111 Stacks:0 Values: Guid:a669021c-c450-4609-a035-5af59af4df18
+Waiting up to 120 sec for rundown events.  Use /RundownTimeout to change.
+If you know your process has exited, use /noRundown qualifer to skip this step.
+Rundown File Length: 91,4MB delta: 91,4MB
+Rundown File Length: 91,4MB delta: 0,0MB
+Rundown file has stopped growing, assuming rundown complete.
+CLR Rundown took 2,717 sec.
+Done stopping sessions.
+Ensuring .NET Allocation profiler not installed.
+Detected 64 bit system, removing 32 bit keys.
+[Merging data files to SimHubProfile.etl.  Can take 10s of seconds... (can skip if data analyzed on same machine with PerfView)]
+WARNING NO _NT_SYMBOL_PATH set ...
+Symbol reader _NT_SYMBOL_PATH= {
+    c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin;
+    }
+This can be set using the File -> Set Symbol Path dialog on the Stack Viewer.
+Created SymbolReader with SymbolPath c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+Setting SymbolReaderOptions forces clearing Pdb lookup cache
+Starting Generating NGEN pdbs for c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin\SimHubProfile.etl
+Starting Merging of c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin\SimHubProfile.etl
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\mscorlib.ni.pdb\b5419ed4992b317610ed2bd9a61e257e1\mscorlib.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\mscorlib\b5419ed4992b317610ed2bd9a61e257e\mscorlib.ni.dll took 0,00 Sec
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\PresentationFramework.ni.pdb\40fb12b2235559fa483911a4a3667fa61\PresentationFramework.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\Presentatio5ae0f00f#\40fb12b2235559fa483911a4a3667fa6\PresentationFramework.ni.dll took 0,00 Sec
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\PresentationCore.ni.pdb\fc5c30103936c41543b1659170a6d7051\PresentationCore.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\PresentationCore\fc5c30103936c41543b1659170a6d705\PresentationCore.ni.dll took 0,00 Sec
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\WindowsBase.ni.pdb\1fed24d9dbd47946c046ff26082bb14a1\WindowsBase.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\WindowsBase\1fed24d9dbd47946c046ff26082bb14a\WindowsBase.ni.dll took 0,00 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Servd1dec626#\cb9a6c207c7ae3d4084e7f04934706ad\System.ServiceModel.Internals.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Servd1dec626#\cb9a6c207c7ae3d4084e7f04934706ad\System.ServiceModel.Internals.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Servd1dec626#\cb9a6c207c7ae3d4084e7f04934706ad\System.ServiceModel.Internals.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\System.ServiceModel.Internals.ni.pdb\cb9a6c207c7ae3d4084e7f04934706ad1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.ServiceModel.Internals.ni.pdb\cb9a6c207c7ae3d4084e7f04934706ad1\System.ServiceModel.Internals.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Servd1dec626#\cb9a6c207c7ae3d4084e7f04934706ad\System.ServiceModel.Internals.ni.dll took 0,31 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\System.ServiceModel\7e9775c9baeda03cfe7623bb45ed5f65\System.ServiceModel.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\System.ServiceModel\7e9775c9baeda03cfe7623bb45ed5f65\System.ServiceModel.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\System.ServiceModel\7e9775c9baeda03cfe7623bb45ed5f65\System.ServiceModel.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\System.ServiceModel.ni.pdb\7e9775c9baeda03cfe7623bb45ed5f651\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.ServiceModel.ni.pdb\7e9775c9baeda03cfe7623bb45ed5f651\System.ServiceModel.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\System.ServiceModel\7e9775c9baeda03cfe7623bb45ed5f65\System.ServiceModel.ni.dll took 0,64 Sec
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\log4net.ni.pdb\feef9f109b61a898ba1a476b10629d001\log4net.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\log4net\feef9f109b61a898ba1a476b10629d00\log4net.ni.dll took 0,00 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Management\cddc2f27606b14c35525966b057b3567\System.Management.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Management\cddc2f27606b14c35525966b057b3567\System.Management.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Management\cddc2f27606b14c35525966b057b3567\System.Management.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Management.ni.pdb\cddc2f27606b14c35525966b057b35671\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Management.ni.pdb\cddc2f27606b14c35525966b057b35671\System.Management.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Management\cddc2f27606b14c35525966b057b3567\System.Management.ni.dll took 0,28 Sec
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.ni.pdb\16cd1e43670c61238c2c926eb57d85b61\System.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\System\16cd1e43670c61238c2c926eb57d85b6\System.ni.dll took 0,00 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Runteb92aa12#\10c565750caaa0aaba723d259ed40e9a\System.Runtime.Serialization.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Runteb92aa12#\10c565750caaa0aaba723d259ed40e9a\System.Runtime.Serialization.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Runteb92aa12#\10c565750caaa0aaba723d259ed40e9a\System.Runtime.Serialization.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Runtime.Serialization.ni.pdb\10c565750caaa0aaba723d259ed40e9a1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Runtime.Serialization.ni.pdb\10c565750caaa0aaba723d259ed40e9a1\System.Runtime.Serialization.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Runteb92aa12#\10c565750caaa0aaba723d259ed40e9a\System.Runtime.Serialization.ni.dll took 0,34 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Serv759bfb78#\97b3e18095dc6503183d9a4503df8350\System.ServiceProcess.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Serv759bfb78#\97b3e18095dc6503183d9a4503df8350\System.ServiceProcess.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Serv759bfb78#\97b3e18095dc6503183d9a4503df8350\System.ServiceProcess.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\System.ServiceProcess.ni.pdb\97b3e18095dc6503183d9a4503df83501\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.ServiceProcess.ni.pdb\97b3e18095dc6503183d9a4503df83501\System.ServiceProcess.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Serv759bfb78#\97b3e18095dc6503183d9a4503df8350\System.ServiceProcess.ni.dll took 0,28 Sec
+Could not find CLR directory for NGEN image C:\Program Files\PowerToys\modules\Awake\System.Private.CoreLib.dll, Giving up
+NGEN PDB creation for C:\Program Files\PowerToys\modules\Awake\System.Private.CoreLib.dll took 0,00 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_64\System.Manaa57fc8cc#\51432702b92c59f0366777e327169b51\System.Management.Automation.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_64\System.Manaa57fc8cc#\51432702b92c59f0366777e327169b51\System.Management.Automation.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_64\System.Manaa57fc8cc#\51432702b92c59f0366777e327169b51\System.Management.Automation.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Management.Automation.ni.pdb\51432702b92c59f0366777e327169b511\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Management.Automation.ni.pdb\51432702b92c59f0366777e327169b511\System.Management.Automation.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_64\System.Manaa57fc8cc#\51432702b92c59f0366777e327169b51\System.Management.Automation.ni.dll took 0,83 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_64\System.Core\bcc287f635ac0c39985ebfce86d8b91d\System.Core.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_64\System.Core\bcc287f635ac0c39985ebfce86d8b91d\System.Core.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_64\System.Core\bcc287f635ac0c39985ebfce86d8b91d\System.Core.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Core.ni.pdb\bcc287f635ac0c39985ebfce86d8b91d1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Core.ni.pdb\bcc287f635ac0c39985ebfce86d8b91d1\System.Core.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_64\System.Core\bcc287f635ac0c39985ebfce86d8b91d\System.Core.ni.dll took 0,45 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_64\mscorlib\3452d280cf55ae309a9ffbe81ea33a15\mscorlib.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_64\mscorlib\3452d280cf55ae309a9ffbe81ea33a15\mscorlib.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_64\mscorlib\3452d280cf55ae309a9ffbe81ea33a15\mscorlib.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\mscorlib.ni.pdb\3452d280cf55ae309a9ffbe81ea33a151\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\mscorlib.ni.pdb\3452d280cf55ae309a9ffbe81ea33a151\mscorlib.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_64\mscorlib\3452d280cf55ae309a9ffbe81ea33a15\mscorlib.ni.dll took 0,61 Sec
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Core.ni.pdb\fffed4b774818656039997b255b84b291\System.Core.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Core\fffed4b774818656039997b255b84b29\System.Core.ni.dll took 0,00 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Windows.Forms\bd17e7b0d8f55666161a1e86fbf6990a\System.Windows.Forms.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Windows.Forms\bd17e7b0d8f55666161a1e86fbf6990a\System.Windows.Forms.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Windows.Forms\bd17e7b0d8f55666161a1e86fbf6990a\System.Windows.Forms.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Windows.Forms.ni.pdb\bd17e7b0d8f55666161a1e86fbf6990a1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Windows.Forms.ni.pdb\bd17e7b0d8f55666161a1e86fbf6990a1\System.Windows.Forms.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Windows.Forms\bd17e7b0d8f55666161a1e86fbf6990a\System.Windows.Forms.ni.dll took 0,48 Sec
+Could not find CLR directory for NGEN image C:\Program Files\WindowsApps\5319275A.WhatsAppDesktop_2.2634.101.0_x64__cv1g1gvanyjgm\System.Private.CoreLib.dll, Giving up
+NGEN PDB creation for C:\Program Files\WindowsApps\5319275A.WhatsAppDesktop_2.2634.101.0_x64__cv1g1gvanyjgm\System.Private.CoreLib.dll took 0,00 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\ArqSerialLib\24bd6fb2f75c700048cdd2a8bccb5c8b\ArqSerialLib.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\ArqSerialLib\24bd6fb2f75c700048cdd2a8bccb5c8b\ArqSerialLib.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\ArqSerialLib\24bd6fb2f75c700048cdd2a8bccb5c8b\ArqSerialLib.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\ArqSerialLib.ni.pdb\24bd6fb2f75c700048cdd2a8bccb5c8b1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\ArqSerialLib.ni.pdb\24bd6fb2f75c700048cdd2a8bccb5c8b1\ArqSerialLib.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\ArqSerialLib\24bd6fb2f75c700048cdd2a8bccb5c8b\ArqSerialLib.ni.dll took 0,26 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\HidSharp\4f7be4bcdbcbb188453aedfd7d0923b9\HidSharp.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\HidSharp\4f7be4bcdbcbb188453aedfd7d0923b9\HidSharp.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\HidSharp\4f7be4bcdbcbb188453aedfd7d0923b9\HidSharp.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\HidSharp.ni.pdb\4f7be4bcdbcbb188453aedfd7d0923b91\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\HidSharp.ni.pdb\4f7be4bcdbcbb188453aedfd7d0923b91\HidSharp.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\HidSharp\4f7be4bcdbcbb188453aedfd7d0923b9\HidSharp.ni.dll took 0,29 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.Ef5258876#\c1cd733251d8ddd5bd4a199333b0f76c\Microsoft.Extensions.DependencyInjection.Abstractions.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.Ef5258876#\c1cd733251d8ddd5bd4a199333b0f76c\Microsoft.Extensions.DependencyInjection.Abstractions.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.Ef5258876#\c1cd733251d8ddd5bd4a199333b0f76c\Microsoft.Extensions.DependencyInjection.Abstractions.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.Extensions.DependencyInjection.Abstractions.ni.pdb\c1cd733251d8ddd5bd4a199333b0f76c1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.Extensions.DependencyInjection.Abstractions.ni.pdb\c1cd733251d8ddd5bd4a199333b0f76c1\Microsoft.Extensions.DependencyInjection.Abstractions.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.Ef5258876#\c1cd733251d8ddd5bd4a199333b0f76c\Microsoft.Extensions.DependencyInjection.Abstractions.ni.dll took 0,28 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Thre95f54cb4#\49a3b13a7b33c07bea914267046ff6d1\System.Threading.Tasks.Extensions.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Thre95f54cb4#\49a3b13a7b33c07bea914267046ff6d1\System.Threading.Tasks.Extensions.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Thre95f54cb4#\49a3b13a7b33c07bea914267046ff6d1\System.Threading.Tasks.Extensions.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Threading.Tasks.Extensions.ni.pdb\49a3b13a7b33c07bea914267046ff6d11\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Threading.Tasks.Extensions.ni.pdb\49a3b13a7b33c07bea914267046ff6d11\System.Threading.Tasks.Extensions.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Thre95f54cb4#\49a3b13a7b33c07bea914267046ff6d1\System.Threading.Tasks.Extensions.ni.dll took 0,28 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.Bitma4806652#\e994efaf2026bac08cb7cd60f9069ef7\SimHub.BitmapDisplay.MMF.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.Bitma4806652#\e994efaf2026bac08cb7cd60f9069ef7\SimHub.BitmapDisplay.MMF.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.Bitma4806652#\e994efaf2026bac08cb7cd60f9069ef7\SimHub.BitmapDisplay.MMF.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\SimHub.BitmapDisplay.MMF.ni.pdb\e994efaf2026bac08cb7cd60f9069ef71\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\SimHub.BitmapDisplay.MMF.ni.pdb\e994efaf2026bac08cb7cd60f9069ef71\SimHub.BitmapDisplay.MMF.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.Bitma4806652#\e994efaf2026bac08cb7cd60f9069ef7\SimHub.BitmapDisplay.MMF.ni.dll took 0,28 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\OxyPlot.Wpf\8df52cc490302eb897cb53fc2dc1b425\OxyPlot.Wpf.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\OxyPlot.Wpf\8df52cc490302eb897cb53fc2dc1b425\OxyPlot.Wpf.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\OxyPlot.Wpf\8df52cc490302eb897cb53fc2dc1b425\OxyPlot.Wpf.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\OxyPlot.Wpf.ni.pdb\8df52cc490302eb897cb53fc2dc1b4251\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\OxyPlot.Wpf.ni.pdb\8df52cc490302eb897cb53fc2dc1b4251\OxyPlot.Wpf.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\OxyPlot.Wpf\8df52cc490302eb897cb53fc2dc1b425\OxyPlot.Wpf.ni.dll took 0,29 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Diagf15757ae#\59e67272a3b66c75047baea21fe4e44f\System.Diagnostics.DiagnosticSource.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Diagf15757ae#\59e67272a3b66c75047baea21fe4e44f\System.Diagnostics.DiagnosticSource.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Diagf15757ae#\59e67272a3b66c75047baea21fe4e44f\System.Diagnostics.DiagnosticSource.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Diagnostics.DiagnosticSource.ni.pdb\59e67272a3b66c75047baea21fe4e44f1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Diagnostics.DiagnosticSource.ni.pdb\59e67272a3b66c75047baea21fe4e44f1\System.Diagnostics.DiagnosticSource.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Diagf15757ae#\59e67272a3b66c75047baea21fe4e44f\System.Diagnostics.DiagnosticSource.ni.dll took 0,28 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.Ed317db63#\1e8fd8c5b5ce79558e2bfb481df8380a\Microsoft.Extensions.DependencyInjection.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.Ed317db63#\1e8fd8c5b5ce79558e2bfb481df8380a\Microsoft.Extensions.DependencyInjection.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.Ed317db63#\1e8fd8c5b5ce79558e2bfb481df8380a\Microsoft.Extensions.DependencyInjection.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.Extensions.DependencyInjection.ni.pdb\1e8fd8c5b5ce79558e2bfb481df8380a1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.Extensions.DependencyInjection.ni.pdb\1e8fd8c5b5ce79558e2bfb481df8380a1\Microsoft.Extensions.DependencyInjection.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.Ed317db63#\1e8fd8c5b5ce79558e2bfb481df8380a\Microsoft.Extensions.DependencyInjection.ni.dll took 0,28 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\Jint\fd4f1be5c2082b913fde4cf83b4cb6cb\Jint.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\Jint\fd4f1be5c2082b913fde4cf83b4cb6cb\Jint.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\Jint\fd4f1be5c2082b913fde4cf83b4cb6cb\Jint.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\Jint.ni.pdb\fd4f1be5c2082b913fde4cf83b4cb6cb1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\Jint.ni.pdb\fd4f1be5c2082b913fde4cf83b4cb6cb1\Jint.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\Jint\fd4f1be5c2082b913fde4cf83b4cb6cb\Jint.ni.dll took 0,36 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\iRacingSDK\b4fe81f8dc1e5188f130cee44b637e40\iRacingSDK.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\iRacingSDK\b4fe81f8dc1e5188f130cee44b637e40\iRacingSDK.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\iRacingSDK\b4fe81f8dc1e5188f130cee44b637e40\iRacingSDK.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\iRacingSDK.ni.pdb\b4fe81f8dc1e5188f130cee44b637e401\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\iRacingSDK.ni.pdb\b4fe81f8dc1e5188f130cee44b637e401\iRacingSDK.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\iRacingSDK\b4fe81f8dc1e5188f130cee44b637e40\iRacingSDK.ni.dll took 0,29 Sec
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\SimHub.Plugins.ni.pdb\1b9e9719ad7308c3333e90083042aad31\SimHub.Plugins.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.Plugins\1b9e9719ad7308c3333e90083042aad3\SimHub.Plugins.ni.dll took 0,00 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\NCalc\7b13a67bb6cefed706ff420502b68854\NCalc.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\NCalc\7b13a67bb6cefed706ff420502b68854\NCalc.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\NCalc\7b13a67bb6cefed706ff420502b68854\NCalc.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\NCalc.ni.pdb\7b13a67bb6cefed706ff420502b688541\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\NCalc.ni.pdb\7b13a67bb6cefed706ff420502b688541\NCalc.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\NCalc\7b13a67bb6cefed706ff420502b68854\NCalc.ni.dll took 0,28 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\GameReaderCommon\ec020dae6dc48b990efbdccfc6d7b81d\GameReaderCommon.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\GameReaderCommon\ec020dae6dc48b990efbdccfc6d7b81d\GameReaderCommon.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\GameReaderCommon\ec020dae6dc48b990efbdccfc6d7b81d\GameReaderCommon.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\GameReaderCommon.ni.pdb\ec020dae6dc48b990efbdccfc6d7b81d1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\GameReaderCommon.ni.pdb\ec020dae6dc48b990efbdccfc6d7b81d1\GameReaderCommon.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\GameReaderCommon\ec020dae6dc48b990efbdccfc6d7b81d\GameReaderCommon.ni.dll took 0,32 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\MahApps.Metro\91ec1c688ebec9283e228bc3cea2a0ef\MahApps.Metro.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\MahApps.Metro\91ec1c688ebec9283e228bc3cea2a0ef\MahApps.Metro.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\MahApps.Metro\91ec1c688ebec9283e228bc3cea2a0ef\MahApps.Metro.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\MahApps.Metro.ni.pdb\91ec1c688ebec9283e228bc3cea2a0ef1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\MahApps.Metro.ni.pdb\91ec1c688ebec9283e228bc3cea2a0ef1\MahApps.Metro.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\MahApps.Metro\91ec1c688ebec9283e228bc3cea2a0ef\MahApps.Metro.ni.dll took 0,32 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\NAudio.Wasapi\c2330accbea2add9e79d640bfa8a9ecf\NAudio.Wasapi.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\NAudio.Wasapi\c2330accbea2add9e79d640bfa8a9ecf\NAudio.Wasapi.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\NAudio.Wasapi\c2330accbea2add9e79d640bfa8a9ecf\NAudio.Wasapi.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\NAudio.Wasapi.ni.pdb\c2330accbea2add9e79d640bfa8a9ecf1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\NAudio.Wasapi.ni.pdb\c2330accbea2add9e79d640bfa8a9ecf1\NAudio.Wasapi.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\NAudio.Wasapi\c2330accbea2add9e79d640bfa8a9ecf\NAudio.Wasapi.ni.dll took 0,31 Sec
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\WoteverCommon.ni.pdb\a65ac2128e03132ff35273557b086fd81\WoteverCommon.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\WoteverCommon\a65ac2128e03132ff35273557b086fd8\WoteverCommon.ni.dll took 0,00 Sec
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\SimHubWPF.ni.pdb\2da8b97498c4c77d40ae41b5067ff0621\SimHubWPF.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHubWPF\2da8b97498c4c77d40ae41b5067ff062\SimHubWPF.ni.exe took 0,00 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\SerialDash\8d945433958d8a085a5e50c639c028fa\SerialDash.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\SerialDash\8d945433958d8a085a5e50c639c028fa\SerialDash.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\SerialDash\8d945433958d8a085a5e50c639c028fa\SerialDash.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\SerialDash.ni.pdb\8d945433958d8a085a5e50c639c028fa1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\SerialDash.ni.pdb\8d945433958d8a085a5e50c639c028fa1\SerialDash.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\SerialDash\8d945433958d8a085a5e50c639c028fa\SerialDash.ni.dll took 0,29 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\vJoyInterfaceWrap\60e8c9a6ad2509e7c179db30294f0e0b\vJoyInterfaceWrap.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\vJoyInterfaceWrap\60e8c9a6ad2509e7c179db30294f0e0b\vJoyInterfaceWrap.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\vJoyInterfaceWrap\60e8c9a6ad2509e7c179db30294f0e0b\vJoyInterfaceWrap.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\vJoyInterfaceWrap.ni.pdb\60e8c9a6ad2509e7c179db30294f0e0b1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\vJoyInterfaceWrap.ni.pdb\60e8c9a6ad2509e7c179db30294f0e0b1\vJoyInterfaceWrap.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\vJoyInterfaceWrap\60e8c9a6ad2509e7c179db30294f0e0b\vJoyInterfaceWrap.ni.dll took 0,26 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.SHSerialPort\442d0ee656e4dcc0232899d651dffbf4\SimHub.SHSerialPort.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.SHSerialPort\442d0ee656e4dcc0232899d651dffbf4\SimHub.SHSerialPort.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.SHSerialPort\442d0ee656e4dcc0232899d651dffbf4\SimHub.SHSerialPort.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\SimHub.SHSerialPort.ni.pdb\442d0ee656e4dcc0232899d651dffbf41\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\SimHub.SHSerialPort.ni.pdb\442d0ee656e4dcc0232899d651dffbf41\SimHub.SHSerialPort.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.SHSerialPort\442d0ee656e4dcc0232899d651dffbf4\SimHub.SHSerialPort.ni.dll took 0,28 Sec
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Xaml.ni.pdb\ccb4707f0d91129a5a5e11333752aec11\System.Xaml.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Xaml\ccb4707f0d91129a5a5e11333752aec1\System.Xaml.ni.dll took 0,00 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Drawing\da7fd5dbf71b9d87c90e9bb90ae0417a\System.Drawing.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Drawing\da7fd5dbf71b9d87c90e9bb90ae0417a\System.Drawing.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Drawing\da7fd5dbf71b9d87c90e9bb90ae0417a\System.Drawing.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Drawing.ni.pdb\da7fd5dbf71b9d87c90e9bb90ae0417a1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Drawing.ni.pdb\da7fd5dbf71b9d87c90e9bb90ae0417a1\System.Drawing.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\System.Drawing\da7fd5dbf71b9d87c90e9bb90ae0417a\System.Drawing.ni.dll took 0,29 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.Plugins.Web\932107156ea32124d8e40edd6845a20d\SimHub.Plugins.Web.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.Plugins.Web\932107156ea32124d8e40edd6845a20d\SimHub.Plugins.Web.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.Plugins.Web\932107156ea32124d8e40edd6845a20d\SimHub.Plugins.Web.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\SimHub.Plugins.Web.ni.pdb\932107156ea32124d8e40edd6845a20d1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\SimHub.Plugins.Web.ni.pdb\932107156ea32124d8e40edd6845a20d1\SimHub.Plugins.Web.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.Plugins.Web\932107156ea32124d8e40edd6845a20d\SimHub.Plugins.Web.ni.dll took 0,39 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.Aec4a74bb#\91224fdaf4249e00a5d677967fa72294\Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.Aec4a74bb#\91224fdaf4249e00a5d677967fa72294\Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.Aec4a74bb#\91224fdaf4249e00a5d677967fa72294\Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.ni.pdb\91224fdaf4249e00a5d677967fa722941\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.ni.pdb\91224fdaf4249e00a5d677967fa722941\Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.Aec4a74bb#\91224fdaf4249e00a5d677967fa72294\Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.ni.dll took 0,31 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.Af0f228da#\6b2d8aa3da40580bf5d3a6396e0a4b85\Microsoft.AspNetCore.Mvc.Core.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.Af0f228da#\6b2d8aa3da40580bf5d3a6396e0a4b85\Microsoft.AspNetCore.Mvc.Core.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.Af0f228da#\6b2d8aa3da40580bf5d3a6396e0a4b85\Microsoft.AspNetCore.Mvc.Core.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.AspNetCore.Mvc.Core.ni.pdb\6b2d8aa3da40580bf5d3a6396e0a4b851\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.AspNetCore.Mvc.Core.ni.pdb\6b2d8aa3da40580bf5d3a6396e0a4b851\Microsoft.AspNetCore.Mvc.Core.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.Af0f228da#\6b2d8aa3da40580bf5d3a6396e0a4b85\Microsoft.AspNetCore.Mvc.Core.ni.dll took 0,40 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.A27ce86fa#\6a3ac5afe4a7d236073a9c8bd7b57bb3\Microsoft.AspNetCore.ResponseCompression.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.A27ce86fa#\6a3ac5afe4a7d236073a9c8bd7b57bb3\Microsoft.AspNetCore.ResponseCompression.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.A27ce86fa#\6a3ac5afe4a7d236073a9c8bd7b57bb3\Microsoft.AspNetCore.ResponseCompression.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.AspNetCore.ResponseCompression.ni.pdb\6a3ac5afe4a7d236073a9c8bd7b57bb31\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.AspNetCore.ResponseCompression.ni.pdb\6a3ac5afe4a7d236073a9c8bd7b57bb31\Microsoft.AspNetCore.ResponseCompression.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.A27ce86fa#\6a3ac5afe4a7d236073a9c8bd7b57bb3\Microsoft.AspNetCore.ResponseCompression.ni.dll took 0,28 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.A0d401efa#\3d63b68c509d0036a09afbfeac9ff07a\Microsoft.AspNetCore.Cors.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.A0d401efa#\3d63b68c509d0036a09afbfeac9ff07a\Microsoft.AspNetCore.Cors.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.A0d401efa#\3d63b68c509d0036a09afbfeac9ff07a\Microsoft.AspNetCore.Cors.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.AspNetCore.Cors.ni.pdb\3d63b68c509d0036a09afbfeac9ff07a1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.AspNetCore.Cors.ni.pdb\3d63b68c509d0036a09afbfeac9ff07a1\Microsoft.AspNetCore.Cors.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.A0d401efa#\3d63b68c509d0036a09afbfeac9ff07a\Microsoft.AspNetCore.Cors.ni.dll took 0,28 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\System.IO.Pipelines\5d3c8f2c0816e83759fedc0faeee32ec\System.IO.Pipelines.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\System.IO.Pipelines\5d3c8f2c0816e83759fedc0faeee32ec\System.IO.Pipelines.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\System.IO.Pipelines\5d3c8f2c0816e83759fedc0faeee32ec\System.IO.Pipelines.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\System.IO.Pipelines.ni.pdb\5d3c8f2c0816e83759fedc0faeee32ec1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.IO.Pipelines.ni.pdb\5d3c8f2c0816e83759fedc0faeee32ec1\System.IO.Pipelines.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\System.IO.Pipelines\5d3c8f2c0816e83759fedc0faeee32ec\System.IO.Pipelines.ni.dll took 0,29 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.A244abf31#\6160dabd087bbe80da36e6c020e313b7\Microsoft.AspNetCore.WebSockets.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.A244abf31#\6160dabd087bbe80da36e6c020e313b7\Microsoft.AspNetCore.WebSockets.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.A244abf31#\6160dabd087bbe80da36e6c020e313b7\Microsoft.AspNetCore.WebSockets.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.AspNetCore.WebSockets.ni.pdb\6160dabd087bbe80da36e6c020e313b71\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.AspNetCore.WebSockets.ni.pdb\6160dabd087bbe80da36e6c020e313b71\Microsoft.AspNetCore.WebSockets.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\Microsoft.A244abf31#\6160dabd087bbe80da36e6c020e313b7\Microsoft.AspNetCore.WebSockets.ni.dll took 0,29 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\OxyPlot\ddce58079666790326c478410d68c1ef\OxyPlot.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\OxyPlot\ddce58079666790326c478410d68c1ef\OxyPlot.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\OxyPlot\ddce58079666790326c478410d68c1ef\OxyPlot.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\OxyPlot.ni.pdb\ddce58079666790326c478410d68c1ef1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\OxyPlot.ni.pdb\ddce58079666790326c478410d68c1ef1\OxyPlot.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\OxyPlot\ddce58079666790326c478410d68c1ef\OxyPlot.ni.dll took 0,32 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.Plugf78f66e9#\e2f9935a518803b500c6ed39e0f5d779\SimHub.Plugins.Motion.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.Plugf78f66e9#\e2f9935a518803b500c6ed39e0f5d779\SimHub.Plugins.Motion.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.Plugf78f66e9#\e2f9935a518803b500c6ed39e0f5d779\SimHub.Plugins.Motion.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\SimHub.Plugins.Motion.ni.pdb\e2f9935a518803b500c6ed39e0f5d7791\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\SimHub.Plugins.Motion.ni.pdb\e2f9935a518803b500c6ed39e0f5d7791\SimHub.Plugins.Motion.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_32\SimHub.Plugf78f66e9#\e2f9935a518803b500c6ed39e0f5d779\SimHub.Plugins.Motion.ni.dll took 0,58 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.C05205801#\3724cc76b6acdca6e218590b706d773e\Microsoft.CodeAnalysis.LanguageServer.Protocol.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.C05205801#\3724cc76b6acdca6e218590b706d773e\Microsoft.CodeAnalysis.LanguageServer.Protocol.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.C05205801#\3724cc76b6acdca6e218590b706d773e\Microsoft.CodeAnalysis.LanguageServer.Protocol.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.CodeAnalysis.LanguageServer.Protocol.ni.pdb\3724cc76b6acdca6e218590b706d773e1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.CodeAnalysis.LanguageServer.Protocol.ni.pdb\3724cc76b6acdca6e218590b706d773e1\Microsoft.CodeAnalysis.LanguageServer.Protocol.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.C05205801#\3724cc76b6acdca6e218590b706d773e\Microsoft.CodeAnalysis.LanguageServer.Protocol.ni.dll took 0,97 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.V412add50#\21b493c90f095c8475e5e65748a4a767\Microsoft.VisualStudio.Shell.UI.Internal.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.V412add50#\21b493c90f095c8475e5e65748a4a767\Microsoft.VisualStudio.Shell.UI.Internal.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.V412add50#\21b493c90f095c8475e5e65748a4a767\Microsoft.VisualStudio.Shell.UI.Internal.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.VisualStudio.Shell.UI.Internal.ni.pdb\21b493c90f095c8475e5e65748a4a7671\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.VisualStudio.Shell.UI.Internal.ni.pdb\21b493c90f095c8475e5e65748a4a7671\Microsoft.VisualStudio.Shell.UI.Internal.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.V412add50#\21b493c90f095c8475e5e65748a4a767\Microsoft.VisualStudio.Shell.UI.Internal.ni.dll took 1,51 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.Vf87aed9a#\38462e7d6727268637ba354a0ecd9409\Microsoft.VisualStudio.Telemetry.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.Vf87aed9a#\38462e7d6727268637ba354a0ecd9409\Microsoft.VisualStudio.Telemetry.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.Vf87aed9a#\38462e7d6727268637ba354a0ecd9409\Microsoft.VisualStudio.Telemetry.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.VisualStudio.Telemetry.ni.pdb\38462e7d6727268637ba354a0ecd94091\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.VisualStudio.Telemetry.ni.pdb\38462e7d6727268637ba354a0ecd94091\Microsoft.VisualStudio.Telemetry.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.Vf87aed9a#\38462e7d6727268637ba354a0ecd9409\Microsoft.VisualStudio.Telemetry.ni.dll took 0,38 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.Vbeb7089b#\277b7e4efab8c9087d86f8c2d67c3a4e\Microsoft.VisualStudio.Threading.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.Vbeb7089b#\277b7e4efab8c9087d86f8c2d67c3a4e\Microsoft.VisualStudio.Threading.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.Vbeb7089b#\277b7e4efab8c9087d86f8c2d67c3a4e\Microsoft.VisualStudio.Threading.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.VisualStudio.Threading.ni.pdb\277b7e4efab8c9087d86f8c2d67c3a4e1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.VisualStudio.Threading.ni.pdb\277b7e4efab8c9087d86f8c2d67c3a4e1\Microsoft.VisualStudio.Threading.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.Vbeb7089b#\277b7e4efab8c9087d86f8c2d67c3a4e\Microsoft.VisualStudio.Threading.ni.dll took 0,35 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_64\System.Windows.Forms\93999ec0f41203df8f1a625ea6389d5a\System.Windows.Forms.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_64\System.Windows.Forms\93999ec0f41203df8f1a625ea6389d5a\System.Windows.Forms.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_64\System.Windows.Forms\93999ec0f41203df8f1a625ea6389d5a\System.Windows.Forms.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Windows.Forms.ni.pdb\93999ec0f41203df8f1a625ea6389d5a1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.Windows.Forms.ni.pdb\93999ec0f41203df8f1a625ea6389d5a1\System.Windows.Forms.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_64\System.Windows.Forms\93999ec0f41203df8f1a625ea6389d5a\System.Windows.Forms.ni.dll took 0,46 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_64\System\2962e4adb6482ee6fbabcb465600f685\System.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_64\System\2962e4adb6482ee6fbabcb465600f685\System.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_64\System\2962e4adb6482ee6fbabcb465600f685\System.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\System.ni.pdb\2962e4adb6482ee6fbabcb465600f6851\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\System.ni.pdb\2962e4adb6482ee6fbabcb465600f6851\System.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_64\System\2962e4adb6482ee6fbabcb465600f685\System.ni.dll took 0,40 Sec
+Checking for V4.5 for NGEN image C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
+Got NGEN image file version number: 4.8.9344.0 built by: NET481REL1LAST_25H2_B
+Is a V4.6 or beyond
+Path has a AUX file in NIC: C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.Vc1955904#\78a8f2e0867e1fac3c8a1bb726b8cd7f\Microsoft.VisualStudio.PerfWatson.ni.dll
+set COMPLUS_NGenEnableCreatePdb=1
+set PATH=%PATH%;C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319
+set _NT_SYMBOL_PATH=c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin
+*** NGEN  CREATEPDB cmdline: C:\WINDOWS\Microsoft.NET\Framework64\v4.0.30319\ngen.exe createpdb "C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.Vc1955904#\78a8f2e0867e1fac3c8a1bb726b8cd7f\Microsoft.VisualStudio.PerfWatson.ni.dll" "C:\Users\chris\AppData\Local\Temp\SymbolCache" 
+
+Microsoft (R) CLR Native Image Generator - Version 4.8.9344.0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+Merging took 32,8 sec
+Successfully generated PDB for native assembly 'C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.Vc1955904#\78a8f2e0867e1fac3c8a1bb726b8cd7f\Microsoft.VisualStudio.PerfWatson.ni.dll'.
+PDB generated in directory C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.VisualStudio.PerfWatson.ni.pdb\78a8f2e0867e1fac3c8a1bb726b8cd7f1\
+
+
+*** NGEN CREATEPDB returns: 0
+Found NGEN pdb C:\Users\chris\AppData\Local\Temp\SymbolCache\Microsoft.VisualStudio.PerfWatson.ni.pdb\78a8f2e0867e1fac3c8a1bb726b8cd7f1\Microsoft.VisualStudio.PerfWatson.ni.pdb
+NGEN PDB creation for C:\Windows\assembly\NativeImages_v4.0.30319_64\Microsoft.Vc1955904#\78a8f2e0867e1fac3c8a1bb726b8cd7f\Microsoft.VisualStudio.PerfWatson.ni.dll took 0,37 Sec
+Could not find CLR directory for NGEN image C:\Program Files\Microsoft Visual Studio\2022\Community\dotnet\net8.0\runtime\shared\Microsoft.NETCore.App\8.0.21\System.Private.CoreLib.dll, Giving up
+NGEN PDB creation for C:\Program Files\Microsoft Visual Studio\2022\Community\dotnet\net8.0\runtime\shared\Microsoft.NETCore.App\8.0.21\System.Private.CoreLib.dll took 0,00 Sec
+Could not find CLR directory for NGEN image C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\VBCSharp\LanguageServices\Core\Microsoft.CodeAnalysis.Remote.ServiceHub.dll, Giving up
+NGEN PDB creation for C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\VBCSharp\LanguageServices\Core\Microsoft.CodeAnalysis.Remote.ServiceHub.dll took 0,00 Sec
+Could not find CLR directory for NGEN image C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\ServiceHub\SharedAssemblies\System.Diagnostics.DiagnosticSource.dll, Giving up
+NGEN PDB creation for C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\ServiceHub\SharedAssemblies\System.Diagnostics.DiagnosticSource.dll took 0,00 Sec
+Generating NGEN Pdbs took 33,0 sec
+Moving c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin\SimHubProfile.etl.new to c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin\SimHubProfile.etl
+Deleting temp file
+Merge and NGEN PDB Generation took 33,048 sec.
+Merge output file c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin\SimHubProfile.etl
+[Zipping ETL file c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin\SimHubProfile.etl]
+[Writing 54 PDBS to Zip file]
+ZIP generation took 10,184 sec
+ZIP output file c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin\SimHubProfile.etl.zip
+Time: 05.09.2026 06:23:59
+Stop Completed at 05.09.2026 06:23:59
+[DONE 06:23:59 SUCCESS: PerfView /AcceptEULA /NoGui /Zip:true /MaxCollectSec:20 /DataFile:c:\Users\chris\OneDrive\Desktop\GIT\DIY-Sim-Racing-FFB-Pedal_Takeover_From_V7\SimHubPlugin\SimHubProfile.etl collect]

@@ -1055,7 +1055,7 @@ namespace DiyFfbPedal.UIFunction
         {
             for (int i = 0; i < minControlQuantity; i++)
             {
-                AddRectAt(i * 80-0.5*RectSize, mainCanvas.Height-i*40-0.5*RectSize);
+                AddRectAt(i * (mainCanvas.Width / (minControlQuantity - 1)) - 0.5 * RectSize, mainCanvas.Height - i * (mainCanvas.Height / (minControlQuantity - 1)) - 0.5 * RectSize);
             }
             UpdateRectState();
         }
@@ -1320,7 +1320,7 @@ namespace DiyFfbPedal.UIFunction
             {
                 for (int i = rectCount; i < rectNewCount; i++)
                 {
-                    AddRectAt(i * 80 - 0.5 * RectSize, mainCanvas.Height - i * 40 - 0.5 * RectSize);
+                    AddRectAt(i * (mainCanvas.Width / (minControlQuantity - 1)) - 0.5 * RectSize, mainCanvas.Height - i * (mainCanvas.Height / (minControlQuantity - 1)) - 0.5 * RectSize);
                 }
                 
             }

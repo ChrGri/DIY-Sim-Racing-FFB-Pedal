@@ -7,7 +7,7 @@
              xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="220" d:DesignWidth="540">
+             d:DesignHeight="200" d:DesignWidth="540">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -16,46 +16,46 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border Background="#7F4E4E4E" Height="220" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0">
-            <StackPanel HorizontalAlignment="Left" Height="220" VerticalAlignment="Top" Width="540">
+        <Border Background="#7F4E4E4E" Height="200" CornerRadius="8,8,8,8" BorderThickness="0,2,0,0" Padding="0,0,0,8">
+            <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540">
                 
                 <!-- Section Header -->
-                <StackPanel Height="20" Width="540" Orientation="Horizontal" Margin="0,2,0,0">
-                    <Label x:Name="lbl_DynamicsHeader" Content="Flight Dynamics &amp; Bilateral Coupling" Height="18" Width="300" Padding="0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="40,0,0,0" FontSize="11" Foreground="White"/>
+                <StackPanel Height="20" Width="540" Orientation="Horizontal" Margin="0,3,0,0">
+                    <Label x:Name="lbl_DynamicsHeader" Content="Flight Dynamics &amp; Bilateral Coupling" Height="18" Width="350" Padding="0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="15,0,0,0" FontSize="11" Foreground="White"/>
                 </StackPanel>
 
                 <!-- Mode 1: Airplane Specific Flight Dynamics -->
-                <StackPanel x:Name="panel_AirplaneDynamics" Height="75" Width="540" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,2,0,0">
+                <StackPanel x:Name="panel_AirplaneDynamics" Height="76" Width="540" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,2,0,0">
                     <StackPanel Height="36" Width="540" HorizontalAlignment="Left" Orientation="Horizontal">
-                        <localUI:SliderWithLabel x:Name="Slider_CenteringDeadzone" SliderLength="180" SliderName="{SLoc DIYFFBPedalPlugin_TextDeadzone, 'Centering Deadzone'}" Width="210" Height="36" MinValue="0.0" MaxValue="5.0" TickFrequency="0.1" Unit="%" SliderValueChanged="Slider_CenteringDeadzone_ValueChanged" ToolTip="Centering deadzone around neutral position (0.0 - 5.0%)." Margin="40,0,0,0" SliderValue="0.0"/>
-                        <localUI:SliderWithLabel x:Name="Slider_RudderTrim" SliderLength="180" SliderName="{SLoc DIYFFBPedalPlugin_TextTrimOffset, 'Rudder Trim Offset'}" Width="210" Height="36" MinValue="-50.0" MaxValue="50.0" TickFrequency="0.5" Unit="%" SliderValueChanged="Slider_RudderTrim_ValueChanged" ToolTip="Aerodynamic rudder trim offset (-50% to +50%)." Margin="10,0,0,0" SliderValue="0.0"/>
+                        <localUI:SliderWithLabel x:Name="Slider_CenteringDeadzone" SliderLength="240" SliderName="{SLoc DIYFFBPedalPlugin_TextDeadzone, 'Centering Deadzone'}" Width="250" Height="36" MinValue="0.0" MaxValue="5.0" TickFrequency="0.1" Unit="%" SliderValueChanged="Slider_CenteringDeadzone_ValueChanged" ToolTip="Centering deadzone around neutral position (0.0 - 5.0%)." Margin="15,0,0,0" SliderValue="0.0"/>
+                        <localUI:SliderWithLabel x:Name="Slider_RudderTrim" SliderLength="240" SliderName="{SLoc DIYFFBPedalPlugin_TextTrimOffset, 'Rudder Trim Offset'}" Width="250" Height="36" MinValue="-50.0" MaxValue="50.0" TickFrequency="0.5" Unit="%" SliderValueChanged="Slider_RudderTrim_ValueChanged" ToolTip="Aerodynamic rudder trim offset (-50% to +50%)." Margin="10,0,0,0" SliderValue="0.0"/>
                     </StackPanel>
                     <StackPanel Height="36" Width="540" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0,2,0,0">
-                        <localUI:SliderWithLabel x:Name="Slider_AeroQGain" SliderLength="180" SliderName="{SLoc DIYFFBPedalPlugin_TextQFeelGain, 'Airspeed Q-Feel Gain'}" Width="210" Height="36" MinValue="0" MaxValue="100" TickFrequency="1" Unit="%" SliderValueChanged="Slider_AeroQGain_ValueChanged" ToolTip="Dynamic aerodynamic resistance scaling based on indicated airspeed (IAS^2)." Margin="40,0,0,0" SliderValue="50"/>
-                        <CheckBox x:Name="chk_AeroQScaling" Content="Enable Dynamic Q-Feel Scaling" Foreground="White" FontSize="10" FontFamily="Arial" VerticalAlignment="Center" Margin="15,0,0,0" Checked="chk_AeroQScaling_Checked" Unchecked="chk_AeroQScaling_Unchecked"/>
+                        <localUI:SliderWithLabel x:Name="Slider_AeroQGain" SliderLength="240" SliderName="{SLoc DIYFFBPedalPlugin_TextQFeelGain, 'Airspeed Q-Feel Gain'}" Width="250" Height="36" MinValue="0" MaxValue="100" TickFrequency="1" Unit="%" SliderValueChanged="Slider_AeroQGain_ValueChanged" ToolTip="Dynamic aerodynamic resistance scaling based on indicated airspeed (IAS^2)." Margin="15,0,0,0" SliderValue="50"/>
+                        <CheckBox x:Name="chk_AeroQScaling" Content="Enable Dynamic Q-Feel Scaling" Foreground="White" FontSize="10" FontFamily="Arial" VerticalAlignment="Center" Margin="10,0,0,0" Checked="chk_AeroQScaling_Checked" Unchecked="chk_AeroQScaling_Unchecked"/>
                     </StackPanel>
                 </StackPanel>
 
                 <!-- Mode 2: Helicopter Specific Flight Dynamics -->
-                <StackPanel x:Name="panel_HeliDynamics" Height="75" Width="540" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,2,0,0" Visibility="Collapsed">
+                <StackPanel x:Name="panel_HeliDynamics" Height="76" Width="540" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,2,0,0" Visibility="Collapsed">
                     <StackPanel Height="36" Width="540" HorizontalAlignment="Left" Orientation="Horizontal">
-                        <localUI:SliderWithLabel x:Name="Slider_HeliViscousDamping" SliderLength="180" SliderName="{SLoc DIYFFBPedalPlugin_TextHeliDamping, 'Hydraulic Viscous Damping'}" Width="210" Height="36" MinValue="0" MaxValue="100" TickFrequency="1" Unit="%" SliderValueChanged="Slider_HeliViscousDamping_ValueChanged" ToolTip="Fluid damping resistance without return spring." Margin="40,0,0,0" SliderValue="45"/>
-                        <localUI:SliderWithLabel x:Name="Slider_HeliCoulombFriction" SliderLength="180" SliderName="{SLoc DIYFFBPedalPlugin_TextHeliFriction, 'Mechanical Friction'}" Width="210" Height="36" MinValue="0.0" MaxValue="10.0" TickFrequency="0.1" Unit="N" SliderValueChanged="Slider_HeliCoulombFriction_ValueChanged" ToolTip="Coulomb friction force holding pedal position (0-10 N)." Margin="10,0,0,0" SliderValue="3.0"/>
+                        <localUI:SliderWithLabel x:Name="Slider_HeliViscousDamping" SliderLength="240" SliderName="{SLoc DIYFFBPedalPlugin_TextHeliDamping, 'Hydraulic Viscous Damping'}" Width="250" Height="36" MinValue="0" MaxValue="100" TickFrequency="1" Unit="%" SliderValueChanged="Slider_HeliViscousDamping_ValueChanged" ToolTip="Fluid damping resistance without return spring." Margin="15,0,0,0" SliderValue="45"/>
+                        <localUI:SliderWithLabel x:Name="Slider_HeliCoulombFriction" SliderLength="240" SliderName="{SLoc DIYFFBPedalPlugin_TextHeliFriction, 'Mechanical Friction'}" Width="250" Height="36" MinValue="0.0" MaxValue="10.0" TickFrequency="0.1" Unit="N" SliderValueChanged="Slider_HeliCoulombFriction_ValueChanged" ToolTip="Coulomb friction force holding pedal position (0-10 N)." Margin="10,0,0,0" SliderValue="3.0"/>
                     </StackPanel>
                     <StackPanel Height="36" Width="540" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0,2,0,0">
-                        <localUI:SliderWithLabel x:Name="Slider_HoverBias" SliderLength="180" SliderName="{SLoc DIYFFBPedalPlugin_TextHoverBias, 'Hover Bias / Anti-Torque Trim'}" Width="210" Height="36" MinValue="-50.0" MaxValue="50.0" TickFrequency="0.5" Unit="%" SliderValueChanged="Slider_HoverBias_ValueChanged" ToolTip="Continuous hover anti-torque offset anchor (-50% to +50%)." Margin="40,0,0,0" SliderValue="0.0"/>
+                        <localUI:SliderWithLabel x:Name="Slider_HoverBias" SliderLength="240" SliderName="{SLoc DIYFFBPedalPlugin_TextHoverBias, 'Hover Bias / Anti-Torque Trim'}" Width="250" Height="36" MinValue="-50.0" MaxValue="50.0" TickFrequency="0.5" Unit="%" SliderValueChanged="Slider_HoverBias_ValueChanged" ToolTip="Continuous hover anti-torque offset anchor (-50% to +50%)." Margin="15,0,0,0" SliderValue="0.0"/>
                     </StackPanel>
                 </StackPanel>
 
                 <!-- Shared Bilateral Kinematics (Push-Pull Coupling & Endstops) -->
                 <StackPanel Height="36" Width="540" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0,2,0,0">
-                    <localUI:SliderWithLabel x:Name="Slider_PushPullSyncForce" SliderLength="180" SliderName="{SLoc DIYFFBPedalPlugin_TextPushPullSync, 'Bilateral Push-Pull Sync'}" Width="210" Height="36" MinValue="20" MaxValue="150" TickFrequency="1" Unit="N" SliderValueChanged="Slider_PushPullSyncForce_ValueChanged" ToolTip="Opposing push-pull link stiffness stopping dual-forward pedal press (default: 80 N)." Margin="40,0,0,0" SliderValue="80"/>
-                    <localUI:SliderWithLabel x:Name="Slider_VirtualPedalMass" SliderLength="180" SliderName="{SLoc DIYFFBPedalPlugin_TextDynamicsSettingSliderVirtualPedalMass, 'Virtual Pedal Mass'}" Width="210" Height="36" MinValue="0.5" MaxValue="2.55" TickFrequency="0.05" Unit="kg" SliderValueChanged="Slider_VirtualPedalMassChanged" ToolTip="Apparent physical mass of the rudder pedal." Margin="10,0,0,0" SliderValue="1.0"/>
+                    <localUI:SliderWithLabel x:Name="Slider_PushPullSyncForce" SliderLength="240" SliderName="{SLoc DIYFFBPedalPlugin_TextPushPullSync, 'Bilateral Push-Pull Sync'}" Width="250" Height="36" MinValue="20" MaxValue="150" TickFrequency="1" Unit="N" SliderValueChanged="Slider_PushPullSyncForce_ValueChanged" ToolTip="Opposing push-pull link stiffness stopping dual-forward pedal press (default: 80 N)." Margin="15,0,0,0" SliderValue="80"/>
+                    <localUI:SliderWithLabel x:Name="Slider_VirtualPedalMass" SliderLength="240" SliderName="{SLoc DIYFFBPedalPlugin_TextDynamicsSettingSliderVirtualPedalMass, 'Virtual Pedal Mass'}" Width="250" Height="36" MinValue="0.5" MaxValue="2.55" TickFrequency="0.05" Unit="kg" SliderValueChanged="Slider_VirtualPedalMassChanged" ToolTip="Apparent physical mass of the rudder pedal." Margin="10,0,0,0" SliderValue="1.0"/>
                 </StackPanel>
 
                 <StackPanel Height="36" Width="540" HorizontalAlignment="Left" Orientation="Horizontal" Margin="0,2,0,0">
-                    <localUI:SliderWithLabel x:Name="Slider_SoftEndstopTravelRange" SliderLength="180" SliderName="{SLoc DIYFFBPedalPlugin_TextDynamicsSettingSliderEndstopTravel, 'Soft Endstop Travel'}" TickFrequency="0.1" Unit="mm" Width="210" Height="36" MinValue="0" MaxValue="10" SliderValueChanged="Slider_SoftEndstopTravelRangeChanged" Margin="40,0,0,0" SliderValue="0"/>
-                    <localUI:SliderWithLabel x:Name="Slider_SoftEndstopStiffness" SliderLength="180" SliderName="{SLoc DIYFFBPedalPlugin_TextDynamicsSettingSliderEndstopStiffness, 'Soft Endstop Stiffness'}" TickFrequency="1" Unit="kg/mm" Width="210" Height="36" MinValue="10" MaxValue="200" SliderValueChanged="Slider_SoftEndstopStiffnessChanged" Margin="10,0,0,0" SliderValue="10"/>
+                    <localUI:SliderWithLabel x:Name="Slider_SoftEndstopTravelRange" SliderLength="240" SliderName="{SLoc DIYFFBPedalPlugin_TextDynamicsSettingSliderEndstopTravel, 'Soft Endstop Travel'}" TickFrequency="0.1" Unit="mm" Width="250" Height="36" MinValue="0" MaxValue="10" SliderValueChanged="Slider_SoftEndstopTravelRangeChanged" Margin="15,0,0,0" SliderValue="0"/>
+                    <localUI:SliderWithLabel x:Name="Slider_SoftEndstopStiffness" SliderLength="240" SliderName="{SLoc DIYFFBPedalPlugin_TextDynamicsSettingSliderEndstopStiffness, 'Soft Endstop Stiffness'}" TickFrequency="1" Unit="kg/mm" Width="250" Height="36" MinValue="10" MaxValue="200" SliderValueChanged="Slider_SoftEndstopStiffnessChanged" Margin="10,0,0,0" SliderValue="10"/>
                 </StackPanel>
 
             </StackPanel>

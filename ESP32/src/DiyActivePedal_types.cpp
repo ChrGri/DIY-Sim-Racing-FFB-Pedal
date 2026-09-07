@@ -320,18 +320,11 @@ void DapCalculationVariables_t::updateFromConfig(DapConfig_t& config_st)
   forceMaxDefault_fl32 = ((float)config_st.payloadPedalConfig_st.maxForce_fl32);
   pedalType_u8 = config_st.payloadPedalConfig_st.pedalType_u8;
 
-  // calculate steps per motor revolution
-  float helper_fl32 = (float)MAXIMUM_STEPPER_SPEED_U32 / ((float)s_maximumStepperRpm_u32 / (float)s_secondsPerMinute_u32);
-  helper_fl32 = floor(helper_fl32 / 10.0f) * 10.0f;
-  helper_fl32 = constrain(helper_fl32, 2000.0f, 10000.0f);
-  stepsPerMotorRevolution_u32 = helper_fl32;
-
-    // // when spindle pitch is smaller than 8, choose coarse microstepping
-    // if ( 8 > config_st.payloadPedalConfig_st.spindlePitch_mmPerRev_u8)
-    // {stepsPerMotorRevolution_u32 = 3200;}
-    // else{stepsPerMotorRevolution_u32 = 6400;}
-
-    // stepsPerMotorRevolution_u32 = 3750;
+  // Microsteps per motor revolution:
+  // 3200 steps/rev (16x microstepping) divides cleanly into the 4 pole pairs (800 steps per electrical cycle).
+  // At 4000 RPM, pulse frequency is (4000 / 60) * 3200 = 213.33 kHz, well within the motor's 250 kHz limit.
+  // Maximum motor speed at 250 kHz is (250,000 / 3200) * 60 = 4,687.5 RPM.
+  stepsPerMotorRevolution_u32 = 3200;
 }
 
 void IRAM_ATTR_FLAG DapCalculationVariables_t::dynamicUpdate()

@@ -4,6 +4,7 @@ static const bool IS_ESPNOW_ENABLED = true;
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include <Arduino.h>
+#include <EEPROM.h>
 #include "ESPNowW.h"
 #include "DiyActivePedal_types.h"
 #include "StepperMovementStrategy_Rudder.h"
@@ -11,6 +12,39 @@ static const bool IS_ESPNOW_ENABLED = true;
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+
+#define WIFI_CH_EEPROM_MAGIC 0xA6
+#define WIFI_CH_EEPROM_OFFSET 260
+struct WifiChannelConfig_t {
+  uint8_t magic_u8;
+  uint8_t channel_u8;
+  uint8_t checksum_u8;
+};
+
+extern uint8_t g_currentWifiChannel_u8;
+
+inline uint8_t loadWifiChannelFromEeprom() {
+  WifiChannelConfig_t cfg;
+  EEPROM.get(WIFI_CH_EEPROM_OFFSET, cfg);
+  if (cfg.magic_u8 == WIFI_CH_EEPROM_MAGIC &&
+      (uint8_t)(cfg.magic_u8 ^ cfg.channel_u8) == cfg.checksum_u8 &&
+      cfg.channel_u8 >= 1 && cfg.channel_u8 <= 14) {
+    return cfg.channel_u8;
+  }
+  return 11;
+}
+
+inline void saveWifiChannelToEeprom(uint8_t ch) {
+  if (ch < 1 || ch > 14) return;
+  WifiChannelConfig_t cfg;
+  cfg.magic_u8 = WIFI_CH_EEPROM_MAGIC;
+  cfg.channel_u8 = ch;
+  cfg.checksum_u8 = (uint8_t)(WIFI_CH_EEPROM_MAGIC ^ ch);
+  EEPROM.put(WIFI_CH_EEPROM_OFFSET, cfg);
+  EEPROM.commit();
+}
+
+
 
 //#define ESPNow_debugg_rudder_st
 //#define ESPNow_debug
@@ -82,6 +116,24 @@ volatile uint32_t g_espnowTxNoMemCount_u32 = 0;
 volatile uint32_t g_espnowSendFailCount_u32 = 0;
 volatile uint32_t g_espnowBasicStateStarvedCount_u32 = 0;
 volatile uint32_t g_lastEspnowDiagLogTime_u32 = 0;
+static volatile uint32_t s_espnowNoMemBackoffUntil_ms = 0;
+
+inline void checkWifiChannelHunting() {}
+
+inline bool isEspnowBusy()
+{
+  if (g_espnowTxInFlight_b)
+  {
+    // Safety guard: If WiFi onSent callback was dropped or stalled for > 25ms, auto-recover
+    if (millis() - g_lastEspnowSendTime_u32 > 25)
+    {
+      g_espnowTxInFlight_b = false;
+      return false;
+    }
+    return true;
+  }
+  return false;
+}
 
 static uint8_t s_registeredPeerMac[6] = {0};
 inline esp_err_t safeRegisterEspNowPeer(const uint8_t *mac)
@@ -118,14 +170,32 @@ inline esp_err_t safeRegisterEspNowPeer(const uint8_t *mac)
 
 inline esp_err_t espnowSendWrapper(const uint8_t *targetMac, const uint8_t *data, size_t len)
 {
-  g_lastEspnowSendTime_u32 = millis();
+  uint32_t now_ms = millis();
+  if (s_espnowNoMemBackoffUntil_ms != 0)
+  {
+    if ((int32_t)(s_espnowNoMemBackoffUntil_ms - now_ms) > 0)
+    {
+      return ESP_ERR_ESPNOW_NO_MEM;
+    }
+    s_espnowNoMemBackoffUntil_ms = 0;
+  }
+
+  if (isEspnowBusy())
+  {
+    return ESP_ERR_ESPNOW_INTERNAL;
+  }
+
+  g_lastEspnowSendTime_u32 = now_ms;
+  g_espnowTxInFlight_b = true;
   esp_err_t res = esp_now_send(targetMac, data, len);
   if (res != ESP_OK)
   {
     g_espnowTxFailCount_u32 = g_espnowTxFailCount_u32 + 1;
+    g_espnowTxInFlight_b = false;
     if (res == ESP_ERR_ESPNOW_NO_MEM)
     {
       g_espnowTxNoMemCount_u32 = g_espnowTxNoMemCount_u32 + 1;
+      s_espnowNoMemBackoffUntil_ms = now_ms + 15;
     }
   }
   return res;
@@ -187,8 +257,7 @@ void ESPNow_Joystick_Broadcast(int32_t controllerValue)
   {
     _dap_joystick_message.pedal_status=0;
   }
-  g_lastEspnowSendTime_u32 = millis();
-  esp_now_send(g_broadcastMac_au8, (uint8_t *) &_dap_joystick_message, sizeof(_dap_joystick_message));
+  espnowSendWrapper(g_broadcastMac_au8, (uint8_t *) &_dap_joystick_message, sizeof(_dap_joystick_message));
 
   
   
@@ -701,6 +770,35 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
         memcpy(&dap_action_ota_st, data, sizeof(DapActionOta_t));
         g_otaUpdateAction_b=true;
       }
+
+      if (data_len == sizeof(DapWifiChannel_t))
+      {
+        DapWifiChannel_t wifiChPacket;
+        memcpy(&wifiChPacket, data, sizeof(DapWifiChannel_t));
+        if (wifiChPacket.payloadHeader_st.payloadType_u8 == DAP_PAYLOAD_TYPE_WIFI_CHANNEL_U8 &&
+            wifiChPacket.payloadHeader_st.version_u8 == DAP_VERSION_CONFIG_U8)
+        {
+          uint16_t crc = checksumCalculator_u16((uint8_t *)(&(wifiChPacket.payloadHeader_st)),
+                                                sizeof(wifiChPacket.payloadHeader_st) + sizeof(wifiChPacket.payloadWifiChannel_st));
+          if (crc == wifiChPacket.payloadFooter_st.checkSum_u16)
+          {
+            if (wifiChPacket.payloadWifiChannel_st.command_u8 == WIFI_CH_CMD_SET_REQ)
+            {
+              uint8_t newCh = wifiChPacket.payloadWifiChannel_st.currentChannel_u8;
+              if (newCh < 1 || newCh > 14) {
+                newCh = wifiChPacket.payloadWifiChannel_st.recommendedChannel_u8;
+              }
+              if (newCh >= 1 && newCh <= 14)
+              {
+                g_currentWifiChannel_u8 = newCh;
+                saveWifiChannelToEeprom(newCh);
+                esp_wifi_set_channel(newCh, WIFI_SECOND_CHAN_NONE);
+                ActiveSerial->printf("Switched Wi-Fi channel to %d via ESP-NOW\n", newCh);
+              }
+            }
+          }
+        }
+      }
       
       if(data_len==sizeof(DAP_servo_config_st))
       {
@@ -740,10 +838,6 @@ void onSent(const esp_now_send_info_t *tx_info, esp_now_send_status_t status)
     }
 }
 
-inline bool isEspnowBusy()
-{
-    return false;
-}
 
 inline uint32_t getEspnowSendLatency()
 {
@@ -804,7 +898,9 @@ void espNowInitialize()
   #ifndef ESPNOW_WIFI_CHANNEL
     #define ESPNOW_WIFI_CHANNEL 11
   #endif
-  esp_wifi_set_channel(ESPNOW_WIFI_CHANNEL, WIFI_SECOND_CHAN_NONE);
+  g_currentWifiChannel_u8 = loadWifiChannelFromEeprom();
+  ActiveSerial->printf("ESP-NOW Channel loaded from EEPROM: %d\n", g_currentWifiChannel_u8);
+  esp_wifi_set_channel(g_currentWifiChannel_u8, WIFI_SECOND_CHAN_NONE);
   delay(3000);
   #ifdef ESPNow_S3
     #ifdef LOWER_WIFI_TRANSMISSION_POWER
@@ -1030,10 +1126,13 @@ typedef struct EspPairingReg_t {
 } EspPairingReg_t;
 static EspPairingReg_t g_espPairingReg_st;
 
+inline bool isEspnowBusy() { return false; }
+inline esp_err_t espnowSendWrapper(const uint8_t *targetMac, const uint8_t *data, size_t len) { return ESP_OK; }
 inline void espNowInitialize() {}
 inline void sendESPNOWLog(const char *log,...) {}
 inline void ESPNow_Joystick_Broadcast(int32_t controllerValue) {}
 inline void writeAssignmentToEeprom() {}
 inline void clearAssignmentToEeprom() {}
 inline void softwareAssignmentInitialize() {}
+inline void checkWifiChannelHunting() {}
 #endif

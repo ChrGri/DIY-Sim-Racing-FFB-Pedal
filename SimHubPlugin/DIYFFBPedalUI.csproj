@@ -348,6 +348,7 @@
     <Compile Include="VariablesStruct\DAP_action_ota_st.cs" />
     <Compile Include="VariablesStruct\DAP_action_st.cs" />
     <Compile Include="VariablesStruct\DAP_bridge_state_st.cs" />
+    <Compile Include="VariablesStruct\DapWifiChannel_st.cs" />
     <Compile Include="VariablesStruct\DAP_config_st.cs" />
     <Compile Include="VariablesStruct\DAP_HidMessage_st.cs" />
     <Compile Include="VariablesStruct\DAP_state_basic_st.cs" />
