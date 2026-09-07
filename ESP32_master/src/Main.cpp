@@ -722,11 +722,15 @@ void handleWifiScanRequest(bool isHid) {
   resp.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
   resp.payloadFooter_st.checkSum_u16 = checksumCalculator((uint8_t*)(&(resp.payloadHeader_st)), sizeof(resp.payloadHeader_st) + sizeof(resp.payloadWifiChannel_st));
 
+#ifdef USB_JOYSTICK
   if (isHid) {
     tinyusbJoystick_.sendData((uint8_t*)&resp, sizeof(DapWifiChannel_t));
   } else {
     ActiveSerial->write((uint8_t*)&resp, sizeof(DapWifiChannel_t));
   }
+#else
+  ActiveSerial->write((uint8_t*)&resp, sizeof(DapWifiChannel_t));
+#endif
   ActiveSerial->printf("[L]Scan done. Best channel: %d (Score Ch1: %d, Ch6: %d, Ch11: %d)\n", recommended, score[1], score[6], score[11]);
 }
 
@@ -761,11 +765,15 @@ void handleWifiSetChannelRequest(uint8_t newChannel, bool isHid) {
   fwd.payloadWifiChannel_st.command_u8 = WIFI_CH_CMD_SET_ACK;
   fwd.payloadWifiChannel_st.currentChannel_u8 = newChannel;
   fwd.payloadFooter_st.checkSum_u16 = checksumCalculator((uint8_t*)(&(fwd.payloadHeader_st)), sizeof(fwd.payloadHeader_st) + sizeof(fwd.payloadWifiChannel_st));
+#ifdef USB_JOYSTICK
   if (isHid) {
     tinyusbJoystick_.sendData((uint8_t*)&fwd, sizeof(DapWifiChannel_t));
   } else {
     ActiveSerial->write((uint8_t*)&fwd, sizeof(DapWifiChannel_t));
   }
+#else
+  ActiveSerial->write((uint8_t*)&fwd, sizeof(DapWifiChannel_t));
+#endif
   ActiveSerial->printf("[L]Wi-Fi channel successfully switched to %d.\n", newChannel);
 }
 
@@ -782,11 +790,15 @@ void sendWifiChannelStatus(bool isHid) {
   fwd.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
   fwd.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
   fwd.payloadFooter_st.checkSum_u16 = checksumCalculator((uint8_t*)(&(fwd.payloadHeader_st)), sizeof(fwd.payloadHeader_st) + sizeof(fwd.payloadWifiChannel_st));
+#ifdef USB_JOYSTICK
   if (isHid) {
     tinyusbJoystick_.sendData((uint8_t*)&fwd, sizeof(DapWifiChannel_t));
   } else {
     ActiveSerial->write((uint8_t*)&fwd, sizeof(DapWifiChannel_t));
   }
+#else
+  ActiveSerial->write((uint8_t*)&fwd, sizeof(DapWifiChannel_t));
+#endif
 }
 
 void serialCommunicationRxTask( void * pvParameters)
@@ -1147,6 +1159,49 @@ void serialCommunicationRxTask( void * pvParameters)
                 }
               }
             #endif
+            break;
+          }
+          case DAP_PAYLOAD_TYPE_WIFI_CHANNEL_U8:
+          {
+            bool structChecker = true;
+            DapWifiChannel_t wifiChannel_local;
+            memcpy(&wifiChannel_local, packet_start, sizeof(DapWifiChannel_t));
+            if (wifiChannel_local.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_WIFI_CHANNEL_U8)
+            {
+              structChecker = false;
+              structIsValid = false;
+            }
+            if (wifiChannel_local.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8)
+            {
+              structChecker = false;
+              structIsValid = false;
+            }
+            uint16_t crc = checksumCalculator((uint8_t *)(&(wifiChannel_local.payloadHeader_st)), sizeof(wifiChannel_local.payloadHeader_st) + sizeof(wifiChannel_local.payloadWifiChannel_st));
+            if (crc != wifiChannel_local.payloadFooter_st.checkSum_u16)
+            {
+              structChecker = false;
+              structIsValid = false;
+            }
+            if (structChecker == true)
+            {
+              uint8_t cmd = wifiChannel_local.payloadWifiChannel_st.command_u8;
+              if (cmd == WIFI_CH_CMD_SCAN_REQ)
+              {
+                handleWifiScanRequest(false);
+              }
+              else if (cmd == WIFI_CH_CMD_SET_REQ)
+              {
+                uint8_t targetCh = wifiChannel_local.payloadWifiChannel_st.currentChannel_u8;
+                if (targetCh < 1 || targetCh > 14) {
+                  targetCh = wifiChannel_local.payloadWifiChannel_st.recommendedChannel_u8;
+                }
+                handleWifiSetChannelRequest(targetCh, false);
+              }
+              else
+              {
+                sendWifiChannelStatus(false);
+              }
+            }
             break;
           }
           //case action for servo config
