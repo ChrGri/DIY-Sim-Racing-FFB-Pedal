@@ -130,8 +130,16 @@ jobs:
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v2
 
-      # --- 4. SimHub Requirements Setup ---
+      # --- 4. SimHub Cache & Requirements Setup ---
+      - name: Cache SimHub Installation
+        id: cache-simhub
+        uses: actions/cache@v4
+        with:
+          path: C:\Program Files (x86)\SimHub
+          key: simhub-9.11.12-windows
+
       - name: Download & Extract SimHub Requirements
+        if: steps.cache-simhub.outputs.cache-hit != 'true'
         run: |
           aria2c -j1 -o SimHub.zip "https://github.com/SHWotever/SimHub/releases/download/9.11.12/SimHub.9.11.12.zip"
           7z x SimHub.zip
