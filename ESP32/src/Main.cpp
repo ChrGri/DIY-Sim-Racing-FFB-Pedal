@@ -2044,17 +2044,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       // end profiler 4, loadcell reading filtering
       profiler_pedalUpdateTask.end(4);
 
-      float FilterReadingJoystick = 0.0f;
-      if (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfJoystick_u8 ==
-          1) {
-        FilterReadingJoystick = kalman_joystick->filteredValue(
-            filteredReading, 0.0f,
-            dap_config_pedalUpdateTask_st.payloadPedalConfig_st
-                .kfModelNoiseJoystick_u8);
-
-      } else {
-        FilterReadingJoystick = filteredReading;
-      }
+      // Joystick denoise is applied to the mapped HID value below.
 
       // if filtered reading > min force, mark the servo was in aciton
       if (filteredReading > dap_config_pedalUpdateTask_st.payloadPedalConfig_st
@@ -2448,8 +2438,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
                   .maxGameOutput_u8);
         } else {
           joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(
-              (FilterReadingJoystick /*filteredReading*/),
-              dap_calculationVariables_st.forceMin_fl32,
+              filteredReading, dap_calculationVariables_st.forceMin_fl32,
               dap_calculationVariables_st.forceMax_fl32,
               dap_config_pedalUpdateTask_st.payloadPedalConfig_st
                   .maxGameOutput_u8);
@@ -2457,14 +2446,18 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       } else {
         if (1 == dap_config_pedalUpdateTask_st.payloadPedalConfig_st
                      .travelAsJoystickOutput_u8) {
+          float travelJoystick_01 =
+              constrain(pedalArcPercentage_fl32, 0.0f, 1.0f);
+          if (filteredReading < dap_calculationVariables_st.forceMin_fl32) {
+            travelJoystick_01 = 0.0f;
+          }
           joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(
-              constrain(pedalArcPercentage_fl32, 0.0f, 1.0f), 0.0f, 1.0f,
+              travelJoystick_01, 0.0f, 1.0f,
               dap_config_pedalUpdateTask_st.payloadPedalConfig_st
                   .maxGameOutput_u8);
         } else {
           joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(
-              FilterReadingJoystick /*filteredReading*/,
-              dap_calculationVariables_st.forceMin_fl32,
+              filteredReading, dap_calculationVariables_st.forceMin_fl32,
               dap_calculationVariables_st.forceMax_fl32,
               dap_config_pedalUpdateTask_st.payloadPedalConfig_st
                   .maxGameOutput_u8);
@@ -2475,12 +2468,40 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       joystickNormalizedToInt32_eval = forceCurve.EvalJoystickCubicSpline(
           &dap_config_pedalUpdateTask_st, &dap_calculationVariables_st,
           joystickfrac);
+      joystickNormalizedToInt32_eval =
+          constrain(joystickNormalizedToInt32_eval, 0.0f, 100.0f);
 
-      joystickNormalizedToUInt16 =
-          joystickNormalizedToInt32_eval / 100.0f * s_JOYSTICK_MAX_VALUE_U16;
-      joystickNormalizedToUInt16 =
-          constrain(joystickNormalizedToUInt16, s_JOYSTICK_MIN_VALUE_U16,
-                    s_JOYSTICK_MAX_VALUE_U16);
+      // Exponential HID denoise (no velocity state, so no 0/100 overshoot).
+      // Slider still "slow to fast": higher kfModelNoiseJoystick_u8 = less lag.
+      static float joystickSmoothedPercent_fl32 = 0.0f;
+      static bool joystickSmoothInit_b = false;
+      if (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfJoystick_u8 ==
+          1) {
+        float alpha_fl32 =
+            1.0f -
+            ((float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                 .kfModelNoiseJoystick_u8 /
+             5000.0f);
+        alpha_fl32 = constrain(alpha_fl32, 0.0f, 0.999f);
+        if (!joystickSmoothInit_b) {
+          joystickSmoothedPercent_fl32 = joystickNormalizedToInt32_eval;
+          joystickSmoothInit_b = true;
+        } else {
+          joystickSmoothedPercent_fl32 =
+              alpha_fl32 * joystickSmoothedPercent_fl32 +
+              (1.0f - alpha_fl32) * joystickNormalizedToInt32_eval;
+        }
+        joystickNormalizedToInt32_eval = joystickSmoothedPercent_fl32;
+      } else {
+        joystickSmoothInit_b = false;
+        joystickSmoothedPercent_fl32 = joystickNormalizedToInt32_eval;
+      }
+
+      float joystickRaw_fl32 = joystickNormalizedToInt32_eval / 100.0f *
+                               (float)s_JOYSTICK_MAX_VALUE_U16;
+      joystickNormalizedToUInt16 = (uint16_t)constrain(
+          joystickRaw_fl32, (float)s_JOYSTICK_MIN_VALUE_U16,
+          (float)s_JOYSTICK_MAX_VALUE_U16);
 
       // send joystick data to queue
       if (s_joystickDataQueue != NULL) {
