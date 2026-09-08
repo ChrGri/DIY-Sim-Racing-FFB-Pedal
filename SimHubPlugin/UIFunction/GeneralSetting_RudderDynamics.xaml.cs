@@ -39,6 +39,18 @@ namespace DiyFfbPedal.UIFunction
             set => SetValue(DAP_Config_Property, value);
         }
 
+        public DIY_FFB_Pedal Plugin { get; set; }
+        public event EventHandler RequestToggleToeBrake;
+
+        private void btn_TestToggleBrake_Click(object sender, RoutedEventArgs e)
+        {
+            RequestToggleToeBrake?.Invoke(this, EventArgs.Empty);
+            if (Plugin != null)
+            {
+                Plugin.Rudder_brake_enable_flag = true;
+            }
+        }
+
         public void updateUI()
         {
             try
@@ -46,7 +58,8 @@ namespace DiyFfbPedal.UIFunction
                 if (Settings != null)
                 {
                     bool isHeli = (Settings.rudderMode == 1);
-                    bool isToeBrake = (Settings.rudderMode == 2);
+                    bool isAirToeBrake = (Settings.rudderMode == 2);
+                    bool isToeBrakeOnly = (Settings.rudderMode == 3);
 
                     // Mode Adaptive sections visibility
                     if (panel_AirplaneDynamics != null) panel_AirplaneDynamics.Visibility = isHeli ? Visibility.Collapsed : Visibility.Visible;
@@ -56,10 +69,61 @@ namespace DiyFfbPedal.UIFunction
                     {
                         if (isHeli)
                             lbl_DynamicsHeader.Content = "Helicopter Anti-Torque Dynamics";
-                        else if (isToeBrake)
-                            lbl_DynamicsHeader.Content = "Airplane with Toe Brake Dynamics & Bilateral Coupling";
+                        else if (isAirToeBrake)
+                            lbl_DynamicsHeader.Content = "Airplane + Toe Brake Dynamics";
+                        else if (isToeBrakeOnly)
+                            lbl_DynamicsHeader.Content = "Toe Brake Dynamics";
                         else
                             lbl_DynamicsHeader.Content = "Flight Dynamics & Bilateral Coupling";
+                    }
+
+                    // Mode 2 / 3 Dynamic Toe Brake Status & Guidance
+                    if (isAirToeBrake)
+                    {
+                        if (border_ToeBrakeStateBadge != null) border_ToeBrakeStateBadge.Visibility = Visibility.Visible;
+                        if (btn_TestToggleBrake != null) btn_TestToggleBrake.Visibility = Visibility.Visible;
+                        if (border_KeybindGuide != null) border_KeybindGuide.Visibility = Visibility.Visible;
+
+                        bool brakeActive = Plugin != null ? Plugin.Rudder_brake_status : false;
+                        if (txt_ToeBrakeState != null && border_ToeBrakeStateBadge != null)
+                        {
+                            if (brakeActive)
+                            {
+                                txt_ToeBrakeState.Text = "TOE BRAKING (ACTIVE)";
+                                txt_ToeBrakeState.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x00, 0xFF, 0xAA));
+                                border_ToeBrakeStateBadge.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0x00, 0xCC, 0x88));
+                                border_ToeBrakeStateBadge.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x66, 0x00, 0xCC, 0x88));
+                            }
+                            else
+                            {
+                                txt_ToeBrakeState.Text = "YAW STEERING (ACTIVE)";
+                                txt_ToeBrakeState.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0xFF, 0xAA, 0x33));
+                                border_ToeBrakeStateBadge.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0xFF, 0x99, 0x00));
+                                border_ToeBrakeStateBadge.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x66, 0xFF, 0x99, 0x00));
+                            }
+                        }
+                    }
+                    else if (isToeBrakeOnly)
+                    {
+                        if (border_ToeBrakeStateBadge != null)
+                        {
+                            border_ToeBrakeStateBadge.Visibility = Visibility.Visible;
+                            border_ToeBrakeStateBadge.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0x00, 0xCC, 0xFF));
+                            border_ToeBrakeStateBadge.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x66, 0x00, 0xCC, 0xFF));
+                        }
+                        if (txt_ToeBrakeState != null)
+                        {
+                            txt_ToeBrakeState.Text = "DEDICATED TOE BRAKE (PERMANENT)";
+                            txt_ToeBrakeState.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x00, 0xCC, 0xFF));
+                        }
+                        if (btn_TestToggleBrake != null) btn_TestToggleBrake.Visibility = Visibility.Collapsed;
+                        if (border_KeybindGuide != null) border_KeybindGuide.Visibility = Visibility.Collapsed;
+                    }
+                    else
+                    {
+                        if (border_ToeBrakeStateBadge != null) border_ToeBrakeStateBadge.Visibility = Visibility.Collapsed;
+                        if (btn_TestToggleBrake != null) btn_TestToggleBrake.Visibility = Visibility.Collapsed;
+                        if (border_KeybindGuide != null) border_KeybindGuide.Visibility = Visibility.Collapsed;
                     }
 
                     // Airplane Controls

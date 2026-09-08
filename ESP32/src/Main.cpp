@@ -2243,12 +2243,18 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         rudderOffsets_st.centerForce_kg = centerForce_kg;
 
         uint8_t cfgMode = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.relativeForce01_u8;
-        if (cfgMode == 2 || dap_calculationVariables_st.rudderBrakeStatus_b) {
+        if (cfgMode == 1 || dap_calculationVariables_st.helicopterRudderStatus_b) {
+          rudderOffsets_st.rudderMode_u8 = RUDDER_MODE_HELICOPTER;
+          dap_calculationVariables_st.rudderBrakeStatus_b = false;
+        } else if (cfgMode == 3) {
+          // Mode 3: Dedicated Toe Brake (Permanently independent differential wheel brakes)
           rudderOffsets_st.rudderMode_u8 = RUDDER_MODE_TOE_BRAKE;
           dap_calculationVariables_st.rudderBrakeStatus_b = true;
-        } else if (cfgMode == 1 || dap_calculationVariables_st.helicopterRudderStatus_b) {
-          rudderOffsets_st.rudderMode_u8 = RUDDER_MODE_HELICOPTER;
+        } else if (cfgMode == 2) {
+          // Mode 2: Airplane with Toe Brake (Switchable between Yaw and Toe Brake via keybind/action with 250ms blend)
+          rudderOffsets_st.rudderMode_u8 = RUDDER_MODE_PLANE;
         } else {
+          // Mode 0: Standard Airplane Rudder
           rudderOffsets_st.rudderMode_u8 = RUDDER_MODE_PLANE;
           dap_calculationVariables_st.rudderBrakeStatus_b = false;
         }
@@ -2385,7 +2391,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
                                       dap_calculationVariables_st.helicopterRudderStatus_b;
             if ((fabsf(requiredSpeed) < 10) &&
                 (targetPosFraction_fl32 <= 0.05f || isRudderModeActive)) {
-              if (abs(hardwareDistance_i32) > 1) {
+              // At endstops in rudder mode, do not overdrive against mechanical limit
+              bool nearEndstop = (targetPosFraction_fl32 <= 0.02f || targetPosFraction_fl32 >= 0.98f);
+              if (abs(hardwareDistance_i32) > 1 && (!isRudderModeActive || !nearEndstop)) {
                 float catchUpKp = 400.0f;
                 catchUpSpeedHz =
                     (float)(abs(hardwareDistance_i32) - 1) * catchUpKp;

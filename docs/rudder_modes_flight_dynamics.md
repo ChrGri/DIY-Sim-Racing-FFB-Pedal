@@ -851,11 +851,113 @@ In Helicopter mode, the aerodynamic centering spring is completely disabled ($K_
 
 
 
-### 7.3 Airplane with Toe Brake Mode Interface
+### 7.3 Mode 2: Airplane with Toe Brake (Switchable via Keybind / Button)
 
+In **Airplane with Toe Brake** mode (`rudderMode = 2`), the pedal system operates as standard rigid push-pull airplane yaw rudder (X-axis) during normal flight. When the pilot presses or holds a mapped button/paddle on their flight stick, throttle, or steering wheel, the pedal system **smoothly transitions** into independent differential toe brakes (Y and Z axes).
 
+#### Key Features & Operational Mechanics:
+1. **Normal Flight (Yaw Steering)**:
+   - Rigid bilateral push-pull mechanical coupling ($x_R = 1.0 - x_L$) with hard common-mode lock ($1200\text{ N}$).
+   - Bipolar aerodynamic centering spring (Linear, Progressive, or S-Curve).
+   - Speed-dependent dynamic pressure scaling ($Q$-feel).
+   - Joystick reports rudder steering on the **X-Axis**.
 
-In **Toe Brake** mode (`rudderMode = 2`), the active pedal system provides a continuous, unified hybrid of **Airplane push-pull yaw coupling** and **independent differential toe braking** simultaneously without requiring any manual mode switching or toggle buttons.
+2. **Braking State (Wheel Brakes Active)**:
+   - Bilateral push-pull tracking and common-mode lock are smoothly crossfaded to $0\text{ N}$.
+   - Pedals become completely decoupled and act as independent progressive return springs.
+   - Pushing the left pedal controls the **Left Wheel Brake (Y-Axis)**; pushing the right pedal controls the **Right Wheel Brake (Z-Axis)**.
+
+3. **Smooth Exponential Crossfade Filter (Zero Mechanical Shock)**:
+   - Switching between Yaw Steering and Toe Braking is governed by a first-order exponential blend filter:
+     $$\tau = 0.25\text{ s}, \quad \alpha = 1 - e^{-\Delta t / \tau} \approx 0.001$$
+     $$k_{\text{coupling}}(t) = k_{\text{coupling}}(t-1) + \alpha \cdot (k_{\text{target}} - k_{\text{coupling}}(t-1))$$
+   - Push-pull tracking stiffness, opposing lock barrier, and floating equilibrium positions are continuously faded over $250\text{ ms}$.
+   - Prevents abrupt motor snaps, shudder, or sudden mechanical kicks under pilot foot pressure.
+
+#### Keybinding & SimHub Action Mapping Setup:
+
+In Mode 2 (**Airplane with Toe Brake**), pilots can toggle or hold between **Flight Rudder Yaw Steering** and **Differential Toe Braking** using any steering wheel paddle, flight HOTAS button, button-box switch, or keyboard key.
+
+##### Step-by-Step Mapping Walkthrough:
+
+1. **Open Controls and Events**:
+   In the SimHub main window, click on **Controls and events** in the left sidebar navigation.
+
+2. **Add a New Mapping**:
+   Click the **New mapping** button at the top of the window. The **Mapping Picker** window will appear.
+
+3. **Select the Input Source (Left Column)**:
+   Press the physical button, paddle shifter, or joystick trigger you wish to bind. SimHub will automatically detect the input and highlight it under **Source (Press input for automatic selection)**.
+
+4. **Select the Target Action (Right Column)**:
+   - In the **Target** search/filter box at the top of the right column, type: `diy_ffb`.
+   - Click on the **`DIY_FFB_Pedal`** header to expand its registered actions.
+   - Select the desired action depending on your preferred control style:
+
+| Action Name | Control Style | Behavior & Recommended Hardware |
+|---|---|---|
+| **`Toe Brake`** *(Recommended)* | **Toggle (ShortPress)** | Each press smoothly toggles between **`YAW STEERING (ACTIVE)`** and **`TOE BRAKING (ACTIVE)`** with a $250\text{ ms}$ exponential blend. Perfect for a steering wheel button or flight stick thumb button. |
+| **`Toe Brake On`** | **Momentary (Press)** | Explicitly activates Toe Brake mode. Ideal when combined with `Toe Brake Off` on a paddle shifter or two-position toggle switch. |
+| **`Toe Brake Off`** | **Momentary (Release)** | Explicitly returns to Yaw Steering. Use on button release for a "hold-to-brake" paddle configuration. |
+| **`Airplane with Toe Brake`** | **Mode Selection** | Switches the active rudder profile directly to Mode 2. |
+| **`Rudder Brake`** | **Alias** | Backward-compatible alias for the `Toe Brake` toggle action. |
+
+5. **Configure Input Mode & Confirm**:
+   - For toggle buttons: Set **Input mode** to **`ShortPress`**.
+   - For momentary hold-to-brake paddles: Map one mapping for **Press** $\to$ `Toe Brake On`, and a second mapping for **Release** $\to$ `Toe Brake Off`.
+   - Set **Games** to **`All games`** (or select your flight simulator).
+   - Click **OK** to save the mapping.
+
+6. **Verify Live Operation**:
+   Go to the pedal plugin's **Dynamic** settings tab. Press your mapped button:
+   - When in flight: The badge displays orange **`YAW STEERING (ACTIVE)`** (coupled push-pull rudder on X-axis).
+   - When pressed: The badge smoothly turns green **`TOE BRAKING (ACTIVE)`** (decoupled independent wheel brakes on Y and Z axes).
+
+---
+
+#### Actions vs. Properties (What Needs to Be Bound?):
+
+> [!TIP]
+> - **Actions** are *commands* triggered by buttons or keys to control the hardware (e.g., `Toe Brake` toggle). **You only need to bind an Action** to switch between Yaw and Brakes.
+> - **Properties** are *read-only telemetry values* published by the plugin into SimHub's property engine. You do **not** need to bind properties to control the pedals; properties are used to drive **Dashboards, Overlays, or Steering Wheel LEDs**.
+
+##### Available Plugin Properties Reference:
+
+| SimHub Property Name | Data Type | Value Range | Description & Dashboard / LED Use Case |
+|---|---|---|---|
+| `[DIY_FFB_Pedal.rudder_mode]` | Integer | `0` = Airplane<br/>`1` = Helicopter<br/>`2` = Air + Toe Brake<br/>`3` = Toe Brake | Indicates the currently active rudder mode index. Useful for displaying the current aircraft profile on your wheel screen. |
+| `[DIY_FFB_Pedal.rudder_brake_status]` | Boolean | `true` (Braking)<br/>`false` (Yaw) | Indicates whether differential toe brakes are currently active. Perfect for illuminating a "PARK BRAKE / TOE BRAKE" indicator light or changing dashboard color. |
+| `[DIY_FFB_Pedal.rudder_yaw_deflection]` | Float | `-1.0` to `+1.0` | Live differential yaw deflection ($0.0$ = neutral center, $-1.0$ = full left rudder, $+1.0$ = full right rudder). Drives rudder trim indicators. |
+| `[DIY_FFB_Pedal.rudder_left_brake]` | Float | `0.0` to `1.0` | Live physical displacement of the left wheel brake ($0.0$ = released, $1.0$ = $100\%$ full brake pressure). |
+| `[DIY_FFB_Pedal.rudder_right_brake]` | Float | `0.0` to `1.0` | Live physical displacement of the right wheel brake ($0.0$ = released, $1.0$ = $100\%$ full brake pressure). |
+
+##### Example Dashboard / LED Scripting:
+
+* **Dash Studio Widget Background Color (NCalc)**:
+  ```csharp
+  if([DIY_FFB_Pedal.rudder_brake_status], '#00CC88', '#FF9900')
+  ```
+  *(Turns the indicator widget bright green when in Toe Brake mode, and amber when in Yaw Steering mode)*.
+
+* **Wheel Screen Status Text (JavaScript)**:
+  ```javascript
+  if ($prop('DIY_FFB_Pedal.rudder_mode') == 2) {
+      return $prop('DIY_FFB_Pedal.rudder_brake_status') ? 'BRAKES ACTIVE' : 'RUDDER YAW';
+  } else if ($prop('DIY_FFB_Pedal.rudder_mode') == 3) {
+      return 'TOE BRAKE ONLY';
+  } else {
+      return 'AIRPLANE RUDDER';
+  }
+  ```
+
+---
+
+### 7.4 Mode 3: Toe Brake Only (Dedicated Differential Brakes)
+
+In **Toe Brake Only** mode (`rudderMode = 3`), the pedals operate **permanently** as independent, decoupled differential wheel brakes.
+- **Always Decoupled**: $k_{\text{coupling}} = 0$, mutual lock disabled.
+- **Independent Axis Control**: Left pedal controls Left Brake (Y-axis), Right pedal controls Right Brake (Z-axis).
+- **Smooth Progressive Resistance**: Calibrated progressive spring force curve on each pedal for modulation without mutual opposition.
 
 
 

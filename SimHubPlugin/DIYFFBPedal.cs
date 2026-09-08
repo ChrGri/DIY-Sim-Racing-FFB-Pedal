@@ -523,8 +523,15 @@ namespace DiyFfbPedal
                     tmp.payloadPedalAction_.Trigger_CV_1 = 0;
                     tmp.payloadPedalAction_.Trigger_CV_2 = 0;
                     tmp.payloadPedalAction_.Rudder_action = 0;
-                    tmp.payloadPedalAction_.Rudder_brake_action = (byte)((Rudder_status && Settings.rudderMode == 2) ? 2 : 0);
-                Rudder_brake_status = (Rudder_status && Settings.rudderMode == 2);
+                    tmp.payloadPedalAction_.Rudder_brake_action = (byte)(Rudder_status ? (Settings.rudderMode == 3 ? 2 : (Settings.rudderMode == 2 ? (Rudder_brake_status ? 2 : 3) : 0)) : 0);
+                    if (Settings.rudderMode == 3)
+                    {
+                        Rudder_brake_status = Rudder_status;
+                    }
+                    else if (Settings.rudderMode != 2)
+                    {
+                        Rudder_brake_status = false;
+                    }
                     if (Settings.G_force_enable_flag[pedalIdx] == 1)
                     {
                         tmp.payloadPedalAction_.G_value = (Byte)g_force_last_value;
@@ -956,7 +963,7 @@ namespace DiyFfbPedal
                 }
                 else
                 {
-                    if (Settings.rudderMode == 0 || Settings.rudderMode == 2)
+                    if (Settings.rudderMode == 0 || Settings.rudderMode == 2 || Settings.rudderMode == 3)
                     {
                         if (Rudder_Pedal_idx[0] == 0)
                         {
@@ -981,8 +988,20 @@ namespace DiyFfbPedal
                 }
 
                 
-                tmp.payloadPedalAction_.Rudder_brake_action = (byte)((Rudder_status && Settings.rudderMode == 2) ? 2 : 0);
-                Rudder_brake_status = (Rudder_status && Settings.rudderMode == 2);
+                if (Settings.rudderMode == 3)
+                {
+                    Rudder_brake_status = Rudder_status;
+                    tmp.payloadPedalAction_.Rudder_brake_action = 2;
+                }
+                else if (Settings.rudderMode == 2)
+                {
+                    tmp.payloadPedalAction_.Rudder_brake_action = (byte)(Rudder_brake_status ? 2 : 3);
+                }
+                else
+                {
+                    Rudder_brake_status = false;
+                    tmp.payloadPedalAction_.Rudder_brake_action = 0;
+                }
 
                 for (uint i = 0; i < 2; i++)
                 {
@@ -1706,6 +1725,22 @@ namespace DiyFfbPedal
                 Rudder_brake_enable_flag = true;
                 SimHub.Logging.Current.Info("Toe Brake");
 
+            });
+            this.AddAction("Toe Brake On", (a, b) =>
+            {
+                if (!Rudder_brake_status)
+                {
+                    Rudder_brake_enable_flag = true;
+                }
+                SimHub.Logging.Current.Info("Toe Brake On");
+            });
+            this.AddAction("Toe Brake Off", (a, b) =>
+            {
+                if (Rudder_brake_status)
+                {
+                    Rudder_brake_enable_flag = true;
+                }
+                SimHub.Logging.Current.Info("Toe Brake Off");
             });
             this.AddAction("Airplane with Toe Brake", (a, b) =>
             {

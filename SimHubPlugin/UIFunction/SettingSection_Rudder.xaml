@@ -21,11 +21,12 @@
                 <Label Content="Rudder Setting" Height="20" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" FontSize="10" Margin="2,0,0,0"/>
                 <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Width="160" Height="80">
                     <Label Content="Mode Select:" Height="15" Width="80" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="5,0,0,0" FontSize="10"/>
-                    <StackPanel Orientation="Horizontal">
-                        <RadioButton x:Name="CheckBox_RudderType_1" Content="Flight" GroupName="RudderTypeOptions"  Width="45" Height="20" BorderThickness="0,0,0,0" IsChecked="True" FontSize="10" Checked="CheckBox_RudderType_Checked" HorizontalAlignment="Left" Margin="2,0,0,0"/>
-                        <RadioButton x:Name="CheckBox_RudderType_2" Content="Helicopter" GroupName="RudderTypeOptions"  Width="55" Height="20" BorderThickness="0,0,0,0" FontSize="10" Checked="CheckBox_RudderType_Checked" HorizontalAlignment="Left" Margin="2,0,0,0"/>
-                        <RadioButton x:Name="CheckBox_RudderType_3" Content="Airplane with Toe Brake" GroupName="RudderTypeOptions"  Width="140" Height="20" BorderThickness="0,0,0,0" FontSize="10" Checked="CheckBox_RudderType_Checked" HorizontalAlignment="Left" Margin="2,0,0,0"/>
-                    </StackPanel>
+                    <WrapPanel Orientation="Horizontal" Width="155">
+                        <RadioButton x:Name="CheckBox_RudderType_1" Content="Airplane" GroupName="RudderTypeOptions" Width="72" Height="18" BorderThickness="0,0,0,0" IsChecked="True" FontSize="9.5" Checked="CheckBox_RudderType_Checked" Margin="2,0,0,2"/>
+                        <RadioButton x:Name="CheckBox_RudderType_2" Content="Heli" GroupName="RudderTypeOptions" Width="72" Height="18" BorderThickness="0,0,0,0" FontSize="9.5" Checked="CheckBox_RudderType_Checked" Margin="2,0,0,2"/>
+                        <RadioButton x:Name="CheckBox_RudderType_3" Content="Air + Brake" GroupName="RudderTypeOptions" Width="72" Height="18" BorderThickness="0,0,0,0" FontSize="9.5" Checked="CheckBox_RudderType_Checked" ToolTip="Airplane with switchable Toe Brake" Margin="2,0,0,2"/>
+                        <RadioButton x:Name="CheckBox_RudderType_4" Content="Toe Brake" GroupName="RudderTypeOptions" Width="72" Height="18" BorderThickness="0,0,0,0" FontSize="9.5" Checked="CheckBox_RudderType_Checked" ToolTip="Toe Brake Only (Dedicated independent wheel brakes)" Margin="2,0,0,2"/>
+                    </WrapPanel>
                 </StackPanel>
 
             </StackPanel>

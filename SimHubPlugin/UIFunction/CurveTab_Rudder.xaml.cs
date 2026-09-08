@@ -64,13 +64,21 @@ namespace DiyFfbPedal.UIFunction
                 if (Settings != null)
                 {
                     bool isHeli = (Settings.rudderMode == 1);
-                    bool isToeBrake = (Settings.rudderMode == 2);
+                    bool isAirToeBrake = (Settings.rudderMode == 2);
+                    bool isToeBrakeOnly = (Settings.rudderMode == 3);
 
                     // Toggle mode-specific visualization elements
                     if (panel_AirplaneProfiles != null) panel_AirplaneProfiles.Visibility = isHeli ? Visibility.Collapsed : Visibility.Visible;
                     if (border_HeliBadge != null) border_HeliBadge.Visibility = isHeli ? Visibility.Visible : Visibility.Collapsed;
                     if (border_HeliOverlay != null) border_HeliOverlay.Visibility = isHeli ? Visibility.Visible : Visibility.Collapsed;
-                    if (border_ToeBrakeBadge != null) border_ToeBrakeBadge.Visibility = isToeBrake ? Visibility.Visible : Visibility.Collapsed;
+                    if (border_ToeBrakeBadge != null)
+                    {
+                        border_ToeBrakeBadge.Visibility = (isAirToeBrake || isToeBrakeOnly) ? Visibility.Visible : Visibility.Collapsed;
+                        if (txt_ToeBrakeBadge != null)
+                        {
+                            txt_ToeBrakeBadge.Text = isToeBrakeOnly ? "TOE BRAKE ONLY (DECOUPLED)" : "AIRPLANE + TOE BRAKE";
+                        }
+                    }
 
                     if (txt_HeliDampingDisplay != null) txt_HeliDampingDisplay.Text = $"Viscous Damping: {Settings.rudderHeliDamping}%";
                     if (txt_HeliFrictionDisplay != null) txt_HeliFrictionDisplay.Text = $"Coulomb Friction: {Math.Round(Settings.rudderHeliFriction, 1)} N";

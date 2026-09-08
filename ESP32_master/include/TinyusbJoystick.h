@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Arduino.h"
 #include <string>
 #include "Adafruit_TinyUSB.h"
@@ -53,21 +53,17 @@ uint8_t const desc_hid_gamepad[] =
         HID_REPORT_ID(JOYSTICK_STRUCT)
         
         HID_USAGE_PAGE ( HID_USAGE_PAGE_DESKTOP ),
-        HID_USAGE      ( HID_USAGE_DESKTOP_POINTER ),
+        HID_USAGE ( HID_USAGE_DESKTOP_X  ),
+        HID_USAGE ( HID_USAGE_DESKTOP_Y  ),
+        HID_USAGE ( HID_USAGE_DESKTOP_Z  ),
+        HID_USAGE ( HID_USAGE_DESKTOP_RX ),
+        HID_USAGE ( HID_USAGE_DESKTOP_RY ),
+        HID_USAGE ( HID_USAGE_DESKTOP_RZ ),
         HID_LOGICAL_MIN( 0 ),
-        HID_LOGICAL_MAX_32( 65535 ), 
-        HID_REPORT_SIZE( 32 ),
+        HID_LOGICAL_MAX_N( 65535, 3 ), 
+        HID_REPORT_SIZE( 16 ),
         HID_REPORT_COUNT( 6 ),
-        
-        HID_COLLECTION ( HID_COLLECTION_PHYSICAL ),
-            HID_USAGE ( HID_USAGE_DESKTOP_X  ),
-            HID_USAGE ( HID_USAGE_DESKTOP_Y  ),
-            HID_USAGE ( HID_USAGE_DESKTOP_Z  ),
-            HID_USAGE ( HID_USAGE_DESKTOP_RX ),
-            HID_USAGE ( HID_USAGE_DESKTOP_RY ),
-            HID_USAGE ( HID_USAGE_DESKTOP_RZ ),
-            HID_INPUT ( HID_DATA | HID_VARIABLE | HID_ABSOLUTE ),
-        HID_COLLECTION_END,
+        HID_INPUT ( HID_DATA | HID_VARIABLE | HID_ABSOLUTE ),
         
     HID_COLLECTION_END
 };
@@ -98,15 +94,15 @@ private:
     static const uint16_t JOYSTICK_RANGE = JOYSTICK_MAX_VALUE - JOYSTICK_MIN_VALUE;
 
     // USB HID object
-    // Report payload for the two axes
+    // Report payload for the axes
     typedef struct
     {
-        int32_t x;
-        int32_t y;
-        int32_t z;
-        int32_t rx;
-        int32_t ry;
-        int32_t rz;
+        uint16_t x;
+        uint16_t y;
+        uint16_t z;
+        uint16_t rx;
+        uint16_t ry;
+        uint16_t rz;
     } hid_report_t;
     
     hid_report_t hid_report = {0};

@@ -230,7 +230,11 @@ namespace DiyFfbPedal
         {
             this.Plugin = plugin;
             if (CurveRudderForce_Tab != null && plugin?.Settings != null) CurveRudderForce_Tab.Settings = plugin.Settings;
-            if (RudderDynamics_Tab != null && plugin?.Settings != null) RudderDynamics_Tab.Settings = plugin.Settings;
+            if (RudderDynamics_Tab != null)
+            {
+                if (plugin?.Settings != null) RudderDynamics_Tab.Settings = plugin.Settings;
+                RudderDynamics_Tab.Plugin = plugin;
+            }
             plugin.testValue = 1;
             plugin.wpfHandle = this;
             UpdateSerialPortList_click();

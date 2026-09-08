@@ -210,6 +210,40 @@ namespace DiyFfbPedal
                     btn_rudder_initialize.Content = "Enable";
                     //text_rudder_log.Visibility = Visibility.Hidden;
                 }
+
+                if (btn_rudder_brake != null)
+                {
+                    if (Plugin.Settings.rudderMode == 2)
+                    {
+                        btn_rudder_brake.Visibility = Visibility.Visible;
+                        if (Plugin.Rudder_brake_status)
+                        {
+                            btn_rudder_brake.Content = "Toe Brake: ACTIVE";
+                            btn_rudder_brake.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xEE, 0x00, 0xAA, 0x66));
+                            btn_rudder_brake.Foreground = System.Windows.Media.Brushes.White;
+                            btn_rudder_brake.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x00, 0xFF, 0xAA));
+                        }
+                        else
+                        {
+                            btn_rudder_brake.Content = "Toe Brake: OFF (Yaw)";
+                            btn_rudder_brake.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0xFF, 0x99, 0x00));
+                            btn_rudder_brake.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0xFF, 0xAA, 0x33));
+                            btn_rudder_brake.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x66, 0xFF, 0x99, 0x00));
+                        }
+                    }
+                    else if (Plugin.Settings.rudderMode == 3)
+                    {
+                        btn_rudder_brake.Visibility = Visibility.Visible;
+                        btn_rudder_brake.Content = "Toe Brake: PERMANENT";
+                        btn_rudder_brake.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0x00, 0xCC, 0xFF));
+                        btn_rudder_brake.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x00, 0xCC, 0xFF));
+                        btn_rudder_brake.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x66, 0x00, 0xCC, 0xFF));
+                    }
+                    else
+                    {
+                        btn_rudder_brake.Visibility = Visibility.Collapsed;
+                    }
+                }
             }
 
             //system UI

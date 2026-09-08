@@ -891,6 +891,18 @@ namespace DiyFfbPedal
             Plugin.SendBridgeAction(tmp_2);
 
         }
+        private void btn_rudder_brake_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            try
+            {
+                if (Plugin != null)
+                {
+                    Plugin.Rudder_brake_enable_flag = true;
+                }
+            }
+            catch { }
+        }
+
         private void RudderMode_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             try
@@ -919,8 +931,8 @@ namespace DiyFfbPedal
                 }
                 if (Plugin?.Rudder_status == true)
                 {
-                    Plugin.Rudder_brake_status = (mode == 2);
-                    Plugin.Rudder_brake_enable_flag = true;
+                    Plugin.Rudder_brake_status = (mode == 3);
+                    Plugin.Rudder_brake_enable_flag = (mode == 3);
                     RudderParameterLiveUpdate();
                 }
             }

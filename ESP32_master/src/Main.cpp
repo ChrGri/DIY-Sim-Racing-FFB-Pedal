@@ -1593,21 +1593,11 @@ void joystickUpdateTask( void * pvParameters )
                                       : g_pedalBrakeValue_u16;
             uint16_t rightBrakeVal = g_pedalThrottleValue_u16;
 
-            // Output differential rudder yaw on X-axis:
-            // Centered when both pedals are equal; deflects with differential forward push
-            int32_t diff = (int32_t)rightBrakeVal - (int32_t)leftBrakeVal;
-            int32_t rudderVal = (int32_t)JOYSTICK_CENTER + (diff / 2);
-            rudderVal = constrain(rudderVal, (int32_t)JOYSTICK_MIN_VALUE, (int32_t)JOYSTICK_MAX_VALUE);
+            // In Toe Brake mode, the pedals act purely as independent wheel brakes:
+            // Rudder yaw (X-axis) remains neutral (centered) with zero connection between pedals
+            SetControllerOutputValueRudder(JOYSTICK_CENTER);
 
-            // 3% deadzone around center
-            int32_t deadzoneThreshold = (int32_t)(0.03f * JOYSTICK_RANGE);
-            if (abs(rudderVal - (int32_t)JOYSTICK_CENTER) < deadzoneThreshold)
-            {
-              rudderVal = (int32_t)JOYSTICK_CENTER;
-            }
-            SetControllerOutputValueRudder((uint16_t)rudderVal);
-
-            // Output individual left and right wheel brakes on Y and Z axes simultaneously
+            // Output independent left and right wheel brakes on Y and Z axes
             SetControllerOutputValueRudder_brake(leftBrakeVal, rightBrakeVal);
           }
           joystickSendState();
