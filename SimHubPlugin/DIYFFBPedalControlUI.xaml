@@ -1,4 +1,4 @@
-<UserControl x:Class="DiyFfbPedal.DIYFFBPedalControlUI"
+﻿<UserControl x:Class="DiyFfbPedal.DIYFFBPedalControlUI"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -518,7 +518,7 @@
                                             <localFunction:InfoSection_Rudder x:Name="RudderInfo" />
                                             <Button x:Name="btn_SidebarRudderDocs" Click="btn_RudderDocs_Click" Content="📖 Flight Docs ↗" Width="158" Height="18" Margin="0,2,0,4" Background="#2600AAFF" Foreground="#00CCFF" BorderBrush="#3300CCFF" BorderThickness="1" FontSize="9" FontFamily="Arial" Cursor="Hand" ToolTip="Open Rudder Flight Dynamics Documentation on GitHub" HorizontalAlignment="Center"/>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,0">
-                                                <ComboBox x:Name="combo_rudderMode" SelectedValuePath="Tag" Width="98" SelectedValue="{Binding Plugin.Settings.rudderMode, Mode=TwoWay}" SelectionChanged="RudderMode_SelectionChanged" Height="22" Padding="2,0,0,0" BorderThickness="0,0,0,0" MinHeight="20">
+                                                <ComboBox x:Name="combo_rudderMode" SelectedValuePath="Tag" Width="106" SelectedValue="{Binding Plugin.Settings.rudderMode, Mode=TwoWay}" SelectionChanged="RudderMode_SelectionChanged" Height="22" Padding="2,0,0,0" BorderThickness="0,0,0,0" MinHeight="20" ToolTip="Rudder Mode: Airplane, Helicopter, or Airplane with Toe Brake">
                                                     <ComboBoxItem Content="Airplane">
                                                         <ComboBoxItem.Tag>
                                                             <sys:UInt32>0</sys:UInt32>
@@ -529,11 +529,17 @@
                                                             <sys:UInt32>1</sys:UInt32>
                                                         </ComboBoxItem.Tag>
                                                     </ComboBoxItem>
+                                                    <ComboBoxItem Content="Airplane with Toe Brake">
+                                                        <ComboBoxItem.Tag>
+                                                            <sys:UInt32>2</sys:UInt32>
+                                                        </ComboBoxItem.Tag>
+                                                    </ComboBoxItem>
                                                 </ComboBox>
-                                                <styles:SHButtonPrimary x:Name="btn_rudder_initialize" Click="btn_rudder_initialize_Click" Width="56" Height="22" Content="Rudder" Margin="6,0,0,0" HorizontalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" HorizontalContentAlignment="Center" MinHeight="20" />
+                                                <styles:SHButtonPrimary x:Name="btn_rudder_initialize" Click="btn_rudder_initialize_Click" Width="48" Height="22" Content="Rudder" Margin="4,0,0,0" HorizontalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" HorizontalContentAlignment="Center" MinHeight="20" />
                                             </StackPanel>
+                                            
                                             <!-- Rudder Status & Operation Monitor Box -->
-                                            <TextBox x:Name="text_rudder_log" HorizontalAlignment="Center" VerticalAlignment="Top" Text="Rudder Monitor Ready..." Width="158" Foreground="#00FFCC" Height="365" Margin="0,8,0,0" FontSize="9" FontFamily="Consolas" Background="#EE141720" BorderBrush="#3300FFCC" BorderThickness="1" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="4"/>
+                                            <TextBox x:Name="text_rudder_log" HorizontalAlignment="Center" VerticalAlignment="Top" Text="Rudder Monitor Ready..." Width="158" Foreground="#00FFCC" Height="340" Margin="0,6,0,0" FontSize="9" FontFamily="Consolas" Background="#EE141720" BorderBrush="#3300FFCC" BorderThickness="1" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="4"/>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>

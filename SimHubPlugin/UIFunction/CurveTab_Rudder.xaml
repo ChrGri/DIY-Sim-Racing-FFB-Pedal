@@ -1,4 +1,4 @@
-<UserControl x:Class="DiyFfbPedal.UIFunction.CurveTab_Rudder"
+﻿<UserControl x:Class="DiyFfbPedal.UIFunction.CurveTab_Rudder"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -32,6 +32,11 @@
                     <!-- Helicopter Free-Floating Badge (Visible in Heli Mode) -->
                     <Border x:Name="border_HeliBadge" Background="#CC1E7A3E" CornerRadius="3" Padding="6,2" Margin="5,0,0,0" VerticalAlignment="Center" Visibility="Collapsed">
                         <TextBlock Text="FREE-FLOATING / 0 N SPRING" Foreground="White" FontSize="10" FontWeight="Bold" FontFamily="Arial"/>
+                    </Border>
+
+                    <!-- Toe Brake Badge (Visible in Toe Brake Mode) -->
+                    <Border x:Name="border_ToeBrakeBadge" Background="#CCB8860B" CornerRadius="3" Padding="6,2" Margin="5,0,0,0" VerticalAlignment="Center" Visibility="Collapsed">
+                        <TextBlock x:Name="txt_ToeBrakeBadge" Text="AIRPLANE WITH TOE BRAKE" Foreground="White" FontSize="10" FontWeight="Bold" FontFamily="Arial"/>
                     </Border>
 
                 </StackPanel>
@@ -69,7 +74,8 @@
                             <Line x:Name="line_CenterTrim" X1="225" Y1="0" X2="225" Y2="200" Stroke="#5500FFCC" StrokeThickness="1" StrokeDashArray="2,2"/>
 
                             <!-- Live Pedal Deflection Marker -->
-                            <Line x:Name="line_LiveDeflection" X1="225" Y1="0" X2="225" Y2="200" Stroke="#FFFFCC00" StrokeThickness="2" Visibility="Visible"/>
+                            <Line x:Name="line_LiveDeflection" X1="225" Y1="0" X2="225" Y2="200" Stroke="#FFFFCC00" StrokeThickness="2" Visibility="Visible" ToolTip="Rudder / Right Brake Deflection"/>
+                            <Line x:Name="line_LiveDeflection_Left" X1="225" Y1="0" X2="225" Y2="200" Stroke="#FF00CCFF" StrokeThickness="2" Visibility="Collapsed" ToolTip="Left Brake Deflection"/>
 
                             <!-- Helicopter Mode Visual Overlay Card -->
                             <Border x:Name="border_HeliOverlay" Width="360" Height="140" Background="#CC151922" BorderBrush="#00FFCC" BorderThickness="1" CornerRadius="8" Canvas.Left="45" Canvas.Top="30" Visibility="Collapsed">

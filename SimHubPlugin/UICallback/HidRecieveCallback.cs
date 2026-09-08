@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -207,8 +207,26 @@ namespace DiyFfbPedal
                                         double rightNorm = (double)Plugin.rawPedalPos[rightIdx] / 65535.0;
                                         double leftRel = Math.Max(0.0, Math.Min(1.0, leftNorm));
                                         double rightRel = Math.Max(0.0, Math.Min(1.0, rightNorm));
-                                        float rudderRatio = (float)Math.Max(0.0, Math.Min(1.0, 0.5 - 0.5 * leftRel + 0.5 * rightRel));
-                                        CurveRudderForce_Tab.UpdateLiveDeflection(rudderRatio);
+
+                                        if (Plugin.Settings.rudderMode == 2)
+                                        {
+                                            if (leftRel > 0.52 && rightRel > 0.52)
+                                            {
+                                                float rightRatio = (float)rightRel;
+                                                float leftRatio = (float)(1.0 - leftRel);
+                                                CurveRudderForce_Tab.UpdateLiveDeflection(rightRatio, leftRatio);
+                                            }
+                                            else
+                                            {
+                                                float rudderRatio = (float)Math.Max(0.0, Math.Min(1.0, 0.5 + 0.5 * (rightRel - leftRel)));
+                                                CurveRudderForce_Tab.UpdateLiveDeflection(rudderRatio, -1f);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            float rudderRatio = (float)Math.Max(0.0, Math.Min(1.0, 0.5 - 0.5 * leftRel + 0.5 * rightRel));
+                                            CurveRudderForce_Tab.UpdateLiveDeflection(rudderRatio, -1f);
+                                        }
                                     }
 
                                     if (Plugin.Rudder_status)

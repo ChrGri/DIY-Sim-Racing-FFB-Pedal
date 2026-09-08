@@ -1,4 +1,4 @@
-<UserControl x:Class="DiyFfbPedal.UIFunction.SettingSection_Rudder"
+﻿<UserControl x:Class="DiyFfbPedal.UIFunction.SettingSection_Rudder"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -22,8 +22,9 @@
                 <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Width="160" Height="80">
                     <Label Content="Mode Select:" Height="15" Width="80" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="5,0,0,0" FontSize="10"/>
                     <StackPanel Orientation="Horizontal">
-                        <RadioButton x:Name="CheckBox_RudderType_1" Content="Flight" GroupName="RudderTypeOptions"  Width="60" Height="20" BorderThickness="0,0,0,0" IsChecked="True" FontSize="10" Checked="CheckBox_RudderType_Checked" HorizontalAlignment="Left" Margin="5,0,0,0"/>
-                        <RadioButton x:Name="CheckBox_RudderType_2" Content="Helicopter" GroupName="RudderTypeOptions"  Width="80" Height="20" BorderThickness="0,0,0,0" FontSize="10" Checked="CheckBox_RudderType_Checked" HorizontalAlignment="Left"/>
+                        <RadioButton x:Name="CheckBox_RudderType_1" Content="Flight" GroupName="RudderTypeOptions"  Width="45" Height="20" BorderThickness="0,0,0,0" IsChecked="True" FontSize="10" Checked="CheckBox_RudderType_Checked" HorizontalAlignment="Left" Margin="2,0,0,0"/>
+                        <RadioButton x:Name="CheckBox_RudderType_2" Content="Helicopter" GroupName="RudderTypeOptions"  Width="55" Height="20" BorderThickness="0,0,0,0" FontSize="10" Checked="CheckBox_RudderType_Checked" HorizontalAlignment="Left" Margin="2,0,0,0"/>
+                        <RadioButton x:Name="CheckBox_RudderType_3" Content="Airplane with Toe Brake" GroupName="RudderTypeOptions"  Width="140" Height="20" BorderThickness="0,0,0,0" FontSize="10" Checked="CheckBox_RudderType_Checked" HorizontalAlignment="Left" Margin="2,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
 

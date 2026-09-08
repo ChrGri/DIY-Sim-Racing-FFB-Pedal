@@ -2242,10 +2242,15 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         rudderOffsets_st.deadzone_01 = constrain(deadzone_01, 0.0f, 0.10f);
         rudderOffsets_st.centerForce_kg = centerForce_kg;
 
-        if (dap_calculationVariables_st.helicopterRudderStatus_b) {
+        uint8_t cfgMode = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.relativeForce01_u8;
+        if (cfgMode == 2 || dap_calculationVariables_st.rudderBrakeStatus_b) {
+          rudderOffsets_st.rudderMode_u8 = RUDDER_MODE_TOE_BRAKE;
+          dap_calculationVariables_st.rudderBrakeStatus_b = true;
+        } else if (cfgMode == 1 || dap_calculationVariables_st.helicopterRudderStatus_b) {
           rudderOffsets_st.rudderMode_u8 = RUDDER_MODE_HELICOPTER;
         } else {
           rudderOffsets_st.rudderMode_u8 = RUDDER_MODE_PLANE;
+          dap_calculationVariables_st.rudderBrakeStatus_b = false;
         }
 
         // Flight Rudder control algorithm
@@ -3128,15 +3133,24 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
               ActiveSerial->println("Rudder Status Clear");
             }
 
-            if (received_action.payloadPedalAction_st.rudderBrakeAction_u8 == 1) {
+            uint8_t brakeAct = received_action.payloadPedalAction_st.rudderBrakeAction_u8;
+            if (brakeAct == 1) {
               if (dap_calculationVariables_st.rudderBrakeStatus_b == false &&
                   (dap_calculationVariables_st.rudderStatus_b == true || dap_calculationVariables_st.helicopterRudderStatus_b == true)) {
                 dap_calculationVariables_st.rudderBrakeStatus_b = true;
-                ActiveSerial->println("Rudder brake on");
+                ActiveSerial->println("Rudder brake on (toggle)");
               } else {
                 dap_calculationVariables_st.rudderBrakeStatus_b = false;
-                ActiveSerial->println("Rudder brake off");
+                ActiveSerial->println("Rudder brake off (toggle)");
               }
+            } else if (brakeAct == 2) {
+              if (dap_calculationVariables_st.rudderStatus_b == true || dap_calculationVariables_st.helicopterRudderStatus_b == true) {
+                dap_calculationVariables_st.rudderBrakeStatus_b = true;
+                ActiveSerial->println("Rudder brake on (explicit)");
+              }
+            } else if (brakeAct == 3) {
+              dap_calculationVariables_st.rudderBrakeStatus_b = false;
+              ActiveSerial->println("Rudder brake off (explicit)");
             }
 #endif
           }

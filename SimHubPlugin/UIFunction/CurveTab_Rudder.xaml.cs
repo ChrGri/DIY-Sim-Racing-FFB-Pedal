@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
@@ -64,11 +64,13 @@ namespace DiyFfbPedal.UIFunction
                 if (Settings != null)
                 {
                     bool isHeli = (Settings.rudderMode == 1);
+                    bool isToeBrake = (Settings.rudderMode == 2);
 
                     // Toggle mode-specific visualization elements
                     if (panel_AirplaneProfiles != null) panel_AirplaneProfiles.Visibility = isHeli ? Visibility.Collapsed : Visibility.Visible;
                     if (border_HeliBadge != null) border_HeliBadge.Visibility = isHeli ? Visibility.Visible : Visibility.Collapsed;
                     if (border_HeliOverlay != null) border_HeliOverlay.Visibility = isHeli ? Visibility.Visible : Visibility.Collapsed;
+                    if (border_ToeBrakeBadge != null) border_ToeBrakeBadge.Visibility = isToeBrake ? Visibility.Visible : Visibility.Collapsed;
 
                     if (txt_HeliDampingDisplay != null) txt_HeliDampingDisplay.Text = $"Viscous Damping: {Settings.rudderHeliDamping}%";
                     if (txt_HeliFrictionDisplay != null) txt_HeliFrictionDisplay.Text = $"Coulomb Friction: {Math.Round(Settings.rudderHeliFriction, 1)} N";
@@ -224,7 +226,7 @@ namespace DiyFfbPedal.UIFunction
             catch { }
         }
 
-        public void UpdateLiveDeflection(float positionRatio01)
+        public void UpdateLiveDeflection(float positionRatio01, float leftPositionRatio01 = -1f)
         {
             try
             {
@@ -235,6 +237,21 @@ namespace DiyFfbPedal.UIFunction
                 double markerX = Math.Max(0, Math.Min(canvasW, positionRatio01 * canvasW));
                 line_LiveDeflection.X1 = markerX;
                 line_LiveDeflection.X2 = markerX;
+
+                if (line_LiveDeflection_Left != null)
+                {
+                    if (leftPositionRatio01 >= 0f)
+                    {
+                        line_LiveDeflection_Left.Visibility = Visibility.Visible;
+                        double markerX_left = Math.Max(0, Math.Min(canvasW, leftPositionRatio01 * canvasW));
+                        line_LiveDeflection_Left.X1 = markerX_left;
+                        line_LiveDeflection_Left.X2 = markerX_left;
+                    }
+                    else
+                    {
+                        line_LiveDeflection_Left.Visibility = Visibility.Collapsed;
+                    }
+                }
             }
             catch { }
         }

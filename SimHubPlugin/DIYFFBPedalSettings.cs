@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using System.Windows.Media.Converters;
 
 namespace DiyFfbPedal
@@ -74,6 +74,7 @@ namespace DiyFfbPedal
         public byte rudderRPMAmp = 1;
         public byte rudderRPMMaxFrequency = 40;
         public byte rudderRPMMinFrequency = 15;
+        // Rudder Mode: 0 = Airplane, 1 = Helicopter, 2 = Airplane with Toe Brake (Differential Braking)
         public uint rudderMode { get; set; } = 0;
         public string[] DefaultConfig = new string[3] { string.Empty, string.Empty, string.Empty };
         public bool profileAutoChange = false;

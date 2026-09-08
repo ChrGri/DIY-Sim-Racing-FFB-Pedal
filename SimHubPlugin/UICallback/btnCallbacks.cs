@@ -919,11 +919,14 @@ namespace DiyFfbPedal
                 }
                 if (Plugin?.Rudder_status == true)
                 {
+                    Plugin.Rudder_brake_status = (mode == 2);
+                    Plugin.Rudder_brake_enable_flag = true;
                     RudderParameterLiveUpdate();
                 }
             }
             catch { }
         }
+
 
         unsafe private void btn_rudder_initialize_Click(object sender, RoutedEventArgs e)
         {

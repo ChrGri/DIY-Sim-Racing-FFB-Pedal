@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -1144,7 +1144,7 @@ namespace DiyFfbPedal
             }
             else
             {
-                // Airplane Mode: Configured Aerodynamic Centering Force
+                // Airplane Mode & Airplane with Toe Brake Mode: Configured Aerodynamic Centering Force
                 dap_config_st_rudder.payloadPedalConfig_.maxForce = Plugin.Settings.rudderCenteringForce;
                 dap_config_st_rudder.payloadPedalConfig_.preloadForce = 0.0f;
                 dap_config_st_rudder.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = Plugin.Settings.rudderCoulombFriction;
@@ -1154,6 +1154,8 @@ namespace DiyFfbPedal
             dap_config_st_rudder.payloadPedalConfig_.virtualPedalMass_u8 = Plugin.Settings.rudderVirtualPedalMass;
             // Pack rudderMinForce (center force) into relativeForce00 (0.0 to 25.5 kg in 0.1 kg steps)
             dap_config_st_rudder.payloadPedalConfig_.relativeForce00 = (byte)Math.Round(Math.Max(0.0f, Math.Min(25.5f, Plugin.Settings.rudderMinForce)) * 10.0f);
+            // Pack rudderMode (0: Airplane, 1: Helicopter, 2: Toe Brake) into relativeForce01
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce01 = (byte)Plugin.Settings.rudderMode;
             // Pack rudderDeadzone into dampingProgression_u8 (e.g. 0 to 50 representing 0.0% to 5.0%)
             dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = (byte)Math.Round(Plugin.Settings.rudderDeadzone * 10.0);
             // Pack bilateral sync stiffness into minForceForEffects_u8 (e.g. 20 to 150 N)

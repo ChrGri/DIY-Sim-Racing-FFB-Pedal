@@ -1,4 +1,4 @@
-﻿﻿using FMOD;
+﻿using FMOD;
 using GameReaderCommon;
 using log4net.Plugin;
 using NCalc;
@@ -523,7 +523,8 @@ namespace DiyFfbPedal
                     tmp.payloadPedalAction_.Trigger_CV_1 = 0;
                     tmp.payloadPedalAction_.Trigger_CV_2 = 0;
                     tmp.payloadPedalAction_.Rudder_action = 0;
-                    tmp.payloadPedalAction_.Rudder_brake_action = 0;
+                    tmp.payloadPedalAction_.Rudder_brake_action = (byte)((Rudder_status && Settings.rudderMode == 2) ? 2 : 0);
+                Rudder_brake_status = (Rudder_status && Settings.rudderMode == 2);
                     if (Settings.G_force_enable_flag[pedalIdx] == 1)
                     {
                         tmp.payloadPedalAction_.G_value = (Byte)g_force_last_value;
@@ -951,10 +952,11 @@ namespace DiyFfbPedal
                 if (!Rudder_status)
                 {
                     tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.ClearRudderStatus;
+                    Rudder_brake_status = false;
                 }
                 else
                 {
-                    if (Settings.rudderMode == 0)
+                    if (Settings.rudderMode == 0 || Settings.rudderMode == 2)
                     {
                         if (Rudder_Pedal_idx[0] == 0)
                         {
@@ -965,7 +967,7 @@ namespace DiyFfbPedal
                             tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableRudderTwoPedals;
                         }
                     }
-                    if (Settings.rudderMode == 1)
+                    else if (Settings.rudderMode == 1)
                     {
                         if (Rudder_Pedal_idx[0] == 0)
                         {
@@ -979,7 +981,8 @@ namespace DiyFfbPedal
                 }
 
                 
-                tmp.payloadPedalAction_.Rudder_brake_action = 0;
+                tmp.payloadPedalAction_.Rudder_brake_action = (byte)((Rudder_status && Settings.rudderMode == 2) ? 2 : 0);
+                Rudder_brake_status = (Rudder_status && Settings.rudderMode == 2);
 
                 for (uint i = 0; i < 2; i++)
                 {
@@ -1205,7 +1208,7 @@ namespace DiyFfbPedal
                 tmp.payloadPedalAction_.Trigger_CV_1 = 0;
                 tmp.payloadPedalAction_.Trigger_CV_2 = 0;
                 tmp.payloadPedalAction_.Rudder_action = 0;
-                tmp.payloadPedalAction_.Rudder_brake_action = 1;
+                tmp.payloadPedalAction_.Rudder_brake_action = (byte)(Rudder_brake_status ? 2 : 3);
 
                 for (uint i = 0; i < 2; i++)
                 {
@@ -1219,9 +1222,8 @@ namespace DiyFfbPedal
                     byte* p = (byte*)v;
                     tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
                     SendPedalAction(tmp, (byte)PIDX);
-                    Rudder_brake_enable_flag = false;
-                    
                 }
+                Rudder_brake_enable_flag = false;
 
             }
 
@@ -1281,6 +1283,7 @@ namespace DiyFfbPedal
             pluginManager.SetPropertyValue("debugvalue", this.GetType(), debug_value);
             pluginManager.SetPropertyValue("rudder_status", this.GetType(), Rudder_status);
             pluginManager.SetPropertyValue("rudder_brake_status", this.GetType(), Rudder_brake_status);
+            pluginManager.SetPropertyValue("rudder_mode", this.GetType(), Settings.rudderMode);
             pluginManager.SetPropertyValue("pedal_position", this.GetType(), pedal_state_in_ratio);
             pluginManager.SetPropertyValue("PedalErrorIndex", this.GetType(), PedalErrorIndex);
             pluginManager.SetPropertyValue("PedalErrorCode", this.GetType(), PedalErrorCode);
@@ -1413,6 +1416,7 @@ namespace DiyFfbPedal
             pluginManager.AddProperty("debugvalue", this.GetType(), debug_value);
             pluginManager.AddProperty("rudder_status", this.GetType(), Rudder_status);
             pluginManager.AddProperty("rudder_brake_status", this.GetType(), Rudder_brake_status);
+            pluginManager.AddProperty("rudder_mode", this.GetType(), Settings.rudderMode);
             pluginManager.AddProperty("pedal_position", this.GetType(), pedal_state_in_ratio);
             pluginManager.AddProperty("PedalErrorIndex", this.GetType(), PedalErrorIndex);
             pluginManager.AddProperty("PedalErrorCode", this.GetType(), PedalErrorCode);
@@ -1695,6 +1699,18 @@ namespace DiyFfbPedal
             {
                 Rudder_brake_enable_flag = true;
                 SimHub.Logging.Current.Info("Rudder Brake");
+
+            });
+            this.AddAction("Toe Brake", (a, b) =>
+            {
+                Rudder_brake_enable_flag = true;
+                SimHub.Logging.Current.Info("Toe Brake");
+
+            });
+            this.AddAction("Airplane with Toe Brake", (a, b) =>
+            {
+                Rudder_brake_enable_flag = true;
+                SimHub.Logging.Current.Info("Airplane with Toe Brake");
 
             });
             this.AddAction("Log Pedal State", (a, b) =>

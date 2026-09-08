@@ -20,6 +20,7 @@ static float s_filteredSyncForce_N = 0.0f;
 static float s_filteredPilotForce_N = 0.0f;
 static float s_smoothedSyncTargetPos_01 = 0.50f;
 static bool s_wasRudderActive = false;
+static bool s_prevBrakeStatus = false;
 
 /**
  * @brief Resets all virtual admittance states and filters for rudder flight
@@ -27,6 +28,7 @@ static bool s_wasRudderActive = false;
  */
 inline void ResetRudderStrategyState() {
   s_wasRudderActive = false;
+  s_prevBrakeStatus = false;
   g_vRudderModelPos_01 = 0.50f;
   g_vRudderModelVel_mps = 0.0f;
   s_activeCenterPos_01 = 0.50f;
@@ -141,13 +143,32 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   s_filteredSyncForce_N = (sync_alpha * cleanSyncForce_N) +
                           ((1.0f - sync_alpha) * s_filteredSyncForce_N);
 
-  // 1. Direct opposing push-pull reaction force (cancels common-mode foot pressure)
-  float rudderPedalOpposingForce_N = -1.0f * s_filteredSyncForce_N;
+  // Pilot Applied Force & Filtering (computed early for bilateral coupling decisions)
+  float rawPilotForce_N = (loadCellReadingKg_fl32 * GRAVITY_N_KG);
+  float cleanPilotForce_N =
+      (rawPilotForce_N > 1.5f) ? (rawPilotForce_N - 1.5f) : 0.0f;
 
-  // Real-time kinematic position coupling (x_R = 1.0 - x_L) with continuous
-  // trajectory smoothing
+  const float PILOT_FORCE_TAU = 0.025f;
+  float pilot_alpha = 1.0f - expf(-dt_s / PILOT_FORCE_TAU);
+  s_filteredPilotForce_N = (pilot_alpha * cleanPilotForce_N) +
+                           ((1.0f - pilot_alpha) * s_filteredPilotForce_N);
+  calc_st->currentPedalForce_N_fl32 = s_filteredPilotForce_N;
+
+  // Detect Toe Brake (Differential Braking) mode
+  bool isToeBrakeMode = (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_TOE_BRAKE) ||
+                        (calc_st != nullptr && calc_st->rudderBrakeStatus_b);
+
+  if (isToeBrakeMode != s_prevBrakeStatus) {
+    s_prevBrakeStatus = isToeBrakeMode;
+    s_filteredSyncForce_N = 0.0f;
+    s_smoothedSyncTargetPos_01 = g_vRudderModelPos_01;
+  }
+
+  // 1. Direct opposing push-pull reaction force & real-time kinematic coupling
+  float rudderPedalOpposingForce_N = 0.0f;
   float syncTrackingForce_N = 0.0f;
   float commonModeForce_N = 0.0f;
+
   if (calc_st->syncPedalPositionRatio_fl32 >= 0.0f &&
       calc_st->syncPedalPositionRatio_fl32 <= 1.0f) {
     float rawSyncTargetPos_01 = 1.0f - calc_st->syncPedalPositionRatio_fl32;
@@ -173,13 +194,38 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
     float trackingGain_N = 250.0f;
     syncTrackingForce_N = trackingGain_N * posError;
 
-    // 3. Hard Common-Mode Lock on smoothed trajectory: Blocks pushing both pedals forward simultaneously
-    // For a rigid linkage: x_local + x_remote_smoothed = 1.0. If sum > 1.0, both feet are pushing forward!
-    float remoteSmoothedPos_01 = 1.0f - s_smoothedSyncTargetPos_01;
-    float commonModeCompression_01 = (g_vRudderModelPos_01 + remoteSmoothedPos_01) - 1.0f;
-    if (commonModeCompression_01 > 0.003f) {
-      const float K_COMMON_LOCK_N = 1200.0f; // Immense rigid linkage barrier stiffness
-      commonModeForce_N = -K_COMMON_LOCK_N * (commonModeCompression_01 - 0.003f);
+    if (!isToeBrakeMode) {
+      // Standard Airplane / Helicopter push-pull coupling:
+      rudderPedalOpposingForce_N = -1.0f * s_filteredSyncForce_N;
+
+      // 3. Hard Common-Mode Lock on smoothed trajectory: Blocks pushing both pedals forward simultaneously
+      // For a rigid linkage: x_local + x_remote_smoothed = 1.0. If sum > 1.0, both feet are pushing forward!
+      float remoteSmoothedPos_01 = 1.0f - s_smoothedSyncTargetPos_01;
+      float commonModeCompression_01 = (g_vRudderModelPos_01 + remoteSmoothedPos_01) - 1.0f;
+      if (commonModeCompression_01 > 0.003f) {
+        const float K_COMMON_LOCK_N = 1200.0f; // Immense rigid linkage barrier stiffness
+        commonModeForce_N = -K_COMMON_LOCK_N * (commonModeCompression_01 - 0.003f);
+      }
+    } else {
+      // Mode 3 (Toe Brake): Differential Yaw + Progressive Toe Braking
+      // Eliminates negative stiffness and discrete switching thresholds.
+      // 1. Common-mode barrier is removed to allow dual forward stroke
+      commonModeForce_N = 0.0f;
+
+      // 2. No direct negative opposing force on pilot foot (eliminates negative stiffness dip)
+      rudderPedalOpposingForce_N = 0.0f;
+
+      // 3. Soft Tracking Guidance when foot is relaxed:
+      // When pilot foot is completely relaxed (F_pilot < 2 N), soft tracking gently guides
+      // the trailing pedal backward to follow (1.0 - x_remote).
+      // Once the pilot pushes this pedal with their foot (F_pilot >= 2 N), tracking disengages
+      // completely, so the pilot feels ONLY the smooth, progressive mechanical spring!
+      if (s_filteredPilotForce_N < 2.0f) {
+        float followError = s_smoothedSyncTargetPos_01 - g_vRudderModelPos_01;
+        syncTrackingForce_N = (followError < 0.0f) ? (80.0f * followError) : 0.0f;
+      } else {
+        syncTrackingForce_N = 0.0f;
+      }
     }
   }
 
@@ -231,8 +277,18 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
     localStiffness_N_m = 15.0f;
     localStiffness_kg_step = 0.001f;
   } else {
-    // Mode 1: Fixed-Wing Airplane (Symmetric Aerodynamic Centering Spring)
-    float deltaPos = g_vRudderModelPos_01 - s_activeCenterPos_01;
+    // Mode 1: Fixed-Wing Airplane (Symmetric Centering Spring) & Mode 3: Toe Brake
+    float effectiveCenter_01 = s_activeCenterPos_01;
+    if (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_TOE_BRAKE &&
+        calc_st->syncPedalPositionRatio_fl32 >= 0.0f) {
+      float remotePos_01 = constrain(calc_st->syncPedalPositionRatio_fl32, 0.0f, 1.0f);
+      // If opposite pedal is pressed forward beyond neutral, our yaw equilibrium is retracted
+      if (remotePos_01 > s_activeCenterPos_01) {
+        effectiveCenter_01 = 1.0f - remotePos_01;
+      }
+    }
+
+    float deltaPos = g_vRudderModelPos_01 - effectiveCenter_01;
     float deadzone = constrain(rudderOffsets_st.deadzone_01, 0.0f, 0.1f);
 
     float effectiveDelta = 0.0f;
@@ -249,12 +305,21 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
     if (centerForceKg > rudderMaxForceKg) centerForceKg = rudderMaxForceKg;
 
     float halfTravel = max(0.5f - deadzone, 0.05f);
+    if (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_TOE_BRAKE && effectiveCenter_01 < s_activeCenterPos_01) {
+      halfTravel = max(1.0f - effectiveCenter_01, 0.10f);
+    }
     float u = constrain(effectiveDelta / halfTravel, -1.0f, 1.0f);
 
     float absU = fabsf(u);
     float forceKg = 0.0f;
-    if (absU > 0.0001f) {
-      forceKg = centerForceKg + absU * (rudderMaxForceKg - centerForceKg);
+    if (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_TOE_BRAKE) {
+      // In Toe Brake mode: pure smooth progressive resistance with ZERO detent step jump
+      // Monotonic (dF/dx > 0) all the way from rest position to 100% stroke
+      forceKg = absU * rudderMaxForceKg;
+    } else {
+      if (absU > 0.0001f) {
+        forceKg = centerForceKg + absU * (rudderMaxForceKg - centerForceKg);
+      }
     }
     springForce_N = (u > 0.0f ? 1.0f : (u < 0.0f ? -1.0f : 0.0f)) * forceKg * GRAVITY_N_KG;
 
@@ -300,16 +365,8 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
       (g_smoothedRudderEffectVel_mps * idealBaseDamping_Ns_m) +
       (g_smoothedRudderEffectAcc_mps2 * virtualMass_kg);
 
-  // 7. Pilot Applied Force & Filtering
-  float rawPilotForce_N = (loadCellReadingKg_fl32 * GRAVITY_N_KG);
-  float cleanPilotForce_N =
-      (rawPilotForce_N > 1.5f) ? (rawPilotForce_N - 1.5f) : 0.0f;
+  // 7. Pilot Applied Force & Filtering (already computed above for bilateral coupling decisions)
 
-  const float PILOT_FORCE_TAU = 0.025f;
-  float pilot_alpha = 1.0f - expf(-dt_s / PILOT_FORCE_TAU);
-  s_filteredPilotForce_N = (pilot_alpha * cleanPilotForce_N) +
-                           ((1.0f - pilot_alpha) * s_filteredPilotForce_N);
-  calc_st->currentPedalForce_N_fl32 = s_filteredPilotForce_N;
 
   // 8. Friction and Damping Forces
   float viscousDamping_Ns_m = idealBaseDamping_Ns_m;

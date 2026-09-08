@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -46,13 +46,21 @@ namespace DiyFfbPedal.UIFunction
                 if (Settings != null)
                 {
                     bool isHeli = (Settings.rudderMode == 1);
+                    bool isToeBrake = (Settings.rudderMode == 2);
 
                     // Mode Adaptive sections visibility
                     if (panel_AirplaneDynamics != null) panel_AirplaneDynamics.Visibility = isHeli ? Visibility.Collapsed : Visibility.Visible;
                     if (panel_HeliDynamics != null) panel_HeliDynamics.Visibility = isHeli ? Visibility.Visible : Visibility.Collapsed;
 
                     if (lbl_DynamicsHeader != null)
-                        lbl_DynamicsHeader.Content = isHeli ? "Helicopter Anti-Torque Dynamics" : "Flight Dynamics & Bilateral Coupling";
+                    {
+                        if (isHeli)
+                            lbl_DynamicsHeader.Content = "Helicopter Anti-Torque Dynamics";
+                        else if (isToeBrake)
+                            lbl_DynamicsHeader.Content = "Airplane with Toe Brake Dynamics & Bilateral Coupling";
+                        else
+                            lbl_DynamicsHeader.Content = "Flight Dynamics & Bilateral Coupling";
+                    }
 
                     // Airplane Controls
                     if (Slider_CenteringDeadzone != null) Slider_CenteringDeadzone.SliderValue = Settings.rudderDeadzone;

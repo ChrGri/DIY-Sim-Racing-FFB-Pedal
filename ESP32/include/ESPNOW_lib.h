@@ -743,24 +743,32 @@ void onRecv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int da
               // ActiveSerial->println("Rudder_t Status Clear");
             }
 
-            if (dap_actions_st.payloadPedalAction_st.rudderBrakeAction_u8 == 1)
+            uint8_t brakeAct = dap_actions_st.payloadPedalAction_st.rudderBrakeAction_u8;
+            if (brakeAct == 1)
             {
               g_getRudderAction_b = true;
               if (dap_calculationVariables_st.rudderBrakeStatus_b == false && 
                   (dap_calculationVariables_st.rudderStatus_b == true || dap_calculationVariables_st.helicopterRudderStatus_b == true))
               {
                 dap_calculationVariables_st.rudderBrakeStatus_b = true;
-                // ActiveSerial->println("Rudder_t brake on");
-                // ActiveSerial->print("status:");
-                // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
               }
               else
               {
                 dap_calculationVariables_st.rudderBrakeStatus_b = false;
-                // ActiveSerial->println("Rudder_t brake off");
-                // ActiveSerial->print("status:");
-                // ActiveSerial->println(dap_calculationVariables_st.rudderStatus_b);
               }
+            }
+            else if (brakeAct == 2)
+            {
+              g_getRudderAction_b = true;
+              if (dap_calculationVariables_st.rudderStatus_b == true || dap_calculationVariables_st.helicopterRudderStatus_b == true)
+              {
+                dap_calculationVariables_st.rudderBrakeStatus_b = true;
+              }
+            }
+            else if (brakeAct == 3)
+            {
+              g_getRudderAction_b = true;
+              dap_calculationVariables_st.rudderBrakeStatus_b = false;
             }
           }
         }

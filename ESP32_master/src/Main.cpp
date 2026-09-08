@@ -1,4 +1,4 @@
-﻿
+
 /* Todo*/
 // https://github.com/espressif/arduino-esp32/issues/7779
 
@@ -1587,17 +1587,28 @@ void joystickUpdateTask( void * pvParameters )
             SetControllerOutputValueAccelerator(JOYSTICK_MIN_VALUE);
             SetControllerOutputValueBrake(JOYSTICK_MIN_VALUE);
             SetControllerOutputValueThrottle(JOYSTICK_MIN_VALUE);
-            SetControllerOutputValueRudder((int16_t)(JOYSTICK_CENTER));
-            // int16_t filter_brake=0;
-            // int16_t filter_throttle=0;
-            if (dap_bridge_state_st.payloadBridgeState_st.pedalAvailability_au8[0] == 1)
+
+            uint16_t leftBrakeVal = (dap_bridge_state_st.payloadBridgeState_st.pedalAvailability_au8[0] == 1)
+                                      ? g_pedalClutchValue_u16
+                                      : g_pedalBrakeValue_u16;
+            uint16_t rightBrakeVal = g_pedalThrottleValue_u16;
+
+            // Output differential rudder yaw on X-axis:
+            // Centered when both pedals are equal; deflects with differential forward push
+            int32_t diff = (int32_t)rightBrakeVal - (int32_t)leftBrakeVal;
+            int32_t rudderVal = (int32_t)JOYSTICK_CENTER + (diff / 2);
+            rudderVal = constrain(rudderVal, (int32_t)JOYSTICK_MIN_VALUE, (int32_t)JOYSTICK_MAX_VALUE);
+
+            // 3% deadzone around center
+            int32_t deadzoneThreshold = (int32_t)(0.03f * JOYSTICK_RANGE);
+            if (abs(rudderVal - (int32_t)JOYSTICK_CENTER) < deadzoneThreshold)
             {
-              SetControllerOutputValueRudder_brake(g_pedalClutchValue_u16, g_pedalThrottleValue_u16);
+              rudderVal = (int32_t)JOYSTICK_CENTER;
             }
-            else
-            {
-              SetControllerOutputValueRudder_brake(g_pedalBrakeValue_u16, g_pedalThrottleValue_u16);
-            }
+            SetControllerOutputValueRudder((uint16_t)rudderVal);
+
+            // Output individual left and right wheel brakes on Y and Z axes simultaneously
+            SetControllerOutputValueRudder_brake(leftBrakeVal, rightBrakeVal);
           }
           joystickSendState();
           if (pedalJoystickUpdate_b)

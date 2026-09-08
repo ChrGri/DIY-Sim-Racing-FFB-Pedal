@@ -88,7 +88,8 @@ namespace DiyFfbPedal.UIFunction
                     if (CheckBox_RudderType_1 != null && CheckBox_RudderType_2 != null)
                     {
                         CheckBox_RudderType_1.IsChecked = Settings.rudderMode == 0;
-                       CheckBox_RudderType_2.IsChecked = Settings.rudderMode == 1;
+                        CheckBox_RudderType_2.IsChecked = Settings.rudderMode == 1;
+                        if (CheckBox_RudderType_3 != null) CheckBox_RudderType_3.IsChecked = Settings.rudderMode == 2;
                     }
                 }
 
@@ -170,6 +171,10 @@ namespace DiyFfbPedal.UIFunction
                 if (CheckBox_RudderType_2.IsChecked == true)
                 {
                     Settings.rudderMode = 1;
+                }
+                if (CheckBox_RudderType_3 != null && CheckBox_RudderType_3.IsChecked == true)
+                {
+                    Settings.rudderMode = 2;
                 }
             }
 
