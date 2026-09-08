@@ -460,7 +460,9 @@ namespace DiyFfbPedal
 
                                                         writer.Write(", admittance_virtualPosition_m");
                                                         writer.Write(", admittance_virtualVelocity_mps");
-                                                        writer.Write(", admittance_virtualAcceleration_mps2");
+                                                        writer.Write(", admittance_virtualAcceleration_mps2");
+                                                        writer.Write(", joystickOutput_u16");
+                                                        writer.Write(", joystickOutput_pct");
 
                                                         writer.Write("\n");
                                                     }
@@ -498,7 +500,9 @@ namespace DiyFfbPedal
                                                         $",{state.admittance_virtualDamping_Ns_m}" +
                                                         $",{state.admittance_virtualPosition_m}" +
                                                         $",{state.admittance_virtualVelocity_mps}" +
-                                                        $",{state.admittance_virtualAcceleration_mps2}"
+                                                        $",{state.admittance_virtualAcceleration_mps2}" +
+                                                        $",{(UInt16)Pedal_position_reading[indexOfSelectedPedal_u]}" +
+                                                        $",{(Pedal_position_reading[indexOfSelectedPedal_u] / 65535.0 * 100.0).ToString("G9")}"
                                                         );
 
                                                 }
