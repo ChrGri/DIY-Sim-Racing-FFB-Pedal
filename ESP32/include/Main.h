@@ -408,7 +408,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 #define ISV57_RXPIN 1
 
 #define BRAKE_RESISTOR_PIN_U8 35
-#define USE_PREDICTIVE_BRAKE_RESISTOR_CONTROL
+// #define USE_PREDICTIVE_BRAKE_RESISTOR_CONTROL
 
 #ifndef DEBUG_KEEP_USB_SERIAL_JTAG
 #define USB_JOYSTICK
@@ -445,7 +445,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 #define ISV57_RXPIN 1
 
 #define BRAKE_RESISTOR_PIN_U8 35
-#define USE_PREDICTIVE_BRAKE_RESISTOR_CONTROL
+// #define USE_PREDICTIVE_BRAKE_RESISTOR_CONTROL
 
 #ifndef DEBUG_KEEP_USB_SERIAL_JTAG
 #define USB_JOYSTICK
@@ -487,7 +487,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 
 // Bremswiderstand
 #define BRAKE_RESISTOR_PIN_U8 1
-#define USE_PREDICTIVE_BRAKE_RESISTOR_CONTROL
+// #define USE_PREDICTIVE_BRAKE_RESISTOR_CONTROL
 
 #ifndef DEBUG_KEEP_USB_SERIAL_JTAG
 #define USB_JOYSTICK

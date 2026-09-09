@@ -150,6 +150,9 @@ static inline IRAM_ATTR_FLAG float pedalArcPercentage(StepperWithLimits* stepper
 
   // travelSteps_cnt: total steps from min to max soft endstop
   float travelSteps_cnt = (float)(dapCalc_pst->softEndstopMaxStepperPos_i32 - dapCalc_pst->softEndstopMinStepperPos_i32);
+  if (travelSteps_cnt <= 0.0f) {
+    return 0.0f;
+  }
 
   // steps to mm
   float stepsToMm_fl32 = motorRevolutionsPerStep_fl32 * (float)config_pst->payloadPedalConfig_st.spindlePitch_mmPerRev_u8;

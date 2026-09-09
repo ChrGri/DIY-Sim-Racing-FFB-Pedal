@@ -451,11 +451,19 @@ int32_t IRAM_ATTR StepperWithLimits::getCurrentPosition() const {
   return _stepper->getCurrentPosition();
 }
 float IRAM_ATTR StepperWithLimits::getCurrentPositionFraction() const {
-  return float(getCurrentPositionFromMin()) / getTravelSteps();
+  int32_t travel = getTravelSteps();
+  if (travel <= 0) {
+    return 0.0f;
+  }
+  return float(getCurrentPositionFromMin()) / (float)travel;
 }
 float IRAM_ATTR StepperWithLimits::getCurrentPositionFractionFromExternalPos(
     int32_t extPos_i32) const {
-  return ((float)(extPos_i32)) / getTravelSteps();
+  int32_t travel = getTravelSteps();
+  if (travel <= 0) {
+    return 0.0f;
+  }
+  return ((float)(extPos_i32)) / (float)travel;
 }
 int32_t IRAM_ATTR StepperWithLimits::getTargetPositionSteps() const {
   return _stepper->getPositionAfterCommandsCompleted();

@@ -693,6 +693,14 @@ void performPedalHomingSequence(DapConfig_t dap_config_st_homing) {
   pedalLED.setPixelColor(0, 0x00, 0xFF, 0xFF); // Cyan / Aqua
   pedalLED.show();
 
+#ifdef USB_JOYSTICK
+  if (usbManager.isJoystickReady()) {
+    if (dap_calculationVariables_st.rudderStatus_b == false) {
+      usbManager.sendJoystickValue(0);
+    }
+  }
+#endif
+
   if (stepper != nullptr) {
     stepper->servoWakeAction();
     delay(100);
@@ -724,6 +732,14 @@ void performPedalHomingSequence(DapConfig_t dap_config_st_homing) {
 
   // move slowly to the configured soft min position
   stepper->moveSlowlyToPos(stepper->getMinPosition());
+
+#ifdef USB_JOYSTICK
+  if (usbManager.isJoystickReady()) {
+    if (dap_calculationVariables_st.rudderStatus_b == false) {
+      usbManager.sendJoystickValue(0);
+    }
+  }
+#endif
 
   pedalLED.setPixelColor(0, 0x00, 0xFF, 0x00); // Green (ready)
   pedalLED.show();
@@ -772,8 +788,8 @@ void setup() {
   WiFi.mode(WIFI_OFF);
   btStop();
 #endif
-  DapConfig_t dap_config_st_local;
-  DapConfig_t dap_config_st_eeprom;
+  DapConfig_t dap_config_st_local = {};
+  DapConfig_t dap_config_st_eeprom = {};
 
   // 1. EEPROM sehr früh laden, um den korrekten Pedal-Namen für das USB-Setup
   // zu ermitteln
@@ -851,6 +867,16 @@ void setup() {
   if (s_joystickDataQueue == NULL) {
     ActiveSerial->println("Error creating the joystick data queue!");
   }
+#ifdef USB_JOYSTICK
+  xTaskCreatePinnedToCore(
+      joystickOutputTask,                          /* Task function. */
+      "joystickOutputTask",                        /* name of task. */
+      4000,                                        /* Stack size of task */
+      NULL,                                        /* parameter of the task */
+      TASK_PRIORITY_JOYSTICKOUTPUT_TASK_UBASETYPE, /* priority of the task */
+      &handle_joystickOutput,                      /* Task handle */
+      CORE_ID_JOYSTICK_TASK_U8);                   /* pin task to core */
+#endif
   s_loadcellDataQueue = xQueueCreate(1, sizeof(loadcellDataPackage_t));
   if (s_loadcellDataQueue == NULL) {
     ActiveSerial->println("Error creating the loadcell data queue!");
@@ -1155,20 +1181,7 @@ void setup() {
       &handle_serialCommunicationTx,                       /* Task handle */
       CORE_ID_SERIAL_COMMUNICATION_TASK_U8); /* pin task to core */
 
-  // the joystickOutputTask does not need a dedicated timer, since it triggered
-  // by queue
-#ifdef USB_JOYSTICK
-  xTaskCreatePinnedToCore(
-      joystickOutputTask,                          /* Task function. */
-      "joystickOutputTask",                        /* name of task. */
-      4000,                                        /* Stack size of task */
-      NULL,                                        /* parameter of the task */
-      TASK_PRIORITY_JOYSTICKOUTPUT_TASK_UBASETYPE, /* priority of the task
-                                                      (e.g., 2, slightly higher
-                                                      than producer) */
-      &handle_joystickOutput,                      /* Task handle */
-      CORE_ID_JOYSTICK_TASK_U8);                   /* pin task to core */
-#endif
+
   // the loadcell task does not need a dedicated timer, since it blocks by DRDY
   // ready ISR
   xTaskCreatePinnedToCore(
@@ -2434,53 +2447,57 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       dap_calculationVariables_st.updateStiffness();
 
       // compute joystick value
-      if (dap_calculationVariables_st.rudderStatus_b &&
-          dap_calculationVariables_st.rudderBrakeStatus_b) {
-        if (1 == dap_config_pedalUpdateTask_st.payloadPedalConfig_st
-                     .travelAsJoystickOutput_u8) {
-          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(
-              (stepperPosCurrent_i32 -
-               dap_calculationVariables_st.stepperPosRange_fl32 / 2),
-              dap_calculationVariables_st.softEndstopMinStepperPos_i32,
-              dap_calculationVariables_st.softEndstopMinStepperPos_i32 +
-                  dap_calculationVariables_st.stepperPosRange_fl32 / 2.0f,
-              dap_config_pedalUpdateTask_st.payloadPedalConfig_st
-                  .maxGameOutput_u8);
-        } else {
-          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(
-              (FilterReadingJoystick /*filteredReading*/),
-              dap_calculationVariables_st.forceMin_fl32,
-              dap_calculationVariables_st.forceMax_fl32,
-              dap_config_pedalUpdateTask_st.payloadPedalConfig_st
-                  .maxGameOutput_u8);
-        }
+      if (g_pedalOperationalState_u8 != (uint8_t)PEDAL_STATE_ACTIVE_E) {
+        joystickNormalizedToUInt16 = 0;
       } else {
-        if (1 == dap_config_pedalUpdateTask_st.payloadPedalConfig_st
-                     .travelAsJoystickOutput_u8) {
-          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(
-              constrain(pedalArcPercentage_fl32, 0.0f, 1.0f), 0.0f, 1.0f,
-              dap_config_pedalUpdateTask_st.payloadPedalConfig_st
-                  .maxGameOutput_u8);
+        if (dap_calculationVariables_st.rudderStatus_b &&
+            dap_calculationVariables_st.rudderBrakeStatus_b) {
+          if (1 == dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                       .travelAsJoystickOutput_u8) {
+            joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(
+                (stepperPosCurrent_i32 -
+                 dap_calculationVariables_st.stepperPosRange_fl32 / 2),
+                dap_calculationVariables_st.softEndstopMinStepperPos_i32,
+                dap_calculationVariables_st.softEndstopMinStepperPos_i32 +
+                    dap_calculationVariables_st.stepperPosRange_fl32 / 2.0f,
+                dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                    .maxGameOutput_u8);
+          } else {
+            joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(
+                (FilterReadingJoystick /*filteredReading*/),
+                dap_calculationVariables_st.forceMin_fl32,
+                dap_calculationVariables_st.forceMax_fl32,
+                dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                    .maxGameOutput_u8);
+          }
         } else {
-          joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(
-              FilterReadingJoystick /*filteredReading*/,
-              dap_calculationVariables_st.forceMin_fl32,
-              dap_calculationVariables_st.forceMax_fl32,
-              dap_config_pedalUpdateTask_st.payloadPedalConfig_st
-                  .maxGameOutput_u8);
+          if (1 == dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                       .travelAsJoystickOutput_u8) {
+            joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(
+                constrain(pedalArcPercentage_fl32, 0.0f, 1.0f), 0.0f, 1.0f,
+                dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                    .maxGameOutput_u8);
+          } else {
+            joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(
+                FilterReadingJoystick /*filteredReading*/,
+                dap_calculationVariables_st.forceMin_fl32,
+                dap_calculationVariables_st.forceMax_fl32,
+                dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                    .maxGameOutput_u8);
+          }
         }
-      }
-      joystickfrac = (float)joystickNormalizedToInt32_orig /
-                     (float)s_JOYSTICK_MAX_VALUE_U16;
-      joystickNormalizedToInt32_eval = forceCurve.EvalJoystickCubicSpline(
-          &dap_config_pedalUpdateTask_st, &dap_calculationVariables_st,
-          joystickfrac);
+        joystickfrac = (float)joystickNormalizedToInt32_orig /
+                       (float)s_JOYSTICK_MAX_VALUE_U16;
+        joystickNormalizedToInt32_eval = forceCurve.EvalJoystickCubicSpline(
+            &dap_config_pedalUpdateTask_st, &dap_calculationVariables_st,
+            joystickfrac);
 
-      joystickNormalizedToUInt16 =
-          joystickNormalizedToInt32_eval / 100.0f * s_JOYSTICK_MAX_VALUE_U16;
-      joystickNormalizedToUInt16 =
-          constrain(joystickNormalizedToUInt16, s_JOYSTICK_MIN_VALUE_U16,
-                    s_JOYSTICK_MAX_VALUE_U16);
+        joystickNormalizedToUInt16 =
+            joystickNormalizedToInt32_eval / 100.0f * s_JOYSTICK_MAX_VALUE_U16;
+        joystickNormalizedToUInt16 =
+            constrain(joystickNormalizedToUInt16, s_JOYSTICK_MIN_VALUE_U16,
+                      s_JOYSTICK_MAX_VALUE_U16);
+      }
 
       // send joystick data to queue
       if (s_joystickDataQueue != NULL) {
@@ -2759,62 +2776,51 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
 #ifdef USB_JOYSTICK
 void IRAM_ATTR_FLAG joystickOutputTask(void *pvParameters) {
 
-  // FunctionProfiler profiler_joystickOutputTask;
-  // profiler_joystickOutputTask.setName("JoystickOutput");
-  // profiler_joystickOutputTask.setNumberOfCalls(500);
-  // configDataPackage_t configPackage_st;
-  // static DapConfig_t jut_dap_config_st;
+  // Ensure HID gamepad is immediately initialized to 0% as soon as task starts
+  if (usbManager.isJoystickReady()) {
+    if (dap_calculationVariables_st.rudderStatus_b == false) {
+      usbManager.sendJoystickValue(0);
+    }
+  }
 
   // This task now waits for a complete package of data from the queue.
   joystickDataPackage_t receivedJoystickData;
+  bool wasReady_b = false;
 
   for (;;) {
+    bool isReady_b = usbManager.isJoystickReady();
 
-    // if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) {
+    // If USB just transitioned to ready (e.g. host enumeration completed), force 0% report immediately
+    if (isReady_b && !wasReady_b) {
+      wasReady_b = true;
+      if (dap_calculationVariables_st.rudderStatus_b == false) {
+        usbManager.sendJoystickValue(0);
+      }
+    } else if (!isReady_b) {
+      wasReady_b = false;
+    }
+
     if (xQueueReceive(s_joystickDataQueue, &receivedJoystickData,
-                      portMAX_DELAY) == pdPASS) {
-
-      // start profiler 0, overall function
-      // profiler_joystickOutputTask.start(0);
-      // // if new data package is available, update the local config
-      // if (xQueueReceive(configUpdateSendToJoystickTaskQueue,
-      // &configPackage_st, (TickType_t)0) == pdPASS) {
-      //   jut_dap_config_st = configPackage_st.config_st;
-      //   // activate profiler depending on pedal config
-      //   if (jut_dap_config_st.payloadPedalConfig_st.debugFlags0_u8 &
-      //   DEBUG_INFO_0_CYCLE_TIMER)
-      //   {
-      //     profiler_joystickOutputTask.activate( true );
-      //   }
-      //   else
-      //   {
-      //     profiler_joystickOutputTask.activate( false );
-      //   }
-
-      //   ActiveSerial->println("Update config: joystick task");
-      // }
-
-      // profiler_joystickOutputTask.start(1);
+                      pdMS_TO_TICKS(10)) == pdPASS) {
 
       uint16_t joystickData_u16 =
           receivedJoystickData.joystickNormalizedToUInt16;
       bool sendFlag_b = receivedJoystickData.sendJoystickFlag_b;
 
-      if (sendFlag_b) {
-        // NEU: Manager nutzen, um den Status abzufragen
-        if (usbManager.isJoystickReady()) {
-          if (dap_calculationVariables_st.rudderStatus_b == false) {
-            // NEU: Manager nutzen, um den Wert zu senden
-            usbManager.sendJoystickValue(joystickData_u16);
-          }
+      if (sendFlag_b && isReady_b) {
+        if (dap_calculationVariables_st.rudderStatus_b == false) {
+          usbManager.sendJoystickValue(joystickData_u16);
         }
       }
 
-      // profiler_joystickOutputTask.end(1);
-      // profiler_joystickOutputTask.end(0);
-
-      // // print profiler results
-      // profiler_joystickOutputTask.report();
+    } else {
+      // Timeout: pedalUpdateTask is not actively feeding queue (e.g. during boot,
+      // endstop detection / homing, standby, or pause). Maintain 0% output.
+      if (isReady_b) {
+        if (dap_calculationVariables_st.rudderStatus_b == false) {
+          usbManager.sendJoystickValue(0);
+        }
+      }
     }
   }
 }
