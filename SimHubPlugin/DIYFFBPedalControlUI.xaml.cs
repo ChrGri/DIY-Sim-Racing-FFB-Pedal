@@ -545,7 +545,35 @@ namespace DiyFfbPedal
         {
             if (Plugin != null)
             {
-                dap_config_st_rudder = e;
+                // Synchronize joystick mapping parameters to dap_config_st_rudder
+                dap_config_st_rudder.payloadPedalConfig_.numOfJoystickMapControl = e.payloadPedalConfig_.numOfJoystickMapControl;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig00 = e.payloadPedalConfig_.joystickMapOrig00;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig01 = e.payloadPedalConfig_.joystickMapOrig01;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig02 = e.payloadPedalConfig_.joystickMapOrig02;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig03 = e.payloadPedalConfig_.joystickMapOrig03;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig04 = e.payloadPedalConfig_.joystickMapOrig04;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig05 = e.payloadPedalConfig_.joystickMapOrig05;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig06 = e.payloadPedalConfig_.joystickMapOrig06;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig07 = e.payloadPedalConfig_.joystickMapOrig07;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig08 = e.payloadPedalConfig_.joystickMapOrig08;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig09 = e.payloadPedalConfig_.joystickMapOrig09;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig10 = e.payloadPedalConfig_.joystickMapOrig10;
+
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped00 = e.payloadPedalConfig_.joystickMapMapped00;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped01 = e.payloadPedalConfig_.joystickMapMapped01;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped02 = e.payloadPedalConfig_.joystickMapMapped02;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped03 = e.payloadPedalConfig_.joystickMapMapped03;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped04 = e.payloadPedalConfig_.joystickMapMapped04;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped05 = e.payloadPedalConfig_.joystickMapMapped05;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped06 = e.payloadPedalConfig_.joystickMapMapped06;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped07 = e.payloadPedalConfig_.joystickMapMapped07;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped08 = e.payloadPedalConfig_.joystickMapMapped08;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped09 = e.payloadPedalConfig_.joystickMapMapped09;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped10 = e.payloadPedalConfig_.joystickMapMapped10;
+
+                writeRudderConfigToSetting();
+                Plugin.SavePluginSettings();
+
                 if (Plugin._calculations.IsUIRefreshNeeded)
                 {
                     updateTheGuiFromConfig();

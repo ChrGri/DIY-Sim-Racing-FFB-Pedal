@@ -26,7 +26,7 @@ namespace DiyFfbPedal
         public const byte WIFI_CH_CMD_SCAN_RES = 2;
         public const byte WIFI_CH_CMD_SET_REQ = 3;
         public const byte WIFI_CH_CMD_SET_ACK = 4;
-        public const string pluginVersion = "26.37.02";
+        public const string pluginVersion = "26.37.03";
         public const string version_control_url = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/version_control.json";
         public const int DEFAULTBAUD = 921600;
         public const int BAUD3M = 3000000;

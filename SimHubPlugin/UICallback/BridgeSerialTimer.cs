@@ -586,6 +586,10 @@ namespace DiyFfbPedal
                                             {
                                                 PedalJoystick_Tab.JoystickStateUpdate(pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
                                             }
+                                            if (Plugin != null && (Plugin.Rudder_status || Plugin._calculations.Rudder_status))
+                                            {
+                                                RudderJoystick_Tab.JoystickStateUpdate(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16);
+                                            }
                                             for (int i = 0; i < 3; i++)
                                             {
                                                 //PedalFirmwareVersion[pedalSelected, i] = pedalState_read_st.payloadPedalBasicState_.pedalFirmwareVersion_u8[i];

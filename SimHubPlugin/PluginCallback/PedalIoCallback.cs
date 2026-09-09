@@ -46,7 +46,6 @@ namespace DiyFfbPedal
                         if (ESPsync_serialPort.IsOpen)
                         {
                             ESPsync_serialPort.DiscardInBuffer();
-                            ESPsync_serialPort.DiscardOutBuffer();
                             ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
                         }
                     }

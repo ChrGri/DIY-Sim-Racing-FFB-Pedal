@@ -104,6 +104,11 @@ namespace DiyFfbPedal
         // Shared Bilateral Push-Pull Kinematics
         public float rudderBilateralSyncForce = 80.0f; // Push-pull sync stiffness in N (20-150 N)
 
+        // Rudder Dedicated Joystick Mapping
+        public byte[] rudderJoystickMapOrig = new byte[11] { 0, 20, 40, 60, 80, 100, 0, 0, 0, 0, 0 };
+        public byte[] rudderJoystickMapMapped = new byte[11] { 0, 20, 40, 60, 80, 100, 0, 0, 0, 0, 0 };
+        public byte rudderNumOfJoystickMapControl = 6;
+
     }
         
 

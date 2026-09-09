@@ -1015,6 +1015,7 @@ namespace DiyFfbPedal
                     byte* p = (byte*)v;
                     tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
                     SendPedalAction(tmp, (byte)PIDX);
+                    System.Threading.Thread.Sleep(100);
                 }
                 Rudder_enable_flag = false;
                 SystemSounds.Beep.Play();

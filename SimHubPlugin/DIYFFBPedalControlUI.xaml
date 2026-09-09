@@ -552,10 +552,59 @@
                                     </Border>
                                 </StackPanel>
                                 <StackPanel Width="540" Height="900" Margin="3,0,0,0">
-                                    <StackPanel Width="540" Height="282" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="1,0,0,0">
-                                        <localFunction:CurveTab_Rudder x:Name="CurveRudderForce_Tab" SettingsChanged="Tab_SettingsChanged" ConfigChanged="Rudder_ConfigChanged" CalculationChanged="Tab_CalculationChanged"/>
-                                    </StackPanel>
-                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="235" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,4,0,0">
+                                    <TabControl HorizontalAlignment="Left" Height="310" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="1,0,0,0">
+                                        <TabControl.Resources>
+                                            <Style TargetType="TabItem">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="TabItem">
+                                                            <Border Name="Border" BorderThickness="0,0,0,0" BorderBrush="Gainsboro" CornerRadius="5,5,5,5" Margin="0,0,2,0">
+                                                                <ContentPresenter x:Name="ContentSite"  
+                                                                    VerticalAlignment="Center"  
+                                                                    HorizontalAlignment="Left"  
+                                                                    ContentSource="Header"  
+                                                                    Margin="0,0"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsSelected" Value="True">
+                                                                    <Setter TargetName="Border" Property="Background" Value="#7F4E4E4E" />
+                                                                    <Setter Property="TextElement.Foreground" Value="#FFFFFFFF" />
+                                                                </Trigger>
+                                                                <Trigger Property="IsSelected" Value="False">
+                                                                    <Setter TargetName="Border" Property="Background" Value="#334E4E4E" />
+                                                                    <Setter Property="TextElement.Foreground" Value="#33FFFFFF" />
+                                                                </Trigger>
+                                                                <MultiTrigger>
+                                                                    <MultiTrigger.Conditions>
+                                                                        <Condition Property="IsMouseOver" SourceName="Border" Value="True"/>
+                                                                        <Condition Property="IsSelected" Value="False"/>
+                                                                    </MultiTrigger.Conditions>
+                                                                    <Setter TargetName="Border" Property="Background" Value="#4C4E4E4E" />
+                                                                </MultiTrigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </TabControl.Resources>
+                                        <TabItem Width="268" Height="30" Padding="0,0,0,0">
+                                            <TabItem.Header>
+                                                <Border Width="268" Height="30" Margin="0,0,0,0">
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TextForceCurveAdjustment, 'RUDDER FORCE CURVE'}" FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="268" />
+                                                </Border>
+                                            </TabItem.Header>
+                                            <localFunction:CurveTab_Rudder x:Name="CurveRudderForce_Tab" SettingsChanged="Tab_SettingsChanged" ConfigChanged="Rudder_ConfigChanged" CalculationChanged="Tab_CalculationChanged"/>
+                                        </TabItem>
+                                        <TabItem x:Name="rudderJoystickTab" Width="268" Height="30" Padding="0,0,0,0">
+                                            <TabItem.Header>
+                                                <Border Width="268" Height="30" Margin="0,0,0,0">
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TextJoystickMapping, 'JOYSTICK MAPPING'}" FontFamily="Arial Black" FontSize="10" Height="30" Width="268" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" />
+                                                </Border>
+                                            </TabItem.Header>
+                                            <localFunction:CurveTab_JoystickMapping x:Name="RudderJoystick_Tab" ConfigChanged="Rudder_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
+                                        </TabItem>
+                                    </TabControl>
+                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="208" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,4,0,0">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
                                                 <Setter Property="Template">

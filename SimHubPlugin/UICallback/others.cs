@@ -1168,6 +1168,35 @@ namespace DiyFfbPedal
             dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq = Plugin.Settings.rudderRPMMaxFrequency;
             dap_config_st_rudder.payloadPedalConfig_.RPM_min_freq = Plugin.Settings.rudderRPMMinFrequency;
             dap_config_st_rudder.payloadPedalConfig_.RPM_AMP = Plugin.Settings.rudderRPMAmp;
+
+            // Load Rudder Joystick Mapping from settings
+            if (Plugin.Settings.rudderJoystickMapOrig != null && Plugin.Settings.rudderJoystickMapOrig.Length == 11)
+            {
+                dap_config_st_rudder.payloadPedalConfig_.numOfJoystickMapControl = Plugin.Settings.rudderNumOfJoystickMapControl;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig00 = Plugin.Settings.rudderJoystickMapOrig[0];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig01 = Plugin.Settings.rudderJoystickMapOrig[1];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig02 = Plugin.Settings.rudderJoystickMapOrig[2];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig03 = Plugin.Settings.rudderJoystickMapOrig[3];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig04 = Plugin.Settings.rudderJoystickMapOrig[4];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig05 = Plugin.Settings.rudderJoystickMapOrig[5];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig06 = Plugin.Settings.rudderJoystickMapOrig[6];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig07 = Plugin.Settings.rudderJoystickMapOrig[7];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig08 = Plugin.Settings.rudderJoystickMapOrig[8];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig09 = Plugin.Settings.rudderJoystickMapOrig[9];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig10 = Plugin.Settings.rudderJoystickMapOrig[10];
+
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped00 = Plugin.Settings.rudderJoystickMapMapped[0];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped01 = Plugin.Settings.rudderJoystickMapMapped[1];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped02 = Plugin.Settings.rudderJoystickMapMapped[2];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped03 = Plugin.Settings.rudderJoystickMapMapped[3];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped04 = Plugin.Settings.rudderJoystickMapMapped[4];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped05 = Plugin.Settings.rudderJoystickMapMapped[5];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped06 = Plugin.Settings.rudderJoystickMapMapped[6];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped07 = Plugin.Settings.rudderJoystickMapMapped[7];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped08 = Plugin.Settings.rudderJoystickMapMapped[8];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped09 = Plugin.Settings.rudderJoystickMapMapped[9];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped10 = Plugin.Settings.rudderJoystickMapMapped[10];
+            }
         }
 
         public void RudderParameterLiveUpdate()
@@ -1253,6 +1282,37 @@ namespace DiyFfbPedal
             Plugin.Settings.rudderRPMMaxFrequency = dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq;
             Plugin.Settings.rudderRPMMinFrequency = dap_config_st_rudder.payloadPedalConfig_.RPM_min_freq;
             Plugin.Settings.rudderRPMAmp = dap_config_st_rudder.payloadPedalConfig_.RPM_AMP;
+
+            // Save Rudder Joystick Mapping to settings
+            Plugin.Settings.rudderNumOfJoystickMapControl = dap_config_st_rudder.payloadPedalConfig_.numOfJoystickMapControl;
+            if (Plugin.Settings.rudderJoystickMapOrig == null || Plugin.Settings.rudderJoystickMapOrig.Length != 11)
+                Plugin.Settings.rudderJoystickMapOrig = new byte[11];
+            if (Plugin.Settings.rudderJoystickMapMapped == null || Plugin.Settings.rudderJoystickMapMapped.Length != 11)
+                Plugin.Settings.rudderJoystickMapMapped = new byte[11];
+
+            Plugin.Settings.rudderJoystickMapOrig[0] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig00;
+            Plugin.Settings.rudderJoystickMapOrig[1] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig01;
+            Plugin.Settings.rudderJoystickMapOrig[2] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig02;
+            Plugin.Settings.rudderJoystickMapOrig[3] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig03;
+            Plugin.Settings.rudderJoystickMapOrig[4] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig04;
+            Plugin.Settings.rudderJoystickMapOrig[5] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig05;
+            Plugin.Settings.rudderJoystickMapOrig[6] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig06;
+            Plugin.Settings.rudderJoystickMapOrig[7] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig07;
+            Plugin.Settings.rudderJoystickMapOrig[8] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig08;
+            Plugin.Settings.rudderJoystickMapOrig[9] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig09;
+            Plugin.Settings.rudderJoystickMapOrig[10] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig10;
+
+            Plugin.Settings.rudderJoystickMapMapped[0] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped00;
+            Plugin.Settings.rudderJoystickMapMapped[1] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped01;
+            Plugin.Settings.rudderJoystickMapMapped[2] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped02;
+            Plugin.Settings.rudderJoystickMapMapped[3] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped03;
+            Plugin.Settings.rudderJoystickMapMapped[4] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped04;
+            Plugin.Settings.rudderJoystickMapMapped[5] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped05;
+            Plugin.Settings.rudderJoystickMapMapped[6] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped06;
+            Plugin.Settings.rudderJoystickMapMapped[7] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped07;
+            Plugin.Settings.rudderJoystickMapMapped[8] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped08;
+            Plugin.Settings.rudderJoystickMapMapped[9] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped09;
+            Plugin.Settings.rudderJoystickMapMapped[10] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped10;
         }
 
         public bool OpenBridgeSerialConnection()
