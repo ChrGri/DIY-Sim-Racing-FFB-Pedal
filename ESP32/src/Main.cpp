@@ -2200,7 +2200,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           ((float)cached_servosVoltage_i16) * 0.1f, current_time_us);
 #else
       brake_state = brakeController.simpleVoltageCheck(
-          ((float)cached_servosVoltage_i16) * 0.1f);
+          ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
+          cached_currentSpeedInHz_i32);
 #endif
 
 #ifdef BRAKE_RESISTOR_PIN_U8
