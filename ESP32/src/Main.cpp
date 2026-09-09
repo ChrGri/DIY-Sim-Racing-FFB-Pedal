@@ -2366,7 +2366,11 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           // = 4000Hz with sign flips
           float distanceToMoveAbs_fl32 = fabsf(distanceToMove);
 
-          if (distanceToMoveAbs_fl32 != 0) {
+          // Hardware distance (integer steps) for fallback and step-loss checks
+          int32_t hardwareDistance_i32 =
+              (int32_t)Position_Last_fl32 - stepper->getCurrentPosition();
+
+          if (distanceToMoveAbs_fl32 != 0 || abs(hardwareDistance_i32) > 1) {
             float deltaTime_s_fl32 =
                 ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) *
                 1e-6f;
@@ -2376,21 +2380,16 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             // requiredSpeed *= 1.1f;
 
             // Catch-up propotional speed gain
-            // Hardware distance (integer steps) for fallback and step-loss
-            // checks
-            int32_t hardwareDistance_i32 =
-                (int32_t)Position_Last_fl32 - stepper->getCurrentPosition();
-
             float catchUpSpeedHz = 0.0f;
 
-            // add catchup speed only near standstill & near min endstop
+            // add catchup speed near standstill & near min endstop, or when correcting hardware offset
             float targetPosFraction_fl32 =
                 stepper->getCurrentPositionFractionFromExternalPos(
                     Position_Next_fl32 - stepper->getMinPosition());
             bool isRudderModeActive = dap_calculationVariables_st.rudderStatus_b ||
                                       dap_calculationVariables_st.helicopterRudderStatus_b;
             if ((fabsf(requiredSpeed) < 10) &&
-                (targetPosFraction_fl32 <= 0.05f || isRudderModeActive)) {
+                (targetPosFraction_fl32 <= 0.05f || isRudderModeActive || abs(hardwareDistance_i32) > 1)) {
               // At endstops in rudder mode, do not overdrive against mechanical limit
               bool nearEndstop = (targetPosFraction_fl32 <= 0.02f || targetPosFraction_fl32 >= 0.98f);
               if (abs(hardwareDistance_i32) > 1 && (!isRudderModeActive || !nearEndstop)) {
