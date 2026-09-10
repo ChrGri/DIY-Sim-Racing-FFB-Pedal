@@ -163,8 +163,11 @@ MovingAverageFilter g_averageFilterJoystick_st(40);
 /*                         Predictive Brake Controller */
 /*                                                                                            */
 /**********************************************************************************************/
-#include "PredictiveBrakeController.h"
-PredictiveBrakeController brakeController;
+// #include "PredictiveBrakeController.h"
+// PredictiveBrakeController brakeController;
+
+#include "PredictiveBrakeControllerV2.h"
+PredictiveBrakeControllerV2 brakeController;
 
 /**********************************************************************************************/
 /*                                                                                            */
@@ -274,8 +277,8 @@ StepperWithLimits *stepper = NULL;
 
 #include "ChatterReduction.h"
 #include "StepperMovementStrategy.h"
-#include "StepperMovementStrategy_Rudder.h"
 #include "StepperMovementStrategy_MPC.h"
+#include "StepperMovementStrategy_Rudder.h"
 
 volatile bool moveSlowlyToPosition_b = true;
 /**********************************************************************************************/
@@ -341,9 +344,11 @@ void IRAM_ATTR_FLAG configHandlingTask(void *pvParameters) {
 #ifdef ESPNOW_Enable
       if (configPackage_st.config_st.payloadPedalConfig_st.pedalType_u8 >= 3) {
         if (s_localPedalType_u8 < 3) {
-          configPackage_st.config_st.payloadPedalConfig_st.pedalType_u8 = s_localPedalType_u8;
+          configPackage_st.config_st.payloadPedalConfig_st.pedalType_u8 =
+              s_localPedalType_u8;
         } else if (g_dapAssignmentReg_st.deviceId_u8 < 3) {
-          configPackage_st.config_st.payloadPedalConfig_st.pedalType_u8 = g_dapAssignmentReg_st.deviceId_u8;
+          configPackage_st.config_st.payloadPedalConfig_st.pedalType_u8 =
+              g_dapAssignmentReg_st.deviceId_u8;
         }
       }
 #endif
@@ -1181,7 +1186,6 @@ void setup() {
       &handle_serialCommunicationTx,                       /* Task handle */
       CORE_ID_SERIAL_COMMUNICATION_TASK_U8); /* pin task to core */
 
-
   // the loadcell task does not need a dedicated timer, since it blocks by DRDY
   // ready ISR
   xTaskCreatePinnedToCore(
@@ -1414,7 +1418,8 @@ void setup() {
                 dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
 #endif
   ActiveSerial->println("Setup end");
-  if (g_pedalOperationalState_u8 == (uint8_t)PEDAL_STATE_STANDBY_WAITING_FOR_WAKEUP_E) {
+  if (g_pedalOperationalState_u8 ==
+      (uint8_t)PEDAL_STATE_STANDBY_WAITING_FOR_WAKEUP_E) {
     pedalLED.setPixelColor(0, 0x00, 0x20, 0x80); // Soft Blue (standby)
   } else {
     pedalLED.setPixelColor(0, 0x00, 0xff, 0x00); // Green (ready)
@@ -1931,7 +1936,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       }
 
       // In admittance rudder mode, endstops remain at physical bounds.
-      // Force coupling and centering are handled natively by MoveByAdmittanceStrategy.
+      // Force coupling and centering are handled natively by
+      // MoveByAdmittanceStrategy.
 #ifdef ESPNow_debugg_rudder_st
       if (dap_calculationVariables_st.rudderStatus_b ||
           dap_calculationVariables_st.helicopterRudderStatus_b) {
@@ -2089,8 +2095,11 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       }
 
       // wakeup process on physical force
-      float forceWakeupThreshold_fl32 = max(STEPPER_WAKEUP_FORCE, 
-                                            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.preloadForce_fl32 + STEPPER_WAKEUP_FORCE);
+      float forceWakeupThreshold_fl32 =
+          max(STEPPER_WAKEUP_FORCE,
+              dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                      .preloadForce_fl32 +
+                  STEPPER_WAKEUP_FORCE);
 
       if ((filteredReading > forceWakeupThreshold_fl32) &&
           (stepper->servoStatus == SERVO_IDLE_NOT_CONNECTED)) {
@@ -2204,13 +2213,23 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
 
       bool brake_state = false;
 // Decide whether to use predictive brake resistor control or simple voltage
-// check based on compile-time flag.
+// check based on compile-time flag and operating mode.
 #ifdef USE_PREDICTIVE_BRAKE_RESISTOR_CONTROL
-      brake_state = brakeController.Update(
-          cached_servosPosError_i32,
-          stepper->getServosPosErrorChangeRateInStepsPerSecond(),
-          changeVelocity, cached_currentSpeedInHz_i32,
-          ((float)cached_servosVoltage_i16) * 0.1f, current_time_us);
+      const bool isRudderModeActive_b =
+          dap_calculationVariables_st.rudderStatus_b ||
+          dap_calculationVariables_st.helicopterRudderStatus_b;
+
+      if (!isRudderModeActive_b) {
+        brake_state = brakeController.Update(
+            cached_servosPosError_i32,
+            stepper->getServosPosErrorChangeRateInStepsPerSecond(),
+            changeVelocity, cached_currentSpeedInHz_i32,
+            ((float)cached_servosVoltage_i16) * 0.1f, current_time_us);
+      } else {
+        brake_state = brakeController.simpleVoltageCheck(
+            ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
+            cached_currentSpeedInHz_i32);
+      }
 #else
       brake_state = brakeController.simpleVoltageCheck(
           ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
@@ -2247,25 +2266,35 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
 
         // rudder variables
         rudderOffsets_st.isRudderMode = true;
-        float trim_01 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.preloadForce_fl32 / 100.0f;
-        float deadzone_01 = ((float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st.dampingProgression_u8) / 1000.0f;
-        float centerForce_kg = ((float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st.relativeForce00_u8) * 0.1f;
-        
+        float trim_01 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                            .preloadForce_fl32 /
+                        100.0f;
+        float deadzone_01 = ((float)dap_config_pedalUpdateTask_st
+                                 .payloadPedalConfig_st.dampingProgression_u8) /
+                            1000.0f;
+        float centerForce_kg = ((float)dap_config_pedalUpdateTask_st
+                                    .payloadPedalConfig_st.relativeForce00_u8) *
+                               0.1f;
+
         rudderOffsets_st.centerPosition_01 = 0.50f;
         rudderOffsets_st.trimOffset_01 = constrain(trim_01, -0.45f, 0.45f);
         rudderOffsets_st.deadzone_01 = constrain(deadzone_01, 0.0f, 0.10f);
         rudderOffsets_st.centerForce_kg = centerForce_kg;
 
-        uint8_t cfgMode = dap_config_pedalUpdateTask_st.payloadPedalConfig_st.relativeForce01_u8;
-        if (cfgMode == 1 || dap_calculationVariables_st.helicopterRudderStatus_b) {
+        uint8_t cfgMode = dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                              .relativeForce01_u8;
+        if (cfgMode == 1 ||
+            dap_calculationVariables_st.helicopterRudderStatus_b) {
           rudderOffsets_st.rudderMode_u8 = RUDDER_MODE_HELICOPTER;
           dap_calculationVariables_st.rudderBrakeStatus_b = false;
         } else if (cfgMode == 3) {
-          // Mode 3: Dedicated Toe Brake (Permanently independent differential wheel brakes)
+          // Mode 3: Dedicated Toe Brake (Permanently independent differential
+          // wheel brakes)
           rudderOffsets_st.rudderMode_u8 = RUDDER_MODE_TOE_BRAKE;
           dap_calculationVariables_st.rudderBrakeStatus_b = true;
         } else if (cfgMode == 2) {
-          // Mode 2: Airplane with Toe Brake (Switchable between Yaw and Toe Brake via keybind/action with 250ms blend)
+          // Mode 2: Airplane with Toe Brake (Switchable between Yaw and Toe
+          // Brake via keybind/action with 250ms blend)
           rudderOffsets_st.rudderMode_u8 = RUDDER_MODE_PLANE;
         } else {
           // Mode 0: Standard Airplane Rudder
@@ -2305,8 +2334,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         Position_Next_fl32 = MoveByAdmittanceStrategy(
             filteredReading, stepper, &forceCurve, &dap_calculationVariables_st,
             &dap_config_pedalUpdateTask_st, effectOffsets_st,
-            endstopBehavior_st, &admittanceDebugInfo_st,
-            &admittanceStates_st);
+            endstopBehavior_st, &admittanceDebugInfo_st, &admittanceStates_st);
         positionWithoutEffect = (int32_t)Position_Next_fl32;
       }
       // end profiler 4, movement strategy
@@ -2396,17 +2424,23 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             // Catch-up propotional speed gain
             float catchUpSpeedHz = 0.0f;
 
-            // add catchup speed near standstill & near min endstop, or when correcting hardware offset
+            // add catchup speed near standstill & near min endstop, or when
+            // correcting hardware offset
             float targetPosFraction_fl32 =
                 stepper->getCurrentPositionFractionFromExternalPos(
                     Position_Next_fl32 - stepper->getMinPosition());
-            bool isRudderModeActive = dap_calculationVariables_st.rudderStatus_b ||
-                                      dap_calculationVariables_st.helicopterRudderStatus_b;
+            bool isRudderModeActive =
+                dap_calculationVariables_st.rudderStatus_b ||
+                dap_calculationVariables_st.helicopterRudderStatus_b;
             if ((fabsf(requiredSpeed) < 10) &&
-                (targetPosFraction_fl32 <= 0.05f || isRudderModeActive || abs(hardwareDistance_i32) > 1)) {
-              // At endstops in rudder mode, do not overdrive against mechanical limit
-              bool nearEndstop = (targetPosFraction_fl32 <= 0.02f || targetPosFraction_fl32 >= 0.98f);
-              if (abs(hardwareDistance_i32) > 1 && (!isRudderModeActive || !nearEndstop)) {
+                (targetPosFraction_fl32 <= 0.05f || isRudderModeActive ||
+                 abs(hardwareDistance_i32) > 1)) {
+              // At endstops in rudder mode, do not overdrive against mechanical
+              // limit
+              bool nearEndstop = (targetPosFraction_fl32 <= 0.02f ||
+                                  targetPosFraction_fl32 >= 0.98f);
+              if (abs(hardwareDistance_i32) > 1 &&
+                  (!isRudderModeActive || !nearEndstop)) {
                 float catchUpKp = 400.0f;
                 catchUpSpeedHz =
                     (float)(abs(hardwareDistance_i32) - 1) * catchUpKp;
@@ -2427,10 +2461,12 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           }
         } else {
           moveSlowlyToPosition_b = false;
-          bool isRudderModeActive = dap_calculationVariables_st.rudderStatus_b ||
-                                    dap_calculationVariables_st.helicopterRudderStatus_b;
+          bool isRudderModeActive =
+              dap_calculationVariables_st.rudderStatus_b ||
+              dap_calculationVariables_st.helicopterRudderStatus_b;
           if (isRudderModeActive) {
-            // Non-blocking reposition in rudder mode: never block the 4kHz physics loop or stall telemetry!
+            // Non-blocking reposition in rudder mode: never block the 4kHz
+            // physics loop or stall telemetry!
             stepper->moveToWithSpeed((int32_t)Position_Next_fl32,
                                      (uint32_t)(MAXIMUM_STEPPER_SPEED_U32 / 4));
           } else {
@@ -2790,7 +2826,8 @@ void IRAM_ATTR_FLAG joystickOutputTask(void *pvParameters) {
   for (;;) {
     bool isReady_b = usbManager.isJoystickReady();
 
-    // If USB just transitioned to ready (e.g. host enumeration completed), force 0% report immediately
+    // If USB just transitioned to ready (e.g. host enumeration completed),
+    // force 0% report immediately
     if (isReady_b && !wasReady_b) {
       wasReady_b = true;
       if (dap_calculationVariables_st.rudderStatus_b == false) {
@@ -2814,8 +2851,9 @@ void IRAM_ATTR_FLAG joystickOutputTask(void *pvParameters) {
       }
 
     } else {
-      // Timeout: pedalUpdateTask is not actively feeding queue (e.g. during boot,
-      // endstop detection / homing, standby, or pause). Maintain 0% output.
+      // Timeout: pedalUpdateTask is not actively feeding queue (e.g. during
+      // boot, endstop detection / homing, standby, or pause). Maintain 0%
+      // output.
       if (isReady_b) {
         if (dap_calculationVariables_st.rudderStatus_b == false) {
           usbManager.sendJoystickValue(0);
@@ -3044,19 +3082,19 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
 
             if (received_action.payloadPedalAction_st.systemAction_u8 ==
                 (uint8_t)PedalSystemAction::ESP_BOOT_INTO_DOWNLOAD_MODE) {
-              #ifdef ESPNow_S3
-                ActiveSerial->println("Restart into Download mode");
-                Buzzer.single_beep_tone(700, 100);
-                ActiveSerial->println("Restart into Download mode");
-                pedalLED.setPixelColor(0, 0x00, 0xFF, 0xFF); // Cyan / Aqua
-                pedalLED.show();
-                delay(1000);
-                REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
-                ESP.restart();
-              #else
-                ActiveSerial->println("Command not supported");
-                delay(1000);
-              #endif
+#ifdef ESPNow_S3
+              ActiveSerial->println("Restart into Download mode");
+              Buzzer.single_beep_tone(700, 100);
+              ActiveSerial->println("Restart into Download mode");
+              pedalLED.setPixelColor(0, 0x00, 0xFF, 0xFF); // Cyan / Aqua
+              pedalLED.show();
+              delay(1000);
+              REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+              ESP.restart();
+#else
+              ActiveSerial->println("Command not supported");
+              delay(1000);
+#endif
               // g_espNowBootIntoDownloadMode_b = false;
             }
             if (received_action.payloadPedalAction_st.systemAction_u8 ==
@@ -3111,9 +3149,11 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
             }
 
 #ifdef ESPNOW_Enable
-            uint8_t rudderAct = received_action.payloadPedalAction_st.rudderAction_u8;
-            if (rudderAct == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_BRAKE || 
-                rudderAct == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_CLUTCH) {
+            uint8_t rudderAct =
+                received_action.payloadPedalAction_st.rudderAction_u8;
+            if (rudderAct == (uint8_t)RudderAction::RUDDER_THROTTLE_AND_BRAKE ||
+                rudderAct ==
+                    (uint8_t)RudderAction::RUDDER_THROTTLE_AND_CLUTCH) {
               if (dap_calculationVariables_st.rudderStatus_b == false) {
                 dap_calculationVariables_st.rudderStatus_b = true;
                 dap_calculationVariables_st.helicopterRudderStatus_b = false;
@@ -3125,9 +3165,14 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                 ResetRudderStrategyState();
                 ActiveSerial->println("Rudder Plane off");
               }
-            } else if (rudderAct == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_BRAKE || 
-                       rudderAct == (uint8_t)RudderAction::HELIRUDDER_THROTTLE_AND_CLUTCH) {
-              if (dap_calculationVariables_st.helicopterRudderStatus_b == false) {
+            } else if (rudderAct ==
+                           (uint8_t)
+                               RudderAction::HELIRUDDER_THROTTLE_AND_BRAKE ||
+                       rudderAct ==
+                           (uint8_t)
+                               RudderAction::HELIRUDDER_THROTTLE_AND_CLUTCH) {
+              if (dap_calculationVariables_st.helicopterRudderStatus_b ==
+                  false) {
                 dap_calculationVariables_st.helicopterRudderStatus_b = true;
                 dap_calculationVariables_st.rudderStatus_b = false;
                 ActiveSerial->println("Rudder Helicopter on");
@@ -3138,7 +3183,8 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                 ResetRudderStrategyState();
                 ActiveSerial->println("Rudder Helicopter off");
               }
-            } else if (rudderAct == (uint8_t)RudderAction::RUDDER_CLEAR_RUDDER_STATUS) {
+            } else if (rudderAct ==
+                       (uint8_t)RudderAction::RUDDER_CLEAR_RUDDER_STATUS) {
               dap_calculationVariables_st.rudderStatus_b = false;
               dap_calculationVariables_st.helicopterRudderStatus_b = false;
               dap_calculationVariables_st.rudderBrakeStatus_b = false;
@@ -3147,10 +3193,13 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
               ActiveSerial->println("Rudder Status Clear");
             }
 
-            uint8_t brakeAct = received_action.payloadPedalAction_st.rudderBrakeAction_u8;
+            uint8_t brakeAct =
+                received_action.payloadPedalAction_st.rudderBrakeAction_u8;
             if (brakeAct == 1) {
               if (dap_calculationVariables_st.rudderBrakeStatus_b == false &&
-                  (dap_calculationVariables_st.rudderStatus_b == true || dap_calculationVariables_st.helicopterRudderStatus_b == true)) {
+                  (dap_calculationVariables_st.rudderStatus_b == true ||
+                   dap_calculationVariables_st.helicopterRudderStatus_b ==
+                       true)) {
                 dap_calculationVariables_st.rudderBrakeStatus_b = true;
                 ActiveSerial->println("Rudder brake on (toggle)");
               } else {
@@ -3158,7 +3207,9 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                 ActiveSerial->println("Rudder brake off (toggle)");
               }
             } else if (brakeAct == 2) {
-              if (dap_calculationVariables_st.rudderStatus_b == true || dap_calculationVariables_st.helicopterRudderStatus_b == true) {
+              if (dap_calculationVariables_st.rudderStatus_b == true ||
+                  dap_calculationVariables_st.helicopterRudderStatus_b ==
+                      true) {
                 dap_calculationVariables_st.rudderBrakeStatus_b = true;
                 ActiveSerial->println("Rudder brake on (explicit)");
               }
@@ -3231,7 +3282,8 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
         }
         case DAP_PAYLOAD_TYPE_WIFI_CHANNEL_U8: {
           DapWifiChannel_t received_wifi_channel;
-          memcpy(&received_wifi_channel, packet_start, sizeof(DapWifiChannel_t));
+          memcpy(&received_wifi_channel, packet_start,
+                 sizeof(DapWifiChannel_t));
           calculated_crc = checksumCalculator_u16(
               (uint8_t *)(&(received_wifi_channel.payloadHeader_st)),
               sizeof(received_wifi_channel.payloadHeader_st) +
@@ -3244,13 +3296,16 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
             structIsValid = false;
           } else {
 #ifdef ESPNOW_Enable
-            if (received_wifi_channel.payloadWifiChannel_st.command_u8 == WIFI_CH_CMD_SET_REQ) {
-              uint8_t newCh = received_wifi_channel.payloadWifiChannel_st.currentChannel_u8;
+            if (received_wifi_channel.payloadWifiChannel_st.command_u8 ==
+                WIFI_CH_CMD_SET_REQ) {
+              uint8_t newCh =
+                  received_wifi_channel.payloadWifiChannel_st.currentChannel_u8;
               if (newCh >= 1 && newCh <= 14) {
                 g_currentWifiChannel_u8 = newCh;
                 saveWifiChannelToEeprom(newCh);
                 esp_wifi_set_channel(newCh, WIFI_SECOND_CHAN_NONE);
-                ActiveSerial->printf("Wi-Fi channel set to %d via Serial\n", newCh);
+                ActiveSerial->printf("Wi-Fi channel set to %d via Serial\n",
+                                     newCh);
               }
             }
 #endif
@@ -3434,32 +3489,26 @@ void otaUpdateTask(void *pvParameters) {
         OTA_count++;
       }
 
-      #if defined(OTA_update) || defined(OTA_update_ESP32)
-      if (g_OTA_enable_b) 
-      {
+#if defined(OTA_update) || defined(OTA_update_ESP32)
+      if (g_OTA_enable_b) {
         DapConfig_t ota_dap_config_st;
         global_dap_config_class.getConfig(&ota_dap_config_st, 50);
-        if (message_out_b) 
-        {
+        if (message_out_b) {
           message_out_b = false;
           Serial1.println("OTA enable flag on");
         }
-        if (g_OTA_status) 
-        {
-          #ifdef OTA_update_ESP32
+        if (g_OTA_status) {
+#ifdef OTA_update_ESP32
           server.handleClient();
-          #endif
-          #ifdef OTA_update
-          if (OTA_update_status == 0) 
-          {
+#endif
+#ifdef OTA_update
+          if (OTA_update_status == 0) {
             Buzzer.play_melody_tone(melody_victory_theme,
                                     sizeof(melody_victory_theme) /
                                         sizeof(melody_victory_theme[0]),
                                     melody_durations_Victory_theme);
             ESP.restart();
-          } 
-          else 
-          {
+          } else {
             if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
                 OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD) {
               ActiveSerial->println(
@@ -3495,59 +3544,55 @@ void otaUpdateTask(void *pvParameters) {
             }
           }
 
-          #endif
+#endif
 
-        }
-        else 
-        {
-          if(dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 == OTA_ACTION_ESP_BOOT_INTO_DOWNLOAD_MODE)
-          {
-            #ifdef ESPNow_S3
-              ActiveSerial->println("Restart into Download mode");
-              Buzzer.single_beep_tone(700, 100);
-              pedalLED.setPixelColor(0, 0x00, 0xFF, 0xFF); // Cyan / Aqua
-              pedalLED.show();            
-              sendESPNOWLog(
-              "Pedal:%d restart into Download mode",
-              ota_dap_config_st.payloadPedalConfig_st.pedalType_u8);
-              delay(1000);
-              REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
-              ESP.restart();
-            #else
-              ActiveSerial->println("Command not supported");
-              delay(1000);
-              ESP.restart();
-            #endif
+        } else {
+          if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
+              OTA_ACTION_ESP_BOOT_INTO_DOWNLOAD_MODE) {
+#ifdef ESPNow_S3
+            ActiveSerial->println("Restart into Download mode");
+            Buzzer.single_beep_tone(700, 100);
+            pedalLED.setPixelColor(0, 0x00, 0xFF, 0xFF); // Cyan / Aqua
+            pedalLED.show();
+            sendESPNOWLog("Pedal:%d restart into Download mode",
+                          ota_dap_config_st.payloadPedalConfig_st.pedalType_u8);
+            delay(1000);
+            REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+            ESP.restart();
+#else
+            ActiveSerial->println("Command not supported");
+            delay(1000);
+            ESP.restart();
+#endif
           }
           esp_err_t result;
           ActiveSerial->println("de-initialize espnow");
           ActiveSerial->println("wait...");
-          #ifdef ESPNOW_Enable
+#ifdef ESPNOW_Enable
           sendESPNOWLog("OTA enabled, de-initialize espnow");
           sendESPNOWLog("wait...");
           delay(1000);
           result = esp_now_deinit();
           g_espNowInitialStatus_b = false;
           g_espNowStatus_b = false;
-          #else
+#else
           result = ESP_OK;
-          #endif
+#endif
           // result = ESP_OK;
           delay(3000);
-          if (result == ESP_OK) 
-          {
+          if (result == ESP_OK) {
             g_OTA_status = true;
             // notify pedal task to stop movement
             uint8_t ota_event = 1;
             xQueueSend(s_systemControlQueue, &ota_event, (TickType_t)0);
             Buzzer.single_beep_tone(700, 100);
             delay(1000);
-            #ifdef OTA_update_ESP32
+#ifdef OTA_update_ESP32
             ota_wifi_initialize(g_apHost_pc);
-            #endif
+#endif
             pedalLED.setPixelColor(0, 0x00, 0x00, 0xff);
             pedalLED.show();
-            #ifdef OTA_update
+#ifdef OTA_update
             wifi_initialized(g_SSID, g_PASS);
             delay(2000);
             // sendESPNOWLog("Wifi Connected");
@@ -3616,7 +3661,7 @@ void otaUpdateTask(void *pvParameters) {
               ActiveSerial->println("OTA from platformIO");
               ota_arduinoota_initialize();
             }
-            #endif
+#endif
             delay(3000);
           }
         }
@@ -3669,14 +3714,18 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
 
       DapConfig_t espnow_dap_config_st = {};
       if (!global_dap_config_class.getConfig(&espnow_dap_config_st, 50)) {
-        espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 = s_localPedalType_u8;
+        espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 =
+            s_localPedalType_u8;
       }
-      if (espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 == PEDAL_ID_UNKNOWN ||
+      if (espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 ==
+              PEDAL_ID_UNKNOWN ||
           espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 > 2) {
         if (s_localPedalType_u8 < 3) {
-          espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 = s_localPedalType_u8;
+          espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 =
+              s_localPedalType_u8;
         } else if (g_dapAssignmentReg_st.deviceId_u8 < 3) {
-          espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 = g_dapAssignmentReg_st.deviceId_u8;
+          espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8 =
+              g_dapAssignmentReg_st.deviceId_u8;
         }
       }
       // basic state sendout interval
@@ -3911,15 +3960,14 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
             if (s_espnowStateQueue != NULL &&
                 xQueuePeek(s_espnowStateQueue, &statePkg, 0) == pdTRUE) {
               dap_state_basic_st_lcl = statePkg.basic_st;
-              dap_state_basic_st_lcl.payloadFooter_st.checkSum_u16 =
-                  checksumCalculator_u16(
-                      (uint8_t *)(&(dap_state_basic_st_lcl.payloadHeader_st)),
-                      sizeof(dap_state_basic_st_lcl.payloadHeader_st) +
-                          sizeof(
-                              dap_state_basic_st_lcl.payloadPedalStateBasic_st));
-              esp_err_t res = espnowSendWrapper(g_broadcastMac_au8,
-                                                (uint8_t *)&dap_state_basic_st_lcl,
-                                                sizeof(dap_state_basic_st_lcl));
+              dap_state_basic_st_lcl.payloadFooter_st
+                  .checkSum_u16 = checksumCalculator_u16(
+                  (uint8_t *)(&(dap_state_basic_st_lcl.payloadHeader_st)),
+                  sizeof(dap_state_basic_st_lcl.payloadHeader_st) +
+                      sizeof(dap_state_basic_st_lcl.payloadPedalStateBasic_st));
+              esp_err_t res = espnowSendWrapper(
+                  g_broadcastMac_au8, (uint8_t *)&dap_state_basic_st_lcl,
+                  sizeof(dap_state_basic_st_lcl));
               if (res == ESP_OK) {
                 packetSentThisCycle = true;
               }
@@ -3932,7 +3980,8 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
 
         profiler_espNow.start(3);
 
-        if (extend_state_send_b && !noAssignmentStatus && !packetSentThisCycle && !isEspnowBusy()) {
+        if (extend_state_send_b && !noAssignmentStatus &&
+            !packetSentThisCycle && !isEspnowBusy()) {
           // update pedal states
           DapStateExtended_t dap_state_extended_st_espNow;
           // initialize with zeros in case semaphore couldn't be aquired
@@ -3950,9 +3999,9 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
                     sizeof(dap_state_extended_st_espNow.payloadHeader_st) +
                         sizeof(dap_state_extended_st_espNow
                                    .payloadPedalStateExtended_st));
-            esp_err_t res = espnowSendWrapper(g_broadcastMac_au8,
-                                              (uint8_t *)&dap_state_extended_st_espNow,
-                                              sizeof(dap_state_extended_st_espNow));
+            esp_err_t res = espnowSendWrapper(
+                g_broadcastMac_au8, (uint8_t *)&dap_state_extended_st_espNow,
+                sizeof(dap_state_extended_st_espNow));
             if (res == ESP_OK) {
               packetSentThisCycle = true;
             }
@@ -4059,21 +4108,21 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
           Buzzer.single_beep_tone(700, 100);
         }
         if (g_espNowBootIntoDownloadMode_b && !noAssignmentStatus) {
-          #ifdef ESPNow_S3
-            ActiveSerial->println("Restart into Download mode");
-            Buzzer.single_beep_tone(700, 100);
-            pedalLED.setPixelColor(0, 0x00, 0xFF, 0xFF); // Cyan / Aqua
-            pedalLED.show();            
-            sendESPNOWLog(
-                "Pedal:%d restart into Download mode",
-                espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8);
-            delay(1000);
-            REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
-            ESP.restart();
-          #else
-            ActiveSerial->println("Command not supported");
-            delay(1000);
-          #endif
+#ifdef ESPNow_S3
+          ActiveSerial->println("Restart into Download mode");
+          Buzzer.single_beep_tone(700, 100);
+          pedalLED.setPixelColor(0, 0x00, 0xFF, 0xFF); // Cyan / Aqua
+          pedalLED.show();
+          sendESPNOWLog(
+              "Pedal:%d restart into Download mode",
+              espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8);
+          delay(1000);
+          REG_WRITE(RTC_CNTL_OPTION1_REG, RTC_CNTL_FORCE_DOWNLOAD_BOOT);
+          ESP.restart();
+#else
+          ActiveSerial->println("Command not supported");
+          delay(1000);
+#endif
           g_espNowBootIntoDownloadMode_b = false;
         }
         // send out rudder packet after rudder initialized
@@ -4090,8 +4139,10 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
                   dap_calculationVariables_st.currentPedalPosition_u32;
               g_dapRudderSending_st.payloadRudderState_st.pedalForce_N_fl32 =
                   dap_calculationVariables_st.currentPedalForce_N_fl32;
-              g_dapRudderSending_st.payloadRudderState_st.sendTimestamp_ms = millis();
-              g_dapRudderSending_st.payloadRudderState_st.echoTimestamp_ms = g_lastPartnerTimestamp_ms;
+              g_dapRudderSending_st.payloadRudderState_st.sendTimestamp_ms =
+                  millis();
+              g_dapRudderSending_st.payloadRudderState_st.echoTimestamp_ms =
+                  g_lastPartnerTimestamp_ms;
               g_dapRudderSending_st.payloadHeader_st.payloadType_u8 =
                   DAP_PAYLOAD_TYPE_ESPNOW_RUDDER_U8;
               g_dapRudderSending_st.payloadHeader_st.pedalTag_u8 =
@@ -4116,9 +4167,9 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
                 safeRegisterEspNowPeer(g_recvMac_au8);
                 targetMac = g_recvMac_au8;
               }
-              esp_err_t res = espnowSendWrapper(targetMac,
-                                                (uint8_t *)&g_dapRudderSending_st,
-                                                sizeof(g_dapRudderSending_st));
+              esp_err_t res = espnowSendWrapper(
+                  targetMac, (uint8_t *)&g_dapRudderSending_st,
+                  sizeof(g_dapRudderSending_st));
               if (res == ESP_OK) {
                 packetSentThisCycle = true;
               }
@@ -4141,16 +4192,19 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
           }
         }
 
-        // Periodic diagnostic telemetry: Report RF health and heap to SimHub every 60s
-        if (millis() - g_lastEspnowDiagLogTime_u32 > 60000 && !noAssignmentStatus) {
+        // Periodic diagnostic telemetry: Report RF health and heap to SimHub
+        // every 60s
+        if (millis() - g_lastEspnowDiagLogTime_u32 > 60000 &&
+            !noAssignmentStatus) {
           g_lastEspnowDiagLogTime_u32 = millis();
           uint32_t freeHeap = esp_get_free_heap_size();
           uint32_t minHeap = esp_get_minimum_free_heap_size();
-          sendESPNOWLog("Pedal:%d Diag: Heap=%u MinHeap=%u TxFail=%u NoMem=%u RetFail=%u Starve=%u RTT=%u",
+          sendESPNOWLog("Pedal:%d Diag: Heap=%u MinHeap=%u TxFail=%u NoMem=%u "
+                        "RetFail=%u Starve=%u RTT=%u",
                         espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8,
-                        freeHeap, minHeap,
-                        g_espnowTxFailCount_u32, g_espnowTxNoMemCount_u32,
-                        g_espnowSendFailCount_u32, g_espnowBasicStateStarvedCount_u32,
+                        freeHeap, minHeap, g_espnowTxFailCount_u32,
+                        g_espnowTxNoMemCount_u32, g_espnowSendFailCount_u32,
+                        g_espnowBasicStateStarvedCount_u32,
                         (uint32_t)g_currentSyncDelay_ms * 2);
         }
       }

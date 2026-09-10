@@ -35,7 +35,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     400,   // Pr1.01: 1st velocity loop gain
     500,   // Pr1.02: 1st time constant of velocity loop integration
     27,    // Pr1.03: 1st filter of velocity detection
-    100,   // Pr1.04: 1st torque filter
+    180,   // Pr1.04: 1st torque filter (erhoeht von 100 auf 180 = 1.8ms gegen Brems-Spannungsspitzen beim Error-Abbau)
     175,   // Pr1.05: 2nd position loop gain
     110,   // Pr1.06: 2nd velocity loop gain
     10000, // Pr1.07: 2nd time constant of velocity loop
@@ -302,7 +302,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     30,     // Pr7.28: Time of Bleeder alarm window
     0,      // Pr7.29: Dc bus voltage detection filter
     16,     // Pr7.30: Under-voltage point set
-    0,      // Pr7.31: Bleeder control mode setting
+    1,      // Pr7.31: Bleeder control mode setting (1 = Enable reactive pump lift suppression function)
     40,     // Pr7.32: Bleeder open the threshold set
     1,      // Pr7.33: Bleeder control hysteresis
     72,     // Pr7.34: Overvoltage point set

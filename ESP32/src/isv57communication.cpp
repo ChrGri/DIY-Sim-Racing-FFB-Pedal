@@ -303,6 +303,10 @@ void Isv57Communication::sendTunedServoParameters(
   // from iSV2 manual: The external resistance is activated when the actual bus
   // voltage is higher than Pr7.32 plus Pr7.33 and is deactivated when the
   // actual bus voltage is lower than Pr7.32 minus Pr7.33
+  retValue_b |= modbus.writeAndVerifyDeviceParameter(
+      slaveId, pr_7_00 + 31,
+      tuned_parameters[pr_7_00 + 31]); // bleeder control mode (1 = reactive
+                                       // pump lift suppression)
   retValue_b |= setServoVoltage(SERVO_MAX_VOLTAGE_IN_V_36V);
   retValue_b |= modbus.writeAndVerifyDeviceParameter(
       slaveId, pr_7_00 + 33,

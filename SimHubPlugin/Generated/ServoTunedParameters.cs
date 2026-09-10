@@ -61,7 +61,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr1.01", 400 },  // 1st velocity loop gain
             { "Pr1.02", 500 },  // 1st time constant of velocity loop integration
             { "Pr1.03", 27 },  // 1st filter of velocity detection
-            { "Pr1.04", 100 },  // 1st torque filter
+            { "Pr1.04", 180 },  // 1st torque filter (erhoeht von 100 auf 180 = 1.8ms g?
             { "Pr1.05", 175 },  // 2nd position loop gain
             { "Pr1.06", 110 },  // 2nd velocity loop gain
             { "Pr1.07", 10000 },  // 2nd time constant of velocity loop
@@ -318,7 +318,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr7.28", 30 },  // Time of Bleeder alarm window
             { "Pr7.29", 0 },  // Dc bus voltage detection filter
             { "Pr7.30", 16 },  // Under-voltage point set
-            { "Pr7.31", 0 },  // Bleeder control mode setting
+            { "Pr7.31", 1 },  // Bleeder control mode setting (1 = Enable reactive pu?
             { "Pr7.32", 40 },  // Bleeder open the threshold set
             { "Pr7.33", 1 },  // Bleeder control hysteresis
             { "Pr7.34", 72 },  // Overvoltage point set
