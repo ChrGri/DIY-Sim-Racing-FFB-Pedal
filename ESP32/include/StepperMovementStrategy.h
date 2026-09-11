@@ -342,28 +342,26 @@ static inline IRAM_ATTR_FLAG void AdaptVirtualMass(
         return;
     }
 
-    const float M_MAX_KG = 2.5f;              // Maximum allowed virtual mass during oscillation (kg)
-    const float M_INCREASE_RATE_KG_S = 15.0f; // How fast mass increases when unstable
-    const float M_DECREASE_RATE_KG_S = 3.0f;  // How fast mass recovers when near endstop
+    const float MAX_ADAPTATION_OFFSET_KG = 0.6f; // Max +0.6kg dynamic mass adaptation (prevents sluggish lockup)
+    const float M_INCREASE_RATE_KG_S = 4.0f;     // Gradual mass increase during genuine limit cycles
+    const float M_ENDSTOP_DECREASE_RATE_KG_S = 4.0f; // Fast recovery near endstops
+    const float M_LEAKY_DECREASE_RATE_KG_S = 1.0f;   // Continuous recovery anywhere in travel
 
     // 1. Ramp up mass during oscillation
     if (isOscillating) {
         float intensity = 1.0f;
         g_massAdaptationOffset_kg += M_INCREASE_RATE_KG_S * intensity * dt_s;
     } 
-    // 2. Reduce mass ONLY when the pedal is safely near an endstop (< 5% or > 95%)
-    else if (actualPosFraction_01 < 0.05f || actualPosFraction_01 > 0.95f) {
-        g_massAdaptationOffset_kg -= M_DECREASE_RATE_KG_S * dt_s;
+    // 2. Continuous decay when stable: faster near endstops, gentle everywhere else
+    else {
+        float decayRate = (actualPosFraction_01 < 0.05f || actualPosFraction_01 > 0.95f) 
+                          ? M_ENDSTOP_DECREASE_RATE_KG_S 
+                          : M_LEAKY_DECREASE_RATE_KG_S;
+        g_massAdaptationOffset_kg -= decayRate * dt_s;
     }
 
     // Clamp values safely
-    if (g_massAdaptationOffset_kg < 0.0f) {
-        g_massAdaptationOffset_kg = 0.0f;
-    }
-    if ((baseMass_kg + g_massAdaptationOffset_kg) > M_MAX_KG) {
-        g_massAdaptationOffset_kg = M_MAX_KG - baseMass_kg;
-    }
-
+    g_massAdaptationOffset_kg = constrain(g_massAdaptationOffset_kg, 0.0f, MAX_ADAPTATION_OFFSET_KG);
     virtualMass_kg = baseMass_kg + g_massAdaptationOffset_kg;
 }
 
@@ -398,14 +396,17 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
             trackingError_01 = fabsf((float)actualServoTrackingError_i32 / travelSteps_cnt);
         }
 
-        // If tracking errors exceed 0.5%, the models damping is dynamically increased proportional
-        // so that the servo can catch up.
-        // FIXED CODE: Gated Tracking-Error Damping
-        // Only apply the tracking-error penalty if we are moving reasonably fast.
-        // During reversals (v near 0), we ignore it so the pedal doesn't feel sticky.
-        if (trackingError_01 > 0.005f && fabsf(vModelVel_mps) > 0.05f) {
-            // Tuning: the multiplier (here 20.0f) determines how much the model decelerates.
-            // dampingMultiplier += (trackingError_01 * 20.0f); // Temporär deaktiviert, da schwankender Schleppfehler zu hochfrequenten Dämpfungsschwankungen führt
+        // Low-pass filter the tracking error to eliminate 100Hz Modbus step discontinuities
+        static float s_smoothedTrackingError_01 = 0.0f;
+        const float TAU_TRACKING_ERR = 0.015f; // 15ms smoothing
+        float alpha_err = 1.0f - expf(-0.00025f / TAU_TRACKING_ERR);
+        s_smoothedTrackingError_01 = (alpha_err * trackingError_01) + ((1.0f - alpha_err) * s_smoothedTrackingError_01);
+
+        // If smoothed tracking error exceeds 0.5% (~0.5-1mm), the model damping is dynamically
+        // increased proportionally so that the servo can catch up without oscillating.
+        if (s_smoothedTrackingError_01 > 0.005f && fabsf(vModelVel_mps) > 0.03f) {
+            float excessError = s_smoothedTrackingError_01 - 0.005f;
+            dampingMultiplier += constrain(excessError * 35.0f, 0.0f, 2.5f);
         }
     }
     
@@ -582,6 +583,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Constrain parameters to safe operational ranges
   virtualMass_kg = constrain(virtualMass_kg, 0.2f, 5.0f);
   dampingRatio_zeta = constrain(dampingRatio_zeta, 0.5f, 5.0f); 
+  const float baseMass_kg = virtualMass_kg; 
 
   // =========================================================
   // --- 2. PHYSICAL GEOMETRY (FORWARD KINEMATICS & TASK SPACE) ---
@@ -625,14 +627,18 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   actualPosFraction_01 = constrain(actualPosFraction_01, 0.0f, 1.0f);
 
   // --- 3. ELASTOMER PHYSICS & SPRING REACTION (Hunt-Crossley Model) ---
-  float displacement_01 = constrain(g_vModelPos_01, 0.0f, 1.0f);
+  // Coupled Spring Displacement: We blend the virtual target position with the actual
+  // physical mechanism position. This prevents the virtual model from prematurely hitting
+  // a steep force wall (e.g. 40kg) and bouncing back violently while the physical servo is
+  // still traveling forward to catch up.
+  float effectiveDisplacement_01 = constrain(0.65f * g_vModelPos_01 + 0.35f * actualPosFraction_01, 0.0f, 1.0f);
   float avgStiffness_N_m = (calc_st->forceRange_fl32 * GRAVITY_N_KG) / max(totalTravel_m, 0.0001f);
 
   // Standard Sim Racing Pedal (Throttle / Brake / Clutch)
-  float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, displacement_01);
+  float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, effectiveDisplacement_01);
   float springForce_N = max(springForceRaw_kg * GRAVITY_N_KG, 0.0f);
 
-  float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, displacement_01, false);
+  float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, effectiveDisplacement_01, false);
   float gradStiffness_N_m = fabsf(localStiffness_kg_step) * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG;
   float localStiffness_N_m = max(gradStiffness_N_m, max(0.3f * avgStiffness_N_m, 1.0f));
 
@@ -644,7 +650,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float localCriticalDamping_Ns_m = 2.0f * sqrtf(virtualMass_kg * localStiffness_N_m);
   const float MAX_ELASTOMER_MULTIPLIER = 4.0f; 
   float ELASTOMER_VISCOSITY_COEFFICIENT = progression_01 * (MAX_ELASTOMER_MULTIPLIER * localCriticalDamping_Ns_m);
-  float elastomerDamping_Ns_m = ELASTOMER_VISCOSITY_COEFFICIENT * displacement_01;
+  float elastomerDamping_Ns_m = ELASTOMER_VISCOSITY_COEFFICIENT * effectiveDisplacement_01;
 
   // --- 5. EFFECT OFFSETS & TOTAL FORCE ---
   // Feedforward Control (Inverse Dynamics)
@@ -705,7 +711,26 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   calc_st->currentPedalForce_N_fl32 = s_filteredPilotForce_N;
 
-  float externalForce_N = (loadCellReadingKg_fl32 * GRAVITY_N_KG) + (effectOffsets_st.forceOffset_kg_fl32 * GRAVITY_N_KG) + effectInjectedForce_N;
+  // Contact Impedance Damping (Force Derivative Feedback):
+  // When the servo accelerates into the user's stiff foot/shoe, high-frequency force spikes
+  // occur (dF/dt > 5000 N/s). Subtracting a small derivative term acts as an instantaneous virtual
+  // damper at the foot-pedal contact interface, quenching contact chatter without lag.
+  static float s_prevPilotForce_N = 0.0f;
+  static float s_filteredForceRate_Nps = 0.0f;
+  float rawForceRate_Nps = (cleanPilotForce_N - s_prevPilotForce_N) / dt_s;
+  s_prevPilotForce_N = cleanPilotForce_N;
+
+  const float FORCE_RATE_TAU = 0.008f; // 8ms smoothing for derivative
+  float alpha_rate = 1.0f - expf(-dt_s / FORCE_RATE_TAU);
+  s_filteredForceRate_Nps = (alpha_rate * rawForceRate_Nps) + ((1.0f - alpha_rate) * s_filteredForceRate_Nps);
+
+  const float K_FORCE_DERIV_S = 0.004f; // 4ms contact damping time
+  float contactDampedPilotForce_N = cleanPilotForce_N - (K_FORCE_DERIV_S * s_filteredForceRate_Nps);
+  if (contactDampedPilotForce_N < 0.0f) {
+    contactDampedPilotForce_N = 0.0f;
+  }
+
+  float externalForce_N = contactDampedPilotForce_N + (effectOffsets_st.forceOffset_kg_fl32 * GRAVITY_N_KG) + effectInjectedForce_N;
 
   // --- 7. DYNAMIC TRAVEL LIMITS ---
   float lowerTravelLimit_01 = 0.0f;
@@ -718,7 +743,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   // --- 9. ADMITTANCE OSCILLATION DETECTOR (Landi et al.) ---
   // We calculate base damping with un-adapted mass for the physics ideal-model reference
-  float idealBaseDamping_Ns_m = dampingRatio_zeta * 2.0f * sqrtf(virtualMass_kg * currentStiffness_N_m);
+  float idealBaseDamping_Ns_m = dampingRatio_zeta * 2.0f * sqrtf(baseMass_kg * currentStiffness_N_m);
   
   // Use the exact restoring force (spline + endstop) instead of linear stiffness assumption
   float totalSpringReaction_N = springForce_N + softEndstopForce_N;
@@ -728,14 +753,14 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Call the detector with max force from config to calculate dynamic threshold
   bool isOscillating = DetectAdmittanceOscillation(
       externalForce_N, actualPosFraction_01, totalTravel_m, 
-      totalSpringReaction_N, idealBaseDamping_Ns_m, virtualMass_kg, 
+      totalSpringReaction_N, idealBaseDamping_Ns_m, baseMass_kg, 
       dt_s, config_st->payloadPedalConfig_st.maxForce_fl32, debugState_st, hasActiveEffect
   );
 
-    // --- 10. PASSIVE PARAMETER ADAPTATION (Position Gated) ---
+  // --- 10. PASSIVE PARAMETER ADAPTATION (Position Gated) ---
   AdaptVirtualMass(isOscillating
     , dt_s
-    , virtualMass_kg
+    , baseMass_kg
     , virtualMass_kg
     , hasActiveEffect
     , actualPosFraction_01);
@@ -975,7 +1000,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // =========================================================
 
   // Hard Clamping of acceleration to prevent limit cycles (Hunting)
-  const float MAX_ACCEL_MPS2 = 50.0f; 
+  const float MAX_ACCEL_MPS2 = 30.0f; 
   acceleration_mps2 = constrain(acceleration_mps2, -MAX_ACCEL_MPS2, MAX_ACCEL_MPS2);
 
   // Predictive EMF Reduction (Regenerative Power Clamping)
@@ -1031,6 +1056,21 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   }
   const float LEASH_RATE = 0.5f; // Noch sanfterer Rückzug (0.5 statt 1.0)
   g_vModelPos_01 += divergence_01 * (LEASH_RATE * dt_s);
+
+  // HARD LEASH CLAMP (Anti-Runaway):
+  // The virtual model is strictly constrained so it cannot outrun the physical sled by more than ~1.5mm (8% travel).
+  const float MAX_LEAD_01 = 0.08f;
+  if ((g_vModelPos_01 - actualPosFraction_01) > MAX_LEAD_01) {
+      g_vModelPos_01 = actualPosFraction_01 + MAX_LEAD_01;
+      if (g_vModelVel_mps > 0.0f) {
+          g_vModelVel_mps *= 0.5f; // Damp forward velocity when actuator speed is saturated
+      }
+  } else if ((actualPosFraction_01 - g_vModelPos_01) > MAX_LEAD_01) {
+      g_vModelPos_01 = actualPosFraction_01 - MAX_LEAD_01;
+      if (g_vModelVel_mps < 0.0f) {
+          g_vModelVel_mps *= 0.5f;
+      }
+  }
 
   // =========================================================
   // POPULATE REMAINDER OF DEBUG TELEMETRY STRUCT

@@ -33,7 +33,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,     // Pr0.24: Reserved parameter
     600,   // Pr1.00: 1st position loop gain
     400,   // Pr1.01: 1st velocity loop gain
-    500,   // Pr1.02: 1st time constant of velocity loop integration
+    200,   // Pr1.02: 1st time constant of velocity loop integration (reduziert von 500 auf 200 = 20ms gegen Nachschwingen)
     27,    // Pr1.03: 1st filter of velocity detection
     180,   // Pr1.04: 1st torque filter (erhoeht von 100 auf 180 = 1.8ms gegen Brems-Spannungsspitzen beim Error-Abbau)
     175,   // Pr1.05: 2nd position loop gain
@@ -41,8 +41,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     10000, // Pr1.07: 2nd time constant of velocity loop
     8,     // Pr1.08: 2nd filter of velocity detection
     200,   // Pr1.09: 2nd torque filter
-    0,     // Pr1.10: Velocity feed forward gain (Reduziert gegen aggressives
-           // Überschwingen bei haptischem Feedback)
+    35,    // Pr1.10: Velocity feed forward gain (35% Feedforward reduziert dynamischen Schleppfehler drastisch)
     0, // Pr1.11: Velocity feed forward filter. Had better velocity error decay
        // with higher values and also less noise. Edit: 31.05.2026: Set to zero
        // to keep coherency between feed forward and feedback. With non-zero
@@ -99,10 +98,8 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,     // Pr2.19: 3rd damping filter
     0,     // Pr2.20: 4th damping frequency
     0,     // Pr2.21: 4th damping filter
-    15,  // Pr2.22: Positional command smoothing filter (PT1). 1.5ms glättet die
-         // Treppenstufen der Microsteps, ohne die Admittanz zu destabilisieren.
-    10,  // Pr2.23: Positional command FIR filter. 1.0ms Moving Average für
-         // weicheren Motorlauf.
+    8,   // Pr2.22: Positional command smoothing filter (PT1). 0.8ms reduziert Totzeit/Phasenverzug.
+    5,   // Pr2.23: Positional command FIR filter. 0.5ms Moving Average fuer weichen Motorlauf.
     0,   // Pr2.24: Reserved parameter
     0,   // Pr2.25: Reserved parameter
     0,   // Pr2.26: Reserved parameter
