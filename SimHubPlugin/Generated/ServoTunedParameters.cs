@@ -67,7 +67,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr1.07", 10000 },  // 2nd time constant of velocity loop
             { "Pr1.08", 8 },  // 2nd filter of velocity detection
             { "Pr1.09", 200 },  // 2nd torque filter
-            { "Pr1.10", 35 },  // Velocity feed forward gain (35% Feedforward reduzier?
+            { "Pr1.10", 35 },  // Velocity feed forward gain (35% Feedforward reduziert
             { "Pr1.11", 0 },  // Velocity feed forward filter. Had better velocity er?
             { "Pr1.12", 0 },  // Torque feed forward gain
             { "Pr1.13", 1000 },  // Torque feed forward filter
@@ -94,7 +94,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr1.34", 0 },  // Reserved parameter
             { "Pr1.35", 0 },  // Position command digital filter Settings
             { "Pr1.36", 0 },  // Encoder feedback pulse digital filter Setting
-            { "Pr1.37", 1052 },  // Special function register
+            { "Pr1.37", 28 },  // Special function register (0x04 | 0x08 | 0x10 = 28; ?
             { "Pr1.38", 0 },  // Reserved parameter
             { "Pr1.39", 0 },  // Reserved parameter
             { "Pr2.00", 0 },  // Adaptive filter mode setup (Ausgeschaltet für konstante
@@ -215,7 +215,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr5.05", 0 },  // Sequence at over-travel inhibit
             { "Pr5.06", 0 },  // Sequence at servo-off
             { "Pr5.07", 0 },  // Main power off sequence
-            { "Pr5.08", 1 },  // Main power off LV trip selection
+            { "Pr5.08", 0 },  // Main power off LV trip selection
             { "Pr5.09", 70 },  // Main power off detection time
             { "Pr5.10", 0 },  // Sequence at alarm
             { "Pr5.11", 0 },  // Torque setup for emergency stop

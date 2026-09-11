@@ -235,8 +235,8 @@ namespace DiyFfbPedal
 
             dap_config_st_rudder.payloadPedalConfig_.quantityOfControl = 6;
             dap_config_st_rudder.payloadPedalConfig_.relativeForce00 = 0;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce01 = 20;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce02 = 40;
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce01 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce02 = 0;
             dap_config_st_rudder.payloadPedalConfig_.relativeForce03 = 60;
             dap_config_st_rudder.payloadPedalConfig_.relativeForce04 = 80;
             dap_config_st_rudder.payloadPedalConfig_.relativeForce05 = 100;
@@ -1156,6 +1156,8 @@ namespace DiyFfbPedal
             dap_config_st_rudder.payloadPedalConfig_.relativeForce00 = (byte)Math.Round(Math.Max(0.0f, Math.Min(25.5f, Plugin.Settings.rudderMinForce)) * 10.0f);
             // Pack rudderMode (0: Airplane, 1: Helicopter, 2: Toe Brake) into relativeForce01
             dap_config_st_rudder.payloadPedalConfig_.relativeForce01 = (byte)Plugin.Settings.rudderMode;
+            // Pack rudderCenteringProfile (0: Linear, 1: Progressive, 2: S-Curve) into relativeForce02
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce02 = (byte)Plugin.Settings.rudderCenteringProfile;
             // Pack rudderDeadzone into dampingProgression_u8 (e.g. 0 to 50 representing 0.0% to 5.0%)
             dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = (byte)Math.Round(Plugin.Settings.rudderDeadzone * 10.0);
             // Pack bilateral sync stiffness into minForceForEffects_u8 (e.g. 20 to 150 N)
@@ -1282,6 +1284,7 @@ namespace DiyFfbPedal
             Plugin.Settings.rudderRPMMaxFrequency = dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq;
             Plugin.Settings.rudderRPMMinFrequency = dap_config_st_rudder.payloadPedalConfig_.RPM_min_freq;
             Plugin.Settings.rudderRPMAmp = dap_config_st_rudder.payloadPedalConfig_.RPM_AMP;
+            Plugin.Settings.rudderCenteringProfile = dap_config_st_rudder.payloadPedalConfig_.relativeForce02;
 
             // Save Rudder Joystick Mapping to settings
             Plugin.Settings.rudderNumOfJoystickMapControl = dap_config_st_rudder.payloadPedalConfig_.numOfJoystickMapControl;

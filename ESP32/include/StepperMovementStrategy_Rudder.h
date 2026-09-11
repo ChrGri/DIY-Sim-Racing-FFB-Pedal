@@ -306,8 +306,17 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
     float u = constrain(effectiveDelta / halfTravel, -1.0f, 1.0f);
 
     float absU = fabsf(u);
-    float planeForceKg = (absU > 0.0001f) ? (centerForceKg + absU * (rudderMaxForceKg - centerForceKg)) : 0.0f;
-    float brakeForceKg = absU * rudderMaxForceKg;
+    float shapeFactor = absU;
+    if (rudderOffsets_st.centeringProfile_u8 == 1) {
+      // Progressive (pow(u, 1.8))
+      shapeFactor = powf(absU, 1.8f);
+    } else if (rudderOffsets_st.centeringProfile_u8 == 2) {
+      // S-Curve (0.5 * (1 - cos(u * PI)))
+      shapeFactor = 0.5f * (1.0f - cosf(absU * PI_FL32));
+    }
+
+    float planeForceKg = (absU > 0.0001f) ? (centerForceKg + shapeFactor * (rudderMaxForceKg - centerForceKg)) : 0.0f;
+    float brakeForceKg = shapeFactor * rudderMaxForceKg;
     float forceKg = (s_couplingBlendFactor * planeForceKg) +
                     ((1.0f - s_couplingBlendFactor) * brakeForceKg);
 

@@ -33,15 +33,18 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,     // Pr0.24: Reserved parameter
     600,   // Pr1.00: 1st position loop gain
     400,   // Pr1.01: 1st velocity loop gain
-    200,   // Pr1.02: 1st time constant of velocity loop integration (reduziert von 500 auf 200 = 20ms gegen Nachschwingen)
+    200,   // Pr1.02: 1st time constant of velocity loop integration (reduziert
+           // von 500 auf 200 = 20ms gegen Nachschwingen)
     27,    // Pr1.03: 1st filter of velocity detection
-    180,   // Pr1.04: 1st torque filter (erhoeht von 100 auf 180 = 1.8ms gegen Brems-Spannungsspitzen beim Error-Abbau)
+    180,   // Pr1.04: 1st torque filter (erhoeht von 100 auf 180 = 1.8ms gegen
+           // Brems-Spannungsspitzen beim Error-Abbau)
     175,   // Pr1.05: 2nd position loop gain
     110,   // Pr1.06: 2nd velocity loop gain
     10000, // Pr1.07: 2nd time constant of velocity loop
     8,     // Pr1.08: 2nd filter of velocity detection
     200,   // Pr1.09: 2nd torque filter
-    35,    // Pr1.10: Velocity feed forward gain (35% Feedforward reduziert dynamischen Schleppfehler drastisch)
+    35,    // Pr1.10: Velocity feed forward gain (35% Feedforward reduziert
+           // dynamischen Schleppfehler drastisch)
     0, // Pr1.11: Velocity feed forward filter. Had better velocity error decay
        // with higher values and also less noise. Edit: 31.05.2026: Set to zero
        // to keep coherency between feed forward and feedback. With non-zero
@@ -72,7 +75,8 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,     // Pr1.34: Reserved parameter
     0,     // Pr1.35: Position command digital filter Settings
     0,     // Pr1.36: Encoder feedback pulse digital filter Setting
-    1052,  // Pr1.37: Special function register
+    28,    // Pr1.37: Special function register (0x04 | 0x08 | 0x10 = 28; Er0D0
+           // undervoltage masked)
     0,     // Pr1.38: Reserved parameter
     0,     // Pr1.39: Reserved parameter
     0,     // Pr2.00: Adaptive filter mode setup (Ausgeschaltet für konstante
@@ -98,52 +102,54 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,     // Pr2.19: 3rd damping filter
     0,     // Pr2.20: 4th damping frequency
     0,     // Pr2.21: 4th damping filter
-    8,   // Pr2.22: Positional command smoothing filter (PT1). 0.8ms reduziert Totzeit/Phasenverzug.
-    5,   // Pr2.23: Positional command FIR filter. 0.5ms Moving Average fuer weichen Motorlauf.
-    0,   // Pr2.24: Reserved parameter
-    0,   // Pr2.25: Reserved parameter
-    0,   // Pr2.26: Reserved parameter
-    0,   // Pr2.27: Reserved parameter
-    0,   // Pr2.28: Reserved parameter
-    0,   // Pr2.29: Reserved parameter
-    0,   // Pr3.00: Velocity setup internal and external switching
-    1,   // Pr3.01: Speed command rotational direction
-    500, // Pr3.02: Speed command input gain
-    0,   // Pr3.03: Speed command reversal input
-    0,   // Pr3.04: 1st speed setup
-    0,   // Pr3.05: 2nd speed setup
-    0,   // Pr3.06: 3rd speed setup
-    0,   // Pr3.07: 4th speed setup
-    0,   // Pr3.08: 5th speed setup
-    0,   // Pr3.09: 6th speed setup
-    0,   // Pr3.10: 7th speed setup
-    0,   // Pr3.11: 8th speed setup
-    0,   // Pr3.12: Time setup acceleration
-    0,   // Pr3.13: Time setup deceleration
-    0,   // Pr3.14: Sigmoid acceleration/deceleration time se...
-    0,   // Pr3.15: Speed zero-clamp function selection
-    30,  // Pr3.16: Speed zero-clamp level
-    0,   // Pr3.17: Torque command internal and external swi...
-    0,   // Pr3.18: Torque command direction selection
-    30,  // Pr3.19: Torque command input gain
-    0,   // Pr3.20: Torque command input reversal
-    0,   // Pr3.21: Speed limit value 1
-    0,   // Pr3.22: Speed limit value 2
-    0,   // Pr3.23: Reserved parameter
-    5000,   // Pr3.24: Maximum speed of motor rotation
-    0,      // Pr3.25: Reserved parameter
-    0,      // Pr3.26: Reserved parameter
-    0,      // Pr3.27: Reserved parameter
-    0,      // Pr3.28: Reserved parameter
-    0,      // Pr3.29: Reserved parameter
-    3084,   // Pr4.00: Input selection SI1
-    3341,   // Pr4.01: Input selection SI2
-    5654,   // Pr4.02: Input selection SI3
-    5911,   // Pr4.03: Input selection SI4
-    6168,   // Pr4.04: Input selection SI5
-    18,     // Pr4.05: Input selection SI6
-    4608,   // Pr4.06: Input selection SI7
-    3584,   // Pr4.07: Input selection SI8
+    8,     // Pr2.22: Positional command smoothing filter (PT1). 0.8ms reduziert
+           // Totzeit/Phasenverzug.
+    5,     // Pr2.23: Positional command FIR filter. 0.5ms Moving Average fuer
+           // weichen Motorlauf.
+    0,     // Pr2.24: Reserved parameter
+    0,     // Pr2.25: Reserved parameter
+    0,     // Pr2.26: Reserved parameter
+    0,     // Pr2.27: Reserved parameter
+    0,     // Pr2.28: Reserved parameter
+    0,     // Pr2.29: Reserved parameter
+    0,     // Pr3.00: Velocity setup internal and external switching
+    1,     // Pr3.01: Speed command rotational direction
+    500,   // Pr3.02: Speed command input gain
+    0,     // Pr3.03: Speed command reversal input
+    0,     // Pr3.04: 1st speed setup
+    0,     // Pr3.05: 2nd speed setup
+    0,     // Pr3.06: 3rd speed setup
+    0,     // Pr3.07: 4th speed setup
+    0,     // Pr3.08: 5th speed setup
+    0,     // Pr3.09: 6th speed setup
+    0,     // Pr3.10: 7th speed setup
+    0,     // Pr3.11: 8th speed setup
+    0,     // Pr3.12: Time setup acceleration
+    0,     // Pr3.13: Time setup deceleration
+    0,     // Pr3.14: Sigmoid acceleration/deceleration time se...
+    0,     // Pr3.15: Speed zero-clamp function selection
+    30,    // Pr3.16: Speed zero-clamp level
+    0,     // Pr3.17: Torque command internal and external swi...
+    0,     // Pr3.18: Torque command direction selection
+    30,    // Pr3.19: Torque command input gain
+    0,     // Pr3.20: Torque command input reversal
+    0,     // Pr3.21: Speed limit value 1
+    0,     // Pr3.22: Speed limit value 2
+    0,     // Pr3.23: Reserved parameter
+    5000,  // Pr3.24: Maximum speed of motor rotation
+    0,     // Pr3.25: Reserved parameter
+    0,     // Pr3.26: Reserved parameter
+    0,     // Pr3.27: Reserved parameter
+    0,     // Pr3.28: Reserved parameter
+    0,     // Pr3.29: Reserved parameter
+    3084,  // Pr4.00: Input selection SI1
+    3341,  // Pr4.01: Input selection SI2
+    5654,  // Pr4.02: Input selection SI3
+    5911,  // Pr4.03: Input selection SI4
+    6168,  // Pr4.04: Input selection SI5
+    18,    // Pr4.05: Input selection SI6
+    4608,  // Pr4.06: Input selection SI7
+    3584,  // Pr4.07: Input selection SI8
     0x0303, // Pr4.08: Input selection SI9
     0,      // Pr4.09: Input selection SI10
     0x101,  // 0x8181,  // Pr4.10: Output selection SO1 81: No ALARM ==> 2.4Ohm,
@@ -195,7 +201,7 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,      // Pr5.05: Sequence at over-travel inhibit
     0,      // Pr5.06: Sequence at servo-off
     0,      // Pr5.07: Main power off sequence
-    1,      // Pr5.08: Main power off LV trip selection
+    0,      // Pr5.08: Main power off LV trip selection
     70,     // Pr5.09: Main power off detection time
     0,      // Pr5.10: Sequence at alarm
     0,      // Pr5.11: Torque setup for emergency stop
@@ -299,23 +305,24 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     30,     // Pr7.28: Time of Bleeder alarm window
     0,      // Pr7.29: Dc bus voltage detection filter
     16,     // Pr7.30: Under-voltage point set
-    1,      // Pr7.31: Bleeder control mode setting (1 = Enable reactive pump lift suppression function)
-    40,     // Pr7.32: Bleeder open the threshold set
-    1,      // Pr7.33: Bleeder control hysteresis
-    72,     // Pr7.34: Overvoltage point set
-    1,      // Pr7.35: Relay control mode setting
-    18,     // Pr7.36: Threshold setting of relay suction
-    2048,   // Pr7.37: Analog quantity AI3 hardware zero drift co...
-    2048,   // Pr7.38: Analog quantity AI3 hardware zero drift co...
-    2048,   // Pr7.39: Analog quantity AI3 hardware zero drift co...
-    21,     // Pr7.40: RS232 communication mode settings
-    4,      // Pr7.41: RS485 communication baud rate settings
-    63,     // Pr7.42: RS232-ID
-    0,      // Pr7.43: DC bus voltage hardware zero drift compe...
-    0,      // Pr7.44: Temperature measurement hardware zero...
-    10000,  // Pr7.45: Dc bus voltage hardware slope coefficient
-    10000,  // Pr7.46: Current U phase sampling hardware slope...
-    10000,  // Pr7.47: Current V phase sampling hardware slope...
-    18,     // Pr7.48: Reserved parameter
-    500     // Pr7.49: Reserved parameter
+    1,    // Pr7.31: Bleeder control mode setting (1 = Enable reactive pump lift
+          // suppression function)
+    40,   // Pr7.32: Bleeder open the threshold set
+    1,    // Pr7.33: Bleeder control hysteresis
+    72,   // Pr7.34: Overvoltage point set
+    1,    // Pr7.35: Relay control mode setting
+    18,   // Pr7.36: Threshold setting of relay suction
+    2048, // Pr7.37: Analog quantity AI3 hardware zero drift co...
+    2048, // Pr7.38: Analog quantity AI3 hardware zero drift co...
+    2048, // Pr7.39: Analog quantity AI3 hardware zero drift co...
+    21,   // Pr7.40: RS232 communication mode settings
+    4,    // Pr7.41: RS485 communication baud rate settings
+    63,   // Pr7.42: RS232-ID
+    0,    // Pr7.43: DC bus voltage hardware zero drift compe...
+    0,    // Pr7.44: Temperature measurement hardware zero...
+    10000, // Pr7.45: Dc bus voltage hardware slope coefficient
+    10000, // Pr7.46: Current U phase sampling hardware slope...
+    10000, // Pr7.47: Current V phase sampling hardware slope...
+    18,    // Pr7.48: Reserved parameter
+    500    // Pr7.49: Reserved parameter
 };

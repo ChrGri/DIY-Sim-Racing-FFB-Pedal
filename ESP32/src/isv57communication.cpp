@@ -261,11 +261,10 @@ void Isv57Communication::sendTunedServoParameters(
       tuned_parameters[pr_0_00 + 14]); // position deviation setup
 
   // Pr1 register
-  // uint16_t special_function_flags = 0x4 | 0x8 | 0x10 | 0x40 | 0x400;
-  uint16_t special_function_flags = 0x4 | 0x8 | 0x10 | 0x20 | 0x400;
+  uint16_t special_function_flags = 0x4 | 0x8 | 0x10;
   retValue_b |= modbus.writeAndVerifyDeviceParameter(
       slaveId, pr_1_00 + 37,
-      tuned_parameters[pr_1_00 + 37]); // special function register
+      special_function_flags); // special function register
   // see https://www.oyostepper.com/images/upload/File/ISV57T-180.pdf
   // 0x01: =0: Enablespeedfeed-forwardfiltering; =1:Disablespeed feed-forward
   // filtering 0x02: =0: Enabletorquefeed-forwardfiltering; =2:disabletorque

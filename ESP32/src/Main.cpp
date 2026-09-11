@@ -2281,6 +2281,18 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         rudderOffsets_st.deadzone_01 = constrain(deadzone_01, 0.0f, 0.10f);
         rudderOffsets_st.centerForce_kg = centerForce_kg;
 
+        uint8_t rf2 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                          .relativeForce02_u8;
+        uint8_t rf4 = dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                          .relativeForce04_u8;
+        uint8_t centeringProfile = 0; // default linear
+        if (rf2 == 1 || (rf2 > 2 && rf4 <= 72 && rf4 > 0)) {
+          centeringProfile = 1; // Progressive
+        } else if (rf2 == 2 || (rf2 > 2 && rf4 >= 86)) {
+          centeringProfile = 2; // S-Curve
+        }
+        rudderOffsets_st.centeringProfile_u8 = centeringProfile;
+
         uint8_t cfgMode = dap_config_pedalUpdateTask_st.payloadPedalConfig_st
                               .relativeForce01_u8;
         if (cfgMode == 1 ||

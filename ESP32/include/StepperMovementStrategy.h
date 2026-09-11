@@ -24,6 +24,7 @@ typedef enum {
 typedef struct {
   bool isRudderMode;
   uint8_t rudderMode_u8;       // 0: Disabled, 1: Plane, 2: Helicopter, 3: Airplane with Toe Brake
+  uint8_t centeringProfile_u8; // 0: Linear, 1: Progressive, 2: S-Curve
   float centerPosition_01;     // normally 0.50 for center alignment
   float trimOffset_01;         // dynamic trim offset (-0.5 to +0.5)
   float deadzone_01;           // deadzone around center (e.g. 0.02)
