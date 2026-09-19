@@ -891,6 +891,18 @@ namespace DiyFfbPedal
             Plugin.SendBridgeAction(tmp_2);
 
         }
+        private void btn_rudder_brake_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            try
+            {
+                if (Plugin != null)
+                {
+                    Plugin.Rudder_brake_enable_flag = true;
+                }
+            }
+            catch { }
+        }
+
         private void RudderMode_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             try
@@ -919,11 +931,52 @@ namespace DiyFfbPedal
                 }
                 if (Plugin?.Rudder_status == true)
                 {
+                    Plugin.Rudder_brake_status = (mode == 3);
+                    Plugin.Rudder_brake_enable_flag = (mode == 3);
+
+                    // Live notify pedals of the new rudder action
+                    byte rudderActionCode = 0;
+                    if (mode == 1) // Helicopter
+                    {
+                        rudderActionCode = (byte)((Plugin.Rudder_Pedal_idx[0] == 0)
+                            ? RudderAction.EnableHeliRudderThreePedals
+                            : RudderAction.EnableHeliRudderTwoPedals);
+                    }
+                    else // Airplane / Toe brake
+                    {
+                        rudderActionCode = (byte)((Plugin.Rudder_Pedal_idx[0] == 0)
+                            ? RudderAction.EnableRudderThreePedals
+                            : RudderAction.EnableRudderTwoPedals);
+                    }
+
+                    DAP_action_st actionPacket = default;
+                    actionPacket.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
+                    actionPacket.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
+                    actionPacket.payloadPedalAction_.Rudder_action = rudderActionCode;
+                    actionPacket.payloadPedalAction_.Rudder_brake_action = (byte)(mode == 3 ? 2 : (mode == 2 ? (Plugin.Rudder_brake_status ? 2 : 3) : 0));
+                    actionPacket.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
+                    actionPacket.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
+                    actionPacket.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
+                    actionPacket.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
+
+                    for (uint i = 0; i < 2; i++)
+                    {
+                        uint pidx = Plugin.Rudder_Pedal_idx[i];
+                        actionPacket.payloadHeader_.PedalTag = (byte)pidx;
+                        unsafe
+                        {
+                            DAP_action_st* ptr = &actionPacket;
+                            actionPacket.payloadFooter_.checkSum = Plugin.checksumCalc((byte*)ptr, sizeof(payloadHeader) + sizeof(payloadPedalAction));
+                        }
+                        Plugin.SendPedalAction(actionPacket, (byte)pidx);
+                    }
+
                     RudderParameterLiveUpdate();
                 }
             }
             catch { }
         }
+
 
         unsafe private void btn_rudder_initialize_Click(object sender, RoutedEventArgs e)
         {
@@ -941,10 +994,12 @@ namespace DiyFfbPedal
                 if (Pedal_connect_status == (byte)PedalAvailability.ThreePedalConnect)
                 {
                     Plugin.Rudder_Pedal_idx[0] = 0;
+                    Plugin.Rudder_Pedal_idx[1] = 2;
                 }
                 else
                 {
                     Plugin.Rudder_Pedal_idx[0] = 1;
+                    Plugin.Rudder_Pedal_idx[1] = 2;
                 }
                 if (Pedal_connect_status == (byte)PedalAvailability.TwoPedalConnectBrakeThrottle || Pedal_connect_status == (byte)PedalAvailability.ThreePedalConnect)
                 {
@@ -1013,6 +1068,38 @@ namespace DiyFfbPedal
                             System.Windows.MessageBox.Show(MSG_tmp, "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                         }
 
+                        // Save current Rudder Joystick mapping into settings before initialization
+                        if (RudderJoystick_Tab != null)
+                        {
+                            dap_config_st_rudder.payloadPedalConfig_.numOfJoystickMapControl = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.numOfJoystickMapControl;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig00 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrig00;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig01 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrig01;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig02 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrig02;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig03 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrig03;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig04 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrig04;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig05 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrig05;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig06 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrig06;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig07 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrig07;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig08 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrig08;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig09 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrig09;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig10 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrig10;
+
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped00 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMapped00;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped01 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMapped01;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped02 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMapped02;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped03 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMapped03;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped04 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMapped04;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped05 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMapped05;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped06 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMapped06;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped07 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMapped07;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped08 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMapped08;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped09 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMapped09;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped10 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMapped10;
+
+                            writeRudderConfigToSetting();
+                            Plugin.SavePluginSettings();
+                        }
+
                         text_rudder_log.Clear();
                         text_rudder_log.Visibility = Visibility.Visible;
                         DelayCall(100, () =>
@@ -1021,7 +1108,7 @@ namespace DiyFfbPedal
                             text_rudder_log.Text += "Initializing Rudder\n";
                         });
                         Rudder_Initialized();
-                        DelayCall(1300, () =>
+                        DelayCall(1800, () =>
                         {
                             text_rudder_log.Visibility = Visibility.Visible;
                             text_rudder_log.Text += "Rudder initialized\n";
@@ -1349,7 +1436,7 @@ namespace DiyFfbPedal
 
             }
 
-            DAP_action_st tmp;
+            DAP_action_st tmp = default;
             tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
             tmp.payloadPedalAction_.system_action_u8 = (byte)PedalSystemAction.PRINT_PEDAL_INFO;
@@ -1518,12 +1605,7 @@ namespace DiyFfbPedal
         }
         private void btn_Assignment_Click(object sender, RoutedEventArgs e)
         {
-            AssignmentConfigurationWindow sideWindow = new AssignmentConfigurationWindow(Plugin);
-            double screenWidth = SystemParameters.PrimaryScreenWidth;
-            double screenHeight = SystemParameters.PrimaryScreenHeight;
-            sideWindow.Left = screenWidth / 2 - sideWindow.Width / 2;
-            sideWindow.Top = screenHeight / 2 - sideWindow.Height / 2;
-            sideWindow.Show();
+            NavigateToSystemWirelessTab();
         }
         private void Btn_OpenLanguageDownload_Click(object sender, RoutedEventArgs e)
         {

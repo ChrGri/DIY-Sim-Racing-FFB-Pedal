@@ -116,7 +116,7 @@ namespace DiyFfbPedal
         public bool[] Version_warning_first_show_b= new bool[3] { false, false, false };
         public bool Version_warning_first_show_b_bridge = false;
         public byte[] Pedal_version = new byte[3];
-        private SerialMonitor_Window _serial_monitor_window;
+        public SerialMonitor_Window _serial_monitor_window;
         public bool Pedal_Log_warning_1st_show_b = true;
         private string[] Rudder_Pedal_idx_Name= new string[3] {"Clutch", "Brake","Throttle"};
         public byte Pedal_connect_status = 0;
@@ -192,6 +192,10 @@ namespace DiyFfbPedal
         private void RootLayout_Loaded(object sender, RoutedEventArgs e)
         {
             UpdateRootScale();
+            if (LivePlotSection != null && Plugin != null)
+            {
+                LivePlotSection.SetReferences(Plugin, this);
+            }
         }
 
         private void RootLayout_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -230,13 +234,25 @@ namespace DiyFfbPedal
         {
             this.Plugin = plugin;
             if (CurveRudderForce_Tab != null && plugin?.Settings != null) CurveRudderForce_Tab.Settings = plugin.Settings;
-            if (RudderDynamics_Tab != null && plugin?.Settings != null) RudderDynamics_Tab.Settings = plugin.Settings;
+            if (RudderDynamics_Tab != null)
+            {
+                if (plugin?.Settings != null) RudderDynamics_Tab.Settings = plugin.Settings;
+                RudderDynamics_Tab.Plugin = plugin;
+            }
             plugin.testValue = 1;
             plugin.wpfHandle = this;
             UpdateSerialPortList_click();
             
             indexOfSelectedPedal_u = plugin.Settings.table_selected;
             MyTab.SelectedIndex = (int)indexOfSelectedPedal_u;
+            if (LivePlotSection != null)
+            {
+                LivePlotSection.SetReferences(plugin, this);
+            }
+            if (LivePlotSection != null)
+            {
+                LivePlotSection.SetReferences(plugin, this);
+            }
             for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
             {
                 DAP_config_set_default(pedalIdx);
@@ -247,6 +263,12 @@ namespace DiyFfbPedal
             {
                 if (tb_wifi_ch_active != null) tb_wifi_ch_active.Text = $"Active: Ch {plugin.Settings.ActiveWifiChannel}";
                 if (combo_wifi_channel != null) combo_wifi_channel.SelectedValue = plugin.Settings.ActiveWifiChannel.ToString();
+            }
+
+            if (SystemWireless_Tab != null)
+            {
+                SystemWireless_Tab.Plugin = plugin;
+                SystemWireless_Tab.ParentUI = this;
             }
 
             // WICHTIG: Hier abonnieren wir die neuen Batch-Events für den Servo-Tab,
@@ -517,6 +539,7 @@ namespace DiyFfbPedal
             if (Plugin != null)
             {
                 Plugin.Settings = e;
+                Plugin.SendBridgeWirelessSyncConfig();
                 if (Plugin.Rudder_status || Plugin._calculations.Rudder_status)
                 {
                     RudderParameterLiveUpdate();
@@ -541,7 +564,35 @@ namespace DiyFfbPedal
         {
             if (Plugin != null)
             {
-                dap_config_st_rudder = e;
+                // Synchronize joystick mapping parameters to dap_config_st_rudder
+                dap_config_st_rudder.payloadPedalConfig_.numOfJoystickMapControl = e.payloadPedalConfig_.numOfJoystickMapControl;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig00 = e.payloadPedalConfig_.joystickMapOrig00;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig01 = e.payloadPedalConfig_.joystickMapOrig01;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig02 = e.payloadPedalConfig_.joystickMapOrig02;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig03 = e.payloadPedalConfig_.joystickMapOrig03;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig04 = e.payloadPedalConfig_.joystickMapOrig04;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig05 = e.payloadPedalConfig_.joystickMapOrig05;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig06 = e.payloadPedalConfig_.joystickMapOrig06;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig07 = e.payloadPedalConfig_.joystickMapOrig07;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig08 = e.payloadPedalConfig_.joystickMapOrig08;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig09 = e.payloadPedalConfig_.joystickMapOrig09;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig10 = e.payloadPedalConfig_.joystickMapOrig10;
+
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped00 = e.payloadPedalConfig_.joystickMapMapped00;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped01 = e.payloadPedalConfig_.joystickMapMapped01;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped02 = e.payloadPedalConfig_.joystickMapMapped02;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped03 = e.payloadPedalConfig_.joystickMapMapped03;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped04 = e.payloadPedalConfig_.joystickMapMapped04;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped05 = e.payloadPedalConfig_.joystickMapMapped05;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped06 = e.payloadPedalConfig_.joystickMapMapped06;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped07 = e.payloadPedalConfig_.joystickMapMapped07;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped08 = e.payloadPedalConfig_.joystickMapMapped08;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped09 = e.payloadPedalConfig_.joystickMapMapped09;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped10 = e.payloadPedalConfig_.joystickMapMapped10;
+
+                writeRudderConfigToSetting();
+                Plugin.SavePluginSettings();
+
                 if (Plugin._calculations.IsUIRefreshNeeded)
                 {
                     updateTheGuiFromConfig();

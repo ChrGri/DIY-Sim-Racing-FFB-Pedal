@@ -1,4 +1,4 @@
-﻿#include "TinyusbJoystick.h"
+#include "TinyusbJoystick.h"
 #include <cstdint>
 #include <cstring>
 #include <cstdarg>
@@ -12,6 +12,7 @@ TinyusbJoystick* TinyusbJoystick::instance = nullptr;
 TinyusbJoystick::TinyusbJoystick() 
 {    
     isBridgeActionGet=false;
+    isMacAddressesGet=false;
 }
 
 bool TinyusbJoystick::IsReady()
@@ -36,7 +37,11 @@ void TinyusbJoystick::begin(int VID, int PID)
     TinyUSBDevice.setID(VID, PID);
     TinyUSBDevice.setProductDescriptor("DIY_FFB_PEDAL_JOYSTICK");
     TinyUSBDevice.setManufacturerDescriptor("OPENSOURCE");
-    TinyUSBDevice.setSerialDescriptor("DIY_FFB_PEDAL_001");
+    
+    static char serialStr[32];
+    uint64_t chipid = ESP.getEfuseMac();
+    snprintf(serialStr, sizeof(serialStr), "DIY_PEDAL_%04X%08X", (uint16_t)(chipid >> 32), (uint32_t)chipid);
+    TinyUSBDevice.setSerialDescriptor(serialStr);
     
     //ActiveSerial->
     // Manual begin() is required on core without built-in support e.g. mbed rp2040
@@ -69,35 +74,29 @@ void TinyusbJoystick::begin(int VID, int PID)
 
 void TinyusbJoystick::setRxAxis(int32_t value)
 {
-    int32_t tmp = value;
-    hid_report.rx = tmp;
+    hid_report.rx = (uint16_t)value;
 }
 
 void TinyusbJoystick::setRyAxis(int32_t value)
 {
-    int32_t tmp = value;
-    hid_report.ry = tmp;
+    hid_report.ry = (uint16_t)value;
 }
 void TinyusbJoystick::setRzAxis(int32_t value)
 {
-    int32_t tmp = value;
-    hid_report.rz = tmp;
+    hid_report.rz = (uint16_t)value;
 }
 
 void TinyusbJoystick::setXAxis(int32_t value)
 {
-    int32_t tmp = value;
-    hid_report.x = tmp;
+    hid_report.x = (uint16_t)value;
 }
 void TinyusbJoystick::setYAxis(int32_t value)
 {
-    int32_t tmp = value;
-    hid_report.y = tmp;
+    hid_report.y = (uint16_t)value;
 }
 void TinyusbJoystick::setZAxis(int32_t value)
 {
-    int32_t tmp = value;
-    hid_report.z = tmp;
+    hid_report.z = (uint16_t)value;
 }
 
 void TinyusbJoystick::sendState()
@@ -229,6 +228,21 @@ void TinyusbJoystick::ProcessFullData(uint8_t *rxBuffer, uint8_t totalLen)
             isBridgeActionGet = true;
         }
         
+    }
+        if(totalLen == sizeof(DapMacAddresses_t))
+    {
+        DapMacAddresses_t tmp;
+        memcpy(&tmp, rxBuffer, totalLen);
+        bool structChecker = true;
+        if(tmp.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_MAC_ADDRESSES_U8) structChecker = false;
+        if(tmp.payloadHeader_st.version_u8 != DAP_VERSION_MAC_ADDRESSES_U8) structChecker = false;
+        uint16_t crc = checksumCal((uint8_t*)(&(tmp.payloadHeader_st)), sizeof(tmp.payloadHeader_st) + sizeof(tmp.payloadMacAddresses_st));
+        if(crc != tmp.payloadFooter_st.checkSum_u16) structChecker = false;
+        if(structChecker)
+        {
+            memcpy(&tmpMacAddresses, &tmp, totalLen);
+            isMacAddressesGet = true;
+        }
     }
     if(totalLen == sizeof(DapActionOta_t))
     {

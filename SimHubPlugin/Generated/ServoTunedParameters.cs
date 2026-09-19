@@ -59,15 +59,15 @@ namespace DiyFfbPedal.UIFunction
             { "Pr0.24", 0 },  // Reserved parameter
             { "Pr1.00", 600 },  // 1st position loop gain
             { "Pr1.01", 400 },  // 1st velocity loop gain
-            { "Pr1.02", 500 },  // 1st time constant of velocity loop integration
+            { "Pr1.02", 200 },  // 1st time constant of velocity loop integration (redu?
             { "Pr1.03", 27 },  // 1st filter of velocity detection
-            { "Pr1.04", 100 },  // 1st torque filter
+            { "Pr1.04", 180 },  // 1st torque filter (erhoeht von 100 auf 180 = 1.8ms g?
             { "Pr1.05", 175 },  // 2nd position loop gain
             { "Pr1.06", 110 },  // 2nd velocity loop gain
             { "Pr1.07", 10000 },  // 2nd time constant of velocity loop
             { "Pr1.08", 8 },  // 2nd filter of velocity detection
             { "Pr1.09", 200 },  // 2nd torque filter
-            { "Pr1.10", 0 },  // Velocity feed forward gain (Reduziert gegen aggressives
+            { "Pr1.10", 35 },  // Velocity feed forward gain (35% Feedforward reduziert
             { "Pr1.11", 0 },  // Velocity feed forward filter. Had better velocity er?
             { "Pr1.12", 0 },  // Torque feed forward gain
             { "Pr1.13", 1000 },  // Torque feed forward filter
@@ -94,7 +94,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr1.34", 0 },  // Reserved parameter
             { "Pr1.35", 0 },  // Position command digital filter Settings
             { "Pr1.36", 0 },  // Encoder feedback pulse digital filter Setting
-            { "Pr1.37", 1052 },  // Special function register
+            { "Pr1.37", 28 },  // Special function register (0x04 | 0x08 | 0x10 = 28; ?
             { "Pr1.38", 0 },  // Reserved parameter
             { "Pr1.39", 0 },  // Reserved parameter
             { "Pr2.00", 0 },  // Adaptive filter mode setup (Ausgeschaltet für konstante
@@ -119,8 +119,8 @@ namespace DiyFfbPedal.UIFunction
             { "Pr2.19", 0 },  // 3rd damping filter
             { "Pr2.20", 0 },  // 4th damping frequency
             { "Pr2.21", 0 },  // 4th damping filter
-            { "Pr2.22", 15 },  // Positional command smoothing filter (PT1). 1.5ms glä?
-            { "Pr2.23", 10 },  // Positional command FIR filter. 1.0ms Moving Average für
+            { "Pr2.22", 8 },  // Positional command smoothing filter (PT1). 0.8ms red?
+            { "Pr2.23", 5 },  // Positional command FIR filter. 0.5ms Moving Average ?
             { "Pr2.24", 0 },  // Reserved parameter
             { "Pr2.25", 0 },  // Reserved parameter
             { "Pr2.26", 0 },  // Reserved parameter
@@ -215,7 +215,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr5.05", 0 },  // Sequence at over-travel inhibit
             { "Pr5.06", 0 },  // Sequence at servo-off
             { "Pr5.07", 0 },  // Main power off sequence
-            { "Pr5.08", 1 },  // Main power off LV trip selection
+            { "Pr5.08", 0 },  // Main power off LV trip selection
             { "Pr5.09", 70 },  // Main power off detection time
             { "Pr5.10", 0 },  // Sequence at alarm
             { "Pr5.11", 0 },  // Torque setup for emergency stop
@@ -318,7 +318,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr7.28", 30 },  // Time of Bleeder alarm window
             { "Pr7.29", 0 },  // Dc bus voltage detection filter
             { "Pr7.30", 16 },  // Under-voltage point set
-            { "Pr7.31", 0 },  // Bleeder control mode setting
+            { "Pr7.31", 1 },  // Bleeder control mode setting (1 = Enable reactive pu?
             { "Pr7.32", 40 },  // Bleeder open the threshold set
             { "Pr7.33", 1 },  // Bleeder control hysteresis
             { "Pr7.34", 72 },  // Overvoltage point set

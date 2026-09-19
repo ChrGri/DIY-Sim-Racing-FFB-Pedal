@@ -73,7 +73,11 @@ void SetupController_USB(uint8_t pedal_ID)
   joystick_.setRxAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
   joystick_.setRyAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
   joystick_.setRzAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
-  joystick_.begin();
+  joystick_.setRxAxis(0);
+  joystick_.setRyAxis(0);
+  joystick_.setRzAxis(0);
+  joystick_.begin(false);
+  joystick_.sendState();
 }
 
 void SetupController()
@@ -81,7 +85,11 @@ void SetupController()
   joystick_.setRxAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
   joystick_.setRyAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
   joystick_.setRzAxisRange(JOYSTICK_AXIS_MINIMUM_U16, JOYSTICK_AXIS_MAXIMUM_U16);
-  joystick_.begin();
+  joystick_.setRxAxis(0);
+  joystick_.setRyAxis(0);
+  joystick_.setRzAxis(0);
+  joystick_.begin(false);
+  joystick_.sendState();
 }
 
 bool IsControllerReady()
@@ -105,15 +113,23 @@ void SetControllerOutputValue(uint16_t value)
   {
     case 0:
       joystick_.setRxAxis(value);
+      joystick_.setRyAxis(0);
+      joystick_.setRzAxis(0);
       break;
     case 1:
+      joystick_.setRxAxis(0);
       joystick_.setRyAxis(value);
+      joystick_.setRzAxis(0);
       break;
     case 2:
+      joystick_.setRxAxis(0);
+      joystick_.setRyAxis(0);
       joystick_.setRzAxis(value);
       break;
     default:
       joystick_.setRxAxis(value);
+      joystick_.setRyAxis(0);
+      joystick_.setRzAxis(0);
       break;
   }
 

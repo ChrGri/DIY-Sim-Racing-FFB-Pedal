@@ -1,4 +1,4 @@
-﻿#include "ForceCurve.h"
+#include "ForceCurve.h"
 #include "Arduino.h"
 
 /**********************************************************************************************/
@@ -111,8 +111,8 @@ float ForceCurveInterpolated::EvalJoystickCubicSpline(const DapConfig_t* config_
   const uint32_t num = calc_st->numOfJoystickControl_u8;
   const float frac = constrain(fractionalPos_fl32, 0.0f, 1.0f) * 100.0f;
 
-  if (frac < calc_st->joystickOrig_afl32[0]) return 0.0f;
-  if (frac >= calc_st->joystickOrig_afl32[(int)num - 1]) return 100.0f;
+  if (frac <= calc_st->joystickOrig_afl32[0]) return calc_st->joystickMapping_afl32[0];
+  if (frac >= calc_st->joystickOrig_afl32[(int)num - 1]) return calc_st->joystickMapping_afl32[(int)num - 1];
 
   // FIX: Changed <= to >= to correctly locate the segment index
   int i = 0; while (i < num && frac >= calc_st->joystickOrig_afl32[i]) i++;
@@ -134,5 +134,7 @@ float ForceCurveInterpolated::EvalJoystickCubicSpline(const DapConfig_t* config_
   const float t = (splineSegment_fl32 - (float)splineSegment_u8);
   const float y_fl32 = j0 + t * (j1 - j0 + (a + (b - a) * t) * (1.0f - t));
   
-  return y_fl32 * 0.01f * fmaxf(calc_st->joystickMapping_afl32[num - 1] - calc_st->joystickMapping_afl32[0], 0.0f);
+  float minVal = fminf(calc_st->joystickMapping_afl32[0], calc_st->joystickMapping_afl32[num - 1]);
+  float maxVal = fmaxf(calc_st->joystickMapping_afl32[0], calc_st->joystickMapping_afl32[num - 1]);
+  return constrain(y_fl32, minVal, maxVal);
 }

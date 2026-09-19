@@ -441,6 +441,16 @@ uint16_t Joystick_::_onGetDescriptor(uint8_t* buffer) {
 void Joystick_::_onOutput(uint8_t report_id, const uint8_t* buffer, uint16_t len) {
 }
 
+// Host GET_REPORT Callback (Endpoint 0 Control Transfer)
+// Windows queries the initial state of the device during USB enumeration via GET_REPORT.
+// Responding here guarantees Windows DirectInput receives 0% immediately on boot without STALL.
+uint16_t Joystick_::_onGetFeature(uint8_t report_id, uint8_t* buffer, uint16_t len) {
+    if (report_id == _hidReportId || report_id == 0) {
+        return fillReport(buffer, len);
+    }
+    return 0;
+}
+
 void Joystick_::begin(bool initAutoSendState, uint32_t intervalMs_u32) {
     // Melde dieses Gerät an der hid-Instanz an
     hid.addDevice(this, hidReportDescriptorSize);
@@ -579,8 +589,10 @@ int Joystick_::buildAndSetSimulationValue(bool includeValue, int32_t value, int3
     return buildAndSet16BitValue(includeValue, value, valueMinimum, valueMaximum, JOYSTICK_SIMULATOR_MINIMUM, JOYSTICK_SIMULATOR_MAXIMUM, dataLocation);
 }
 
-void Joystick_::sendState() {
-    uint8_t data[_hidReportSize];
+uint16_t Joystick_::fillReport(uint8_t *data, uint16_t maxLen) {
+    if (data == NULL || maxLen < _hidReportSize) {
+        return 0;
+    }
     int index = 0;
 
     // Load Button State
@@ -616,14 +628,19 @@ void Joystick_::sendState() {
     index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_BRAKE, _brake, _brakeMinimum, _brakeMaximum, &(data[index]));
     index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_STEERING, _steering, _steeringMinimum, _steeringMaximum, &(data[index]));
 
+    return _hidReportSize;
+}
+
+void Joystick_::sendState() {
+    uint8_t data[_hidReportSize];
+    fillReport(data, sizeof(data));
+
     if ((bool)USB) { 
         // Jetzt klappt der Aufruf über unser hid-Objekt!
         bool success = hid.SendReport(_hidReportId, data, sizeof(data));
         
         if (!success)  
             _reportFailCount++;
-        if (_reportFailCount > 5)  
-            _usbDeviceStatus = false;
         else  
             _reportFailCount = 0;
     }

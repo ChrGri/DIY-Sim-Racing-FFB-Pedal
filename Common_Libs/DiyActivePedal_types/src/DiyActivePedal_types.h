@@ -19,6 +19,7 @@
 #include "PayloadHidMessage.h"
 #include "PayloadServoConfig.h"
 #include "PayloadWifiChannel.h"
+#include "PayloadMacAddresses.h"
 
 // define the payload revision
 typedef struct __attribute__((packed)) DapActions
@@ -55,6 +56,13 @@ typedef struct __attribute__((packed)) DapActionOta
   PayloadOtaInfo_t payloadOtaInfo_st;
   PayloadFooter_t payloadFooter_st;
 } DapActionOta_t;
+
+typedef struct __attribute__((packed)) DapMacAddresses
+{
+  PayloadHeader_t payloadHeader_st;
+  PayloadMacAddresses_t payloadMacAddresses_st;
+  PayloadFooter_t payloadFooter_st;
+} DapMacAddresses_t;
 
 typedef struct __attribute__((packed)) DapConfig
 {

@@ -41,6 +41,10 @@ namespace DiyFfbPedal
         public bool[] dumpPedalToResponseFile;
         public string current_profile = "NA";
         public bool ForceUpdate_b;
+
+        public DAP_state_extended_st[] pedalState_extended = new DAP_state_extended_st[3];
+        public long[] pedalState_extended_counter = new long[3] { 0, 0, 0 };
+        public Action<int, DAP_state_extended_st> OnExtendedStateReceived;
         //public uint UpdateChannel;
         public uint _rssi_value;
         public byte[,] PedalFirmwareVersion;

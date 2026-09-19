@@ -284,6 +284,26 @@ namespace DiyFfbPedal.UIFunction
         private void CheckBox_Pedal_ESPNow_SyncFlag_Unchecked(object sender, RoutedEventArgs e)
         {
             Settings.Pedal_ESPNow_Sync_flag[Settings.table_selected] = false;
+            if (calculation != null)
+            {
+                calculation.rssi[Settings.table_selected] = 0;
+                calculation.pedalWirelessStatus[Settings.table_selected] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+            }
+            if (Settings.vjoy_output_flag == 1 && _joystick != null)
+            {
+                switch (Settings.table_selected)
+                {
+                    case 0:
+                        _joystick.SetAxis(0, Settings.vjoy_order, HID_USAGES.HID_USAGE_RX);
+                        break;
+                    case 1:
+                        _joystick.SetAxis(0, Settings.vjoy_order, HID_USAGES.HID_USAGE_RY);
+                        break;
+                    case 2:
+                        _joystick.SetAxis(0, Settings.vjoy_order, HID_USAGES.HID_USAGE_RZ);
+                        break;
+                }
+            }
             SettingsChangedEvent(Settings);
         }
 

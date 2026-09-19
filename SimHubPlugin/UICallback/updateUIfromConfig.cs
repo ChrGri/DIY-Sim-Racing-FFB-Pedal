@@ -43,6 +43,8 @@ namespace DiyFfbPedal
                 {
                     if (!Plugin.Settings.Pedal_ESPNow_Sync_flag[i])
                     {
+                        Plugin._calculations.rssi[i] = 0;
+                        Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
                         if (!Plugin._serialPort[i].IsOpen)
                         {
                             Plugin._calculations.ServoStatus[i] = 0;
@@ -84,6 +86,7 @@ namespace DiyFfbPedal
                 PedalSettingsSection.dap_config_st = tmp_struct;
                 var tmp_rudder = dap_config_st_rudder;
                 CurveRudderForce_Tab.dap_config_st = tmp_rudder;
+                RudderJoystick_Tab.dap_config_st = tmp_rudder;
                 RudderDynamics_Tab.dap_config_st = tmp_rudder;
                 EffectsRPMRudder_Tab.dap_config_st = tmp_rudder;
 
@@ -102,12 +105,15 @@ namespace DiyFfbPedal
                 PedalSettingsSection.Settings = Plugin.Settings;
                 EffectsRPMRudder_Tab.Settings = Plugin.Settings;
                 CurveRudderForce_Tab.Settings = Plugin.Settings;
+                RudderJoystick_Tab.Settings = Plugin.Settings;
+                RudderJoystick_Tab.updateUI();
                 EffectRudderACC_Tab.Settings = Plugin.Settings;
                 RudderDynamics_Tab.Settings = Plugin.Settings;
                 CurveRudderForce_Tab.updateUI();
                 RudderDynamics_Tab.updateUI();
                 //SettingOTA_Tab.Settings = Plugin.Settings;
                 SystemLicense_Tab.Settings = Plugin.Settings;
+                if (SystemWireless_Tab != null) { SystemWireless_Tab.Plugin = Plugin; SystemWireless_Tab.ParentUI = this; SystemWireless_Tab.UpdateLiveTable(); }
                 SystemSetting_Section.Settings = Plugin.Settings;
                 SystemInfo.Settings = Plugin.Settings;
                 PedalInfo.Settings = Plugin.Settings;
@@ -121,6 +127,7 @@ namespace DiyFfbPedal
                 PedalForceTravel_Tab.calculation = Plugin._calculations;
                 PedalSettingsSection.calculation = Plugin._calculations;
                 CurveRudderForce_Tab.calculation = Plugin._calculations;
+                RudderJoystick_Tab.calculation = Plugin._calculations;
 
                 //SettingOTA_Tab.calculation = Plugin._calculations;
                 SystemInfo.calculation = Plugin._calculations;
@@ -150,14 +157,7 @@ namespace DiyFfbPedal
             if (Plugin != null)
             {
 
-                if (Plugin.Settings.Pedal_ESPNow_Sync_flag[indexOfSelectedPedal_u])
-                {
-                    btn_Assignment.IsEnabled = true;
-                }
-                else
-                {
-                    btn_Assignment.IsEnabled = false;
-                }
+
 
                 if (Plugin.ESPsync_serialPort.IsOpen)
                 {
@@ -168,6 +168,13 @@ namespace DiyFfbPedal
                     btn_connect_espnow_port.Content = "Connect";
                 }
                 btn_connect_espnow_port.IsEnabled = Plugin.Settings.IsFanatecAndPicoSupport;
+            }
+
+            if (indexOfSelectedPedal_u < 3 && !Plugin.Settings.Pedal_ESPNow_Sync_flag[indexOfSelectedPedal_u] && !Plugin._serialPort[indexOfSelectedPedal_u].IsOpen)
+            {
+                PedalForceTravel_Tab?.updatePedalState(0, 0);
+                PedalKinematics_Tab?.updatePedalState(0);
+                PedalJoystick_Tab?.JoystickStateUpdate(0);
             }
 
             //// Select serial port accordingly
@@ -209,6 +216,40 @@ namespace DiyFfbPedal
                 {
                     btn_rudder_initialize.Content = "Enable";
                     //text_rudder_log.Visibility = Visibility.Hidden;
+                }
+
+                if (btn_rudder_brake != null)
+                {
+                    if (Plugin.Settings.rudderMode == 2)
+                    {
+                        btn_rudder_brake.Visibility = Visibility.Visible;
+                        if (Plugin.Rudder_brake_status)
+                        {
+                            btn_rudder_brake.Content = "Toe Brake: ACTIVE";
+                            btn_rudder_brake.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xEE, 0x00, 0xAA, 0x66));
+                            btn_rudder_brake.Foreground = System.Windows.Media.Brushes.White;
+                            btn_rudder_brake.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x00, 0xFF, 0xAA));
+                        }
+                        else
+                        {
+                            btn_rudder_brake.Content = "Toe Brake: OFF (Yaw)";
+                            btn_rudder_brake.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0xFF, 0x99, 0x00));
+                            btn_rudder_brake.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0xFF, 0xAA, 0x33));
+                            btn_rudder_brake.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x66, 0xFF, 0x99, 0x00));
+                        }
+                    }
+                    else if (Plugin.Settings.rudderMode == 3)
+                    {
+                        btn_rudder_brake.Visibility = Visibility.Visible;
+                        btn_rudder_brake.Content = "Toe Brake: PERMANENT";
+                        btn_rudder_brake.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0x00, 0xCC, 0xFF));
+                        btn_rudder_brake.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x00, 0xCC, 0xFF));
+                        btn_rudder_brake.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x66, 0x00, 0xCC, 0xFF));
+                    }
+                    else
+                    {
+                        btn_rudder_brake.Visibility = Visibility.Collapsed;
+                    }
                 }
             }
 

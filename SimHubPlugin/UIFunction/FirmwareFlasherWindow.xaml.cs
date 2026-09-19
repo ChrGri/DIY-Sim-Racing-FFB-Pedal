@@ -186,6 +186,7 @@ namespace DiyFfbPedal.UIFunction
             ForceDisconnectSerial(port);
 
             BtnFlash.IsEnabled = false;
+            BtnEraseEeprom.IsEnabled = false;
             TxtLog.Clear();
             TxtLog.AppendText(selectedBoardFolder == "CUSTOM_LOCAL" ? "Preparing to flash local files...\n" : $"Preparing to flash {selectedBoardFolder}...\n");
 
@@ -240,6 +241,7 @@ namespace DiyFfbPedal.UIFunction
             finally
             {
                 BtnFlash.IsEnabled = true;
+                BtnEraseEeprom.IsEnabled = true;
             }
         }
 
@@ -257,6 +259,46 @@ namespace DiyFfbPedal.UIFunction
             if (_plugin.ESPsync_serialPort.IsOpen && _plugin.ESPsync_serialPort.PortName.Equals(targetPort, StringComparison.OrdinalIgnoreCase))
             {
                 try { _plugin.ESPsync_serialPort.Close(); } catch { }
+            }
+        }
+
+        private async void BtnEraseEeprom_Click(object sender, RoutedEventArgs e)
+        {
+            if (CboComPorts.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a COM port.");
+                return;
+            }
+
+            string port = CboComPorts.SelectedItem.ToString();
+            ForceDisconnectSerial(port);
+
+            BtnFlash.IsEnabled = false;
+            BtnEraseEeprom.IsEnabled = false;
+            TxtLog.Clear();
+            TxtLog.AppendText($"Starting EEPROM / NVS reset on {port}...\n");
+
+            try
+            {
+                bool success = await _flasher.EraseEepromAsync(port);
+                if (success)
+                {
+                    MessageBox.Show("EEPROM / NVS reset successfully! The device has been restored to factory settings.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show("EEPROM Reset Failed. Check the log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error during EEPROM reset: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                TxtLog.AppendText($"\nERROR: {ex.Message}\n");
+            }
+            finally
+            {
+                BtnFlash.IsEnabled = true;
+                BtnEraseEeprom.IsEnabled = true;
             }
         }
     }

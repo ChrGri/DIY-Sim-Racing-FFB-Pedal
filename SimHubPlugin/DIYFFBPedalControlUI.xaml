@@ -64,9 +64,9 @@
                 <TabControl.Background>
                     <SolidColorBrush Color="#FF252525" Opacity="0"/>
                 </TabControl.Background>
-                <TabItem x:Name="Tab_Pedals" Width="200" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <TabItem x:Name="Tab_Pedals" Width="191" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
                     <TabItem.Header>
-                        <Border  Width="200" Height="40" Margin="0,0,0,0" >
+                        <Border  Width="191" Height="40" Margin="0,0,0,0" >
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Width="26" Height="26" Source="{StaticResource Pedals}" />
                                 <Label Content="{SLoc DIYFFBPedalPlugin_TextPedals, 'PEDALS'}"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
@@ -188,16 +188,16 @@
                                                             <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextPedalRestart, 'Restart'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
-                                                    <Button x:Name="btn_Assignment" Style="{StaticResource IconGridButtonStyle}" Click="btn_Assignment_Click" ToolTip="Wireless Assignment" Margin="5,5,5,0">
-                                                        <StackPanel>
-                                                            <Image Width="30" Height="30" Source="{StaticResource WifiAssignment}" />
-                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextWirelessAssignment, 'Pedal Roles'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_OnlineProfile_Click" ToolTip="Community Config" Margin="0,5,0,0">
+                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_OnlineProfile_Click" ToolTip="Community Config" Margin="5,5,0,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource CommunityConfig}" />
                                                             <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextGetOnlineConfig, 'Cloud Config'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_PedalBootMode_Click" ToolTip="Get Pedal Sensor Info" Margin="5,5,0,0">
+                                                        <StackPanel>
+                                                            <Image Width="30" Height="30" Source="{StaticResource FirmwareDownload}" />
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextFWFlash, 'Flash Mode'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
                                                 </StackPanel>
@@ -223,12 +223,7 @@
                                                     </Button>
                                                 </StackPanel>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_PedalBootMode_Click" ToolTip="Get Pedal Sensor Info" Margin="0,5,0,0">
-                                                        <StackPanel>
-                                                            <Image Width="30" Height="30" Source="{StaticResource FirmwareDownload}" />
-                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextFWFlash, 'Flash Mode'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
-                                                        </StackPanel>
-                                                    </Button>
+                                                    
                                                 </StackPanel>
                                                 <Border Background="#FF4E4E4E" Height="250" CornerRadius="8,8,8,8" BorderThickness="0,0,0,0" Width="160" HorizontalAlignment="Center" Margin="0,5,0,0" >
                                                     <TextBox x:Name="TextBox2" TextWrapping="Wrap" Width="160" AutomationProperties.Name="TextBox2" Height="250" FontSize="9" Background="#004E4E4E" BorderBrush="#00CCCCCC" IsHitTestVisible="False" AllowDrop="True" HorizontalAlignment="Center"/>
@@ -304,7 +299,7 @@
                                         </TabItem>
 
                                     </TabControl>
-                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="235" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,4,0,0">
+                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="235" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,5,0,0">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
                                                 <Setter Property="Template">
@@ -312,10 +307,10 @@
                                                         <ControlTemplate TargetType="TabItem">
                                                             <!--The four values of CornerRadius represent the four corners of the TabItem.-->
                                                             <Border Name="Border" BorderThickness="0,0,0,0" BorderBrush="Gainsboro" CornerRadius="5,5,5,5" Margin="0,0,2,0">
-                                                                <ContentPresenter x:Name="ContentSite"  
-                                                VerticalAlignment="Center"  
-                                                HorizontalAlignment="Left"  
-                                                ContentSource="Header"  
+                                                                <ContentPresenter x:Name="ContentSite"
+                                                VerticalAlignment="Center"
+                                                HorizontalAlignment="Left"
+                                                ContentSource="Header"
                                                 Margin="0,0"/>
                                                             </Border>
                                                             <ControlTemplate.Triggers>
@@ -389,7 +384,7 @@
 
 
                                     </TabControl>
-                                    <TabControl Grid.Column="0" SelectionChanged="TabControl_SelectionChanged_1" HorizontalAlignment="Left" Height="275" Grid.Row="5" VerticalAlignment="Center" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,3,0,0">
+                                    <TabControl Grid.Column="0" SelectionChanged="TabControl_SelectionChanged_1" HorizontalAlignment="Left" Height="275" Grid.Row="5" VerticalAlignment="Center" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,5,0,0">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
                                                 <Setter Property="Template">
@@ -493,9 +488,9 @@
 
                     </Border>
                 </TabItem>
-                <TabItem x:Name="Tab_Rudder" Width="200" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <TabItem x:Name="Tab_Rudder" Width="191" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
                     <TabItem.Header>
-                        <Border  Width="200" Height="40" Margin="0,0,0,0" >
+                        <Border  Width="191" Height="40" Margin="0,0,0,0" >
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Width="26" Height="26" Source="{StaticResource plane}" />
                                 <Label Content="{SLoc DIYFFBPedalPlugin_TextRudder, 'RUDDER'}"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
@@ -518,7 +513,7 @@
                                             <localFunction:InfoSection_Rudder x:Name="RudderInfo" />
                                             <Button x:Name="btn_SidebarRudderDocs" Click="btn_RudderDocs_Click" Content="📖 Flight Docs ↗" Width="158" Height="18" Margin="0,2,0,4" Background="#2600AAFF" Foreground="#00CCFF" BorderBrush="#3300CCFF" BorderThickness="1" FontSize="9" FontFamily="Arial" Cursor="Hand" ToolTip="Open Rudder Flight Dynamics Documentation on GitHub" HorizontalAlignment="Center"/>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,0">
-                                                <ComboBox x:Name="combo_rudderMode" SelectedValuePath="Tag" Width="98" SelectedValue="{Binding Plugin.Settings.rudderMode, Mode=TwoWay}" SelectionChanged="RudderMode_SelectionChanged" Height="22" Padding="2,0,0,0" BorderThickness="0,0,0,0" MinHeight="20">
+                                                <ComboBox x:Name="combo_rudderMode" SelectedValuePath="Tag" Width="106" SelectedValue="{Binding Plugin.Settings.rudderMode, Mode=TwoWay}" SelectionChanged="RudderMode_SelectionChanged" Height="22" Padding="2,0,0,0" BorderThickness="0,0,0,0" MinHeight="20" ToolTip="Rudder Mode: Airplane, Helicopter, or Airplane with Toe Brake">
                                                     <ComboBoxItem Content="Airplane">
                                                         <ComboBoxItem.Tag>
                                                             <sys:UInt32>0</sys:UInt32>
@@ -529,19 +524,82 @@
                                                             <sys:UInt32>1</sys:UInt32>
                                                         </ComboBoxItem.Tag>
                                                     </ComboBoxItem>
+                                                    <ComboBoxItem Content="Airplane with Toe Brake">
+                                                        <ComboBoxItem.Tag>
+                                                            <sys:UInt32>2</sys:UInt32>
+                                                        </ComboBoxItem.Tag>
+                                                    </ComboBoxItem>
+                                                    <ComboBoxItem Content="Toe Brake">
+                                                        <ComboBoxItem.Tag>
+                                                            <sys:UInt32>3</sys:UInt32>
+                                                        </ComboBoxItem.Tag>
+                                                    </ComboBoxItem>
                                                 </ComboBox>
-                                                <styles:SHButtonPrimary x:Name="btn_rudder_initialize" Click="btn_rudder_initialize_Click" Width="56" Height="22" Content="Rudder" Margin="6,0,0,0" HorizontalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" HorizontalContentAlignment="Center" MinHeight="20" />
+                                                <styles:SHButtonPrimary x:Name="btn_rudder_initialize" Click="btn_rudder_initialize_Click" Width="48" Height="22" Content="Rudder" Margin="4,0,0,0" HorizontalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" HorizontalContentAlignment="Center" MinHeight="20" />
                                             </StackPanel>
+                                            
+                                            <!-- Mode 2/3 Brake Switch / Status Button -->
+                                            <Button x:Name="btn_rudder_brake" Click="btn_rudder_brake_Click" Content="Toe Brake: OFF (Yaw)" Width="158" Height="22" Margin="0,4,0,0" Background="#33FF9900" Foreground="#FFAA33" BorderBrush="#66FF9900" BorderThickness="1" FontSize="9.5" FontWeight="SemiBold" FontFamily="Arial" Cursor="Hand" ToolTip="Toggle between Yaw Steering and Toe Braking (SimHub Action: 'Toe Brake')" HorizontalAlignment="Center"/>
+                                            
                                             <!-- Rudder Status & Operation Monitor Box -->
-                                            <TextBox x:Name="text_rudder_log" HorizontalAlignment="Center" VerticalAlignment="Top" Text="Rudder Monitor Ready..." Width="158" Foreground="#00FFCC" Height="365" Margin="0,8,0,0" FontSize="9" FontFamily="Consolas" Background="#EE141720" BorderBrush="#3300FFCC" BorderThickness="1" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="4"/>
+                                            <TextBox x:Name="text_rudder_log" HorizontalAlignment="Center" VerticalAlignment="Top" Text="Rudder Monitor Ready..." Width="158" Foreground="#00FFCC" Height="314" Margin="0,6,0,0" FontSize="9" FontFamily="Consolas" Background="#EE141720" BorderBrush="#3300FFCC" BorderThickness="1" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="4"/>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
                                 <StackPanel Width="540" Height="900" Margin="3,0,0,0">
-                                    <StackPanel Width="540" Height="282" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="1,0,0,0">
-                                        <localFunction:CurveTab_Rudder x:Name="CurveRudderForce_Tab" SettingsChanged="Tab_SettingsChanged" ConfigChanged="Rudder_ConfigChanged" CalculationChanged="Tab_CalculationChanged"/>
-                                    </StackPanel>
-                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="235" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,4,0,0">
+                                    <TabControl HorizontalAlignment="Left" Height="310" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent">
+                                        <TabControl.Resources>
+                                            <Style TargetType="TabItem">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="TabItem">
+                                                            <Border Name="Border" BorderThickness="0,0,0,0" BorderBrush="Gainsboro" CornerRadius="5,5,5,5" Margin="0,0,2,0">
+                                                                <ContentPresenter x:Name="ContentSite"  
+                                                                    VerticalAlignment="Center"  
+                                                                    HorizontalAlignment="Left"  
+                                                                    ContentSource="Header"  
+                                                                    Margin="0,0"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsSelected" Value="True">
+                                                                    <Setter TargetName="Border" Property="Background" Value="#7F4E4E4E" />
+                                                                    <Setter Property="TextElement.Foreground" Value="#FFFFFFFF" />
+                                                                </Trigger>
+                                                                <Trigger Property="IsSelected" Value="False">
+                                                                    <Setter TargetName="Border" Property="Background" Value="#334E4E4E" />
+                                                                    <Setter Property="TextElement.Foreground" Value="#33FFFFFF" />
+                                                                </Trigger>
+                                                                <MultiTrigger>
+                                                                    <MultiTrigger.Conditions>
+                                                                        <Condition Property="IsMouseOver" SourceName="Border" Value="True"/>
+                                                                        <Condition Property="IsSelected" Value="False"/>
+                                                                    </MultiTrigger.Conditions>
+                                                                    <Setter TargetName="Border" Property="Background" Value="#4C4E4E4E" />
+                                                                </MultiTrigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </TabControl.Resources>
+                                        <TabItem Width="268" Height="30" Padding="0,0,0,0">
+                                            <TabItem.Header>
+                                                <Border Width="268" Height="30" Margin="0,0,0,0">
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TextForceCurveAdjustment, 'RUDDER FORCE CURVE'}" FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="268" />
+                                                </Border>
+                                            </TabItem.Header>
+                                            <localFunction:CurveTab_Rudder x:Name="CurveRudderForce_Tab" SettingsChanged="Tab_SettingsChanged" ConfigChanged="Rudder_ConfigChanged" CalculationChanged="Tab_CalculationChanged"/>
+                                        </TabItem>
+                                        <TabItem x:Name="rudderJoystickTab" Width="268" Height="30" Padding="0,0,0,0">
+                                            <TabItem.Header>
+                                                <Border Width="268" Height="30" Margin="0,0,0,0">
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TextJoystickMapping, 'JOYSTICK MAPPING'}" FontFamily="Arial Black" FontSize="10" Height="30" Width="268" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" />
+                                                </Border>
+                                            </TabItem.Header>
+                                            <localFunction:CurveTab_RudderJoystickMapping x:Name="RudderJoystick_Tab" ConfigChanged="Rudder_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
+                                        </TabItem>
+                                    </TabControl>
+                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="208" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,5,0,0">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
                                                 <Setter Property="Template">
@@ -832,12 +890,11 @@
                                                 
                                                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
                                                     <TextBlock Text="Target:" FontFamily="Arial" FontSize="8.5" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                    <ComboBox x:Name="combo_wifi_channel" SelectedValuePath="Tag" Width="58" Height="20" FontSize="8.5" VerticalAlignment="Center" Padding="3,0">
+                                                    <ComboBox x:Name="combo_wifi_channel" SelectedValuePath="Tag" Width="58" Height="20" FontSize="8.5" VerticalAlignment="Center" Padding="3,0" IsEnabled="False" ToolTip="Recommended channel from the last scan (apply it from System &gt; Wireless)">
                                                         <ComboBoxItem Content="Ch 1" Tag="1"/>
                                                         <ComboBoxItem Content="Ch 6" Tag="6"/>
                                                         <ComboBoxItem Content="Ch 11" Tag="11" IsSelected="True"/>
                                                     </ComboBox>
-                                                    <Button x:Name="btn_apply_wifi_channel" Click="btn_apply_wifi_channel_Click" Content="Apply" Width="54" Height="20" Margin="5,0,0,0" Background="#3300E676" Foreground="#00E676" BorderBrush="#5500E676" BorderThickness="1" FontSize="8.5" FontFamily="Arial" FontWeight="Bold" Cursor="Hand" ToolTip="Broadcast new Wi-Fi channel to pedals and switch master radio"/>
                                                 </StackPanel>
                                             </DockPanel>
 
@@ -854,9 +911,9 @@
                         </StackPanel>
                     </Border>
                 </TabItem>
-                <TabItem x:Name="Tab_System" Width="200" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <TabItem x:Name="Tab_System" Width="191" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
                     <TabItem.Header>
-                        <Border  Width="200" Height="40" Margin="0,0,0,0" >
+                        <Border  Width="191" Height="40" Margin="0,0,0,0" >
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Width="26" Height="26" Source="{StaticResource Settings}" />
                                 <Label Content="{SLoc DIYFFBPedalPlugin_TextSystem, 'SYSTEM'}"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
@@ -925,7 +982,7 @@
                                     </Border>
                                 </StackPanel>
                                 <StackPanel Width="540" Height="900" Margin="3,0,0,0">
-                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="213" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent">
+                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="325" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
                                                 <Setter Property="Template">
@@ -985,11 +1042,19 @@
                                             </TabItem.Header>
                                             <localFunction:SystemSetting_License x:Name="SystemLicense_Tab" btn_test_Click_event="SystemLicense_Tab_btn_test_Click_event"/>
                                         </TabItem>
+                                        <TabItem x:Name="TabItem_Wireless" Width="120" Height="30" Padding="0,0,0,0" >
+                                            <TabItem.Header>
+                                                <Border  Width="120" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="Wireless"  FontFamily="Arial Black" FontSize="10" Height="30" Width="120" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                </Border>
+                                            </TabItem.Header>
+                                            <localFunction:SystemSetting_Wireless x:Name="SystemWireless_Tab"/>
+                                        </TabItem>
 
                                     </TabControl>
 
 
-                                    <StackPanel Width="540" Height="281" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="1,3,0,0">
+                                    <StackPanel Width="540" Height="281" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,5,0,0">
                                         <Border  HorizontalAlignment="Left" Height="281" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="5,5,5,5">
                                             <StackPanel HorizontalAlignment="Left" Height="281" VerticalAlignment="Top" Width="540" Grid.RowSpan="2" Grid.ColumnSpan="3" Grid.Row="6" Grid.Column="1">
                                                 <StackPanel HorizontalAlignment="Center" Height="25" VerticalAlignment="Top" Width="540" Orientation="Horizontal">
@@ -1006,6 +1071,25 @@
                                     </StackPanel>
                                 </StackPanel>
                             </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </TabItem>
+                <TabItem x:Name="Tab_LivePlot" Width="191" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <TabItem.Header>
+                        <Border Width="191" Height="40" Margin="0,0,0,0">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="📈" FontSize="22" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <Label Content="LIVE PLOT" FontFamily="Arial Black" FontSize="24" Height="40" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                    </TabItem.Header>
+
+                    <Border HorizontalAlignment="Left" Height="860" VerticalAlignment="Top" Width="770" CornerRadius="5,5,5,5" Margin="0,3,0,0">
+                        <StackPanel Height="905" Width="770" HorizontalAlignment="Left" VerticalAlignment="Top">
+                            <Canvas Height="6" Width="764" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Margin="0,1,0,1">
+                                <Line X1="2" Y1="3" X2="764" Y2="3" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="2" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
+                            </Canvas>
+                            <localFunction:LivePlot_ExtendedState x:Name="LivePlotSection" HorizontalAlignment="Left" Width="764"/>
                         </StackPanel>
                     </Border>
                 </TabItem>

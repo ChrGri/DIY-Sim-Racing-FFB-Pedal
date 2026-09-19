@@ -48,12 +48,13 @@ namespace DiyFfbPedal
                         Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT;
                         for (uint i = 0; i < 3; i++)
                         {
-                            if (Plugin._calculations.pedalWirelessStatus[(uint)i] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
+                            if (Plugin.Settings.Pedal_ESPNow_Sync_flag[i] && Plugin._calculations.pedalWirelessStatus[(uint)i] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
                             {
                                 Plugin._calculations.pedalWirelessStatus[(uint)i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
                             }
 
                         }
+                        Plugin.SendBridgeWirelessSyncConfig();
                         //ToastNotification("Pedal Wireless Bridge", "Connection initialized");
                         //updateTheGuiFromConfig();
                     }
@@ -255,7 +256,14 @@ namespace DiyFfbPedal
                     Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT;
                     for (int i = 0; i < 3; i++)
                     {
-                        Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
+                        if (Plugin.Settings.Pedal_ESPNow_Sync_flag[i])
+                        {
+                            Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
+                        }
+                        else
+                        {
+                            Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                        }
                     }
                 }
                 else

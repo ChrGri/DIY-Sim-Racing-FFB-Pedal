@@ -20,6 +20,8 @@ namespace DiyFfbPedal.UIFunction
     /// </summary>
     public partial class AssignmentConfigurationWindow : Window
     {
+        public static bool IsOpen { get; set; } = false;
+
         public class PedalItem
         {
             public string Name { get; set; }
@@ -37,6 +39,8 @@ namespace DiyFfbPedal.UIFunction
         public AssignmentConfigurationWindow(DIY_FFB_Pedal Plugin)
         {
             InitializeComponent();
+            this.Loaded += (s, e) => { IsOpen = true; };
+            this.Closed += (s, e) => { IsOpen = false; };
             //this.Loaded += Window_Loaded;
             _plugin = Plugin;
             

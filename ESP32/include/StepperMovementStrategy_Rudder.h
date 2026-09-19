@@ -20,6 +20,8 @@ static float s_filteredSyncForce_N = 0.0f;
 static float s_filteredPilotForce_N = 0.0f;
 static float s_smoothedSyncTargetPos_01 = 0.50f;
 static bool s_wasRudderActive = false;
+static bool s_prevBrakeStatus = false;
+static float s_couplingBlendFactor = 1.0f; // 1.0 = rigid yaw coupling, 0.0 = decoupled toe braking
 
 /**
  * @brief Resets all virtual admittance states and filters for rudder flight
@@ -27,6 +29,8 @@ static bool s_wasRudderActive = false;
  */
 inline void ResetRudderStrategyState() {
   s_wasRudderActive = false;
+  s_prevBrakeStatus = false;
+  s_couplingBlendFactor = 1.0f;
   g_vRudderModelPos_01 = 0.50f;
   g_vRudderModelVel_mps = 0.0f;
   s_activeCenterPos_01 = 0.50f;
@@ -141,14 +145,45 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   s_filteredSyncForce_N = (sync_alpha * cleanSyncForce_N) +
                           ((1.0f - sync_alpha) * s_filteredSyncForce_N);
 
-  // 1. Direct opposing push-pull reaction force (cancels common-mode foot pressure)
-  float rudderPedalOpposingForce_N = -1.0f * s_filteredSyncForce_N;
+  // Pilot Applied Force & Filtering (computed early for bilateral coupling decisions)
+  float rawPilotForce_N = (loadCellReadingKg_fl32 * GRAVITY_N_KG);
+  float cleanPilotForce_N =
+      (rawPilotForce_N > 1.5f) ? (rawPilotForce_N - 1.5f) : 0.0f;
 
-  // Real-time kinematic position coupling (x_R = 1.0 - x_L) with continuous
-  // trajectory smoothing
+  const float PILOT_FORCE_TAU = 0.025f;
+  float pilot_alpha = 1.0f - expf(-dt_s / PILOT_FORCE_TAU);
+  s_filteredPilotForce_N = (pilot_alpha * cleanPilotForce_N) +
+                           ((1.0f - pilot_alpha) * s_filteredPilotForce_N);
+  calc_st->currentPedalForce_N_fl32 = s_filteredPilotForce_N;
+
+  // Detect Toe Brake (Differential Braking) mode
+  bool isToeBrakeMode = (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_TOE_BRAKE) ||
+                        (calc_st != nullptr && calc_st->rudderBrakeStatus_b);
+
+  if (isToeBrakeMode != s_prevBrakeStatus) {
+    s_prevBrakeStatus = isToeBrakeMode;
+    s_filteredSyncForce_N = 0.0f;
+    s_smoothedSyncTargetPos_01 = g_vRudderModelPos_01;
+  }
+
+  // Continuous Blend Factor (250ms exponential crossfade eliminating mechanical jolt/kick)
+  float targetBlend = isToeBrakeMode ? 0.0f : 1.0f;
+  if (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_TOE_BRAKE) {
+    s_couplingBlendFactor = 0.0f;
+  } else {
+    const float BLEND_TAU = 0.25f;
+    float blend_alpha = 1.0f - expf(-dt_s / BLEND_TAU);
+    s_couplingBlendFactor += blend_alpha * (targetBlend - s_couplingBlendFactor);
+    s_couplingBlendFactor = constrain(s_couplingBlendFactor, 0.0f, 1.0f);
+  }
+
+  // 1. Direct opposing push-pull reaction force & real-time kinematic coupling
+  float rudderPedalOpposingForce_N = 0.0f;
   float syncTrackingForce_N = 0.0f;
   float commonModeForce_N = 0.0f;
-  if (calc_st->syncPedalPositionRatio_fl32 >= 0.0f &&
+
+  if (s_couplingBlendFactor > 0.001f &&
+      calc_st->syncPedalPositionRatio_fl32 >= 0.0f &&
       calc_st->syncPedalPositionRatio_fl32 <= 1.0f) {
     float rawSyncTargetPos_01 = 1.0f - calc_st->syncPedalPositionRatio_fl32;
 
@@ -169,18 +204,36 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
 
     float posError = s_smoothedSyncTargetPos_01 - g_vRudderModelPos_01;
 
-    // 2. Rigid Bilateral Push-Pull Sync tracking gain (250 N: rock-solid feel without graininess)
-    float trackingGain_N = 250.0f;
-    syncTrackingForce_N = trackingGain_N * posError;
+    // 1. Opposing push-pull reaction force (scaled smoothly by blend factor)
+    rudderPedalOpposingForce_N = s_couplingBlendFactor * (-1.0f * s_filteredSyncForce_N);
 
-    // 3. Hard Common-Mode Lock on smoothed trajectory: Blocks pushing both pedals forward simultaneously
-    // For a rigid linkage: x_local + x_remote_smoothed = 1.0. If sum > 1.0, both feet are pushing forward!
+    // 2. Rigid Bilateral Push-Pull Sync tracking gain (scaled smoothly by blend factor)
+    float yawTracking_N = 250.0f * posError;
+    syncTrackingForce_N = s_couplingBlendFactor * yawTracking_N;
+    // Don't drive pedals deeper into physical limits to eliminate bilateral chatter at endstops:
+    if (g_vRudderModelPos_01 <= 0.005f) {
+      if (syncTrackingForce_N < 0.0f) syncTrackingForce_N = 0.0f;
+      if (rudderPedalOpposingForce_N < 0.0f) rudderPedalOpposingForce_N = 0.0f;
+    }
+    if (g_vRudderModelPos_01 >= 0.995f) {
+      if (syncTrackingForce_N > 0.0f) syncTrackingForce_N = 0.0f;
+      if (rudderPedalOpposingForce_N > 0.0f) rudderPedalOpposingForce_N = 0.0f;
+    }
+
+    // 3. Smooth Common-Mode Lock on smoothed trajectory: Blocks pushing both pedals forward simultaneously in yaw mode
     float remoteSmoothedPos_01 = 1.0f - s_smoothedSyncTargetPos_01;
     float commonModeCompression_01 = (g_vRudderModelPos_01 + remoteSmoothedPos_01) - 1.0f;
     if (commonModeCompression_01 > 0.003f) {
       const float K_COMMON_LOCK_N = 1200.0f; // Immense rigid linkage barrier stiffness
-      commonModeForce_N = -K_COMMON_LOCK_N * (commonModeCompression_01 - 0.003f);
+      commonModeForce_N = s_couplingBlendFactor * (-K_COMMON_LOCK_N * (commonModeCompression_01 - 0.003f));
     }
+  } else {
+    // Mode 3 (Toe Brake) / Decoupled State: Zero out all bilateral connection forces
+    rudderPedalOpposingForce_N = 0.0f;
+    syncTrackingForce_N = 0.0f;
+    commonModeForce_N = 0.0f;
+    s_filteredSyncForce_N = 0.0f;
+    s_smoothedSyncTargetPos_01 = g_vRudderModelPos_01;
   }
 
   // 4. Physical Geometry & Task-Space Conversion (Arc Length in Meters)
@@ -231,8 +284,9 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
     localStiffness_N_m = 15.0f;
     localStiffness_kg_step = 0.001f;
   } else {
-    // Mode 1: Fixed-Wing Airplane (Symmetric Aerodynamic Centering Spring)
-    float deltaPos = g_vRudderModelPos_01 - s_activeCenterPos_01;
+    // Mode 0: Fixed-Wing Airplane (Symmetric Centering Spring) & Mode 2/3: Toe Brake
+    float effectiveCenter_01 = s_activeCenterPos_01;
+    float deltaPos = g_vRudderModelPos_01 - effectiveCenter_01;
     float deadzone = constrain(rudderOffsets_st.deadzone_01, 0.0f, 0.1f);
 
     float effectiveDelta = 0.0f;
@@ -252,10 +306,20 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
     float u = constrain(effectiveDelta / halfTravel, -1.0f, 1.0f);
 
     float absU = fabsf(u);
-    float forceKg = 0.0f;
-    if (absU > 0.0001f) {
-      forceKg = centerForceKg + absU * (rudderMaxForceKg - centerForceKg);
+    float shapeFactor = absU;
+    if (rudderOffsets_st.centeringProfile_u8 == 1) {
+      // Progressive (pow(u, 1.8))
+      shapeFactor = powf(absU, 1.8f);
+    } else if (rudderOffsets_st.centeringProfile_u8 == 2) {
+      // S-Curve (0.5 * (1 - cos(u * PI)))
+      shapeFactor = 0.5f * (1.0f - cosf(absU * PI_FL32));
     }
+
+    float planeForceKg = (absU > 0.0001f) ? (centerForceKg + shapeFactor * (rudderMaxForceKg - centerForceKg)) : 0.0f;
+    float brakeForceKg = shapeFactor * rudderMaxForceKg;
+    float forceKg = (s_couplingBlendFactor * planeForceKg) +
+                    ((1.0f - s_couplingBlendFactor) * brakeForceKg);
+
     springForce_N = (u > 0.0f ? 1.0f : (u < 0.0f ? -1.0f : 0.0f)) * forceKg * GRAVITY_N_KG;
 
     float gradStiffness_N_m =
@@ -300,16 +364,8 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
       (g_smoothedRudderEffectVel_mps * idealBaseDamping_Ns_m) +
       (g_smoothedRudderEffectAcc_mps2 * virtualMass_kg);
 
-  // 7. Pilot Applied Force & Filtering
-  float rawPilotForce_N = (loadCellReadingKg_fl32 * GRAVITY_N_KG);
-  float cleanPilotForce_N =
-      (rawPilotForce_N > 1.5f) ? (rawPilotForce_N - 1.5f) : 0.0f;
+  // 7. Pilot Applied Force & Filtering (already computed above for bilateral coupling decisions)
 
-  const float PILOT_FORCE_TAU = 0.025f;
-  float pilot_alpha = 1.0f - expf(-dt_s / PILOT_FORCE_TAU);
-  s_filteredPilotForce_N = (pilot_alpha * cleanPilotForce_N) +
-                           ((1.0f - pilot_alpha) * s_filteredPilotForce_N);
-  calc_st->currentPedalForce_N_fl32 = s_filteredPilotForce_N;
 
   // 8. Friction and Damping Forces
   float viscousDamping_Ns_m = idealBaseDamping_Ns_m;
@@ -322,7 +378,61 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
       dampingSlider = 45.0f; // Default 45% if unconfigured
     viscousDamping_Ns_m = 30.0f + (dampingSlider * 0.8f); // 34 to 110 N*s/m
   }
-  float dampingForce_N = viscousDamping_Ns_m * g_vRudderModelVel_mps;
+
+  // 9. Soft Endstops & Critical Barrier Damping (Eliminates violent chatter at limits)
+  float lowerTravelLimit_01 = 0.0f;
+  if (isToeBrakeMode && g_vRudderModelPos_01 >= (s_activeCenterPos_01 - 0.02f)) {
+    lowerTravelLimit_01 = s_activeCenterPos_01;
+  }
+  float upperTravelLimit_01 = 1.0f;
+  float softEndstopForce_N = 0.0f;
+  float endstopDamping_Ns_m = 0.0f;
+
+  float endstopStiffness_N_m =
+      endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32 * 1000.0f;
+  if (endstopStiffness_N_m < 5000.0f) endstopStiffness_N_m = 10000.0f;
+  float endstopCritDamping_Ns_m =
+      2.0f * sqrtf(virtualMass_kg * endstopStiffness_N_m);
+
+  float softEndstopTravel_m = (endstopBehavior_st.travelRange_mm_fl32 > 0.01f)
+                                  ? (endstopBehavior_st.travelRange_mm_fl32 * 0.001f)
+                                  : 0.0f;
+  float softEndstopTravel_01 = (totalTravel_m > 0.001f) ? (softEndstopTravel_m / totalTravel_m) : 0.0f;
+
+  if (softEndstopTravel_01 > 0.001f) {
+    // Progressive cushion zone before hard limit
+    float upperSoftThreshold_01 = upperTravelLimit_01 - softEndstopTravel_01;
+    if (g_vRudderModelPos_01 > upperSoftThreshold_01) {
+      float deflection_m = (g_vRudderModelPos_01 - upperSoftThreshold_01) * totalTravel_m;
+      float penetration_01 = constrain(deflection_m / softEndstopTravel_m, 0.0f, 1.0f);
+      softEndstopForce_N = (endstopStiffness_N_m * deflection_m) * (0.5f + 0.5f * penetration_01);
+      endstopDamping_Ns_m = 2.0f * endstopCritDamping_Ns_m * penetration_01;
+    }
+
+    float lowerSoftThreshold_01 = lowerTravelLimit_01 + softEndstopTravel_01;
+    if (g_vRudderModelPos_01 < lowerSoftThreshold_01) {
+      float deflection_m = (lowerSoftThreshold_01 - g_vRudderModelPos_01) * totalTravel_m;
+      float penetration_01 = constrain(deflection_m / softEndstopTravel_m, 0.0f, 1.0f);
+      softEndstopForce_N = -1.0f * (endstopStiffness_N_m * deflection_m) * (0.5f + 0.5f * penetration_01);
+      endstopDamping_Ns_m = 2.0f * endstopCritDamping_Ns_m * penetration_01;
+    }
+  }
+
+  // Clamping at physical limits with inelastic boundary restitution (v=0)
+  if (g_vRudderModelPos_01 >= upperTravelLimit_01) {
+    g_vRudderModelPos_01 = upperTravelLimit_01;
+    if (g_vRudderModelVel_mps > 0.0f) {
+      g_vRudderModelVel_mps = 0.0f;
+    }
+  } else if (g_vRudderModelPos_01 <= lowerTravelLimit_01) {
+    g_vRudderModelPos_01 = lowerTravelLimit_01;
+    if (g_vRudderModelVel_mps < 0.0f) {
+      g_vRudderModelVel_mps = 0.0f;
+    }
+  }
+
+  float dampingForce_N =
+      (viscousDamping_Ns_m + endstopDamping_Ns_m) * g_vRudderModelVel_mps;
 
   float coulombFriction_N =
       ((float)config_st->payloadPedalConfig_st.coulombFrictionIn0p1N_u8) * 0.1f;
@@ -335,26 +445,6 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   float frictionForce_N =
       coulombFriction_N * tanhf(g_vRudderModelVel_mps / VELOCITY_EPSILON_MPS);
 
-  // 9. Soft Endstops
-  // Note: calc_st->softEndstopMinStepperPos_i32 and calc_st->softEndstopMaxStepperPos_i32
-  // are already defined by pedalStartPosition and pedalEndPosition.
-  // Thus g_vRudderModelPos_01 spans 0.0 to 1.0 across the configured travel range.
-  float lowerTravelLimit_01 = 0.0f;
-  float upperTravelLimit_01 = 1.0f;
-  float softEndstopForce_N = 0.0f;
-  if (g_vRudderModelPos_01 > upperTravelLimit_01) {
-    float penetration_m =
-        (g_vRudderModelPos_01 - upperTravelLimit_01) * totalTravel_m;
-    softEndstopForce_N = endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32 *
-                         1000.0f * penetration_m;
-  } else if (g_vRudderModelPos_01 < lowerTravelLimit_01) {
-    float penetration_m =
-        (lowerTravelLimit_01 - g_vRudderModelPos_01) * totalTravel_m;
-    softEndstopForce_N = -1.0f *
-                         endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32 *
-                         1000.0f * penetration_m;
-  }
-
   // 10. Net Acceleration & Semi-Implicit Euler Integration
   float totalExternalForce_N =
       (loadCellReadingKg_fl32 * GRAVITY_N_KG) +
@@ -364,21 +454,104 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
 
   float netForce_N = totalExternalForce_N - springForce_N - dampingForce_N -
                      frictionForce_N - softEndstopForce_N;
+
+  // Inelastic boundary condition: normal reaction force prevents bouncing at hard endstops
+  if (g_vRudderModelPos_01 >= upperTravelLimit_01 && netForce_N > 0.0f) {
+    netForce_N = 0.0f;
+    g_vRudderModelVel_mps = 0.0f;
+  }
+  if (g_vRudderModelPos_01 <= lowerTravelLimit_01 && netForce_N < 0.0f) {
+    netForce_N = 0.0f;
+    g_vRudderModelVel_mps = 0.0f;
+  }
+
   float accel_mps2 = netForce_N / virtualMass_kg;
 
   g_vRudderModelVel_mps += accel_mps2 * dt_s;
-  float maxPedalVel_mps =
+  // --- 11. Velocity Choking & Regenerative EMF Governor ---
+  // Limit movement speed based on physical motor limits and regenerative braking constraints
+  float maxPhysicalSledVel_mps = 0.8f;
+  if (calc_st->stepsPerMotorRevolution_u32 > 0) {
+    maxPhysicalSledVel_mps = (float)MAXIMUM_STEPPER_SPEED_U32 * pitch_mm /
+                             (float)calc_st->stepsPerMotorRevolution_u32 * 0.001f;
+  }
+  float maxSledPos_m = max(maxSledPos_mm * 0.001f, 0.0001f);
+  float maxPedalArcVel_mps = maxPhysicalSledVel_mps * (totalTravel_m / maxSledPos_m);
+
+  float dynamicSpeedLimit =
       (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) ? 0.12f
                                                                  : 0.80f;
-  g_vRudderModelVel_mps =
-      constrain(g_vRudderModelVel_mps, -maxPedalVel_mps, maxPedalVel_mps);
+  dynamicSpeedLimit = min(dynamicSpeedLimit, maxPedalArcVel_mps);
+
+  // Regenerative Power & Back-EMF Clamping:
+  // Dynamically governs speed so regeneration <= 35W and motor RPM <= 3600 RPM.
+  float spindlePitch_mm = pitch_mm;
+
+  // Opposing forces opposing forward (v > 0) or backward (v < 0) pedal travel
+  float opposingForceForward_N = max(0.0f, springForce_N) + max(0.0f, softEndstopForce_N) +
+                                 fabsf(dampingForce_N) + max(0.0f, -rudderPedalOpposingForce_N) +
+                                 max(0.0f, -syncTrackingForce_N) + max(0.0f, -commonModeForce_N);
+
+  float opposingForceBackward_N = max(0.0f, -springForce_N) + max(0.0f, -softEndstopForce_N) +
+                                  fabsf(dampingForce_N) + max(0.0f, rudderPedalOpposingForce_N) +
+                                  max(0.0f, syncTrackingForce_N) + max(0.0f, commonModeForce_N);
+
+  // Calculate soft endstop penetration for cushioning
+  float upperPenetration_01 = 0.0f;
+  float lowerPenetration_01 = 0.0f;
+  if (softEndstopTravel_01 > 0.001f) {
+    float upperSoftThreshold_01 = upperTravelLimit_01 - softEndstopTravel_01;
+    if (g_vRudderModelPos_01 > upperSoftThreshold_01) {
+      upperPenetration_01 = constrain((g_vRudderModelPos_01 - upperSoftThreshold_01) / softEndstopTravel_01, 0.0f, 1.0f);
+    }
+    float lowerSoftThreshold_01 = lowerTravelLimit_01 + softEndstopTravel_01;
+    if (g_vRudderModelPos_01 < lowerSoftThreshold_01) {
+      lowerPenetration_01 = constrain((lowerSoftThreshold_01 - g_vRudderModelPos_01) / softEndstopTravel_01, 0.0f, 1.0f);
+    }
+  }
+
+  float effectivePosForward_01 = 1.0f + (upperPenetration_01 * (softEndstopTravel_m / totalTravel_m));
+  float effectivePosBackward_01 = 1.0f + (lowerPenetration_01 * (softEndstopTravel_m / totalTravel_m));
+
+  float maxRegenVelForward_mps = CalcRegenVelocityLimit(
+      opposingForceForward_N,
+      totalTravel_m,
+      maxSledPos_m,
+      spindlePitch_mm,
+      effectivePosForward_01,
+      softEndstopTravel_m
+  );
+
+  float maxRegenVelBackward_mps = CalcRegenVelocityLimit(
+      opposingForceBackward_N,
+      totalTravel_m,
+      maxSledPos_m,
+      spindlePitch_mm,
+      effectivePosBackward_01,
+      softEndstopTravel_m
+  );
+
+  float forwardSpeedLimit = min(dynamicSpeedLimit, maxRegenVelForward_mps);
+  float backwardSpeedLimit = min(dynamicSpeedLimit, maxRegenVelBackward_mps);
+  g_vRudderModelVel_mps = constrain(g_vRudderModelVel_mps, -backwardSpeedLimit, forwardSpeedLimit);
 
   g_vRudderModelPos_01 += (g_vRudderModelVel_mps * dt_s) / totalTravel_m;
-  g_vRudderModelPos_01 = constrain(g_vRudderModelPos_01, -0.05f, 1.05f);
 
-  // 11. Target Stepper Position Output
+  // Strict physical clamp to active travel range
+  if (g_vRudderModelPos_01 >= upperTravelLimit_01) {
+    g_vRudderModelPos_01 = upperTravelLimit_01;
+    if (g_vRudderModelVel_mps > 0.0f) g_vRudderModelVel_mps = 0.0f;
+  } else if (g_vRudderModelPos_01 <= lowerTravelLimit_01) {
+    g_vRudderModelPos_01 = lowerTravelLimit_01;
+    if (g_vRudderModelVel_mps < 0.0f) g_vRudderModelVel_mps = 0.0f;
+  }
+
+  // 12. Target Stepper Position Output: Strictly clamped to soft endstops
   float targetStepPos_fl32 = (float)calc_st->softEndstopMinStepperPos_i32 +
                              (g_vRudderModelPos_01 * travelSteps_cnt);
+  targetStepPos_fl32 = constrain(targetStepPos_fl32,
+                                 (float)calc_st->softEndstopMinStepperPos_i32,
+                                 (float)calc_st->softEndstopMaxStepperPos_i32);
 
   if (admittanceStates_pst != nullptr) {
     admittanceStates_pst->physicalPos_m = g_vRudderModelPos_01 * totalTravel_m;

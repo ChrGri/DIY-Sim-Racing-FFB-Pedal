@@ -153,6 +153,29 @@ namespace DiyFfbPedal
                                 DAP_state_basic_st* v_state = &pedalState_read_st;
                                 byte* p_state = (byte*)v_state;
                                 UInt16 pedalSelected = pedalState_read_st.payloadHeader_.PedalTag;
+                                // Ignore wireless data if wireless communication is disabled for this pedal
+                                if (pedalSelected < 3 && !Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalSelected])
+                                {
+                                    Plugin._calculations.pedalWirelessStatus[pedalSelected] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                                    Plugin._calculations.rssi[pedalSelected] = 0;
+                                    if (Plugin.Settings.vjoy_output_flag == 1 && Plugin._calculations._joystick != null)
+                                    {
+                                        switch (pedalSelected)
+                                        {
+                                            case 0:
+                                                Plugin._calculations._joystick.SetAxis(0, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RX);
+                                                break;
+                                            case 1:
+                                                Plugin._calculations._joystick.SetAxis(0, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RY);
+                                                break;
+                                            case 2:
+                                                Plugin._calculations._joystick.SetAxis(0, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RZ);
+                                                break;
+                                        }
+                                    }
+                                    return;
+                                }
+
                                 // payload type check
                                 bool check_payload_state_b = false;
                                 if (pedalState_read_st.payloadHeader_.payloadType == Constants.pedalStateBasicPayload_type)
@@ -324,6 +347,11 @@ namespace DiyFfbPedal
                                 DAP_state_extended_st* v_state = &pedalState_ext_read_st;
                                 byte* p_state = (byte*)v_state;
                                 UInt16 pedalSelected = pedalState_ext_read_st.payloadHeader_.PedalTag;
+
+                                if (pedalSelected < 3 && !Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalSelected])
+                                {
+                                    return;
+                                }
                                 // payload type check
                                 bool check_payload_state_b = false;
                                 if (pedalState_ext_read_st.payloadHeader_.payloadType == Constants.pedalStateExtendedPayload_type)
@@ -493,15 +521,26 @@ namespace DiyFfbPedal
                                     
                                     if (bridge_state.payloadBridgeState_.unassignedPedalCount > 0 && Plugin._calculations.unassignedPedalCount != bridge_state.payloadBridgeState_.unassignedPedalCount)
                                     {
-                                        
-                                        string tmp = bridge_state.payloadBridgeState_.unassignedPedalCount + " unassigned pedals founded!";
-                                        ToastNotification("New Pedal Detected", tmp);
+                                        int count = bridge_state.payloadBridgeState_.unassignedPedalCount;
+                                        string tmp = count == 1 ? "1 unassigned pedal detected." : $"{count} unassigned pedals detected.";
+                                        ToastNotification("New Pedal Detected", tmp, "Wireless Settings", () =>
+                                        {
+                                            NavigateToSystemWirelessTab();
+                                        });
                                     }
                                     Plugin._calculations.unassignedPedalCount = bridge_state.payloadBridgeState_.unassignedPedalCount;
 
                                     for (int pedalIDX = 0; pedalIDX < 3; pedalIDX++)
                                     {
-                                        Plugin._calculations.rssi[pedalIDX] = bridge_state.payloadBridgeState_.Pedal_RSSI_realtime[pedalIDX];
+                                        if (Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalIDX])
+                                        {
+                                            Plugin._calculations.rssi[pedalIDX] = bridge_state.payloadBridgeState_.Pedal_RSSI_realtime[pedalIDX];
+                                        }
+                                        else
+                                        {
+                                            Plugin._calculations.rssi[pedalIDX] = 0;
+                                            Plugin._calculations.pedalWirelessStatus[pedalIDX] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                                        }
                                         int macInitialAddress = pedalIDX * 6;
                                         for (int macIndex = 0; macIndex < 6; macIndex++)
                                         {

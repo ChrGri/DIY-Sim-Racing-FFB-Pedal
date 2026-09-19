@@ -160,5 +160,74 @@ namespace DiyFfbPedal
                 return false;
             }
         }
+        public async Task<bool> EraseEepromAsync(string comPort)
+        {
+            string esptoolPath;
+            try
+            {
+                esptoolPath = ExtractEsptool();
+            }
+            catch (Exception ex)
+            {
+                OnOutputReceived?.Invoke(this, $"Failed to extract flasher: {ex.Message}");
+                return false;
+            }
+
+            // Perform 1200-bps touch and dynamically resolve the bootloader port (e.g. if COM35 switched to COM34)
+            string uploadPort = await TouchAndResolveBootloaderPortAsync(comPort);
+
+            // Erase the NVS / EEPROM partition (Offset 0x9000, Size 0x6000 covers 20KB/24KB)
+            string args = $"--chip esp32s3 --port {uploadPort} --baud 460800 --after hard-reset erase-region 0x9000 0x6000";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = esptoolPath,
+                Arguments = args,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            try
+            {
+                using (var process = new Process { StartInfo = psi })
+                {
+                    process.OutputDataReceived += (s, e) => { if (e.Data != null) OnOutputReceived?.Invoke(this, e.Data); };
+                    process.ErrorDataReceived += (s, e) => { if (e.Data != null) OnOutputReceived?.Invoke(this, "ERROR: " + e.Data); };
+
+                    OnOutputReceived?.Invoke(this, $"Starting EEPROM / NVS erase on {uploadPort} (0x9000 - 0xF000)...");
+                    process.Start();
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
+
+                    await Task.Run(() => process.WaitForExit());
+
+                    bool success = process.ExitCode == 0;
+                    if (success)
+                    {
+                        OnOutputReceived?.Invoke(this, "\n------------------------------------------------------------");
+                        OnOutputReceived?.Invoke(this, "SUCCESS: EEPROM / NVS erased successfully!");
+                        OnOutputReceived?.Invoke(this, "Device restarted to factory default state.");
+                        OnOutputReceived?.Invoke(this, "------------------------------------------------------------\n");
+                    }
+                    else
+                    {
+                        OnOutputReceived?.Invoke(this, "\n------------------------------------------------------------");
+                        OnOutputReceived?.Invoke(this, "TIP: If connection failed ('No serial data received'):");
+                        OnOutputReceived?.Invoke(this, "1. Press and hold the 'BOOT' button on the board.");
+                        OnOutputReceived?.Invoke(this, "2. Press and release the 'RST' button.");
+                        OnOutputReceived?.Invoke(this, "3. Release 'BOOT' and click 'Reset EEPROM' again.");
+                        OnOutputReceived?.Invoke(this, "------------------------------------------------------------\n");
+                    }
+                    return success;
+                }
+            }
+            catch (Exception ex)
+            {
+                OnOutputReceived?.Invoke(this, $"Exception: {ex.Message}");
+                return false;
+            }
+        }
     }
 }

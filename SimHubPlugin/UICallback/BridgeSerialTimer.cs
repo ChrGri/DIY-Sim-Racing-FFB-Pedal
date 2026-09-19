@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.Ports;
@@ -333,9 +333,22 @@ namespace DiyFfbPedal
                                     {
 
                                         bufferByteAssignedToStruct.AsSpan(srcBufferOffset_0, sizeof(DAP_state_extended_st)).Fill(true);
+                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_extended_st)).Fill(2);
                                         lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + sizeof(DAP_state_extended_st));
 
 										UInt16 pedalSelectedFromPacket_u16 = pedalState_ext_read_st.payloadHeader_.PedalTag;
+
+                                        if (pedalSelectedFromPacket_u16 < 3 && !Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalSelectedFromPacket_u16])
+                                        {
+                                            continue;
+                                        }
+
+                                        if (pedalSelectedFromPacket_u16 >= 0 && pedalSelectedFromPacket_u16 < 3 && Plugin != null && Plugin._calculations != null)
+                                        {
+                                            Plugin._calculations.pedalState_extended[pedalSelectedFromPacket_u16] = pedalState_ext_read_st;
+                                            Plugin._calculations.pedalState_extended_counter[pedalSelectedFromPacket_u16]++;
+                                            Plugin._calculations.OnExtendedStateReceived?.Invoke((int)pedalSelectedFromPacket_u16, pedalState_ext_read_st);
+                                        }
 										
                                         if (indexOfSelectedPedal_u == pedalSelectedFromPacket_u16)
                                         {
@@ -495,6 +508,29 @@ namespace DiyFfbPedal
                                         lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + sizeof(DAP_state_basic_st));
 										
 										UInt16 pedalSelectedFromPacket_u16 = pedalState_read_st.payloadHeader_.PedalTag;
+
+                                        // Ignore wireless data if wireless communication is disabled for this pedal
+                                        if (pedalSelectedFromPacket_u16 < 3 && !Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalSelectedFromPacket_u16])
+                                        {
+                                            Plugin._calculations.pedalWirelessStatus[pedalSelectedFromPacket_u16] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                                            Plugin._calculations.rssi[pedalSelectedFromPacket_u16] = 0;
+                                            if (Plugin.Settings.vjoy_output_flag == 1 && Plugin._calculations._joystick != null)
+                                            {
+                                                switch (pedalSelectedFromPacket_u16)
+                                                {
+                                                    case 0:
+                                                        Plugin._calculations._joystick.SetAxis(0, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RX);
+                                                        break;
+                                                    case 1:
+                                                        Plugin._calculations._joystick.SetAxis(0, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RY);
+                                                        break;
+                                                    case 2:
+                                                        Plugin._calculations._joystick.SetAxis(0, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RZ);
+                                                        break;
+                                                }
+                                            }
+                                            continue;
+                                        }
 										
                                         // write vJoy data
                                         Pedal_position_reading[pedalSelectedFromPacket_u16] = pedalState_read_st.payloadPedalBasicState_.joystickOutput_u16;
@@ -845,7 +881,15 @@ namespace DiyFfbPedal
                                         //Bridge_RSSI = bridge_state.payloadBridgeState_.Pedal_RSSI;
                                         for (int pedalIDX = 0; pedalIDX < 3; pedalIDX++)
                                         {
-                                            Plugin._calculations.rssi[pedalIDX] = bridge_state.payloadBridgeState_.Pedal_RSSI_realtime[pedalIDX];
+                                            if (Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalIDX])
+                                            {
+                                                Plugin._calculations.rssi[pedalIDX] = bridge_state.payloadBridgeState_.Pedal_RSSI_realtime[pedalIDX];
+                                            }
+                                            else
+                                            {
+                                                Plugin._calculations.rssi[pedalIDX] = 0;
+                                                Plugin._calculations.pedalWirelessStatus[pedalIDX] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                                            }
                                         }
 
                                         string connection_tmp = "";

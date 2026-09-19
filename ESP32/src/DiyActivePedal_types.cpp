@@ -10,7 +10,7 @@ static const float s_absScaling_fl32 = 50.0f;
 
 #define WAIT_TIME_IN_MS_TO_ACQUIRE_GLOBAL_STRUCT_U32 500U
 
-static const uint32_t s_eepromOffset_u32 = ASSIGNMENT_EEPROM_OFFSET_U32 + sizeof(DapAssignmentReg_t) + ASSIGNMENT_EEPROM_OFFSET_U32/*+(DAP_VERSION_CONFIG_U8-128) * sizeof(DapConfig_t) % (2048-sizeof(DapConfig_t))*/;
+static const uint32_t s_eepromOffset_u32 = DAP_CONFIG_EEPROM_OFFSET_U32;
 
 void DapConfig_t::initializeDefaults()
 {

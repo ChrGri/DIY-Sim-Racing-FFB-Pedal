@@ -36,6 +36,11 @@ namespace DiyFfbPedal
 
         private void Function_Tab_seleciton_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (e.Source is TabControl)
+            {
+                bool isLivePlot = Tab_LivePlot != null && Tab_LivePlot.IsSelected;
+                LivePlotSection?.OnTabSelected(isLivePlot);
+            }
         }
 
 

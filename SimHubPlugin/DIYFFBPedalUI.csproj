@@ -224,6 +224,9 @@
     <Compile Include="UIFunction\AssignmentConfigurationWindow.xaml.cs">
       <DependentUpon>AssignmentConfigurationWindow.xaml</DependentUpon>
     </Compile>
+        <Compile Include="UIFunction\CurveTab_RudderJoystickMapping.xaml.cs">
+      <DependentUpon>CurveTab_RudderJoystickMapping.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\CurveTab_JoystickMapping.xaml.cs">
       <DependentUpon>CurveTab_JoystickMapping.xaml</DependentUpon>
     </Compile>
@@ -312,6 +315,9 @@
     <Compile Include="UIFunction\SerialMonitor.xaml.cs">
       <DependentUpon>SerialMonitor.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\LivePlot_ExtendedState.xaml.cs">
+      <DependentUpon>LivePlot_ExtendedState.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\SettingSection_Pedal.xaml.cs">
       <DependentUpon>SettingSection_Pedal.xaml</DependentUpon>
     </Compile>
@@ -323,6 +329,9 @@
     </Compile>
     <Compile Include="UIFunction\SystemSetting_License.xaml.cs">
       <DependentUpon>SystemSetting_License.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UIFunction\SystemSetting_Wireless.xaml.cs">
+      <DependentUpon>SystemSetting_Wireless.xaml</DependentUpon>
     </Compile>
     <Compile Include="UIFunction\SystemSetting_OTA.xaml.cs">
       <DependentUpon>SystemSetting_OTA.xaml</DependentUpon>
@@ -360,6 +369,8 @@
     <Compile Include="VariablesStruct\payloadHeader.cs" />
     <Compile Include="VariablesStruct\payloadPedalAction.cs" />
     <Compile Include="VariablesStruct\payloadPedalConfig.cs" />
+    <Compile Include="VariablesStruct\payloadMacAddresses.cs" />
+    <Compile Include="VariablesStruct\DAP_mac_addresses_st.cs" />
     <Compile Include="VariablesStruct\payloadServoConfig.cs" />
     <Compile Include="VariablesStruct\payloadPedalState_Basic.cs" />
     <Compile Include="VariablesStruct\payloadPedalState_Extended.cs" />
@@ -404,6 +415,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\AssignmentConfigurationWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+        <Page Include="UIFunction\CurveTab_RudderJoystickMapping.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -527,6 +542,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="UIFunction\LivePlot_ExtendedState.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="UIFunction\SettingSection_Pedal.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -540,6 +559,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\SystemSetting_License.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\SystemSetting_Wireless.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

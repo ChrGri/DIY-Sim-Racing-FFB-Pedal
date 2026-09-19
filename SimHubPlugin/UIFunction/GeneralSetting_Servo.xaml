@@ -58,7 +58,7 @@
     <!-- Outer scroll so everything is reachable when panel is small -->
     <ScrollViewer VerticalScrollBarVisibility="Auto"
                   HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Margin="4,4,4,8">
+        <StackPanel Margin="4,0,4,8">
 
             <!-- ??? Servo Settings (sliders) ??????????????????????????????? -->
             <Border Background="#7F4E4E4E"

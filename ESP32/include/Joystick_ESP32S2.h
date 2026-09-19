@@ -101,7 +101,9 @@ class Joystick_ : public USBHIDDevice {
     int buildAndSetAxisValue(bool includeAxis, int32_t axisValue, int32_t axisMinimum, int32_t axisMaximum, uint8_t dataLocation[]);
     int buildAndSetSimulationValue(bool includeValue, int32_t value, int32_t valueMinimum, int32_t valueMaximum, uint8_t dataLocation[]);
     uint16_t _onGetDescriptor(uint8_t* buffer) override;
+    uint16_t _onGetFeature(uint8_t report_id, uint8_t* buffer, uint16_t len) override;
     void _onOutput(uint8_t report_id, const uint8_t* buffer, uint16_t len) override;
+    uint16_t fillReport(uint8_t *data, uint16_t maxLen);
 
   public:
     uint8_t *customHidReportDescriptor;

@@ -131,6 +131,7 @@ public:
     int8_t moveTo(int32_t position, bool blocking = false);
     void moveSlowlyToPos(int32_t targetPos_ui32);
     void moveToPosWithSpeed(int32_t targetPos_ui32, uint32_t speedInHz_u32);
+    void moveToPosWithSpeedBlocking(int32_t targetPos_ui32, uint32_t speedInHz_u32);
     void moveToWithSpeed(int32_t targetPos_i32, uint32_t speed_u32);
     void setSpeedLive(uint32_t speedInHz_u32);
     void setSpeed(uint32_t speedInStepsPerSecond);

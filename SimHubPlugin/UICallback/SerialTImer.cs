@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿﻿﻿﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.Ports;
@@ -252,12 +252,14 @@ namespace DiyFfbPedal
                         List<int> indices_sof_basic_struct = FindAllOccurrences(buffer_appended[pedalSelected], STARTOFFRAME_BASIC_STRUCT, currentBufferLength);
                         List<int> indices_sof_config = FindAllOccurrences(buffer_appended[pedalSelected], STARTOFFRAME_CONFIG, currentBufferLength);
                         List<int> indices_sof_servo_config = FindAllOccurrences(buffer_appended[pedalSelected], STARTOFFRAME_SERVO_CONFIG, currentBufferLength);
+                        List<int> indices_sof_mac_addresses = FindAllOccurrences(buffer_appended[pedalSelected], STARTOFFRAME_MAC_ADDRESSES, currentBufferLength);
                         List<int> indices_eof = FindAllOccurrences(buffer_appended[pedalSelected], ENDOFFRAMCHAR, currentBufferLength);
 
                         var validPairsExtendedStruct = new List<Tuple<int, int>>();
                         var validPairsBasicStruct = new List<Tuple<int, int>>();
                         var validPairsConfig = new List<Tuple<int, int>>();
                         var validPairsServoConfig = new List<Tuple<int, int>>();
+                        var validPairsMacAddresses = new List<Tuple<int, int>>();
 
                         bool sofHasBeenReceivedEofNotYet = false;
                         byte[] bufferByteAssignedToStruct_class = serial_bufferByteAssignedToStruct_class;
@@ -304,6 +306,16 @@ namespace DiyFfbPedal
                             ref sofHasBeenReceivedEofNotYet,
                             bufferByteAssignedToStruct_class,
                             5); // classId=5: servo config (1=basic, 2=extended, 3=config, 4=bridge)
+
+                        // Search for the mac addresses struct
+                        FindValidMessagePairs(
+                            indices_sof_mac_addresses,
+                            indices_eof,
+                            sizeof(DAP_mac_addresses_st),
+                            validPairsMacAddresses,
+                            ref sofHasBeenReceivedEofNotYet,
+                            bufferByteAssignedToStruct_class,
+                            6);
 
                         // check if at least SOF1 byte was received, but EOF was not for last packet
                         List<int> indices_sof1 = FindAllOccurrences(buffer_appended[pedalSelected], STARTOFFRAMCHAR_SOF_byte0, currentBufferLength);
@@ -360,9 +372,43 @@ namespace DiyFfbPedal
 
                         // Destination array
                         byte[] destinationArray = new byte[destBufferSize];
-                        
-                        
                         int lastTrueElementIndex = 0;
+
+                        // mac addresses struct
+                        for (int pairId = 0; pairId < validPairsMacAddresses.Count; pairId++)
+                        {
+                            int srcBufferOffset_0 = validPairsMacAddresses[pairId].Item1;
+                            int srcBufferOffset_1 = validPairsMacAddresses[pairId].Item2;
+                            Buffer.BlockCopy(buffer_appended[pedalSelected], srcBufferOffset_0, destinationArray, 0, sizeof(DAP_mac_addresses_st));
+                            int destBuffLength = srcBufferOffset_1 - srcBufferOffset_0;
+                            if (destBuffLength == sizeof(DAP_mac_addresses_st))
+                            {
+                                DAP_mac_addresses_st macs = getMacAddressesFromBytes(destinationArray);
+                                DAP_mac_addresses_st* pMacs = &macs;
+                                byte* pBytes = (byte*)pMacs;
+                                if (macs.payloadHeader_.payloadType == Constants.macAddressesPayload_type &&
+                                    Plugin.checksumCalc(pBytes, sizeof(payloadHeader) + sizeof(payloadMacAddresses)) == macs.payloadFooter_.checkSum)
+                                {
+                                    bufferByteAssignedToStruct.AsSpan(srcBufferOffset_0, sizeof(DAP_mac_addresses_st)).Fill(true);
+                                    lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + sizeof(DAP_mac_addresses_st));
+
+                                    string ownMac = macs.payloadMacAddresses_.GetOwnMacAddressString();
+                                    byte ownNode = macs.payloadMacAddresses_.ownNodeType_u8;
+                                    if (ownNode < 4 && !string.IsNullOrWhiteSpace(ownMac))
+                                    {
+                                        if (Plugin.Settings.AssignedPedalMac == null || Plugin.Settings.AssignedPedalMac.Length < 4)
+                                        {
+                                            Array.Resize(ref Plugin.Settings.AssignedPedalMac, 4);
+                                        }
+                                        Plugin.Settings.AssignedPedalMac[ownNode] = ownMac;
+                                        if (ownNode < 3 && Plugin._calculations?.unassignedPedalMacaddress != null && Plugin._calculations.unassignedPedalMacaddress.Length > ownNode)
+                                        {
+                                            Plugin._calculations.unassignedPedalMacaddress[ownNode] = macs.payloadMacAddresses_.GetMacAddress(ownNode);
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
 
 
@@ -409,7 +455,15 @@ namespace DiyFfbPedal
                                     {
 
                                         bufferByteAssignedToStruct.AsSpan(srcBufferOffset_0, sizeof(DAP_state_extended_st)).Fill(true);
+                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_extended_st)).Fill(2);
                                         lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + sizeof(DAP_state_extended_st));
+
+                                        if (pedalSelected >= 0 && pedalSelected < 3 && Plugin != null && Plugin._calculations != null)
+                                        {
+                                            Plugin._calculations.pedalState_extended[pedalSelected] = pedalState_ext_read_st;
+                                            Plugin._calculations.pedalState_extended_counter[pedalSelected]++;
+                                            Plugin._calculations.OnExtendedStateReceived?.Invoke(pedalSelected, pedalState_ext_read_st);
+                                        }
 
                                         if (indexOfSelectedPedal_u == pedalSelected)
                                         {
@@ -624,7 +678,8 @@ namespace DiyFfbPedal
                                         Plugin.rawPedalPos[pedalSelected] = pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16;
                                         if (Tab_Rudder != null && Tab_Rudder.IsSelected)
                                         {
-                                            if (CurveRudderForce_Tab != null)
+                                            bool isRudderActive = Plugin != null && (Plugin.Rudder_status || Plugin._calculations.Rudder_status);
+                                            if (isRudderActive)
                                             {
                                                 uint leftIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 0) ? (uint)Plugin.Rudder_Pedal_idx[0] : 1;
                                                 uint rightIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 1) ? (uint)Plugin.Rudder_Pedal_idx[1] : 2;
@@ -632,8 +687,52 @@ namespace DiyFfbPedal
                                                 double rightNorm = (double)Plugin.rawPedalPos[rightIdx] / 65535.0;
                                                 double leftRel = Math.Max(0.0, Math.Min(1.0, leftNorm));
                                                 double rightRel = Math.Max(0.0, Math.Min(1.0, rightNorm));
-                                                float rudderRatio = (float)Math.Max(0.0, Math.Min(1.0, 0.5 - 0.5 * leftRel + 0.5 * rightRel));
-                                                CurveRudderForce_Tab.UpdateLiveDeflection(rudderRatio);
+
+                                                if (CurveRudderForce_Tab != null)
+                                                {
+                                                    if (Plugin.Settings.rudderMode == 3 || (Plugin.Settings.rudderMode == 2 && (Plugin.Rudder_brake_status || (leftRel > 0.52 && rightRel > 0.52))))
+                                                    {
+                                                        float rightRatio = (float)rightRel;
+                                                        float leftRatio = (float)(1.0 - leftRel);
+                                                        CurveRudderForce_Tab.UpdateLiveDeflection(rightRatio, leftRatio);
+                                                    }
+                                                    else
+                                                    {
+                                                        float rudderRatio = (float)Math.Max(0.0, Math.Min(1.0, 0.5 + 0.5 * (rightRel - leftRel)));
+                                                        CurveRudderForce_Tab.UpdateLiveDeflection(rudderRatio, -1f);
+                                                    }
+                                                }
+
+                                                if (RudderJoystick_Tab != null)
+                                                {
+                                                    bool isToeBrakeMode = (Plugin.Settings.rudderMode == 3 || (Plugin.Settings.rudderMode == 2 && (Plugin.Rudder_brake_status || (leftRel > 0.52 && rightRel > 0.52))));
+                                                    if (isToeBrakeMode)
+                                                    {
+                                                        double toeRatio = (Plugin.Settings.rudderMode == 3)
+                                                            ? Math.Max(0.0, Math.Min(1.0, Math.Max(leftRel, rightRel)))
+                                                            : Math.Max(0.0, Math.Min(1.0, (Math.Max(leftRel, rightRel) - 0.5) * 2.0));
+                                                        RudderJoystick_Tab.UpdateYawState(0.5);
+                                                        RudderJoystick_Tab.UpdateToeBrakeState(toeRatio);
+                                                    }
+                                                    else
+                                                    {
+                                                        double rudderRatio = Math.Max(0.0, Math.Min(1.0, 0.5 + 0.5 * (rightRel - leftRel)));
+                                                        RudderJoystick_Tab.UpdateYawState(rudderRatio);
+                                                        RudderJoystick_Tab.UpdateToeBrakeState(0.0);
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if (RudderJoystick_Tab != null)
+                                                {
+                                                    RudderJoystick_Tab.UpdateYawState(0.5);
+                                                    RudderJoystick_Tab.UpdateToeBrakeState(0.0);
+                                                }
+                                                if (CurveRudderForce_Tab != null)
+                                                {
+                                                    CurveRudderForce_Tab.UpdateLiveDeflection(0.5f, -1f);
+                                                }
                                             }
 
                                             if (Plugin.Rudder_status)

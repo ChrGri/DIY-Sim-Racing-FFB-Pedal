@@ -12,6 +12,19 @@ namespace DiyFfbPedal
 {
     public partial class DIY_FFB_Pedal : IPlugin, IDataPlugin, IWPFSettingsV2
     {
+                unsafe public byte[] getBytes_MacAddresses(DAP_mac_addresses_st aux)
+        {
+            byte[] myBuffer = new byte[sizeof(DAP_mac_addresses_st)];
+            fixed (byte* p = myBuffer) { *(DAP_mac_addresses_st*)p = aux; }
+            return myBuffer;
+        }
+
+        unsafe public DAP_mac_addresses_st getMacAddressesFromBytes(byte[] myBuffer)
+        {
+            if (myBuffer == null || myBuffer.Length < sizeof(DAP_mac_addresses_st)) return default(DAP_mac_addresses_st);
+            fixed (byte* p = myBuffer) { return *(DAP_mac_addresses_st*)p; }
+        }
+
         public void SendPedalAction(DAP_action_st action_tmp, Byte PedalID)
         {
 
@@ -46,7 +59,6 @@ namespace DiyFfbPedal
                         if (ESPsync_serialPort.IsOpen)
                         {
                             ESPsync_serialPort.DiscardInBuffer();
-                            ESPsync_serialPort.DiscardOutBuffer();
                             ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
                         }
                     }
@@ -211,6 +223,21 @@ namespace DiyFfbPedal
             }
             if (serialUpdate || wirelessUpdate || Rudder_status || _calculations.Rudder_status) SendConfig(tmp, PedalIDX);
         }
+        public void SendBridgeWirelessSyncConfig()
+        {
+            try
+            {
+                DAP_bridge_state_st tmp = new DAP_bridge_state_st();
+                tmp.payloadBridgeState_.Bridge_action = (byte)bridgeAction.BRIDGE_ACTION_SET_PEDAL_WIRELESS_SYNC;
+                tmp.payloadBridgeState_.unassignedPedalCount = 0;
+                tmp.payloadBridgeState_.Pedal_availability_0 = (byte)(Settings.Pedal_ESPNow_Sync_flag[0] ? 1 : 0);
+                tmp.payloadBridgeState_.Pedal_availability_1 = (byte)(Settings.Pedal_ESPNow_Sync_flag[1] ? 1 : 0);
+                tmp.payloadBridgeState_.Pedal_availability_2 = (byte)(Settings.Pedal_ESPNow_Sync_flag[2] ? 1 : 0);
+                SendBridgeAction(tmp);
+            }
+            catch { }
+        }
+
         public void SendBridgeAction(DAP_bridge_state_st tmp)
         {
             int length;
@@ -221,10 +248,13 @@ namespace DiyFfbPedal
             tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
             tmp.payLoadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
             tmp.payLoadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
-            tmp.payloadBridgeState_.unassignedPedalCount = 0;
-            tmp.payloadBridgeState_.Pedal_availability_0 = 0;
-            tmp.payloadBridgeState_.Pedal_availability_1 = 0;
-            tmp.payloadBridgeState_.Pedal_availability_2 = 0;
+            if (tmp.payloadBridgeState_.Bridge_action != (byte)bridgeAction.BRIDGE_ACTION_SET_PEDAL_WIRELESS_SYNC)
+            {
+                tmp.payloadBridgeState_.unassignedPedalCount = 0;
+                tmp.payloadBridgeState_.Pedal_availability_0 = 0;
+                tmp.payloadBridgeState_.Pedal_availability_1 = 0;
+                tmp.payloadBridgeState_.Pedal_availability_2 = 0;
+            }
 
 
             byte[] newBuffer_2;
