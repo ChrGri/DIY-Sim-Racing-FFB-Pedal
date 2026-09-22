@@ -59,6 +59,13 @@ inline bool macCheck(const uint8_t *Mac_A, const uint8_t *Mac_B) {
   return memcmp(Mac_A, Mac_B, 6) == 0;
 }
 
+inline bool isAllZeroMac(const uint8_t *mac) {
+  for (int i = 0; i < 6; i++) {
+    if (mac[i] != 0) return false;
+  }
+  return true;
+}
+
 inline DapMacAddresses_t loadMacAddressesFromEeprom() {
   DapMacAddresses_t macCfg;
   EEPROM.get(DAP_MAC_ADDRESSES_EEPROM_OFFSET_U32, macCfg);
@@ -128,13 +135,16 @@ void sWirelessCommSentTrampoline(const esp_now_send_info_t *info, esp_now_send_s
 // =========================================================================
 // WirelessCommunicationBridge
 //
-// Replaces the old ESP-NOW transport (ESPNOW_lib.h). Broadcast-only: every
-// packet goes to FF:FF:FF:FF:FF:FF, there is exactly one ESP-NOW peer ever
-// registered, and there is no busy-flag/backoff/retry state machine. Sender
-// slot for an incoming telemetry/config/servo-config packet is derived
-// strictly from which configured pedal MAC sent it (never trusted from the
-// packet's own self-reported tag), and unrecognized senders are dropped
-// (no auto-discovery: a pedal's MAC must already be provisioned via
+// Unicast: every send targets a specific pedal's registered MAC peer via
+// sendTo(), which is the sole esp_now_send() call site and implements the
+// flow-control this repo already learned it needs the hard way - see the
+// history note on sendTo() below. The old broadcast peer/sendBroadcast()
+// path is kept only as a fallback for anything not yet converted; nothing
+// in this file's converted send methods uses it. Sender slot for an
+// incoming telemetry/config/servo-config packet is derived strictly from
+// which configured pedal MAC sent it (never trusted from the packet's own
+// self-reported tag), and unrecognized senders are dropped (no
+// auto-discovery: a pedal's MAC must already be provisioned via
 // DapMacAddresses_t before its traffic is accepted).
 // =========================================================================
 class WirelessCommunicationBridge {
@@ -226,6 +236,7 @@ public:
     for (int i = 0; i < 3; i++) {
       memcpy(_pedalMac[i], macCfg.payloadMacAddresses_st.macAddress_aau8[i], 6);
     }
+    syncPeerTable();
   }
 
   esp_err_t deinit() {
@@ -252,54 +263,78 @@ public:
   uint32_t getTxSuccessCount() const { return _txSuccessCount; }
   uint32_t getTxFailCount() const { return _txFailCount; }
   uint32_t getTxErrCount() const { return _txErrCount; }
+  uint32_t getTxNoMemCount() const { return _txNoMemCount_u32; }
+  uint32_t getTxBusySkipCount() const { return _txBusySkipCount_u32; }
+  bool isTxBusy() const { return _txInFlight_b || millis() < _noMemBackoffUntil_ms; }
 
   esp_err_t sendBroadcast(const uint8_t *data, size_t len) {
-    esp_err_t res = esp_now_send(_broadcastMac, data, len);
-    if (res != ESP_OK) {
-      _txErrCount++;
-      logDebug("TX failed: %s", esp_err_to_name(res));
-    }
-    return res;
+    return sendTo(_broadcastMac, data, len);
   }
 
-  // Fire-and-forget reliability helper for one-shot commands (assignment
-  // change, wifi channel change): broadcast frames get no link-layer ACK or
-  // retry, so send it a few times with a short delay instead of waiting on
-  // any kind of acknowledgement.
-  void sendBroadcastRetry(const uint8_t *data, size_t len, int times, uint32_t delayMs) {
+  // Fire-and-forget reliability helper for one-shot commands targeting a
+  // SPECIFIC already-known peer (assignment change, etc.): unicast frames
+  // get hardware ACK/retry, but a single attempt can still be dropped if
+  // the peer briefly missed it, so send it a few times with a short delay
+  // instead of waiting on any application-level acknowledgement.
+  void sendUnicastRetry(const uint8_t *targetMac, const uint8_t *data, size_t len, int times, uint32_t delayMs) {
+    if (isAllZeroMac(targetMac)) return;
     for (int i = 0; i < times; i++) {
-      sendBroadcast(data, len);
+      sendTo(targetMac, data, len);
+      delay(delayMs);
+    }
+  }
+
+  // Same as sendUnicastRetry, but for the rare case a packet genuinely must
+  // reach every currently-known pedal (e.g. a wifi channel change - every
+  // pedal has to move channel together, and you don't know in advance
+  // which ones are actually powered on and listening). One round = one
+  // unicast attempt to each known pedal, then a single delay before the
+  // next round (not per-pedal), so total time stays bounded.
+  void sendToAllKnownPedalsRetry(const uint8_t *data, size_t len, int times, uint32_t delayMs) {
+    for (int i = 0; i < times; i++) {
+      for (int p = 0; p < 3; p++) {
+        if (!isAllZeroMac(_pedalMac[p])) {
+          sendTo(_pedalMac[p], data, len);
+        }
+      }
       delay(delayMs);
     }
   }
 
   esp_err_t sendConfigToPedal(uint8_t pedalIdx, const DapConfig_t &pkt) {
-    (void)pedalIdx;
+    if (pedalIdx >= 3 || isAllZeroMac(_pedalMac[pedalIdx])) return ESP_ERR_INVALID_ARG;
     logDebug("TX Config to pedal #%u", pedalIdx);
-    return sendBroadcast((const uint8_t *)&pkt, sizeof(pkt));
+    return sendTo(_pedalMac[pedalIdx], (const uint8_t *)&pkt, sizeof(pkt));
   }
 
   esp_err_t sendActionToPedal(uint8_t pedalIdx, const DapActions_t &pkt) {
-    (void)pedalIdx;
+    if (pedalIdx >= 3 || isAllZeroMac(_pedalMac[pedalIdx])) return ESP_ERR_INVALID_ARG;
     logDebug("TX Action to pedal #%u", pedalIdx);
-    return sendBroadcast((const uint8_t *)&pkt, sizeof(pkt));
+    return sendTo(_pedalMac[pedalIdx], (const uint8_t *)&pkt, sizeof(pkt));
   }
 
   esp_err_t sendServoConfigToPedal(uint8_t pedalIdx, const DAP_servo_config_st_t &pkt) {
-    (void)pedalIdx;
+    if (pedalIdx >= 3 || isAllZeroMac(_pedalMac[pedalIdx])) return ESP_ERR_INVALID_ARG;
     logDebug("TX ServoConfig to pedal #%u", pedalIdx);
-    return sendBroadcast((const uint8_t *)&pkt, sizeof(pkt));
+    return sendTo(_pedalMac[pedalIdx], (const uint8_t *)&pkt, sizeof(pkt));
   }
 
   esp_err_t sendOtaToPedal(uint8_t pedalIdx, const DapActionOta_t &pkt) {
-    (void)pedalIdx;
+    if (pedalIdx >= 3 || isAllZeroMac(_pedalMac[pedalIdx])) return ESP_ERR_INVALID_ARG;
     logDebug("TX Ota to pedal #%u", pedalIdx);
-    return sendBroadcast((const uint8_t *)&pkt, sizeof(pkt));
+    return sendTo(_pedalMac[pedalIdx], (const uint8_t *)&pkt, sizeof(pkt));
   }
 
+  // pkt.deviceId_u8 says which pedal this particular assignment-sync packet
+  // is "about" - callers (see syncPairingTableToPedals() in Main.cpp) already
+  // loop over all pedals and set deviceId_u8 per call before invoking this,
+  // so this must send to exactly that one pedal, not fan out itself (that
+  // would both triple-send and attach the wrong deviceId_u8 to the wrong
+  // pedal).
   esp_err_t sendAssignmentSync(const DapAssignmentReg_t &pkt) {
-    logDebug("TX AssignmentSync");
-    return sendBroadcast((const uint8_t *)&pkt, sizeof(pkt));
+    if (pkt.deviceId_u8 >= 3 || isAllZeroMac(_pedalMac[pkt.deviceId_u8])) return ESP_ERR_INVALID_ARG;
+    logDebug("TX AssignmentSync to pedal #%u", pkt.deviceId_u8);
+    return sendTo(_pedalMac[pkt.deviceId_u8], (const uint8_t *)&pkt, sizeof(pkt));
   }
 
   void handleRecv(const esp_now_recv_info_t *info, const uint8_t *data, int len) {
@@ -375,6 +410,9 @@ public:
 
   void handleSent(const esp_now_send_info_t *info, esp_now_send_status_t status) {
     (void)info;
+    // Flow control (see sendTo() below): a send is only "in flight" until
+    // this callback fires, one way or the other.
+    _txInFlight_b = false;
     if (status == ESP_NOW_SEND_SUCCESS) {
       _txSuccessCount++;
     } else {
@@ -386,6 +424,7 @@ private:
   uint8_t _broadcastMac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
   uint8_t _ownMac[6] = {0};
   uint8_t _pedalMac[3][6] = {{0}};
+  uint8_t _registeredPedalMac[3][6] = {{0}};
   uint8_t _currentChannel = 11;
   bool _started = false;
   bool _pedalWirelessSyncEnabled[3] = {true, true, true};
@@ -393,6 +432,84 @@ private:
   uint32_t _txSuccessCount = 0;
   uint32_t _txFailCount = 0;
   uint32_t _txErrCount = 0;
+
+  // --- Unicast flow control -------------------------------------------
+  // History: this repo already tried unicast once (see commits fafe7737..
+  // 4bd7749d) and hit a real hardware lockup - rudder-sync packets at a
+  // 2ms interval exhausted the 32 ESP-IDF TX descriptors
+  // (ESP_ERR_ESPNOW_NO_MEM) because nothing paced app-level esp_now_send()
+  // calls against what the WiFi driver could actually retire (unicast
+  // frames cost more per-send than broadcast due to hardware ACK+retry).
+  // The fix that worked, ported here: track whether a send is still
+  // in-flight (cleared by handleSent(), with a 25ms safety-timeout
+  // auto-recovery in case the callback is ever dropped), and back off for
+  // 15ms after any ESP_ERR_ESPNOW_NO_MEM before attempting another send.
+  bool _txInFlight_b = false;
+  uint32_t _lastSendTime_u32 = 0;
+  uint32_t _noMemBackoffUntil_ms = 0;
+  uint32_t _txNoMemCount_u32 = 0;
+  uint32_t _txBusySkipCount_u32 = 0;
+
+  esp_err_t sendTo(const uint8_t *mac, const uint8_t *data, size_t len) {
+    uint32_t now = millis();
+    if (now < _noMemBackoffUntil_ms) {
+      _txBusySkipCount_u32++;
+      return ESP_ERR_ESPNOW_NO_MEM;
+    }
+    if (_txInFlight_b) {
+      if (now - _lastSendTime_u32 > 25) {
+        // Safety-timeout recovery: the send callback never fired (dropped
+        // or stalled) - don't let one lost callback wedge TX forever.
+        _txInFlight_b = false;
+      } else {
+        _txBusySkipCount_u32++;
+        return ESP_ERR_ESPNOW_INTERNAL;
+      }
+    }
+    _txInFlight_b = true;
+    _lastSendTime_u32 = now;
+    esp_err_t res = esp_now_send(mac, data, len);
+    if (res != ESP_OK) {
+      _txInFlight_b = false;
+      _txErrCount++;
+      if (res == ESP_ERR_ESPNOW_NO_MEM) {
+        _noMemBackoffUntil_ms = now + 15;
+        _txNoMemCount_u32++;
+      }
+      logDebug("TX failed: %s", esp_err_to_name(res));
+    }
+    return res;
+  }
+
+  // --- Unicast peer management ------------------------------------------
+  bool ensurePeer(const uint8_t *mac) {
+    if (isAllZeroMac(mac)) return false;
+    if (esp_now_is_peer_exist(mac)) return true;
+    esp_now_peer_info_t peer = {};
+    memcpy(peer.peer_addr, mac, 6);
+    peer.channel = 0;
+    peer.ifidx = WIFI_IF_STA;
+    peer.encrypt = false;
+    return esp_now_add_peer(&peer) == ESP_OK;
+  }
+
+  // Reconciles the registered ESP-NOW peer table against the desired
+  // _pedalMac[] table - called from applyMacConfig() so this stays correct
+  // both at boot and whenever the host pushes an updated MAC table at
+  // runtime. Idempotent: a slot whose MAC hasn't changed is left alone.
+  void syncPeerTable() {
+    for (int i = 0; i < 3; i++) {
+      bool changed = memcmp(_pedalMac[i], _registeredPedalMac[i], 6) != 0;
+      if (!changed) continue;
+      if (!isAllZeroMac(_registeredPedalMac[i])) {
+        esp_now_del_peer(_registeredPedalMac[i]);
+        memset(_registeredPedalMac[i], 0, 6);
+      }
+      if (!isAllZeroMac(_pedalMac[i]) && ensurePeer(_pedalMac[i])) {
+        memcpy(_registeredPedalMac[i], _pedalMac[i], 6);
+      }
+    }
+  }
 
   void handleLogPacket(const uint8_t *data, int len) {
     PayloadHidMessage_t receivedMsg;
@@ -427,6 +544,14 @@ private:
       return;
     }
     memcpy(&dap_state_basic_st[pedalTag], data, sizeof(DapStateBasic_t));
+    // Force the tag to the MAC-verified slot, not whatever the sender
+    // embedded in the payload - a pedal freshly reassigned to a new role
+    // (e.g. Throttle -> Clutch) keeps broadcasting its old self-reported
+    // pedalTag_u8 for a while, and downstream code (pedalAvailability_au8,
+    // "Found Pedal" logging, and the packet forwarded to the PC) all key off
+    // this field. handleStateExtendedPacket() already does this; this
+    // sibling function was missing it.
+    dap_state_basic_st[pedalTag].payloadHeader_st.pedalTag_u8 = pedalTag;
     g_updateBasicState_ab[pedalTag] = true;
     g_pedalLastUpdate_au32[pedalTag] = millis();
     if (local.payloadPedalStateBasic_st.errorCode_u8 != 0) g_espNowError_ab[pedalTag] = true;
@@ -480,6 +605,14 @@ private:
   }
 
   void handleConfigEchoPacket(const uint8_t *data, uint8_t pedalTag) {
+    // TEMP DIAGNOSTIC (unconditional, low-volume - config echoes are rare).
+    // Remove once the root cause is confirmed.
+    ActiveSerial->printf("[L][DIAG] ConfigEcho RX from pedal=%u, syncEnabled=%u\n",
+                         pedalTag, (unsigned)_pedalWirelessSyncEnabled[pedalTag]);
+    #ifdef USB_JOYSTICK
+    tinyusbJoystick_.printf("[DIAG] ConfigEcho RX from pedal=%u, syncEnabled=%u",
+                            pedalTag, (unsigned)_pedalWirelessSyncEnabled[pedalTag]);
+    #endif
     if (!_pedalWirelessSyncEnabled[pedalTag]) {
       return;
     }
@@ -503,6 +636,15 @@ private:
   void handleServoConfigPacket(const uint8_t *data, uint8_t pedalTag) {
     DAP_servo_config_st_t received_servo_config;
     memcpy(&received_servo_config, data, sizeof(DAP_servo_config_st_t));
+    // TEMP DIAGNOSTIC (unconditional - "Load From Servo" is rare/user-
+    // triggered, not continuous). Tracking down why servo register
+    // exchange doesn't complete over wireless. Remove once confirmed fixed.
+    ActiveSerial->printf("[L][DIAG] ServoConfig response RX from pedal=%u, syncEnabled=%u\n",
+                         pedalTag, (unsigned)_pedalWirelessSyncEnabled[pedalTag]);
+    #ifdef USB_JOYSTICK
+    tinyusbJoystick_.printf("[DIAG] ServoConfig response RX from pedal=%u, syncEnabled=%u",
+                            pedalTag, (unsigned)_pedalWirelessSyncEnabled[pedalTag]);
+    #endif
     if (received_servo_config.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8 ||
         received_servo_config.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8) {
       logDebug("RX ServoConfig dropped: bad type/version");

@@ -170,5 +170,37 @@ namespace DiyFfbPedal
         // friction parameters
         public byte coulombFrictionIn0p1N_u8;
         public byte wakeOnPluginOnly_u8;
+
+        // Rudder toe-brake joystick curve - separate from joystickMapOrig/Mapped
+        // above (yaw / regular pedal output) so both can be sent and stored
+        // independently; only one is active on the device at a time, selected
+        // by the Toe Brake toggle, but both need to be present in the config.
+        public byte numOfJoystickMapControlToe;
+        public byte joystickMapOrigToe00;
+        public byte joystickMapOrigToe01;
+        public byte joystickMapOrigToe02;
+        public byte joystickMapOrigToe03;
+        public byte joystickMapOrigToe04;
+        public byte joystickMapOrigToe05;
+        public byte joystickMapOrigToe06;
+        public byte joystickMapOrigToe07;
+        public byte joystickMapOrigToe08;
+        public byte joystickMapOrigToe09;
+        public byte joystickMapOrigToe10;
+        public byte joystickMapMappedToe00;
+        public byte joystickMapMappedToe01;
+        public byte joystickMapMappedToe02;
+        public byte joystickMapMappedToe03;
+        public byte joystickMapMappedToe04;
+        public byte joystickMapMappedToe05;
+        public byte joystickMapMappedToe06;
+        public byte joystickMapMappedToe07;
+        public byte joystickMapMappedToe08;
+        public byte joystickMapMappedToe09;
+        public byte joystickMapMappedToe10;
+
+        // 1 = brake resistor allowed to switch on as normal, 0 = force it off
+        // (debug/bench use only - servo braking energy will not be dissipated)
+        public byte enableBrakeResistor_u8;
     }
 }

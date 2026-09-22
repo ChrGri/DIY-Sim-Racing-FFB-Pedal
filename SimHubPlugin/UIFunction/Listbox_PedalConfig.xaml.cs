@@ -270,6 +270,33 @@ namespace DiyFfbPedal.UIFunction
             {
                 if (parameter is ConfigListItem item)
                 {
+                    byte tabRole = (byte)Plugin.Settings.table_selected;
+
+                    // This writes storeToEeprom=1 - an unconditional role commit to
+                    // whatever device is on this tab's COM port. The port-to-role
+                    // mapping is just "which tab were you on when you connected", so
+                    // if the wrong physical pedal ended up on this port (easy to do -
+                    // Windows doesn't guarantee stable COM numbers across reconnects),
+                    // this would silently overwrite that pedal's real role. Guard it by
+                    // checking the last config the device itself reported back against
+                    // the role we're about to force onto it.
+                    if (Plugin._calculations.pedalSerialStatus[tabRole] == ConnectStateEnum.PEDAL_IS_READY)
+                    {
+                        byte reportedRole = _plugin.wpfHandle.dap_config_st[tabRole].payloadPedalConfig_.pedal_type;
+                        if (reportedRole <= (byte)PedalIdEnum.PEDAL_ID_THROTTLE && reportedRole != tabRole)
+                        {
+                            var confirm = MessageBox.Show(
+                                $"The pedal connected on this port currently identifies itself as {PedalConstStrings.PedalID[reportedRole]}, " +
+                                $"but you're about to set it as {PedalConstStrings.PedalID[tabRole]} and write that to its EEPROM.\n\n" +
+                                "If this isn't the physical pedal you meant to reassign, cancel and check which device is on this COM port first.\n\n" +
+                                "Continue and overwrite its role?",
+                                "Pedal Role Mismatch",
+                                MessageBoxButton.YesNo,
+                                MessageBoxImage.Warning);
+                            if (confirm != MessageBoxResult.Yes) return;
+                        }
+                    }
+
                     Plugin.Settings.DefaultConfig[Plugin.Settings.table_selected] = item.FileName;
                     Plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                     DAP_config_st tmp = _plugin.ConfigService.ReadConfig(item.FullPath);

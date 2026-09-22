@@ -369,7 +369,6 @@ float motorRevolutionsPerSteps_fl32 = 1.0f / 3200.0f;
 
 #include "SignalFilter_1st_order.h"
 KalmanFilter1stOrder *kalman = NULL;
-KalmanFilter1stOrder *kalman_joystick = NULL;
 
 #include "SignalFilter_2nd_order.h"
 KalmanFilter2ndOrder *kalman_2nd_order = NULL;
@@ -1297,7 +1296,6 @@ void setup() {
 
   // setup Kalman filters
   kalman = new KalmanFilter1stOrder(loadcell->getVarianceEstimate());
-  kalman_joystick = new KalmanFilter1stOrder(0.1f);
   kalman_2nd_order = new KalmanFilter2ndOrder(loadcell->getVarianceEstimate());
 
   // Check if wakeup only by plugin trigger is requested
@@ -1837,6 +1835,11 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
   uint16_t joystickNormalizedToUInt16 = 0;
   int32_t ABS_trigger_value;
 
+  // Post-curve joystick HID denoise state (see "compute joystick value").
+  bool joystickDenoiseInit_b = false;
+  float joystickDenoisedPercent_fl32 = 0.0f;
+  uint32_t joystickDenoiseLastMicros_u32 = 0;
+
   uint8_t sendPedalStructsViaSerialCounter_u8 = 0;
   uint8_t sendJoystickDataCounter_u8 = 0;
 
@@ -2247,17 +2250,12 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       // end profiler 4, loadcell reading filtering
       profiler_pedalUpdateTask.end(4);
 
-      float FilterReadingJoystick = 0.0f;
-      if (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfJoystick_u8 ==
-          1) {
-        FilterReadingJoystick = kalman_joystick->filteredValue(
-            filteredReading, 0.0f,
-            dap_config_pedalUpdateTask_st.payloadPedalConfig_st
-                .kfModelNoiseJoystick_u8);
-
-      } else {
-        FilterReadingJoystick = filteredReading;
-      }
+      // Joystick HID denoise (kfJoystick_u8/kfModelNoiseJoystick_u8) is now
+      // applied once, post-curve, to the final 0-100% eval value below -- see
+      // "compute joystick value". That covers force-as-joystick,
+      // travel-as-joystick and rudder yaw/toe-brake uniformly, unlike the old
+      // pre-curve Kalman filter which only ever touched the force-as-joystick
+      // path.
 
       // if filtered reading > min force, mark the servo was in aciton
       if (filteredReading > dap_config_pedalUpdateTask_st.payloadPedalConfig_st
@@ -2342,6 +2340,22 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         ActiveSerial->println("Servo force Stoped.");
       }
 #endif
+
+      // Sustained servo overcurrent protection. The actual axis shutdown
+      // already happened inside StepperWithLimits::performSafetyChecks() (on
+      // the servo communication task, so it can't be delayed by anything
+      // going on here); this just surfaces it to the user once.
+      if (stepper->consumeOvercurrentTripFlag()) {
+        Buzzer.single_beep_tone(770, 100);
+        delay(300);
+        pedalLED.setPixelColor(0, 0xff, 0x00, 0x00); // show red
+        pedalLED.show();
+        Buzzer.single_beep_tone(770, 100);
+        ActiveSerial->println(
+            "Servo overcurrent protection triggered - motor disabled to "
+            "prevent overheating. Restart the pedal to clear.");
+      }
+
       // float
       // FilterReadingJoystick=g_averageFilterJoystick_st.process(filteredReading);
 
@@ -2438,6 +2452,14 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       //     ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
       //     cached_currentSpeedInHz_i32, cached_servoCycleCounter_u32);
 #endif
+
+      // Config-driven brake resistor kill switch (default: enabled). Lets a
+      // user disable the brake resistor from Pedals > General for
+      // debug/bench use, without needing a firmware rebuild.
+      if (!(dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                .enableBrakeResistor_u8)) {
+        brake_state = false;
+      }
 
 #if defined(BRAKE_RESISTOR_PIN_U8) && (BRAKE_RESISTOR_PIN_U8 >= 0)
       if (brake_state) {
@@ -2700,7 +2722,16 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       // compute joystick value
       if (g_pedalOperationalState_u8 != (uint8_t)PEDAL_STATE_ACTIVE_E) {
         joystickNormalizedToUInt16 = 0;
+        // Force a fresh (non-smoothed) start next time the pedal re-activates,
+        // instead of slowly ramping in from whatever was smoothed last.
+        joystickDenoiseInit_b = false;
       } else {
+        // Load whichever joystick curve (yaw/regular vs toe-brake) the
+        // upcoming EvalJoystickCubicSpline() calls below need. No-ops unless
+        // rudderBrakeStatus_b just changed since the last tick.
+        dap_calculationVariables_st.refreshActiveJoystickCurve(
+            dap_calculationVariables_st.rudderBrakeStatus_b);
+
         if (dap_calculationVariables_st.rudderStatus_b &&
             dap_calculationVariables_st.rudderBrakeStatus_b) {
           if (1 == dap_config_pedalUpdateTask_st.payloadPedalConfig_st
@@ -2715,7 +2746,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
                     .maxGameOutput_u8);
           } else {
             joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(
-                (FilterReadingJoystick /*filteredReading*/),
+                filteredReading,
                 dap_calculationVariables_st.forceMin_fl32,
                 dap_calculationVariables_st.forceMax_fl32,
                 dap_config_pedalUpdateTask_st.payloadPedalConfig_st
@@ -2724,13 +2755,23 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         } else {
           if (1 == dap_config_pedalUpdateTask_st.payloadPedalConfig_st
                        .travelAsJoystickOutput_u8) {
+            // Preload gate: travel alone can't tell idle servo
+            // hunting/vibration from real pedal input, so below forceMin the
+            // travel output is forced to a clean 0 rather than smoothing it
+            // (the EMA denoise above only softens the noise, it doesn't
+            // remove it).
+            float travelJoystick_01 =
+                constrain(pedalArcPercentage_fl32, 0.0f, 1.0f);
+            if (filteredReading < dap_calculationVariables_st.forceMin_fl32) {
+              travelJoystick_01 = 0.0f;
+            }
             joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(
-                constrain(pedalArcPercentage_fl32, 0.0f, 1.0f), 0.0f, 1.0f,
+                travelJoystick_01, 0.0f, 1.0f,
                 dap_config_pedalUpdateTask_st.payloadPedalConfig_st
                     .maxGameOutput_u8);
           } else {
             joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(
-                FilterReadingJoystick /*filteredReading*/,
+                filteredReading,
                 dap_calculationVariables_st.forceMin_fl32,
                 dap_calculationVariables_st.forceMax_fl32,
                 dap_config_pedalUpdateTask_st.payloadPedalConfig_st
@@ -2763,11 +2804,70 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
               joystickfrac);
         }
 
-        joystickNormalizedToUInt16 =
-            joystickNormalizedToInt32_eval / 100.0f * s_JOYSTICK_MAX_VALUE_U16;
-        joystickNormalizedToUInt16 =
-            constrain(joystickNormalizedToUInt16, s_JOYSTICK_MIN_VALUE_U16,
-                      s_JOYSTICK_MAX_VALUE_U16);
+        // Clamp before anything else touches this value: the cubic-spline
+        // eval can overshoot slightly outside [0,100], and casting an
+        // out-of-range float straight to uint16_t further down would wrap
+        // (e.g. a hair below 0% wrapping to ~65535, i.e. ~100%).
+        joystickNormalizedToInt32_eval =
+            constrain(joystickNormalizedToInt32_eval, 0.0f, 100.0f);
+
+        // Joystick HID denoise: exponential smoothing on the final 0-100%
+        // value, using the actual measured cycle time so filter strength
+        // doesn't drift with scheduling jitter. Applied here (post-curve,
+        // after the branches above converge) it uniformly covers
+        // force-as-joystick, travel-as-joystick and rudder yaw/toe-brake --
+        // unlike the old pre-curve Kalman filter, which only ever touched
+        // the force-as-joystick path and left travel/rudder unfiltered.
+        if (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfJoystick_u8 ==
+            1) {
+          uint32_t nowMicros_u32 = micros();
+          uint32_t elapsedMicros_u32 =
+              nowMicros_u32 - joystickDenoiseLastMicros_u32;
+          joystickDenoiseLastMicros_u32 = nowMicros_u32;
+          // Guard against a stale/huge first-sample delta and against a
+          // zero delta (both would otherwise skew the exponent below).
+          elapsedMicros_u32 = constrain(elapsedMicros_u32, 1u, 50000u);
+
+          // kfModelNoiseJoystick_u8 (1-255, UI slider "KF for Joystick
+          // Denoise") keeps its existing "higher = less lag" direction from
+          // the old Kalman filter, mapped log-scale onto a tau (time
+          // constant) between ~2 ms (barely any smoothing) and ~125 ms
+          // (heavy smoothing) so the full slider range stays useful. Capped
+          // at 125ms (rather than 500ms) because the lower half of the
+          // slider range above that is unusable lag in practice.
+          const float tauMin_ms_fl32 = 2.0f;
+          const float tauMax_ms_fl32 = 125.0f;
+          float sliderFrac_fl32 =
+              (float)(dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                          .kfModelNoiseJoystick_u8 -
+                      1) /
+              254.0f;
+          sliderFrac_fl32 = constrain(sliderFrac_fl32, 0.0f, 1.0f);
+          float tau_ms_fl32 =
+              tauMax_ms_fl32 *
+              powf(tauMin_ms_fl32 / tauMax_ms_fl32, sliderFrac_fl32);
+
+          float alpha_fl32 =
+              expf(-((float)elapsedMicros_u32 * 0.001f) / tau_ms_fl32);
+
+          if (!joystickDenoiseInit_b) {
+            joystickDenoisedPercent_fl32 = joystickNormalizedToInt32_eval;
+            joystickDenoiseInit_b = true;
+          } else {
+            joystickDenoisedPercent_fl32 =
+                alpha_fl32 * joystickDenoisedPercent_fl32 +
+                (1.0f - alpha_fl32) * joystickNormalizedToInt32_eval;
+          }
+          joystickNormalizedToInt32_eval = joystickDenoisedPercent_fl32;
+        } else {
+          joystickDenoiseInit_b = false;
+        }
+
+        float joystickRaw_fl32 = joystickNormalizedToInt32_eval / 100.0f *
+                                  (float)s_JOYSTICK_MAX_VALUE_U16;
+        joystickNormalizedToUInt16 = (uint16_t)constrain(
+            joystickRaw_fl32, (float)s_JOYSTICK_MIN_VALUE_U16,
+            (float)s_JOYSTICK_MAX_VALUE_U16);
       }
 
       // send joystick data to queue
@@ -3059,6 +3159,21 @@ void IRAM_ATTR_FLAG joystickOutputTask(void *pvParameters) {
   joystickDataPackage_t receivedJoystickData;
   bool wasReady_b = false;
 
+  // pedalUpdateTask posts to the queue every
+  // REPETITION_INTERVAL_JOYSTICKOUTPUT_TASK_IN_US_I64 (currently 10ms),
+  // driven by a hardware timer with very little jitter. If this task's
+  // receive timeout is set to that same 10ms, the two periods aren't
+  // phase-locked and drift against each other: the receive window
+  // periodically closes just before the new value arrives, times out, and
+  // this task (wrongly) treats that as "pedal task stopped feeding data"
+  // and forces a spurious 0% report -- even while the pedal is held
+  // steady. Give the timeout a comfortable multiple of the feed period so
+  // ordinary scheduling jitter can't trip the stall-detection fallback,
+  // while a genuine stall (boot/homing/standby/pause) is still caught
+  // quickly.
+  const TickType_t joystickQueueTimeoutTicks_st = pdMS_TO_TICKS(
+      (REPETITION_INTERVAL_JOYSTICKOUTPUT_TASK_IN_US_I64 / 1000) * 3);
+
   for (;;) {
     bool isReady_b = usbManager.isJoystickReady();
 
@@ -3075,7 +3190,7 @@ void IRAM_ATTR_FLAG joystickOutputTask(void *pvParameters) {
     }
 
     if (xQueueReceive(s_joystickDataQueue, &receivedJoystickData,
-                      pdMS_TO_TICKS(10)) == pdPASS) {
+                      joystickQueueTimeoutTicks_st) == pdPASS) {
 
       uint16_t joystickData_u16 =
           receivedJoystickData.joystickNormalizedToUInt16;
@@ -4147,19 +4262,20 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
             esp_err_t res =
                 wirelessComm.sendBasicStateToBridge(dap_state_basic_st_lcl);
 
-            static uint32_t lastTxDiagTime = 0;
-            if (millis() - lastTxDiagTime > 3000) {
-              lastTxDiagTime = millis();
-              const uint8_t *hostMac = wirelessComm.getHostMac();
-              ActiveSerial->printf(
-                  "[ESPNOW TX] Sent basic state to Bridge "
-                  "%02X:%02X:%02X:%02X:%02X:%02X, res=%s (ch=%d) [Sent:%u, "
-                  "Fail:%u, Err:%u]\n",
-                  hostMac[0], hostMac[1], hostMac[2], hostMac[3], hostMac[4],
-                  hostMac[5], esp_err_to_name(res), wirelessComm.getChannel(),
-                  wirelessComm.getTxSuccessCount(),
-                  wirelessComm.getTxFailCount(), wirelessComm.getTxErrCount());
-            }
+            // static uint32_t lastTxDiagTime = 0;
+            // if (millis() - lastTxDiagTime > 3000) {
+            //   lastTxDiagTime = millis();
+            //   const uint8_t *hostMac = wirelessComm.getHostMac();
+            //   ActiveSerial->printf(
+            //       "[ESPNOW TX] Sent basic state to Bridge "
+            //       "%02X:%02X:%02X:%02X:%02X:%02X, res=%s (ch=%d) [Sent:%u, "
+            //       "Fail:%u, Err:%u, NoMem:%u, BusySkip:%u]\n",
+            //       hostMac[0], hostMac[1], hostMac[2], hostMac[3], hostMac[4],
+            //       hostMac[5], esp_err_to_name(res), wirelessComm.getChannel(),
+            //       wirelessComm.getTxSuccessCount(),
+            //       wirelessComm.getTxFailCount(), wirelessComm.getTxErrCount(),
+            //       wirelessComm.getTxNoMemCount(), wirelessComm.getTxBusySkipCount());
+            // }
 
             if (res == ESP_OK) {
               packetSentThisCycle = true;
@@ -4208,6 +4324,24 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
         }
 
         profiler_espNow.end(3);
+
+        // TEMP DIAGNOSTIC: g_espNowConfigRequest_b getting set (confirmed by
+        // the pedal-side [DIAG] logs in WirelessCommunication_pedal.h) but
+        // never reaching the send below would otherwise be a silent gap -
+        // this closes it. Edge-triggered (static latch) so a stuck gate logs
+        // once instead of spamming this hot loop. Remove once the root
+        // cause is confirmed.
+        static bool s_diagConfigReqGateBlockedLogged = false;
+        if (g_espNowConfigRequest_b && !(pedalId < 3 || pedalId == PEDAL_ID_UNKNOWN)) {
+          if (!s_diagConfigReqGateBlockedLogged) {
+            s_diagConfigReqGateBlockedLogged = true;
+            wirelessComm.sendLogToBridge(
+                "[DIAG] ConfigReq set but BLOCKED by pedalId gate, pedalId=%d",
+                (int)pedalId);
+          }
+        } else {
+          s_diagConfigReqGateBlockedLogged = false;
+        }
 
         if (g_espNowConfigRequest_b &&
             (pedalId < 3 || pedalId == PEDAL_ID_UNKNOWN)) {
@@ -4332,7 +4466,15 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
             (pedalId < 3)) {
           if (dap_calculationVariables_st.rudderStatus_b ||
               dap_calculationVariables_st.helicopterRudderStatus_b) {
-            if (!packetSentThisCycle) {
+            // Rudder sync is the exact packet type that historically stalled
+            // the WiFi TX FIFO under unicast (see the history note on
+            // WirelessCommunicationPedal::sendTo()) - if the driver is still
+            // busy with a prior send, skip building/sending this sample
+            // entirely rather than queue it. Deliberately don't touch
+            // rudderPacketsUpdateLast here, so the very next 2ms wake
+            // retries immediately (with a fresh sample) once the driver is
+            // free again, instead of waiting out a full stale interval.
+            if (!packetSentThisCycle && !wirelessComm.shouldSkipRudderSyncForBusy()) {
               rudderPacketsUpdateLast = millis();
               DapRudder_t rudderTxLocal;
               memset(&rudderTxLocal, 0, sizeof(rudderTxLocal));
@@ -4355,7 +4497,9 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
                       (uint8_t *)(&(rudderTxLocal.payloadHeader_st)),
                       sizeof(rudderTxLocal.payloadHeader_st) +
                           sizeof(rudderTxLocal.payloadRudderState_st));
-              // Broadcast - no unicast partner MAC to resolve any more.
+              // Unicasts to whichever sibling handleActionsPacket resolved
+              // as our rudder partner (see resolveRudderPartnerId()); safe
+              // no-op if no partner is currently resolved.
               esp_err_t res = wirelessComm.sendRudderSync(rudderTxLocal);
               if (res == ESP_OK) {
                 packetSentThisCycle = true;
@@ -4374,6 +4518,30 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
           } else {
             rudderPacketsUpdateLast = millis();
           }
+
+          // TEMP DIAGNOSTIC: rudder sync is the newest unicast-specific
+          // logic (partner resolution + busy-skip) and the exact packet
+          // type/cadence that historically stalled this repo's earlier
+          // unicast attempt - this tells apart "partner never resolved" vs
+          // "stuck busy every attempt" vs "sends fine but never gets
+          // accepted on the other end" without needing hardware access to
+          // guess. Rate-limited to every 2s (rudder fires every 2ms, so an
+          // unconditional log here would flood the link). Remove once
+          // rudder sync is confirmed working again.
+          static uint32_t s_lastRudderDiagLogTime = 0;
+          if ((dap_calculationVariables_st.rudderStatus_b ||
+               dap_calculationVariables_st.helicopterRudderStatus_b) &&
+              millis() - s_lastRudderDiagLogTime > 2000) {
+            s_lastRudderDiagLogTime = millis();
+            wirelessComm.sendLogToBridge(
+                "[DIAG] Rudder: partner=%u TxOk=%u TxSkipNoPartner=%u "
+                "TxSkipBusy=%u RxAccepted=%u RxRejected=%u",
+                wirelessComm.getRudderPartnerId(), wirelessComm.getRudderTxOkCount(),
+                wirelessComm.getRudderTxSkipNoPartnerCount(),
+                wirelessComm.getRudderTxSkipBusyCount(),
+                wirelessComm.getRudderRxAcceptedCount(),
+                wirelessComm.getRudderRxRejectedCount());
+          }
         }
 
         // Periodic diagnostic telemetry: Report RF health and heap to SimHub
@@ -4391,17 +4559,19 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
           // guaranteed to show up.
           ActiveSerial->printf(
               "Pedal:%d Diag: Heap=%u MinHeap=%u LargestFreeBlock=%u TxFail=%u "
-              "TxErr=%u RTT=%u\n",
+              "TxErr=%u TxNoMem=%u TxBusySkip=%u RTT=%u\n",
               espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8, freeHeap,
               minHeap, largestBlock, wirelessComm.getTxFailCount(),
-              wirelessComm.getTxErrCount(),
+              wirelessComm.getTxErrCount(), wirelessComm.getTxNoMemCount(),
+              wirelessComm.getTxBusySkipCount(),
               (uint32_t)g_currentSyncDelay_ms * 2);
           wirelessComm.sendLogToBridge(
               "Pedal:%d Diag: Heap=%u MinHeap=%u LargestFreeBlock=%u TxFail=%u "
-              "TxErr=%u RTT=%u",
+              "TxErr=%u TxNoMem=%u TxBusySkip=%u RTT=%u",
               espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8, freeHeap,
               minHeap, largestBlock, wirelessComm.getTxFailCount(),
-              wirelessComm.getTxErrCount(),
+              wirelessComm.getTxErrCount(), wirelessComm.getTxNoMemCount(),
+              wirelessComm.getTxBusySkipCount(),
               (uint32_t)g_currentSyncDelay_ms * 2);
         }
       }

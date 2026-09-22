@@ -393,17 +393,75 @@ namespace DiyFfbPedal
                                     lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + sizeof(DAP_mac_addresses_st));
 
                                     string ownMac = macs.payloadMacAddresses_.GetOwnMacAddressString();
-                                    byte ownNode = macs.payloadMacAddresses_.ownNodeType_u8;
-                                    if (ownNode < 4 && !string.IsNullOrWhiteSpace(ownMac))
+                                    if (!string.IsNullOrWhiteSpace(ownMac))
                                     {
-                                        if (Plugin.Settings.AssignedPedalMac == null || Plugin.Settings.AssignedPedalMac.Length < 4)
+                                        // Use the COM port/tab this reply arrived on (pedalSelected), not
+                                        // the device's own stored role (ownNodeType_u8). The device may
+                                        // still report its OLD role here (e.g. "Throttle") even though the
+                                        // user has deliberately connected it under a different tab (e.g.
+                                        // "Clutch") in order to reassign it - trusting ownNodeType_u8 would
+                                        // silently write the detected MAC into the wrong slot and make
+                                        // reassignment impossible via auto-detect.
+                                        //
+                                        // But blindly trusting pedalSelected is also how a stale/wrong
+                                        // COM-port-to-role mapping (Windows doesn't guarantee stable COM
+                                        // numbers across reconnects) gets silently baked into
+                                        // AssignedPedalMac, and from there into the bridge's EEPROM MAC
+                                        // table on the next "Sync to All Devices" - after which the
+                                        // bridge's MAC-based routing faithfully misroutes every wireless
+                                        // packet for that role (reported by users as pedals showing
+                                        // disconnected / getting each other's settings). So when the
+                                        // device's reported role disagrees with this tab AND assigning it
+                                        // here would actually change what's stored, ask before overwriting
+                                        // instead of doing it silently.
+                                        // NOTE: this code runs on the UI thread inside the serial-poll
+                                        // timer tick, including the silent background auto-detect that
+                                        // fires on Wireless-tab load - a blocking MessageBox here would
+                                        // (and, in an earlier version of this guard, did) freeze the whole
+                                        // plugin UI on a modal dialog nobody asked for or could see, stuck
+                                        // showing "Read Pedal Config" forever. So instead of blocking for
+                                        // confirmation, default to the safe choice (don't overwrite an
+                                        // existing, different assignment) and just notify - the user can
+                                        // still deliberately reassign the pedal via the tab's explicit
+                                        // "Set as Default"/role-write action, which already has its own
+                                        // synchronous, user-initiated confirmation dialog.
+                                        byte ownNodeType = macs.payloadMacAddresses_.ownNodeType_u8;
+                                        string previousMac = (Plugin.Settings.AssignedPedalMac != null && Plugin.Settings.AssignedPedalMac.Length > pedalSelected)
+                                            ? Plugin.Settings.AssignedPedalMac[pedalSelected] : null;
+                                        bool wouldChangeAssignment = !string.IsNullOrWhiteSpace(previousMac) &&
+                                            previousMac != "--" && previousMac != "00:00:00:00:00:00" &&
+                                            !string.Equals(previousMac, ownMac, StringComparison.OrdinalIgnoreCase);
+                                        bool roleMismatch = ownNodeType <= (byte)PedalIdEnum.PEDAL_ID_THROTTLE && ownNodeType != pedalSelected;
+
+                                        bool proceedWithAssignment = true;
+                                        if (roleMismatch && wouldChangeAssignment)
                                         {
-                                            Array.Resize(ref Plugin.Settings.AssignedPedalMac, 4);
+                                            proceedWithAssignment = false;
+                                            ToastNotification("Pedal Role Mismatch",
+                                                $"Device on {PedalConstStrings.PedalID[pedalSelected]} port identifies as {PedalConstStrings.PedalID[ownNodeType]} - not auto-assigned. " +
+                                                "Use the tab's config assignment to reassign it deliberately if intended.");
                                         }
-                                        Plugin.Settings.AssignedPedalMac[ownNode] = ownMac;
-                                        if (ownNode < 3 && Plugin._calculations?.unassignedPedalMacaddress != null && Plugin._calculations.unassignedPedalMacaddress.Length > ownNode)
+
+                                        if (proceedWithAssignment)
                                         {
-                                            Plugin._calculations.unassignedPedalMacaddress[ownNode] = macs.payloadMacAddresses_.GetMacAddress(ownNode);
+                                            if (Plugin.Settings.AssignedPedalMac == null || Plugin.Settings.AssignedPedalMac.Length < 4)
+                                            {
+                                                Array.Resize(ref Plugin.Settings.AssignedPedalMac, 4);
+                                            }
+                                            Plugin.Settings.AssignedPedalMac[pedalSelected] = ownMac;
+                                            if (Plugin._calculations?.unassignedPedalMacaddress != null && Plugin._calculations.unassignedPedalMacaddress.Length > pedalSelected)
+                                            {
+                                                string[] macParts = ownMac.Split(':');
+                                                if (macParts.Length == 6)
+                                                {
+                                                    byte[] macBytes = new byte[6];
+                                                    for (int mi = 0; mi < 6; mi++)
+                                                    {
+                                                        macBytes[mi] = Convert.ToByte(macParts[mi], 16);
+                                                    }
+                                                    Plugin._calculations.unassignedPedalMacaddress[pedalSelected] = macBytes;
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -515,6 +573,8 @@ namespace DiyFfbPedal
                                                         writer.Write(", admittance_virtualPosition_m");
                                                         writer.Write(", admittance_virtualVelocity_mps");
                                                         writer.Write(", admittance_virtualAcceleration_mps2");
+                                                        writer.Write(", joystickOutput_u16");
+                                                        writer.Write(", joystickOutput_pct");
 
                                                         writer.Write("\n");
                                                     }
@@ -552,7 +612,9 @@ namespace DiyFfbPedal
                                                         $",{state.admittance_virtualDamping_Ns_m}" +
                                                         $",{state.admittance_virtualPosition_m}" +
                                                         $",{state.admittance_virtualVelocity_mps}" +
-                                                        $",{state.admittance_virtualAcceleration_mps2}"
+                                                        $",{state.admittance_virtualAcceleration_mps2}" +
+                                                        $",{(UInt16)Pedal_position_reading[indexOfSelectedPedal_u]}" +
+                                                        $",{(Pedal_position_reading[indexOfSelectedPedal_u] / 65535.0 * 100.0).ToString("G9")}"
                                                         );
 
                                                 }
@@ -708,9 +770,13 @@ namespace DiyFfbPedal
                                                     bool isToeBrakeMode = (Plugin.Settings.rudderMode == 3 || (Plugin.Settings.rudderMode == 2 && (Plugin.Rudder_brake_status || (leftRel > 0.52 && rightRel > 0.52))));
                                                     if (isToeBrakeMode)
                                                     {
-                                                        double toeRatio = (Plugin.Settings.rudderMode == 3)
-                                                            ? Math.Max(0.0, Math.Min(1.0, Math.Max(leftRel, rightRel)))
-                                                            : Math.Max(0.0, Math.Min(1.0, (Math.Max(leftRel, rightRel) - 0.5) * 2.0));
+                                                        // Both modes read leftRel/rightRel centered at ~0.5 at rest
+                                                        // (matching the yaw-axis convention these two pedals also
+                                                        // serve under), so both need the same rescale to show 0%
+                                                        // at rest - mode 3 previously skipped it and showed ~50%
+                                                        // idle in the curve preview even though the actual applied
+                                                        // output was correct.
+                                                        double toeRatio = Math.Max(0.0, Math.Min(1.0, (Math.Max(leftRel, rightRel) - 0.5) * 2.0));
                                                         RudderJoystick_Tab.UpdateYawState(0.5);
                                                         RudderJoystick_Tab.UpdateToeBrakeState(toeRatio);
                                                     }

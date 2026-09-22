@@ -484,7 +484,8 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   dynamicSpeedLimit = min(dynamicSpeedLimit, maxPedalArcVel_mps);
 
   // Regenerative Power & Back-EMF Clamping:
-  // Dynamically governs speed so regeneration <= 35W and motor RPM <= 3600 RPM.
+  // Dynamically governs speed so regeneration <= 35W and motor RPM stays within the
+  // stepper's actual configured max (see CalcRegenVelocityLimit).
   float spindlePitch_mm = pitch_mm;
 
   // Opposing forces opposing forward (v > 0) or backward (v < 0) pedal travel
@@ -519,7 +520,8 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
       maxSledPos_m,
       spindlePitch_mm,
       effectivePosForward_01,
-      softEndstopTravel_m
+      softEndstopTravel_m,
+      calc_st->stepsPerMotorRevolution_u32
   );
 
   float maxRegenVelBackward_mps = CalcRegenVelocityLimit(
@@ -528,7 +530,8 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
       maxSledPos_m,
       spindlePitch_mm,
       effectivePosBackward_01,
-      softEndstopTravel_m
+      softEndstopTravel_m,
+      calc_st->stepsPerMotorRevolution_u32
   );
 
   float forwardSpeedLimit = min(dynamicSpeedLimit, maxRegenVelForward_mps);

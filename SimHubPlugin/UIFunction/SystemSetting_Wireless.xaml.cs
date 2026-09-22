@@ -38,6 +38,11 @@ namespace DiyFfbPedal.UIFunction
         private Brush _rowBackground = Brushes.Transparent;
         private bool _canBeep = false;
 
+        // Not bound to any UI element - just tells the 250ms live-status timer
+        // to leave this row's MAC text alone while the user has it focused, so
+        // it doesn't stomp keystrokes back to the last saved value mid-edit.
+        public bool IsUserEditing { get; set; }
+
         public int NodeIndex { get => _nodeIndex; set { _nodeIndex = value; OnPropertyChanged(); } }
         public string RoleName { get => _roleName; set { _roleName = value; OnPropertyChanged(); } }
         public string UsbStatusText { get => _usbStatusText; set { _usbStatusText = value; OnPropertyChanged(); } }
@@ -172,8 +177,10 @@ namespace DiyFfbPedal.UIFunction
             {
                 int idx = row.NodeIndex;
 
-                // Sync MAC address from plugin settings if known
-                if (Plugin.Settings?.AssignedPedalMac != null && Plugin.Settings.AssignedPedalMac.Length > idx)
+                // Sync MAC address from plugin settings if known - but not while
+                // the user is actively editing this row's textbox, otherwise this
+                // runs every 250ms and reverts their typing mid-keystroke.
+                if (!row.IsUserEditing && Plugin.Settings?.AssignedPedalMac != null && Plugin.Settings.AssignedPedalMac.Length > idx)
                 {
                     string savedMac = Plugin.Settings.AssignedPedalMac[idx];
                     if (!string.IsNullOrWhiteSpace(savedMac) && savedMac != "--" && savedMac != "00:00:00:00:00:00")
@@ -508,7 +515,7 @@ namespace DiyFfbPedal.UIFunction
                 {
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                     {
-                        FileName = "https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/tree/master/docs",
+                        FileName = "https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/tree/master/docs/pedal_pairing_and_assignment_guide.md",
                         UseShellExecute = true
                     });
                 }
@@ -522,6 +529,65 @@ namespace DiyFfbPedal.UIFunction
         private async void btn_write_all_usb_Click(object sender, RoutedEventArgs e)
         {
             if (Plugin == null) return;
+
+            // Guard against pushing a corrupted role<->MAC table to EEPROM: if two
+            // pedal roles ended up carrying the same MAC (possible if a stale/wrong
+            // COM-port-to-role mapping was picked up during Auto-Detect), syncing it
+            // as-is would make the bridge's MAC-based routing consistently treat two
+            // roles as the same physical pedal - the exact "settings got mixed up /
+            // pedal shows disconnected" symptom this table is meant to prevent.
+            var duplicateGroups = NodeRows
+                .Where(r => r.NodeIndex >= 0 && r.NodeIndex < 3 &&
+                            !string.IsNullOrWhiteSpace(r.MacAddress) &&
+                            r.MacAddress != "--" && r.MacAddress != "00:00:00:00:00:00")
+                .GroupBy(r => r.MacAddress.ToUpperInvariant())
+                .Where(g => g.Count() > 1)
+                .ToList();
+            if (duplicateGroups.Count > 0)
+            {
+                string roles = string.Join(", ", duplicateGroups.SelectMany(g => g.Select(r => r.RoleName)));
+                var confirmDuplicate = System.Windows.MessageBox.Show(
+                    $"The same MAC address is assigned to more than one pedal role ({roles}).\n\n" +
+                    "Syncing this table would make the plugin and bridge treat those roles as the same physical pedal. " +
+                    "Re-run Auto-Detect (connecting one pedal's USB cable at a time if needed) or fix the MAC fields manually before syncing.\n\n" +
+                    "Sync anyway?",
+                    "Duplicate Pedal MAC Address",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+                if (confirmDuplicate != MessageBoxResult.Yes) return;
+            }
+
+            // Guard against writing an unknown/placeholder Bridge MAC into a
+            // pedal's EEPROM: a pedal only learns the bridge's MAC via this
+            // exact sync (there's no wireless path to fix it afterwards), so
+            // syncing while the Bridge row is still "--" permanently blinds
+            // that pedal to every packet the bridge ever sends it. Wireless
+            // traffic is now unicast (ESP-NOW send targets the specific
+            // peer MAC directly - see WirelessCommunicationPedal::sendTo()
+            // in ESP32/include/WirelessCommunication_pedal.h), so an unknown
+            // bridge MAC blinds the pedal completely: it can't even transmit
+            // its own telemetry any more (that used to still get through
+            // under the old broadcast transport), so the plugin won't see
+            // the pedal at all rather than just seeing it stuck on "Read
+            // Pedal Config".
+            var bridgeRow = NodeRows.FirstOrDefault(r => r.NodeIndex == 3);
+            bool bridgeMacKnown = bridgeRow != null && !string.IsNullOrWhiteSpace(bridgeRow.MacAddress) &&
+                                   bridgeRow.MacAddress != "--" && bridgeRow.MacAddress != "00:00:00:00:00:00";
+            if (!bridgeMacKnown)
+            {
+                var confirmNoBridgeMac = System.Windows.MessageBox.Show(
+                    "The Bridge row has no known MAC address yet.\n\n" +
+                    "Syncing now will write an empty bridge address into every connected pedal's EEPROM. " +
+                    "A pedal only learns the bridge's MAC through this sync - there's no way to fix it wirelessly afterwards - " +
+                    "so any pedal synced this way will stop communicating with the bridge entirely (wireless traffic is unicast, " +
+                    "so it won't even be able to transmit telemetry) until re-synced with a known Bridge MAC.\n\n" +
+                    "Run Auto-Detect first (with the bridge connected) so its MAC is known, or continue anyway?",
+                    "Bridge MAC Unknown",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+                if (confirmNoBridgeMac != MessageBoxResult.Yes) return;
+            }
+
             byte targetChannel = GetSelectedWifiChannel();
             tb_scan_status.Text = $"Packaging DAP_mac_addresses_st_t (Channel {targetChannel}) and writing to EEPROM...";
             btn_write_all_usb.IsEnabled = false;
@@ -765,6 +831,42 @@ namespace DiyFfbPedal.UIFunction
                     action.payloadPedalAction_.system_action_u8 = (byte)PedalSystemAction.ASSIGNMENT_CHECK_BEEP;
                     Plugin.SendPedalAction(action, (byte)nodeIdx);
                     tb_scan_status.Text = $"Sent identify beep to {row.RoleName}.";
+                }
+            }
+        }
+
+        private void MacAddressTextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox tb && tb.Tag is WirelessNodeRow row)
+            {
+                row.IsUserEditing = true;
+            }
+        }
+
+        private void MacAddressTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox tb && tb.Tag is WirelessNodeRow row)
+            {
+                row.IsUserEditing = false;
+
+                // Persist immediately so the edit isn't lost/reverted by the next
+                // live-status refresh, and survives even without an explicit Sync -
+                // though the hardware itself is only updated by "Sync to All Devices".
+                if (Plugin?.Settings != null)
+                {
+                    if (Plugin.Settings.AssignedPedalMac == null || Plugin.Settings.AssignedPedalMac.Length < 4)
+                    {
+                        string[] newMacs = new string[4];
+                        if (Plugin.Settings.AssignedPedalMac != null)
+                        {
+                            Array.Copy(Plugin.Settings.AssignedPedalMac, newMacs, Math.Min(Plugin.Settings.AssignedPedalMac.Length, 4));
+                        }
+                        Plugin.Settings.AssignedPedalMac = newMacs;
+                    }
+                    if (row.NodeIndex >= 0 && row.NodeIndex < Plugin.Settings.AssignedPedalMac.Length)
+                    {
+                        Plugin.Settings.AssignedPedalMac[row.NodeIndex] = row.MacAddress;
+                    }
                 }
             }
         }

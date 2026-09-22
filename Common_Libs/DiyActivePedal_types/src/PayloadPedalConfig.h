@@ -162,4 +162,39 @@ typedef struct __attribute__((packed)) PayloadPedalConfig
   // wake on plugin trigger only (0 = auto-start on boot, 1 = standby on boot, wait for plugin)
   uint8_t wakeOnPluginOnly_u8;
 
+  // Rudder toe-brake joystick curve - kept separate from
+  // joystickMapOrig/Mapped above (which is used for yaw, or for the
+  // regular pedal output on non-rudder units) so both can be configured
+  // independently. Only one of the two is ever active on a given pedal at
+  // a time (yaw XOR toe-brake), but both need to be stored so switching
+  // between them (e.g. the Toe Brake toggle in "Airplane with Toe Brake"
+  // mode) doesn't require re-sending config.
+  uint8_t numOfJoystickMapControlToe_u8;
+  uint8_t joystickMapOrigToe00_u8;
+  uint8_t joystickMapOrigToe01_u8;
+  uint8_t joystickMapOrigToe02_u8;
+  uint8_t joystickMapOrigToe03_u8;
+  uint8_t joystickMapOrigToe04_u8;
+  uint8_t joystickMapOrigToe05_u8;
+  uint8_t joystickMapOrigToe06_u8;
+  uint8_t joystickMapOrigToe07_u8;
+  uint8_t joystickMapOrigToe08_u8;
+  uint8_t joystickMapOrigToe09_u8;
+  uint8_t joystickMapOrigToe10_u8;
+  uint8_t joystickMapMappedToe00_u8;
+  uint8_t joystickMapMappedToe01_u8;
+  uint8_t joystickMapMappedToe02_u8;
+  uint8_t joystickMapMappedToe03_u8;
+  uint8_t joystickMapMappedToe04_u8;
+  uint8_t joystickMapMappedToe05_u8;
+  uint8_t joystickMapMappedToe06_u8;
+  uint8_t joystickMapMappedToe07_u8;
+  uint8_t joystickMapMappedToe08_u8;
+  uint8_t joystickMapMappedToe09_u8;
+  uint8_t joystickMapMappedToe10_u8;
+
+  // 1 = brake resistor allowed to switch on as normal, 0 = force it off
+  // (debug/bench use only - servo braking energy will not be dissipated)
+  uint8_t enableBrakeResistor_u8;
+
 } PayloadPedalConfig_t;

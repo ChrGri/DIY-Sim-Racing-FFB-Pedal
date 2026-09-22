@@ -1096,6 +1096,31 @@ namespace DiyFfbPedal
                             dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped09 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMapped09;
                             dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped10 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMapped10;
 
+                            dap_config_st_rudder.payloadPedalConfig_.numOfJoystickMapControlToe = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.numOfJoystickMapControlToe;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe00 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrigToe00;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe01 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrigToe01;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe02 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrigToe02;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe03 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrigToe03;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe04 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrigToe04;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe05 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrigToe05;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe06 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrigToe06;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe07 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrigToe07;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe08 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrigToe08;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe09 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrigToe09;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe10 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapOrigToe10;
+
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe00 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMappedToe00;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe01 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMappedToe01;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe02 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMappedToe02;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe03 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMappedToe03;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe04 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMappedToe04;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe05 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMappedToe05;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe06 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMappedToe06;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe07 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMappedToe07;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe08 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMappedToe08;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe09 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMappedToe09;
+                            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe10 = RudderJoystick_Tab.dap_config_st.payloadPedalConfig_.joystickMapMappedToe10;
+
                             writeRudderConfigToSetting();
                             Plugin.SavePluginSettings();
                         }

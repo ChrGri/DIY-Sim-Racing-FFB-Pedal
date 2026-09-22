@@ -10,8 +10,8 @@ The wireless communication uses Espressif's high-speed **ESP-NOW** protocol oper
 
 - **Factory eFuse Hardware MACs**: Every pedal and Bridge module uses its permanent, factory-burned hardware MAC address.
 - **Dedicated EEPROM Partition**: The routing table `DapMacAddresses_t` (containing the MAC addresses for Bridge, Clutch, Brake, Throttle and the active Wi-Fi channel) is stored in EEPROM at fixed offset 0, completely isolated from pedal motion configs (offset 64).
-- **Buffer-Starvation Protection**: Pure unicast communication prevents broadcast buffer overflows and eliminates connection drops.
-- **Multi-Rig Isolation**: Multiple simulator rigs operating in the same room or household will never interfere with each other.
+- **Paced, Flow-Controlled Sends**: Every ESP-NOW send (bridge↔pedal and pedal↔pedal rudder sync) goes through a single in-flight/backoff-tracked send path per device, so the radio's transmit queue is never hammered faster than it can drain - this is what makes sustained unicast traffic (including the 2 ms rudder-sync cadence) hold up over long sessions instead of stalling.
+- **Multi-Rig Isolation**: Multiple simulator rigs operating in the same room or household will never interfere with each other - a packet addressed to your Throttle's MAC is never delivered to anyone else's radio, including your own other pedals.
 
 ---
 
@@ -21,9 +21,9 @@ The wireless communication uses Espressif's high-speed **ESP-NOW** protocol oper
 *Figure 1: Wireless Management tab in SimHub (`System -> Wireless`).*
 
 > [!IMPORTANT]
-> **Wichtiger Hinweis (USB COM vs. Wireless):**  
-> Wenn ein Pedal per USB-C-Kabel (COM-Port) an den PC angeschlossen ist, muss im jeweiligen Pedal-Reiter in SimHub die Checkbox/Option **"Wireless Communication" temporär deaktiviert (OFF)** werden.  
-> Dadurch erhält die serielle USB-Kommunikation Priorität, damit Hardware-MAC-Abfragen und EEPROM-Schreibvorgänge schnell und zuverlässig durchgeführt werden können. Nach dem Synchronisieren kann das USB-Kabel abgezogen und die drahtlose Kommunikation wieder aktiviert werden.
+> **Important note (USB COM vs. Wireless):**  
+> When a pedal is connected to the PC via USB-C cable (COM port), the **"Wireless Communication" option must be temporarily disabled (OFF)** in that pedal's tab in SimHub.  
+> This gives the USB serial connection priority, so hardware MAC queries and EEPROM writes can complete quickly and reliably. Once synced, you can unplug the USB cable and re-enable wireless communication.
 
 ---
 
@@ -46,6 +46,8 @@ sequenceDiagram
     Plugin->>User: Populate Table (Bridge, Clutch, Brake, Throttle)
     User->>Plugin: Select Wi-Fi Channel (e.g. Ch 11)
     User->>Plugin: Click "💾 Sync to All Devices"
+    Plugin->>Plugin: Validate table (no duplicate MACs, Bridge MAC known)
+    Note over Plugin,User: Warns "Duplicate Pedal MAC Address" or<br/>"Bridge MAC Unknown" if either check fails
     Plugin->>Bridge: Write DapMacAddresses_t to EEPROM (Offset 0)
     Plugin->>Pedals: Write DapMacAddresses_t to EEPROM (Offset 0)
     Bridge-->>Plugin: Ack & Apply Static Unicast Peer
@@ -53,62 +55,70 @@ sequenceDiagram
     Plugin->>User: "Sync complete! Devices paired."
 ```
 
-### Schritt-für-Schritt-Anleitung (DE)
+### Step-by-Step Guide
 
-1. **Geräte per USB verbinden**:
-   - Schließe die ESP32-S3 Bridge per USB an den PC an (erscheint als `USB-HID Online`).
-   - Schließe die Pedale nacheinander oder gleichzeitig per USB-C-Kabel an den PC an.
-2. **Wireless Communication im Pedal-Tab temporär ausschalten**:
-   - Öffne in SimHub den jeweiligen Reiter (z. B. *Brake* oder *Throttle*).
-   - Schalte **"Wireless Communication" auf OFF**, damit der COM-Port aktiv für die Datenübertragung genutzt wird.
-3. **Wireless Management Tab öffnen**:
-   - Navigiere zu **System -> Wireless**.
-4. **Auto-Erkennung starten**:
-   - Klicke auf **"🔍 Auto-Detect"**.
-   - Das Plugin fragt alle USB-Geräte ab und trägt die echten Hardware-MAC-Adressen automatisch in die Zeilen (`BRIDGE`, `CLUTCH`, `BRAKE`, `THROTTLE`) ein.
-   - Mit dem **"🔔 Beep"**-Button kannst du testen, welches physische Pedal angesprochen wird.
-5. **WLAN-Kanal wählen**:
-   - Wähle oben rechts den gewünschten Wi-Fi-Kanal (z. B. **Ch 11** oder einen störungsfreien Kanal 1–13).
-6. **Synchronisieren**:
-   - Klicke auf **"💾 Sync to All Devices"**.
-   - Die komplette Routing-Tabelle wird nun in das EEPROM (Offset 0) der Bridge sowie aller verbundenen Pedale geflasht.
-7. **Drahtlosbetrieb starten**:
-   - Trenne die USB-Kabel der Pedale.
-   - Aktiviere im SimHub-Pedal-Tab wieder **"Wireless Communication"**.
-   - Die Pedale verbinden sich nun rein über statischen Unicast mit der Bridge.
+https://github.com/user-attachments/assets/96f13742-3679-4350-b759-af907de7c6d0
 
----
+1. **Connect devices via USB**:
+   - Connect the ESP32-S3 Bridge to the PC via USB (it will show up as `USB-HID Online`).
+   - Connect the pedals to the PC via USB-C cable, one at a time or all at once.
+2. **Temporarily disable Wireless Communication in the pedal tab**:
+   - In SimHub, open the relevant tab (e.g. *Brake* or *Throttle*).
+   - Turn **"Wireless Communication" OFF**, so the COM port is actively used for data transfer.
+   - Select the pedal's COM port from the dropdown and click **"Connect"** - the pedal must be actively connected over its COM port for Auto-Detect and Sync to reach it.
 
-## 3. Wi-Fi-Kanalverwaltung (Kanäle 1–13)
+   ![Wireless Communication toggled off on a pedal tab](media/images/simhub_pedal_wireless_toggle_off.png)  
+   *Figure 2: "Wireless Communication" set to OFF on the Brake tab while connected via USB.*
+3. **Open the Wireless Management tab**:
+   - Navigate to **System -> Wireless**.
+4. **Start auto-detection**:
+   - Click **"🔍 Auto-Detect"**.
+   - The plugin queries all USB devices and automatically fills in the real hardware MAC addresses in the rows (`BRIDGE`, `CLUTCH`, `BRAKE`, `THROTTLE`).
+   - Use the **"🔔 Beep"** button to test which physical pedal is being addressed.
+5. **Select the Wi-Fi channel**:
+   - Choose the desired Wi-Fi channel in the top-right dropdown (e.g. **Ch 11**, or any channel 1-13 that's free of interference).
 
-Standardmäßig arbeitet das System auf **Kanal 11**. Sollte dein Heim-WLAN oder Nachbarnetzwerke auf 2.4 GHz stark funken, kannst du jederzeit auf einen anderen Kanal wechseln:
-- Wähle in der Dropdown-Liste oben rechts den neuen Kanal (1–13).
-- Klicke auf **"💾 Sync to All Devices"**, während die Geräte per USB angeschlossen sind.
-- Sowohl Bridge als auch Pedale schalten auf den neuen Kanal um und speichern ihn permanent im EEPROM.
+   ![Wi-Fi channel dropdown expanded](media/images/simhub_wireless_channel_dropdown.png)  
+   *Figure 3: Wi-Fi channel selector (Ch 1-13), top right of the Wireless tab.*
+6. **Synchronize**:
+   - Click **"💾 Sync to All Devices"**.
+   - The complete routing table is now flashed into the EEPROM (offset 0) of the Bridge and every connected pedal.
+   - > [!IMPORTANT]
+     > A pedal learns the Bridge's MAC address **exclusively** through this sync - there is no way to teach it wirelessly afterwards. Make sure the **BRIDGE row already shows a real MAC address** (not `--`) before you sync, otherwise the sync will write an empty bridge address into that pedal's EEPROM. The plugin now warns about this automatically with the **"Bridge MAC Unknown"** dialog, letting you cancel or proceed deliberately.
+   - If two pedal roles accidentally end up with the same MAC address (e.g. from a mixed-up USB COM assignment during Auto-Detect), the **"Duplicate Pedal MAC Address"** dialog also appears - in that case, re-run Auto-Detect (ideally with only one pedal connected via USB at a time) or correct the MAC fields manually before continuing.
 
----
-
-## 4. Benötigte Screenshots / Required Screenshots
-
-Um die Dokumentation mit ansprechenden Bildern zu vervollständigen, werden folgende Screenshots benötigt (abzulegen unter `docs/media/images/`):
-
-| Dateiname | Beschreibung | Wo aufzunehmen? |
-| :--- | :--- | :--- |
-| **`simhub_system_wireless_tab.png`** | Übersicht des neuen Wireless-Tabs mit allen 4 Zeilen (Bridge, Clutch, Brake, Throttle), ausgefüllten MAC-Adressen, Status-LEDs und RSSI-Anzeige. | SimHub Plugin -> *System* -> *Wireless* |
-| **`simhub_pedal_wireless_toggle_off.png`** | Ansicht eines Pedal-Tabs (z. B. Brake) mit hervorgehobener Checkbox **"Wireless Communication" (auf OFF gesetzt)** bei aktiver USB-Verbindung. | SimHub Plugin -> *Pedal Tab (Brake)* |
-| **`simhub_wireless_sync_success.png`** | Screenshot direkt nach dem Klick auf **"💾 Sync to All Devices"** mit der Erfolgsmeldung in der Statuszeile. | SimHub Plugin -> *System* -> *Wireless* |
-| **`simhub_wireless_channel_dropdown.png`** | Aufgeklapptes Wi-Fi-Kanal-Dropdown-Menü (Ch 1 bis 13). | SimHub Plugin -> *System* -> *Wireless* (oben rechts) |
+   ![Sync to All Devices success message](media/images/simhub_wireless_sync_success.png)  
+   *Figure 4: Status line after a successful "Sync to All Devices".*
+7. **Start wireless operation**:
+   - Disconnect the pedals' USB cables.
+   - Re-enable **"Wireless Communication"** in the SimHub pedal tab.
+   - The pedals now connect to the Bridge purely via static unicast.
 
 ---
 
-## 5. Fehlerbehebung / Troubleshooting
+## 3. Wi-Fi Channel Management (Channels 1-13)
 
-- **MAC-Adresse wird nicht automatisch erkannt**:
-  - Prüfe, ob das Pedal im Pedal-Tab erkannt wird.
-  - Stelle sicher, dass **"Wireless Communication" auf OFF** steht, während das Pedal per USB angeschlossen ist.
-  - Klicke erneut auf **"🔍 Auto-Detect"** oder **"📥 Read Device"**.
-- **Pedal verbindet sich drahtlos nicht mit der Bridge**:
-  - Stelle sicher, dass die Bridge-MAC in das EEPROM des Pedals geschrieben wurde (erkennbar am Boot-Log: `[MAC] Configured Bridge MAC: XX:XX:XX:XX:XX:XX`).
-  - Überprüfe, ob der Wi-Fi-Kanal auf Bridge und Pedal identisch ist.
-- **Signalstärke (RSSI) prüfen**:
-  - Im Wireless-Tab zeigt die Spalte **WIRELESS** die Echtzeit-Signalstärke (z. B. `-45 dBm` = Hervorragend, `-70 dBm` = Gut, `-85 dBm` = Schwach).
+By default the system operates on **channel 11**. If your home Wi-Fi or neighboring networks are causing heavy interference on 2.4 GHz, you can switch to a different channel at any time:
+- Select the new channel (1-13) from the dropdown in the top right.
+- Click **"💾 Sync to All Devices"** while the devices are connected via USB.
+- Both the Bridge and the pedals switch to the new channel and store it permanently in EEPROM.
+
+---
+
+## 4. Troubleshooting
+
+- **MAC address isn't detected automatically**:
+  - Check whether the pedal is recognized in its pedal tab.
+  - Make sure **"Wireless Communication" is set to OFF** while the pedal is connected via USB.
+  - Click **"🔍 Auto-Detect"** or **"📥 Read Device"** again.
+  - If Auto-Detect shows a **"Pedal Role Mismatch"** toast notification, the device connected on that USB port still identifies itself internally as a different role (e.g. "Throttle" on the Brake port). In that case the detected MAC is **not** applied automatically, to avoid accidentally overwriting a pedal - only reassign it deliberately via that pedal's own tab (the "Set as Default" dialog, with confirmation).
+- **Pedal stays permanently stuck on "Read Pedal Config" (wireless), even though it worked fine over USB before**:
+  - Most common cause: the **Bridge's MAC was never written to this pedal's EEPROM** - usually because during the last "Sync to All Devices", only this one pedal was connected via USB while the Bridge row in the plugin still showed `--`. Since the Bridge's MAC is learned exclusively through that sync, the pedal will then permanently and silently ignore every packet from the Bridge (it keeps happily sending its own telemetry, though, since sending doesn't require a known Bridge MAC).
+  - Check the pedal's boot log (via a USB serial monitor) for the line `[MAC] Configured Bridge MAC: XX:XX:XX:XX:XX:XX` - if it shows `00:00:00:00:00:00`, that's the cause.
+  - Fix: connect the pedal via USB, make sure the BRIDGE row in the Wireless tab shows a real MAC (run "🔍 Auto-Detect" with the Bridge connected if needed), then click **"💾 Sync to All Devices"** again while the affected pedal is connected via USB.
+  - As of the latest update, the plugin now warns about exactly this *before* writing (the **"Bridge MAC Unknown"** dialog), so this situation shouldn't happen unnoticed anymore.
+- **Pedal doesn't connect wirelessly to the Bridge**:
+  - Make sure the Bridge's MAC was written to the pedal's EEPROM (visible in the boot log: `[MAC] Configured Bridge MAC: XX:XX:XX:XX:XX:XX`).
+  - Check that the Wi-Fi channel matches between the Bridge and the pedal.
+- **Checking signal strength (RSSI)**:
+  - In the Wireless tab, the **WIRELESS** column shows real-time signal strength (e.g. `-45 dBm` = Excellent, `-70 dBm` = Good, `-85 dBm` = Weak).

@@ -2,6 +2,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
@@ -339,6 +341,30 @@ namespace DiyFfbPedal
             dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig08 = 0;
             dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig09 = 0;
             dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig10 = 0;
+
+            dap_config_st_rudder.payloadPedalConfig_.numOfJoystickMapControlToe = 6;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe00 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe01 = 20;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe02 = 40;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe03 = 60;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe04 = 80;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe05 = 100;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe06 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe07 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe08 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe09 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe10 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe00 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe01 = 20;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe02 = 40;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe03 = 60;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe04 = 80;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe05 = 100;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe06 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe07 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe08 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe09 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe10 = 0;
 
             dap_config_st_rudder.payloadPedalConfig_.absFrequency = 5;
             dap_config_st_rudder.payloadPedalConfig_.absAmplitude = 20;
@@ -1467,12 +1493,55 @@ namespace DiyFfbPedal
             }
         }
 
+        public ObservableCollection<WifiChannelBar> WifiChannelBars { get; } = new ObservableCollection<WifiChannelBar>();
+        private byte _wifiCurrentChannel = 0;
+        private byte _wifiRecommendedChannel = 0;
+        private byte _wifiUserSelectedChannel = 0;
+
+        public void InitWifiChannelBars()
+        {
+            if (ic_wifi_channel_bars == null) return;
+            WifiChannelBars.Clear();
+            for (int ch = 1; ch <= payloadWifiChannel.ChannelCount; ch++)
+            {
+                WifiChannelBars.Add(new WifiChannelBar
+                {
+                    Channel = ch,
+                    ChannelLabel = ch.ToString(),
+                    BarHeight = 3,
+                    BarColor = new SolidColorBrush(Color.FromRgb(60, 60, 70)),
+                    HighlightThickness = new Thickness(0),
+                    Tooltip = $"Channel {ch}: not scanned yet",
+                    LabelWeight = FontWeights.Normal,
+                    LabelColor = new SolidColorBrush(Color.FromRgb(170, 170, 170))
+                });
+            }
+            ic_wifi_channel_bars.ItemsSource = WifiChannelBars;
+        }
+
+        private void ApplyWifiBarHighlight(WifiChannelBar bar)
+        {
+            bool isCurrent = bar.Channel == _wifiCurrentChannel;
+            bool isRecommended = bar.Channel == _wifiRecommendedChannel;
+            bool isSelected = bar.Channel == _wifiUserSelectedChannel;
+
+            bar.HighlightThickness = isSelected ? new Thickness(2) : (isCurrent || isRecommended) ? new Thickness(1.5) : new Thickness(0);
+            bar.LabelWeight = (isCurrent || isSelected) ? FontWeights.Bold : FontWeights.Normal;
+            bar.LabelColor = isSelected ? new SolidColorBrush(Color.FromRgb(0, 229, 255)) :
+                              isCurrent ? new SolidColorBrush(Color.FromRgb(0, 255, 204)) :
+                              isRecommended ? new SolidColorBrush(Color.FromRgb(0, 230, 118)) :
+                              new SolidColorBrush(Color.FromRgb(170, 170, 170));
+        }
+
         public void HandleWifiChannelResponse(DAP_wifi_channel_st wc)
         {
             Dispatcher.InvokeAsync(() =>
             {
                 if (wc.payloadWifiChannel_.command_u8 == Constants.WIFI_CH_CMD_SCAN_RES)
                 {
+                    _wifiCurrentChannel = wc.payloadWifiChannel_.currentChannel_u8;
+                    _wifiRecommendedChannel = wc.payloadWifiChannel_.recommendedChannel_u8;
+
                     if (tb_wifi_ch_active != null) tb_wifi_ch_active.Text = $"Active: Ch {wc.payloadWifiChannel_.currentChannel_u8}";
                     if (tb_wifi_ch_rec != null) tb_wifi_ch_rec.Text = $"Rec: Ch {wc.payloadWifiChannel_.recommendedChannel_u8}";
                     if (combo_wifi_channel != null)
@@ -1480,32 +1549,33 @@ namespace DiyFfbPedal
                         combo_wifi_channel.SelectedValue = wc.payloadWifiChannel_.recommendedChannel_u8.ToString();
                     }
 
-                    // Ch 1
-                    if (tb_ch1_aps != null) tb_ch1_aps.Text = $"{wc.payloadWifiChannel_.channel1ApCount_u8} APs";
-                    if (tb_ch1_rssi != null) tb_ch1_rssi.Text = wc.payloadWifiChannel_.channel1Rssi_i8 < 0 ? $"{wc.payloadWifiChannel_.channel1Rssi_i8} dBm" : "None";
-                    if (tb_ch1_score != null) tb_ch1_score.Text = $"{wc.payloadWifiChannel_.channel1ApScore_u8}%";
-                    if (border_ch1_badge != null) border_ch1_badge.Background = GetCongestionBrush(wc.payloadWifiChannel_.channel1ApScore_u8);
+                    for (int ch = 1; ch <= payloadWifiChannel.ChannelCount && ch - 1 < WifiChannelBars.Count; ch++)
+                    {
+                        var bar = WifiChannelBars[ch - 1];
+                        byte score = wc.payloadWifiChannel_.GetApScore(ch);
+                        byte apCount = wc.payloadWifiChannel_.GetApCount(ch);
+                        sbyte rssi = wc.payloadWifiChannel_.GetRssi(ch);
 
-                    // Ch 6
-                    if (tb_ch6_aps != null) tb_ch6_aps.Text = $"{wc.payloadWifiChannel_.channel6ApCount_u8} APs";
-                    if (tb_ch6_rssi != null) tb_ch6_rssi.Text = wc.payloadWifiChannel_.channel6Rssi_i8 < 0 ? $"{wc.payloadWifiChannel_.channel6Rssi_i8} dBm" : "None";
-                    if (tb_ch6_score != null) tb_ch6_score.Text = $"{wc.payloadWifiChannel_.channel6ApScore_u8}%";
-                    if (border_ch6_badge != null) border_ch6_badge.Background = GetCongestionBrush(wc.payloadWifiChannel_.channel6ApScore_u8);
+                        bar.BarHeight = 3 + (score / 100.0) * 27.0;
+                        bar.BarColor = GetCongestionBrush(score);
+                        ApplyWifiBarHighlight(bar);
 
-                    // Ch 11
-                    if (tb_ch11_aps != null) tb_ch11_aps.Text = $"{wc.payloadWifiChannel_.channel11ApCount_u8} APs";
-                    if (tb_ch11_rssi != null) tb_ch11_rssi.Text = wc.payloadWifiChannel_.channel11Rssi_i8 < 0 ? $"{wc.payloadWifiChannel_.channel11Rssi_i8} dBm" : "None";
-                    if (tb_ch11_score != null) tb_ch11_score.Text = $"{wc.payloadWifiChannel_.channel11ApScore_u8}%";
-                    if (border_ch11_badge != null) border_ch11_badge.Background = GetCongestionBrush(wc.payloadWifiChannel_.channel11ApScore_u8);
+                        string rssiText = apCount > 0 ? $"{rssi} dBm" : "no signal";
+                        string suffix = ch == _wifiCurrentChannel ? " (active)" : ch == _wifiRecommendedChannel ? " (recommended)" : "";
+                        bar.Tooltip = $"Channel {ch}: {apCount} AP{(apCount == 1 ? "" : "s")}, {rssiText}, congestion {score}%{suffix}";
+                        bar.Refresh();
+                    }
 
                     if (tb_wifi_scan_status != null)
                     {
-                        tb_wifi_scan_status.Text = $"Scan complete. Recommended: Channel {wc.payloadWifiChannel_.recommendedChannel_u8}. Click 'Apply' to switch.";
+                        tb_wifi_scan_status.Text = $"Scan complete. Recommended: Channel {wc.payloadWifiChannel_.recommendedChannel_u8}. Apply it from System > Wireless.";
                         tb_wifi_scan_status.Foreground = new SolidColorBrush(Color.FromRgb(0, 230, 118));
                     }
                 }
                 else if (wc.payloadWifiChannel_.command_u8 == Constants.WIFI_CH_CMD_SET_ACK)
                 {
+                    _wifiCurrentChannel = wc.payloadWifiChannel_.currentChannel_u8;
+
                     if (tb_wifi_ch_active != null) tb_wifi_ch_active.Text = $"Active: Ch {wc.payloadWifiChannel_.currentChannel_u8}";
                     if (Plugin?.Settings != null && wc.payloadWifiChannel_.currentChannel_u8 >= 1 && wc.payloadWifiChannel_.currentChannel_u8 <= 14)
                     {
@@ -1517,6 +1587,7 @@ namespace DiyFfbPedal
                         tb_wifi_scan_status.Text = $"Channel {wc.payloadWifiChannel_.currentChannel_u8} applied successfully! Master & Pedals synchronized.";
                         tb_wifi_scan_status.Foreground = new SolidColorBrush(Color.FromRgb(0, 229, 255));
                     }
+                    foreach (var bar in WifiChannelBars) ApplyWifiBarHighlight(bar);
                     ToastNotification("Wi-Fi Channel Switch", $"Switched active channel to {wc.payloadWifiChannel_.currentChannel_u8}");
                 }
             });
@@ -1533,11 +1604,49 @@ namespace DiyFfbPedal
         {
             if (tb_wifi_scan_status != null)
             {
-                tb_wifi_scan_status.Text = "Scanning 2.4 GHz channels 1, 6, 11... please wait (~1s)...";
+                tb_wifi_scan_status.Text = "Scanning all 2.4 GHz channels (1-13)... please wait (~1s)...";
                 tb_wifi_scan_status.Foreground = new SolidColorBrush(Color.FromRgb(255, 235, 59));
             }
             SendWifiChannelCommand(Constants.WIFI_CH_CMD_SCAN_REQ);
         }
 
+        private void WifiChannelBar_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (!(sender is FrameworkElement fe) || !(fe.Tag is WifiChannelBar clicked)) return;
+
+            _wifiUserSelectedChannel = (byte)clicked.Channel;
+            foreach (var bar in WifiChannelBars)
+            {
+                ApplyWifiBarHighlight(bar);
+                bar.Refresh();
+            }
+
+            if (tb_wifi_ch_rec != null) tb_wifi_ch_rec.Text = $"Rec: Ch {clicked.Channel}";
+            if (combo_wifi_channel != null) combo_wifi_channel.SelectedValue = clicked.Channel.ToString();
+            if (tb_wifi_scan_status != null)
+            {
+                tb_wifi_scan_status.Text = $"Channel {clicked.Channel} selected as target. Apply it from System > Wireless.";
+                tb_wifi_scan_status.Foreground = new SolidColorBrush(Color.FromRgb(0, 229, 255));
+            }
+        }
+
+    }
+
+    public class WifiChannelBar : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler PropertyChanged;
+        public int Channel { get; set; }
+        public string ChannelLabel { get; set; }
+        public double BarHeight { get; set; }
+        public Brush BarColor { get; set; }
+        public Thickness HighlightThickness { get; set; }
+        public string Tooltip { get; set; }
+        public FontWeight LabelWeight { get; set; }
+        public Brush LabelColor { get; set; }
+
+        public void Refresh()
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
+        }
     }
 }

@@ -19,6 +19,17 @@ constexpr uint32_t TIME_SINCE_SERVO_POS_CHANGE_TO_DETECT_STANDSTILL_IN_MS =
     200; // Time without movement to consider the pedal idle
 constexpr uint32_t TIME_SINCE_SERVO_POS_CHANGE_TO_DETECT_CRASH_IN_MS =
     10000; // Time without movement to enable deep crash detection
+constexpr int32_t SERVO_OVERCURRENT_TRIP_THRESHOLD_PERCENT =
+    150; // Same current level already treated elsewhere in this file as
+         // "definitely stalled/jammed" (see performSafetyChecks()), not just
+         // a hard press against a configured force curve.
+constexpr uint32_t SERVO_OVERCURRENT_TRIP_DURATION_MS =
+    15000; // Continuous time above the threshold before the axis is latched
+           // off entirely. Longer than the crash-relief standstill window
+           // above so that gentler mechanism gets a chance to clear a jam at
+           // a hard endstop first; this is the backstop for a jam anywhere
+           // else in the travel, or one the relief bump couldn't clear, so
+           // the winding isn't left cooking indefinitely.
 constexpr uint32_t LIFELINE_CHECK_INTERVAL_MS =
     500; // Interval to verify serial heartbeat
 constexpr int32_t ENCODER_OVERFLOW_THRESHOLD =
@@ -1047,6 +1058,35 @@ void IRAM_ATTR StepperWithLimits::performSafetyChecks() {
       }
     }
   }
+
+  // --- Sustained overcurrent protection ---
+  // Independent of the hard-endstop relief above: any sustained high current
+  // draw -- jammed mid-travel, a relief bump that didn't clear the jam, or
+  // any other blockage -- risks overheating the servo winding if left
+  // running. Latch the axis off (same sticky fault as the emergency-stop
+  // path, requires a restart to clear) once current has stayed at or above
+  // the trip threshold continuously for the trip duration.
+  if (servoStatus != SERVO_FORCE_STOP) {
+    if (abs(getServosCurrent()) >= SERVO_OVERCURRENT_TRIP_THRESHOLD_PERCENT) {
+      if (overcurrentSinceMs_u32 == 0) {
+        overcurrentSinceMs_u32 = (uint32_t)timeNow_l;
+      } else if ((uint32_t)timeNow_l - overcurrentSinceMs_u32 >=
+                 SERVO_OVERCURRENT_TRIP_DURATION_MS) {
+        _stepper->forceStop();
+        servoIdleAction();
+        servoStatus = SERVO_FORCE_STOP;
+        overcurrentTripped_b = true;
+      }
+    } else {
+      overcurrentSinceMs_u32 = 0;
+    }
+  }
+}
+
+bool IRAM_ATTR StepperWithLimits::consumeOvercurrentTripFlag() {
+  bool tripped_b = overcurrentTripped_b;
+  overcurrentTripped_b = false;
+  return tripped_b;
 }
 
 // Wraps all data gathering, decoding, and analytical functions for the servo

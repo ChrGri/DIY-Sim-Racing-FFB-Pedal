@@ -71,6 +71,29 @@ namespace DiyFfbPedal
             DefaultConfig.payloadPedalConfig_.joystickMapOrig08 = 0;
             DefaultConfig.payloadPedalConfig_.joystickMapOrig09 = 0;
             DefaultConfig.payloadPedalConfig_.joystickMapOrig10 = 0;
+            DefaultConfig.payloadPedalConfig_.numOfJoystickMapControlToe = 6;
+            DefaultConfig.payloadPedalConfig_.joystickMapMappedToe00 = 0;
+            DefaultConfig.payloadPedalConfig_.joystickMapMappedToe01 = 20;
+            DefaultConfig.payloadPedalConfig_.joystickMapMappedToe02 = 40;
+            DefaultConfig.payloadPedalConfig_.joystickMapMappedToe03 = 60;
+            DefaultConfig.payloadPedalConfig_.joystickMapMappedToe04 = 80;
+            DefaultConfig.payloadPedalConfig_.joystickMapMappedToe05 = 100;
+            DefaultConfig.payloadPedalConfig_.joystickMapMappedToe06 = 0;
+            DefaultConfig.payloadPedalConfig_.joystickMapMappedToe07 = 0;
+            DefaultConfig.payloadPedalConfig_.joystickMapMappedToe08 = 0;
+            DefaultConfig.payloadPedalConfig_.joystickMapMappedToe09 = 0;
+            DefaultConfig.payloadPedalConfig_.joystickMapMappedToe10 = 0;
+            DefaultConfig.payloadPedalConfig_.joystickMapOrigToe00 = 0;
+            DefaultConfig.payloadPedalConfig_.joystickMapOrigToe01 = 20;
+            DefaultConfig.payloadPedalConfig_.joystickMapOrigToe02 = 40;
+            DefaultConfig.payloadPedalConfig_.joystickMapOrigToe03 = 60;
+            DefaultConfig.payloadPedalConfig_.joystickMapOrigToe04 = 80;
+            DefaultConfig.payloadPedalConfig_.joystickMapOrigToe05 = 100;
+            DefaultConfig.payloadPedalConfig_.joystickMapOrigToe06 = 0;
+            DefaultConfig.payloadPedalConfig_.joystickMapOrigToe07 = 0;
+            DefaultConfig.payloadPedalConfig_.joystickMapOrigToe08 = 0;
+            DefaultConfig.payloadPedalConfig_.joystickMapOrigToe09 = 0;
+            DefaultConfig.payloadPedalConfig_.joystickMapOrigToe10 = 0;
             DefaultConfig.payloadPedalConfig_.absFrequency = 5;
             DefaultConfig.payloadPedalConfig_.absAmplitude = 20;
             DefaultConfig.payloadPedalConfig_.absPattern = 0;
@@ -130,6 +153,7 @@ namespace DiyFfbPedal
             DefaultConfig.payloadPedalConfig_.endstopTravelRange_mm_u8 = 0;
             DefaultConfig.payloadPedalConfig_.dampingProgression_u8 = 0;
             DefaultConfig.payloadPedalConfig_.wakeOnPluginOnly_u8 = 0;
+            DefaultConfig.payloadPedalConfig_.enableBrakeResistor_u8 = 1;
 
         }
 

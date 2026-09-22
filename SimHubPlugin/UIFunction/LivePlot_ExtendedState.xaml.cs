@@ -172,8 +172,44 @@ namespace DiyFfbPedal.UIFunction
             if (ParentUI == null || ParentUI.Plugin == null) return;
             try
             {
+                bool isRudderAssigned = ParentUI.Plugin.Rudder_status &&
+                    ParentUI.Plugin.Rudder_Pedal_idx != null &&
+                    (ParentUI.Plugin.Rudder_Pedal_idx[0] == pedalIndex || ParentUI.Plugin.Rudder_Pedal_idx[1] == pedalIndex);
+
+                if (isRudderAssigned)
+                {
+                    // A rudder-assigned pedal's actual running config comes from
+                    // dap_config_st_rudder (sent via RudderParameterLiveUpdate),
+                    // not the regular per-pedal dap_config_st[] cache used by the
+                    // Pedals tab - that cache goes stale the moment a pedal is
+                    // handed to rudder duty. Toggling the flag there and sending
+                    // it (the old code path below) would silently overwrite the
+                    // pedal's real rudder travel/geometry settings with whatever
+                    // pre-rudder config happened to still be cached.
+                    byte oldFlags = ParentUI.dap_config_st_rudder.payloadPedalConfig_.debug_flags_0;
+                    if (enable)
+                    {
+                        ParentUI.dap_config_st_rudder.payloadPedalConfig_.debug_flags_0 |= 64;
+                    }
+                    else if (!ParentUI.Plugin._calculations.dumpPedalToResponseFile[pedalIndex])
+                    {
+                        ParentUI.dap_config_st_rudder.payloadPedalConfig_.debug_flags_0 =
+                            (byte)(ParentUI.dap_config_st_rudder.payloadPedalConfig_.debug_flags_0 & ~64);
+                    }
+                    if (ParentUI.dap_config_st_rudder.payloadPedalConfig_.debug_flags_0 != oldFlags)
+                    {
+                        // Shared flag on dap_config_st_rudder, so this streams
+                        // extended telemetry from both rudder pedals together
+                        // rather than just the one currently selected in Live
+                        // Plot - a minor bandwidth cost, but correctness (not
+                        // clobbering the live rudder config) matters more here.
+                        ParentUI.RudderParameterLiveUpdate();
+                    }
+                    return;
+                }
+
                 var config = ParentUI.dap_config_st[pedalIndex];
-                byte oldFlags = config.payloadPedalConfig_.debug_flags_0;
+                byte oldFlagsRegular = config.payloadPedalConfig_.debug_flags_0;
                 if (enable)
                 {
                     config.payloadPedalConfig_.debug_flags_0 |= 64;
@@ -185,7 +221,7 @@ namespace DiyFfbPedal.UIFunction
                         config.payloadPedalConfig_.debug_flags_0 = (byte)(config.payloadPedalConfig_.debug_flags_0 & ~64);
                     }
                 }
-                if (config.payloadPedalConfig_.debug_flags_0 != oldFlags)
+                if (config.payloadPedalConfig_.debug_flags_0 != oldFlagsRegular)
                 {
                     ParentUI.dap_config_st[pedalIndex] = config;
                     ParentUI.Plugin.SendConfigWithoutSaveToEEPROM(config, (byte)pedalIndex);

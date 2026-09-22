@@ -166,10 +166,10 @@
                                 <Canvas x:Name="canvas_Header_Tab_sub" Height="900" Width="6" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Grid.Row="0" Grid.ColumnSpan="3" Margin="-460,0,0,0" VerticalAlignment="Top" >
                                     <Line  X1="3" Y1="2" X2="3" Y2="827" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="1" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
                                 </Canvas>
-                                <StackPanel Width="175" Height="900" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-455,0,0,0">
+                                <StackPanel Width="175" Height="900" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-455.5,0,0,0">
                                     <StackPanel HorizontalAlignment="Center" Height="827" Grid.Row="3" VerticalAlignment="Top" Width="168" Grid.RowSpan="3">
 
-                                        <Border Background="#7F4E4E4E" Height="827" CornerRadius="8,8,8,8" BorderThickness="0,0,0,0" Width="168" HorizontalAlignment="Center" >
+                                        <Border Background="#7F4E4E4E" Height="827" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="168" HorizontalAlignment="Center" >
                                             <StackPanel HorizontalAlignment="Center" Height="822" VerticalAlignment="Top" Width="160" Margin="0,5,0,0">
                                                 <localFunction:InfoSection_Pedal x:Name="PedalInfo" />
                                                 <TextBox x:Name="textBox_VersionUpdate" HorizontalAlignment="Left" Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="160" Height="25" AutomationProperties.Name="TextBox2" BorderBrush="#00CCCCCC" Background="#00252525" FontSize="8" FontFamily="Arial" />
@@ -236,7 +236,7 @@
                                     </StackPanel>
                                 </StackPanel>
 
-                                <StackPanel Height="900" Width="545" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-280,0,0,0">
+                                <StackPanel Height="900" Width="545" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-281,0,0,0">
                                     <TabControl x:Name="Tab_main_1" Grid.Column="0" SelectionChanged="Tab_main_1_SelectionChanged" HorizontalAlignment="Left" Height="310" Grid.Row="0" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Grid.RowSpan="2">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
@@ -819,81 +819,49 @@
                                                 </StackPanel>
                                             </DockPanel>
 
-                                            <!-- Row 1: 3-Channel Spectrum Cards (Compact & Proportional) -->
-                                            <Grid Grid.Row="1" Margin="0,1,0,3">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="6"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="6"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-
-                                                <!-- Channel 1 Card -->
-                                                <Border Grid.Column="0" Background="#EE141720" BorderBrush="#22FFFFFF" BorderThickness="1" CornerRadius="4" Padding="6,3">
-                                                    <StackPanel>
-                                                        <DockPanel LastChildFill="False">
-                                                            <TextBlock Text="CHANNEL 1" FontFamily="Arial" FontWeight="Bold" FontSize="8" Foreground="#E0E0E0" DockPanel.Dock="Left"/>
-                                                            <Border x:Name="border_ch1_badge" CornerRadius="2" Padding="3,0" DockPanel.Dock="Right" Background="#33FFFFFF">
-                                                                <TextBlock x:Name="tb_ch1_score" Text="-- %" FontFamily="Consolas" FontSize="7.5" FontWeight="Bold" Foreground="#FFFFFF"/>
-                                                            </Border>
-                                                        </DockPanel>
-                                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                                            <TextBlock Text="APs: " FontFamily="Arial" FontSize="7.5" Foreground="#888888"/>
-                                                            <TextBlock x:Name="tb_ch1_aps" Text="-- APs" FontFamily="Consolas" FontSize="7.5" Foreground="#E0E0E0" Margin="0,0,6,0"/>
-                                                            <TextBlock Text="Peak: " FontFamily="Arial" FontSize="7.5" Foreground="#888888"/>
-                                                            <TextBlock x:Name="tb_ch1_rssi" Text="-- dBm" FontFamily="Consolas" FontSize="7.5" Foreground="#00E5FF"/>
-                                                        </StackPanel>
-                                                    </StackPanel>
-                                                </Border>
-
-                                                <!-- Channel 6 Card -->
-                                                <Border Grid.Column="2" Background="#EE141720" BorderBrush="#22FFFFFF" BorderThickness="1" CornerRadius="4" Padding="6,3">
-                                                    <StackPanel>
-                                                        <DockPanel LastChildFill="False">
-                                                            <TextBlock Text="CHANNEL 6" FontFamily="Arial" FontWeight="Bold" FontSize="8" Foreground="#E0E0E0" DockPanel.Dock="Left"/>
-                                                            <Border x:Name="border_ch6_badge" CornerRadius="2" Padding="3,0" DockPanel.Dock="Right" Background="#33FFFFFF">
-                                                                <TextBlock x:Name="tb_ch6_score" Text="-- %" FontFamily="Consolas" FontSize="7.5" FontWeight="Bold" Foreground="#FFFFFF"/>
-                                                            </Border>
-                                                        </DockPanel>
-                                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                                            <TextBlock Text="APs: " FontFamily="Arial" FontSize="7.5" Foreground="#888888"/>
-                                                            <TextBlock x:Name="tb_ch6_aps" Text="-- APs" FontFamily="Consolas" FontSize="7.5" Foreground="#E0E0E0" Margin="0,0,6,0"/>
-                                                            <TextBlock Text="Peak: " FontFamily="Arial" FontSize="7.5" Foreground="#888888"/>
-                                                            <TextBlock x:Name="tb_ch6_rssi" Text="-- dBm" FontFamily="Consolas" FontSize="7.5" Foreground="#00E5FF"/>
-                                                        </StackPanel>
-                                                    </StackPanel>
-                                                </Border>
-
-                                                <!-- Channel 11 Card -->
-                                                <Border Grid.Column="4" Background="#EE141720" BorderBrush="#22FFFFFF" BorderThickness="1" CornerRadius="4" Padding="6,3">
-                                                    <StackPanel>
-                                                        <DockPanel LastChildFill="False">
-                                                            <TextBlock Text="CHANNEL 11" FontFamily="Arial" FontWeight="Bold" FontSize="8" Foreground="#E0E0E0" DockPanel.Dock="Left"/>
-                                                            <Border x:Name="border_ch11_badge" CornerRadius="2" Padding="3,0" DockPanel.Dock="Right" Background="#33FFFFFF">
-                                                                <TextBlock x:Name="tb_ch11_score" Text="-- %" FontFamily="Consolas" FontSize="7.5" FontWeight="Bold" Foreground="#FFFFFF"/>
-                                                            </Border>
-                                                        </DockPanel>
-                                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                                            <TextBlock Text="APs: " FontFamily="Arial" FontSize="7.5" Foreground="#888888"/>
-                                                            <TextBlock x:Name="tb_ch11_aps" Text="-- APs" FontFamily="Consolas" FontSize="7.5" Foreground="#E0E0E0" Margin="0,0,6,0"/>
-                                                            <TextBlock Text="Peak: " FontFamily="Arial" FontSize="7.5" Foreground="#888888"/>
-                                                            <TextBlock x:Name="tb_ch11_rssi" Text="-- dBm" FontFamily="Consolas" FontSize="7.5" Foreground="#00E5FF"/>
-                                                        </StackPanel>
-                                                    </StackPanel>
-                                                </Border>
-                                            </Grid>
+                                            <!-- Row 1: 13-Channel Spectrum Heatmap (channels 1-13) -->
+                                            <Border Grid.Row="1" Background="#EE141720" BorderBrush="#22FFFFFF" BorderThickness="1" CornerRadius="4" Padding="4,3" Margin="0,1,0,3" Height="47">
+                                                <ItemsControl x:Name="ic_wifi_channel_bars">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <UniformGrid Rows="1" Columns="13"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Grid Margin="1,0" ToolTip="{Binding Tooltip}" Cursor="Hand" MouseLeftButtonUp="WifiChannelBar_Click" Tag="{Binding}">
+                                                                <Grid.RowDefinitions>
+                                                                    <RowDefinition Height="*"/>
+                                                                    <RowDefinition Height="11"/>
+                                                                </Grid.RowDefinitions>
+                                                                <Border Grid.Row="0" VerticalAlignment="Bottom" Height="{Binding BarHeight}" Background="{Binding BarColor}" BorderBrush="#00E5FF" BorderThickness="{Binding HighlightThickness}" CornerRadius="1,1,0,0"/>
+                                                                <TextBlock Grid.Row="1" Text="{Binding ChannelLabel}" FontFamily="Consolas" FontSize="6.5" FontWeight="{Binding LabelWeight}" Foreground="{Binding LabelColor}" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Border>
 
                                             <!-- Row 2: Action Controls (Scan Spectrum & Switch Channel Apply) -->
                                             <DockPanel Grid.Row="2" LastChildFill="False" Margin="0,2,0,3">
-                                                <Button x:Name="btn_scan_wifi_channels" Click="btn_scan_wifi_channels_Click" DockPanel.Dock="Left" Content="🔍 Scan Spectrum" Width="108" Height="20" Background="#2600AAFF" Foreground="#00CCFF" BorderBrush="#3300CCFF" BorderThickness="1" FontSize="8.5" FontFamily="Arial" FontWeight="SemiBold" Cursor="Hand" ToolTip="Scan 2.4 GHz channels 1, 6, and 11 for RF interference"/>
+                                                <Button x:Name="btn_scan_wifi_channels" Click="btn_scan_wifi_channels_Click" DockPanel.Dock="Left" Content="🔍 Scan Spectrum" Width="108" Height="20" Background="#2600AAFF" Foreground="#00CCFF" BorderBrush="#3300CCFF" BorderThickness="1" FontSize="8.5" FontFamily="Arial" FontWeight="SemiBold" Cursor="Hand" ToolTip="Scan all 2.4 GHz channels (1-13) for RF interference"/>
                                                 
                                                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
                                                     <TextBlock Text="Target:" FontFamily="Arial" FontSize="8.5" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                                     <ComboBox x:Name="combo_wifi_channel" SelectedValuePath="Tag" Width="58" Height="20" FontSize="8.5" VerticalAlignment="Center" Padding="3,0" IsEnabled="False" ToolTip="Recommended channel from the last scan (apply it from System &gt; Wireless)">
                                                         <ComboBoxItem Content="Ch 1" Tag="1"/>
+                                                        <ComboBoxItem Content="Ch 2" Tag="2"/>
+                                                        <ComboBoxItem Content="Ch 3" Tag="3"/>
+                                                        <ComboBoxItem Content="Ch 4" Tag="4"/>
+                                                        <ComboBoxItem Content="Ch 5" Tag="5"/>
                                                         <ComboBoxItem Content="Ch 6" Tag="6"/>
+                                                        <ComboBoxItem Content="Ch 7" Tag="7"/>
+                                                        <ComboBoxItem Content="Ch 8" Tag="8"/>
+                                                        <ComboBoxItem Content="Ch 9" Tag="9"/>
+                                                        <ComboBoxItem Content="Ch 10" Tag="10"/>
                                                         <ComboBoxItem Content="Ch 11" Tag="11" IsSelected="True"/>
+                                                        <ComboBoxItem Content="Ch 12" Tag="12"/>
+                                                        <ComboBoxItem Content="Ch 13" Tag="13"/>
                                                     </ComboBox>
                                                 </StackPanel>
                                             </DockPanel>

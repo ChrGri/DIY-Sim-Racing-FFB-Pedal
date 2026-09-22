@@ -1141,63 +1141,65 @@ namespace DiyFfbPedal.UIFunction
                 SettingsChanged?.Invoke(this, Settings);
             }
 
-            // Also update dap_config_st with active curve depending on rudderMode
+            // Send BOTH curves unconditionally - the device now has separate
+            // slots for yaw/regular (joystickMapOrig/Mapped) and toe-brake
+            // (joystickMapOrigToe/MappedToe), and picks which one is live
+            // based on the Toe Brake toggle, not on which one the plugin last
+            // happened to send. Previously this only sent one curve based on
+            // rudderMode == 3, so editing the toe curve in "Airplane with Toe
+            // Brake" mode (mode 2, which also uses toe braking) silently
+            // never reached the device.
             var cfg = dap_config_st;
-            bool isToeActive = (Settings != null && (Settings.rudderMode == 3));
-            if (isToeActive)
-            {
-                cfg.payloadPedalConfig_.numOfJoystickMapControl = (byte)toeRectCount;
-                cfg.payloadPedalConfig_.joystickMapOrig00 = toeJoystickOrig[0];
-                cfg.payloadPedalConfig_.joystickMapOrig01 = toeJoystickOrig[1];
-                cfg.payloadPedalConfig_.joystickMapOrig02 = toeJoystickOrig[2];
-                cfg.payloadPedalConfig_.joystickMapOrig03 = toeJoystickOrig[3];
-                cfg.payloadPedalConfig_.joystickMapOrig04 = toeJoystickOrig[4];
-                cfg.payloadPedalConfig_.joystickMapOrig05 = toeJoystickOrig[5];
-                cfg.payloadPedalConfig_.joystickMapOrig06 = toeJoystickOrig[6];
-                cfg.payloadPedalConfig_.joystickMapOrig07 = toeJoystickOrig[7];
-                cfg.payloadPedalConfig_.joystickMapOrig08 = toeJoystickOrig[8];
-                cfg.payloadPedalConfig_.joystickMapOrig09 = toeJoystickOrig[9];
-                cfg.payloadPedalConfig_.joystickMapOrig10 = toeJoystickOrig[10];
 
-                cfg.payloadPedalConfig_.joystickMapMapped00 = toeJoystickMapped[0];
-                cfg.payloadPedalConfig_.joystickMapMapped01 = toeJoystickMapped[1];
-                cfg.payloadPedalConfig_.joystickMapMapped02 = toeJoystickMapped[2];
-                cfg.payloadPedalConfig_.joystickMapMapped03 = toeJoystickMapped[3];
-                cfg.payloadPedalConfig_.joystickMapMapped04 = toeJoystickMapped[4];
-                cfg.payloadPedalConfig_.joystickMapMapped05 = toeJoystickMapped[5];
-                cfg.payloadPedalConfig_.joystickMapMapped06 = toeJoystickMapped[6];
-                cfg.payloadPedalConfig_.joystickMapMapped07 = toeJoystickMapped[7];
-                cfg.payloadPedalConfig_.joystickMapMapped08 = toeJoystickMapped[8];
-                cfg.payloadPedalConfig_.joystickMapMapped09 = toeJoystickMapped[9];
-                cfg.payloadPedalConfig_.joystickMapMapped10 = toeJoystickMapped[10];
-            }
-            else
-            {
-                cfg.payloadPedalConfig_.numOfJoystickMapControl = (byte)yawRectCount;
-                cfg.payloadPedalConfig_.joystickMapOrig00 = yawJoystickOrig[0];
-                cfg.payloadPedalConfig_.joystickMapOrig01 = yawJoystickOrig[1];
-                cfg.payloadPedalConfig_.joystickMapOrig02 = yawJoystickOrig[2];
-                cfg.payloadPedalConfig_.joystickMapOrig03 = yawJoystickOrig[3];
-                cfg.payloadPedalConfig_.joystickMapOrig04 = yawJoystickOrig[4];
-                cfg.payloadPedalConfig_.joystickMapOrig05 = yawJoystickOrig[5];
-                cfg.payloadPedalConfig_.joystickMapOrig06 = yawJoystickOrig[6];
-                cfg.payloadPedalConfig_.joystickMapOrig07 = yawJoystickOrig[7];
-                cfg.payloadPedalConfig_.joystickMapOrig08 = yawJoystickOrig[8];
-                cfg.payloadPedalConfig_.joystickMapOrig09 = yawJoystickOrig[9];
-                cfg.payloadPedalConfig_.joystickMapOrig10 = yawJoystickOrig[10];
+            cfg.payloadPedalConfig_.numOfJoystickMapControl = (byte)yawRectCount;
+            cfg.payloadPedalConfig_.joystickMapOrig00 = yawJoystickOrig[0];
+            cfg.payloadPedalConfig_.joystickMapOrig01 = yawJoystickOrig[1];
+            cfg.payloadPedalConfig_.joystickMapOrig02 = yawJoystickOrig[2];
+            cfg.payloadPedalConfig_.joystickMapOrig03 = yawJoystickOrig[3];
+            cfg.payloadPedalConfig_.joystickMapOrig04 = yawJoystickOrig[4];
+            cfg.payloadPedalConfig_.joystickMapOrig05 = yawJoystickOrig[5];
+            cfg.payloadPedalConfig_.joystickMapOrig06 = yawJoystickOrig[6];
+            cfg.payloadPedalConfig_.joystickMapOrig07 = yawJoystickOrig[7];
+            cfg.payloadPedalConfig_.joystickMapOrig08 = yawJoystickOrig[8];
+            cfg.payloadPedalConfig_.joystickMapOrig09 = yawJoystickOrig[9];
+            cfg.payloadPedalConfig_.joystickMapOrig10 = yawJoystickOrig[10];
 
-                cfg.payloadPedalConfig_.joystickMapMapped00 = yawJoystickMapped[0];
-                cfg.payloadPedalConfig_.joystickMapMapped01 = yawJoystickMapped[1];
-                cfg.payloadPedalConfig_.joystickMapMapped02 = yawJoystickMapped[2];
-                cfg.payloadPedalConfig_.joystickMapMapped03 = yawJoystickMapped[3];
-                cfg.payloadPedalConfig_.joystickMapMapped04 = yawJoystickMapped[4];
-                cfg.payloadPedalConfig_.joystickMapMapped05 = yawJoystickMapped[5];
-                cfg.payloadPedalConfig_.joystickMapMapped06 = yawJoystickMapped[6];
-                cfg.payloadPedalConfig_.joystickMapMapped07 = yawJoystickMapped[7];
-                cfg.payloadPedalConfig_.joystickMapMapped08 = yawJoystickMapped[8];
-                cfg.payloadPedalConfig_.joystickMapMapped09 = yawJoystickMapped[9];
-                cfg.payloadPedalConfig_.joystickMapMapped10 = yawJoystickMapped[10];
-            }
+            cfg.payloadPedalConfig_.joystickMapMapped00 = yawJoystickMapped[0];
+            cfg.payloadPedalConfig_.joystickMapMapped01 = yawJoystickMapped[1];
+            cfg.payloadPedalConfig_.joystickMapMapped02 = yawJoystickMapped[2];
+            cfg.payloadPedalConfig_.joystickMapMapped03 = yawJoystickMapped[3];
+            cfg.payloadPedalConfig_.joystickMapMapped04 = yawJoystickMapped[4];
+            cfg.payloadPedalConfig_.joystickMapMapped05 = yawJoystickMapped[5];
+            cfg.payloadPedalConfig_.joystickMapMapped06 = yawJoystickMapped[6];
+            cfg.payloadPedalConfig_.joystickMapMapped07 = yawJoystickMapped[7];
+            cfg.payloadPedalConfig_.joystickMapMapped08 = yawJoystickMapped[8];
+            cfg.payloadPedalConfig_.joystickMapMapped09 = yawJoystickMapped[9];
+            cfg.payloadPedalConfig_.joystickMapMapped10 = yawJoystickMapped[10];
+
+            cfg.payloadPedalConfig_.numOfJoystickMapControlToe = (byte)toeRectCount;
+            cfg.payloadPedalConfig_.joystickMapOrigToe00 = toeJoystickOrig[0];
+            cfg.payloadPedalConfig_.joystickMapOrigToe01 = toeJoystickOrig[1];
+            cfg.payloadPedalConfig_.joystickMapOrigToe02 = toeJoystickOrig[2];
+            cfg.payloadPedalConfig_.joystickMapOrigToe03 = toeJoystickOrig[3];
+            cfg.payloadPedalConfig_.joystickMapOrigToe04 = toeJoystickOrig[4];
+            cfg.payloadPedalConfig_.joystickMapOrigToe05 = toeJoystickOrig[5];
+            cfg.payloadPedalConfig_.joystickMapOrigToe06 = toeJoystickOrig[6];
+            cfg.payloadPedalConfig_.joystickMapOrigToe07 = toeJoystickOrig[7];
+            cfg.payloadPedalConfig_.joystickMapOrigToe08 = toeJoystickOrig[8];
+            cfg.payloadPedalConfig_.joystickMapOrigToe09 = toeJoystickOrig[9];
+            cfg.payloadPedalConfig_.joystickMapOrigToe10 = toeJoystickOrig[10];
+
+            cfg.payloadPedalConfig_.joystickMapMappedToe00 = toeJoystickMapped[0];
+            cfg.payloadPedalConfig_.joystickMapMappedToe01 = toeJoystickMapped[1];
+            cfg.payloadPedalConfig_.joystickMapMappedToe02 = toeJoystickMapped[2];
+            cfg.payloadPedalConfig_.joystickMapMappedToe03 = toeJoystickMapped[3];
+            cfg.payloadPedalConfig_.joystickMapMappedToe04 = toeJoystickMapped[4];
+            cfg.payloadPedalConfig_.joystickMapMappedToe05 = toeJoystickMapped[5];
+            cfg.payloadPedalConfig_.joystickMapMappedToe06 = toeJoystickMapped[6];
+            cfg.payloadPedalConfig_.joystickMapMappedToe07 = toeJoystickMapped[7];
+            cfg.payloadPedalConfig_.joystickMapMappedToe08 = toeJoystickMapped[8];
+            cfg.payloadPedalConfig_.joystickMapMappedToe09 = toeJoystickMapped[9];
+            cfg.payloadPedalConfig_.joystickMapMappedToe10 = toeJoystickMapped[10];
 
             dap_config_st = cfg;
             ConfigChanged?.Invoke(this, dap_config_st);

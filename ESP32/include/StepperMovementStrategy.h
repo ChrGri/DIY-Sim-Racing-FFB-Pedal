@@ -527,7 +527,11 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
  *    - Pr7.08 is the Back-EMF constant: 5.6 V_rms / 1000 rpm (line-to-line).
  *    - Peak AC voltage is 5.6 * sqrt(2) ≈ 7.9 V / 1000 rpm.
  *    - Rectified DC voltage through the body diodes is V_rectified ≈ 1.35 * 5.6 V ≈ 7.56 V / 1000 rpm.
- *    - At 3600 rpm, the uncontrolled passive rectified BEMF is ~27.2V, safely below 36V/48V bus rails.
+ *    - The safe RPM ceiling is derived from the actual configured max step rate
+ *      (MAXIMUM_STEPPER_SPEED_U32 / stepsPerMotorRevolution_u32) rather than a fixed
+ *      number, so it always matches what the stepper can actually be commanded to do.
+ *      E.g. at 3200 steps/rev and a 250000 Hz step-rate ceiling, that works out to
+ *      ~4687 rpm, whose rectified BEMF (~35.4V) still stays below the 36V/48V bus rails.
  * =========================================================================================
  */
 static inline IRAM_ATTR_FLAG float CalcRegenVelocityLimit(
@@ -536,19 +540,26 @@ static inline IRAM_ATTR_FLAG float CalcRegenVelocityLimit(
     float maxSledPos_m,
     float spindlePitch_mm,
     float vModelPos_01,
-    float softEndstopTravel_m)
+    float softEndstopTravel_m,
+    uint32_t stepsPerMotorRevolution_u32)
 {
     // 1. SAFE REGENERATIVE POWER LIMIT
     // P_regen = F_oppose * v_pedal. Safe dissipation limit before DC bus overvoltage.
     // iSV57 internal bleeder + capacitance handles up to ~35-40W continuous/burst safely.
-    const float MAX_REGEN_POWER_W = 35.0f;
+    const float MAX_REGEN_POWER_W = 40.0f;
     float safeOpposingForce_N = max(totalOpposingForce_N, 1.0f);
     float vMaxPower_mps = MAX_REGEN_POWER_W / safeOpposingForce_N;
 
     // 2. BACK-EMF VOLTAGE / MOTOR RPM LIMIT
-    // Pr7.08 = 56 (5.6 V_rms/krpm). Leadshine iSV57 max rated speed is 3000-4000 rpm.
-    // At 3600 rpm, BEMF amplitude remains safely below DC bus supply voltage (36V / 48V).
-    const float MAX_SAFE_MOTOR_RPM = 3600.0f;
+    // Pr7.08 = 56 (5.6 V_rms/krpm). Derive the safe RPM ceiling from the same
+    // step-rate limit the rest of the motion pipeline actually uses
+    // (MAXIMUM_STEPPER_SPEED_U32, see maxPhysicalSledVel_mps above), instead of a
+    // separate hardcoded number that can silently drift out of sync with it.
+    const float MAX_SAFE_MOTOR_RPM =
+        (stepsPerMotorRevolution_u32 > 0)
+            ? (float)MAXIMUM_STEPPER_SPEED_U32 * 60.0f /
+                  (float)stepsPerMotorRevolution_u32
+            : 3600.0f; // conservative fallback if steps/rev isn't configured yet
     float safePitch_mm = (spindlePitch_mm > 0.0f) ? spindlePitch_mm : 5.0f;
     float vSledMaxBemf_mps = (MAX_SAFE_MOTOR_RPM * safePitch_mm) / 60000.0f; // mm/min to m/s
     float vPedalMaxBemf_mps = vSledMaxBemf_mps * (totalTravel_m / max(maxSledPos_m, 0.0001f));
@@ -1090,7 +1101,8 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   
   // Regenerative Power & Back-EMF Clamping:
   // Moving forward (v > 0) against the spring, endstop, and damping forces converts foot mechanical power
-  // into electrical energy (P = F_oppose * v). We limit forward velocity so P <= 35W and motor RPM <= 3600 RPM.
+  // into electrical energy (P = F_oppose * v). We limit forward velocity so P <= 35W and
+  // motor RPM stays within the stepper's actual configured max (see CalcRegenVelocityLimit).
   float totalOpposingForce_N = springForce_N + softEndstopForce_N + fabsf(dampingForce_N);
   float softEndstopTravel_m = endstopBehavior_st.travelRange_mm_fl32 * 0.001f;
   float spindlePitch_mm = (float)config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8;
@@ -1101,7 +1113,8 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       maxSledPos_m,
       spindlePitch_mm,
       g_vModelPos_01,
-      softEndstopTravel_m
+      softEndstopTravel_m,
+      calc_st->stepsPerMotorRevolution_u32
   );
 
   float forwardSpeedLimit = min(dynamicSpeedLimit, maxRegenVel_mps);

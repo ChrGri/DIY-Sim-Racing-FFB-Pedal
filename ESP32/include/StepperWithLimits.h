@@ -95,6 +95,8 @@ private:
     uint32_t servoLastUnwrapCycleCounter_u32 = 0;  // Tracks servo cycle count to guard against stale frames
     uint32_t servoLastSafetyCycleCounter_u32 = 0;  // Tracks cycle count for safety checks
     uint32_t servoLastCycleCounterWhenPositionWasCorrected_u32 = 0; // Tracks cycle of last crash correction
+    uint32_t overcurrentSinceMs_u32 = 0;            // millis() timestamp since current first crossed the trip threshold; 0 = currently below it
+    volatile bool overcurrentTripped_b = false;     // One-shot: set when the overcurrent protection just latched the axis off
     int16_t servoLastRawPos_i16 = 0;               // Previous raw 16-bit servo position reading
     int32_t servoLastEspPos_i32 = 0;               // Previous 32-bit ESP pulse generator position
     int16_t servoPos_last_i16 = 0;
@@ -166,6 +168,12 @@ public:
     void correctPos();
     void setMinPosition();
     int32_t getPositionDeviation();
+
+    // One-shot: true exactly once when the sustained-overcurrent protection
+    // (see performSafetyChecks()) just latched the axis off. Clears itself
+    // on read, so the caller (Main.cpp) can drive a beep/LED/log exactly once
+    // per trip instead of every loop iteration.
+    bool consumeOvercurrentTripFlag();
     
     // --- Servo Telemetry Data ---
     int32_t getServosInternalPosition();

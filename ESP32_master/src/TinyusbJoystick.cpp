@@ -7,6 +7,10 @@
 
 extern DAP_servo_config_st_t dap_servo_config_st[3];
 extern bool update_servo_config[3];
+// Declared (and defined) in Main.h/Main.cpp - not pulling in the whole
+// header here to avoid its dependency graph, just this one extern needed
+// for the TEMP DIAGNOSTIC prints below.
+extern Stream *ActiveSerial;
 
 TinyusbJoystick* TinyusbJoystick::instance = nullptr;
 TinyusbJoystick::TinyusbJoystick() 
@@ -283,12 +287,20 @@ void TinyusbJoystick::ProcessFullData(uint8_t *rxBuffer, uint8_t totalLen)
         if(structChecker)
         {
             uint8_t pedalTag = tmp.payloadHeader_st.pedalTag_u8;
-            if(pedalTag >= 0 && pedalTag < 3) 
+            if(pedalTag >= 0 && pedalTag < 3)
             {
                 // Setze globale Variablen (wie update_servo_config), die in hidCommunicaitonRxTask abgefragt werden
                 memcpy(&dap_servo_config_st[pedalTag], &tmp, totalLen);
-                update_servo_config[pedalTag] = true; 
+                update_servo_config[pedalTag] = true;
+                // TEMP DIAGNOSTIC (unconditional - "Load From Servo" is rare/
+                // user-triggered from the host, not continuous). Remove once
+                // wireless servo register exchange is confirmed fixed.
+                ActiveSerial->printf("[L][DIAG] ServoConfig RX from host for Pedal #%d\n", pedalTag);
             }
+        }
+        else
+        {
+            ActiveSerial->println("[L][DIAG] ServoConfig RX from host: structChecker FAILED");
         }
     }
 }

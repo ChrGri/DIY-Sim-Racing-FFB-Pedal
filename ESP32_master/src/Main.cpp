@@ -545,8 +545,18 @@ void espNowCommunicationTxTask( void * pvParameters )
         }
       #endif
 
+      // Pace at most one send attempt per 2ms wake across all the
+      // categories below (config/action/servo-config/OTA) - unlike the
+      // pedal side's existing packetSentThisCycle discipline, nothing paced
+      // this loop before, and unicast's higher per-frame cost (hardware
+      // ACK+retry) makes back-to-back sends here a real risk of exhausting
+      // the driver's TX descriptor pool (see the history note on
+      // WirelessCommunicationBridge::sendTo()). sendTo() itself also
+      // self-limits (busy/backoff), so this is a belt-and-suspenders cap,
+      // not the only thing preventing overload.
+      bool sentThisCycle = false;
 
-      for(int i=0;i<3;i++)
+      for(int i=0;i<3 && !sentThisCycle;i++)
       {
         if(configUpdateAvailable[i])
         {
@@ -560,36 +570,84 @@ void espNowCommunicationTxTask( void * pvParameters )
             #ifdef USB_JOYSTICK
               tinyusbJoystick_.printf("Forward config to Pedal: %d, result:%s", i, esp_err_to_name(err));
             #endif
+            sentThisCycle = true;
           }
         }
       }
-      
 
-      for(int i=0; i<3; i++)
+
+      for(int i=0; i<3 && !sentThisCycle; i++)
       {
         if(dap_action_update[i] )
         {
           dap_action_update[i]=false;
+          // TEMP DIAGNOSTIC (unconditional, low-volume - only fires for the
+          // rare returnPedalConfig_u8 action) - tracking down why the
+          // wireless config-echo request never completes. Remove once the
+          // root cause is confirmed.
+          bool isConfigRequest = dap_actions_st[i].payloadPedalAction_st.returnPedalConfig_u8 != 0;
           if(dap_bridge_state_st.payloadBridgeState_st.pedalAvailability_au8[i]==1)
           {
+            // The actual action send goes out FIRST, then the (lower-
+            // priority) pairing-table refresh below - not the other way
+            // around. syncPairingTableToPedals() fires up to 3 back-to-back
+            // unicast sends with no delay between them; under unicast's
+            // shared in-flight/backoff state (see the history note on
+            // WirelessCommunicationBridge::sendTo()), that burst was eating
+            // the one "send slot" this 2ms wake before the actual rudder
+            // action below ever got a chance to go out - the action send
+            // would be silently busy-skipped with no retry, since
+            // dap_action_update[i] is already cleared above. Reordering
+            // costs nothing here: the pairing table already exists in RAM
+            // from boot/last sync, this call just refreshes it.
+            wirelessComm.sendActionToPedal(i, dap_actions_st[i]);
+            sentThisCycle = true;
             if (i == PEDAL_ID_BRAKE &&
                 dap_actions_st[i].payloadPedalAction_st.rudderAction_u8 != 0 &&
                 dap_actions_st[i].payloadPedalAction_st.systemAction_u8 == 0) {
               syncPairingTableToPedals();
             }
-            wirelessComm.sendActionToPedal(i, dap_actions_st[i]);
+            if (isConfigRequest) {
+              ActiveSerial->printf("[L][DIAG] ConfigReq action forwarded to Pedal #%d\n", i);
+              #ifdef USB_JOYSTICK
+              tinyusbJoystick_.printf("[DIAG] ConfigReq action forwarded to Pedal #%d", i);
+              #endif
+            }
+          }
+          else if (isConfigRequest)
+          {
+            ActiveSerial->printf("[L][DIAG] ConfigReq action for Pedal #%d DROPPED - pedalAvailability=0\n", i);
+            #ifdef USB_JOYSTICK
+            tinyusbJoystick_.printf("[DIAG] ConfigReq action for Pedal #%d DROPPED - pedalAvailability=0", i);
+            #endif
           }
         }
 
         // --- ADDED: Forward Servo Config to Pedals ---
-        for(int s=0; s<3; s++)
+        for(int s=0; s<3 && !sentThisCycle; s++)
         {
           if(update_servo_config[s])
           {
             update_servo_config[s] = false;
+            // TEMP DIAGNOSTIC (unconditional - "Load From Servo" is rare/
+            // user-triggered, not continuous). Tracking down why servo
+            // register exchange doesn't complete over wireless. Remove
+            // once confirmed fixed.
             if(dap_bridge_state_st.payloadBridgeState_st.pedalAvailability_au8[s]==1)
             {
               wirelessComm.sendServoConfigToPedal(s, dap_servo_config_st[s]);
+              sentThisCycle = true;
+              ActiveSerial->printf("[L][DIAG] ServoConfig forwarded to Pedal #%d\n", s);
+              #ifdef USB_JOYSTICK
+              tinyusbJoystick_.printf("[DIAG] ServoConfig forwarded to Pedal #%d", s);
+              #endif
+            }
+            else
+            {
+              ActiveSerial->printf("[L][DIAG] ServoConfig for Pedal #%d DROPPED - pedalAvailability=0\n", s);
+              #ifdef USB_JOYSTICK
+              tinyusbJoystick_.printf("[DIAG] ServoConfig for Pedal #%d DROPPED - pedalAvailability=0", s);
+              #endif
             }
           }
         }
@@ -597,9 +655,9 @@ void espNowCommunicationTxTask( void * pvParameters )
       }
 
 
-    
+
       //forward the basic wifi info for pedals
-      if(g_pedalOtaAction_b)
+      if(g_pedalOtaAction_b && !sentThisCycle)
       {
         if (dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 < 3) {
           wirelessComm.sendOtaToPedal(dap_action_ota_st.payloadOtaInfo_st.deviceId_u8, dap_action_ota_st);
@@ -607,7 +665,7 @@ void espNowCommunicationTxTask( void * pvParameters )
         }
         g_pedalOtaAction_b=false;
       }
-    }    
+    }
   }
 }
 
@@ -638,7 +696,7 @@ void clearPedalAssignmentAction(uint8_t targetIdx, const DapActions_t &action)
   }
 
   if (hasMac) {
-    wirelessComm.sendBroadcastRetry((const uint8_t*)&action, sizeof(DapActions_t), 5, 20);
+    wirelessComm.sendUnicastRetry(targetMac, (const uint8_t*)&action, sizeof(DapActions_t), 5, 20);
   }
 
   // Clear pairing in EEPROM & RAM
@@ -685,8 +743,9 @@ void pushPedalAssignmentAction(uint8_t sourceTag, uint8_t newRole, const DapActi
     return;
   }
 
-  // Broadcast a few times for reliability - no unicast peer/ACK needed.
-  wirelessComm.sendBroadcastRetry((const uint8_t*)&action, sizeof(DapActions_t), 3, 20);
+  // Unicast a few times for reliability - the target MAC is already known
+  // (resolved above), so send directly to it instead of broadcasting.
+  wirelessComm.sendUnicastRetry(targetMac, (const uint8_t*)&action, sizeof(DapActions_t), 3, 20);
   ActiveSerial->printf("[L]Assignment action sent to pedal: %02X:%02X:%02X:%02X:%02X:%02X, new role: %d\n",
                        targetMac[0], targetMac[1], targetMac[2], targetMac[3], targetMac[4], targetMac[5], newRole);
 
@@ -773,15 +832,17 @@ void handleWifiScanRequest(bool isHid) {
 
   esp_wifi_set_channel(wirelessComm.getChannel(), WIFI_SECOND_CHAN_NONE);
 
+  // Recommend from all 13 channels now, not just the classic non-overlapping
+  // 1/6/11 trio - the per-channel scores (with adjacent-channel bleed
+  // already folded in above) were always computed for all of them, they
+  // just weren't reported before.
   uint8_t recommended = 1;
   int minScore = score[1];
-  if (score[6] < minScore) {
-    minScore = score[6];
-    recommended = 6;
-  }
-  if (score[11] < minScore) {
-    minScore = score[11];
-    recommended = 11;
+  for (uint8_t ch = 2; ch <= 13; ch++) {
+    if (score[ch] < minScore) {
+      minScore = score[ch];
+      recommended = ch;
+    }
   }
 
   DapWifiChannel_t resp = {};
@@ -793,15 +854,12 @@ void handleWifiScanRequest(bool isHid) {
   resp.payloadWifiChannel_st.command_u8 = WIFI_CH_CMD_SCAN_RES;
   resp.payloadWifiChannel_st.currentChannel_u8 = wirelessComm.getChannel();
   resp.payloadWifiChannel_st.recommendedChannel_u8 = recommended;
-  resp.payloadWifiChannel_st.channel1Rssi_i8 = (bestRssi[1] > -120) ? (int8_t)bestRssi[1] : (int8_t)0;
-  resp.payloadWifiChannel_st.channel6Rssi_i8 = (bestRssi[6] > -120) ? (int8_t)bestRssi[6] : (int8_t)0;
-  resp.payloadWifiChannel_st.channel11Rssi_i8 = (bestRssi[11] > -120) ? (int8_t)bestRssi[11] : (int8_t)0;
-  resp.payloadWifiChannel_st.channel1ApCount_u8 = (uint8_t)constrain(apCount[1], 0, 255);
-  resp.payloadWifiChannel_st.channel6ApCount_u8 = (uint8_t)constrain(apCount[6], 0, 255);
-  resp.payloadWifiChannel_st.channel11ApCount_u8 = (uint8_t)constrain(apCount[11], 0, 255);
-  resp.payloadWifiChannel_st.channel1ApScore_u8 = (uint8_t)constrain(score[1], 0, 100);
-  resp.payloadWifiChannel_st.channel6ApScore_u8 = (uint8_t)constrain(score[6], 0, 100);
-  resp.payloadWifiChannel_st.channel11ApScore_u8 = (uint8_t)constrain(score[11], 0, 100);
+  for (uint8_t ch = 1; ch <= 13; ch++) {
+    uint8_t idx = ch - 1;
+    resp.payloadWifiChannel_st.channelRssi_ai8[idx] = (bestRssi[ch] > -120) ? (int8_t)bestRssi[ch] : (int8_t)0;
+    resp.payloadWifiChannel_st.channelApCount_au8[idx] = (uint8_t)constrain(apCount[ch], 0, 255);
+    resp.payloadWifiChannel_st.channelApScore_au8[idx] = (uint8_t)constrain(score[ch], 0, 100);
+  }
   resp.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
   resp.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
   resp.payloadFooter_st.checkSum_u16 = checksumCalculator((uint8_t*)(&(resp.payloadHeader_st)), sizeof(resp.payloadHeader_st) + sizeof(resp.payloadWifiChannel_st));
@@ -815,7 +873,7 @@ void handleWifiScanRequest(bool isHid) {
 #else
   ActiveSerial->write((uint8_t*)&resp, sizeof(DapWifiChannel_t));
 #endif
-  ActiveSerial->printf("[L]Scan done. Best channel: %d (Score Ch1: %d, Ch6: %d, Ch11: %d)\n", recommended, score[1], score[6], score[11]);
+  ActiveSerial->printf("[L]Scan done. Best channel: %d (score %d)\n", recommended, minScore);
 }
 
 void handleWifiSetChannelRequest(uint8_t newChannel, bool isHid) {
@@ -835,8 +893,11 @@ void handleWifiSetChannelRequest(uint8_t newChannel, bool isHid) {
   fwd.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
   fwd.payloadFooter_st.checkSum_u16 = checksumCalculator((uint8_t*)(&(fwd.payloadHeader_st)), sizeof(fwd.payloadHeader_st) + sizeof(fwd.payloadWifiChannel_st));
 
-  // Broadcast a few times over ~200ms for reliability - no unicast peer/ACK needed.
-  wirelessComm.sendBroadcastRetry((const uint8_t*)&fwd, sizeof(DapWifiChannel_t), 4, 50);
+  // Every currently-known pedal needs to hear this (they all have to move
+  // channel together), so unicast to each one individually rather than a
+  // single broadcast - sent BEFORE switching the bridge's own channel below,
+  // so pedals still on the old channel actually receive it.
+  wirelessComm.sendToAllKnownPedalsRetry((const uint8_t*)&fwd, sizeof(DapWifiChannel_t), 4, 50);
 
   saveWifiChannelToEeprom(newChannel);
   wirelessComm.setChannel(newChannel);
@@ -1723,16 +1784,15 @@ void joystickUpdateTask( void * pvParameters )
             SetControllerOutputValueAccelerator(JOYSTICK_MIN_VALUE);
             SetControllerOutputValueBrake(JOYSTICK_MIN_VALUE);
             SetControllerOutputValueThrottle(JOYSTICK_MIN_VALUE);
-            // 3% deadzone
+            // No deadzone here by design: rudderValue already comes from the
+            // pedal's own joystick-mapping curve (Main.cpp on the pedal,
+            // mirrored symmetrically for left/right), which has its own
+            // deadzone control - dragging the curve's center control point
+            // outward clamps flat near center and ramps from there, with no
+            // discontinuity. A second, independent, hardcoded deadzone here
+            // was both redundant and (as shipped) buggy - see git history.
             uint16_t rudderValue = wirelessComm.isPedalWirelessSyncEnabled(2) ? g_pedalThrottleValue_u16 : JOYSTICK_CENTER;
-            if (rudderValue < ((int16_t)(0.47f * JOYSTICK_RANGE + JOYSTICK_MIN_VALUE)) || rudderValue > ((int16_t)(0.53f * JOYSTICK_RANGE + JOYSTICK_MIN_VALUE)))
-            {
-              SetControllerOutputValueRudder(rudderValue);
-            }
-            else
-            {
-              SetControllerOutputValueRudder((int16_t)(JOYSTICK_CENTER));
-            }
+            SetControllerOutputValueRudder(rudderValue);
             SetControllerOutputValueRudder_brake(JOYSTICK_MIN_VALUE, JOYSTICK_MIN_VALUE);
           }
           if (g_pedalStatus_u8 == 2)
@@ -2428,6 +2488,9 @@ void hidCommunicaitonTxTask(void *pvParameters)
           {
             send_servo_config_to_host[i] = false;
             tinyusbJoystick_.sendData((uint8_t*)&dap_servo_config_response_st[i], sizeof(DAP_servo_config_st_t));
+            // TEMP DIAGNOSTIC (unconditional - rare/user-triggered action).
+            // Remove once wireless servo register exchange is confirmed fixed.
+            ActiveSerial->printf("[L][DIAG] ServoConfig response forwarded to host for Pedal #%d\n", i);
           }
         }
         

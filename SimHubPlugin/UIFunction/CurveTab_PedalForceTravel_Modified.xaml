@@ -7,7 +7,7 @@
              xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="272" d:DesignWidth="540">
+             d:DesignHeight="276" d:DesignWidth="540">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -16,8 +16,8 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border  HorizontalAlignment="Left" Height="276" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="8,8,8,8" Padding="0,0,0,6">
-            <StackPanel HorizontalAlignment="Left" Height="270" VerticalAlignment="Top" Width="540">
+        <Border  HorizontalAlignment="Left" Height="276" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="8,8,8,8" Padding="0,0,0,8">
+            <StackPanel HorizontalAlignment="Left" Height="276" VerticalAlignment="Top" Width="540">
                 
                 <StackPanel Height="20" Width="540" VerticalAlignment="Top" HorizontalAlignment="Left" Orientation="Horizontal">
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextForceCurveAdjustment, 'FORCE CURVE ADJUSTMENT'}" Width="200" Foreground="White" FontFamily="Arial Black" HorizontalAlignment="Center" Margin="15,0,0,0" Height="20" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center"/>

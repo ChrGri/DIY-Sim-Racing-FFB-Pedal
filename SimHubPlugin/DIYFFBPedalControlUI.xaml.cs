@@ -264,6 +264,7 @@ namespace DiyFfbPedal
                 if (tb_wifi_ch_active != null) tb_wifi_ch_active.Text = $"Active: Ch {plugin.Settings.ActiveWifiChannel}";
                 if (combo_wifi_channel != null) combo_wifi_channel.SelectedValue = plugin.Settings.ActiveWifiChannel.ToString();
             }
+            InitWifiChannelBars();
 
             if (SystemWireless_Tab != null)
             {
@@ -589,6 +590,31 @@ namespace DiyFfbPedal
                 dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped08 = e.payloadPedalConfig_.joystickMapMapped08;
                 dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped09 = e.payloadPedalConfig_.joystickMapMapped09;
                 dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped10 = e.payloadPedalConfig_.joystickMapMapped10;
+
+                dap_config_st_rudder.payloadPedalConfig_.numOfJoystickMapControlToe = e.payloadPedalConfig_.numOfJoystickMapControlToe;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe00 = e.payloadPedalConfig_.joystickMapOrigToe00;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe01 = e.payloadPedalConfig_.joystickMapOrigToe01;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe02 = e.payloadPedalConfig_.joystickMapOrigToe02;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe03 = e.payloadPedalConfig_.joystickMapOrigToe03;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe04 = e.payloadPedalConfig_.joystickMapOrigToe04;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe05 = e.payloadPedalConfig_.joystickMapOrigToe05;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe06 = e.payloadPedalConfig_.joystickMapOrigToe06;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe07 = e.payloadPedalConfig_.joystickMapOrigToe07;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe08 = e.payloadPedalConfig_.joystickMapOrigToe08;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe09 = e.payloadPedalConfig_.joystickMapOrigToe09;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe10 = e.payloadPedalConfig_.joystickMapOrigToe10;
+
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe00 = e.payloadPedalConfig_.joystickMapMappedToe00;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe01 = e.payloadPedalConfig_.joystickMapMappedToe01;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe02 = e.payloadPedalConfig_.joystickMapMappedToe02;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe03 = e.payloadPedalConfig_.joystickMapMappedToe03;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe04 = e.payloadPedalConfig_.joystickMapMappedToe04;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe05 = e.payloadPedalConfig_.joystickMapMappedToe05;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe06 = e.payloadPedalConfig_.joystickMapMappedToe06;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe07 = e.payloadPedalConfig_.joystickMapMappedToe07;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe08 = e.payloadPedalConfig_.joystickMapMappedToe08;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe09 = e.payloadPedalConfig_.joystickMapMappedToe09;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe10 = e.payloadPedalConfig_.joystickMapMappedToe10;
 
                 writeRudderConfigToSetting();
                 Plugin.SavePluginSettings();

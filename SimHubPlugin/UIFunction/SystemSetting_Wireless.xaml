@@ -165,8 +165,8 @@
                                                     <TextBlock Text="{Binding UsbStatusText}" FontFamily="Consolas" FontSize="7.5" Foreground="{Binding UsbStatusForeground}"/>
                                                 </StackPanel>
 
-                                                <!-- MAC Address Entry -->
-                                                <TextBox Grid.Column="2" Text="{Binding MacAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" FontFamily="Consolas" FontSize="8" Foreground="#00FFCC" Background="#15000000" BorderBrush="#3300FFCC" BorderThickness="1" Padding="3,1" VerticalAlignment="Center" Width="138" HorizontalAlignment="Left"/>
+                                                <!-- MAC Address Entry - click to edit, then use "Sync to All Devices" to push it -->
+                                                <TextBox Grid.Column="2" Tag="{Binding}" Text="{Binding MacAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" GotFocus="MacAddressTextBox_GotFocus" LostFocus="MacAddressTextBox_LostFocus" FontFamily="Consolas" FontSize="8" Foreground="#00FFCC" Background="#15000000" BorderBrush="#3300FFCC" BorderThickness="1" Padding="3,1" VerticalAlignment="Center" Width="138" HorizontalAlignment="Left" ToolTip="Click to edit, then use &quot;Sync to All Devices&quot; to write it to the hardware"/>
 
                                                 <!-- Active Wi-Fi Channel Badge -->
                                                 <Border Grid.Column="3" Background="{Binding ChannelBadgeBackground}" BorderBrush="{Binding ChannelBadgeBorder}" BorderThickness="1" CornerRadius="3" Padding="3,1" HorizontalAlignment="Center" VerticalAlignment="Center">

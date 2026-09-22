@@ -168,11 +168,34 @@ typedef struct DapCalculationVariables
   float *interpolatorB_pfl32 = nullptr;
   float *joystickInterpolatorA_pfl32 = nullptr;
   float *joystickInterpolatorB_pfl32 = nullptr;
+  // "Active" joystick curve - whatever EvalJoystickCubicSpline() reads.
+  // Populated from either the primary (yaw / regular pedal) or toe-brake
+  // source below via refreshActiveJoystickCurve(), never written directly.
   float joystickOrig_afl32[11];
   float joystickMapping_afl32[11];
   uint8_t numOfJoystickControl_u8;
   Cubic cubic_st;
   Cubic joystickInterpolator_st;
+
+  // Stable source data for both curves, populated once per config update.
+  // Only one Cubic interpolator (above) is kept fitted at a time - it is
+  // ~6.4KB per instance (100-point result buffers), and every pedal in the
+  // fleet carries this struct whether or not it ever uses toe-brake, so a
+  // second permanent interpolator was not worth the memory on top of an
+  // already heap-constrained ESP32. Switching between yaw and toe-brake
+  // output is a rare, discrete user action (not a per-tick thing), so
+  // refitting on demand instead of keeping both pre-fitted is cheap enough.
+  float joystickOrigPrimarySrc_afl32[11];
+  float joystickMappingPrimarySrc_afl32[11];
+  uint8_t numOfJoystickControlPrimarySrc_u8;
+  float joystickOrigToeSrc_afl32[11];
+  float joystickMappingToeSrc_afl32[11];
+  uint8_t numOfJoystickControlToeSrc_u8;
+  // Which source is currently fitted into the active slot above.
+  // -1 = not yet loaded (forces a refit on first use).
+  int8_t activeJoystickCurveIsToe_i8 = -1;
+  void refreshActiveJoystickCurve(bool wantToe);
+
   void updateFromConfig(DapConfig_t& config_st);
   void updateEndstops(int32_t newMinEndstop_i32, int32_t newMaxEndstop_i32);
   void updateStiffness();

@@ -62,9 +62,13 @@
                     </StackPanel>
                 </StackPanel>
                 <StackPanel Height="30" Width="540" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,3,0,0">
-                    <StackPanel Height="20" Width="400" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="15,0,0,0">
+                    <StackPanel Height="20" Width="175" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="15,0,0,0">
                         <styles:SHToggleButton x:Name="CheckBox_WakeOnPluginOnly" Content="" Checked="CheckBox_WakeOnPluginOnly_Checked" Unchecked="CheckBox_WakeOnPluginOnly_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="When enabled, the pedal will stay in standby on power-up and only initialize/home when SimHub connects or triggers wakeup" RenderTransformOrigin="0.5,0.5" Margin="0,0,0,0" />
-                        <Label Content="{SLoc DIYFFBPedalPlugin_TextGeneralSettingWakeOnPluginOnly, 'Wakeup only by plugin trigger'}" Height="20" Width="350" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
+                        <Label Content="{SLoc DIYFFBPedalPlugin_TextGeneralSettingWakeOnPluginOnly, 'Wakeup only by plugin trigger'}" Height="20" Width="190" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
+                    </StackPanel>
+                    <StackPanel Height="20" Width="200" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0">
+                        <styles:SHToggleButton x:Name="CheckBox_EnableBrakeResistor" Content="" Checked="CheckBox_EnableBrakeResistor_Checked" Unchecked="CheckBox_EnableBrakeResistor_Unchecked" IsChecked="True" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="When disabled, the brake resistor is never switched on (debug/bench use only - servo braking energy will not be dissipated)" RenderTransformOrigin="0.5,0.5" Margin="0,0,0,0" />
+                        <Label Content="{SLoc DIYFFBPedalPlugin_TextGeneralSettingEnableBrakeResistor, 'Enable brake resistor'}" Height="20" Width="160" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
             </StackPanel>

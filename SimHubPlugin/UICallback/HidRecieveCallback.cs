@@ -253,9 +253,13 @@ namespace DiyFfbPedal
                                                     bool isToeBrakeMode = (Plugin.Settings.rudderMode == 3 || (Plugin.Settings.rudderMode == 2 && (Plugin.Rudder_brake_status || (leftRel > 0.52 && rightRel > 0.52))));
                                                     if (isToeBrakeMode)
                                                     {
-                                                        double toeRatio = (Plugin.Settings.rudderMode == 3)
-                                                            ? Math.Max(0.0, Math.Min(1.0, Math.Max(leftRel, rightRel)))
-                                                            : Math.Max(0.0, Math.Min(1.0, (Math.Max(leftRel, rightRel) - 0.5) * 2.0));
+                                                        // Both modes read leftRel/rightRel centered at ~0.5 at rest
+                                                        // (matching the yaw-axis convention these two pedals also
+                                                        // serve under), so both need the same rescale to show 0%
+                                                        // at rest - mode 3 previously skipped it and showed ~50%
+                                                        // idle in the curve preview even though the actual applied
+                                                        // output was correct.
+                                                        double toeRatio = Math.Max(0.0, Math.Min(1.0, (Math.Max(leftRel, rightRel) - 0.5) * 2.0));
                                                         RudderJoystick_Tab.UpdateYawState(0.5);
                                                         RudderJoystick_Tab.UpdateToeBrakeState(toeRatio);
                                                     }
@@ -427,6 +431,8 @@ namespace DiyFfbPedal
                                                 writer.Write(", admittance_virtualPosition_m");
                                                 writer.Write(", admittance_virtualVelocity_mps");
                                                 writer.Write(", admittance_virtualAcceleration_mps2");
+                                                writer.Write(", joystickOutput_u16");
+                                                writer.Write(", joystickOutput_pct");
 
                                                 writer.Write("\n");
                                             }
@@ -465,7 +471,9 @@ namespace DiyFfbPedal
                                                 $",{state.admittance_virtualDamping_Ns_m}" +
                                                 $",{state.admittance_virtualPosition_m}" +
                                                 $",{state.admittance_virtualVelocity_mps}" +
-                                                $",{state.admittance_virtualAcceleration_mps2}"
+                                                $",{state.admittance_virtualAcceleration_mps2}" +
+                                                $",{(UInt16)Pedal_position_reading[pedalSelected]}" +
+                                                $",{(Pedal_position_reading[pedalSelected] / 65535.0 * 100.0).ToString("G9")}"
                                                 );
                                         }
 
