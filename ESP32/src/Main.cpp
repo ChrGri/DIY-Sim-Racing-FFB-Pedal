@@ -2658,29 +2658,33 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             // slightly overspeed to make sure pulses reach in time
             // requiredSpeed *= 1.1f;
 
-            // Catch-up propotional speed gain
+            // Catch-up: close servo lag. Standstill uses a high Kp; in-motion
+            // uses a milder gain so lag is bled off during the stroke instead
+            // of dumped when the model slows (that dump is the felt jerk).
             float catchUpSpeedHz = 0.0f;
-
-            // add catchup speed near standstill & near min endstop, or when
-            // correcting hardware offset
             float targetPosFraction_fl32 =
                 stepper->getCurrentPositionFractionFromExternalPos(
                     Position_Next_fl32 - stepper->getMinPosition());
             bool isRudderModeActive =
                 dap_calculationVariables_st.rudderStatus_b ||
                 dap_calculationVariables_st.helicopterRudderStatus_b;
-            if ((fabsf(requiredSpeed) < 10) &&
-                (targetPosFraction_fl32 <= 0.05f || isRudderModeActive ||
-                 abs(hardwareDistance_i32) > 1)) {
-              // At endstops in rudder mode, do not overdrive against mechanical
-              // limit
-              bool nearEndstop = (targetPosFraction_fl32 <= 0.02f ||
-                                  targetPosFraction_fl32 >= 0.98f);
-              if (abs(hardwareDistance_i32) > 1 &&
-                  (!isRudderModeActive || !nearEndstop)) {
-                float catchUpKp = 400.0f;
-                catchUpSpeedHz =
-                    (float)(abs(hardwareDistance_i32) - 1) * catchUpKp;
+            bool nearEndstop = (targetPosFraction_fl32 <= 0.02f ||
+                                targetPosFraction_fl32 >= 0.98f);
+            int32_t hardwareDistanceAbs_i32 = abs(hardwareDistance_i32);
+            if (hardwareDistanceAbs_i32 > 1 &&
+                (!isRudderModeActive || !nearEndstop)) {
+              if (fabsf(requiredSpeed) < 10.0f) {
+                const float catchUpKpStandstill_fl32 = 400.0f;
+                catchUpSpeedHz = (float)(hardwareDistanceAbs_i32 - 1) *
+                                 catchUpKpStandstill_fl32;
+              } else if (hardwareDistanceAbs_i32 > 16) {
+                const float catchUpKpMotion_fl32 = 80.0f;
+                const float catchUpMaxMotionHz_fl32 = 12000.0f;
+                catchUpSpeedHz = (float)(hardwareDistanceAbs_i32 - 16) *
+                                 catchUpKpMotion_fl32;
+                if (catchUpSpeedHz > catchUpMaxMotionHz_fl32) {
+                  catchUpSpeedHz = catchUpMaxMotionHz_fl32;
+                }
               }
             }
 
