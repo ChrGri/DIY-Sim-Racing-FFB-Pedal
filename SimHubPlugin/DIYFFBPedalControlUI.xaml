@@ -145,27 +145,10 @@
                                             <TranslateTransform X="0" Y="500"/>
                                         </TransformGroup>
                                     </TabControl.RenderTransform>
-                                    <TabItem x:Name="tabPedalSelection_clutch" Width="150" Height="48" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                    <TabItem x:Name="tabPedalSelection_accelerator" Tag="2" Width="166" Height="48" Padding="0,0,0,0">
                                         <TabItem.Header>
-                                            <Border  Width="150" Height="48" Margin="0,0,0,0" >
-                                                <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdClutch, 'Clutch'}"  FontFamily="Arial Black" FontSize="26" Height="48" Width="150" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
-
-                                            </Border>
-                                        </TabItem.Header>
-                                    </TabItem>
-                                    <TabItem x:Name="tabPedalSelection_brake" Width="150" Height="48" Padding="0,0,0,0">
-                                        <TabItem.Header>
-                                            <Border  Width="150" Height="48" Margin="0,0,0,0" >
-                                                <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdBrake, 'Brake'}"  FontFamily="Arial Black" FontSize="26" Height="48" Width="150" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
-                                            </Border>
-                                        </TabItem.Header>
-                                        <Border Height="850" Width="1120">
-                                        </Border>
-                                    </TabItem>
-                                    <TabItem x:Name="tabPedalSelection_accelerator" Width="190" Height="48" Padding="0,0,0,0">
-                                        <TabItem.Header>
-                                            <Border  Width="190" Height="48" Margin="0,0,0,0" >
-                                                <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdThrottle, 'Throttle'}"  FontFamily="Arial Black" FontSize="26" Height="48" Width="190" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" RenderTransformOrigin="0.5,0.5"  >
+                                            <Border  Width="166" Height="48" Margin="0,0,0,0" >
+                                                <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdThrottle, 'Throttle'}"  FontFamily="Arial Black" FontSize="26" Height="48" Width="166" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" RenderTransformOrigin="0.5,0.5"  >
                                                     <Label.RenderTransform>
                                                         <TransformGroup>
                                                             <ScaleTransform/>
@@ -175,6 +158,23 @@
                                                         </TransformGroup>
                                                     </Label.RenderTransform>
                                                 </Label>
+                                            </Border>
+                                        </TabItem.Header>
+                                    </TabItem>
+                                    <TabItem x:Name="tabPedalSelection_brake" Tag="1" Width="166" Height="48" Padding="0,0,0,0">
+                                        <TabItem.Header>
+                                            <Border  Width="166" Height="48" Margin="0,0,0,0" >
+                                                <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdBrake, 'Brake'}"  FontFamily="Arial Black" FontSize="26" Height="48" Width="166" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
+                                            </Border>
+                                        </TabItem.Header>
+                                        <Border Height="850" Width="1120">
+                                        </Border>
+                                    </TabItem>
+                                    <TabItem x:Name="tabPedalSelection_clutch" Tag="0" Width="166" Height="48" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                        <TabItem.Header>
+                                            <Border  Width="166" Height="48" Margin="0,0,0,0" >
+                                                <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdClutch, 'Clutch'}"  FontFamily="Arial Black" FontSize="26" Height="48" Width="166" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
+
                                             </Border>
                                         </TabItem.Header>
                                     </TabItem>

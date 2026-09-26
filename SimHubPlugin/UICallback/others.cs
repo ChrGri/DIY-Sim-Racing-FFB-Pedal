@@ -1031,7 +1031,7 @@ namespace DiyFfbPedal
             if (Plugin.Page_update_flag == true)
             {
                 Plugin.Page_update_flag = false;
-                MyTab.SelectedIndex = (int)Plugin.Settings.table_selected;
+                SelectPedalTab(Plugin.Settings.table_selected);
                 Plugin.pedal_select_update_flag = false;
                 Plugin.simhub_theme_color = defaultcolor.ToString();
                 switch (Plugin.Settings.table_selected)

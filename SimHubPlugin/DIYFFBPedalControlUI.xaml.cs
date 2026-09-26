@@ -244,7 +244,7 @@ namespace DiyFfbPedal
             UpdateSerialPortList_click();
             
             indexOfSelectedPedal_u = plugin.Settings.table_selected;
-            MyTab.SelectedIndex = (int)indexOfSelectedPedal_u;
+            SelectPedalTab(indexOfSelectedPedal_u);
             if (LivePlotSection != null)
             {
                 LivePlotSection.SetReferences(plugin, this);

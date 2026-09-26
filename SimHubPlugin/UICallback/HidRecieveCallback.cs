@@ -32,7 +32,9 @@ namespace DiyFfbPedal
         private void EnsureCurveRedrawTimer()
         {
             if (_curveRedrawTimer != null) return;
-            _curveRedrawTimer = new DispatcherTimer(System.Windows.Threading.DispatcherPriority.Render)
+            // Must be bound to the UI dispatcher: this is called from the HID ReadLoop thread, and a
+            // DispatcherTimer created without one attaches to that thread's dispatcher, which never runs.
+            _curveRedrawTimer = new DispatcherTimer(System.Windows.Threading.DispatcherPriority.Render, Dispatcher)
             {
                 Interval = TimeSpan.FromMilliseconds(1000.0 / 60.0)
             };
