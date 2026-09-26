@@ -7,13 +7,12 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/DiyFfbPedal;component/UIStyles/DefaultStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            <Style x:Key="QuickButton" TargetType="Button">
-                <Setter Property="Background" Value="#FF4A535E"/>
-                <Setter Property="Foreground" Value="White"/>
+            <Style x:Key="QuickButton" TargetType="Button" BasedOn="{StaticResource ModernPillButton}">
                 <Setter Property="FontSize" Value="13"/>
                 <Setter Property="Margin" Value="4"/>
                 <Setter Property="Padding" Value="8,5"/>
                 <Setter Property="MinHeight" Value="38"/>
+                <Setter Property="MinWidth" Value="90"/>
             </Style>
         </ResourceDictionary>
     </UserControl.Resources>
@@ -58,8 +57,8 @@
                 <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="90"/><RowDefinition Height="42"/></Grid.RowDefinitions>
                 <TextBlock Text="QUICK PROFILES" Foreground="White" FontSize="16" FontWeight="Bold"/>
                 <TextBlock Grid.Row="1" Text="Apply saved pedal settings and effects in one click" Foreground="#FFABB4BE" FontSize="11" Margin="0,4,0,5"/>
-                <Grid Grid.Row="2"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
-                    <Button x:Name="Quick0" Grid.Column="0" Grid.Row="0" Style="{StaticResource QuickButton}" Content="Profile 1 Apply" Tag="0" Click="QuickApply_Click"/><Button x:Name="Quick1" Grid.Column="1" Grid.Row="0" Style="{StaticResource QuickButton}" Content="Profile 2 Apply" Tag="1" Click="QuickApply_Click"/><Button x:Name="Quick2" Grid.Column="2" Grid.Row="0" Style="{StaticResource QuickButton}" Content="Profile 3 Apply" Tag="2" Click="QuickApply_Click"/><Button x:Name="Quick3" Grid.Column="0" Grid.Row="1" Style="{StaticResource QuickButton}" Content="Profile 4 Apply" Tag="3" Click="QuickApply_Click"/><Button x:Name="Quick4" Grid.Column="1" Grid.Row="1" Style="{StaticResource QuickButton}" Content="Profile 5 Apply" Tag="4" Click="QuickApply_Click"/><Button x:Name="Quick5" Grid.Column="2" Grid.Row="1" Style="{StaticResource QuickButton}" Content="Profile 6 Apply" Tag="5" Click="QuickApply_Click"/>
+                <Grid Grid.Row="2" HorizontalAlignment="Left"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                    <Button x:Name="Quick0" Grid.Column="0" Grid.Row="0" Style="{StaticResource QuickButton}" Width="140" Content="Profile 1" Tag="0" Click="QuickApply_Click"/><Button x:Name="Quick1" Grid.Column="1" Grid.Row="0" Style="{StaticResource QuickButton}" Width="140" Content="Profile 2" Tag="1" Click="QuickApply_Click"/><Button x:Name="Quick2" Grid.Column="2" Grid.Row="0" Style="{StaticResource QuickButton}" Width="140" Content="Profile 3" Tag="2" Click="QuickApply_Click"/><Button x:Name="Quick3" Grid.Column="0" Grid.Row="1" Style="{StaticResource QuickButton}" Width="140" Content="Profile 4" Tag="3" Click="QuickApply_Click"/><Button x:Name="Quick4" Grid.Column="1" Grid.Row="1" Style="{StaticResource QuickButton}" Width="140" Content="Profile 5" Tag="4" Click="QuickApply_Click"/><Button x:Name="Quick5" Grid.Column="2" Grid.Row="1" Style="{StaticResource QuickButton}" Width="140" Content="Profile 6" Tag="5" Click="QuickApply_Click"/>
                 </Grid>
                 <Border Grid.Row="3" Background="#22232A31" CornerRadius="4" Margin="4,2,4,0" Padding="6,5" MinHeight="38"><TextBlock x:Name="ApplyFeedback" Foreground="#FFB5EFE3" FontSize="11" VerticalAlignment="Center" TextWrapping="Wrap" LineHeight="15"/></Border>
             </Grid>

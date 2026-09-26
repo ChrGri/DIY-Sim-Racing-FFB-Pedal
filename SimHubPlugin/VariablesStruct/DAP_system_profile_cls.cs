@@ -27,9 +27,30 @@ namespace DiyFfbPedal
         [OnDeserialized]
         internal void OnDeserializedMethod(StreamingContext context)
         {
+            if (ConfigPath == null)
+            {
+                ConfigPath = new string[3];
+            }
+            else if (ConfigPath.Length < 3)
+            {
+                string[] configPath = ConfigPath;
+                Array.Resize(ref configPath, 3);
+                ConfigPath = configPath;
+            }
+            for (int i = 0; i < ConfigPath.Length; i++)
+            {
+                if (ConfigPath[i] == null) ConfigPath[i] = string.Empty;
+            }
+
             if (Effects == null)
             {
                 Effects = new bool[3][];
+            }
+            else if (Effects.Length < 3)
+            {
+                bool[][] effects = Effects;
+                Array.Resize(ref effects, 3);
+                Effects = effects;
             }
             for (int i = 0; i < Effects.Length; i++)
             {

@@ -192,6 +192,7 @@ namespace DiyFfbPedal
                     Plugin._calculations.pedalSerialStatus[i] == ConnectStateEnum.PEDAL_IS_READY))
                 {
                     Plugin.SendConfigWithoutSaveToEEPROM(Plugin.ProfileServicePlugin.ConfigBuffer[i], (byte)i);
+                    dap_config_st[i] = Plugin.ProfileServicePlugin.ConfigBuffer[i];
                     Plugin._calculations.ConfigEditing[i] = Plugin.ConfigService.ConfigList.FirstOrDefault(item => item.FullPath == Plugin.ProfileServicePlugin.GameConfigPathBuffer[i]).FileName;
                     Plugin.ProfileServicePlugin.GamePofileConfigChange_b[i] = false;
                     if (!Plugin.ProfileServicePlugin.GamePofileConfigChange_b[0] && !Plugin.ProfileServicePlugin.GamePofileConfigChange_b[1] && !Plugin.ProfileServicePlugin.GamePofileConfigChange_b[2])

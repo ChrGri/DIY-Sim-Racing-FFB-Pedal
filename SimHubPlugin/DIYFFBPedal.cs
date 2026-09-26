@@ -88,6 +88,8 @@ namespace DiyFfbPedal
         public bool Version_Check_Simhub_MSFS = false;
         public byte[] Rudder_Pedal_idx = new byte[2] { 1, 2 };
         public string Current_Game = "";
+        private DateTime lastRunningGameSeenUtc = DateTime.MinValue;
+        private bool autoProfileStateCleared = true;
         public byte TrackSurfaceCondition = 0;
         //public bool[] PedalConfigRead_b = new bool[3] { false, false, false };
         public bool[] isCdcSerial = new bool[3] { false, false, false };
@@ -315,6 +317,32 @@ namespace DiyFfbPedal
             
             //bool WS_flag = false;
 
+            bool gameProcessDetected = data.GameRunning || data.RunningGameProcessDetected;
+            if (gameProcessDetected)
+            {
+                string runningGame = Convert.ToString(pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame"));
+                if (String.IsNullOrWhiteSpace(runningGame) && pluginManager.GameDescription != null)
+                    runningGame = pluginManager.GameDescription.Code;
+                if (String.IsNullOrWhiteSpace(runningGame)) runningGame = data.GameName;
+                if (!String.IsNullOrWhiteSpace(runningGame))
+                {
+                    Current_Game = runningGame;
+                    currentGame = runningGame;
+                    lastRunningGameSeenUtc = DateTime.UtcNow;
+                    autoProfileStateCleared = false;
+                    if (Settings.profileAutoChange)
+                        ProfileServicePlugin.ApplyProfileAutoForGame(runningGame);
+                }
+            }
+            else if (!autoProfileStateCleared &&
+                DateTime.UtcNow - lastRunningGameSeenUtc > TimeSpan.FromSeconds(2))
+            {
+                Current_Game = "";
+                currentGame = null;
+                ProfileServicePlugin.ClearAutoSwitchStatus();
+                autoProfileStateCleared = true;
+            }
+
             if (data.GamePaused || (!data.GameRunning))
             {
                 in_game_flag = 0;
@@ -337,17 +365,9 @@ namespace DiyFfbPedal
             // Send ABS signal when triggered by the game
             if (data.GameRunning)
             {
-                Current_Game = data.GameName;//(string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame");
-                currentGame = data.GameName;
                 if (Settings.profileAutoChange)
                 {
-                    if (PedalConstStrings.AutoProfileSwitchGameList.Contains(Current_Game) && IsGameChanged)
-                    {
-                        //set default game profile first;
-                        ProfileServicePlugin.ApplyProfileAutoForGame(data.GameName);
-                        IsGameChanged = false;
-                    }
-                    //overwrite with car profile
+                    // A car-specific profile takes precedence once telemetry is available.
                     ProfileServicePlugin.ApplyProfileAutoForCar(data.NewData.CarId);
 
                 }

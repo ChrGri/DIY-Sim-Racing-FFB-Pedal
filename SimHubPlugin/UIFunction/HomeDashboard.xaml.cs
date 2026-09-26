@@ -18,6 +18,8 @@ namespace DiyFfbPedal.UIFunction
             new Queue<KeyValuePair<DateTime, double>>(),
             new Queue<KeyValuePair<DateTime, double>>()
         };
+        // newest sample that fell out of the 10 s window, used to interpolate the graph's left edge
+        private readonly KeyValuePair<DateTime, double>?[] lastExpired = new KeyValuePair<DateTime, double>?[3];
         private readonly bool?[] lastConnected = new bool?[3];
         private readonly int[] lastPercent = { -1, -1, -1 };
         private readonly DispatcherTimer refreshTimer;
@@ -112,12 +114,24 @@ namespace DiyFfbPedal.UIFunction
             DateTime now = DateTime.UtcNow;
             Queue<KeyValuePair<DateTime, double>> pedalHistory = history[pedal];
             pedalHistory.Enqueue(new KeyValuePair<DateTime, double>(now, percent));
-            while (pedalHistory.Count > 0 && now - pedalHistory.Peek().Key > TimeSpan.FromSeconds(10)) pedalHistory.Dequeue();
-            PointCollection points = new PointCollection(pedalHistory.Count);
+            DateTime windowStart = now - TimeSpan.FromSeconds(10);
+            while (pedalHistory.Count > 0 && pedalHistory.Peek().Key < windowStart) lastExpired[pedal] = pedalHistory.Dequeue();
+            PointCollection points = new PointCollection(pedalHistory.Count + 1);
+            // pin the line's left end to x = 0 so it doesn't jitter by up to one sample interval
+            if (lastExpired[pedal].HasValue && pedalHistory.Count > 0)
+            {
+                KeyValuePair<DateTime, double> before = lastExpired[pedal].Value;
+                KeyValuePair<DateTime, double> after = pedalHistory.Peek();
+                double span = (after.Key - before.Key).TotalSeconds;
+                double t = span > 0 ? (windowStart - before.Key).TotalSeconds / span : 1;
+                double edgeValue = before.Value + (after.Value - before.Value) * t;
+                points.Add(new Point(0, 72 - edgeValue * 0.66));
+            }
             foreach (KeyValuePair<DateTime, double> sample in pedalHistory)
             {
                 double x = 700 - (now - sample.Key).TotalSeconds * 70;
-                points.Add(new Point(x, 78 - sample.Value * 0.78));
+                // keep 0 % / 100 % 6 units inside the canvas so the lines clear the border's rounded corners
+                points.Add(new Point(x, 72 - sample.Value * 0.66));
             }
             points.Freeze();
             graph.Points = points;
@@ -161,7 +175,7 @@ namespace DiyFfbPedal.UIFunction
                 {
                     ProfileListItem item = plugin.ProfileServicePlugin.ProfileList[i];
                     string name = String.IsNullOrWhiteSpace(item.ListNameOrig) ? item.FileName : item.ListNameOrig;
-                    button.Content = name + " Apply";
+                    button.Content = name;
                 }
             }
         }

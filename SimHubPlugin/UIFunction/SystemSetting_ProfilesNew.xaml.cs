@@ -65,6 +65,7 @@ namespace DiyFfbPedal.UIFunction
             get { return _configList; }
             set { _configList = value; OnPropertyChanged(); }
         }
+        public ObservableCollection<string> GameCodes { get; } = new ObservableCollection<string>();
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
@@ -101,6 +102,23 @@ namespace DiyFfbPedal.UIFunction
                 //this.DataContext = data;
                 ItemList = data.ProfileServicePlugin.ProfileList;
                 ConfigList = data.ConfigService.ConfigList;
+                RefreshGameCodes();
+            }
+        }
+
+        private void RefreshGameCodes()
+        {
+            GameCodes.Clear();
+            foreach (string code in PedalConstStrings.AutoProfileSwitchGameList
+                .Where(code => !String.IsNullOrWhiteSpace(code))
+                .OrderBy(code => code, StringComparer.OrdinalIgnoreCase))
+            {
+                GameCodes.Add(code);
+            }
+            if (_plugin != null && !String.IsNullOrWhiteSpace(_plugin.Current_Game) &&
+                !GameCodes.Contains(_plugin.Current_Game, StringComparer.OrdinalIgnoreCase))
+            {
+                GameCodes.Add(_plugin.Current_Game);
             }
         }
         public SystemSetting_ProfilesNew()
@@ -402,6 +420,29 @@ namespace DiyFfbPedal.UIFunction
         private void Btn_ClearCarName_Click(object sender, RoutedEventArgs e)
         {
             tmpProfile.BindGameOrCar = string.Empty;
+            OnPropertyChanged(nameof(tmpProfile));
+        }
+
+        private void Btn_BindCurrentGame_Click(object sender, RoutedEventArgs e)
+        {
+            if (_plugin == null || String.IsNullOrWhiteSpace(_plugin.Current_Game))
+            {
+                System.Windows.MessageBox.Show("SimHub is not currently detecting a game.",
+                    "No game detected", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            string currentGame = _plugin.Current_Game.Trim();
+            var bindings = (tmpProfile.BindGameOrCar ?? String.Empty)
+                .Split(',')
+                .Select(value => value.Trim())
+                .Where(value => value.Length > 0)
+                .ToList();
+            if (!bindings.Contains(currentGame, StringComparer.OrdinalIgnoreCase))
+                bindings.Add(currentGame);
+            tmpProfile.BindGameOrCar = String.Join(", ", bindings);
+            if (!GameCodes.Contains(currentGame, StringComparer.OrdinalIgnoreCase))
+                GameCodes.Add(currentGame);
             OnPropertyChanged(nameof(tmpProfile));
         }
     }
