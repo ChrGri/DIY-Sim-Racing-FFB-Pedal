@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using SimHub.Plugins.Styles;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -28,8 +27,6 @@ namespace User.PluginSdkDemo.UIFunction
     
     public partial class SystemSetting_Profiles : UserControl
     {
-        private static readonly string[] EffectNames =
-            { "ABS", "RPM", "BitePoint", "GForce", "WheelSlip", "RoadImpact", "Custom1", "Custom2" };
         public System.Windows.Controls.CheckBox[,] Effect_status_profile = new System.Windows.Controls.CheckBox[3, 8];
         public uint profile_select = 0;
         public SystemSetting_Profiles()
@@ -389,68 +386,6 @@ namespace User.PluginSdkDemo.UIFunction
             SettingsChangedEvent(Settings);
         }
 
-        private void SetEffectStatesFromConfig(uint profile, int pedal, JObject config)
-        {
-            JObject effectMetadata = config["effectEnabled"] as JObject;
-            for (int effect = 0; effect < EffectNames.Length; effect++)
-            {
-                JToken status = effectMetadata?[EffectNames[effect]];
-                bool enabled = status != null &&
-                    (status.Type == JTokenType.Boolean && status.Value<bool>() ||
-                     status.Type == JTokenType.Integer && status.Value<int>() != 0);
-                if (effect == 2 && status == null)
-                {
-                    enabled = config["payloadPedalConfig_"].Value<int?>("BP_trigger") == 1;
-                }
-                enabled = enabled && Effect_status_profile[pedal, effect].IsEnabled;
-                Settings.Effect_status_prolife[profile, pedal, effect] = enabled;
-                Effect_status_profile[pedal, effect].IsChecked = enabled;
-            }
-            Settings.Effect_status_profile_initialized[profile, pedal] = true;
-        }
-
-        private void InitializeLinkedEffectStates(uint profile)
-        {
-            for (int pedal = 0; pedal < 3; pedal++)
-            {
-                if (Settings.Effect_status_profile_initialized[profile, pedal] ||
-                    Settings.file_enable_check[profile, pedal] != 1)
-                {
-                    continue;
-                }
-
-                // Preserve effect choices made in older versions of the profile UI.
-                bool hasSavedChoice = false;
-                for (int effect = 0; effect < EffectNames.Length; effect++)
-                {
-                    hasSavedChoice |= Settings.Effect_status_prolife[profile, pedal, effect];
-                }
-                if (hasSavedChoice)
-                {
-                    Settings.Effect_status_profile_initialized[profile, pedal] = true;
-                    continue;
-                }
-
-                string path = Settings.Pedal_file_string[profile, pedal];
-                if (String.IsNullOrEmpty(path) || !File.Exists(path))
-                {
-                    continue;
-                }
-                try
-                {
-                    JObject config = JObject.Parse(File.ReadAllText(path));
-                    if (config["payloadPedalConfig_"] is JObject)
-                    {
-                        SetEffectStatesFromConfig(profile, pedal, config);
-                    }
-                }
-                catch (Exception)
-                {
-                    // Keep the saved profile state if a linked file cannot be read.
-                }
-            }
-        }
-
         private void Read_for_slot(object sender, RoutedEventArgs e)
         {
             var Button = sender as SHButtonPrimary;
@@ -472,26 +407,6 @@ namespace User.PluginSdkDemo.UIFunction
                     //
                     uint i = profile_select;
                     uint j = 0;
-                    if (Button.Name != "Reading_clutch" && Button.Name != "Reading_brake"
-                        && Button.Name != "Reading_gas")
-                    {
-                        return;
-                    }
-                    JObject config;
-                    try
-                    {
-                        config = JObject.Parse(File.ReadAllText(filePath));
-                        if (!(config["payloadPedalConfig_"] is JObject))
-                        {
-                            throw new InvalidDataException("The file has no pedal configuration.");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Windows.MessageBox.Show("Could not load the pedal configuration: " + ex.Message,
-                            "Invalid configuration", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
-                    }
                     if (Button.Name == "Reading_clutch")
                     {
 
@@ -518,12 +433,24 @@ namespace User.PluginSdkDemo.UIFunction
                         j = 2;
                     }
 
-                    SetEffectStatesFromConfig(i, (int)j, config);
+                    //write to setting
+                    for (int k = 0; k < 8; k++)
+                    {
+                        if (Effect_status_profile[j, k].IsChecked == true)
+                        {
+                            Settings.Effect_status_prolife[i, j, k] = true;
+                        }
+                        else
+                        {
+                            Settings.Effect_status_prolife[i, j, k] = false;
+                        }
 
-                    SettingsChangedEvent(Settings);
-                    btn_apply_profile_Click_event?.Invoke(this, EventArgs.Empty);
+                    }
+
+
                 }
             }
+            SettingsChangedEvent(Settings);
         }
 
         private void Clear_slot(object sender, RoutedEventArgs e)
@@ -573,31 +500,7 @@ namespace User.PluginSdkDemo.UIFunction
         public event EventHandler btn_apply_profile_Click_event;
         private void btn_apply_profile_Click(object sender, RoutedEventArgs e)
         {
-            InitializeLinkedEffectStates(profile_select);
-            for (int pedal = 0; pedal < 3; pedal++)
-            {
-                for (int effect = 0; effect < EffectNames.Length; effect++)
-                {
-                    Settings.Effect_status_prolife[profile_select, pedal, effect] =
-                        Effect_status_profile[pedal, effect].IsChecked == true;
-                }
-                Settings.Effect_status_profile_initialized[profile_select, pedal] = true;
-            }
-            SettingsChangedEvent(Settings);
             btn_apply_profile_Click_event?.Invoke(this, EventArgs.Empty);
-        }
-
-        public void SelectProfile(uint profile)
-        {
-            if (profile > 5) return;
-            profile_select = profile;
-            ProfileTab.SelectedIndex = (int)profile;
-            calculation.profile_index = profile;
-            InitializeLinkedEffectStates(profile);
-            calculation.Update_Profile_Checkbox_b = true;
-            updateUI();
-            SettingsChangedEvent(Settings);
-            CalculationChangedEvent(calculation);
         }
         public event EventHandler btn_send_profile_Click_event;
         private void btn_send_profile_Click(object sender, RoutedEventArgs e)

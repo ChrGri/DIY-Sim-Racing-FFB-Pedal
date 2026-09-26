@@ -1060,31 +1060,6 @@
                                             </TabItem.Header>
                                             <localFunction:SystemSetting_License x:Name="SystemLicense_Tab" btn_test_Click_event="SystemLicense_Tab_btn_test_Click_event"/>
                                         </TabItem>
-                                        <TabItem Width="120" Height="30" Padding="0,0,0,0" ToolTip="Switch pedal profiles when a game starts">
-                                            <TabItem.Header>
-                                                <Border Width="120" Height="30">
-                                                    <Label Content="Game Profiles" FontFamily="Arial Black" FontSize="10" Height="30" Width="120" Padding="0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
-                                                </Border>
-                                            </TabItem.Header>
-                                            <Border Width="540" Height="178" Background="#7F4E4E4E" CornerRadius="5" Padding="8,4">
-                                                <StackPanel>
-                                                    <StackPanel Orientation="Horizontal" Height="23">
-                                                        <CheckBox x:Name="GameProfileAutoEnabled" Content="Auto switch" Width="105" Foreground="White" Checked="GameProfileAutoEnabled_Changed" Unchecked="GameProfileAutoEnabled_Changed"/>
-                                                        <TextBlock Text="Default" Width="48" Foreground="White" VerticalAlignment="Center"/>
-                                                        <ComboBox x:Name="GameProfileDefaultSlot" Width="165" Height="21" SelectionChanged="GameProfileDefaultSlot_SelectionChanged"/>
-                                                        <TextBlock x:Name="GameProfileCurrentGame" Text="Current game: none" Foreground="#FFB5EFE3" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                                    </StackPanel>
-                                                    <StackPanel Orientation="Horizontal" Height="28" Margin="0,3,0,0">
-                                                        <ComboBox x:Name="GameProfileGame" Width="220" Height="22" IsEditable="True" IsTextSearchEnabled="True" ToolTip="SimHub game code"/>
-                                                        <ComboBox x:Name="GameProfileSlot" Width="155" Height="22" Margin="5,0,0,0"/>
-                                                        <Button Content="Save" Width="55" Height="22" Margin="5,0,0,0" Click="GameProfileSave_Click"/>
-                                                        <Button Content="Remove" Width="60" Height="22" Margin="5,0,0,0" Click="GameProfileRemove_Click"/>
-                                                    </StackPanel>
-                                                    <ListBox x:Name="GameProfileMappings" Height="73" FontSize="10" SelectionChanged="GameProfileMappings_SelectionChanged"/>
-                                                    <TextBlock x:Name="GameProfileStatus" Foreground="#FFCCCCCC" FontSize="10" Margin="0,3,0,0"/>
-                                                </StackPanel>
-                                            </Border>
-                                        </TabItem>
                                     </TabControl>
 
 

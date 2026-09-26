@@ -83,10 +83,6 @@ namespace User.PluginSdkDemo
         public bool Version_Check_Simhub_MSFS = false;
         public byte[] Rudder_Pedal_idx = new byte[2] { 1, 2 };
         public string Current_Game = "";
-        private string lastAutoProfileGame;
-        private string observedGameCode = "";
-        private DateTime lastRunningGameSeenUtc = DateTime.MinValue;
-        private int queuedAutoProfileSlot = -1;
         public byte TrackSurfaceCondition = 0;
         public bool[] PedalConfigRead_b = new bool[3] { false, false, false };
         public List<VidPidResult> comportList = new List<VidPidResult>();
@@ -381,54 +377,6 @@ namespace User.PluginSdkDemo
             tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalConfig));
             SendConfig(tmp, PedalIDX);
         }
-
-        public void RequestAutomaticProfileRefresh()
-        {
-            lastAutoProfileGame = null;
-            UpdateAutomaticProfile(observedGameCode);
-        }
-
-        private void UpdateAutomaticProfile(string gameCode)
-        {
-            if (Settings == null || !Settings.AutoProfileByGame)
-            {
-                lastAutoProfileGame = null;
-                return;
-            }
-
-            string code = gameCode ?? "";
-            if (String.Equals(lastAutoProfileGame, code, StringComparison.OrdinalIgnoreCase)) return;
-            lastAutoProfileGame = code;
-
-            int slot = Math.Max(0, Math.Min(5, Settings.DefaultProfileSlot));
-            int mappedSlot;
-            if (code.Length > 0 && Settings.GameProfileSlots != null &&
-                Settings.GameProfileSlots.TryGetValue(code, out mappedSlot) &&
-                mappedSlot >= 0 && mappedSlot < 6)
-            {
-                slot = mappedSlot;
-            }
-
-            queuedAutoProfileSlot = slot;
-            SimHub.Logging.Current.Info(String.Format(
-                "DIY pedal auto profile: game '{0}' -> slot {1}",
-                code.Length > 0 ? code : "default", (char)('A' + slot)));
-
-            var handle = wpfHandle;
-            if (handle != null)
-            {
-                handle.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    if (queuedAutoProfileSlot == slot) handle.ApplyAutomaticProfile((uint)slot);
-                }));
-            }
-            else
-            {
-                _calculations.profile_index = (uint)slot;
-                Page_update_flag = true;
-            }
-        }
-
         unsafe public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
 			
@@ -449,22 +397,6 @@ namespace User.PluginSdkDemo
             bool Flight_running_simhub = false;
             
             //bool WS_flag = false;
-
-            if (data.GameRunning || data.RunningGameProcessDetected)
-            {
-                string runningCode = Convert.ToString(pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame"));
-                if (String.IsNullOrWhiteSpace(runningCode) && pluginManager.GameDescription != null)
-                    runningCode = pluginManager.GameDescription.Code;
-                if (String.IsNullOrWhiteSpace(runningCode)) runningCode = data.GameName;
-                if (!String.IsNullOrWhiteSpace(runningCode)) observedGameCode = runningCode;
-                lastRunningGameSeenUtc = DateTime.UtcNow;
-            }
-            else if (DateTime.UtcNow - lastRunningGameSeenUtc > TimeSpan.FromSeconds(2))
-            {
-                observedGameCode = "";
-            }
-            Current_Game = observedGameCode;
-            UpdateAutomaticProfile(observedGameCode);
 
             if (data.GamePaused | (!data.GameRunning))
             {
@@ -488,6 +420,7 @@ namespace User.PluginSdkDemo
             // Send ABS signal when triggered by the game
             if (data.GameRunning)
             {
+                Current_Game=(string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame");
                 //load surface condition
                 TrackSurfaceCondition = 0;
                 if (Current_Game == "IRacing")
@@ -1516,16 +1449,6 @@ namespace User.PluginSdkDemo
 
             // Load settings
             Settings = this.ReadCommonSettings<DIYFFBPedalSettings>("GeneralSettings", () => new DIYFFBPedalSettings());
-            var gameProfileSlots = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            if (Settings.GameProfileSlots != null)
-            {
-                foreach (var mapping in Settings.GameProfileSlots)
-                {
-                    if (!String.IsNullOrWhiteSpace(mapping.Key))
-                        gameProfileSlots[mapping.Key.Trim()] = mapping.Value;
-                }
-            }
-            Settings.GameProfileSlots = gameProfileSlots;
             Simhub_version = (String)pluginManager.GetPropertyValue("DataCorePlugin.SimHubVersion");
             // Declare a property available in the property list, this gets evaluated "on demand" (when shown or used in formulas)
             //this.AttachDelegate("CurrentDateTime", () => DateTime.Now);

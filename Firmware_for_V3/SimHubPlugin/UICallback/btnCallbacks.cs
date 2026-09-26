@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using System;
-using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -685,21 +684,6 @@ namespace User.PluginSdkDemo
                     stream1.Position = 0;
                     StreamReader sr = new StreamReader(stream1);
                     string jsonString = sr.ReadToEnd();
-
-                    // Effect enable states are SimHub settings, not part of the pedal firmware payload.
-                    // Store them alongside the payload so slot profiles can restore the checkboxes.
-                    uint pedalIndex = indexOfSelectedPedal_u;
-                    var configJson = JObject.Parse(jsonString);
-                    configJson["effectEnabled"] = new JObject(
-                        new JProperty("ABS", Plugin.Settings.ABS_enable_flag[pedalIndex] == 1),
-                        new JProperty("RPM", Plugin.Settings.RPM_enable_flag[pedalIndex] == 1),
-                        new JProperty("BitePoint", dap_config_st[pedalIndex].payloadPedalConfig_.BP_trigger == 1),
-                        new JProperty("GForce", Plugin.Settings.G_force_enable_flag[pedalIndex] == 1),
-                        new JProperty("WheelSlip", Plugin.Settings.WS_enable_flag[pedalIndex] == 1),
-                        new JProperty("RoadImpact", Plugin.Settings.Road_impact_enable_flag[pedalIndex] == 1),
-                        new JProperty("Custom1", Plugin.Settings.CV1_enable_flag[pedalIndex]),
-                        new JProperty("Custom2", Plugin.Settings.CV2_enable_flag[pedalIndex]));
-                    jsonString = configJson.ToString(Formatting.Indented);
 
                     // Check if file already exists. If yes, delete it.     
                     if (File.Exists(fileName))

@@ -1046,6 +1046,7 @@ namespace User.PluginSdkDemo
 
 
 
+            updateTheGuiFromConfig();
         }
         public void Profile_change(uint profile_index)
         {
@@ -1094,7 +1095,7 @@ namespace User.PluginSdkDemo
                                 Plugin.Settings.RPM_enable_flag[j] = 1;
                                 break;
                             case 2:
-                                dap_config_st[j].payloadPedalConfig_.BP_trigger = 1;
+                                //Plugin.Settings. = 1;
                                 break;
                             case 3:
                                 Plugin.Settings.G_force_enable_flag[j] = 1;
@@ -1124,7 +1125,7 @@ namespace User.PluginSdkDemo
                                 Plugin.Settings.RPM_enable_flag[j] = 0;
                                 break;
                             case 2:
-                                dap_config_st[j].payloadPedalConfig_.BP_trigger = 0;
+                                //Plugin.Settings. = 1;
                                 break;
                             case 3:
                                 Plugin.Settings.G_force_enable_flag[j] = 0;
@@ -1148,7 +1149,6 @@ namespace User.PluginSdkDemo
             }
             //effect profile change
 
-            updateTheGuiFromConfig();
         }
 
         public void DelayCall(int msec, Action fn)

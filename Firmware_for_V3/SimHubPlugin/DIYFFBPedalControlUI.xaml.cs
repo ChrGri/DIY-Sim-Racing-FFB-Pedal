@@ -110,7 +110,6 @@ namespace User.PluginSdkDemo
         //private int gridline_kinematic_count_original = 0;
         private double[] Pedal_position_reading=new double[3];
         private bool[] Serial_connect_status = new bool[3] { false,false,false};
-        private bool updatingGameProfileUI;
         //public byte Bridge_RSSI = 0;
         public bool[] Pedal_wireless_connection_update_b = new bool[3] { false,false,false};
         public int Bridge_baudrate = 3000000;
@@ -215,8 +214,6 @@ namespace User.PluginSdkDemo
             connect_timer.Interval = 5000; // in miliseconds try connect every 5s
             connect_timer.Start();
             System.Threading.Thread.Sleep(50);
-            RefreshGameProfileUI();
-            plugin.RequestAutomaticProfileRefresh();
 
         }
 
@@ -395,184 +392,7 @@ namespace User.PluginSdkDemo
         private void SystemProfile_Tab_btn_apply_profile_Click_event(object sender, EventArgs e)
         {
             Profile_change((uint)Plugin._calculations.profile_index);
-        }
-
-        private sealed class GameProfileMappingItem
-        {
-            public string GameCode { get; set; }
-            public int Slot { get; set; }
-            public string SlotName { get; set; }
-
-            public override string ToString()
-            {
-                return String.Format("{0} -> {1}: {2}", GameCode, (char)('A' + Slot), SlotName);
-            }
-        }
-
-        private void RefreshGameProfileUI()
-        {
-            if (Plugin == null || GameProfileGame == null) return;
-            updatingGameProfileUI = true;
-            try
-            {
-                if (Plugin.Settings.GameProfileSlots == null)
-                    Plugin.Settings.GameProfileSlots = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-                GameProfileAutoEnabled.IsChecked = Plugin.Settings.AutoProfileByGame;
-                GameProfileDefaultSlot.Items.Clear();
-                GameProfileSlot.Items.Clear();
-                for (int slot = 0; slot < 6; slot++)
-                {
-                    string label = String.Format("{0}: {1}", (char)('A' + slot),
-                        Plugin.Settings.Profile_name[slot]);
-                    GameProfileDefaultSlot.Items.Add(label);
-                    GameProfileSlot.Items.Add(label);
-                }
-                GameProfileDefaultSlot.SelectedIndex = Math.Max(0,
-                    Math.Min(5, Plugin.Settings.DefaultProfileSlot));
-                if (GameProfileSlot.SelectedIndex < 0) GameProfileSlot.SelectedIndex = 0;
-
-                string selectedGame = GameProfileGame.Text;
-                var gameCodes = new HashSet<string>(Plugin.Settings.GameProfileSlots.Keys,
-                    StringComparer.OrdinalIgnoreCase);
-                string gameDataPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PluginsData");
-                if (Directory.Exists(gameDataPath))
-                {
-                    foreach (string directory in Directory.GetDirectories(gameDataPath))
-                    {
-                        string code = System.IO.Path.GetFileName(directory);
-                        if (code != "Common" && code != "_Backups" &&
-                            code != "MotionRecords" && code != "MotionTrackProfiles")
-                            gameCodes.Add(code);
-                    }
-                }
-                if (!String.IsNullOrWhiteSpace(Plugin.Current_Game)) gameCodes.Add(Plugin.Current_Game);
-
-                GameProfileGame.Items.Clear();
-                foreach (string code in gameCodes.OrderBy(code => code, StringComparer.OrdinalIgnoreCase))
-                    GameProfileGame.Items.Add(code);
-                GameProfileGame.Text = selectedGame;
-
-                GameProfileMappings.Items.Clear();
-                foreach (var mapping in Plugin.Settings.GameProfileSlots.OrderBy(item => item.Key,
-                    StringComparer.OrdinalIgnoreCase))
-                {
-                    if (mapping.Value < 0 || mapping.Value > 5) continue;
-                    GameProfileMappings.Items.Add(new GameProfileMappingItem
-                    {
-                        GameCode = mapping.Key,
-                        Slot = mapping.Value,
-                        SlotName = Plugin.Settings.Profile_name[mapping.Value]
-                    });
-                }
-                GameProfileStatus.Text = String.Format("{0} game mapping(s)", GameProfileMappings.Items.Count);
-            }
-            catch (Exception ex)
-            {
-                GameProfileStatus.Text = "Could not read game profiles: " + ex.Message;
-            }
-            finally
-            {
-                updatingGameProfileUI = false;
-            }
-        }
-
-        private void GameProfileAutoEnabled_Changed(object sender, RoutedEventArgs e)
-        {
-            if (Plugin == null || updatingGameProfileUI) return;
-            Plugin.Settings.AutoProfileByGame = GameProfileAutoEnabled.IsChecked == true;
-            Plugin.RequestAutomaticProfileRefresh();
-        }
-
-        private void GameProfileDefaultSlot_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (Plugin == null || updatingGameProfileUI || GameProfileDefaultSlot.SelectedIndex < 0) return;
-            Plugin.Settings.DefaultProfileSlot = GameProfileDefaultSlot.SelectedIndex;
-            Plugin.RequestAutomaticProfileRefresh();
-        }
-
-        private void GameProfileSave_Click(object sender, RoutedEventArgs e)
-        {
-            if (Plugin == null) return;
-            string code = GameProfileGame.Text.Trim();
-            int slot = GameProfileSlot.SelectedIndex;
-            if (code.Length == 0 || slot < 0 || slot > 5)
-            {
-                GameProfileStatus.Text = "Choose a game and slot first.";
-                return;
-            }
-            var mappings = new Dictionary<string, int>(Plugin.Settings.GameProfileSlots,
-                StringComparer.OrdinalIgnoreCase);
-            mappings[code] = slot;
-            Plugin.Settings.GameProfileSlots = mappings;
-            RefreshGameProfileUI();
-            GameProfileGame.Text = code;
-            GameProfileStatus.Text = String.Format("{0} -> Slot {1} saved", code, (char)('A' + slot));
-            Plugin.RequestAutomaticProfileRefresh();
-        }
-
-        private void GameProfileRemove_Click(object sender, RoutedEventArgs e)
-        {
-            if (Plugin == null) return;
-            var mapping = GameProfileMappings.SelectedItem as GameProfileMappingItem;
-            if (mapping == null) return;
-            var mappings = new Dictionary<string, int>(Plugin.Settings.GameProfileSlots,
-                StringComparer.OrdinalIgnoreCase);
-            mappings.Remove(mapping.GameCode);
-            Plugin.Settings.GameProfileSlots = mappings;
-            RefreshGameProfileUI();
-            Plugin.RequestAutomaticProfileRefresh();
-        }
-
-        private void GameProfileMappings_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (updatingGameProfileUI) return;
-            var mapping = GameProfileMappings.SelectedItem as GameProfileMappingItem;
-            if (mapping == null) return;
-            GameProfileGame.Text = mapping.GameCode;
-            GameProfileSlot.SelectedIndex = mapping.Slot;
-        }
-
-        public void ApplyAutomaticProfile(uint slot)
-        {
-            if (Plugin == null || !Plugin.Settings.AutoProfileByGame || slot > 5) return;
-            bool hasLinkedPedal = false;
-            for (int pedal = 0; pedal < 3; pedal++)
-            {
-                if (Plugin.Settings.file_enable_check[slot, pedal] != 1) continue;
-                hasLinkedPedal = true;
-                if (!File.Exists(Plugin.Settings.Pedal_file_string[slot, pedal]))
-                {
-                    GameProfileStatus.Text = String.Format("Slot {0} has a missing config file", (char)('A' + slot));
-                    SimHub.Logging.Current.Error("DIY pedal auto profile: " + GameProfileStatus.Text);
-                    return;
-                }
-            }
-            if (!hasLinkedPedal)
-            {
-                GameProfileStatus.Text = String.Format("Slot {0} has no enabled pedal files", (char)('A' + slot));
-                SimHub.Logging.Current.Error("DIY pedal auto profile: " + GameProfileStatus.Text);
-                return;
-            }
-
-            try
-            {
-                SystemProfile_Tab.Settings = Plugin.Settings;
-                SystemProfile_Tab.calculation = Plugin._calculations;
-                SystemProfile_Tab.SelectProfile(slot);
-                Plugin._calculations.profile_index = slot;
-                Profile_change(slot);
-                Sendconfigtopedal_shortcut();
-                GameProfileCurrentGame.Text = "Current game: " +
-                    (String.IsNullOrWhiteSpace(Plugin.Current_Game) ? "none" : Plugin.Current_Game);
-                GameProfileStatus.Text = String.Format("Slot {0} applied", (char)('A' + slot));
-                SimHub.Logging.Current.Info("DIY pedal auto profile: " + GameProfileStatus.Text);
-            }
-            catch (Exception ex)
-            {
-                GameProfileStatus.Text = "Auto switch failed: " + ex.Message;
-                SimHub.Logging.Current.Error("DIY pedal auto profile: " + ex);
-            }
+            Parsefile((uint)Plugin._calculations.profile_index);
         }
 
         private void SystemLicense_Tab_btn_test_Click_event(object sender, EventArgs e)
