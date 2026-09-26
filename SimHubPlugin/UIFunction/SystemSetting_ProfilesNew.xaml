@@ -64,7 +64,7 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border Style="{StaticResource Card}" Margin="0" Height="177" VerticalAlignment="Top">
+        <Border Style="{StaticResource Card}" Margin="0" VerticalAlignment="Top">
             <StackPanel Orientation="Horizontal">
                 <StackPanel>
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextProfileListTittle, 'Profile List'}" Height="20" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="15,0,0,0"/>
@@ -134,7 +134,7 @@
 
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,10">
                         <CheckBox Content="TC  " IsChecked="{Binding tmpProfile.Effects[0][0]}" Padding="1,0,0,0" FontSize="9" FontFamily="Arial" Height="18"/>
                         <CheckBox Content="RPM" IsChecked="{Binding tmpProfile.Effects[0][1]}" Margin="4,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
                         <CheckBox Content="B.P" IsChecked="{Binding tmpProfile.Effects[0][2]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial" IsEnabled="False"/>
@@ -159,7 +159,7 @@
 
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,10">
                         <CheckBox Content="ABS" IsChecked="{Binding tmpProfile.Effects[1][0]}" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
                         <CheckBox Content="RPM" IsChecked="{Binding tmpProfile.Effects[1][1]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
                         <CheckBox Content="B.P" IsChecked="{Binding tmpProfile.Effects[1][2]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial" IsEnabled="False"/>
@@ -185,7 +185,7 @@
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                        <CheckBox Content="TC  " IsChecked="{Binding tmpProfile.Effects[2][0]}" Padding="1,0,0,0" FontSize="10"/>
+                        <CheckBox Content="TC  " IsChecked="{Binding tmpProfile.Effects[2][0]}" Padding="1,0,0,0" FontSize="9" FontFamily="Arial" Height="18"/>
                         <CheckBox Content="RPM" IsChecked="{Binding tmpProfile.Effects[2][1]}" Margin="4,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial"/>
                         <CheckBox Content="B.P" IsChecked="{Binding tmpProfile.Effects[2][2]}" Margin="3,0,0,0" Padding="1,0,0,0" FontSize="9" FontFamily="Arial" IsEnabled="False"/>
                         <CheckBox Content="G-F" IsChecked="{Binding tmpProfile.Effects[2][3]}" Margin="3,0,0,0" Padding="1,0,0,0" IsEnabled="False" FontSize="9" FontFamily="Arial"/>
