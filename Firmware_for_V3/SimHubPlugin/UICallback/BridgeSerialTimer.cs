@@ -177,7 +177,6 @@ namespace User.PluginSdkDemo
 
                                 if ((check_payload_state_b) && check_crc_state_b)
                                 {
-
                                     // write vJoy data
                                     Pedal_position_reading[pedalSelected] = pedalState_read_st.payloadPedalBasicState_.joystickOutput_u16;
                                     //if (Plugin.Rudder_enable_flag == false)
@@ -454,6 +453,14 @@ namespace User.PluginSdkDemo
 
                                 if ((check_payload_state_b) && check_crc_state_b)
                                 {
+                                    bool fanatecBridge = (bridge_state.payloadBridgeState_.Bridge_action & 0x40) != 0;
+                                    SystemSetting_Section.FanatecVibrationPanel.Visibility = fanatecBridge ? Visibility.Visible : Visibility.Collapsed;
+                                    if (fanatecBridge)
+                                    {
+                                        _updatingFanatecVibrationToggle = true;
+                                        SystemSetting_Section.FanatecVibrationToggle.IsChecked = (bridge_state.payloadBridgeState_.Bridge_action & 0x80) != 0;
+                                        _updatingFanatecVibrationToggle = false;
+                                    }
                                     //Bridge_RSSI = bridge_state.payloadBridgeState_.Pedal_RSSI;
                                     Plugin._calculations.RSSI_Value = bridge_state.payloadBridgeState_.Pedal_RSSI;
                                     for (int pedalIDX = 0; pedalIDX < 3; pedalIDX++)

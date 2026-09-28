@@ -310,6 +310,10 @@ void setup()
   #ifdef ESPNow_Pairing_function
     //button read setup
     pinMode(Pairing_GPIO, INPUT_PULLUP);
+  #endif
+  #if defined(ESPNow_Pairing_function) || defined(Fanatec_comunication)
+    // Single EEPROM init for all users. A second EEPROM.begin() with a
+    // different size would truncate the stored blob.
     EEPROM.begin(256);
   #endif
 /*
@@ -515,8 +519,42 @@ void loop()
   taskYIELD();
 }
 
+#ifdef Fanatec_comunication
+static DAP_actions_st makeFanatecAction(uint8_t pedalTag, const DAP_actions_st* lastSimhubAction,
+                                       uint8_t brakeVibration, uint8_t throttleVibration)
+{
+  DAP_actions_st action = lastSimhubAction ? *lastSimhubAction : DAP_actions_st{};
+  action.payLoadHeader_.payloadType = DAP_PAYLOAD_TYPE_ACTION;
+  action.payLoadHeader_.version = DAP_VERSION_CONFIG;
+  action.payLoadHeader_.storeToEeprom = 0;
+  action.payLoadHeader_.PedalTag = pedalTag;
+  if (!lastSimhubAction) action.payloadPedalAction_.G_value = 128;
+  // Periodic refreshes must not replay one-shot SimHub commands.
+  action.payloadPedalAction_.system_action_u8 = 0;
+  action.payloadPedalAction_.startSystemIdentification_u8 = 0;
+  action.payloadPedalAction_.returnPedalConfig_u8 = 0;
+  action.payloadPedalAction_.Trigger_CV_1 = 0;
+  action.payloadPedalAction_.Trigger_CV_2 = 0;
+  action.payloadPedalAction_.Rudder_action = 0;
+  action.payloadPedalAction_.Rudder_brake_action = 0;
+  action.payloadPedalAction_.WS_u8 = 0;
+  action.payloadPedalAction_.impact_value_u8 = 0;
+  if (pedalTag == 1) action.payloadPedalAction_.triggerAbs_u8 = brakeVibration ? 1 : 0;
+  if (pedalTag == 2 && throttleVibration) action.payloadPedalAction_.RPM_u8 = 100;
+  action.payloadFooter_.checkSum = checksumCalculator((uint8_t*)&action,
+      sizeof(action.payLoadHeader_) + sizeof(action.payloadPedalAction_));
+  return action;
+}
+#endif
+
 void ESPNOW_SyncTask( void * pvParameters )
 {
+  #ifdef Fanatec_comunication
+    DAP_actions_st lastSimhubAction[3] = {};
+    bool hasSimhubAction[3] = {false, false, false};
+    bool fanatecThrottleWasActive = false;
+    unsigned long lastFanatecRefreshAt = 0;
+  #endif
   for(;;)
   {
     #ifdef ESPNow_Pairing_function
@@ -668,28 +706,55 @@ void ESPNOW_SyncTask( void * pvParameters )
 
     if(dap_action_update)
     {
-      
-      if(dap_actions_st.payLoadHeader_.PedalTag==0 && dap_bridge_state_st.payloadBridgeState_.Pedal_availability[0]==1)
-      {
-        ESPNow.send_message(Clu_mac,(uint8_t *) &dap_actions_st,sizeof(dap_actions_st));
-        //Serial.println("BRK sent");
-      }
-      if(dap_actions_st.payLoadHeader_.PedalTag==1 && dap_bridge_state_st.payloadBridgeState_.Pedal_availability[1]==1)
-      {
-        ESPNow.send_message(Brk_mac,(uint8_t *) &dap_actions_st,sizeof(dap_actions_st));
-        //Serial.println("BRK sent");
-      }
-                  
-      if(dap_actions_st.payLoadHeader_.PedalTag==2 && dap_bridge_state_st.payloadBridgeState_.Pedal_availability[2]==1)
-      {
-        ESPNow.send_message(Gas_mac,(uint8_t *) &dap_actions_st,sizeof(dap_actions_st));
-        //Serial.println("GAS sent");
-      }
-      
-      //ESPNow.send_message(broadcast_mac,(uint8_t *) &dap_actions_st,sizeof(dap_actions_st));
-      //Serial.println("Broadcast sent");
+      DAP_actions_st action = dap_actions_st;
+      const uint8_t pedalTag = action.payLoadHeader_.PedalTag;
+      #ifdef Fanatec_comunication
+        if (pedalTag < 3) {
+          lastSimhubAction[pedalTag] = action;
+          hasSimhubAction[pedalTag] = true;
+        }
+        if (pedalTag == 1 && fanatec.brakeVibration()) {
+          action.payloadPedalAction_.triggerAbs_u8 = 1;
+        }
+        if (pedalTag == 2 && fanatec.throttleVibration()) {
+          action.payloadPedalAction_.RPM_u8 = 100;
+        }
+        action.payloadFooter_.checkSum = checksumCalculator((uint8_t*)&action,
+            sizeof(action.payLoadHeader_) + sizeof(action.payloadPedalAction_));
+      #endif
+      if (pedalTag == 0 && dap_bridge_state_st.payloadBridgeState_.Pedal_availability[0] == 1)
+        ESPNow.send_message(Clu_mac, (uint8_t*)&action, sizeof(action));
+      if (pedalTag == 1 && dap_bridge_state_st.payloadBridgeState_.Pedal_availability[1] == 1)
+        ESPNow.send_message(Brk_mac, (uint8_t*)&action, sizeof(action));
+      if (pedalTag == 2 && dap_bridge_state_st.payloadBridgeState_.Pedal_availability[2] == 1)
+        ESPNow.send_message(Gas_mac, (uint8_t*)&action, sizeof(action));
       dap_action_update=false;
     }
+    #ifdef Fanatec_comunication
+      const uint8_t brakeVibration = fanatec.brakeVibration();
+      const uint8_t throttleVibration = fanatec.throttleVibration();
+      const unsigned long now = millis();
+      if ((brakeVibration || throttleVibration) && now - lastFanatecRefreshAt >= 50) {
+        if (brakeVibration && dap_bridge_state_st.payloadBridgeState_.Pedal_availability[1] == 1) {
+          DAP_actions_st action = makeFanatecAction(1,
+              hasSimhubAction[1] ? &lastSimhubAction[1] : nullptr, brakeVibration, 0);
+          ESPNow.send_message(Brk_mac, (uint8_t*)&action, sizeof(action));
+        }
+        if (throttleVibration && dap_bridge_state_st.payloadBridgeState_.Pedal_availability[2] == 1) {
+          DAP_actions_st action = makeFanatecAction(2,
+              hasSimhubAction[2] ? &lastSimhubAction[2] : nullptr, 0, throttleVibration);
+          ESPNow.send_message(Gas_mac, (uint8_t*)&action, sizeof(action));
+        }
+        lastFanatecRefreshAt = now;
+      }
+      if (!throttleVibration && fanatecThrottleWasActive &&
+          dap_bridge_state_st.payloadBridgeState_.Pedal_availability[2] == 1) {
+        DAP_actions_st action = makeFanatecAction(2,
+            hasSimhubAction[2] ? &lastSimhubAction[2] : nullptr, 0, 0);
+        ESPNow.send_message(Gas_mac, (uint8_t*)&action, sizeof(action));
+      }
+      fanatecThrottleWasActive = throttleVibration != 0;
+    #endif
     //forward the basic wifi info for pedals
     if(pedal_OTA_action_b)
     {
@@ -927,6 +992,16 @@ void Serial_Task( void * pvParameters)
                 Serial.println("[L]The command is not supported");
               #endif
             }
+            #ifdef Fanatec_comunication
+            if (dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_FANATEC_VIBRATION_ON ||
+                dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_FANATEC_VIBRATION_OFF)
+            {
+              const bool enabled = dap_bridge_state_lcl.payloadBridgeState_.Bridge_action == BRIDGE_ACTION_FANATEC_VIBRATION_ON;
+              Serial.println(fanatec.setVibrationEnabled(enabled) ?
+                (enabled ? "[L]Fanatec vibration enabled" : "[L]Fanatec vibration disabled") :
+                "[L]Failed to save Fanatec vibration setting");
+            }
+            #endif
           }
         break;
       case sizeof(DAP_otaWifiInfo_st):
@@ -1064,6 +1139,10 @@ void Serial_Task( void * pvParameters)
       dap_bridge_state_st.payLoadHeader_.payloadType=DAP_PAYLOAD_TYPE_BRIDGE_STATE;
       dap_bridge_state_st.payLoadHeader_.version=DAP_VERSION_CONFIG;
       dap_bridge_state_st.payloadBridgeState_.Bridge_action=0;
+      #ifdef Fanatec_comunication
+        // Status bits use the response only; command values remain unchanged.
+        dap_bridge_state_st.payloadBridgeState_.Bridge_action = 0x40 | (fanatec.vibrationEnabled() ? 0x80 : 0);
+      #endif
       memcpy(dap_bridge_state_st.payloadBridgeState_.Pedal_RSSI_Realtime,rssi,sizeof(int32_t)*3);
       //parse_version(BRIDGE_FIRMWARE_VERSION,&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[0],&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[1],&dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[2]);
       dap_bridge_state_st.payloadBridgeState_.Bridge_firmware_version_u8[0]=versionMajor;
@@ -1559,18 +1638,3 @@ void FanatecUpdate(void * pvParameters)
     delay(10);
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

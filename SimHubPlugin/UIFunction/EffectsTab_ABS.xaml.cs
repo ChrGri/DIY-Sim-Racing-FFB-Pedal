@@ -26,6 +26,42 @@ namespace DiyFfbPedal.UIFunction
         public EffectsTab_ABS()
         {
             InitializeComponent();
+            DrawGridLines();
+        }
+
+        private void DrawGridLines()
+        {
+            int rowCount = 2;
+            int columnCount = 6;
+            double cellWidth = canvas_plot_ABS.Width / columnCount;
+            double cellHeight = canvas_plot_ABS.Height / rowCount;
+
+            for (int i = 1; i < rowCount; i++)
+            {
+                canvas_plot_ABS.Children.Add(new Line
+                {
+                    X1 = 0,
+                    Y1 = i * cellHeight,
+                    X2 = canvas_plot_ABS.Width,
+                    Y2 = i * cellHeight,
+                    Stroke = System.Windows.Media.Brushes.LightSteelBlue,
+                    StrokeThickness = 1,
+                    Opacity = 0.1
+                });
+            }
+            for (int i = 1; i < columnCount; i++)
+            {
+                canvas_plot_ABS.Children.Add(new Line
+                {
+                    X1 = i * cellWidth,
+                    Y1 = 0,
+                    X2 = i * cellWidth,
+                    Y2 = canvas_plot_ABS.Height,
+                    Stroke = System.Windows.Media.Brushes.LightSteelBlue,
+                    StrokeThickness = 1,
+                    Opacity = 0.1
+                });
+            }
         }
         public static readonly DependencyProperty DAP_Config_Property = DependencyProperty.Register(
             nameof(dap_config_st),

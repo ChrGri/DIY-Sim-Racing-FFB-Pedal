@@ -30,6 +30,10 @@ public:
     // Check if connected to the Fanatec device
     bool isConnected();
     bool isPlugged();
+    bool vibrationEnabled() const;
+    bool setVibrationEnabled(bool enabled);
+    uint8_t throttleVibration() const;
+    uint8_t brakeVibration() const;
 
 private:
     // Internal helper functions
@@ -58,6 +62,14 @@ private:
 
     // Connection status
     bool _connected;
+    volatile bool _vibrationEnabled; // written by Serial_Task, read by ESP-NOW task
+    volatile uint8_t _throttleVibration;
+    volatile uint8_t _brakeVibration;
+    volatile unsigned long _lastThrottleVibrationAt;
+    volatile unsigned long _lastBrakeVibrationAt;
+    uint8_t _rxFrame[12];
+    size_t _rxFrameIndex;
+    unsigned long _lastRxByteAt;
 
     // Connection callback function pointer
     void (*_connectedCallback)(bool);

@@ -184,7 +184,7 @@ namespace DiyFfbPedal
             CheckForUpdateAsync();
         }
 
-        private const double RootScale_DesignWidth_d = 810.0;
+        private const double RootScale_DesignWidth_d = 972.0;
         private const double RootScale_DesignHeight_d = 910.0;
         private const double RootScale_MaxScale_d = 1.75;
         private const double RootScale_Deadband_d = 0.005;
@@ -244,10 +244,14 @@ namespace DiyFfbPedal
             UpdateSerialPortList_click();
             
             indexOfSelectedPedal_u = plugin.Settings.table_selected;
-            MyTab.SelectedIndex = (int)indexOfSelectedPedal_u;
+            SelectPedalTab(indexOfSelectedPedal_u);
             if (LivePlotSection != null)
             {
                 LivePlotSection.SetReferences(plugin, this);
+            }
+            if (HomeDashboardSection != null)
+            {
+                HomeDashboardSection.Initialize(plugin, this);
             }
             if (LivePlotSection != null)
             {
@@ -262,7 +266,6 @@ namespace DiyFfbPedal
             if (plugin?.Settings != null && plugin.Settings.ActiveWifiChannel >= 1 && plugin.Settings.ActiveWifiChannel <= 14)
             {
                 if (tb_wifi_ch_active != null) tb_wifi_ch_active.Text = $"Active: Ch {plugin.Settings.ActiveWifiChannel}";
-                if (combo_wifi_channel != null) combo_wifi_channel.SelectedValue = plugin.Settings.ActiveWifiChannel.ToString();
             }
             InitWifiChannelBars();
 
@@ -300,6 +303,24 @@ namespace DiyFfbPedal
             System.Threading.Thread.Sleep(50);
             Plugin.BridgeHidService.OnDataReceived += HidRecieveCallback;
             updateTheGuiFromConfig();
+        }
+
+        public bool IsHomePedalConnected(int pedal)
+        {
+            return Plugin != null && pedal >= 0 && pedal < 3 &&
+                (Plugin._calculations.pedalWirelessStatus[pedal] == WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY ||
+                 Plugin._calculations.pedalSerialStatus[pedal] == ConnectStateEnum.PEDAL_IS_READY);
+        }
+
+        public double GetHomePedalPercent(int pedal)
+        {
+            if (Plugin == null || pedal < 0 || pedal >= Plugin.rawPedalPos.Length) return 0;
+            return Plugin.rawPedalPos[pedal] * 100.0 / UInt16.MaxValue;
+        }
+
+        public void ShowHomeTarget(bool system)
+        {
+            Function_Tab_seleciton.SelectedItem = system ? Tab_System : Tab_Pedals;
         }
 
 
@@ -383,48 +404,15 @@ namespace DiyFfbPedal
             // This is the list we will return
             var portChoices = new List<SerialPortChoice>();
 
-            // Your logic starts here:
-            //string[] comPorts = System.IO.Ports.SerialPort.GetPortNames();
-
-            // After (guaranteed to be unique)
-            string[] comPorts = System.IO.Ports.SerialPort.GetPortNames().Distinct().ToArray();
-
-            // 🌟 MODIFIED SECTION STARTS HERE 🌟
-            // Use LINQ to sort the COM ports numerically.
-            comPorts = comPorts
-                .Select(port => new
-                {
-                    Name = port,
-                    // Use Regex to extract the number from the string (e.g., "COM17" -> 17)
-                    Number = int.TryParse(
-                        System.Text.RegularExpressions.Regex.Match(port, @"\d+").Value,
-                        out int num) ? num : int.MaxValue
-                })
-                // Order by the extracted number
-                .OrderBy(p => p.Number)
-                // Select just the port name string back
-                .Select(p => p.Name)
-                .ToArray();
-            // 🌟 MODIFIED SECTION ENDS HERE 🌟
-
-            if (comPorts.Length > 0)
+            // Only ports of devices that are actually connected (sorted by number) -
+            // SerialPort.GetPortNames() also returns stale registry entries of
+            // unplugged devices, which showed up as "COMx ()".
+            var presentPorts = ComPortHelper.GetPresentPorts(forceRefresh: true);
+            if (presentPorts.Count > 0)
             {
-                // Use a simple loop, Distinct() is good but GetPortNames()
-                // usually doesn't return duplicates anyway.
-                foreach (string portName in comPorts)
+                foreach (var port in presentPorts)
                 {
-                    // Get additional details about the port (your helper method)
-                    // Example: ComPortHelper.GetVidPidFromComPort(portName) might return
-                    // an object with a DeviceName property like "USB-SERIAL CH340".
-                    var parseResult = ComPortHelper.GetVidPidFromComPort(portName);
-
-                    // Create a user-friendly display name, e.g., "COM3 USB-SERIAL CH340"
-                    string friendlyName = $"{portName} ({parseResult.DeviceName})";
-
-                    // Add the new object to our list.
-                    // The first parameter is what the user sees.
-                    // The second parameter is the value used by the program.
-                    portChoices.Add(new SerialPortChoice(friendlyName, portName));
+                    portChoices.Add(new SerialPortChoice(ComPortHelper.DisplayName(port), port.ComPortName));
                 }
             }
             else
@@ -828,7 +816,7 @@ namespace DiyFfbPedal
 
             // Draw Graphs
             double canvasWidth = canvas_rudder_latency_graph.ActualWidth;
-            if (canvasWidth <= 0) canvasWidth = 520;
+            if (canvasWidth <= 0) canvasWidth = 624;
 
             double latHeight = canvas_rudder_latency_graph.ActualHeight;
             if (latHeight <= 0) latHeight = 70;

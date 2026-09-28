@@ -7,7 +7,7 @@
              xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="135" d:DesignWidth="160">
+             d:DesignHeight="135" d:DesignWidth="192">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -16,29 +16,28 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border Background="#FF4E4E4E" Height="135" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="160" HorizontalAlignment="Left" >
-            <StackPanel HorizontalAlignment="Center" Height="135" VerticalAlignment="Top" Width="160">
-                <Label Content="{SLoc DIYFFBPedalPlugin_LabelPedalSetting, 'Pedal Setting'}" Height="20" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" FontSize="10" Margin="2,0,0,0"/>
-                                <StackPanel Width="155" Height="16" Orientation="Horizontal" Margin="2,1,0,0">
-                    <Grid Width="155" Height="16">
-                        <Label x:Name="Label_Pedal_interval_trigger" Width="155" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="8" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Effects Update Rate:" Height="16" Padding="0,0,0,0" Cursor="Hand" ToolTip="Click to type update rate (15, 20, 30, 60 Hz)" MouseLeftButtonDown="Label_Pedal_interval_trigger_MouseLeftButtonDown" Background="Transparent"/>
+            <StackPanel HorizontalAlignment="Center" Height="135" VerticalAlignment="Top" Width="192">
+                <Label Content="{SLoc DIYFFBPedalPlugin_LabelPedalSetting, 'Pedal Setting'}" Height="20" Width="180" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" Foreground="White" HorizontalAlignment="Left" FontSize="10" Margin="2,0,0,0"/>
+                                <StackPanel Width="186" Height="16" Orientation="Horizontal" Margin="2,1,0,0">
+                    <Grid Width="186" Height="16">
+                        <Label x:Name="Label_Pedal_interval_trigger" Width="186" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="8" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Effects Update Rate:" Height="16" Padding="0,0,0,0" Cursor="Hand" ToolTip="Click to type update rate (15, 20, 30, 60 Hz)" MouseLeftButtonDown="Label_Pedal_interval_trigger_MouseLeftButtonDown" Background="Transparent"/>
                         <TextBox x:Name="TextBox_edit_Pedal_interval" Width="50" Height="16" FontSize="8" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus" Padding="1,0,1,0"/>
                     </Grid>
                 </StackPanel>
-                <Slider x:Name="Slider_Pedal_interval_trigger" Style="{DynamicResource SliderStyle_single_H}" HorizontalAlignment="Left" Grid.Row="1" VerticalAlignment="Top" Width="155" Height="10" Minimum="15" Maximum="60" TickPlacement="BottomRight" Ticks="15,20,30,60" IsSnapToTickEnabled="True" Value="30" ValueChanged="Slider_Pedal_interval_trigger_ValueChanged" ToolTip="Only work in Simhub with purchased licnese, free version is limited to 10 FPS. " Margin="3,2,0,0"/>
-                <StackPanel x:Name="text_debug_flag" Height="20" Width="150" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,2,0,0">
+                <Slider x:Name="Slider_Pedal_interval_trigger" Style="{DynamicResource SliderStyle_single_H}" HorizontalAlignment="Left" Grid.Row="1" VerticalAlignment="Top" Width="186" Height="10" Minimum="15" Maximum="60" TickPlacement="BottomRight" Ticks="15,20,30,60" IsSnapToTickEnabled="True" Value="30" ValueChanged="Slider_Pedal_interval_trigger_ValueChanged" ToolTip="Only work in Simhub with purchased licnese, free version is limited to 10 FPS. " Margin="3,2,0,0"/>
+                <StackPanel x:Name="text_debug_flag" Height="20" Width="180" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,2,0,0">
                     <Label Content="{SLoc DIYFFBPedalPlugin_LabelDebugFlag0, 'Debug Flag 0:'}" Height="20" Width="65" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="5,0,0,0"/>
                     <TextBox x:Name="textBox_debug_Flag_0" Width="40" Height="20" PreviewTextInput="NumericTextBox_PreviewTextInput" TextChanged="textBox_debug_Flag_0_TextChanged" Margin="2,0,0,0" HorizontalAlignment="Left" MinHeight="20" FontSize="8" ToolTip="DebugFlag input, please check ESP32 sketch for cheatcode" BorderThickness="0,0,0,0"/>
                 </StackPanel>
-                <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
+                <StackPanel Height="20" Width="192" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
                     <styles:SHToggleButton x:Name="checkbox_auto_connect" Content="" Checked="checkbox_auto_connect_Checked" Unchecked="checkbox_auto_connect_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Auto connect with scan the port every 5s, and connect back the pedal you have connect until you press disconnect" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextAutomaticPedalConnect, 'Automatic Pedal Connect'}" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                 </StackPanel>
-                <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
+                <StackPanel Height="20" Width="192" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
                     <styles:SHToggleButton x:Name="CheckBox_Pedal_ESPNow_SyncFlag" Content="" Checked="CheckBox_Pedal_ESPNow_SyncFlag_Checked" Unchecked="CheckBox_Pedal_ESPNow_SyncFlag_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextWirelessCommunication, 'Wireless Communication'}" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                 </StackPanel>
-                <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
+                <StackPanel Height="20" Width="192" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
                     <styles:SHToggleButton x:Name="dump_pedal_response_to_file" Content="" Checked="dump_pedal_response_to_file_Checked" Unchecked="dump_pedal_response_to_file_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Dump pedal realtime status to file, it should be off when not in use" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextLogPedalStates, 'Capture pedal trace'}" Height="20" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                     <TextBlock 
@@ -63,6 +62,5 @@
 
 
             </StackPanel>
-        </Border>
     </Grid>
 </UserControl>

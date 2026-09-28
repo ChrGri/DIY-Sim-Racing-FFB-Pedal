@@ -81,29 +81,29 @@ namespace DiyFfbPedal.UIFunction
             else if (CboFirmware.Items.Count > 0) CboFirmware.SelectedIndex = 0;
         }
 
-        private void BtnRefreshCom_Click(object sender, RoutedEventArgs e) => RefreshPorts();
+        // Re-enumerate every time the list is opened (replaces the former Refresh button).
+        private void CboComPorts_DropDownOpened(object sender, EventArgs e) => RefreshPorts();
 
         private void RefreshPorts()
         {
+            string previousPort = SelectedPort;
             CboComPorts.Items.Clear();
 
-            string[] comPorts = SerialPort.GetPortNames().Distinct().ToArray();
-            var sortedPorts = comPorts
-                .Select(port => new
-                {
-                    Name = port,
-                    Number = int.TryParse(System.Text.RegularExpressions.Regex.Match(port, @"\d+").Value, out int num) ? num : int.MaxValue
-                })
-                .OrderBy(p => p.Number)
-                .Select(p => p.Name)
-                .ToArray();
-
-            foreach (string port in sortedPorts)
+            // Only ports of devices that are actually connected - GetPortNames() also
+            // returns stale registry entries of unplugged devices.
+            foreach (var port in ComPortHelper.GetPresentPorts(forceRefresh: true))
             {
-                CboComPorts.Items.Add(port);
+                var item = new System.Windows.Controls.ComboBoxItem { Content = ComPortHelper.DisplayName(port), Tag = port.ComPortName };
+                CboComPorts.Items.Add(item);
+                if (string.Equals(port.ComPortName, previousPort, StringComparison.OrdinalIgnoreCase))
+                {
+                    CboComPorts.SelectedItem = item;
+                }
             }
-            if (CboComPorts.Items.Count > 0) CboComPorts.SelectedIndex = 0;
+            if (CboComPorts.SelectedItem == null && CboComPorts.Items.Count > 0) CboComPorts.SelectedIndex = 0;
         }
+
+        private string SelectedPort => (CboComPorts.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag as string;
 
         /// <summary>
         /// Extracts an embedded binary from the DLL to the Windows Temp folder
@@ -173,7 +173,7 @@ namespace DiyFfbPedal.UIFunction
                 return;
             }
 
-            string port = CboComPorts.SelectedItem.ToString();
+            string port = SelectedPort;
             string selectedBoardFolder = CboFirmware.SelectedValue.ToString();
 
             // Validation for custom file mode
@@ -270,7 +270,7 @@ namespace DiyFfbPedal.UIFunction
                 return;
             }
 
-            string port = CboComPorts.SelectedItem.ToString();
+            string port = SelectedPort;
             ForceDisconnectSerial(port);
 
             BtnFlash.IsEnabled = false;

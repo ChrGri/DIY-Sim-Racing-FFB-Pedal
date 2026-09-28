@@ -7,7 +7,7 @@
              xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="190" d:DesignWidth="540">
+             d:DesignHeight="190" d:DesignWidth="648">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -16,18 +16,18 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border Background="#7F4E4E4E" Height="190" CornerRadius="8,8,8,8" Padding="0,0,0,6" BorderThickness="0,2,0,0" >
-            <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540">
-                <StackPanel Height="20" Width="540" Orientation="Horizontal">
-                    <styles:SHToggleButton x:Name="checkbox_enable_RPM_rudder" Content="" Checked="checkbox_enable_RPM_rudder_Checked" Unchecked="checkbox_enable_RPM_rudder_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="60,0,0,0" ToolTip="Enable for RPM/Spped rumble, the trigger was save in local, no need sned config to Pedal"/>
+        <Border Style="{StaticResource Card}" Margin="0" Height="190" Padding="0,0,0,6" VerticalAlignment="Top">
+            <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="648">
+                <StackPanel Height="20" Width="648" Orientation="Horizontal">
+                    <styles:SHToggleButton x:Name="checkbox_enable_RPM_rudder" Content="" Checked="checkbox_enable_RPM_rudder_Checked" Unchecked="checkbox_enable_RPM_rudder_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="15,0,0,0" ToolTip="Enable for RPM/Spped rumble, the trigger was save in local, no need sned config to Pedal"/>
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectRudderEngineTittle, 'Engine RPM Rumble Effect'}" Height="15" Width="300" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="4,0,0,0"/>
                 </StackPanel>
-                <localUI:SliderWithLabel x:Name="Slider_RPM_AMP_rudder" Width="400" Height="40" SliderLength="400" TickFrequency="0.02" MaxValue="4" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectEngineAmp, 'Effect Amplitude'}" Unit="%" SliderValueChanged="Slider_RPM_AMP_rudder_SliderValueChanged"/>
-                <StackPanel Width="400" Height="50">
-                    <StackPanel Width="400" Height="12" Orientation="Horizontal">
+                <localUI:SliderWithLabel x:Name="Slider_RPM_AMP_rudder" Width="480" Height="40" SliderLength="480" TickFrequency="0.02" MaxValue="4" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectEngineAmp, 'Effect Amplitude'}" Unit="%" SliderValueChanged="Slider_RPM_AMP_rudder_SliderValueChanged"/>
+                <StackPanel Width="480" Height="50">
+                    <StackPanel Width="480" Height="12" Orientation="Horizontal">
                         <Label x:Name="label_RPM_freq_rudder"  Width="250" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="{SLoc DIYFFBPedalPlugin_TextEffectEngineFreq, 'Effect Frequency:'}" Height="12" Padding="0,0,0,0"/>
                     </StackPanel>
-                    <StackPanel Width="400" Height="16" Orientation="Horizontal">
+                    <StackPanel Width="480" Height="16" Orientation="Horizontal">
                         <Grid Width="55" Height="16">
                             <Label x:Name="label_RPM_freq_min_rudder" Width="55" Foreground="White" FontSize="10" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" Content="MIN:" Height="16" Padding="0,0,0,0" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" Cursor="Hand" ToolTip="Click to type min frequency (Hz)" MouseLeftButtonDown="label_RPM_freq_min_rudder_MouseLeftButtonDown" Background="Transparent"/>
                             <TextBox x:Name="TextBox_edit_RPM_freq_min" Width="45" Height="16" FontSize="9" FontFamily="Arial" VerticalAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus" Padding="1,0,1,0"/>

@@ -6,16 +6,105 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Threading;
 
 namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
         private readonly byte[] _rxBuffer = new byte[4096];
-        private int _rxIndex = 0;          
-        private int _expectedTotalLen = 0; 
+        private int _rxIndex = 0;
+        private int _expectedTotalLen = 0;
         private bool _isReceiving = false;
         private byte PKT_TYPE_START = 0x01;
+
+        // Curve/graph redraw throttling: incoming telemetry packets can arrive far faster than the
+        // screen can usefully redraw. These UI-only visual markers (no vJoy/force-feedback output)
+        // are coalesced to the latest value and applied on a 60Hz timer instead of on every packet.
+        private DispatcherTimer _curveRedrawTimer;
+        private bool _pendingRudderDeflection, _pendingRudderJoystick, _pendingPedalForceTravel, _pendingPedalKinematics, _pendingPedalJoystick;
+        private float _rudderDeflectionRatio, _rudderDeflectionLeftRatio;
+        private double _rudderYaw, _rudderToeBrake;
+        private ushort _pedalForceTravelPosition, _pedalForceTravelForce;
+        private ushort _pedalKinematicsPosition;
+        private ushort _pedalJoystickValue;
+
+        private void EnsureCurveRedrawTimer()
+        {
+            if (_curveRedrawTimer != null) return;
+            // Must be bound to the UI dispatcher: this is called from the HID ReadLoop thread, and a
+            // DispatcherTimer created without one attaches to that thread's dispatcher, which never runs.
+            _curveRedrawTimer = new DispatcherTimer(System.Windows.Threading.DispatcherPriority.Render, Dispatcher)
+            {
+                Interval = TimeSpan.FromMilliseconds(1000.0 / 60.0)
+            };
+            _curveRedrawTimer.Tick += CurveRedrawTimer_Tick;
+            _curveRedrawTimer.Start();
+        }
+
+        private void CurveRedrawTimer_Tick(object sender, EventArgs e)
+        {
+            if (_pendingRudderDeflection)
+            {
+                _pendingRudderDeflection = false;
+                CurveRudderForce_Tab?.UpdateLiveDeflection(_rudderDeflectionRatio, _rudderDeflectionLeftRatio);
+            }
+            if (_pendingRudderJoystick)
+            {
+                _pendingRudderJoystick = false;
+                RudderJoystick_Tab?.UpdateYawState(_rudderYaw);
+                RudderJoystick_Tab?.UpdateToeBrakeState(_rudderToeBrake);
+            }
+            if (_pendingPedalForceTravel)
+            {
+                _pendingPedalForceTravel = false;
+                PedalForceTravel_Tab?.updatePedalState(_pedalForceTravelPosition, _pedalForceTravelForce);
+            }
+            if (_pendingPedalKinematics)
+            {
+                _pendingPedalKinematics = false;
+                PedalKinematics_Tab?.updatePedalState(_pedalKinematicsPosition);
+            }
+            if (_pendingPedalJoystick)
+            {
+                _pendingPedalJoystick = false;
+                PedalJoystick_Tab?.JoystickStateUpdate(_pedalJoystickValue);
+            }
+        }
+
+        private void QueueRudderDeflection(float ratio, float leftRatio)
+        {
+            _rudderDeflectionRatio = ratio;
+            _rudderDeflectionLeftRatio = leftRatio;
+            _pendingRudderDeflection = true;
+        }
+
+        private void QueueRudderJoystick(double yaw, double toeBrake)
+        {
+            _rudderYaw = yaw;
+            _rudderToeBrake = toeBrake;
+            _pendingRudderJoystick = true;
+        }
+
+        private void QueuePedalForceTravel(ushort position, ushort force)
+        {
+            _pedalForceTravelPosition = position;
+            _pedalForceTravelForce = force;
+            _pendingPedalForceTravel = true;
+        }
+
+        private void QueuePedalKinematics(ushort position)
+        {
+            _pedalKinematicsPosition = position;
+            _pendingPedalKinematics = true;
+        }
+
+        private void QueuePedalJoystick(ushort value)
+        {
+            _pedalJoystickValue = value;
+            _pendingPedalJoystick = true;
+        }
+
         public void HidRecieveCallback(byte[] buffer)
         {
             if (buffer == null || buffer.Length < 4) return;
@@ -64,12 +153,13 @@ namespace DiyFfbPedal
         }
 
         void ProcessFullDataFromESP(byte[] data)
-        { 
+        {
             int length = data.Length;
             string hexString=string.Empty;
             bool pedalStateHasAlreadyBeenUpdated_b = false;
             if (length > 0)
             {
+                EnsureCurveRedrawTimer();
                 Dispatcher.InvokeAsync(() =>
                 {
                     unsafe 
@@ -239,12 +329,12 @@ namespace DiyFfbPedal
                                                     {
                                                         float rightRatio = (float)rightRel;
                                                         float leftRatio = (float)(1.0 - leftRel);
-                                                        CurveRudderForce_Tab.UpdateLiveDeflection(rightRatio, leftRatio);
+                                                        QueueRudderDeflection(rightRatio, leftRatio);
                                                     }
                                                     else
                                                     {
                                                         float rudderRatio = (float)Math.Max(0.0, Math.Min(1.0, 0.5 + 0.5 * (rightRel - leftRel)));
-                                                        CurveRudderForce_Tab.UpdateLiveDeflection(rudderRatio, -1f);
+                                                        QueueRudderDeflection(rudderRatio, -1f);
                                                     }
                                                 }
 
@@ -260,14 +350,12 @@ namespace DiyFfbPedal
                                                         // idle in the curve preview even though the actual applied
                                                         // output was correct.
                                                         double toeRatio = Math.Max(0.0, Math.Min(1.0, (Math.Max(leftRel, rightRel) - 0.5) * 2.0));
-                                                        RudderJoystick_Tab.UpdateYawState(0.5);
-                                                        RudderJoystick_Tab.UpdateToeBrakeState(toeRatio);
+                                                        QueueRudderJoystick(0.5, toeRatio);
                                                     }
                                                     else
                                                     {
                                                         double rudderRatio = Math.Max(0.0, Math.Min(1.0, 0.5 + 0.5 * (rightRel - leftRel)));
-                                                        RudderJoystick_Tab.UpdateYawState(rudderRatio);
-                                                        RudderJoystick_Tab.UpdateToeBrakeState(0.0);
+                                                        QueueRudderJoystick(rudderRatio, 0.0);
                                                     }
                                                 }
                                             }
@@ -275,12 +363,11 @@ namespace DiyFfbPedal
                                             {
                                                 if (RudderJoystick_Tab != null)
                                                 {
-                                                    RudderJoystick_Tab.UpdateYawState(0.5);
-                                                    RudderJoystick_Tab.UpdateToeBrakeState(0.0);
+                                                    QueueRudderJoystick(0.5, 0.0);
                                                 }
                                                 if (CurveRudderForce_Tab != null)
                                                 {
-                                                    CurveRudderForce_Tab.UpdateLiveDeflection(0.5f, -1f);
+                                                    QueueRudderDeflection(0.5f, -1f);
                                                 }
                                             }
 
@@ -302,10 +389,10 @@ namespace DiyFfbPedal
                                 {
                                     double control_rect_value_max = 65535;
                                     pedalStateHasAlreadyBeenUpdated_b = true;
-                                    PedalForceTravel_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16, pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
+                                    QueuePedalForceTravel(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16, pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
                                             if (pedalKinematicTab != null && pedalKinematicTab.IsSelected)
                                             {
-                                                PedalKinematics_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16);
+                                                QueuePedalKinematics(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16);
                                             }
                                     if (Plugin.Settings.advanced_b)
                                     {
@@ -325,11 +412,11 @@ namespace DiyFfbPedal
                                     }
                                     if (dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.travelAsJoystickOutput_u8 == 1)
                                     {
-                                        PedalJoystick_Tab.JoystickStateUpdate(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16);
+                                        QueuePedalJoystick(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16);
                                     }
                                     else
                                             {
-                                                PedalJoystick_Tab.JoystickStateUpdate(pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
+                                                QueuePedalJoystick(pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
                                             }
 
                                 }

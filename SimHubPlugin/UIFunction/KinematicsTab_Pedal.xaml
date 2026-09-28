@@ -7,7 +7,7 @@
              xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="240" d:DesignWidth="540">
+             d:DesignHeight="240" d:DesignWidth="648">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -16,14 +16,14 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border  HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="8,8,8,8" Padding="0,0,0,6">
-            <StackPanel HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="540">
-                <StackPanel Height="20" Width="540" VerticalAlignment="Top" HorizontalAlignment="Left" Orientation="Horizontal">
+        <Border  HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="648" Style="{StaticResource Card}" Padding="0,0,0,6" Margin="0">
+            <StackPanel HorizontalAlignment="Left" Height="272" VerticalAlignment="Top" Width="648">
+                <StackPanel Height="20" Width="648" VerticalAlignment="Top" HorizontalAlignment="Left" Orientation="Horizontal">
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalKinematicsTitle, 'PEDAL KINEMATIC SETTING'}" Width="200" Foreground="White" FontFamily="Arial Black" HorizontalAlignment="Center" Margin="70,0,0,0" Height="20" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                 </StackPanel>
-                <StackPanel Height="205" Width="540" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,5,0,0">
+                <StackPanel Height="205" Width="648" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,5,0,0">
                     <!-- Travel vs Force curve GUI elements -->
-                    <Canvas x:Name="canvas_kinematic" Height="200" Width="400" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="70,0,0,0" ClipToBounds="True">
+                    <Canvas x:Name="canvas_kinematic" Height="200" Width="480" Background="#141414" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="70,0,0,0" ClipToBounds="True">
                         <TextBlock x:Name="TextBlock_Warning_kinematics" Height="40" Width="200" FontFamily="Arial" FontSize="9" Foreground="#FFF44343" />
                         <!-- Physical pedal schematic layer (rendered behind kinematic dimension lines) -->
                         <Rectangle x:Name="schematic_base_rail" Height="20" Fill="#232733" Stroke="#3E4559" StrokeThickness="1" RadiusX="2" RadiusY="2"/>
@@ -84,15 +84,15 @@
                             <TextBox x:Name="Label_travel_canvas" PreviewTextInput="NumericTextBox_PreviewTextInput" TextChanged="Kinematic_TextBox_TextChanged" Height="20" Width="30" FontFamily="Yu Gothic UI" FontSize="10" VerticalContentAlignment="Center" Padding="0,0,0,0" HorizontalContentAlignment="Center" Background="#00252525" BorderBrush="#00CCCCCC" Foreground="White" CaretBrush="Transparent" Margin="0,-3,0,0" BorderThickness="0,0,0,0" Cursor="Hand" ToolTip="Click to edit"/>
                             <Button x:Name="btn_minus_travel_canvas"  Click="btn_minus_travel_canvas_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10" Visibility="Hidden" Cursor="Hand"/>
                         </StackPanel>
-                        <StackPanel  Height="60" Width="15" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="385,0,0,0" Cursor="Hand">
+                        <StackPanel  Height="60" Width="15" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="465,0,0,0" Cursor="Hand">
                             <Button x:Name="btn_plus_kinematic_scale"  Click="btn_plus_kinematic_scale_Click" Content="+" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-0.5,0,0" VerticalContentAlignment="Top" FontWeight="Bold" Cursor="Hand"/>
                             <Label x:Name="Label_kinematic_scale"  Height="15" Width="15" FontFamily="Yu Gothic UI" FontSize="10" VerticalContentAlignment="Center" Padding="0,0,0,0" HorizontalContentAlignment="Center"/>
                             <Button x:Name="btn_minus_kinematic_scale"  Click="btn_minus_kinematic_scale_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10" Cursor="Hand"/>
                         </StackPanel>
                     </Canvas>
                 </StackPanel>
-                <StackPanel Height="15" Width="540" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
-                    <Label x:Name="Label_kinematic_pedal_angle" Content=" " Height="15" Width="400" FontFamily="Yu Gothic UI" FontSize="10" VerticalContentAlignment="Center" Padding="0,0,0,0" HorizontalContentAlignment="Center" Margin="70,0,0,0"/>
+                <StackPanel Height="15" Width="648" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
+                    <Label x:Name="Label_kinematic_pedal_angle" Content=" " Height="15" Width="480" FontFamily="Yu Gothic UI" FontSize="10" VerticalContentAlignment="Center" Padding="0,0,0,0" HorizontalContentAlignment="Center" Margin="70,0,0,0"/>
                 </StackPanel>
             </StackPanel>
         </Border>

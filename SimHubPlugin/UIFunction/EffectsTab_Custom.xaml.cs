@@ -17,7 +17,7 @@ using System.Windows.Shapes;
 namespace DiyFfbPedal.UIFunction
 {
     /// <summary>
-    /// EffectsTab_Custom1.xaml 的互動邏輯
+    /// EffectsTab_Custom.xaml 的互動邏輯
     /// </summary>
     public partial class EffectsTab_Custom : UserControl
     {
@@ -322,7 +322,7 @@ namespace DiyFfbPedal.UIFunction
 
         private void Bind_CV3_Click(object sender, RoutedEventArgs e)
         {
-            NcalcScriptEditor sideWindow = new NcalcScriptEditor(Plugin, 2, (int)Plugin.Settings.table_selected);
+            NcalcScriptEditor sideWindow = new NcalcScriptEditor(Plugin, 3, (int)Plugin.Settings.table_selected);
             double screenWidth = SystemParameters.PrimaryScreenWidth;
             double screenHeight = SystemParameters.PrimaryScreenHeight;
             sideWindow.Left = screenWidth / 2 - sideWindow.Width / 2;
@@ -382,7 +382,7 @@ namespace DiyFfbPedal.UIFunction
 
         private void Bind_CV4_Click(object sender, RoutedEventArgs e)
         {
-            NcalcScriptEditor sideWindow = new NcalcScriptEditor(Plugin, 2, (int)Plugin.Settings.table_selected);
+            NcalcScriptEditor sideWindow = new NcalcScriptEditor(Plugin, 4, (int)Plugin.Settings.table_selected);
             double screenWidth = SystemParameters.PrimaryScreenWidth;
             double screenHeight = SystemParameters.PrimaryScreenHeight;
             sideWindow.Left = screenWidth / 2 - sideWindow.Width / 2;

@@ -1067,7 +1067,7 @@ namespace DiyFfbPedal.UIFunction
                 {
                     X1 = 0,
                     Y1 = canvas_kinematic.Height - (yOffset + i * cellHeight),
-                    X2 = 400,
+                    X2 = canvas_kinematic.Width,
                     Y2 = canvas_kinematic.Height - (yOffset + i * cellHeight),
                     //Stroke = Brush.Black,
                     Stroke = System.Windows.Media.Brushes.LightSteelBlue,

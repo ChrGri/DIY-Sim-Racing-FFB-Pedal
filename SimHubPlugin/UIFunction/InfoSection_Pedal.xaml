@@ -7,7 +7,7 @@
              xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="85" d:DesignWidth="160">
+             d:DesignHeight="85" d:DesignWidth="192">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -16,13 +16,13 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <StackPanel HorizontalAlignment="Center" Height="85" VerticalAlignment="Top" Width="160">
-            <StackPanel Height="15" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+        <StackPanel HorizontalAlignment="Center" Height="85" VerticalAlignment="Top" Width="192">
+            <StackPanel Height="15" Width="192" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                 <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalInfoTitle, 'Pedal Info'}"  FontFamily="Arial Black" FontSize="12" Height="15" Width="80" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center"  />
                 <Label x:Name="Label_RSSI" Content=""  FontFamily="Arial" FontSize="8" Height="15" Width="35" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="29,0,0,0"  />
                 <localUI:RSSIBar x:Name="rssibar" />
             </StackPanel>
-            <StackPanel Height="70" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <StackPanel Height="70" Width="192" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
                 <Label x:Name="info_label" Content="" Height="70" Width="70" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="10" Padding="0,5,0,0"/>
                 <Label x:Name="info_label_2" Content="Label" Height="70" Width="90" FontFamily="Arial" VerticalAlignment="Top" FontSize="10" Padding="0,5,0,5"/>
             </StackPanel>

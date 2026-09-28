@@ -1,12 +1,26 @@
 // FanatecInterface.cpp
 
 #include "FanatecInterface.h"
+#include <EEPROM.h>
+
+// EEPROM is initialised once in setup() (256 bytes). Bytes 15..42 hold the
+// ESP-NOW pairing registry, so the vibration flag lives behind it.
+#define ADDR_VIBRATION_MAGIC 64
+#define ADDR_VIBRATION_ENABLED 65
+#define VIBRATION_MAGIC 0xA7
+static const unsigned long VIBRATION_TIMEOUT_MS = 500;
+
+static bool eepromReady() {
+    return EEPROM.length() > ADDR_VIBRATION_ENABLED;
+}
 
 // Constructor
 FanatecInterface::FanatecInterface(int rxPin, int txPin, int plugPin)
     : _rxPin(rxPin), _txPin(txPin), _plugPin(plugPin), _serial(&Serial1),
       _throttle(0), _brake(0), _clutch(0), _handbrake(0),
-      _connected(false), _connectedCallback(nullptr), _initialized(false) {
+      _connected(false), _vibrationEnabled(false), _throttleVibration(0),
+      _brakeVibration(0), _lastThrottleVibrationAt(0), _lastBrakeVibrationAt(0),
+      _rxFrameIndex(0), _lastRxByteAt(0), _connectedCallback(nullptr), _initialized(false) {
 }
 
 // Initialization function
@@ -14,6 +28,13 @@ void FanatecInterface::begin() {
     // Initialize serial port
     _serial->begin(250000, SERIAL_8N1, _rxPin, _txPin);
     pinMode(_plugPin, INPUT_PULLDOWN);
+
+    if (eepromReady()) {
+        _vibrationEnabled = EEPROM.read(ADDR_VIBRATION_MAGIC) == VIBRATION_MAGIC &&
+                            EEPROM.read(ADDR_VIBRATION_ENABLED) == 1;
+    } else {
+        Serial.println("[L] EEPROM not initialised, Fanatec vibration setting unavailable");
+    }
 
     // Generate CRC table
     makeCRCTable(0x8C);
@@ -36,6 +57,9 @@ void FanatecInterface::communicationUpdate() {
     if (!detectState && _initialized) {
         _initialized = false;
         _connected = false;
+        _throttleVibration = 0;
+        _brakeVibration = 0;
+        _rxFrameIndex = 0;
         if (_connectedCallback) {
             _connectedCallback(false);
         }
@@ -44,6 +68,44 @@ void FanatecInterface::communicationUpdate() {
 
 void FanatecInterface::update() {
     if (isPlugged()) {
+        if (isConnected()) {
+            // UART reads may split a wheelbase packet across task iterations.
+            for (size_t budget = 0; budget < 48 && _serial->available(); ++budget) {
+                const uint8_t receivedByte = _serial->read();
+                const unsigned long now = millis();
+                if (now - _lastRxByteAt > 20) _rxFrameIndex = 0;
+                _lastRxByteAt = now;
+                if (_rxFrameIndex == 0 && receivedByte != 0x7B) continue;
+                _rxFrame[_rxFrameIndex++] = receivedByte;
+                if (_rxFrameIndex != sizeof(_rxFrame)) continue;
+                _rxFrameIndex = 0;
+                if (_rxFrame[11] != 0x7D || generateCRC(&_rxFrame[1], 9) != _rxFrame[10]) {
+                    // Misaligned frame: resync on the next start byte inside it.
+                    for (size_t i = 1; i < sizeof(_rxFrame); ++i) {
+                        if (_rxFrame[i] == 0x7B) {
+                            _rxFrameIndex = sizeof(_rxFrame) - i;
+                            memmove(_rxFrame, &_rxFrame[i], _rxFrameIndex);
+                            break;
+                        }
+                    }
+                    continue;
+                }
+                // Vibration packet: {0x7B, 0x00, throttle, brake, 0x01, 0 x5, CRC, 0x7D}
+                if (_rxFrame[1] == 0x00 && _rxFrame[4] == 0x01 &&
+                    _rxFrame[5] == 0 && _rxFrame[6] == 0 &&
+                    _rxFrame[7] == 0 && _rxFrame[8] == 0 && _rxFrame[9] == 0) {
+                    // The wheelbase sends each motor's active packet separately.
+                    if (_rxFrame[2]) {
+                        _throttleVibration = _rxFrame[2];
+                        _lastThrottleVibrationAt = now;
+                    }
+                    if (_rxFrame[3]) {
+                        _brakeVibration = _rxFrame[3];
+                        _lastBrakeVibrationAt = now;
+                    }
+                }
+            }
+        }
         // Create and send pedal data packet
         uint8_t packet[12];
         createPacket(packet);
@@ -80,6 +142,34 @@ void FanatecInterface::onConnected(void (*callback)(bool)) {
 // Check if connected to the Fanatec device
 bool FanatecInterface::isConnected() {
     return _connected;
+}
+
+bool FanatecInterface::vibrationEnabled() const {
+    return _vibrationEnabled;
+}
+
+bool FanatecInterface::setVibrationEnabled(bool enabled) {
+    if (!eepromReady()) return false;
+    if (_vibrationEnabled == enabled && EEPROM.read(ADDR_VIBRATION_MAGIC) == VIBRATION_MAGIC) return true;
+    EEPROM.write(ADDR_VIBRATION_MAGIC, VIBRATION_MAGIC);
+    EEPROM.write(ADDR_VIBRATION_ENABLED, enabled ? 1 : 0);
+    if (!EEPROM.commit()) return false;
+    _vibrationEnabled = enabled;
+    if (!enabled) {
+        _throttleVibration = 0;
+        _brakeVibration = 0;
+    }
+    return true;
+}
+
+uint8_t FanatecInterface::throttleVibration() const {
+    return _vibrationEnabled && _connected && millis() - _lastThrottleVibrationAt <= VIBRATION_TIMEOUT_MS
+        ? _throttleVibration : 0;
+}
+
+uint8_t FanatecInterface::brakeVibration() const {
+    return _vibrationEnabled && _connected && millis() - _lastBrakeVibrationAt <= VIBRATION_TIMEOUT_MS
+        ? _brakeVibration : 0;
 }
 
 // Internal helper functions

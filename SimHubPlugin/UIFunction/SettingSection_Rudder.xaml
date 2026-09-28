@@ -7,7 +7,7 @@
              xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="354" d:DesignWidth="160" VerticalAlignment="Top">
+             d:DesignHeight="354" d:DesignWidth="192" VerticalAlignment="Top">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -16,12 +16,12 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid HorizontalAlignment="Left" VerticalAlignment="Top">
-        <Border Background="#FF4E4E4E" Height="349" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="160" HorizontalAlignment="Left" Margin="0,3,0,0" >
-            <StackPanel HorizontalAlignment="Center" Height="166" VerticalAlignment="Top" Width="160">
-                <Label Content="Rudder Setting" Height="20" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" FontSize="10" Margin="2,0,0,0"/>
-                <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Width="160" Height="80">
+        <Border Background="#FF4E4E4E" Height="349" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="192" HorizontalAlignment="Left" Margin="0,3,0,0" >
+            <StackPanel HorizontalAlignment="Center" Height="166" VerticalAlignment="Top" Width="192">
+                <Label Content="Rudder Setting" Height="20" Width="180" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" FontSize="10" Margin="2,0,0,0"/>
+                <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Width="192" Height="80">
                     <Label Content="Mode Select:" Height="15" Width="80" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="5,0,0,0" FontSize="10"/>
-                    <WrapPanel Orientation="Horizontal" Width="155">
+                    <WrapPanel Orientation="Horizontal" Width="186">
                         <RadioButton x:Name="CheckBox_RudderType_1" Content="Airplane" GroupName="RudderTypeOptions" Width="72" Height="18" BorderThickness="0,0,0,0" IsChecked="True" FontSize="9.5" Checked="CheckBox_RudderType_Checked" Margin="2,0,0,2"/>
                         <RadioButton x:Name="CheckBox_RudderType_2" Content="Heli" GroupName="RudderTypeOptions" Width="72" Height="18" BorderThickness="0,0,0,0" FontSize="9.5" Checked="CheckBox_RudderType_Checked" Margin="2,0,0,2"/>
                         <RadioButton x:Name="CheckBox_RudderType_3" Content="Air + Brake" GroupName="RudderTypeOptions" Width="72" Height="18" BorderThickness="0,0,0,0" FontSize="9.5" Checked="CheckBox_RudderType_Checked" ToolTip="Airplane with switchable Toe Brake" Margin="2,0,0,2"/>

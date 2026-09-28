@@ -135,6 +135,7 @@ namespace DiyFfbPedal
                                 _plugin._calculations.ProfileEditing = item.FileName;
                             }
                             ApplyProfile(ProfilePath);
+                            UpdateProfileUi(item);
                             UpdateProfileLabelDefaultAndEditing();
                             _plugin.wpfHandle.ToastNotification("Profile Applied", $"Profile:{item.ListNameOrig} for Car:{carName} applied.");
                         }
@@ -167,6 +168,7 @@ namespace DiyFfbPedal
                             }
                             ApplyProfileForGame(ProfilePath);
                             CurrentGameProfile= item.FileName;
+                            UpdateProfileUi(item);
                             UpdateProfileLabelDefaultAndEditing();
                             //_plugin.wpfHandle.ToastNotification("Profile Applied", $"Profile:{item.ListNameOrig} for Game:{gameName} applied.");
                         }
@@ -213,16 +215,7 @@ namespace DiyFfbPedal
                         _plugin._calculations.configApplyLockLast = DateTime.Now;
                         //System.Threading.Thread.Sleep(100);
                     }
-                    //write the effect setting
-                    _plugin.Settings.ABS_enable_flag[i] = _plugin.BoolToInt(tmpProfile.Effects[i][0]);
-                    _plugin.Settings.RPM_enable_flag[i] = _plugin.BoolToInt(tmpProfile.Effects[i][1]);
-                    if (i == 1) _plugin.Settings.G_force_enable_flag[i] = _plugin.BoolToInt(tmpProfile.Effects[i][3]);
-                    _plugin.Settings.WS_enable_flag[i] = _plugin.BoolToInt(tmpProfile.Effects[i][4]);
-                    _plugin.Settings.Road_impact_enable_flag[i] = _plugin.BoolToInt(tmpProfile.Effects[i][5]);
-                    _plugin.Settings.CV1_enable_flag[i] = tmpProfile.Effects[i][6];
-                    _plugin.Settings.CV2_enable_flag[i] = tmpProfile.Effects[i][7];
-                    _plugin.Settings.CV3_enable_flag[i] = tmpProfile.Effects[i][8];
-                    _plugin.Settings.CV4_enable_flag[i] = tmpProfile.Effects[i][9];
+                    ApplyProfileEffects(tmpProfile, i);
                 }
                 
                 _plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
@@ -250,19 +243,34 @@ namespace DiyFfbPedal
 
                         //System.Threading.Thread.Sleep(100);
                     }
-                    //write the effect setting
-                    _plugin.Settings.ABS_enable_flag[i] = _plugin.BoolToInt(tmpProfile.Effects[i][0]);
-                    _plugin.Settings.RPM_enable_flag[i] = _plugin.BoolToInt(tmpProfile.Effects[i][1]);
-                    if (i == 1) _plugin.Settings.G_force_enable_flag[i] = _plugin.BoolToInt(tmpProfile.Effects[i][3]);
-                    _plugin.Settings.WS_enable_flag[i] = _plugin.BoolToInt(tmpProfile.Effects[i][4]);
-                    _plugin.Settings.Road_impact_enable_flag[i] = _plugin.BoolToInt(tmpProfile.Effects[i][5]);
-                    _plugin.Settings.CV1_enable_flag[i] = tmpProfile.Effects[i][6];
-                    _plugin.Settings.CV2_enable_flag[i] = tmpProfile.Effects[i][7];
-                    _plugin.Settings.CV3_enable_flag[i] = tmpProfile.Effects[i][8];
-                    _plugin.Settings.CV4_enable_flag[i] = tmpProfile.Effects[i][9];
+                    ApplyProfileEffects(tmpProfile, i);
                 }
                 _plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                 //wpfHandle.updateTheGuiFromConfig();
+            }
+
+            private void ApplyProfileEffects(DAP_system_profile_cls profile, int pedal)
+            {
+                bool[] effects = profile.Effects[pedal];
+                _plugin.Settings.ABS_enable_flag[pedal] = _plugin.BoolToInt(effects[0]);
+                _plugin.Settings.RPM_enable_flag[pedal] = _plugin.BoolToInt(effects[1]);
+                if (pedal == 1) _plugin.Settings.G_force_enable_flag[pedal] = _plugin.BoolToInt(effects[3]);
+                _plugin.Settings.WS_enable_flag[pedal] = _plugin.BoolToInt(effects[4]);
+                _plugin.Settings.Road_impact_enable_flag[pedal] = _plugin.BoolToInt(effects[5]);
+                _plugin.Settings.CV1_enable_flag[pedal] = effects[6];
+                _plugin.Settings.CV2_enable_flag[pedal] = effects[7];
+                _plugin.Settings.CV3_enable_flag[pedal] = effects[8];
+                _plugin.Settings.CV4_enable_flag[pedal] = effects[9];
+            }
+
+            private void UpdateProfileUi(ProfileListItem item)
+            {
+                if (item == null || _plugin.wpfHandle == null) return;
+                _plugin.wpfHandle.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    _plugin.wpfHandle.SystemProfile_TabNew.ApplyProfileOnUiWithPath(item.FullPath);
+                    _plugin.wpfHandle.updateTheGuiFromConfig();
+                }));
             }
             public void RefreshProfileList()
             {
@@ -360,6 +368,8 @@ namespace DiyFfbPedal
             public void ClearAutoSwitchStatus()
             {
                 lastCarName = string.Empty;
+                lastGameName = string.Empty;
+                CurrentGameProfile = string.Empty;
             }
         }
     }

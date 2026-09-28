@@ -950,6 +950,31 @@ namespace User.PluginSdkDemo
             
         }
 
+        unsafe private void FanatecVibrationToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_updatingFanatecVibrationToggle || Plugin == null ||
+                SystemSetting_Section.FanatecVibrationToggle == null || !Plugin.ESPsync_serialPort.IsOpen) return;
+
+            DAP_bridge_state_st command = default(DAP_bridge_state_st);
+            command.payLoadHeader_.version = (byte)Constants.pedalConfigPayload_version;
+            command.payLoadHeader_.payloadType = (byte)Constants.bridgeStatePayloadType;
+            command.payLoadHeader_.PedalTag = 5;
+            command.payloadBridgeState_.Bridge_action = (byte)(SystemSetting_Section.FanatecVibrationToggle.IsChecked == true ?
+                bridgeAction.BRIDGE_ACTION_FANATEC_VIBRATION_ON : bridgeAction.BRIDGE_ACTION_FANATEC_VIBRATION_OFF);
+            DAP_bridge_state_st* commandPtr = &command;
+            command.payloadFooter_.checkSum = Plugin.checksumCalc((byte*)commandPtr,
+                sizeof(payloadHeader) + sizeof(payloadBridgeState));
+            try
+            {
+                byte[] buffer = Plugin.getBytes_Bridge(command);
+                Plugin.ESPsync_serialPort.Write(buffer, 0, buffer.Length);
+            }
+            catch (Exception ex)
+            {
+                SimHub.Logging.Current.Error("Fanatec vibration setting: " + ex.Message);
+            }
+        }
+
         unsafe private void btn_Bridge_restart_Click(object sender, RoutedEventArgs e)
         {
             /*

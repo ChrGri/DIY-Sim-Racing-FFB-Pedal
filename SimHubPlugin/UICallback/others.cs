@@ -225,29 +225,17 @@ namespace DiyFfbPedal
 
             var SerialPortSelectionArray = new List<SerialPortChoice>();
             
-            string[] comPorts = SerialPort.GetPortNames();
-            var SerialPortList = new List<string>();
-            comPorts = comPorts.Distinct().ToArray(); // unique
+            // Only ports of devices that are actually connected (see GetPresentPorts).
+            var presentPorts = ComPortHelper.GetPresentPorts(forceRefresh: true);
             Plugin.comportList.Clear();
-            SerialPortList.Clear();
-     
-            if (comPorts.Length > 0)
+
+            if (presentPorts.Count > 0)
             {
-
-                foreach (string portName in comPorts)
+                foreach (var port in presentPorts)
                 {
-                    
-                    //SerialPortSelectionArray.Add(new SerialPortChoice(portName, portName));
-                    //int index = Plugin.comportList.FindIndex(item => item.ComPortName == portName);
-                    var parseResult= ComPortHelper.GetVidPidFromComPort(portName);
-                    Plugin.comportList.Add(parseResult);
-                    var portDeviceName = portName+" "+parseResult.DeviceName;
-                    //SerialPortList.Add((string)Plugin.comportList[index].DeviceName);
-                    SerialPortSelectionArray.Add(new SerialPortChoice(portDeviceName, portName));
-                    
-
+                    Plugin.comportList.Add(port);
+                    SerialPortSelectionArray.Add(new SerialPortChoice(ComPortHelper.DisplayName(port), port.ComPortName));
                 }
-                
             }
             else
             {
@@ -1031,7 +1019,7 @@ namespace DiyFfbPedal
             if (Plugin.Page_update_flag == true)
             {
                 Plugin.Page_update_flag = false;
-                MyTab.SelectedIndex = (int)Plugin.Settings.table_selected;
+                SelectPedalTab(Plugin.Settings.table_selected);
                 Plugin.pedal_select_update_flag = false;
                 Plugin.simhub_theme_color = defaultcolor.ToString();
                 switch (Plugin.Settings.table_selected)
@@ -1544,10 +1532,6 @@ namespace DiyFfbPedal
 
                     if (tb_wifi_ch_active != null) tb_wifi_ch_active.Text = $"Active: Ch {wc.payloadWifiChannel_.currentChannel_u8}";
                     if (tb_wifi_ch_rec != null) tb_wifi_ch_rec.Text = $"Rec: Ch {wc.payloadWifiChannel_.recommendedChannel_u8}";
-                    if (combo_wifi_channel != null)
-                    {
-                        combo_wifi_channel.SelectedValue = wc.payloadWifiChannel_.recommendedChannel_u8.ToString();
-                    }
 
                     for (int ch = 1; ch <= payloadWifiChannel.ChannelCount && ch - 1 < WifiChannelBars.Count; ch++)
                     {
@@ -1622,7 +1606,6 @@ namespace DiyFfbPedal
             }
 
             if (tb_wifi_ch_rec != null) tb_wifi_ch_rec.Text = $"Rec: Ch {clicked.Channel}";
-            if (combo_wifi_channel != null) combo_wifi_channel.SelectedValue = clicked.Channel.ToString();
             if (tb_wifi_scan_status != null)
             {
                 tb_wifi_scan_status.Text = $"Channel {clicked.Channel} selected as target. Apply it from System > Wireless.";

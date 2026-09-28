@@ -7,7 +7,7 @@
              xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="80" d:DesignWidth="160">
+             d:DesignHeight="80" d:DesignWidth="192">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -16,11 +16,11 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <StackPanel HorizontalAlignment="Center" Height="80" VerticalAlignment="Top" Width="160">
-            <StackPanel Height="15" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+        <StackPanel HorizontalAlignment="Center" Height="80" VerticalAlignment="Top" Width="192">
+            <StackPanel Height="15" Width="192" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                 <Label Content="{SLoc DIYFFBPedalPlugin_TextSystemInfoTitle, 'System Info'}"  FontFamily="Arial Black" FontSize="12" Height="15" Width="80" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center"  />
             </StackPanel>
-            <StackPanel Height="65" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <StackPanel Height="65" Width="192" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
                 <Label x:Name="info_label_system" Content="" Height="65" Width="70" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="10" Padding="0,5,0,0"/>
                 <Label x:Name="info_label_2_system" Content="" Height="65" Width="90" FontFamily="Arial" VerticalAlignment="Top" FontSize="10" Padding="0,5,0,0"/>
             </StackPanel>

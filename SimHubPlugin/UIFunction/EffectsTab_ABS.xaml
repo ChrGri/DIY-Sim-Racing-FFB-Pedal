@@ -7,7 +7,7 @@
              xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="240" d:DesignWidth="540">
+             d:DesignHeight="240" d:DesignWidth="648">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -16,28 +16,28 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border Background="#7F4E4E4E" CornerRadius="8,8,8,8" Height="240" BorderThickness="0,2,0,0" Padding="0,0,0,8">
-            <StackPanel HorizontalAlignment="Left" Height="232" VerticalAlignment="Top" Width="540">
-                <StackPanel Height="20" Width="540" Orientation="Horizontal" Margin="0,2,0,0">
+        <Border Style="{StaticResource Card}" Margin="0" Height="240" Padding="0,0,0,8">
+            <StackPanel HorizontalAlignment="Left" Height="232" VerticalAlignment="Top" Width="648">
+                <StackPanel Height="20" Width="648" Orientation="Horizontal" Margin="0,2,0,0">
                     <styles:SHToggleButton x:Name="checkbox_enable_ABS" Content="" Checked="checkbox_enable_ABS_Checked" Unchecked="checkbox_enable_ABS_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" Margin="15,0,0,0" ToolTip="Enable for ABS/TC effect, the trigger was save in local, no need send config to Pedal"/>
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSTittle, 'ABS/TC Effect'}" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="6,0,0,0"/>
                 </StackPanel>
 
-                <Canvas x:Name="canvas_plot_ABS" Height="50" Width="510" Background="#7F20232F" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Margin="15,4,0,0" >
+                <Canvas x:Name="canvas_plot_ABS" Height="50" Width="510" Background="#141414" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Margin="15,4,0,0" >
                     <Polyline x:Name="Polyline_plot_ABS" Height="50" Width="510" Points="0,25 102,25 204,25 306,25 408,25 510,25" Stroke="{DynamicResource AccentColorBrush}" Opacity="0.7" HorizontalAlignment="Left" VerticalAlignment="Center" StrokeThickness="2" />
                 </Canvas>
 
-                <StackPanel Height="36" Width="540" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,3,0,0">
+                <StackPanel Height="36" Width="648" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,3,0,0">
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSEffectProfile, 'Effect Profile:'}" Height="20" Width="70" FontSize="10" Padding="0,0,0,0" VerticalContentAlignment="Center" Margin="15,0,0,0"/>
                     <ComboBox x:Name="AbsPattern" SelectionChanged="AbsPattern_SelectionChanged" Width="90" Height="20" FontSize="10" SelectedIndex="0" Margin="8,0,0,0" BorderThickness="0,0,0,0">
                         <ComboBoxItem Content="Sinewave"/>
                         <ComboBoxItem Content="Sawtooth"/>
                     </ComboBox>
-                    <styles:SHButtonPrimary x:Name="btn_testABS" Content="{SLoc DIYFFBPedalPlugin_TextEffectABSTestABS, 'Test ABS/TC'}" Click="btn_testABS_Click" Height="20" FontWeight="Bold" FontSize="9" Width="85" HorizontalAlignment="Left" Margin="15,0,0,0" ToolTip="Click for testing ABS/TC, click again to cancel" MinHeight="20" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
+                    <Button Style="{StaticResource ModernPillButton}" x:Name="btn_testABS" Content="{SLoc DIYFFBPedalPlugin_TextEffectABSTestABS, 'Test ABS/TC'}" Click="btn_testABS_Click" Height="20" FontWeight="Bold" FontSize="9" Width="85" HorizontalAlignment="Left" Margin="15,0,0,0" ToolTip="Click for testing ABS/TC, click again to cancel" MinHeight="20" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                     <CheckBox Width="30" x:Name="TestAbs_check" IsEnabled="False" Height="20" FontSize="8" Foreground="White" Content="" HorizontalAlignment="Left" Margin="4,0,0,0"/>
                 </StackPanel>
 
-                <StackPanel Height="36" Width="540" Orientation="Horizontal" Margin="0,2,0,0">
+                <StackPanel Height="36" Width="648" Orientation="Horizontal" Margin="0,2,0,0">
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSEffectApply, 'Effect Apply By:'}" Height="25" Width="80" FontSize="10" Margin="15,0,0,0" FontFamily="Arial" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Left" Padding="0,0,0,0"/>
                     <ComboBox x:Name="EffectAppliedOnForceOrTravel_combobox" SelectionChanged="EffectAppliedOnForceOrTravel_combobox_SelectionChanged" Width="90" Height="20" FontSize="10" SelectedIndex="0" BorderThickness="0,0,0,0" Margin="8,0,0,0">
                         <ComboBoxItem Content="Force"/>

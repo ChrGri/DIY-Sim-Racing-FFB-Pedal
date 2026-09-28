@@ -310,6 +310,20 @@ void Isv57Communication::sendTunedServoParameters(
   retValue_b |= modbus.writeAndVerifyDeviceParameter(
       slaveId, pr_7_00 + 33,
       tuned_parameters[pr_7_00 + 33]); // bleeder hysteresis voltage
+
+  // Writes above only change the servo's RAM. Parameters like Pr0.08 (microsteps)
+  // and the electronic gear are loaded from NVM at servo power-up, so a servo
+  // with deviating NVM values keeps scaling the step pulses (e.g. 3750 vs. 3200
+  // steps/rev) although the RAM read-back matches. Store to NVM only when a
+  // deviation was detected, to avoid wearing out the servo's EEPROM.
+  if (retValue_b) {
+    // identified with logic analyzer. See
+    // \StepperParameterization\Meesages\StoreSettingsToEEPROM_0.png
+    modbus.writeHoldingRegisterToDevice(slaveId, 0x019A, 0x5555);
+    delay(500);
+    ActiveSerial->println("Servo parameters deviated and have been stored to "
+                          "the servo's NVM. Please power cycle the servo!");
+  }
 }
 
 bool Isv57Communication::findServosSlaveId() {

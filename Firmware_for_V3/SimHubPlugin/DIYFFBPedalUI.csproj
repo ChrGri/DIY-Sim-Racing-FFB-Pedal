@@ -189,6 +189,9 @@
     <Compile Include="UIElement\SliderWithLabel.xaml.cs">
       <DependentUpon>SliderWithLabel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\HomeDashboard.xaml.cs">
+      <DependentUpon>HomeDashboard.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\CurveTab_JoystickMapping.xaml.cs">
       <DependentUpon>CurveTab_JoystickMapping.xaml</DependentUpon>
     </Compile>
@@ -327,6 +330,10 @@
     <Page Include="UIElement\SliderWithLabel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\HomeDashboard.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="UIFunction\CurveTab_JoystickMapping.xaml">
       <Generator>MSBuild:Compile</Generator>

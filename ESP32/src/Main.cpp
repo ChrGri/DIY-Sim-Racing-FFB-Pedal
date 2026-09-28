@@ -3,6 +3,7 @@
 // https://github.com/espressif/arduino-esp32/issues/7779
 
 #include "esp_heap_caps.h"
+#include "esp_mac.h"
 #include "esp_partition.h"
 #include "esp_timer.h" // Include the header for the high-resolution timer
 #include <algorithm>
@@ -940,7 +941,7 @@ void setup() {
 
   // 1. EEPROM sehr früh laden, um den korrekten Pedal-Namen für das USB-Setup
   // zu ermitteln
-  EEPROM.begin(2048);
+  EEPROM.begin(DAP_EEPROM_SIZE_U32);
   global_dap_config_class.loadConfigFromEeprom();
   global_dap_config_class.getConfig(&dap_config_st_eeprom, 500);
 
@@ -968,6 +969,11 @@ void setup() {
              PEDAL_ID_UNKNOWN) {
     dap_config_st_local.payloadPedalConfig_st.pedalType_u8 =
         dap_config_st_eeprom.payloadPedalConfig_st.pedalType_u8;
+  } else {
+    // Erased flash reads 0xFF - without this the zero-initialized local
+    // config keeps role 0, and every freshly erased pedal boots (and
+    // persists its safe defaults) as the Clutch.
+    dap_config_st_local.payloadPedalConfig_st.pedalType_u8 = PEDAL_ID_UNKNOWN;
   }
 
 #ifdef PEDAL_HARDWARE_ASSIGNMENT
@@ -1149,7 +1155,7 @@ void setup() {
   pedalLED.show();
 
   // Load config from EEPROM, if valid, overwrite initial config
-  EEPROM.begin(2048);
+  EEPROM.begin(DAP_EEPROM_SIZE_U32);
   global_dap_config_class.loadConfigFromEeprom();
   global_dap_config_class.getConfig(&dap_config_st_eeprom, 500);
 
@@ -1391,7 +1397,11 @@ void setup() {
       &handle_profilerTask,      /* Task handle to keep track of created task */
       CORE_ID_PROFILER_TASK_U8); /* pin task to core 1 */
 
-  xTaskCreatePinnedToCore(miscTask, "miscTask", 2000, NULL,
+  // 5000 bytes: miscTask persists role assignments (several DapConfig_t
+  // copies on the stack + EEPROM.commit() -> NVS write). With 2000 bytes the
+  // NVS write overflowed the stack and reset the pedal before the new role
+  // reached flash, so every Sync-triggered assignment silently reverted.
+  xTaskCreatePinnedToCore(miscTask, "miscTask", 5000, NULL,
                           TASK_PRIORITY_MISC_TASK_UBASETYPE, &handle_miscTask,
                           CORE_ID_MISC_TASK_U8);
 
@@ -1578,6 +1588,17 @@ void setup() {
       dap_config_st_local.payloadPedalConfig_st.pedalType_u8, CONTROL_BOARD,
       DAP_FIRMWARE_VERSION);
   delay(15);
+  {
+    const uint8_t *om = wirelessComm.getOwnMac();
+    const uint8_t *hm = wirelessComm.getHostMac();
+    wirelessComm.sendLogToBridge(
+        "Pedal:%d Own MAC: %02X:%02X:%02X:%02X:%02X:%02X, Bridge MAC: "
+        "%02X:%02X:%02X:%02X:%02X:%02X, ch: %d",
+        dap_config_st_local.payloadPedalConfig_st.pedalType_u8, om[0], om[1],
+        om[2], om[3], om[4], om[5], hm[0], hm[1], hm[2], hm[3], hm[4], hm[5],
+        wirelessComm.getChannel());
+    delay(15);
+  }
   wirelessComm.sendLogToBridge(
       "Pedal:%d Servo Voltage: %.0f V, Rail pitch set to %d mm.",
       dap_config_st_local.payloadPedalConfig_st.pedalType_u8,
@@ -3680,6 +3701,62 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
                   "[MAC] Stored & Applied MAC Addresses table via Serial COM. "
                   "Channel: %d\n",
                   received_macs.payloadMacAddresses_st.wifiChannel_u8);
+
+              // applyMacConfig() only updates who our peers are (host +
+              // siblings), never who WE are - a pedal's own role
+              // (s_localPedalType_u8) was previously only ever taught by an
+              // explicit config commit (storeToEeprom=1 DapConfig_t) or the
+              // dedicated assignment mechanism below, never by "Sync to All
+              // Devices" alone. That's why users had to manually push a
+              // config after pairing before a pedal was recognized as the
+              // right role. Close that gap here: if our own hardware MAC is
+              // in this table under a role slot that differs from our
+              // current role, drive it through the same
+              // persist-and-restart path SET_ASSIGNMENT_x already uses.
+              // Read the hardware STA MAC directly: wirelessComm.getOwnMac()
+              // is only filled in begin(), which runs at the very end of
+              // setup() - a Sync clicked before that would never match.
+              uint8_t ownMac[6] = {0};
+              esp_read_mac(ownMac, ESP_MAC_WIFI_STA);
+              int matchedSlot = -1;
+              bool roleUpdate = false;
+              for (int slot = 0; slot < 3; slot++) {
+                if (macCheck(ownMac, received_macs.payloadMacAddresses_st
+                                          .macAddress_aau8[slot])) {
+                  matchedSlot = slot;
+                  if (s_localPedalType_u8 != (uint8_t)slot) {
+                    g_newAssignedRole_u8 = (uint8_t)slot;
+                    g_assignmentUpdate_b = true;
+                    roleUpdate = true;
+                  }
+                  break;
+                }
+              }
+
+              const uint8_t *hostMac =
+                  received_macs.payloadMacAddresses_st.macAddress_aau8[3];
+              const char *syncResult =
+                  roleUpdate ? "role update, restarting"
+                             : (matchedSlot < 0 ? "own MAC not in table"
+                                                : "role unchanged");
+              ActiveSerial->printf(
+                  "[MAC] Sync summary: host=%02X:%02X:%02X:%02X:%02X:%02X "
+                  "ch=%d own=%02X:%02X:%02X:%02X:%02X:%02X slot=%d "
+                  "role=%d -> %s\n",
+                  hostMac[0], hostMac[1], hostMac[2], hostMac[3], hostMac[4],
+                  hostMac[5],
+                  received_macs.payloadMacAddresses_st.wifiChannel_u8,
+                  ownMac[0], ownMac[1], ownMac[2], ownMac[3], ownMac[4],
+                  ownMac[5], matchedSlot, s_localPedalType_u8, syncResult);
+              // Also relay it to the bridge log (the host MAC was just
+              // applied), where users usually look.
+              wirelessComm.sendLogToBridge(
+                  "Pedal:%d [MAC] Sync: own=%02X:%02X:%02X:%02X:%02X:%02X "
+                  "slot=%d ch=%d -> %s",
+                  s_localPedalType_u8, ownMac[0], ownMac[1], ownMac[2],
+                  ownMac[3], ownMac[4], ownMac[5], matchedSlot,
+                  received_macs.payloadMacAddresses_st.wifiChannel_u8,
+                  syncResult);
             }
 
             // Always reply with current MAC table + own hardware MAC & node
@@ -4284,6 +4361,48 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
           basic_state_send_b = false;
         }
 
+        // Failure-only TX health: print only when there is no host MAC or
+        // TX fail/err counts increased since the last check. Distinguishes
+        // "not transmitting" from "transmitting but not ACKed" (wrong
+        // channel / wrong host MAC) without flooding the log when healthy.
+        {
+          static uint32_t lastTxHealthCheck_u32 = 0;
+          static uint32_t lastTxFail_u32 = 0;
+          static uint32_t lastTxErr_u32 = 0;
+          if (millis() - lastTxHealthCheck_u32 > 5000) {
+            lastTxHealthCheck_u32 = millis();
+            const uint8_t *hostMac = wirelessComm.getHostMac();
+            bool hostMacEmpty = true;
+            for (int i = 0; i < 6; i++) {
+              if (hostMac[i] != 0) {
+                hostMacEmpty = false;
+                break;
+              }
+            }
+            uint32_t txFail = wirelessComm.getTxFailCount();
+            uint32_t txErr = wirelessComm.getTxErrCount();
+            if (hostMacEmpty || txFail != lastTxFail_u32 ||
+                txErr != lastTxErr_u32) {
+              ActiveSerial->printf(
+                  "[ESPNOW TX] Unhealthy: host=%02X:%02X:%02X:%02X:%02X:%02X%s "
+                  "ch=%d role=%d Sent=%u Fail=%u(+%u) Err=%u(+%u)\n",
+                  hostMac[0], hostMac[1], hostMac[2], hostMac[3], hostMac[4],
+                  hostMac[5], hostMacEmpty ? " (EMPTY)" : "",
+                  wirelessComm.getChannel(), pedalId,
+                  wirelessComm.getTxSuccessCount(), txFail,
+                  txFail - lastTxFail_u32, txErr, txErr - lastTxErr_u32);
+              wirelessComm.sendLogToBridge(
+                  "Pedal:%d [ESPNOW TX] Unhealthy: ch=%d Sent=%u Fail=%u(+%u) "
+                  "Err=%u(+%u)",
+                  pedalId, wirelessComm.getChannel(),
+                  wirelessComm.getTxSuccessCount(), txFail,
+                  txFail - lastTxFail_u32, txErr, txErr - lastTxErr_u32);
+            }
+            lastTxFail_u32 = txFail;
+            lastTxErr_u32 = txErr;
+          }
+        }
+
         profiler_espNow.end(2);
 
         profiler_espNow.start(3);
@@ -4364,12 +4483,14 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
               sizeof(espnow_dap_config_st.payloadHeader_st) +
                   sizeof(espnow_dap_config_st.payloadPedalConfig_st));
           dap_config_st_local_ptr->payloadFooter_st.checkSum_u16 = crc;
-          wirelessComm.sendConfigEchoToBridge(espnow_dap_config_st);
+          esp_err_t echoRes =
+              wirelessComm.sendConfigEchoToBridge(espnow_dap_config_st);
           g_espNowConfigRequest_b = false;
           vTaskDelay(pdMS_TO_TICKS(10));
           wirelessComm.sendLogToBridge(
-              "Pedal:%d Config returned by user request, CRC:%d",
-              espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8, crc);
+              "Pedal:%d Config returned by user request, CRC:%d, send:%s",
+              espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8, crc,
+              esp_err_to_name(echoRes));
         }
 
         if (g_espNowOtaEnable_b) {
@@ -4542,6 +4663,14 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
                 wirelessComm.getRudderRxAcceptedCount(),
                 wirelessComm.getRudderRxRejectedCount());
           }
+        }
+
+        // TEMP DIAGNOSTIC: wireless link status every 5s, see printDiag().
+        static uint32_t s_lastLinkDiagLogTime = 0;
+        if (millis() - s_lastLinkDiagLogTime > 5000) {
+          s_lastLinkDiagLogTime = millis();
+          wirelessComm.printDiag(
+              espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8);
         }
 
         // Periodic diagnostic telemetry: Report RF health and heap to SimHub

@@ -12,6 +12,53 @@ static const float s_absScaling_fl32 = 50.0f;
 
 static const uint32_t s_eepromOffset_u32 = DAP_CONFIG_EEPROM_OFFSET_U32;
 
+static_assert(DAP_MAC_ADDRESSES_EEPROM_OFFSET_U32 + sizeof(DapMacAddresses_t) <=
+                  DAP_MAC_ADDRESSES_EEPROM_RESERVED_U32,
+              "MAC table outgrew its reserved EEPROM region");
+static_assert(DAP_CONFIG_EEPROM_OFFSET_U32 >= DAP_MAC_ADDRESSES_EEPROM_RESERVED_U32,
+              "Config overlaps the MAC table region");
+static_assert(DAP_CONFIG_EEPROM_OFFSET_U32 + sizeof(DapConfig_t) <= DAP_EEPROM_SIZE_U32,
+              "Config does not fit into the EEPROM");
+
+// One-time migration from the old layout (config at offset 64, directly
+// behind the MAC table): if the new location holds no config but the legacy
+// one does, copy it over raw - the regular version/CRC/plausibility checks
+// at boot then decide whether it is used, exactly as before the move. The
+// legacy header is wiped afterwards so the stale bytes can't be picked up
+// again; that area (64..127) lies inside the MAC table's reserved region,
+// so the wipe never touches the new config.
+static void migrateLegacyConfigLocation()
+{
+  DapConfig_t current_st;
+  EEPROM.get(s_eepromOffset_u32, current_st);
+  if (current_st.payloadHeader_st.payloadType_u8 == DAP_PAYLOAD_TYPE_CONFIG_U8)
+  {
+    return;
+  }
+
+  DapConfig_t legacy_st;
+  EEPROM.get(DAP_CONFIG_EEPROM_LEGACY_OFFSET_U32, legacy_st);
+  if (legacy_st.payloadHeader_st.startOfFrame0_u8 != SOF_BYTE_0_U8 ||
+      legacy_st.payloadHeader_st.startOfFrame1_u8 != SOF_BYTE_1_U8 ||
+      legacy_st.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_CONFIG_U8)
+  {
+    return;
+  }
+
+  EEPROM.put(s_eepromOffset_u32, legacy_st);
+  for (uint32_t addr = DAP_CONFIG_EEPROM_LEGACY_OFFSET_U32; addr < DAP_MAC_ADDRESSES_EEPROM_RESERVED_U32; addr++)
+  {
+    EEPROM.write(addr, 0xFF);
+  }
+  EEPROM.commit();
+  // Runs from the very first config load in setup(), before ActiveSerial
+  // is assigned.
+  if (ActiveSerial != nullptr)
+  {
+    ActiveSerial->println("Migrated pedal config to new EEPROM location");
+  }
+}
+
 void DapConfig_t::initializeDefaults()
 {
 
@@ -195,6 +242,7 @@ void DapConfig_t::loadConfigFromEeprom(DapConfig_t& config_st)
 {
   DapConfig_t local_config_st;
 
+  migrateLegacyConfigLocation();
   EEPROM.get(s_eepromOffset_u32, local_config_st);
   //EEPROM.commit();
 

@@ -7,7 +7,7 @@
              xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="130" d:DesignWidth="160">
+             d:DesignHeight="130" d:DesignWidth="192">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -67,7 +67,7 @@
     <Grid>
         <StackPanel>
             <Label Content="{SLoc DIYFFBPedalPlugin_TextConfigListTittle, 'Config List'}" Height="15" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left"/>
-            <ListBox Name="ConfigListBox" Height="115" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="10" FontFamily="Arial" Width="160" ItemsSource="{Binding ItemList}">
+            <ListBox x:Name="ConfigListBox" Height="115" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="10" FontFamily="Arial" Width="192" ItemsSource="{Binding ItemList}">
                 <ListBox.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListAddNewConfig, 'Add new Config'}" Command="{Binding AddNewConfigCommand}" FontFamily="Arial" FontSize="10"/>
@@ -112,6 +112,7 @@
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
+            <TextBlock Text="{SLoc DIYFFBPedalPlugin_TextConfigListContextMenuHint, 'Right-click a config for options'}" Foreground="#7F7D7D7D" FontFamily="Arial" FontSize="8" FontStyle="Italic" HorizontalAlignment="Center" Margin="0,4,0,0"/>
         </StackPanel>
     </Grid>
 </UserControl>

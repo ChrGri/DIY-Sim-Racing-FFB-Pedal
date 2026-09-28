@@ -9,7 +9,7 @@
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:ui="clr-namespace:SimHub.Plugins.UI;assembly=SimHub.Plugins" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="190" d:DesignWidth="540"
+             d:DesignHeight="190" d:DesignWidth="648"
              d:DataContext="{d:DesignInstance Type=localFunction:GeneralSetting_GlobalEffects}">
     <UserControl.Resources>
         <ResourceDictionary>
@@ -19,13 +19,13 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border Background="#7F4E4E4E" Height="190" CornerRadius="8,8,8,8" Padding="0,0,0,6" BorderThickness="0,2,0,0" >
-            <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="540">
-                <StackPanel Height="20" Width="540" Orientation="Horizontal">
-                    <Label Content="{SLoc DIYFFBPedalPlugin_TextGlobalEffectsSettingTittle, 'Global Effects Setting'}" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="70,0,0,0"/>
+        <Border Style="{StaticResource Card}" Margin="0" Height="200" Padding="0,0,0,6">
+            <StackPanel HorizontalAlignment="Left" Height="200" VerticalAlignment="Center" Width="648">
+                <StackPanel Height="20" Width="648" Orientation="Horizontal">
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextGlobalEffectsSettingTittle, 'Global Effects Setting'}" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="15,0,0,0"/>
                 </StackPanel>
-                <StackPanel Width="400" Height="50">
-                    <localUI:SliderWithLabel x:Name="Slider_MinForceForEffects" SliderLength="400" SliderName="{SLoc DIYFFBPedalPlugin_TextGlobalEffectsSettingSliderEffectThresholdForce, 'Threshold Force for Effect'}" SliderValue="0" MinValue="0" MaxValue="10" SliderValueChanged="Slider_MinForceForEffects_SliderValueChanged" TickFrequency="1" Unit="kg" ToolTip="This is the minimum force that must be reached or exceeded for the effect to occur. A value of 0 indicates no force restriction."/>
+                <StackPanel Width="480" Height="50">
+                    <localUI:SliderWithLabel x:Name="Slider_MinForceForEffects" SliderLength="480" SliderName="{SLoc DIYFFBPedalPlugin_TextGlobalEffectsSettingSliderEffectThresholdForce, 'Threshold Force for Effect'}" SliderValue="0" MinValue="0" MaxValue="10" SliderValueChanged="Slider_MinForceForEffects_SliderValueChanged" TickFrequency="1" Unit="kg" ToolTip="This is the minimum force that must be reached or exceeded for the effect to occur. A value of 0 indicates no force restriction."/>
                 </StackPanel>
             </StackPanel>
 

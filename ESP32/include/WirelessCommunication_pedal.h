@@ -15,14 +15,6 @@
 
 static const bool IS_ESPNOW_ENABLED = true;
 
-#define WIFI_CH_EEPROM_MAGIC 0xA6
-#define WIFI_CH_EEPROM_OFFSET 260
-struct WifiChannelConfig_t {
-  uint8_t magic_u8;
-  uint8_t channel_u8;
-  uint8_t checksum_u8;
-};
-
 // Uncomment to enable verbose wireless transport debug logging (ActiveSerial
 // only - the pedal has no tinyusbJoystick_-style USB HID text mirror, that
 // pattern is bridge-only). #define WIRELESS_COMM_DEBUG
@@ -65,28 +57,6 @@ volatile uint32_t g_lastPartnerTimestamp_ms = 0;
 volatile uint8_t g_currentSyncDelay_ms = 0;
 volatile uint32_t g_lastMasterHeartbeat_ms = 0;
 volatile bool g_saveWifiChannelDeferred_b = false;
-
-inline uint8_t loadWifiChannelFromEeprom() {
-  WifiChannelConfig_t cfg;
-  EEPROM.get(WIFI_CH_EEPROM_OFFSET, cfg);
-  if (cfg.magic_u8 == WIFI_CH_EEPROM_MAGIC &&
-      (uint8_t)(cfg.magic_u8 ^ cfg.channel_u8) == cfg.checksum_u8 &&
-      cfg.channel_u8 >= 1 && cfg.channel_u8 <= 14) {
-    return cfg.channel_u8;
-  }
-  return 11;
-}
-
-inline void saveWifiChannelToEeprom(uint8_t ch) {
-  if (ch < 1 || ch > 14)
-    return;
-  WifiChannelConfig_t cfg;
-  cfg.magic_u8 = WIFI_CH_EEPROM_MAGIC;
-  cfg.channel_u8 = ch;
-  cfg.checksum_u8 = (uint8_t)(WIFI_CH_EEPROM_MAGIC ^ ch);
-  EEPROM.put(WIFI_CH_EEPROM_OFFSET, cfg);
-  EEPROM.commit();
-}
 
 inline bool macCheck(const uint8_t *Mac_A, const uint8_t *Mac_B) {
   return memcmp(Mac_A, Mac_B, 6) == 0;
@@ -133,6 +103,20 @@ inline void storeMacAddressesToEeprom(DapMacAddresses_t &macCfg) {
       sizeof(macCfg.payloadHeader_st) + sizeof(macCfg.payloadMacAddresses_st));
   EEPROM.put(DAP_MAC_ADDRESSES_EEPROM_OFFSET_U32, macCfg);
   EEPROM.commit();
+}
+
+// The Wi-Fi channel is persisted only as wifiChannel_u8 of the stored MAC
+// table, which is what applyMacConfig() applies at boot. (A separate channel
+// record used to be written but was never read back, so runtime channel
+// changes were lost on reboot.)
+inline void saveWifiChannelToEeprom(uint8_t ch) {
+  if (ch < 1 || ch > 13)
+    return;
+  DapMacAddresses_t macCfg = loadMacAddressesFromEeprom();
+  if (macCfg.payloadMacAddresses_st.wifiChannel_u8 == ch)
+    return;
+  macCfg.payloadMacAddresses_st.wifiChannel_u8 = ch;
+  storeMacAddressesToEeprom(macCfg);
 }
 
 // Forward declarations - ESP-NOW's C callback API needs plain function
@@ -267,6 +251,42 @@ public:
   uint32_t getTxErrCount() const { return _txErrCount; }
   uint32_t getTxNoMemCount() const { return _txNoMemCount_u32; }
   uint32_t getTxBusySkipCount() const { return _txBusySkipCount_u32; }
+
+  // TEMP DIAGNOSTIC: pedal side of the wireless link status. Printed to the
+  // local serial port first, because when pedal->bridge is broken the
+  // wireless copy never arrives. Remove once the wireless-recognition
+  // reports are resolved.
+  void printDiag(uint8_t role) {
+    uint8_t hwChan = 0;
+    wifi_second_chan_t secChan;
+    esp_wifi_get_channel(&hwChan, &secChan);
+    char lastRx[16];
+    if (_diagLastHostRxMs_u32 == 0) {
+      snprintf(lastRx, sizeof(lastRx), "never");
+    } else {
+      snprintf(lastRx, sizeof(lastRx), "%ums",
+               (unsigned)(millis() - _diagLastHostRxMs_u32));
+    }
+    ActiveSerial->printf(
+        "[DIAG] Pedal role=%u ch=%u hwCh=%u ownMAC=%02X:%02X:%02X:%02X:%02X:%02X "
+        "bridgeMAC=%02X:%02X:%02X:%02X:%02X:%02X\n",
+        role, _currentChannel, hwChan, _ownMac[0], _ownMac[1], _ownMac[2],
+        _ownMac[3], _ownMac[4], _ownMac[5], _hostMac[0], _hostMac[1],
+        _hostMac[2], _hostMac[3], _hostMac[4], _hostMac[5]);
+    ActiveSerial->printf(
+        "[DIAG] Pedal TxOk=%u TxFail=%u TxErr=%u TxBusySkip=%u RxFromBridge=%u "
+        "LastRxFromBridge=%s BridgeRSSI=%d RxUnknown=%u "
+        "last=%02X:%02X:%02X:%02X:%02X:%02X\n",
+        _txSuccessCount, _txFailCount, _txErrCount, _txBusySkipCount_u32,
+        _diagRxFromHost_u32, lastRx, (int)_rssi[3], _diagRxUnknown_u32,
+        _diagLastUnknownMac[0], _diagLastUnknownMac[1], _diagLastUnknownMac[2],
+        _diagLastUnknownMac[3], _diagLastUnknownMac[4], _diagLastUnknownMac[5]);
+    sendLogToBridge(
+        "[DIAG] Pedal role=%u ch=%u TxOk=%u TxFail=%u RxFromBridge=%u "
+        "LastRxFromBridge=%s BridgeRSSI=%d",
+        role, _currentChannel, _txSuccessCount, _txFailCount,
+        _diagRxFromHost_u32, lastRx, (int)_rssi[3]);
+  }
   bool isTxBusy() const { return _txInFlight_b || millis() < _noMemBackoffUntil_ms; }
   uint32_t getLastTxTime() const { return _lastTxTime; }
   uint32_t getLastRxTime() const { return _lastRxTime; }
@@ -307,16 +327,19 @@ public:
     return sendTo(_hostMac, (const uint8_t *)&pkt, sizeof(pkt));
   }
 
+  // One-shot replies (config echo, servo registers) use sendToWithRetry():
+  // they are sent right after the periodic state packet, which is usually
+  // still in flight, and a busy-skip in sendTo() would drop them silently.
   esp_err_t sendConfigEchoToBridge(const DapConfig_t &pkt) {
     if (isAllZero(_hostMac)) return ESP_ERR_INVALID_ARG;
     logDebug("TX ConfigEcho len=%u", (unsigned)sizeof(pkt));
-    return sendTo(_hostMac, (const uint8_t *)&pkt, sizeof(pkt));
+    return sendToWithRetry(_hostMac, (const uint8_t *)&pkt, sizeof(pkt));
   }
 
   esp_err_t sendServoConfigResponseToBridge(const DAP_servo_config_st_t &pkt) {
     if (isAllZero(_hostMac)) return ESP_ERR_INVALID_ARG;
     logDebug("TX ServoConfigResponse len=%u", (unsigned)sizeof(pkt));
-    return sendTo(_hostMac, (const uint8_t *)&pkt, sizeof(pkt));
+    return sendToWithRetry(_hostMac, (const uint8_t *)&pkt, sizeof(pkt));
   }
 
   // Targets whichever sibling pedal handleActionsPacket's rudder mode-select
@@ -376,6 +399,15 @@ public:
 
     bool hasHost = !isAllZero(_hostMac);
     bool isHostSender = hasHost && macCheck(_hostMac, src);
+
+    if (isHostSender) {
+      _diagRxFromHost_u32++;
+      _diagLastHostRxMs_u32 = millis() | 1;
+    } else if (!macCheck(src, _pedalMac[0]) && !macCheck(src, _pedalMac[1]) &&
+               !macCheck(src, _pedalMac[2])) {
+      _diagRxUnknown_u32++;
+      memcpy(_diagLastUnknownMac, src, 6);
+    }
 
     if (info->rx_ctrl != NULL) {
       for (int i = 0; i < 3; i++) {
@@ -551,6 +583,12 @@ private:
   uint32_t _txNoMemCount_u32 = 0;
   uint32_t _txBusySkipCount_u32 = 0;
 
+  // TEMP DIAGNOSTIC counters, see printDiag().
+  uint32_t _diagRxFromHost_u32 = 0;
+  uint32_t _diagLastHostRxMs_u32 = 0;
+  uint32_t _diagRxUnknown_u32 = 0;
+  uint8_t _diagLastUnknownMac[6] = {0};
+
   static bool isAllZero(const uint8_t *mac) {
     for (int i = 0; i < 6; i++) {
       if (mac[i] != 0)
@@ -614,6 +652,21 @@ private:
     } else {
       _lastSendOk = true;
     }
+    return res;
+  }
+
+  // Waits (bounded) for the send slot instead of giving up on the first
+  // busy/backoff skip - for packets that are sent once and never repeated.
+  esp_err_t sendToWithRetry(const uint8_t *mac, const uint8_t *data,
+                            size_t len, uint32_t timeoutMs = 60) {
+    uint32_t start = millis();
+    esp_err_t res;
+    do {
+      res = sendTo(mac, data, len);
+      if (res == ESP_OK)
+        return res;
+      vTaskDelay(pdMS_TO_TICKS(2));
+    } while (millis() - start < timeoutMs);
     return res;
   }
 
@@ -717,30 +770,27 @@ private:
         g_espNowErrorCode_u8 = 104;
     }
 
-    // Target Role Protection: once assigned, an incoming (non-EEPROM-store)
-    // config must match our own role.
-    if (structChecker && s_localPedalType_u8 < 3 &&
-        dap_config_espnow_recv_st.payloadHeader_st.storeToEeprom_u8 == 0) {
-      if (dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8 !=
-          s_localPedalType_u8) {
-        structChecker = false;
-      }
-    }
-
     if (!structChecker) {
       logDebug("RX Config dropped: validation failed (err=%u)",
                g_espNowErrorCode_u8);
       return;
     }
 
+    // No role-tag check here any more: this packet only ever reached this
+    // pedal's radio because the bridge unicast it here, backed by the
+    // admin's own MAC table - delivery IS the authorization now (see the
+    // history note on WirelessCommunicationPedal::sendTo()). So the
+    // pedal's in-memory identity simply tracks whatever a legitimately-
+    // addressed config says, immediately, live or persisted, rather than
+    // rejecting anything that disagrees with a possibly-stale prior belief
+    // (which was the actual cause of "need to send a config to the pedal
+    // first" reports - the pedal was refusing packets meant for it).
+    // EEPROM persistence is unaffected: that still only happens when
+    // storeToEeprom_u8==1, below.
     g_lastMasterHeartbeat_ms = millis();
     configDataPackage_t configPackage_st;
     configPackage_st.config_st = dap_config_espnow_recv_st;
-    if (dap_config_espnow_recv_st.payloadHeader_st.storeToEeprom_u8 == 1 ||
-        s_localPedalType_u8 == PEDAL_ID_UNKNOWN) {
-      s_localPedalType_u8 =
-          dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8;
-    }
+    s_localPedalType_u8 = dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8;
     xQueueSend(s_configUpdateAvailableQueue, &configPackage_st, 0);
     if (dap_config_espnow_recv_st.payloadHeader_st.storeToEeprom_u8 == 1) {
       g_configUpdateBuzzer_b = true;
@@ -753,17 +803,13 @@ private:
     DapActions_t dap_actions_st;
     memcpy(&dap_actions_st, data, sizeof(DapActions_t));
 
+    // incomingTag/myTag are kept only for the TEMP DIAGNOSTIC log lines
+    // below (no longer used for gating - see the comment on the removed
+    // tag-match check further down).
     uint8_t incomingTag = dap_actions_st.payloadHeader_st.pedalTag_u8;
     uint8_t myTag =
         dap_config_espnow_recv_st.payloadPedalConfig_st.pedalType_u8;
     uint8_t sysAct = dap_actions_st.payloadPedalAction_st.systemAction_u8;
-
-    bool isAssignmentAction =
-        (sysAct == (uint8_t)PedalSystemAction::CLEAR_ASSIGNMENT ||
-         sysAct == (uint8_t)PedalSystemAction::SET_ASSIGNMENT_0 ||
-         sysAct == (uint8_t)PedalSystemAction::SET_ASSIGNMENT_1 ||
-         sysAct == (uint8_t)PedalSystemAction::SET_ASSIGNMENT_2 ||
-         sysAct == (uint8_t)PedalSystemAction::ASSIGNMENT_CHECK_BEEP);
 
     // TEMP DIAGNOSTIC (unconditional, not gated behind WIRELESS_COMM_DEBUG -
     // relayed to the PC's Serial Logs via sendLogToBridge) - tracking down
@@ -793,10 +839,17 @@ private:
                      DAP_PAYLOAD_TYPE_ACTION_U8));
     }
 
+    // No role-tag check here any more: this packet only ever reached this
+    // pedal's radio because the bridge unicast it here, backed by the
+    // admin's own MAC table - delivery IS the authorization now (see the
+    // history note on WirelessCommunicationPedal::sendTo()). Re-checking a
+    // role tag against this pedal's own possibly-stale belief was the
+    // actual cause of the "wrong pedal ignores an action meant for it"
+    // reports (rudder partner never resolving, config-request actions
+    // silently dropped, etc.) - only structural validity is checked here
+    // now.
     if (dap_actions_st.payloadHeader_st.payloadType_u8 !=
-            DAP_PAYLOAD_TYPE_ACTION_U8 ||
-        !(isAssignmentAction || incomingTag == myTag ||
-          incomingTag == s_localPedalType_u8)) {
+        DAP_PAYLOAD_TYPE_ACTION_U8) {
       if (isConfigRequest) {
         sendLogToBridge("[DIAG] ConfigReq DROPPED at type/tag gate");
       }
@@ -1100,13 +1153,10 @@ private:
       logDebug("RX ServoConfig dropped: bad CRC");
       return;
     }
-    if (s_localPedalType_u8 < 3 &&
-        received_servo_config.payloadHeader_st.pedalTag_u8 !=
-            s_localPedalType_u8) {
-      sendLogToBridge("[DIAG] ServoConfig DROPPED: role tag mismatch");
-      logDebug("RX ServoConfig dropped: role tag mismatch");
-      return;
-    }
+    // No role-tag check here any more: this packet only ever reached this
+    // pedal's radio because the bridge unicast it here, backed by the
+    // admin's own MAC table - delivery IS the authorization now (see the
+    // history note on WirelessCommunicationPedal::sendTo()).
     if (s_servoConfigRxQueue != NULL) {
       xQueueSend(s_servoConfigRxQueue, &received_servo_config, (TickType_t)0);
     }

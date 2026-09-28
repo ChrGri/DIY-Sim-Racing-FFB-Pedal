@@ -12,11 +12,33 @@ namespace DiyFfbPedal
         private uint count_timmer_count = 0;
         private WirelessConnectStateEnum[] pedalWirelessStatusLast = new WirelessConnectStateEnum[3] { WirelessConnectStateEnum.PEDAL_DISCONNECT, WirelessConnectStateEnum.PEDAL_DISCONNECT, WirelessConnectStateEnum.PEDAL_DISCONNECT };
         private ConnectStateEnum[] pedalSerialStatusLast = new ConnectStateEnum[3] { ConnectStateEnum.PEDAL_DISCONNECT, ConnectStateEnum.PEDAL_DISCONNECT, ConnectStateEnum.PEDAL_DISCONNECT };
+        private DateTime lastBridgeWirelessSyncResend = DateTime.MinValue;
         public void connection_timmer_tick(object sender, EventArgs e)
         {
             //simhub action for debug
             Simhub_action_update();
-           
+
+            // The bridge drops all traffic from a pedal whose wireless-sync flag it
+            // holds as off, and only learns the flags on a settings change or HID
+            // connect - a lost update leaves the pedal invisible until the user
+            // toggles something. Re-assert them while any enabled pedal isn't ready.
+            bool bridgeLinkUp = Plugin.BridgeHidService.IsConnected || Plugin.ESPsync_serialPort.IsOpen;
+            bool anyEnabledPedalNotReady = false;
+            for (int i = 0; i < 3; i++)
+            {
+                if (Plugin.Settings.Pedal_ESPNow_Sync_flag[i] &&
+                    Plugin._calculations.pedalWirelessStatus[i] != WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY)
+                {
+                    anyEnabledPedalNotReady = true;
+                }
+            }
+            if (bridgeLinkUp && anyEnabledPedalNotReady &&
+                (DateTime.Now - lastBridgeWirelessSyncResend).TotalMilliseconds > 2000)
+            {
+                lastBridgeWirelessSyncResend = DateTime.Now;
+                Plugin.SendBridgeWirelessSyncConfig();
+            }
+
 
             for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
             {
@@ -192,6 +214,7 @@ namespace DiyFfbPedal
                     Plugin._calculations.pedalSerialStatus[i] == ConnectStateEnum.PEDAL_IS_READY))
                 {
                     Plugin.SendConfigWithoutSaveToEEPROM(Plugin.ProfileServicePlugin.ConfigBuffer[i], (byte)i);
+                    dap_config_st[i] = Plugin.ProfileServicePlugin.ConfigBuffer[i];
                     Plugin._calculations.ConfigEditing[i] = Plugin.ConfigService.ConfigList.FirstOrDefault(item => item.FullPath == Plugin.ProfileServicePlugin.GameConfigPathBuffer[i]).FileName;
                     Plugin.ProfileServicePlugin.GamePofileConfigChange_b[i] = false;
                     if (!Plugin.ProfileServicePlugin.GamePofileConfigChange_b[0] && !Plugin.ProfileServicePlugin.GamePofileConfigChange_b[1] && !Plugin.ProfileServicePlugin.GamePofileConfigChange_b[2])

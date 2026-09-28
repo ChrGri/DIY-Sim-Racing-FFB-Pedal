@@ -89,6 +89,7 @@ namespace User.PluginSdkDemo
 
 
         public DAP_bridge_state_st dap_bridge_state_st;
+        private bool _updatingFanatecVibrationToggle;
         public Basic_WIfi_info _basic_wifi_info;
         //private string stringValue;
         public bool[] waiting_for_pedal_config = new bool[3];
@@ -156,6 +157,8 @@ namespace User.PluginSdkDemo
                 _basic_wifi_info.WIFI_SSID[i] = 0;
             }
             InitializeComponent();
+            SystemSetting_Section.FanatecVibrationToggle.Checked += FanatecVibrationToggle_Changed;
+            SystemSetting_Section.FanatecVibrationToggle.Unchecked += FanatecVibrationToggle_Changed;
             
             //setting drawing color with Simhub theme workaround
             SolidColorBrush buttonBackground_ = btn_update.Background as SolidColorBrush;
@@ -196,6 +199,10 @@ namespace User.PluginSdkDemo
             
             indexOfSelectedPedal_u = plugin.Settings.table_selected;
             MyTab.SelectedIndex = (int)indexOfSelectedPedal_u;
+            if (HomeDashboardSection != null)
+            {
+                HomeDashboardSection.Initialize(plugin, this);
+            }
 
 
             //auto connection with timmer
@@ -211,6 +218,23 @@ namespace User.PluginSdkDemo
             connect_timer.Start();
             System.Threading.Thread.Sleep(50);
 
+        }
+
+        public bool IsHomePedalConnected(int pedal)
+        {
+            return Plugin != null && pedal >= 0 && pedal < 3 &&
+                (Plugin._calculations.PedalAvailability[pedal] || Plugin._calculations.PedalSerialAvailability[pedal]);
+        }
+
+        public double GetHomePedalPercent(int pedal)
+        {
+            if (pedal < 0 || pedal >= Pedal_position_reading.Length) return 0;
+            return Pedal_position_reading[pedal] * 100.0 / 32767.0;
+        }
+
+        public void ShowHomeTarget(bool system)
+        {
+            Function_Tab_seleciton.SelectedItem = system ? Tab_System : Tab_Pedals;
         }
 
 

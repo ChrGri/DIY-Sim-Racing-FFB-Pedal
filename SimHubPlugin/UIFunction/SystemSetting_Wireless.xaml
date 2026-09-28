@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins"
              mc:Ignorable="d" 
-             d:DesignHeight="290" d:DesignWidth="535">
+             d:DesignHeight="290" d:DesignWidth="648">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -49,8 +49,8 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Width="535" HorizontalAlignment="Left">
-        <Border Background="#7F353535" CornerRadius="5" BorderThickness="0,2,0,0" BorderBrush="#00E5FF" Padding="6,4">
+    <Grid Width="648" HorizontalAlignment="Left" VerticalAlignment="Top">
+        <Border Style="{StaticResource Card}" Margin="0" Padding="8,6" VerticalAlignment="Top">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -73,7 +73,7 @@
 
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
                         <TextBlock Text="Wi-Fi Ch:" FontFamily="Arial" FontSize="8" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,3,0"/>
-                        <ComboBox x:Name="combo_select_channel" Width="55" Height="20" FontSize="8" VerticalAlignment="Center" Padding="3,0">
+                        <ComboBox x:Name="combo_select_channel" Width="80" Height="20" FontSize="8" VerticalAlignment="Center" Padding="3,0">
                             <ComboBoxItem Content="Ch 1" Tag="1"/>
                             <ComboBoxItem Content="Ch 2" Tag="2"/>
                             <ComboBoxItem Content="Ch 3" Tag="3"/>
@@ -122,11 +122,11 @@
                         <Border Grid.Row="0" Background="#222222" BorderBrush="#33FFFFFF" BorderThickness="0,0,0,1" CornerRadius="3,3,0,0">
                             <Grid Margin="5,0,5,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="65"/>
-                                    <ColumnDefinition Width="100"/>
-                                    <ColumnDefinition Width="148"/>
-                                    <ColumnDefinition Width="50"/>
-                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="78"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="178"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="96"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="ROLE" FontFamily="Arial Black" FontSize="7.5" Foreground="#777777" VerticalAlignment="Center"/>
@@ -146,11 +146,11 @@
                                         <Border BorderBrush="#15FFFFFF" BorderThickness="0,0,0,1" Padding="5,2" Background="{Binding RowBackground}">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="65"/>
-                                                    <ColumnDefinition Width="100"/>
-                                                    <ColumnDefinition Width="148"/>
-                                                    <ColumnDefinition Width="50"/>
-                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="78"/>
+                                                    <ColumnDefinition Width="120"/>
+                                                    <ColumnDefinition Width="178"/>
+                                                    <ColumnDefinition Width="60"/>
+                                                    <ColumnDefinition Width="96"/>
                                                     <ColumnDefinition Width="*"/>
                                                 </Grid.ColumnDefinitions>
 
@@ -166,7 +166,7 @@
                                                 </StackPanel>
 
                                                 <!-- MAC Address Entry - click to edit, then use "Sync to All Devices" to push it -->
-                                                <TextBox Grid.Column="2" Tag="{Binding}" Text="{Binding MacAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" GotFocus="MacAddressTextBox_GotFocus" LostFocus="MacAddressTextBox_LostFocus" FontFamily="Consolas" FontSize="8" Foreground="#00FFCC" Background="#15000000" BorderBrush="#3300FFCC" BorderThickness="1" Padding="3,1" VerticalAlignment="Center" Width="138" HorizontalAlignment="Left" ToolTip="Click to edit, then use &quot;Sync to All Devices&quot; to write it to the hardware"/>
+                                                <TextBox Grid.Column="2" Tag="{Binding}" Text="{Binding MacAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" GotFocus="MacAddressTextBox_GotFocus" LostFocus="MacAddressTextBox_LostFocus" FontFamily="Consolas" FontSize="8" Foreground="#00FFCC" Background="#15000000" BorderBrush="#3300FFCC" BorderThickness="1" Padding="3,1" VerticalAlignment="Center" Width="166" HorizontalAlignment="Left" ToolTip="Click to edit, then use &quot;Sync to All Devices&quot; to write it to the hardware"/>
 
                                                 <!-- Active Wi-Fi Channel Badge -->
                                                 <Border Grid.Column="3" Background="{Binding ChannelBadgeBackground}" BorderBrush="{Binding ChannelBadgeBorder}" BorderThickness="1" CornerRadius="3" Padding="3,1" HorizontalAlignment="Center" VerticalAlignment="Center">
