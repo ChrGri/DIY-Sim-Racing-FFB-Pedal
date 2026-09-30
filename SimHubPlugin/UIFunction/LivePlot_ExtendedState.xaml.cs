@@ -1377,9 +1377,9 @@ namespace DiyFfbPedal.UIFunction
 
         private void UpdatePedalButtonStyles()
         {
-            SetPedalButtonStyle(btn_pedal_clutch, _selectedPedal == 0, Color.FromRgb(0xE5, 0x39, 0x35));
-            SetPedalButtonStyle(btn_pedal_brake, _selectedPedal == 1, Color.FromRgb(0x43, 0xA0, 0x47));
-            SetPedalButtonStyle(btn_pedal_throttle, _selectedPedal == 2, Color.FromRgb(0x1E, 0x88, 0xE5));
+            SetPedalButtonStyle(btn_pedal_clutch, _selectedPedal == 0, Color.FromRgb(0x33, 0xD1, 0xCC));
+            SetPedalButtonStyle(btn_pedal_brake, _selectedPedal == 1, Color.FromRgb(0xE0, 0x24, 0x24));
+            SetPedalButtonStyle(btn_pedal_throttle, _selectedPedal == 2, Color.FromRgb(0x4C, 0xD1, 0x37));
         }
 
         private void SetPedalButtonStyle(Button btn, bool isSelected, Color activeColor)

@@ -535,4 +535,15 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <!-- Connect/Disconnect toggle: highlighted like a selected tab while connected -->
+    <Style x:Key="ConnectPillButton" TargetType="Button" BasedOn="{StaticResource ModernPillButton}">
+        <Style.Triggers>
+            <Trigger Property="Content" Value="Disconnect">
+                <Setter Property="Background" Value="#4E4E4E"/>
+                <Setter Property="BorderBrush" Value="#666666"/>
+                <Setter Property="Foreground" Value="#FFFFFF"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
 </ResourceDictionary>
