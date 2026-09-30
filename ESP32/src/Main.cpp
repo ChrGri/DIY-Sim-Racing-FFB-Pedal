@@ -2702,7 +2702,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             filteredReading, stepper, &dap_calculationVariables_st,
             &dap_config_pedalUpdateTask_st, effectOffsets_st,
             endstopBehavior_st, rudderOffsets_st, &admittanceDebugInfo_st,
-            &admittanceStates_st);
+            &admittanceStates_st, cycleTime_s_fl32);
 
         positionWithoutEffect = Position_Next_fl32;
         if (effectsCalculated_b) {

@@ -70,6 +70,8 @@ inline void ResetRudderStrategyState() {
  * @param rudderOffsets_st Flight rudder specific offset parameters.
  * @param debugState_st Optional pointer to debug state structure.
  * @param admittanceStates_pst Optional pointer to state recording struct.
+ * @param cycleTime_s Measured time since the previous call in s (clamped by the
+ * caller); 0 = nominal interval.
  * @return float Absolute target position in steps for the stepper motor.
  */
 float IRAM_ATTR_FLAG MoveByRudderStrategy(
@@ -78,9 +80,15 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
     EffectOffsets_t effectOffsets_st, EndstopBehavior_t endstopBehavior_st,
     RudderOffsets_t rudderOffsets_st,
     AdmittanceDebugState_t *debugState_st = nullptr,
-    AdmittanceStates_t *admittanceStates_pst = nullptr) {
-  // 1. Integration timestep (constant interval for maximum numerical stability)
-  float dt_s = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
+    AdmittanceStates_t *admittanceStates_pst = nullptr,
+    float cycleTime_s = 0.0f) {
+  // 1. Integration timestep: the measured cycle time, so the model advances in
+  // real time. The step command derives its feed-forward speed from the model
+  // step divided by the same measured time; with a fixed step, every late cycle
+  // commanded too low a speed and the servo moved start-stop ("grain").
+  float dt_s = (cycleTime_s > 0.0f)
+                   ? cycleTime_s
+                   : ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
   const float GRAVITY_N_KG = 9.81f;
 
   // 2. Physical Parameters & Flight Feel Tuning
@@ -434,8 +442,11 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
     }
   }
 
-  float dampingForce_N =
-      (viscousDamping_Ns_m + endstopDamping_Ns_m) * g_vRudderModelVel_mps;
+  // Explicit damping is only stable for c*dt/m < 2. Cap at c*dt/m = 1: never
+  // reached at the nominal interval (stiffest endstop ~0.7), only on late cycles.
+  float totalDamping_Ns_m = min(viscousDamping_Ns_m + endstopDamping_Ns_m,
+                                virtualMass_kg / dt_s);
+  float dampingForce_N = totalDamping_Ns_m * g_vRudderModelVel_mps;
 
   float coulombFriction_N =
       ((float)config_st->payloadPedalConfig_st.coulombFrictionIn0p1N_u8) * 0.1f;
