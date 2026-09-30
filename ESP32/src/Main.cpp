@@ -3129,9 +3129,18 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             joystickDenoisedPercent_fl32 = joystickNormalizedToInt32_eval;
             joystickDenoiseInit_b = true;
           } else {
-            joystickDenoisedPercent_fl32 =
-                alpha_fl32 * joystickDenoisedPercent_fl32 +
-                (1.0f - alpha_fl32) * joystickNormalizedToInt32_eval;
+            float denoiseDelta_fl32 =
+                joystickNormalizedToInt32_eval - joystickDenoisedPercent_fl32;
+            // Snap once within 0.01% (~6 HID counts): with heavy smoothing
+            // the per-step increment drops below float32 resolution near the
+            // target and the EMA stalls short of it (e.g. 65532 instead of
+            // 65535 at full press).
+            if (fabsf(denoiseDelta_fl32) < 0.01f) {
+              joystickDenoisedPercent_fl32 = joystickNormalizedToInt32_eval;
+            } else {
+              joystickDenoisedPercent_fl32 +=
+                  (1.0f - alpha_fl32) * denoiseDelta_fl32;
+            }
           }
           joystickNormalizedToInt32_eval = joystickDenoisedPercent_fl32;
         } else {
@@ -3139,7 +3148,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         }
 
         float joystickRaw_fl32 = joystickNormalizedToInt32_eval / 100.0f *
-                                  (float)s_JOYSTICK_MAX_VALUE_U16;
+                                  (float)s_JOYSTICK_MAX_VALUE_U16 +
+                                  0.5f; // round, don't truncate
         joystickNormalizedToUInt16 = (uint16_t)constrain(
             joystickRaw_fl32, (float)s_JOYSTICK_MIN_VALUE_U16,
             (float)s_JOYSTICK_MAX_VALUE_U16);

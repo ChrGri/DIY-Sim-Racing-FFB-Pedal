@@ -573,7 +573,14 @@ int Joystick_::buildAndSet16BitValue(bool includeValue, int32_t value, int32_t v
         value = realMaximum - value + realMinimum;
     }
 
-    convertedValue = map(value, realMinimum, realMaximum, actualMinimum, actualMaximum);
+    // Not Arduino map(): its 32-bit (delta * rise) overflows for a 0..65535
+    // range (65535 * 65535 > INT32_MAX), sending e.g. 65534 for 65535.
+    if (realMaximum == realMinimum) {
+        convertedValue = actualMinimum;
+    } else {
+        convertedValue = (int32_t)(((int64_t)(value - realMinimum) * (actualMaximum - actualMinimum)) /
+                                   (realMaximum - realMinimum) + actualMinimum);
+    }
     highByte = (uint8_t)(convertedValue >> 8);
     lowByte = (uint8_t)(convertedValue & 0x00FF);
     dataLocation[0] = lowByte;

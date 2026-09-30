@@ -17,7 +17,11 @@ uint16_t IRAM_ATTR_FLAG NormalizeControllerOutputValue(float value, float minVal
 
   float fractional_fl32 = (value - corrected_min_value_fl32) / corrected_valRange_fl32;
   float controller_fl32 = s_JOYSTICK_MIN_VALUE_U16 + (fractional_fl32 * s_JOYSTICK_RANGE_U16);
-  uint16_t controller_u16 = constrain(controller_fl32, s_JOYSTICK_MIN_VALUE_U16, (maxGameOutput_u8 * 0.01f) * s_JOYSTICK_MAX_VALUE_U16);
+  // Round both the limit and the result: with -ffast-math the limit is
+  // reassociated to maxGameOutput * 655.35f = 65534.998 for 100%, which
+  // truncated to 65534 instead of 65535.
+  float controllerMax_fl32 = roundf((maxGameOutput_u8 * 0.01f) * s_JOYSTICK_MAX_VALUE_U16);
+  uint16_t controller_u16 = (uint16_t)(constrain(controller_fl32, (float)s_JOYSTICK_MIN_VALUE_U16, controllerMax_fl32) + 0.5f);
   return controller_u16;
 }
 
