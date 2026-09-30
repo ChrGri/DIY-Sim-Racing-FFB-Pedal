@@ -3,6 +3,10 @@
 #include "DiyActivePedal_types.h"
 #include "Main.h"
 
+// Stick/slip friction in the pedal admittance model (holds the pedal still against foot
+// tremor). Comment out to compare against the previous behaviour.
+#define ADMITTANCE_STICTION_ENABLED
+
 // Task dependent structs and variables
 typedef struct {
   float travelRange_mm_fl32;
@@ -1079,6 +1083,37 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   netForce_N -= (FRICTION_N * frictionBlend);
 
   // =========================================================
+  // STICTION (stick/slip, Karnopp model)
+  // =========================================================
+  // While holding, the foot's natural tremor (~0.2-0.3 N, 1-15 Hz) moved the pedal back and
+  // forth ~15 times per second; that motion is felt as vibration (a pedal held still is calm).
+  // Damping and the Coulomb term above only scale this motion, since both vanish at v = 0.
+  // Stiction holds the pedal still until the force imbalance exceeds the static friction,
+  // then it slides with the slightly lower kinetic friction. Replay of logged holds: reversals
+  // 17/s -> 0.2-0.5/s, press onset +1.6 ms, hold offset <= F_static / k (~0.3 mm). A kinetic
+  // ratio close to 1 keeps the stick-slip steps of very slow creeping (< 1 N/s) small.
+  // Static friction scales with the foot force (tremor grows with force), but never exceeds
+  // half of it, so the pedal always returns to its rest position when released.
+  // Disabled while effects are active, so small effect forces are never swallowed.
+  const float STICTION_MIN_N = 0.5f;               // static friction at low force
+  const float STICTION_RELATIVE_01 = 0.02f;        // ... growing to 2 % of the foot force
+  const float STICTION_KINETIC_RATIO_01 = 0.85f;   // kinetic / static friction
+  const float STICTION_VELOCITY_MPS = 0.0005f;     // below this the pedal may stick
+  static bool s_isStuck_b = false;
+  float staticFriction_N = 0.0f;
+#ifdef ADMITTANCE_STICTION_ENABLED
+  if (!hasActiveEffect) {
+    staticFriction_N = min(max(STICTION_MIN_N, STICTION_RELATIVE_01 * s_filteredPilotForce_N),
+                           0.5f * s_filteredPilotForce_N);
+  }
+#endif
+  // force that would move the pedal if it were free (without damping and friction)
+  float stictionDriveForce_N = externalForce_N - springForce_N - softEndstopForce_N;
+  if ((staticFriction_N <= 0.0f) || (fabsf(stictionDriveForce_N) > staticFriction_N)) {
+    s_isStuck_b = false; // break away
+  }
+
+  // =========================================================
   // Integration approaches (Start)
   // =========================================================
   // Update virtual acceleration
@@ -1167,6 +1202,14 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       float frictionBlendTustin = constrain(g_vModelVel_mps / 0.015f, -1.0f, 1.0f);
       netForce_without_damping_N -= (FRICTION_N * frictionBlendTustin);
 
+      // kinetic friction while sliding (direction of motion, or of the drive force at breakaway)
+      if ((staticFriction_N > 0.0f) && !s_isStuck_b) {
+        float slipDirection = (fabsf(g_vModelVel_mps) > STICTION_VELOCITY_MPS)
+                                  ? copysignf(1.0f, g_vModelVel_mps)
+                                  : copysignf(1.0f, stictionDriveForce_N);
+        netForce_without_damping_N -= STICTION_KINETIC_RATIO_01 * staticFriction_N * slipDirection;
+      }
+
       // =========================================================
       // TUSTIN (BILINEAR TRANSFORM) MATHEMATICS
       // =========================================================
@@ -1224,6 +1267,20 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
           new_vModelVel_mps = (b0 * netForce_without_damping_N) + 
                               (b1 * g_lastNetForceTustin_N) - 
                               (a1 * g_vModelVel_mps);
+      }
+
+      // Stick: stay stuck, or stick when the motion stops or reverses while the drive force
+      // is below the static friction. Friction then balances the drive force exactly, so the
+      // pedal holds still and the integrator memory sees a net force of zero.
+      if (staticFriction_N > 0.0f) {
+        bool isStoppingOrReversing = ((new_vModelVel_mps * g_vModelVel_mps) <= 0.0f) ||
+                                     (fabsf(new_vModelVel_mps) < STICTION_VELOCITY_MPS);
+        if (s_isStuck_b ||
+            (isStoppingOrReversing && (fabsf(stictionDriveForce_N) <= staticFriction_N))) {
+          s_isStuck_b = true;
+          new_vModelVel_mps = 0.0f;
+          netForce_without_damping_N = 0.0f;
+        }
       }
 
       // Store the current net force for the next integration cycle (z^-1)
