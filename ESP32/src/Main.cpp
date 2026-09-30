@@ -2889,7 +2889,13 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           //   so a late next cycle does not stop the pulses at the setpoint
           //   (start-stop "grain"). On time, the next cycle retargets before
           //   the lead is reached. No lead at standstill (exact positioning).
-          const float STEP_COMMAND_LEAD_S = 2.0f * nominalCycleTime_s_fl32;
+          //   3 cycles (750 us): a logic analyzer + log session showed single
+          //   cycles of up to 713 us; with a 2-cycle lead these stopped the
+          //   pulses for 0.1-0.3 ms at 5-18 kHz.
+          const float STEP_COMMAND_LEAD_S = 3.0f * nominalCycleTime_s_fl32;
+          // time within which a standstill correction is completed (unchanged
+          // 2 cycles, independent of the motion lead)
+          const float STANDSTILL_REACH_S = 2.0f * nominalCycleTime_s_fl32;
           const float STANDSTILL_SPEED_HZ = 10.0f;
 
           float previousSetpoint_fl32 = Position_Last_fl32;
@@ -2943,22 +2949,34 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
               leadSteps_fl32 = copysignf(MIN_LEAD_STEPS, feedForwardSpeedHz_fl32);
             }
           }
-          float target_fl32 =
-              constrain(Position_Next_fl32 + leadSteps_fl32,
-                        (float)stepper->getHardEndstopMinPosition(),
-                        (float)stepper->getHardEndstopMaxPosition());
+          // The lead must not carry the target past the end of the travel range:
+          // when the model runs into full travel it stops within ~1 ms, and the
+          // pulses already sent ahead overshot by 2-3 steps and then reversed
+          // (a small knock at every full press). A setpoint that is itself
+          // beyond the range (soft endstop, effects) is still followed.
+          float leadUpperLimit_fl32 =
+              max(Position_Next_fl32,
+                  (float)dap_calculationVariables_st.softEndstopMaxStepperPos_i32);
+          float leadLowerLimit_fl32 =
+              min(Position_Next_fl32,
+                  (float)dap_calculationVariables_st.softEndstopMinStepperPos_i32);
+          float target_fl32 = constrain(Position_Next_fl32 + leadSteps_fl32,
+                                        leadLowerLimit_fl32, leadUpperLimit_fl32);
+          target_fl32 = constrain(target_fl32,
+                                  (float)stepper->getHardEndstopMinPosition(),
+                                  (float)stepper->getHardEndstopMaxPosition());
           float distanceToTarget_fl32 = fabsf(target_fl32 - currentPos_fl32);
 
           if (distanceToTarget_fl32 > 1.0f) {
             float requiredSpeed =
                 fabsf(feedForwardSpeedHz_fl32 + correctionSpeedHz_fl32);
             // at standstill never crawl: reach the target within
-            // (1 cycle + lead) at least. Not while moving: there the target
-            // lies ahead on purpose and the speed must follow the model.
+            // (1 cycle + STANDSTILL_REACH_S) at least. Not while moving: there
+            // the target lies ahead on purpose and the speed must follow the model.
             if (isStandstill_b) {
               requiredSpeed = max(requiredSpeed,
                                   distanceToTarget_fl32 /
-                                      (nominalCycleTime_s_fl32 + STEP_COMMAND_LEAD_S));
+                                      (nominalCycleTime_s_fl32 + STANDSTILL_REACH_S));
             }
             if (requiredSpeed > (float)MAXIMUM_STEPPER_SPEED_U32) {
               requiredSpeed = (float)MAXIMUM_STEPPER_SPEED_U32;
