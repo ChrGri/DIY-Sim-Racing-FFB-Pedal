@@ -195,7 +195,7 @@
                                                     <ComboBox x:Name="SerialPortSelection" DropDownOpened="SerialPortSelection_DropDownOpened" SelectionChanged="SerialPortSelectionChanged" Width="124" ItemsSource="{Binding}" DisplayMemberPath="Display" SelectedValuePath="Value" FontSize="8" Height="20" MinHeight="20"/>
                                                     <!-- Hidden connect/disconnect state flag read/written by ConnectToPedal_click and updateUIfromConfig.cs - not a visible control -->
                                                     <CheckBox x:Name="ConnectToPedal" IsChecked="False" Visibility="Collapsed"/>
-                                                    <Button x:Name="btn_pedal_connect" Style="{StaticResource ModernPillButton}" Click="ConnectToPedal_click" Width="55"  Height="20" Content="Connect" HorizontalAlignment="Center" Margin="8,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0" MinHeight="20"  FontFamily="Arial" FontSize="10"/>
+                                                    <Button x:Name="btn_pedal_connect" Style="{StaticResource ConnectPillButton}" Click="ConnectToPedal_click" Width="55"  Height="20" Content="Connect" HorizontalAlignment="Center" Margin="8,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0" MinHeight="20"  FontFamily="Arial" FontSize="10"/>
                                                 </StackPanel>
                                             </StackPanel>
                                         </Border>
@@ -756,12 +756,12 @@
                                                         <!-- Legend & Subplot Title Tag -->
                                                         <StackPanel Orientation="Horizontal" Canvas.Left="5" Canvas.Top="2">
                                                             <TextBlock Text="PEDAL RSSI" Foreground="#55FFFFFF" FontSize="8" FontFamily="Arial" FontWeight="Bold" Margin="0,0,8,0"/>
-                                                            <TextBlock Text="&#x25A0; Clutch: " Foreground="#FF4D4D" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
-                                                            <TextBlock x:Name="tb_rssi_clutch_val" Text="--" Foreground="#FF4D4D" FontSize="8" FontFamily="Consolas" Margin="0,0,8,0"/>
-                                                            <TextBlock Text="&#x25A0; Brake: " Foreground="#00E676" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
-                                                            <TextBlock x:Name="tb_rssi_brake_val" Text="--" Foreground="#00E676" FontSize="8" FontFamily="Consolas" Margin="0,0,8,0"/>
-                                                            <TextBlock Text="&#x25A0; Throttle: " Foreground="#2979FF" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
-                                                            <TextBlock x:Name="tb_rssi_throttle_val" Text="--" Foreground="#2979FF" FontSize="8" FontFamily="Consolas"/>
+                                                            <TextBlock Text="&#x25A0; Clutch: " Foreground="#33D1CC" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
+                                                            <TextBlock x:Name="tb_rssi_clutch_val" Text="--" Foreground="#33D1CC" FontSize="8" FontFamily="Consolas" Margin="0,0,8,0"/>
+                                                            <TextBlock Text="&#x25A0; Brake: " Foreground="#E02424" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
+                                                            <TextBlock x:Name="tb_rssi_brake_val" Text="--" Foreground="#E02424" FontSize="8" FontFamily="Consolas" Margin="0,0,8,0"/>
+                                                            <TextBlock Text="&#x25A0; Throttle: " Foreground="#4CD137" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
+                                                            <TextBlock x:Name="tb_rssi_throttle_val" Text="--" Foreground="#4CD137" FontSize="8" FontFamily="Consolas"/>
                                                         </StackPanel>
 
                                                         <!-- Horizontal Reference Grid Lines (-30 to -100 dBm scale) -->
@@ -781,9 +781,9 @@
                                                         <Line X1="499" Y1="0" X2="499" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
 
                                                         <!-- Live RSSI Traces: Red=Clutch, Green=Brake, Blue=Throttle -->
-                                                        <Polyline x:Name="poly_rssi_clutch" Stroke="#FF4D4D" StrokeThickness="1.5" StrokeLineJoin="Round"/>
-                                                        <Polyline x:Name="poly_rssi_brake" Stroke="#00E676" StrokeThickness="1.5" StrokeLineJoin="Round"/>
-                                                        <Polyline x:Name="poly_rssi_throttle" Stroke="#2979FF" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                                        <Polyline x:Name="poly_rssi_clutch" Stroke="#33D1CC" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                                        <Polyline x:Name="poly_rssi_brake" Stroke="#E02424" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                                        <Polyline x:Name="poly_rssi_throttle" Stroke="#4CD137" StrokeThickness="1.5" StrokeLineJoin="Round"/>
                                                     </Canvas>
 
                                                     <!-- Divider before X-Axis -->
@@ -909,7 +909,7 @@
                                             <localFunction:InfoSection_System x:Name="SystemInfo" />
                                             <StackPanel HorizontalAlignment="Left" Height="22" VerticalAlignment="Top" Width="192" Orientation="Horizontal" Margin="0,2,0,0">
                                                 <ComboBox x:Name="SerialPortSelection_ESPNow" DropDownOpened="ESPNow_SerialPortSelection_DropDownOpened" SelectionChanged="ESPNow_SerialPortSelectionChanged" Width="130" ItemsSource="{Binding}" DisplayMemberPath="Display" SelectedValuePath="Value" FontSize="8" Height="20" HorizontalAlignment="Left" MinHeight="20"/>
-                                                <Button x:Name="btn_connect_espnow_port" Style="{StaticResource ModernPillButton}" Click="btn_connect_espnow_port_Click" Width="55" Content="Connect" Height="20" Margin="3,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                                                <Button x:Name="btn_connect_espnow_port" Style="{StaticResource ConnectPillButton}" Click="btn_connect_espnow_port_Click" Width="55" Content="Connect" Height="20" Margin="3,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>

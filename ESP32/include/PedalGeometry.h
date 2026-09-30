@@ -146,6 +146,40 @@ static inline IRAM_ATTR_FLAG float pedalInclineAngleDeg(float sledPositionMm_fl3
 }
 
 
+/**
+ * Cache for pedalInclineAngleDeg() at positions that only change with the configuration
+ * (e.g. the travel ends). The result depends only on the sled position and the pedal lengths
+ * A, B, C (vertical/horizontal); it is recomputed whenever one of them differs from the cached
+ * inputs, so the returned value is always identical to a direct call.
+ */
+typedef struct {
+  float sledPositionMm_fl32 = NAN; // NAN: never matches, forces the first computation
+  int16_t lengthA_i16 = 0;
+  int16_t lengthB_i16 = 0;
+  int16_t lengthCVertical_i16 = 0;
+  int16_t lengthCHorizontal_i16 = 0;
+  float angleDeg_fl32 = 0.0f;
+} PedalAngleCache_t;
+
+static inline IRAM_ATTR_FLAG float pedalInclineAngleDegCached(float sledPositionMm_fl32, DapConfig_t * config_pst, PedalAngleCache_t& cache_st) {
+  const int16_t lengthA_i16 = config_pst->payloadPedalConfig_st.lengthPedalA_i16;
+  const int16_t lengthB_i16 = config_pst->payloadPedalConfig_st.lengthPedalB_i16;
+  const int16_t lengthCVertical_i16 = config_pst->payloadPedalConfig_st.lengthPedalCVertical_i16;
+  const int16_t lengthCHorizontal_i16 = config_pst->payloadPedalConfig_st.lengthPedalCHorizontal_i16;
+  if (!(sledPositionMm_fl32 == cache_st.sledPositionMm_fl32) ||
+      (lengthA_i16 != cache_st.lengthA_i16) || (lengthB_i16 != cache_st.lengthB_i16) ||
+      (lengthCVertical_i16 != cache_st.lengthCVertical_i16) ||
+      (lengthCHorizontal_i16 != cache_st.lengthCHorizontal_i16)) {
+    cache_st.sledPositionMm_fl32 = sledPositionMm_fl32;
+    cache_st.lengthA_i16 = lengthA_i16;
+    cache_st.lengthB_i16 = lengthB_i16;
+    cache_st.lengthCVertical_i16 = lengthCVertical_i16;
+    cache_st.lengthCHorizontal_i16 = lengthCHorizontal_i16;
+    cache_st.angleDeg_fl32 = pedalInclineAngleDeg(sledPositionMm_fl32, config_pst);
+  }
+  return cache_st.angleDeg_fl32;
+}
+
 static inline IRAM_ATTR_FLAG float pedalArcPercentage(StepperWithLimits* stepper_pstwl, DapConfig_t * config_pst, float motorRevolutionsPerStep_fl32, DapCalculationVariables_t* dapCalc_pst) {
 
   // travelSteps_cnt: total steps from min to max soft endstop
@@ -165,8 +199,11 @@ static inline IRAM_ATTR_FLAG float pedalArcPercentage(StepperWithLimits* stepper
   float actualSledPos_mm = actualSledPosFraction_01 * maxSledPos_mm;
 
   // 2. Forward Kinematics: Angles at the boundaries and current physical state
-  float angleAtMinSled_deg = pedalInclineAngleDeg(minSledPos_mm, config_pst);
-  float angleAtMaxSled_deg = pedalInclineAngleDeg(maxSledPos_mm, config_pst);
+  // travel-end angles only change with the configuration: cached (exact)
+  static PedalAngleCache_t s_angleAtMinSledCache_st;
+  static PedalAngleCache_t s_angleAtMaxSledCache_st;
+  float angleAtMinSled_deg = pedalInclineAngleDegCached(minSledPos_mm, config_pst, s_angleAtMinSledCache_st);
+  float angleAtMaxSled_deg = pedalInclineAngleDegCached(maxSledPos_mm, config_pst, s_angleAtMaxSledCache_st);
   float currentAngle_deg = pedalInclineAngleDeg(actualSledPos_mm, config_pst);
 
   float angleDelta = angleAtMaxSled_deg - angleAtMinSled_deg;

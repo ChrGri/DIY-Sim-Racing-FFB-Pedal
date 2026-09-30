@@ -832,8 +832,12 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float actualSledPos_mm = actualSledPosFraction_01 * maxSledPos_mm;
 
   // 2. Forward Kinematics: Angles at the boundaries and current physical state
-  float angleAtMinSled_deg = pedalInclineAngleDeg(minSledPos_mm, config_st);
-  float angleAtMaxSled_deg = pedalInclineAngleDeg(maxSledPos_mm, config_st);
+  // travel-end angles only change with the configuration: cached, recomputed exactly whenever
+  // the sled travel or a pedal length changes (identical values to a direct call)
+  static PedalAngleCache_t s_angleAtMinSledCache_st;
+  static PedalAngleCache_t s_angleAtMaxSledCache_st;
+  float angleAtMinSled_deg = pedalInclineAngleDegCached(minSledPos_mm, config_st, s_angleAtMinSledCache_st);
+  float angleAtMaxSled_deg = pedalInclineAngleDegCached(maxSledPos_mm, config_st, s_angleAtMaxSledCache_st);
   float currentAngle_deg = pedalInclineAngleDeg(actualSledPos_mm, config_st);
 
   // 3. Convert Angles to Arc Length (Task Space in meters)
@@ -974,11 +978,14 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Landi detector: only for telemetry (physical kinematics, expected force). Its threshold (25 N)
   // and power gating missed the heel-contact oscillation (~3.4 N at 16 Hz), and the mass
   // adaptation it drove does not stabilize a stiff contact (simulation).
-  DetectAdmittanceOscillation(
-      externalForce_N, actualPosFraction_01, totalTravel_m,
-      totalSpringReaction_N, idealBaseDamping_Ns_m, baseMass_kg,
-      dt_s, config_st->payloadPedalConfig_st.maxForce_fl32, debugState_st, hasActiveEffect
-  );
+  // Only evaluated when telemetry is requested (debugState_st given), to save CPU time.
+  if (debugState_st != nullptr) {
+    DetectAdmittanceOscillation(
+        externalForce_N, actualPosFraction_01, totalTravel_m,
+        totalSpringReaction_N, idealBaseDamping_Ns_m, baseMass_kg,
+        dt_s, config_st->payloadPedalConfig_st.maxForce_fl32, debugState_st, hasActiveEffect
+    );
+  }
 
   // --- 10. CONTACT OSCILLATION DAMPING (replaces the virtual mass adaptation) ---
   bool isOscillating = false;

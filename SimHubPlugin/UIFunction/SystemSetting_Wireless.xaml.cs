@@ -129,36 +129,36 @@ namespace DiyFfbPedal.UIFunction
                 CanBeep = false
             });
 
-            // 2. Clutch (Node Index 0) - Red
+            // 2. Clutch (Node Index 0) - Cyan
             NodeRows.Add(new WirelessNodeRow
             {
                 NodeIndex = 0,
                 RoleName = "CLUTCH",
-                RoleBadgeForeground = new SolidColorBrush(Color.FromRgb(255, 82, 82)),
-                RoleBadgeBackground = new SolidColorBrush(Color.FromArgb(34, 255, 82, 82)),
-                RoleBadgeBorder = new SolidColorBrush(Color.FromArgb(68, 255, 82, 82)),
+                RoleBadgeForeground = new SolidColorBrush(Color.FromRgb(51, 209, 204)),
+                RoleBadgeBackground = new SolidColorBrush(Color.FromArgb(34, 51, 209, 204)),
+                RoleBadgeBorder = new SolidColorBrush(Color.FromArgb(68, 51, 209, 204)),
                 CanBeep = true
             });
 
-            // 3. Brake (Node Index 1) - Green
+            // 3. Brake (Node Index 1) - Red
             NodeRows.Add(new WirelessNodeRow
             {
                 NodeIndex = 1,
                 RoleName = "BRAKE",
-                RoleBadgeForeground = new SolidColorBrush(Color.FromRgb(0, 230, 118)),
-                RoleBadgeBackground = new SolidColorBrush(Color.FromArgb(34, 0, 230, 118)),
-                RoleBadgeBorder = new SolidColorBrush(Color.FromArgb(68, 0, 230, 118)),
+                RoleBadgeForeground = new SolidColorBrush(Color.FromRgb(224, 36, 36)),
+                RoleBadgeBackground = new SolidColorBrush(Color.FromArgb(34, 224, 36, 36)),
+                RoleBadgeBorder = new SolidColorBrush(Color.FromArgb(68, 224, 36, 36)),
                 CanBeep = true
             });
 
-            // 4. Throttle (Node Index 2) - Blue
+            // 4. Throttle (Node Index 2) - Green
             NodeRows.Add(new WirelessNodeRow
             {
                 NodeIndex = 2,
                 RoleName = "THROTTLE",
-                RoleBadgeForeground = new SolidColorBrush(Color.FromRgb(41, 121, 255)),
-                RoleBadgeBackground = new SolidColorBrush(Color.FromArgb(34, 41, 121, 255)),
-                RoleBadgeBorder = new SolidColorBrush(Color.FromArgb(68, 41, 121, 255)),
+                RoleBadgeForeground = new SolidColorBrush(Color.FromRgb(76, 209, 55)),
+                RoleBadgeBackground = new SolidColorBrush(Color.FromArgb(34, 76, 209, 55)),
+                RoleBadgeBorder = new SolidColorBrush(Color.FromArgb(68, 76, 209, 55)),
                 CanBeep = true
             });
         }
