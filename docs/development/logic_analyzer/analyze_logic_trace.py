@@ -116,6 +116,7 @@ def compute_metrics(tr):
                 cut.append((t, falls[j] - prv))
     m["setup"] = setup
     m["cut"] = cut
+
     return m
 
 
@@ -159,9 +160,13 @@ def report(tr, m):
     if s:
         print(f"DIR change -> next step rising edge: min {s[0]*1e6:.2f} us, median {pct(s, 50)*1e6:.1f} us")
         print(f"   setups < {DIR_SETUP_MIN_S*1e6:.0f} us: {sum(1 for x in s if x < DIR_SETUP_MIN_S)} of {len(s)}")
-    print(f"DIR changed while a step pulse was high: {len(m['cut'])}")
+    # A DIR edge inside a HIGH phase means the pulse's rising and falling edge see different DIR
+    # levels: counters using different edges (ESP32 PCNT vs servo) count it in opposite directions.
+    # Note: STEP rests HIGH at standstill (the MCPWM timer stops at the start of a period), so a
+    # direction change from standstill is only clean if the library ends that phase first.
+    print(f"DIR changed while STEP was high (should be 0): {len(m['cut'])}")
     for c in m["cut"][:10]:
-        print(f"   t={c[0]:.6f}s pulse high time {c[1]*1e6:.2f} us")
+        print(f"   t={c[0]:.6f}s high time {c[1]*1e6:.2f} us")
 
 
 if __name__ == "__main__":
