@@ -251,8 +251,11 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   float actualSledPosFraction_01 = stepper->getCurrentPositionFraction();
   float actualSledPos_mm = actualSledPosFraction_01 * maxSledPos_mm;
 
-  float angleAtMinSled_deg = pedalInclineAngleDeg(minSledPos_mm, config_st);
-  float angleAtMaxSled_deg = pedalInclineAngleDeg(maxSledPos_mm, config_st);
+  // travel-end angles only change with the configuration: cached (exact, see PedalGeometry.h)
+  static PedalAngleCache_t s_rudderAngleAtMinSledCache_st;
+  static PedalAngleCache_t s_rudderAngleAtMaxSledCache_st;
+  float angleAtMinSled_deg = pedalInclineAngleDegCached(minSledPos_mm, config_st, s_rudderAngleAtMinSledCache_st);
+  float angleAtMaxSled_deg = pedalInclineAngleDegCached(maxSledPos_mm, config_st, s_rudderAngleAtMaxSledCache_st);
   float currentAngle_deg = pedalInclineAngleDeg(actualSledPos_mm, config_st);
 
   float leverArm_m =

@@ -19,6 +19,10 @@
 // cycle (1 kHz at 4 kHz loop) to avoid USB CDC buffer overflows / trace gaps
 #define DEBUG_INFO_0_EXTENDED_STRUCT_DECIMATED_U8 4U
 #define EXTENDED_STRUCT_DECIMATION_FACTOR_U8 4U
+
+// millis()-based oscillation effects (RPM, bite point, wheel slip, custom
+// vibrations) are evaluated every Nth pedal cycle (1 kHz at 4 kHz)
+#define OSCILLATION_EFFECTS_DECIMATION_U8 4U
 #define DEBUG_INFO_0_SERVO_READINGS_U8 8U
 #define DEBUG_INFO_0_RESET_ALL_SERVO_ALARMS_U8 16U
 #define DEBUG_INFO_0_RESET_SERVO_TO_FACTORY_U8 32U
@@ -1378,7 +1382,7 @@ void setup() {
   addScheduledTask(pedalUpdateTask, "pedalUpdateTask",
                    REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64,
                    TASK_PRIORITY_PEDAL_UPDATE_TASK_UBASETYPE,
-                   CORE_ID_PEDAL_UPDATE_TASK_U8, 7000);
+                   CORE_ID_PEDAL_UPDATE_TASK_U8, 8000);
   addScheduledTask(serialCommunicationTaskRx, "serComRx",
                    REPETITION_INTERVAL_SERIALCOMMUNICATION_TASK_IN_US_I64,
                    TASK_PRIORITY_SERIALCOMMUNICATION_TASK_UBASETYPE,
@@ -1396,7 +1400,7 @@ void setup() {
   xTaskCreatePinnedToCore(
       serialCommunicationTaskTx, /* Task function. */
       "serComTx",                /* name of task. */
-      2000,                      /* Stack size of task */
+      3000,                      /* Stack size of task */
       NULL,                      /* parameter of the task */
       TASK_PRIORITY_SERIALCOMMUNICATION_TX_TASK_UBASETYPE, /* priority of the
                                                               task (e.g., 2,
@@ -1410,7 +1414,7 @@ void setup() {
   xTaskCreatePinnedToCore(
       loadcellReadingTask,                           /* Task function. */
       "loadcellReadingTask",                         /* name of task. */
-      1500,                                          /* Stack size of task */
+      2500,                                          /* Stack size of task */
       NULL,                                          /* parameter of the task */
       TASK_PRIORITY_LOADCELL_READING_TASK_UBASETYPE, /* priority of the task */
       &handle_loadcellReadingTask, /* Task handle to keep track of created task
@@ -1431,7 +1435,7 @@ void setup() {
   xTaskCreatePinnedToCore(
       profilerTask,                          /* Task function. */
       "profilerTask",                        /* name of task. */
-      3000,                                  /* Stack size of task */
+      4000,                                  /* Stack size of task */
       NULL,                                  /* parameter of the task */
       TASK_PRIORITY_PROFILER_TASK_UBASETYPE, /* priority of the task */
       &handle_profilerTask,      /* Task handle to keep track of created task */
@@ -2158,45 +2162,58 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       dap_calculationVariables_st.setDefaultPos();
 
       // trigger and compute effects
+      // Every cycle: ABS (its release decay advances per call), g-force and
+      // road impact (moving averages over a number of calls).
       absOscillation.forceOffset(
           &dap_calculationVariables_st,
           dap_config_pedalUpdateTask_st.payloadPedalConfig_st.absPattern_u8,
           dap_config_pedalUpdateTask_st.payloadPedalConfig_st
               .absForceOrTarvelBit_u8);
-      g_rpmOscillation_st.trigger();
-      g_rpmOscillation_st.forceOffset(&dap_calculationVariables_st);
-      g_bitePointOscillation_st.forceOffset(&dap_calculationVariables_st);
       g_gForceEffect_st.forceOffset(
           &dap_calculationVariables_st,
           dap_config_pedalUpdateTask_st.payloadPedalConfig_st.gMulti_u8);
-      g_wsOscillation_st.forceOffset(&dap_calculationVariables_st);
       g_roadImpactEffect_st.forceOffset(
           &dap_calculationVariables_st,
           dap_config_pedalUpdateTask_st.payloadPedalConfig_st.roadMulti_u8);
-      g_customVibration1_st.forceOffset(
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq1_u8,
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp1_u8,
-          dap_calculationVariables_st.stepperPosRange_fl32);
-      g_customVibration2_st.forceOffset(
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq2_u8,
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp2_u8,
-          dap_calculationVariables_st.stepperPosRange_fl32);
-      g_customVibration3_st.forceOffset(
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq3_u8,
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp3_u8,
-          dap_calculationVariables_st.stepperPosRange_fl32);
-      g_customVibration4_st.forceOffset(
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq4_u8,
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp4_u8,
-          dap_calculationVariables_st.stepperPosRange_fl32);
-      if (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.bpTrigger_u8 ==
-          1) {
-        if (Position_check > BP_trigger_min) {
-          if (Position_check < BP_trigger_max) {
-            g_bitePointOscillation_st.trigger();
+
+      // The oscillation effects below derive their time base from millis()
+      // differences, so their output changes at most once per millisecond:
+      // evaluating them every OSCILLATION_EFFECTS_DECIMATION_U8-th cycle
+      // (1 kHz at 4 kHz) gives the same waveform and frees CPU time for the
+      // control loop.
+      static uint8_t s_oscillationEffectsCounter_u8 = 0;
+      if (s_oscillationEffectsCounter_u8 == 0) {
+        g_rpmOscillation_st.trigger();
+        g_rpmOscillation_st.forceOffset(&dap_calculationVariables_st);
+        g_bitePointOscillation_st.forceOffset(&dap_calculationVariables_st);
+        g_wsOscillation_st.forceOffset(&dap_calculationVariables_st);
+        g_customVibration1_st.forceOffset(
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq1_u8,
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp1_u8,
+            dap_calculationVariables_st.stepperPosRange_fl32);
+        g_customVibration2_st.forceOffset(
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq2_u8,
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp2_u8,
+            dap_calculationVariables_st.stepperPosRange_fl32);
+        g_customVibration3_st.forceOffset(
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq3_u8,
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp3_u8,
+            dap_calculationVariables_st.stepperPosRange_fl32);
+        g_customVibration4_st.forceOffset(
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq4_u8,
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp4_u8,
+            dap_calculationVariables_st.stepperPosRange_fl32);
+        if (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.bpTrigger_u8 ==
+            1) {
+          if (Position_check > BP_trigger_min) {
+            if (Position_check < BP_trigger_max) {
+              g_bitePointOscillation_st.trigger();
+            }
           }
         }
       }
+      s_oscillationEffectsCounter_u8 =
+          (s_oscillationEffectsCounter_u8 + 1) % OSCILLATION_EFFECTS_DECIMATION_U8;
 
       // In admittance rudder mode, endstops remain at physical bounds.
       // Force coupling and centering are handled natively by
@@ -2716,11 +2733,16 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
                 : 0.0f;
 
         // Racing Pedal control algorithm (Throttle / Brake / Clutch)
+        // debug telemetry (incl. the Landi detector) only when the extended
+        // state is streamed; admittanceStates_st is always needed (IMM inputs)
+        bool extendedTelemetry_b =
+            (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 &
+             DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT_U8) != 0;
         Position_Next_fl32 = MoveByAdmittanceStrategy(
             filteredReading, stepper, &forceCurve, &dap_calculationVariables_st,
-            &dap_config_pedalUpdateTask_st, effectOffsets_st,
-            endstopBehavior_st, &admittanceDebugInfo_st, &admittanceStates_st,
-            holdProbability_01, cycleTime_s_fl32);
+            &dap_config_pedalUpdateTask_st, effectOffsets_st, endstopBehavior_st,
+            extendedTelemetry_b ? &admittanceDebugInfo_st : nullptr,
+            &admittanceStates_st, holdProbability_01, cycleTime_s_fl32);
         positionWithoutEffect = (int32_t)Position_Next_fl32;
       }
 
