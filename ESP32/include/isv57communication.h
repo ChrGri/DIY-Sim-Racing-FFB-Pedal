@@ -91,6 +91,8 @@ struct isv57dynamicStates {
     int16_t servo_current_percent = 0;
     int16_t servoVoltage0p1V_i16 = 0;
     int16_t servo_velocity_given_rpm_i16 = 0;
+    int16_t servo_velocity_feedback_rpm_i16 = 0; // only while slot 2 streams velocity
+
     int16_t servo_position_feedback_i16 = 0;
     // int16_t estimated_pos_error_currentStepperPos_i16 = 0;
     unsigned long lastUpdateTimeInMS_u32 = 0;
@@ -102,6 +104,11 @@ class Isv57Communication {
 	public:
     Isv57Communication();
     void setupServoStateReading();
+    // Cyclic read slot 2 (0x0192) streams the current by default. For debugging it
+    // can stream the unfiltered feedback velocity instead; the current reading is
+    // then 0. Returns true when the servo confirmed the slot pointer.
+    bool setSlot2Velocity(bool velocity_b);
+    volatile bool slot2IsVelocity_b = false;
     void sendTunedServoParameters(bool commandRotationDirection, uint32_t stepsPerMotorRev_u32);
     void readAllServoParameters();
     void readServoStates();

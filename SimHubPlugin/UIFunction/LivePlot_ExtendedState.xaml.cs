@@ -29,6 +29,8 @@ namespace DiyFfbPedal.UIFunction
             public payloadPedalState_Extended State;
         }
 
+        private const double SERVO_STEPS_PER_REV = 3200.0; // fixed microstep setting (Pr0.08)
+
         // All supported signals from payloadPedalState_Extended
         private static readonly List<SignalDef> AllSignals = new List<SignalDef>
         {
@@ -38,6 +40,9 @@ namespace DiyFfbPedal.UIFunction
             new SignalDef { Id = "servo_pos_err", Name = "Servo Pos Error", Subsystem = "Servo Registers", Unit = "cts", DefaultColor = Color.FromRgb(0xFF, 0x40, 0x81), Getter = s => s.servoPositionError_i16, Format = "F0" },
             new SignalDef { Id = "servo_voltage", Name = "Servo Voltage", Subsystem = "Servo Registers", Unit = "V", DefaultColor = Color.FromRgb(0xFF, 0xFF, 0x00), Getter = s => s.servoVoltage0p1V_i16 / 10.0, Format = "F1" },
             new SignalDef { Id = "servo_current", Name = "Servo Current", Subsystem = "Servo Registers", Unit = "%", DefaultColor = Color.FromRgb(0x69, 0xF0, 0xAE), Getter = s => s.servoCurrentPercent_i16, Format = "F0" },
+            // Only with debug flag 128 (servo streams velocity instead of current, the current
+            // then reads 0). In steps/s, directly comparable to "ESP Command Velocity".
+            new SignalDef { Id = "servo_velocity", Name = "Servo Velocity", Subsystem = "Servo Registers", Unit = "Hz", DefaultColor = Color.FromRgb(0xFF, 0x80, 0xAB), Getter = s => s.servoVelocityRpm_i16 * SERVO_STEPS_PER_REV / 60.0, Format = "F0" },
             new SignalDef { Id = "servo_cycle", Name = "Servo Cycle Count", Subsystem = "Servo Registers", Unit = "cts", DefaultColor = Color.FromRgb(0xB0, 0xBE, 0xC5), Getter = s => s.servoStateCycleCount_u32, Format = "F0" },
 
             // ESP32 & Physical Values
@@ -135,7 +140,7 @@ namespace DiyFfbPedal.UIFunction
         // the trigger instant; the plot shows the latest capture with t = 0 at the trigger.
         private const double TRIGGER_PRE_SEC = 0.2;
         private const double TRIGGER_POST_SEC = 0.5;
-        private static readonly string[] LatencyCheckSignals = { "servo_pos_target", "esp_target_pos", "servo_pos_fb", "force_raw", "force_filtered", "speed_hz" };
+        private static readonly string[] LatencyCheckSignals = { "servo_pos_target", "esp_target_pos", "servo_pos_fb", "force_raw", "force_filtered", "speed_hz", "servo_velocity" };
         private bool _triggerMode = false;
         private float _trigPreloadKg = 0f;   // cached from the pedal config on the UI thread
         private float _trigMaxForceKg = 0f;

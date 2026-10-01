@@ -27,7 +27,10 @@
 #define DEBUG_INFO_0_RESET_ALL_SERVO_ALARMS_U8 16U
 #define DEBUG_INFO_0_RESET_SERVO_TO_FACTORY_U8 32U
 #define DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT_U8 64U
-#define DEBUG_INFO_0_LOG_ALL_SERVO_PARAMS_U8 128U
+// servo streams its feedback velocity instead of the current (extended state
+// field servoVelocityRpm_i16; the current reads 0); overcurrent trip and crash
+// relief are off while set
+#define DEBUG_INFO_0_SERVO_VELOCITY_READOUT_U8 128U
 
 #define EFFECT_SCALING_FACTOR_FL32 4.0f
 #define EFFECT_POSITION_SCALING_FACTOR_FL32 0.1f
@@ -2058,26 +2061,6 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           stepper->resetServoParametersToFactoryValues();
         }
 
-        // print all servo parameters for debug purposes
-        if ((dap_config_pedalUpdateTask_st.payloadPedalConfig_st
-                 .debugFlags0_u8 &
-             DEBUG_INFO_0_LOG_ALL_SERVO_PARAMS_U8)) {
-          DapConfig_t tmp;
-          global_dap_config_class.getConfig(&tmp, 500);
-          tmp.payloadPedalConfig_st.debugFlags0_u8 &=
-              (~(uint8_t)
-                   DEBUG_INFO_0_LOG_ALL_SERVO_PARAMS_U8); // clear the debug bit
-          // global_dap_config_class.setConfig(tmp);
-
-          configDataPackage_t configPackage_st;
-          configPackage_st.config_st = tmp;
-          xQueueSend(s_configUpdateAvailableQueue, &configPackage_st,
-                     portMAX_DELAY);
-
-          delay(1000);
-          stepper->printAllServoParameters();
-        }
-
         // ActiveSerial->printf("Abs ampl.: %0.3f\n",
         // (float)dap_calculationVariables_st.absAmplitude_fl32);
         // ActiveSerial->printf("force range.: %0.3f\n",
@@ -2567,6 +2550,13 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       }
       */
 
+      // Debug velocity readout (flag 128), only while the pedal is active: homing
+      // needs the current reading and switches it back itself
+      stepper->requestServoVelocityReadout(
+          ((dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 &
+            DEBUG_INFO_0_SERVO_VELOCITY_READOUT_U8) != 0) &&
+          (g_pedalOperationalState_u8 == (uint8_t)PEDAL_STATE_ACTIVE_E));
+
       // --- Predictive Brake Resistor Activator ---
       // Cache servo state once per cycle; reused in extended debug struct
       // to avoid duplicate ISR-spinlock-contending calls later.
@@ -2575,6 +2565,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           stepper->getCurrentSpeedInHz();
       const int16_t cached_servosVoltage_i16 = stepper->getServosVoltage();
       const int16_t cached_servosCurrent_i16 = stepper->getServosCurrent();
+      // 0 unless the debug velocity readout (flag 128) is active
+      const int16_t cached_servosVelocityRpm_i16 =
+          (int16_t)stepper->getServosVelocityRpm();
       const uint32_t cached_servoCycleCounter_u32 =
           stepper->getServoCycleCounter();
       const int32_t cached_servosInternalPosCorrected_i32 =
@@ -3377,6 +3370,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             .servoVoltage0p1V_i16 = cached_servosVoltage_i16;
         dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st
             .servoCurrentPercent_i16 = cached_servosCurrent_i16;
+        dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st
+            .servoVelocityRpm_i16 = cached_servosVelocityRpm_i16;
 
         // ESP states
         dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st

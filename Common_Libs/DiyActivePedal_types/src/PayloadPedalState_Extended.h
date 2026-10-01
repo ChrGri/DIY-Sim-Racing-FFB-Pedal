@@ -9,7 +9,8 @@ typedef struct __attribute__((packed)) PayloadPedalStateExtended
   int16_t servoPositionError_i16;
   int16_t servoVoltage0p1V_i16;
   int16_t servoCurrentPercent_i16;
-  
+  int16_t servoVelocityRpm_i16; // only with debug flag 128 (servo streams velocity instead of current), else 0
+
 
   // values from ESP
   uint32_t timeInUs_u32;

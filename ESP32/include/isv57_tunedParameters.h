@@ -6,8 +6,8 @@
 // Note: the firmware writes only the registers listed in
 // Isv57Communication::sendTunedServoParameters(). All other values here
 // (loop gains Pr1.xx, filters Pr2.xx, Pr6.xx) document the intended setup;
-// the servo uses its own NVM values, set with the Stepperonline app. Dump the
-// real values with printAllServoParameters(). Signal flow and tuning notes:
+// the servo uses its own NVM values, set with the Stepperonline app (read the
+// real values there). Signal flow and tuning notes:
 // docs/development/servoLoops.md
 #define ISV57_NMB_OF_REGISTERS 305
 const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {

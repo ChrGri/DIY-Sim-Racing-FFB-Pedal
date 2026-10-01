@@ -60,7 +60,7 @@ private:
 
     uint16_t posCommandSmoothingFactor_u16 = 0;    // Smoothing parameter for the iSV57 internal trajectory generator
 
-    bool logAllServoParams = false;                // Trigger flag to dump all servo registers to serial
+    volatile bool servoVelocityReadoutRequested_b = false; // Debug: stream servo velocity instead of current
     bool clearAllServoAlarms_b = false;            // Trigger flag to clear servo fault states
     bool resetServoRegistersToFactoryValues_b = false; // Trigger flag to perform a factory reset
     bool updateServoParams_b = false;              // Trigger flag to push new parameters to the servo
@@ -180,6 +180,7 @@ public:
     uint32_t getServoCycleCounter();
     int32_t getServosVoltage();
     int32_t getServosCurrent();
+    int32_t getServosVelocityRpm();
     int32_t getServosPos();
     int32_t getServosPosError();
     uint32_t getServoCycleTimestamp();
@@ -187,7 +188,11 @@ public:
     
     // --- Configuration Triggers ---
     void configSteplossRecovAndCrashDetection(uint8_t flags_u8);
-    void printAllServoParameters();
+    // Debug: the servo's cyclic current reading is replaced by its feedback
+    // velocity. While active, everything that needs the current (overcurrent
+    // trip, crash relief, homing endstop detection) is disabled.
+    void requestServoVelocityReadout(bool request_b);
+    bool isServoVelocityReadoutActive() const;
     void clearAllServoAlarms();
     void resetServoParametersToFactoryValues();
     void configSetProfilingFlag(bool proFlag_b);

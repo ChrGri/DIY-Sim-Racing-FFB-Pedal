@@ -119,11 +119,28 @@ void Isv57Communication::setupServoStateReading() {
   modbus.writeAndVerifyDeviceParameter(slaveId, 0x0193,
                                        reg_add_position_error_p);
   modbus.writeAndVerifyDeviceParameter(slaveId, 0x0194, reg_add_voltage_0p1V);
+  slot2IsVelocity_b = false;
   // modbus.writeAndVerifyDeviceParameter(slaveId, 0x0195,
   // reg_add_velocity_feedback_rpm);
 
   // modbus.writeAndVerifyDeviceParameter(slaveId, 0x0193,
   // reg_add_position_feedback_p);
+}
+
+bool Isv57Communication::setSlot2Velocity(bool velocity_b) {
+  // Unfiltered velocity: the Pr1.03 velocity detection filter would add its own
+  // delay to latency measurements.
+  int16_t target_i16 = velocity_b ? reg_add_velocity_feedback_no_filt_rpm
+                                  : reg_add_velocity_current_feedback_percent;
+  modbus.writeAndVerifyDeviceParameter(slaveId, 0x0192, target_i16);
+
+  int16_t readBack_i16 = -1;
+  if ((readRegisters(0x0192, 1, &readBack_i16) != 1) ||
+      (readBack_i16 != target_i16)) {
+    return false;
+  }
+  slot2IsVelocity_b = velocity_b;
+  return true;
 }
 
 void Isv57Communication::readAllServoParameters() {
@@ -449,7 +466,13 @@ void Isv57Communication::readServoStates() {
 
         // Update dynamic states immediately
         isv57dynamicStates_.servo_pos_given_p = regArray[0];
-        isv57dynamicStates_.servo_current_percent = regArray[1];
+        if (slot2IsVelocity_b) {
+          isv57dynamicStates_.servo_velocity_feedback_rpm_i16 = regArray[1];
+          isv57dynamicStates_.servo_current_percent = 0;
+        } else {
+          isv57dynamicStates_.servo_current_percent = regArray[1];
+          isv57dynamicStates_.servo_velocity_feedback_rpm_i16 = 0;
+        }
         isv57dynamicStates_.servo_pos_error_p = regArray[2];
         isv57dynamicStates_.servoVoltage0p1V_i16 = regArray[3];
 
