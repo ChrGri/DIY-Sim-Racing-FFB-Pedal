@@ -113,8 +113,8 @@
                     <StackPanel Orientation="Vertical">
                         <TextBlock x:Name="tb_trigger_status" Text="TRIGGER ● armed" FontSize="11" FontWeight="Bold" Foreground="#FFD740" Margin="0,0,0,3"/>
                         <TextBlock x:Name="tb_trigger_move" Text="Time to move: --" FontSize="11" FontWeight="SemiBold" Foreground="#FFAB00" Margin="0,0,0,1"/>
-                        <TextBlock x:Name="tb_trigger_end" Text="Time to reach end: --" FontSize="11" FontWeight="SemiBold" Foreground="#E040FB" Margin="0,0,0,3"/>
-                        <TextBlock x:Name="tb_trigger_servo_move" Text="Servo start move: --" FontSize="11" FontWeight="SemiBold" Foreground="#FF5252" Margin="0,0,0,1"/>
+                        <TextBlock x:Name="tb_trigger_servo_move" Text="Servo start move: --" FontSize="11" FontWeight="SemiBold" Foreground="#FF5252" Margin="0,0,0,3"/>
+                        <TextBlock x:Name="tb_trigger_end" Text="Time to reach end: --" FontSize="11" FontWeight="SemiBold" Foreground="#E040FB" Margin="0,0,0,1"/>
                         <TextBlock x:Name="tb_trigger_servo_end" Text="Servo finish move: --" FontSize="11" FontWeight="SemiBold" Foreground="#FF8A80"/>
                     </StackPanel>
                 </Border>

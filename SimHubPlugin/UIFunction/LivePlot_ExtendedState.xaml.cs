@@ -148,6 +148,7 @@ namespace DiyFfbPedal.UIFunction
         private double _capStandstillPos, _capFinalPos;
         private double _capTMove = double.NaN, _capTMaxForce = double.NaN, _capTEnd = double.NaN;
         private double _capFbStandstill, _capFbFinal;
+        private double _capEndBand, _capFbEndBand; // "end reached" tolerance in counts
         private double _capTServoTgtMove = double.NaN, _capTServoTgtEnd = double.NaN;
         private double _capTFbMove = double.NaN, _capTFbEnd = double.NaN;
         private float _capPreloadKg, _capMaxForceKg;
@@ -706,18 +707,20 @@ namespace DiyFfbPedal.UIFunction
                 if (s.targetPosition_i32 > final) final = s.targetPosition_i32;
             }
 
-            // Final value = end of travel reached in the capture (max target position)
+            // Final value = end of travel reached in the capture (max target position);
+            // reached = within the end tolerance of it
+            double endBand = EndTolerance(final - standstill, 0.0);
             double tEnd = double.NaN;
             for (int i = trigIdx; i < cap.Count; i++)
             {
-                if (cap[i].State.targetPosition_i32 >= final) { tEnd = cap[i].TimeSec; break; }
+                if (cap[i].State.targetPosition_i32 >= final - endBand) { tEnd = cap[i].TimeSec; break; }
             }
 
             // Servo side: Servo Target Pos is the ESP target as read back from the servo,
             // so its delay vs. ESP Target Pos is the Modbus/readout lag that is also
             // contained in Servo Feedback Pos. Subtracting it gives the corrected timing.
-            ServoMoveTimes(cap, trigIdx, s => s.servoPositionTarget_i32, out double tTgtMove, out double tTgtEnd, out _, out _);
-            ServoMoveTimes(cap, trigIdx, s => s.servoPositionFeedback_i32, out double tFbMove, out double tFbEnd, out double fbStandstill, out double fbFinal);
+            ServoMoveTimes(cap, trigIdx, s => s.servoPositionTarget_i32, out double tTgtMove, out double tTgtEnd, out _, out _, out _);
+            ServoMoveTimes(cap, trigIdx, s => s.servoPositionFeedback_i32, out double tFbMove, out double tFbEnd, out double fbStandstill, out double fbFinal, out double fbEndBand);
 
             _capturePoints = cap;
             _capTServoTgtMove = tTgtMove;
@@ -726,6 +729,8 @@ namespace DiyFfbPedal.UIFunction
             _capTFbEnd = tFbEnd;
             _capFbStandstill = fbStandstill;
             _capFbFinal = fbFinal;
+            _capFbEndBand = fbEndBand;
+            _capEndBand = endBand;
             _captureCount++;
             _capStandstillPos = standstill;
             _capFinalPos = final;
@@ -737,10 +742,10 @@ namespace DiyFfbPedal.UIFunction
         }
 
         // Servo registers can jitter at rest, so standstill is the pre-trigger band:
-        // "move" = first sample above that band, "end" = first sample within the band's
-        // width of the final (maximum) value reached in the capture.
+        // "move" = first sample above that band, "end" = first sample within the end
+        // tolerance of the final (maximum) value reached in the capture.
         private static void ServoMoveTimes(List<TelemetryPoint> cap, int trigIdx, Func<payloadPedalState_Extended, double> get,
-            out double tMove, out double tEnd, out double standstill, out double final)
+            out double tMove, out double tEnd, out double standstill, out double final, out double endBand)
         {
             double preMin = double.MaxValue, preMax = double.MinValue;
             for (int i = 0; i < Math.Max(1, trigIdx); i++)
@@ -761,15 +766,25 @@ namespace DiyFfbPedal.UIFunction
             }
 
             tEnd = double.NaN;
+            endBand = EndTolerance(final - preMax, noiseBand);
             if (!double.IsNaN(tMove))
             {
                 for (int i = trigIdx; i < cap.Count; i++)
                 {
-                    if (get(cap[i].State) >= final - noiseBand) { tEnd = cap[i].TimeSec; break; }
+                    if (get(cap[i].State) >= final - endBand) { tEnd = cap[i].TimeSec; break; }
                 }
             }
             standstill = preMax;
         }
+
+        // "End reached" tolerance: the last few counts are not perceptible (10 counts are
+        // ~0.016 mm of sled), but the servo removes them slowly while the foot holds the
+        // pedal at the end, so waiting for the exact final count measured that creep
+        // instead of the motion. END_TOLERANCE_FRACTION of the stroke, at least the
+        // jitter band.
+        private const double END_TOLERANCE_FRACTION = 0.005;
+        private static double EndTolerance(double stroke, double noiseBand)
+            => Math.Max(noiseBand, END_TOLERANCE_FRACTION * Math.Max(0.0, stroke));
 
         private void ResetTriggerState()
         {
@@ -871,7 +886,7 @@ namespace DiyFfbPedal.UIFunction
             double lagMove = _capTServoTgtMove - _capTMove;
             tb_trigger_servo_move.Text = double.IsNaN(_capTFbMove)
                 ? $"Servo start move: — (Servo Feedback stayed at {_capFbStandstill:F0} cts)"
-                : $"Servo start move: {_capTFbMove * 1000.0:F1} ms  →  corrected {FormatMs(_capTFbMove - lagMove)}   (Servo Feedback > {_capFbStandstill:F0} cts; servo target lag {FormatMs(lagMove)})";
+                : $"Servo start move: {_capTFbMove * 1000.0:F1} ms  →  corrected {FormatMs(_capTFbMove - lagMove)}  ·  behind ESP {FormatMs(_capTFbMove - lagMove - _capTMove)}   (Servo Feedback > {_capFbStandstill:F0} cts; servo target lag {FormatMs(lagMove)})";
 
             // Servo finish: relative to Filtered Force > max force
             double lagEnd = _capTServoTgtEnd - _capTEnd;
@@ -880,7 +895,7 @@ namespace DiyFfbPedal.UIFunction
             else if (double.IsNaN(_capTFbEnd))
                 tb_trigger_servo_end.Text = "Servo finish move: — (Servo Feedback did not move)";
             else
-                tb_trigger_servo_end.Text = $"Servo finish move: {(_capTFbEnd - _capTMaxForce) * 1000.0:F1} ms  →  corrected {FormatMs(_capTFbEnd - lagEnd - _capTMaxForce)}   (Servo Feedback = {_capFbFinal:F0} cts; servo target lag {FormatMs(lagEnd)})";
+                tb_trigger_servo_end.Text = $"Servo finish move: {(_capTFbEnd - _capTMaxForce) * 1000.0:F1} ms  →  corrected {FormatMs(_capTFbEnd - lagEnd - _capTMaxForce)}  ·  behind ESP {FormatMs(_capTFbEnd - lagEnd - _capTEnd)}   (Servo Feedback ≥ {_capFbFinal - _capFbEndBand:F0} cts = final − {_capFbEndBand:F0}; servo target lag {FormatMs(lagEnd)})";
 
             tb_trigger_move.Text = double.IsNaN(_capTMove)
                 ? $"Time to move: — (ESP target stayed at {_capStandstillPos:F0} cts)"
@@ -889,7 +904,7 @@ namespace DiyFfbPedal.UIFunction
             if (double.IsNaN(_capTMaxForce))
                 tb_trigger_end.Text = $"Time to reach end: — (Filtered Force stayed below max force {_capMaxForceKg:F2} kg)";
             else
-                tb_trigger_end.Text = $"Time to reach end: {(_capTEnd - _capTMaxForce) * 1000.0:F1} ms   (ESP target = {_capFinalPos:F0} cts  −  Filtered Force > {_capMaxForceKg:F2} kg)";
+                tb_trigger_end.Text = $"Time to reach end: {(_capTEnd - _capTMaxForce) * 1000.0:F1} ms   (ESP target ≥ {_capFinalPos - _capEndBand:F0} cts = final − {_capEndBand:F0}  −  Filtered Force > {_capMaxForceKg:F2} kg)";
         }
 
         private static string FormatMs(double sec) => double.IsNaN(sec) ? "n/a" : $"{sec * 1000.0:F1} ms";
