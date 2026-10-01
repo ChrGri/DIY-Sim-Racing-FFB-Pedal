@@ -29,13 +29,20 @@
                         <TextBlock Text="— Right-click plot to select signals" FontSize="11" Foreground="#888888" Margin="10,2,0,0" VerticalAlignment="Center" FontStyle="Italic"/>
                     </StackPanel>
                     
-                    <!-- Stream Status Pill (Always visible in top right) -->
-                    <Border HorizontalAlignment="Right" Background="#282828" BorderBrush="#444444" BorderThickness="1" CornerRadius="3" Padding="8,2" VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Ellipse x:Name="ellipse_stream_indicator" Width="8" Height="8" Fill="#757575" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="tb_stream_status" Text="○ Idle" FontSize="11" Foreground="#9E9E9E" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <!-- Measurement Preset (e.g. Latency check with oscilloscope-style trigger) -->
+                        <TextBlock Text="Preset:" FontSize="10" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,3,0" FontWeight="SemiBold"/>
+                        <ComboBox x:Name="cb_preset" Width="100" Height="22" SelectionChanged="CbPreset_SelectionChanged" Margin="0,0,8,0" Background="#2A2A2A" Foreground="White" FontSize="10"
+                                  ToolTip="Latency check: adds the force &amp; position signals and triggers on Filtered Force rising above the preload force (window -0.2 s … +0.5 s)"/>
+
+                        <!-- Stream Status Pill (Always visible in top right) -->
+                        <Border Background="#282828" BorderBrush="#444444" BorderThickness="1" CornerRadius="3" Padding="8,2" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Ellipse x:Name="ellipse_stream_indicator" Width="8" Height="8" Fill="#757575" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="tb_stream_status" Text="○ Idle" FontSize="11" Foreground="#9E9E9E" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
                 </Grid>
 
                 <!-- Row 2: Controls Toolbar -->
@@ -81,7 +88,10 @@
             <Grid x:Name="grid_plot_host">
                 <!-- Background Gridlines & Axis Labels -->
                 <Canvas x:Name="canvas_grid" Width="914" Height="578" IsHitTestVisible="False"/>
-                
+
+                <!-- Trigger mode event markers (trigger, move start, max force, end reached) -->
+                <Canvas x:Name="canvas_markers" Width="914" Height="578" IsHitTestVisible="False"/>
+
                 <!-- Main Polyline Trace Canvas with Right-Click Context Menu & Hover Data Tip -->
                 <Canvas x:Name="canvas_plot" Width="914" Height="578" Background="Transparent" Cursor="Cross"
                         SizeChanged="Canvas_plot_SizeChanged"
@@ -96,6 +106,18 @@
                         </ContextMenu>
                     </Canvas.ContextMenu>
                 </Canvas>
+
+                <!-- Trigger mode status & latency results -->
+                <Border x:Name="card_trigger_info" Background="#DD161616" BorderBrush="#4A4A4A" BorderThickness="1" CornerRadius="4" Padding="8,5" Margin="0,24,8,0"
+                        HorizontalAlignment="Right" VerticalAlignment="Top" IsHitTestVisible="False" Visibility="Collapsed">
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock x:Name="tb_trigger_status" Text="TRIGGER ● armed" FontSize="11" FontWeight="Bold" Foreground="#FFD740" Margin="0,0,0,3"/>
+                        <TextBlock x:Name="tb_trigger_move" Text="Time to move: --" FontSize="11" FontWeight="SemiBold" Foreground="#FFAB00" Margin="0,0,0,1"/>
+                        <TextBlock x:Name="tb_trigger_end" Text="Time to reach end: --" FontSize="11" FontWeight="SemiBold" Foreground="#E040FB" Margin="0,0,0,3"/>
+                        <TextBlock x:Name="tb_trigger_servo_move" Text="Servo start move: --" FontSize="11" FontWeight="SemiBold" Foreground="#FF5252" Margin="0,0,0,1"/>
+                        <TextBlock x:Name="tb_trigger_servo_end" Text="Servo finish move: --" FontSize="11" FontWeight="SemiBold" Foreground="#FF8A80"/>
+                    </StackPanel>
+                </Border>
 
                 <!-- Rubber-Band Regional Zoom Selection Box -->
                 <Rectangle x:Name="rect_zoom_selection" Stroke="#00E5FF" StrokeThickness="1.5" StrokeDashArray="3,3" Fill="#3300E5FF" Visibility="Collapsed" IsHitTestVisible="False" HorizontalAlignment="Left" VerticalAlignment="Top"/>
