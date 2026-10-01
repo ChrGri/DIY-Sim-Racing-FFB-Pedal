@@ -86,6 +86,7 @@ float g_vModelVel_mps = 0.0f;   // Physical virtual velocity [meters/second]
 float g_tankEnergy_J = 2.0f;    // Energy tank level for passive parameter adaptation [Joules]
 float g_massAdaptationOffset_kg = 0.0f; // Dynamic mass offset from Energy Tank framework
 float g_lastActiveDamping_Ns_m = 0.0f;  // Track previous frame's damping for power calculation
+float g_lastNetForceTustin_N = 0.0f;    // Net force of the previous integration step (force memory)
 
 
 // Oscillation Detector State (Landi et al.)
@@ -492,7 +493,7 @@ static inline IRAM_ATTR_FLAG float UpdateContactOscillationDamping(
 static inline IRAM_ATTR_FLAG float CalcActiveDamping(
     float dampingRatio_zeta, float virtualMass_kg, float currentStiffness_N_m,
     float vModelPos_01, float actualPosFraction_01,
-    int32_t actualServoTrackingError_i32, float travelSteps_cnt, float effectForceOffset_fl32,
+    int32_t actualServoTrackingError_i32, float travelSteps_cnt, bool hasActiveEffect,
     uint8_t dampingProgression_u8, float springForce_N, float vModelVel_mps, uint8_t elastomerModelSelection, float maxPedalForce_kg,
     float dt_s, float totalTravel_m)
 {
@@ -503,7 +504,7 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
     float dampingMultiplier = 1.0f;
 
     // Adaptive damping (AOM & Tracking Error) only when no effect is applied
-    if (effectForceOffset_fl32 == 0.0f) 
+    if (!hasActiveEffect)
     {
 
         // =========================================================
@@ -645,7 +646,7 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
  *    into electrical current fed back through the inverter bridge diodes into the DC power bus:
  *        P_elec ≈ P_mech
  * 
- * 2. WHY 35 WATTS (DC BUS CAPACITANCE & INTERNAL BLEEDER CIRCUIT):
+ * 2. WHY 40 WATTS (DC BUS CAPACITANCE & INTERNAL BLEEDER CIRCUIT):
  *    - Capacitive Absorption Limit:
  *      The internal DC bus capacitor bank inside the Leadshine iSV57 is C ≈ 470 - 1000 uF (63V rating).
  *      The energy absorbed during a voltage rise from nominal supply (e.g. 36V) to the 
@@ -664,11 +665,11 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
  *      external SMPS (Switch-Mode Power Supplies) lacking reverse-current sinks.
  * 
  *    - Velocity Governor:
- *      By setting P_max_regen = 35.0 W, we dynamically enforce:
+ *      By setting P_max_regen = 40.0 W (MAX_REGEN_POWER_W), we dynamically enforce:
  *          v_max_power = P_max_regen / F_oppose
- *      - At low pedal resistance (e.g. 25 N): v_max = 35 / 25 = 1.4 m/s (no restriction, completely transparent).
- *      - At heavy braking (e.g. 250 N): v_max = 35 / 250 = 0.14 m/s (140 mm/s, halts overvoltage spikes).
- *      - At extreme endstop hit (e.g. 500 N): v_max = 35 / 500 = 0.07 m/s (70 mm/s, smooth deceleration).
+ *      - At low pedal resistance (e.g. 25 N): v_max = 40 / 25 = 1.6 m/s (no restriction, completely transparent).
+ *      - At heavy braking (e.g. 250 N): v_max = 40 / 250 = 0.16 m/s (160 mm/s, halts overvoltage spikes).
+ *      - At extreme endstop hit (e.g. 500 N): v_max = 40 / 500 = 0.08 m/s (80 mm/s, smooth deceleration).
  * 
  * 3. BACK-EMF & MOTOR RPM LIMIT (Pr7.08 = 56):
  *    - Pr7.08 is the Back-EMF constant: 5.6 V_rms / 1000 rpm (line-to-line).
@@ -801,7 +802,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // --- 1. PHYSICAL PARAMETERS & CONFIGURATION ---
   // Time step for integration (seconds): the measured cycle time when given (already clamped by
   // the caller), so the model advances in real time. With a fixed step, every late cycle slowed the
-  // setpoint in real time and the servo moved start-stop ("grain"). The Tustin integrator is stable
+  // setpoint in real time and the servo moved start-stop ("grain"). The mass-damper integrator is stable
   // for any step length; otherwise fall back to the nominal interval.
   float dt_s = (cycleTime_s > 0.0f) ? cycleTime_s
                                     : ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
@@ -859,7 +860,24 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   if (fabsf(angleAtMaxSled_deg - angleAtMinSled_deg) > 0.001f) {
       actualPosFraction_01 = (currentAngle_deg - angleAtMinSled_deg) / (angleAtMaxSled_deg - angleAtMinSled_deg);
   }
+  // unclamped copy for the leash: in the soft endstop and with effect offsets the sled is
+  // legitimately outside [0, 1]
+  const float actualPosFractionRaw_01 = actualPosFraction_01;
   actualPosFraction_01 = constrain(actualPosFraction_01, 0.0f, 1.0f);
+
+  // Re-anchor the model when the travel changes (pedal start/end position, endstops): the model
+  // position is a fraction of the travel, so the old fraction would map to a different sled
+  // position and the first command would jump by up to the hard leash.
+  static int32_t s_lastSoftEndstopMin_i32 = 0;
+  static int32_t s_lastSoftEndstopMax_i32 = 0;
+  if ((calc_st->softEndstopMinStepperPos_i32 != s_lastSoftEndstopMin_i32) ||
+      (calc_st->softEndstopMaxStepperPos_i32 != s_lastSoftEndstopMax_i32)) {
+    s_lastSoftEndstopMin_i32 = calc_st->softEndstopMinStepperPos_i32;
+    s_lastSoftEndstopMax_i32 = calc_st->softEndstopMaxStepperPos_i32;
+    g_vModelPos_01 = actualPosFraction_01;
+    g_vModelVel_mps = 0.0f;
+    g_lastNetForceTustin_N = 0.0f;
+  }
 
   // --- 3. ELASTOMER PHYSICS & SPRING REACTION (Hunt-Crossley Model) ---
   // Coupled Spring Displacement: We blend the virtual target position with the actual
@@ -928,11 +946,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
                               + (g_smoothedEffectVel_mps * idealBaseDamping_Ns_m_ff)
                               + (g_smoothedEffectAcc_mps2 * virtualMass_kg);
 
-  // 6. Keep legacy variable for downstream logic (e.g., disabling tracking error damping)
-  float effectPositionToForceConversion_kg = effectOffsets_st.forceOffset_Steps_fl32 * localStiffness_kg_step;
-  float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32 + effectPositionToForceConversion_kg;
-
-  // 7. Final total force (Loadcell + Static Effect Weight + Dynamic Effect Force)
+  // 6. Final total force (Loadcell + Static Effect Weight + Dynamic Effect Force)
   float rawPilotForce_N = (loadCellReadingKg_fl32 * GRAVITY_N_KG);
   // no deadzone here: the loadcell calibration already removes mean + 3 sigma of the idle reading
   float cleanPilotForce_N = max(rawPilotForce_N, 0.0f);
@@ -982,7 +996,18 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Use the exact restoring force (spline + endstop) instead of linear stiffness assumption
   float totalSpringReaction_N = springForce_N + softEndstopForce_N;
   
-  bool hasActiveEffect = (effectOffsets_st.forceOffset_kg_fl32 != 0.0f) || (effectOffsets_st.forceOffset_Steps_fl32 != 0.0f);
+  // Effect active: held for EFFECT_ACTIVE_HOLD_S after the last non-zero offset. The vibration
+  // effects pass through exactly zero twice per period (the RPM offset is truncated to int), so
+  // the instantaneous test dropped out for ~1 ms each time and let stiction, the contact
+  // oscillation detector and the tracking-error damping switch on mid-vibration.
+  const float EFFECT_ACTIVE_HOLD_S = 0.1f;
+  static float s_effectActiveHoldRemaining_s = 0.0f;
+  if ((effectOffsets_st.forceOffset_kg_fl32 != 0.0f) || (effectOffsets_st.forceOffset_Steps_fl32 != 0.0f)) {
+    s_effectActiveHoldRemaining_s = EFFECT_ACTIVE_HOLD_S;
+  } else {
+    s_effectActiveHoldRemaining_s = max(0.0f, s_effectActiveHoldRemaining_s - dt_s);
+  }
+  bool hasActiveEffect = (s_effectActiveHoldRemaining_s > 0.0f);
 
   // Landi detector: only for telemetry (physical kinematics, expected force). Its threshold (25 N)
   // and power gating missed the heel-contact oscillation (~3.4 N at 16 Hz), and the mass
@@ -1006,7 +1031,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   }
 
   // --- 11. DYNAMIC ADAPTIVE DAMPING ---
-  // (Re-calculate active damping with the new adapted mass)
+  // (base damping, tracking-error and elastomer damping; the virtual mass is not adapted)
   float activeDamping_Ns_m = CalcActiveDamping(dampingRatio_zeta
     , virtualMass_kg
     , currentStiffness_N_m
@@ -1014,7 +1039,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
     , actualPosFraction_01
     , stepper->getServosPosError()
     , travelSteps_cnt
-    , effectForceOffset_fl32
+    , hasActiveEffect
     , config_st->payloadPedalConfig_st.dampingProgression_u8
     , springForce_N
     , g_vModelVel_mps
@@ -1127,7 +1152,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   
   // 0 = Explicit Euler (Legacy)
   // 1 = Implicit Backward Euler
-  // 2 = Tustin (Bilinear Transform)
+  // 2 = Exact mass-damper step (exponential integrator, formerly Tustin)
   int integration_method = 2; 
   
   switch(integration_method)
@@ -1197,7 +1222,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       break;
     }
 
-    case 2: // TUSTIN (BILINEAR TRANSFORM)
+    case 2: // EXACT MASS-DAMPER STEP (formerly TUSTIN)
     {
       // We calculate the net force WITHOUT damping. 
       // Damping will be mathematically modeled perfectly within the IIR filter.
@@ -1217,62 +1242,30 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       }
 
       // =========================================================
-      // TUSTIN (BILINEAR TRANSFORM) MATHEMATICS
+      // EXACT MASS-DAMPER STEP (exponential integrator)
       // =========================================================
-      // Derivation of the discrete IIR Filter for a Mass-Damper system:
-      // We treat the spring as an external force to keep the non-linear
-      // splines intact. Our continuous system is: M*a + C*v = F_netto
-      //
-      // 1. Laplace Transform (S-Domain) to find the transfer function:
-      //    M * s * V(s) + C * V(s) = F(s)
-      //    H(s) = V(s) / F(s) = 1 / (M * s + C)
-      //
-      // 2. Tustin Substitution (Mapping S-Domain to Z-Domain):
-      //    s ≈ (2 / dt) * (1 - z^-1) / (1 + z^-1)
-      //    Let c = 2 / dt.
-      //
-      // 3. Substitute 's' into H(s):
-      //    H(z) = 1 / ( M * c * [(1 - z^-1)/(1 + z^-1)] + C )
-      //    Multiply numerator and denominator by (1 + z^-1):
-      //    H(z) = (1 + z^-1) / ( M * c * (1 - z^-1) + C * (1 + z^-1) )
-      //
-      // 4. Group by z^-1 to form the difference equation denominator:
-      //    H(z) = (1 + z^-1) / ( (M*c + C) + (C - M*c)*z^-1 )
-      //
-      // 5. Define IIR Filter Coefficients (a1, b0, b1):
-      //    A0 = M*c + C
-      //    A1 = C - M*c
-      //    b0 = 1 / A0,  b1 = 1 / A0,  a1 = A1 / A0
-      //
-      // 6. Final Time-Domain Difference Equation:
-      //    v_new = b0 * F_netto_new + b1 * F_netto_old - a1 * v_old
+      // The spring is treated as an external force to keep the non-linear splines intact.
+      // Continuous system: M*a + C*v = F_netto, with F_netto averaged over the step
+      // (F_avg = (F_new + F_old) / 2, the same force memory as the former Tustin filter).
+      // Exact solution over one step for a constant F_avg:
+      //    v_new = e * v_old + (1 - e) * F_avg / C,   e = exp(-C * dt / M)
+      // The pole e is always in (0, 1). Tustin's pole (1 - r) / (1 + r), r = C * dt / (2M),
+      // turns negative for r > 1 (high damping, low mass, long cycle): the velocity then
+      // flipped sign every cycle (Nyquist buzz). For small r both agree to second order.
+      // For C * dt / M -> 0 the limit is v_old + F_avg * dt / M.
       // =========================================================
-
-      // Static variable to store the previous force for the IIR filter (z^-1 delay)
-      // Note: If you instantiate this class multiple times (e.g. clutch + brake), 
-      // you should move this variable into the class header or calculation struct!
-      static float g_lastNetForceTustin_N = 0.0f;
-
-      // Calculate the Tustin constant 'c'
-      float c_tustin = 2.0f / dt_s;
-  
-      // Calculate denominator terms A0 and A1
-      float A0 = (virtualMass_kg * c_tustin) + activeDamping_Ns_m;
-      float A1 = activeDamping_Ns_m - (virtualMass_kg * c_tustin);
-  
-      // Calculate final IIR filter coefficients
-      // Safeguard against division by zero just in case
       float new_vModelVel_mps = g_vModelVel_mps;
-      if (fabsf(A0) > 1e-5) 
+      float averageNetForce_N = 0.5f * (netForce_without_damping_N + g_lastNetForceTustin_N);
+      if (virtualMass_kg > 1e-5f)
       {
-          float b0 = 1.0f / A0;
-          float b1 = 1.0f / A0;
-          float a1 = A1 / A0;
-
-          // Compute the new ideal velocity using the difference equation
-          new_vModelVel_mps = (b0 * netForce_without_damping_N) + 
-                              (b1 * g_lastNetForceTustin_N) - 
-                              (a1 * g_vModelVel_mps);
+          float dampingRate_1 = activeDamping_Ns_m * dt_s / virtualMass_kg;
+          if (dampingRate_1 > 1e-4f) {
+              float decay_01 = expf(-dampingRate_1);
+              new_vModelVel_mps = decay_01 * g_vModelVel_mps
+                                + (1.0f - decay_01) * averageNetForce_N / activeDamping_Ns_m;
+          } else {
+              new_vModelVel_mps = g_vModelVel_mps + averageNetForce_N * dt_s / virtualMass_kg;
+          }
       }
 
       // Stick: stay stuck, or stick when the motion stops or reverses while the drive force
@@ -1294,7 +1287,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
       // Reconstruct the effective acceleration for this time step.
       // This is necessary so the existing limits (Regen clamping, hard max accel) 
-      // can operate unmodified on the Tustin output.
+      // can operate unmodified on the integrator output.
       acceleration_mps2 = (new_vModelVel_mps - g_vModelVel_mps) / dt_s;
 
       break;
@@ -1322,7 +1315,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   // --- 13. VELOCITY CHOKING & REGENERATIVE EMF GOVERNOR ---
   // Limit the movement speed if the system becomes unstable or generates excessive regen power.
-  float velocityLimit_01 = 1.0f; // Up to 70% speed reduction
+  float velocityLimit_01 = 1.0f; // speed scale (currently no reduction)
   
   float maxPhysicalSledVel_mps = 0.8f; 
   if (calc_st->stepsPerMotorRevolution_u32 > 0) {
@@ -1337,7 +1330,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   
   // Regenerative Power & Back-EMF Clamping:
   // Moving forward (v > 0) against the spring, endstop, and damping forces converts foot mechanical power
-  // into electrical energy (P = F_oppose * v). We limit forward velocity so P <= 35W and
+  // into electrical energy (P = F_oppose * v). We limit forward velocity so P <= MAX_REGEN_POWER_W (40 W) and
   // motor RPM stays within the stepper's actual configured max (see CalcRegenVelocityLimit).
   float totalOpposingForce_N = springForce_N + softEndstopForce_N + fabsf(dampingForce_N);
   float softEndstopTravel_m = endstopBehavior_st.travelRange_mm_fl32 * 0.001f;
@@ -1367,13 +1360,16 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       if (g_vModelVel_mps < 0.0f) g_vModelVel_mps = 0.0f;
   } else if (g_vModelPos_01 > upperTravelLimit_01) {
       g_vModelPos_01 = upperTravelLimit_01;
-      // FIX: Dampen velocity rather than hard zeroing to prevent step excitation in Tustin
+      // FIX: Dampen velocity rather than hard zeroing to prevent step excitation in the integrator
       if (g_vModelVel_mps > 0.0f) g_vModelVel_mps *= 0.5f; 
   }
   
   // SOFT LEASH: Synchronize the virtual model with the actual stepper command position
   // to prevent divergence due to numerical drift without corrupting second-order dynamics.
-  float divergence_01 = actualPosFraction_01 - g_vModelPos_01;
+  // Uses the unclamped sled position (limited to the dynamic travel limits): with the clamped
+  // value the leash pulled the model out of the soft endstop and the hard leash cut its last mm.
+  float actualPosLeash_01 = constrain(actualPosFractionRaw_01, lowerTravelLimit_01, upperTravelLimit_01);
+  float divergence_01 = actualPosLeash_01 - g_vModelPos_01;
   
   // SOFT LEASH DEADBAND: Verhindert, dass Sensorrauschen Schläge ins Physikmodell überträgt
   if (fabsf(divergence_01) < 0.005f) { // Auf 0.5% Toleranz erhöht (ca. 0.5 mm Pufferzone)
@@ -1385,15 +1381,16 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   g_vModelPos_01 += divergence_01 * (LEASH_RATE * dt_s);
 
   // HARD LEASH CLAMP (Anti-Runaway):
-  // The virtual model is strictly constrained so it cannot outrun the physical sled by more than ~1.5mm (8% travel).
+  // The virtual model is strictly constrained so it cannot outrun the physical sled by more than
+  // 8 % of the travel (~8 mm at ~100 mm pedal travel).
   const float MAX_LEAD_01 = 0.08f;
-  if ((g_vModelPos_01 - actualPosFraction_01) > MAX_LEAD_01) {
-      g_vModelPos_01 = actualPosFraction_01 + MAX_LEAD_01;
+  if ((g_vModelPos_01 - actualPosLeash_01) > MAX_LEAD_01) {
+      g_vModelPos_01 = actualPosLeash_01 + MAX_LEAD_01;
       if (g_vModelVel_mps > 0.0f) {
           g_vModelVel_mps *= 0.5f; // Damp forward velocity when actuator speed is saturated
       }
-  } else if ((actualPosFraction_01 - g_vModelPos_01) > MAX_LEAD_01) {
-      g_vModelPos_01 = actualPosFraction_01 - MAX_LEAD_01;
+  } else if ((actualPosLeash_01 - g_vModelPos_01) > MAX_LEAD_01) {
+      g_vModelPos_01 = actualPosLeash_01 - MAX_LEAD_01;
       if (g_vModelVel_mps < 0.0f) {
           g_vModelVel_mps *= 0.5f;
       }
