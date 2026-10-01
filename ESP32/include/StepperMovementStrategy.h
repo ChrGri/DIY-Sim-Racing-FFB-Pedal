@@ -378,9 +378,11 @@ float g_contactOscPrevForce_N = 0.0f;
 float g_contactOscPeak_N = 0.0f;
 float g_contactOscLastHalfWavePeak_N = 0.0f;
 int8_t g_contactOscSign_i8 = 0;
-float g_contactOscCrossingTimes_s[CONTACT_OSC_CROSSING_BUFFER_SIZE] = {0};
+// integer microseconds: a float seconds clock stops advancing after a few hours (600 us steps
+// round to zero above 16384 s), which froze the crossing ages and latched the detection
+int64_t g_contactOscCrossingTimes_us[CONTACT_OSC_CROSSING_BUFFER_SIZE] = {0};
 uint8_t g_contactOscCrossingIdx_u8 = 0;
-float g_contactOscTime_s = 0.0f;
+int64_t g_contactOscTime_us = 0;
 float g_contactOscForceLowPass_N = 0.0f;
 float g_contactOscForceAtDetection_N = 0.0f;
 float g_contactOscDampingMultiplier = 1.0f;
@@ -426,7 +428,7 @@ static inline IRAM_ATTR_FLAG float UpdateContactOscillationDamping(
     const float CONTACT_OSC_MOVING_VELOCITY_MPS = 0.005f;
     const float CONTACT_OSC_RELEASE_FORCE_RATIO = 0.5f;
 
-    g_contactOscTime_s += dt_s;
+    g_contactOscTime_us += (int64_t)(dt_s * 1e6f + 0.5f);
 
     // band-pass: first order high-pass followed by first order low-pass
     float highPassTau_s = 1.0f / (2.0f * PI * CONTACT_OSC_HIGH_PASS_HZ);
@@ -446,7 +448,7 @@ static inline IRAM_ATTR_FLAG float UpdateContactOscillationDamping(
     if (sign_i8 != g_contactOscSign_i8) {
         if ((g_contactOscPeak_N >= amplitudeThreshold_N) &&
             (g_contactOscForceLowPass_N >= CONTACT_OSC_MIN_FORCE_N) && !hasActiveEffect) {
-            g_contactOscCrossingTimes_s[g_contactOscCrossingIdx_u8] = g_contactOscTime_s;
+            g_contactOscCrossingTimes_us[g_contactOscCrossingIdx_u8] = g_contactOscTime_us;
             g_contactOscCrossingIdx_u8 = (g_contactOscCrossingIdx_u8 + 1) % CONTACT_OSC_CROSSING_BUFFER_SIZE;
         }
         g_contactOscLastHalfWavePeak_N = g_contactOscPeak_N;
@@ -454,9 +456,10 @@ static inline IRAM_ATTR_FLAG float UpdateContactOscillationDamping(
         g_contactOscSign_i8 = sign_i8;
     }
     uint8_t recentCrossings_u8 = 0;
+    const int64_t windowLength_us = (int64_t)(CONTACT_OSC_WINDOW_S * 1e6f);
     for (uint8_t i = 0; i < CONTACT_OSC_CROSSING_BUFFER_SIZE; i++) {
-        float age_s = g_contactOscTime_s - g_contactOscCrossingTimes_s[i];
-        if ((g_contactOscCrossingTimes_s[i] > 0.0f) && (age_s <= CONTACT_OSC_WINDOW_S)) {
+        int64_t age_us = g_contactOscTime_us - g_contactOscCrossingTimes_us[i];
+        if ((g_contactOscCrossingTimes_us[i] > 0) && (age_us <= windowLength_us)) {
             recentCrossings_u8++;
         }
     }
@@ -942,8 +945,10 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   // Contact Impedance Damping (Force Derivative Feedback):
   // When the servo accelerates into the user's stiff foot/shoe, high-frequency force spikes
-  // occur (dF/dt > 5000 N/s). Subtracting a small derivative term acts as an instantaneous virtual
-  // damper at the foot-pedal contact interface, quenching contact chatter without lag.
+  // occur (dF/dt > 5000 N/s). A virtual damper at the foot-pedal contact adds tau * dF/dt:
+  // against a held foot F = k_c * (x_foot - x), so dF/dt = -k_c * v and the term acts as
+  // damping tau * k_c. (Subtracting it, F - tau * dF/dt ~ F(t - tau), was a 4 ms delay and
+  // gave negative damping of tau * k_c, ~40 Ns/m at a 10 N/mm heel contact.)
   static float s_prevPilotForce_N = 0.0f;
   static float s_filteredForceRate_Nps = 0.0f;
   float rawForceRate_Nps = (cleanPilotForce_N - s_prevPilotForce_N) / dt_s;
@@ -954,7 +959,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   s_filteredForceRate_Nps = (alpha_rate * rawForceRate_Nps) + ((1.0f - alpha_rate) * s_filteredForceRate_Nps);
 
   const float K_FORCE_DERIV_S = 0.004f; // 4ms contact damping time
-  float contactDampedPilotForce_N = cleanPilotForce_N - (K_FORCE_DERIV_S * s_filteredForceRate_Nps);
+  float contactDampedPilotForce_N = cleanPilotForce_N + (K_FORCE_DERIV_S * s_filteredForceRate_Nps);
   if (contactDampedPilotForce_N < 0.0f) {
     contactDampedPilotForce_N = 0.0f;
   }
@@ -1076,7 +1081,8 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Minimal Coulomb Friction to prevent micro-hunting (jitter) around the rest position
   const float FRICTION_N = config_st->payloadPedalConfig_st.coulombFrictionIn0p1N_u8 * 0.1f;
   // FIXED CODE: Smooth Coulomb Friction
-  // Create a narrow "fade" band around 0 velocity (+/- 15 mm/s)
+  // Create a narrow "fade" band around 0 velocity (+/- VELOCITY_BAND_MPS), shared by all
+  // integration methods below
   // This smoothly ramps the friction from -1 to +1 across the zero point
   const float VELOCITY_BAND_MPS = 0.030f; // Verbreitert für weicheren Nulldurchgang (verhindert Ruckeln/Schläge bei Richtungswechsel)
   float frictionBlend = constrain(g_vModelVel_mps / VELOCITY_BAND_MPS, -1.0f, 1.0f);
@@ -1134,7 +1140,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
       // Minimal Coulomb Friction to prevent micro-hunting (jitter) around the rest position
       // FIXED CODE: Smooth Coulomb Friction
-      float frictionBlendImplicit = constrain(g_vModelVel_mps / 0.015f, -1.0f, 1.0f);
+      float frictionBlendImplicit = constrain(g_vModelVel_mps / VELOCITY_BAND_MPS, -1.0f, 1.0f);
       netForce_without_damping_N -= (FRICTION_N * frictionBlendImplicit);
 
       // =========================================================
@@ -1199,7 +1205,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
       // Minimal Coulomb Friction to prevent micro-hunting (jitter) around the rest position
       // FIXED CODE: Smooth Coulomb Friction
-      float frictionBlendTustin = constrain(g_vModelVel_mps / 0.015f, -1.0f, 1.0f);
+      float frictionBlendTustin = constrain(g_vModelVel_mps / VELOCITY_BAND_MPS, -1.0f, 1.0f);
       netForce_without_damping_N -= (FRICTION_N * frictionBlendTustin);
 
       // kinetic friction while sliding (direction of motion, or of the drive force at breakaway)
@@ -1457,8 +1463,12 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float maxExt_mm = maxExt * (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm);
   float minExt_mm = minExt * (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm);
 
-  // Add the soft endstop travel allowance to the physical bounds
-  float endstopTravel_mm = (endstopBehavior_st.travelRange_mm_fl32 > 0.01f) ? endstopBehavior_st.travelRange_mm_fl32 : 0.0f;
+  // Add the soft endstop travel allowance to the physical bounds. The soft endstop travel is
+  // pedal arc length (task space, see CalcSoftEndstopForce): convert it to sled mm with the
+  // mean sled-per-arc ratio of the travel.
+  float endstopTravelArc_mm = (endstopBehavior_st.travelRange_mm_fl32 > 0.01f) ? endstopBehavior_st.travelRange_mm_fl32 : 0.0f;
+  float sledPerArc_01 = (totalTravel_m > 0.0001f) ? (maxSledPos_m / totalTravel_m) : 1.0f;
+  float endstopTravel_mm = endstopTravelArc_mm * sledPerArc_01;
   float endstopTravel_steps = endstopTravel_mm / (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm);
 
   // Clamp the solved sled position to safe physical bounds (with dynamic expansion AND soft endstop)
