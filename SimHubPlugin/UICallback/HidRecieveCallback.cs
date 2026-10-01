@@ -488,6 +488,8 @@ namespace DiyFfbPedal
                                         // write header
                                         if (!File.Exists(filePath))
                                         {
+                                            WritePedalConfigForTrace(filePath, pedalSelected);
+
                                             using (StreamWriter writer = new StreamWriter(filePath, true))
                                             {
                                                 // Write the content to the file

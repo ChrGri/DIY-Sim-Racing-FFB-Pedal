@@ -663,6 +663,37 @@ namespace DiyFfbPedal
                 }
             }
         }
+
+        // Writes the pedal config next to a pedal trace log (same name, .json extension),
+        // so each trace can be analysed together with the settings it was recorded with.
+        private void WritePedalConfigForTrace(string traceFilePath, int pedalIdx)
+        {
+            if (pedalIdx < 0 || pedalIdx >= dap_config_st.Length)
+            {
+                return;
+            }
+
+            try
+            {
+                DAP_config_st config = dap_config_st[pedalIdx];
+                config.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
+
+                using (var stream = new MemoryStream())
+                {
+                    var writer = JsonReaderWriterFactory.CreateJsonWriter(stream, Encoding.UTF8, true, true, "  ");
+                    var serializer = new DataContractJsonSerializer(typeof(DAP_config_st));
+                    serializer.WriteObject(writer, config);
+                    writer.Flush();
+
+                    string jsonPath = Path.ChangeExtension(traceFilePath, ".json");
+                    File.WriteAllBytes(jsonPath, stream.ToArray());
+                }
+            }
+            catch (Exception ex)
+            {
+                SimHub.Logging.Current.Error("Failed to write pedal config for trace: " + ex.Message);
+            }
+        }
         private void btn_reset_default_Click(object sender, RoutedEventArgs e)
         {
             DAP_config_set_default(indexOfSelectedPedal_u);
