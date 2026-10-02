@@ -177,6 +177,10 @@ namespace DiyFfbPedal
                     {
                         TextBox2.Text = ex.Message;
                         //ConnectToPedal.IsChecked = false;
+                        // The port is gone (device unplugged or tty hung up), but SerialPort stays
+                        // IsOpen, so every tick would throw again. Close it, so that
+                        // connection_timmer_tick reopens it once the pedal is back.
+                        try { sp.Close(); } catch { }
                         return;
                     }
                     
