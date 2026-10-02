@@ -305,9 +305,6 @@ MovingAverageFilter g_averageFilterJoystick_st(40);
 #include "BrakeResistorPwm.h"
 PredictiveBrakeController brakeController;
 
-// #include "PredictiveBrakeControllerV2.h"
-// PredictiveBrakeControllerV2 brakeController;
-
 /**********************************************************************************************/
 /*                                                                                            */
 /*                         iterpolation  definitions */
@@ -2570,7 +2567,6 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           stepper->getServosInternalPositionCorrected();
       uint32_t current_time_us = micros();
 
-      bool brake_state = false;
       float brakeResistorDuty_01 = 0.0f;
       // duty requested by the admittance strategy in the previous cycle: the regen
       // power above the servo's own share (see CalcRegenVelocityLimit)
@@ -2581,29 +2577,19 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       const bool isRudderModeActive_b =
           dap_calculationVariables_st.rudderStatus_b ||
           dap_calculationVariables_st.helicopterRudderStatus_b;
-// Decide whether to use predictive brake resistor control or simple voltage
-// check based on compile-time flag and operating mode.
-#ifdef USE_PREDICTIVE_BRAKE_RESISTOR_CONTROL
-      if (!isRudderModeActive_b) {
-        brake_state = brakeController.Update(
-            cached_servosPosError_i32,
-            stepper->getServosPosErrorChangeRateInStepsPerSecond(),
-            changeVelocity, cached_currentSpeedInHz_i32,
-            ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
-            cached_servoCycleCounter_u32);
-      } else {
-        brake_state = brakeController.simpleVoltageCheck(
-            ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
-            cached_currentSpeedInHz_i32, cached_servoCycleCounter_u32);
-      }
-      brakeResistorDuty_01 = brake_state ? 1.0f : 0.0f;
-#else
+      // fitted resistance for the thermal model (Ohm, 0 = BRAKE_RESISTOR_OHMS)
+      brakeController.setResistanceOhm(
+          (dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+               .brakeResistorResistance_Ohm_u8 > 0)
+              ? (float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                        .brakeResistorResistance_Ohm_u8
+              : BRAKE_RESISTOR_OHMS);
       if (isRudderModeActive_b) {
         // rudder: reactive voltage check (on/off) as before
-        brake_state = brakeController.simpleVoltageCheck(
+        bool brakeResistorOn_b = brakeController.simpleVoltageCheck(
             ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
             cached_currentSpeedInHz_i32);
-        brakeResistorDuty_01 = brake_state ? 1.0f : 0.0f;
+        brakeResistorDuty_01 = brakeResistorOn_b ? 1.0f : 0.0f;
       } else {
         // admittance: PWM feedforward from the regen governor, reactive backstop
         // and thermal model in the controller
@@ -2612,14 +2598,12 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
             cached_currentSpeedInHz_i32);
       }
-#endif
 
       // Config-driven brake resistor kill switch (default: enabled). Off: the
       // regen governor keeps the power within what the servo absorbs itself.
       if (!brakeResistorEnabled_b) {
         brakeResistorDuty_01 = 0.0f;
       }
-      brake_state = (brakeResistorDuty_01 > 0.0f);
       brakeResistorPwmWrite(brakeResistorDuty_01);
       // consumed; only a strategy run in this cycle requests it again (not in rudder
       // mode, homing, ...)

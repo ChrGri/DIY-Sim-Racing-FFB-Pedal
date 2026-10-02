@@ -154,6 +154,7 @@ namespace DiyFfbPedal
             DefaultConfig.payloadPedalConfig_.dampingProgression_u8 = 0;
             DefaultConfig.payloadPedalConfig_.wakeOnPluginOnly_u8 = 0;
             DefaultConfig.payloadPedalConfig_.enableBrakeResistor_u8 = 1;
+            DefaultConfig.payloadPedalConfig_.brakeResistorResistance_Ohm_u8 = 10; // Ohm
 
         }
 

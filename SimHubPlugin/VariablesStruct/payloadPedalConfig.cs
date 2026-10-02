@@ -202,5 +202,8 @@ namespace DiyFfbPedal
         // 1 = brake resistor allowed to switch on as normal, 0 = force it off
         // (debug/bench use only - servo braking energy will not be dissipated)
         public byte enableBrakeResistor_u8;
+
+        // brake resistor resistance in Ohm (1-255; 0 = default 10 Ohm)
+        public byte brakeResistorResistance_Ohm_u8;
     }
 }

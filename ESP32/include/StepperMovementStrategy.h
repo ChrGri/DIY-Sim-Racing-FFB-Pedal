@@ -690,11 +690,12 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
 // of foot power the bleeder held the bus at ~42 V; at ~110 W it climbed to 62 V.
 // (The former 40 W were applied to the model force, which is 1.3-1.7x lower than the
 // measured force during a press, i.e. ~50-68 W real.)
-#define ADMITTANCE_REGEN_POWER_SERVO_W 60.0f
+#define ADMITTANCE_REGEN_POWER_SERVO_W 40.0f
 // Additional regen power routed into the external brake resistor when it is
 // enabled (enableBrakeResistor_u8): 10 Ohm at ~40 V take ~160 W fully on.
 #define ADMITTANCE_REGEN_POWER_BRAKE_RESISTOR_W 100.0f
-#define BRAKE_RESISTOR_OHMS 10.0f
+// fallback when the config holds no resistance (brakeResistorResistance_Ohm_u8 = 0)
+#define BRAKE_RESISTOR_OHMS 5.0f
 // Legacy limit on the model force (rudder strategy)
 #define REGEN_POWER_MODEL_FORCE_W 40.0f
 
@@ -1358,8 +1359,19 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float softEndstopTravel_m = endstopBehavior_st.travelRange_mm_fl32 * 0.001f;
   float spindlePitch_mm = (float)config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8;
   brakeResistorAvailable_01 = constrain(brakeResistorAvailable_01, 0.0f, 1.0f);
+  // brake resistor from the config (Ohm; 0 = BRAKE_RESISTOR_OHMS)
+  const float brakeResistor_Ohm =
+      (config_st->payloadPedalConfig_st.brakeResistorResistance_Ohm_u8 > 0)
+          ? (float)config_st->payloadPedalConfig_st.brakeResistorResistance_Ohm_u8
+          : BRAKE_RESISTOR_OHMS;
+  const float brakeResistorFullOnPower_W =
+      (max(busVoltage_V, 16.0f) * max(busVoltage_V, 16.0f)) / brakeResistor_Ohm;
+  // the resistor's share is capped at 80 % of its full-on power, so the duty keeps
+  // headroom (a larger resistance takes less power)
+  const float brakeResistorRegenPower_W =
+      min(ADMITTANCE_REGEN_POWER_BRAKE_RESISTOR_W, 0.8f * brakeResistorFullOnPower_W);
   float regenPowerBudget_W = ADMITTANCE_REGEN_POWER_SERVO_W
-                           + brakeResistorAvailable_01 * ADMITTANCE_REGEN_POWER_BRAKE_RESISTOR_W;
+                           + brakeResistorAvailable_01 * brakeResistorRegenPower_W;
 
   float maxRegenVel_mps = CalcRegenVelocityLimit(
       totalOpposingForce_N,
@@ -1381,9 +1393,8 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   if (brakeResistorDutyRequest_01 != nullptr) {
     float regenPower_W = totalOpposingForce_N * max(g_vModelVel_mps, 0.0f);
     float excessPower_W = regenPower_W - ADMITTANCE_REGEN_POWER_SERVO_W;
-    float fullOnPower_W = (max(busVoltage_V, 16.0f) * max(busVoltage_V, 16.0f)) / BRAKE_RESISTOR_OHMS;
     *brakeResistorDutyRequest_01 = (brakeResistorAvailable_01 > 0.0f)
-        ? constrain(excessPower_W / fullOnPower_W, 0.0f, 1.0f)
+        ? constrain(excessPower_W / brakeResistorFullOnPower_W, 0.0f, 1.0f)
         : 0.0f;
   }
 

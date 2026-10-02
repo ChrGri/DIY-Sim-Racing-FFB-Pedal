@@ -217,6 +217,7 @@ void DapConfig_t::initializeDefaults()
   payloadPedalConfig_st.coulombFrictionIn0p1N_u8 = 0;
   payloadPedalConfig_st.wakeOnPluginOnly_u8 = 0;
   payloadPedalConfig_st.enableBrakeResistor_u8 = 1;
+  payloadPedalConfig_st.brakeResistorResistance_Ohm_u8 = 10; // Ohm
 }
 
 
