@@ -922,15 +922,16 @@ void performPedalHomingSequence(DapConfig_t dap_config_st_homing) {
 }
 
 void setup() {
-// 1. Immediately clamp all control & communication pins to prevent floating
-// state / glitches
+// 1. Immediately clamp all control pins to prevent floating state / glitches.
+// The servo UART pins are kept high-Z (no drive, no pull-up) until the servo
+// has booted (see StepperWithLimits constructor): its tuning UART is not
+// isolated, and driving TX HIGH into an unpowered servo back-feeds its logic,
+// so it misses its power-on reset (solid red LED on simultaneous power-on).
 #if defined(ISV57_TXPIN) && (ISV57_TXPIN >= 0)
-  pinMode(ISV57_TXPIN, OUTPUT);
-  digitalWrite(ISV57_TXPIN, HIGH); // HIGH is the idle state for UART (Marking)
+  pinMode(ISV57_TXPIN, INPUT);
 #endif
 #if defined(ISV57_RXPIN) && (ISV57_RXPIN >= 0)
-  pinMode(ISV57_RXPIN,
-          INPUT_PULLUP); // Pull up RX line to prevent floating UART noise
+  pinMode(ISV57_RXPIN, INPUT);
 #endif
 #if defined(STEP_PIN_STEPPER_U8) && (STEP_PIN_STEPPER_U8 >= 0)
   pinMode(STEP_PIN_STEPPER_U8, OUTPUT);

@@ -103,6 +103,7 @@ class Isv57Communication {
 	
 	public:
     Isv57Communication();
+    void begin();
     void setupServoStateReading();
     // Cyclic read slot 2 (0x0192) streams the current by default. For debugging it
     // can stream the unfiltered feedback velocity instead; the current reading is

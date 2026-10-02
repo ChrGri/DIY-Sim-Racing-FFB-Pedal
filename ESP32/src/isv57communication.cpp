@@ -74,18 +74,12 @@ void printDecodedAlarmString(uint16_t alarm_code) {
   }
 }
 
-// initialize the communication
-Isv57Communication::Isv57Communication() {
-#if defined(ISV57_TXPIN) && (ISV57_TXPIN >= 0)
-  pinMode(ISV57_TXPIN, OUTPUT);
-  digitalWrite(ISV57_TXPIN,
-               HIGH); // Assert idle UART state before serial controller init
-#endif
-#if defined(ISV57_RXPIN) && (ISV57_RXPIN >= 0)
-  pinMode(ISV57_RXPIN,
-          INPUT_PULLUP); // Pull up RX line to prevent floating UART noise
-#endif
+// The UART pins are left untouched here, so they stay high-Z until begin().
+Isv57Communication::Isv57Communication() {}
 
+// Initialize the communication. Call only once the servo is powered and
+// booted: Serial2 drives TX HIGH (idle), which back-feeds an unpowered servo.
+void Isv57Communication::begin() {
 #if PCB_VERSION == 10 || PCB_VERSION == 9 || PCB_VERSION == 12 ||              \
     PCB_VERSION == 13 || PCB_VERSION == 14
   Serial2.begin(38400, SERIAL_8N1, ISV57_RXPIN, ISV57_TXPIN,
