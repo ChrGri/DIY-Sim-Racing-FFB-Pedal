@@ -692,10 +692,18 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
 // measured force during a press, i.e. ~50-68 W real.)
 #define ADMITTANCE_REGEN_POWER_SERVO_W 40.0f
 // Additional regen power routed into the external brake resistor when it is
-// enabled (enableBrakeResistor_u8): 10 Ohm at ~40 V take ~160 W fully on.
-#define ADMITTANCE_REGEN_POWER_BRAKE_RESISTOR_W 100.0f
+// enabled (enableBrakeResistor_u8), capped at 80 % of the full-on power V^2/R
+// (5 Ohm at 38 V: 289 W full on, 200 W = duty ~0.69; 10 Ohm: capped at ~115 W).
+#define ADMITTANCE_REGEN_POWER_BRAKE_RESISTOR_W 200.0f
 // fallback when the config holds no resistance (brakeResistorResistance_Ohm_u8 = 0)
 #define BRAKE_RESISTOR_OHMS 5.0f
+// Share of the mechanical foot power F*v that reaches the DC bus as electrical regen
+// power (spindle/sled friction, motor copper losses, inverter). Estimated from a
+// throttle press 2026-10-02: at F*v = 240 W the resistor took ~180 W with the bus near
+// its rest voltage (servo bleeder off), so ~0.75. The servo and resistor shares are
+// electrical powers; the velocity budget converts them to mechanical power (/ efficiency)
+// and the brake resistor duty converts the mechanical power to electrical (* efficiency).
+#define REGEN_ELECTRICAL_EFFICIENCY_01 0.75f
 // Legacy limit on the model force (rudder strategy)
 #define REGEN_POWER_MODEL_FORCE_W 40.0f
 
@@ -1370,8 +1378,10 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // headroom (a larger resistance takes less power)
   const float brakeResistorRegenPower_W =
       min(ADMITTANCE_REGEN_POWER_BRAKE_RESISTOR_W, 0.8f * brakeResistorFullOnPower_W);
-  float regenPowerBudget_W = ADMITTANCE_REGEN_POWER_SERVO_W
-                           + brakeResistorAvailable_01 * brakeResistorRegenPower_W;
+  // electrical budget (servo + resistor share) as mechanical foot power F*v
+  float regenPowerBudget_W = (ADMITTANCE_REGEN_POWER_SERVO_W
+                              + brakeResistorAvailable_01 * brakeResistorRegenPower_W)
+                           / REGEN_ELECTRICAL_EFFICIENCY_01;
 
   float maxRegenVel_mps = CalcRegenVelocityLimit(
       totalOpposingForce_N,
@@ -1387,11 +1397,12 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float forwardSpeedLimit = min(dynamicSpeedLimit, maxRegenVel_mps);
   g_vModelVel_mps = constrain(g_vModelVel_mps, -dynamicSpeedLimit, forwardSpeedLimit);
 
-  // Brake resistor feedforward: dissipate the regen power above the servo's own share.
-  // Duty = excess power / full-on power V^2/R (at the nominal bus voltage, which is a bit
-  // below the bleeder level and thus errs towards a higher duty).
+  // Brake resistor feedforward: dissipate the electrical regen power above the servo's
+  // own share. Duty = excess power / full-on power V^2/R (at the nominal bus voltage).
+  // With the full mechanical power the resistor took everything (incl. the servo's share,
+  // whose bleeder only acts above ~40 V) and pulled the bus below its rest voltage.
   if (brakeResistorDutyRequest_01 != nullptr) {
-    float regenPower_W = totalOpposingForce_N * max(g_vModelVel_mps, 0.0f);
+    float regenPower_W = REGEN_ELECTRICAL_EFFICIENCY_01 * totalOpposingForce_N * max(g_vModelVel_mps, 0.0f);
     float excessPower_W = regenPower_W - ADMITTANCE_REGEN_POWER_SERVO_W;
     *brakeResistorDutyRequest_01 = (brakeResistorAvailable_01 > 0.0f)
         ? constrain(excessPower_W / brakeResistorFullOnPower_W, 0.0f, 1.0f)
