@@ -1,6 +1,7 @@
 #include "StepperWithLimits.h"
 #include "FunctionProfiler.h"
 #include "Main.h"
+#include "BrakeResistorPwm.h"
 #include "esp_task_wdt.h"
 #include <math.h>
 
@@ -836,7 +837,7 @@ void IRAM_ATTR StepperWithLimits::handleConnectionLoss() {
 // Safety requirement: Disable brake resistor instantly to prevent thermal
 // destruction
 #ifdef BRAKE_RESISTOR_PIN_U8
-  digitalWrite(BRAKE_RESISTOR_PIN_U8, LOW);
+  brakeResistorPwmWrite(0.0f);
   brakeResistorState_b = false;
 #endif
 }

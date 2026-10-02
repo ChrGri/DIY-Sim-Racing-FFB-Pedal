@@ -302,6 +302,7 @@ MovingAverageFilter g_averageFilterJoystick_st(40);
 /*                                                                                            */
 /**********************************************************************************************/
 #include "PredictiveBrakeController.h"
+#include "BrakeResistorPwm.h"
 PredictiveBrakeController brakeController;
 
 // #include "PredictiveBrakeControllerV2.h"
@@ -939,10 +940,7 @@ void setup() {
   pinMode(DIR_PIN_STEPPER_U8, OUTPUT);
   digitalWrite(DIR_PIN_STEPPER_U8, LOW);
 #endif
-#if defined(BRAKE_RESISTOR_PIN_U8) && (BRAKE_RESISTOR_PIN_U8 >= 0)
-  pinMode(BRAKE_RESISTOR_PIN_U8, OUTPUT);
-  digitalWrite(BRAKE_RESISTOR_PIN_U8, LOW);
-#endif
+  brakeResistorPwmInit();
 #if defined(ALM_PORT_GPIO) && (ALM_PORT_GPIO >= 0)
   pinMode(ALM_PORT_GPIO, INPUT_PULLUP);
 #endif
@@ -1137,10 +1135,7 @@ void setup() {
       CORE_ID_CONFIG_HANDLING_TASK_U8);             /* pin task to core 1 */
 
 // setup brake resistor pin
-#if defined(BRAKE_RESISTOR_PIN_U8) && (BRAKE_RESISTOR_PIN_U8 >= 0)
-  pinMode(BRAKE_RESISTOR_PIN_U8, OUTPUT);   // Set GPIO as an output
-  digitalWrite(BRAKE_RESISTOR_PIN_U8, LOW); // Turn the LED on
-#endif
+  brakeResistorPwmInit();
 
 #ifdef EMERGENCY_PIN_U8
   pinMode(EMERGENCY_PIN_U8, INPUT_PULLUP);
@@ -2575,13 +2570,19 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       uint32_t current_time_us = micros();
 
       bool brake_state = false;
-// Decide whether to use predictive brake resistor control or simple voltage
-// check based on compile-time flag and operating mode.
-#ifdef USE_PREDICTIVE_BRAKE_RESISTOR_CONTROL
+      float brakeResistorDuty_01 = 0.0f;
+      // duty requested by the admittance strategy in the previous cycle: the regen
+      // power above the servo's own share (see CalcRegenVelocityLimit)
+      static float s_brakeResistorDutyRequest_01 = 0.0f;
+      const bool brakeResistorEnabled_b =
+          (dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+               .enableBrakeResistor_u8 != 0);
       const bool isRudderModeActive_b =
           dap_calculationVariables_st.rudderStatus_b ||
           dap_calculationVariables_st.helicopterRudderStatus_b;
-
+// Decide whether to use predictive brake resistor control or simple voltage
+// check based on compile-time flag and operating mode.
+#ifdef USE_PREDICTIVE_BRAKE_RESISTOR_CONTROL
       if (!isRudderModeActive_b) {
         brake_state = brakeController.Update(
             cached_servosPosError_i32,
@@ -2594,31 +2595,38 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
             cached_currentSpeedInHz_i32, cached_servoCycleCounter_u32);
       }
+      brakeResistorDuty_01 = brake_state ? 1.0f : 0.0f;
 #else
-      brake_state = brakeController.simpleVoltageCheck(
-          ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
-          cached_currentSpeedInHz_i32);
-
-      // brake_state = brakeController.simpleVoltageCheck(
-      //     ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
-      //     cached_currentSpeedInHz_i32, cached_servoCycleCounter_u32);
-#endif
-
-      // Config-driven brake resistor kill switch (default: enabled). Lets a
-      // user disable the brake resistor from Pedals > General for
-      // debug/bench use, without needing a firmware rebuild.
-      if (!(dap_config_pedalUpdateTask_st.payloadPedalConfig_st
-                .enableBrakeResistor_u8)) {
-        brake_state = false;
-      }
-
-#if defined(BRAKE_RESISTOR_PIN_U8) && (BRAKE_RESISTOR_PIN_U8 >= 0)
-      if (brake_state) {
-        digitalWrite(BRAKE_RESISTOR_PIN_U8, HIGH);
+      if (isRudderModeActive_b) {
+        // rudder: reactive voltage check (on/off) as before
+        brake_state = brakeController.simpleVoltageCheck(
+            ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
+            cached_currentSpeedInHz_i32);
+        brakeResistorDuty_01 = brake_state ? 1.0f : 0.0f;
       } else {
-        digitalWrite(BRAKE_RESISTOR_PIN_U8, LOW);
+        // admittance: PWM feedforward from the regen governor, reactive backstop
+        // and thermal model in the controller
+        brakeResistorDuty_01 = brakeController.updateDuty(
+            brakeResistorEnabled_b ? s_brakeResistorDutyRequest_01 : 0.0f,
+            ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
+            cached_currentSpeedInHz_i32);
       }
 #endif
+
+      // Config-driven brake resistor kill switch (default: enabled). Off: the
+      // regen governor keeps the power within what the servo absorbs itself.
+      if (!brakeResistorEnabled_b) {
+        brakeResistorDuty_01 = 0.0f;
+      }
+      brake_state = (brakeResistorDuty_01 > 0.0f);
+      brakeResistorPwmWrite(brakeResistorDuty_01);
+      // consumed; only a strategy run in this cycle requests it again (not in rudder
+      // mode, homing, ...)
+      s_brakeResistorDutyRequest_01 = 0.0f;
+
+      // regen budget the admittance strategy may route into the resistor
+      const float brakeResistorAvailable_01 =
+          brakeResistorEnabled_b ? brakeController.availableFraction() : 0.0f;
 
       // compute next position with PID strategy
       // MPC control strataegy for rudder
@@ -2735,7 +2743,10 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             filteredReading, stepper, &forceCurve, &dap_calculationVariables_st,
             &dap_config_pedalUpdateTask_st, effectOffsets_st, endstopBehavior_st,
             extendedTelemetry_b ? &admittanceDebugInfo_st : nullptr,
-            &admittanceStates_st, holdProbability_01, cycleTime_s_fl32);
+            &admittanceStates_st, holdProbability_01, cycleTime_s_fl32,
+            brakeResistorAvailable_01,
+            stepper->getBrakeResistorActivationVoltage(),
+            &s_brakeResistorDutyRequest_01);
         positionWithoutEffect = (int32_t)Position_Next_fl32;
       }
 
@@ -3390,7 +3401,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             .currentSpeedInHz_i32 = cached_currentSpeedInHz_i32;
         dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st
             .brakeResistorState_b =
-            brake_state * 255; // stepper->getBrakeResistorState();
+            (uint8_t)lroundf(brakeResistorDuty_01 * 255.0f); // PWM duty
         dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st
             .oscillationMonitorValue_u8 = 0.0f;
         // IMM filter: probability of the MOVE hypothesis (0 = HOLD, 255 = MOVE)

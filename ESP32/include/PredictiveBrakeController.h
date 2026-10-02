@@ -21,6 +21,11 @@ private:
   // --- 2. Hysteresis Parameters (Reactive Overvoltage Protection) ---
   const float BRAKE_RESISTOR_UPPER_THRESHOLD_VOLTAGE = 4.0f;
   const float BRAKE_RESISTOR_LOWER_THRESHOLD_VOLTAGE = 1.5f;
+  // Backstop of updateDuty() (feedforward mode): above the servo bleeder level
+  // (~rest + 7 V measured), so it only engages when the feedforward falls short
+  const float BACKSTOP_UPPER_THRESHOLD_VOLTAGE = 10.0f;
+  const float BACKSTOP_LOWER_THRESHOLD_VOLTAGE = 7.0f;
+  float appliedDuty_01_fl32 = 0.0f;
 
   // Baseline voltage (auto-learned from idle bus voltage or set via
   // setVoltageThreshold)
@@ -34,7 +39,7 @@ private:
   const uint32_t THERMAL_COOLDOWN_TIME_US = 3000000;
 
   // --- 4. Leaky-Bucket Energy Accumulator (I^2*t Thermal Model) ---
-  const float RESISTOR_OHMS_FL32 = 5.0f; // Typical brake resistor resistance
+  const float RESISTOR_OHMS_FL32 = 10.0f; // Fitted brake resistor (V7 board)
   const float COOLING_POWER_W_FL32 =
       3.0f; // Passive continuous dissipation capacity
   const float MAX_ENERGY_JOULES_FL32 =
@@ -176,6 +181,97 @@ public:
     is_hardware_active_b = false;
     is_in_lockout_b = false;
     accumulated_energy_j_fl32 = 0.0f;
+  }
+
+  /**
+   * @brief Share of the brake resistor that the regen power budget may count on:
+   * 1 while cool, ramping to 0 between 50 % and 100 % of the thermal energy budget,
+   * 0 during a thermal lockout. Lets the admittance strategy fall back to the servo's
+   * own regen budget before the resistor cuts out.
+   */
+  float availableFraction() const {
+    if (is_in_lockout_b) {
+      return 0.0f;
+    }
+    float usedFraction_fl32 = accumulated_energy_j_fl32 / MAX_ENERGY_JOULES_FL32;
+    return constrain(2.0f * (1.0f - usedFraction_fl32), 0.0f, 1.0f);
+  }
+
+  /**
+   * @brief PWM duty for the brake resistor (admittance strategy).
+   *
+   * Feedforward: the strategy requests the duty that dissipates the estimated regen
+   * power above the servo's own share. A reactive backstop (full on) only engages well
+   * above the servo's bleeder level, so it no longer fires on every press. The thermal
+   * model integrates the actually dissipated power duty * V^2 / R.
+   *
+   * @return duty [0, 1] to apply
+   */
+  float updateDuty(float feedforwardDuty_01, float servoVoltage_fl32,
+                   uint32_t currentTimeUs_u32, int32_t currentSpeedInHz_i32) {
+    float dt_s_fl32 = 0.001f;
+    if (prev_time_us_u32 != 0) {
+      uint32_t dt_us = currentTimeUs_u32 - prev_time_us_u32;
+      if (dt_us > 0 && dt_us < 100000) {
+        dt_s_fl32 = (float)dt_us * 1e-6f;
+      }
+    }
+    prev_time_us_u32 = currentTimeUs_u32;
+
+    updateVoltageBaseline(servoVoltage_fl32, appliedDuty_01_fl32 > 0.0f,
+                          currentSpeedInHz_i32);
+
+    // reactive backstop with hysteresis
+    if (servoVoltage_fl32 >= voltageThreshold_V_fl32 + BACKSTOP_UPPER_THRESHOLD_VOLTAGE) {
+      is_voltage_fallback_active_b = true;
+    } else if (servoVoltage_fl32 <= voltageThreshold_V_fl32 + BACKSTOP_LOWER_THRESHOLD_VOLTAGE) {
+      is_voltage_fallback_active_b = false;
+    }
+    float duty_01 = constrain(feedforwardDuty_01, 0.0f, 1.0f);
+    if (is_voltage_fallback_active_b) {
+      duty_01 = 1.0f;
+    }
+
+    // thermal model: dissipated energy minus passive cooling
+    float fullOnPower_W = (servoVoltage_fl32 * servoVoltage_fl32) / RESISTOR_OHMS_FL32;
+    accumulated_energy_j_fl32 +=
+        (appliedDuty_01_fl32 * fullOnPower_W - COOLING_POWER_W_FL32) * dt_s_fl32;
+    if (accumulated_energy_j_fl32 < 0.0f) {
+      accumulated_energy_j_fl32 = 0.0f;
+    }
+    if (accumulated_energy_j_fl32 >= MAX_ENERGY_JOULES_FL32 && !is_in_lockout_b) {
+      is_in_lockout_b = true;
+      lockout_start_time_us_u32 = currentTimeUs_u32;
+    }
+
+    // continuous full-on limit (the feedforward stays far below 100 %)
+    if (duty_01 >= 0.99f) {
+      if (!is_hardware_active_b) {
+        is_hardware_active_b = true;
+        active_start_time_us_u32 = currentTimeUs_u32;
+      } else if ((currentTimeUs_u32 - active_start_time_us_u32) > MAX_CONTINUOUS_ON_TIME_US) {
+        is_in_lockout_b = true;
+        lockout_start_time_us_u32 = currentTimeUs_u32;
+      }
+    } else {
+      is_hardware_active_b = false;
+    }
+
+    if (is_in_lockout_b) {
+      bool time_cooled_b = (currentTimeUs_u32 - lockout_start_time_us_u32) >
+                           THERMAL_COOLDOWN_TIME_US;
+      bool energy_cooled_b = accumulated_energy_j_fl32 <= RECOVERY_ENERGY_JOULES_FL32;
+      if (time_cooled_b && energy_cooled_b) {
+        is_in_lockout_b = false;
+      } else {
+        duty_01 = 0.0f;
+        is_hardware_active_b = false;
+        is_voltage_fallback_active_b = false;
+      }
+    }
+
+    appliedDuty_01_fl32 = duty_01;
+    return duty_01;
   }
 
   bool simpleVoltageCheck(float servoVoltage_fl32,

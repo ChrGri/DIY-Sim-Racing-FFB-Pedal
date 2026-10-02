@@ -646,7 +646,7 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
  *    into electrical current fed back through the inverter bridge diodes into the DC power bus:
  *        P_elec ≈ P_mech
  * 
- * 2. WHY 40 WATTS (DC BUS CAPACITANCE & INTERNAL BLEEDER CIRCUIT):
+ * 2. POWER BUDGET (DC BUS CAPACITANCE & INTERNAL BLEEDER CIRCUIT):
  *    - Capacitive Absorption Limit:
  *      The internal DC bus capacitor bank inside the Leadshine iSV57 is C ≈ 470 - 1000 uF (63V rating).
  *      The energy absorbed during a voltage rise from nominal supply (e.g. 36V) to the 
@@ -665,11 +665,14 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
  *      external SMPS (Switch-Mode Power Supplies) lacking reverse-current sinks.
  * 
  *    - Velocity Governor:
- *      By setting P_max_regen = 40.0 W (MAX_REGEN_POWER_W), we dynamically enforce:
+ *      With the power budget P_max_regen (maxRegenPower_W) we dynamically enforce:
  *          v_max_power = P_max_regen / F_oppose
- *      - At low pedal resistance (e.g. 25 N): v_max = 40 / 25 = 1.6 m/s (no restriction, completely transparent).
- *      - At heavy braking (e.g. 250 N): v_max = 40 / 250 = 0.16 m/s (160 mm/s, halts overvoltage spikes).
- *      - At extreme endstop hit (e.g. 500 N): v_max = 40 / 500 = 0.08 m/s (80 mm/s, smooth deceleration).
+ *      The admittance strategy uses F_oppose = max(model force, measured pedal force) and
+ *      P_max_regen = ADMITTANCE_REGEN_POWER_SERVO_W (60 W), plus up to
+ *      ADMITTANCE_REGEN_POWER_BRAKE_RESISTOR_W when the external brake resistor is enabled;
+ *      the excess above the servo's share is then dissipated in the resistor by PWM.
+ *      - At heavy braking (e.g. 250 N): v_max = 60 / 250 = 0.24 m/s.
+ *      - At extreme endstop hit (e.g. 500 N): v_max = 60 / 500 = 0.12 m/s.
  * 
  * 3. BACK-EMF & MOTOR RPM LIMIT (Pr7.08 = 56):
  *    - Pr7.08 is the Back-EMF constant: 5.6 V_rms / 1000 rpm (line-to-line).
@@ -682,6 +685,19 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
  *      ~4687 rpm, whose rectified BEMF (~35.4V) still stays below the 36V/48V bus rails.
  * =========================================================================================
  */
+// Regen power the servo absorbs by itself (internal bleeder + bus capacitors), based
+// on the MEASURED pedal force. Measured 2026-10-02 (brake, 36 V supply): up to ~68 W
+// of foot power the bleeder held the bus at ~42 V; at ~110 W it climbed to 62 V.
+// (The former 40 W were applied to the model force, which is 1.3-1.7x lower than the
+// measured force during a press, i.e. ~50-68 W real.)
+#define ADMITTANCE_REGEN_POWER_SERVO_W 60.0f
+// Additional regen power routed into the external brake resistor when it is
+// enabled (enableBrakeResistor_u8): 10 Ohm at ~40 V take ~160 W fully on.
+#define ADMITTANCE_REGEN_POWER_BRAKE_RESISTOR_W 100.0f
+#define BRAKE_RESISTOR_OHMS 10.0f
+// Legacy limit on the model force (rudder strategy)
+#define REGEN_POWER_MODEL_FORCE_W 40.0f
+
 static inline IRAM_ATTR_FLAG float CalcRegenVelocityLimit(
     float totalOpposingForce_N,
     float totalTravel_m,
@@ -689,14 +705,14 @@ static inline IRAM_ATTR_FLAG float CalcRegenVelocityLimit(
     float spindlePitch_mm,
     float vModelPos_01,
     float softEndstopTravel_m,
-    uint32_t stepsPerMotorRevolution_u32)
+    uint32_t stepsPerMotorRevolution_u32,
+    float maxRegenPower_W = REGEN_POWER_MODEL_FORCE_W)
 {
     // 1. SAFE REGENERATIVE POWER LIMIT
-    // P_regen = F_oppose * v_pedal. Safe dissipation limit before DC bus overvoltage.
-    // iSV57 internal bleeder + capacitance handles up to ~35-40W continuous/burst safely.
-    const float MAX_REGEN_POWER_W = 40.0f;
+    // P_regen = F_oppose * v_pedal. Safe dissipation limit before DC bus overvoltage
+    // (servo bleeder, plus the external brake resistor when the caller budgets for it).
     float safeOpposingForce_N = max(totalOpposingForce_N, 1.0f);
-    float vMaxPower_mps = MAX_REGEN_POWER_W / safeOpposingForce_N;
+    float vMaxPower_mps = maxRegenPower_W / safeOpposingForce_N;
 
     // 2. BACK-EMF VOLTAGE / MOTOR RPM LIMIT
     // Pr7.08 = 56 (5.6 V_rms/krpm). Derive the safe RPM ceiling from the same
@@ -797,7 +813,10 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   AdmittanceDebugState_t* debugState_st = nullptr,
   AdmittanceStates_t *admittanceStates_pst = nullptr,
   float holdProbability_01 = 0.0f,
-  float cycleTime_s = 0.0f)
+  float cycleTime_s = 0.0f,
+  float brakeResistorAvailable_01 = 0.0f,
+  float busVoltage_V = 38.0f,
+  float* brakeResistorDutyRequest_01 = nullptr)
 {
   // --- 1. PHYSICAL PARAMETERS & CONFIGURATION ---
   // Time step for integration (seconds): the measured cycle time when given (already clamped by
@@ -1329,12 +1348,18 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float dynamicSpeedLimit = maxPedalArcVel_mps * velocityLimit_01;
   
   // Regenerative Power & Back-EMF Clamping:
-  // Moving forward (v > 0) against the spring, endstop, and damping forces converts foot mechanical power
-  // into electrical energy (P = F_oppose * v). We limit forward velocity so P <= MAX_REGEN_POWER_W (40 W) and
-  // motor RPM stays within the stepper's actual configured max (see CalcRegenVelocityLimit).
-  float totalOpposingForce_N = springForce_N + softEndstopForce_N + fabsf(dampingForce_N);
+  // Moving forward (v > 0) the motor brakes the foot and converts its mechanical power into
+  // electrical energy, P = F * v. The motor holds the MEASURED pedal force, which exceeds the
+  // model force (spring + endstop + damping) while the pedal accelerates, so the larger of the
+  // two is used. Budget: what the servo absorbs by itself, plus the external brake resistor's
+  // share while it is enabled and thermally available (see CalcRegenVelocityLimit).
+  float modelOpposingForce_N = springForce_N + softEndstopForce_N + fabsf(dampingForce_N);
+  float totalOpposingForce_N = max(modelOpposingForce_N, cleanPilotForce_N);
   float softEndstopTravel_m = endstopBehavior_st.travelRange_mm_fl32 * 0.001f;
   float spindlePitch_mm = (float)config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8;
+  brakeResistorAvailable_01 = constrain(brakeResistorAvailable_01, 0.0f, 1.0f);
+  float regenPowerBudget_W = ADMITTANCE_REGEN_POWER_SERVO_W
+                           + brakeResistorAvailable_01 * ADMITTANCE_REGEN_POWER_BRAKE_RESISTOR_W;
 
   float maxRegenVel_mps = CalcRegenVelocityLimit(
       totalOpposingForce_N,
@@ -1343,11 +1368,24 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       spindlePitch_mm,
       g_vModelPos_01,
       softEndstopTravel_m,
-      calc_st->stepsPerMotorRevolution_u32
+      calc_st->stepsPerMotorRevolution_u32,
+      regenPowerBudget_W
   );
 
   float forwardSpeedLimit = min(dynamicSpeedLimit, maxRegenVel_mps);
   g_vModelVel_mps = constrain(g_vModelVel_mps, -dynamicSpeedLimit, forwardSpeedLimit);
+
+  // Brake resistor feedforward: dissipate the regen power above the servo's own share.
+  // Duty = excess power / full-on power V^2/R (at the nominal bus voltage, which is a bit
+  // below the bleeder level and thus errs towards a higher duty).
+  if (brakeResistorDutyRequest_01 != nullptr) {
+    float regenPower_W = totalOpposingForce_N * max(g_vModelVel_mps, 0.0f);
+    float excessPower_W = regenPower_W - ADMITTANCE_REGEN_POWER_SERVO_W;
+    float fullOnPower_W = (max(busVoltage_V, 16.0f) * max(busVoltage_V, 16.0f)) / BRAKE_RESISTOR_OHMS;
+    *brakeResistorDutyRequest_01 = (brakeResistorAvailable_01 > 0.0f)
+        ? constrain(excessPower_W / fullOnPower_W, 0.0f, 1.0f)
+        : 0.0f;
+  }
 
   // --- 14. POSITION INTEGRATION, BOUNDARY CONSTRAINTS & DRIFT CORRECTION ---
   // Update virtual position based on velocity
