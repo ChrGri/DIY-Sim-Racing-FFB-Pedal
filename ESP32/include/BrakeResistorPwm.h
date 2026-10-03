@@ -6,10 +6,10 @@
 
 // PWM output for the external brake resistor (LEDC).
 //
-// Low frequency on purpose: the MOSFET (FR120N) is specified for 10 V gate drive and
-// is driven from the 3.3 V GPIO, so its switching edges are slow. At 1 kHz the
-// switching losses stay negligible; the bus ripple of a 10 Ohm / ~4 A pulse train is
-// ~2 V at 50 % duty with ~1000 uF bus capacitance.
+// Low frequency on purpose: the FR120N module switches the MOSFET through a PC817
+// optocoupler and 4.7 kOhm gate resistors, so its edges take ~20-45 us. The switching
+// loss rises with the frequency (~3 W at 1 kHz, ~33 W at 10 kHz with 5 Ohm / 42 V);
+// do not raise it. See docs/development/EMF_Predictive_Brake_Model.md, section 2.3.
 #define BRAKE_RESISTOR_PWM_FREQUENCY_HZ 1000U
 #define BRAKE_RESISTOR_PWM_RESOLUTION_BITS 8U
 // LEDC channel 0 (timer 0) is used by the buzzer through the IDF driver; channel 2

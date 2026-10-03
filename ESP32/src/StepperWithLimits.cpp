@@ -98,11 +98,8 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
                                      uint8_t _endstopDetectionThreshold)
     : _endstopLimitMin(0), _endstopLimitMax(0), _posMin(0), _posMax(0),
       stepsPerMotorRev_u32(stepsPerMotorRev_arg_u32) {
-  // 1. Initialize pulse generator library for high-frequency step output
+  // 1. Create the pulse generator. begin() follows after the servo boot wait.
   _stepper = new FastNonAccelStepper(pinStep, pinDirection, invertMotorDir_b);
-  _stepper->begin();
-  _stepper->setExpectedCycleTimeUs(
-      REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64);
 
   invertMotorDir_global_b = invertMotorDir_b;
 
@@ -174,6 +171,16 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
   }
   // ==============================================================================
 #endif
+
+  // Init the pulse generator only now that the servo has booted:
+  // FastNonAccelStepper::begin() runs mcpwm_init(), which already starts the
+  // 250 kHz timer, and routes it to STEP before forceStop(). That pulse burst
+  // during the servo's boot left it with a solid red LED on simultaneous
+  // power-on (servo powered first was fine). STEP stays LOW from setup() until
+  // here.
+  _stepper->begin();
+  _stepper->setExpectedCycleTimeUs(
+      REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64);
 
   // Start the servo UART only now: driving TX before the servo has booted
   // back-feeds its logic and blocks its power-on reset.

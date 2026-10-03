@@ -223,20 +223,28 @@ ESP32 (Core 1, 4kHz) --[GPIO 41]--> [PC817 Opto] -------------------------------
 * **Rotor Inertia ($J_m$):** $0.40\,\text{kg}\cdot\text{cm}^2 = 4.0 \times 10^{-5}\,\text{kg}\cdot\text{m}^2$.
 * **Bus Overvoltage Trip Point:** Factory default $50 - 72\,\text{V}$ (configured via `Pr7.34`).
 
-### 2.3 MOSFET Switch: FR120N + PC817 Optocoupler (Strict "No-PWM" Constraint)
-* **Switching Element:** N-Channel Power MOSFET FR120N / LR120N ($100\,\text{V}$, $9.4\,\text{A}$, $R_{\text{DS(on)}} \approx 0.21\,\Omega$).
-* **Gate Driver:** PC817 optocoupler with high pull-up resistance ($1\,\text{k}\Omega - 10\,\text{k}\Omega$).
+### 2.3 MOSFET Switch: FR120N + PC817 Optocoupler (PWM up to ~1 kHz)
+* **Switching Element:** N-Channel Power MOSFET FR120N (IRFR120N, D-PAK: $100\,	ext{V}$, $9.4\,	ext{A}$ at $T_C = 25\,°	ext{C}$ / $6.6\,	ext{A}$ at $100\,°	ext{C}$, $R_{	ext{DS(on)}} \le 0.21\,\Omega$ at $V_{	ext{GS}} = 10\,	ext{V}$, $pprox 0.34\,\Omega$ hot, $V_{	ext{GS(th)}} = 2 - 4\,	ext{V}$).
+* **Gate Driver (common FR120N module):** PC817 optocoupler (input through $1\,	ext{k}\Omega$), gate charged from the module supply through $4.7\,	ext{k}\Omega$ and clamped by a Zener diode (~12-15 V), discharged only through a $4.7\,	ext{k}\Omega$ pull-down. There is no active gate driver.
 * **Switching Dynamics:**
-  - Rise time ($t_r$): $15 - 25\,\mu\text{s}$
-  - Fall time ($t_f$): $25 - 45\,\mu\text{s}$
+  - Rise time ($t_r$): $15 - 25\,\mu	ext{s}$
+  - Fall time ($t_f$): $25 - 45\,\mu	ext{s}$ (Miller plateau at ~4-5 V discharged with ~1 mA)
 
-> [!CAUTION]
-> **PWM WILL DESTROY THE MOSFET:**
-> Operating this optocoupler-driven circuit with high-frequency PWM ($> 1\,\text{kHz}$) causes the MOSFET to spend a large fraction of each cycle in the **linear active region** ($V_{\text{GS}} \approx 3 - 4\,\text{V}$). The resulting instantaneous power dissipation ($P = V_{\text{DS}} \cdot I_{\text{D}} \approx 20\,\text{V} \cdot 4\,\text{A} = 80\,\text{W}$) will induce rapid thermal breakdown in the TO-252 package within milliseconds.
-> 
-> **Design Mandate:** **STRICTLY NO PWM.** Switching must occur in discrete, single-shot pulses with:
-> - **Minimum ON-time ($T_{\text{on,min}}$):** $\ge 600\,\mu\text{s}$ (ensures full saturation well past rise time).
-> - **Minimum OFF-time ($T_{\text{off,min}}$):** $\ge 1000\,\mu\text{s}$ (ensures full gate discharge and cooling).
+> [!IMPORTANT]
+> **No component forbids PWM, but the slow edges limit its frequency.** During each edge the MOSFET carries current with voltage across it (up to ~80 W instantaneous for a few tens of µs). For a resistive load the energy per edge is $E = V \cdot I \cdot t / 6$, so the switching loss rises in proportion to the PWM frequency (5 Ω, 42 V, 8.4 A):
+>
+> | PWM frequency | Edges' share of the period | Switching loss |
+> |---|---|---|
+> | 500 Hz | ~3 % | ~1.7 W |
+> | 1 kHz (firmware) | ~6 % | ~3.3 W |
+> | 10 kHz | ~60 % | ~33 W (destroys the MOSFET) |
+>
+> At 1 kHz the switching loss is small next to the conduction loss ($8.4^2 \cdot 0.34\,\Omega \cdot 0.69 pprox 16.5\,	ext{W}$ during a burst), and a 200 ms burst puts only ~4 J into the MOSFET. The firmware therefore drives the resistor with **1 kHz PWM** (`BrakeResistorPwm.h`), with a **minimum duty of 10 %** (100 µs on-time, `MIN_PWM_DUTY_01` in `PredictiveBrakeController.h`): shorter pulses would spend most of their time in the linear region.
+>
+> **Hardware conditions:**
+> - **Gate voltage:** the PC817 must saturate. With a 3.3 V input on the 1 kΩ resistor the opto LED gets only ~2 mA; at the low end of the PC817's current-transfer-ratio spread the gate may only reach ~5 V and the MOSFET then stays partly on for the whole on-time. Check $V_{	ext{GS}} \ge 10\,	ext{V}$ while switched on; otherwise reduce the input resistor to 330-470 Ω.
+> - **Current:** a 5 Ω resistor at 42 V draws 8.4 A, above the MOSFET's 6.6 A rating at a hot case. Acceptable for short bursts on a cool tab; 10 Ω (4.2 A) is gentler.
+> - **Do not raise the PWM frequency** above ~1 kHz with this module.
 
 ### 2.4 Brake Resistor: 10W $5.0\,\Omega$ Ceramic Resistor (Low Thermal Mass)
 * **Resistance ($R$):** $5.0\,\Omega \pm 5\%$.

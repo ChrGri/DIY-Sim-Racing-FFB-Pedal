@@ -26,6 +26,11 @@ private:
   // (~rest + 7 V measured), so it only engages when the feedforward falls short
   const float BACKSTOP_UPPER_THRESHOLD_VOLTAGE = 10.0f;
   const float BACKSTOP_LOWER_THRESHOLD_VOLTAGE = 7.0f;
+  // Minimum on-time of the PWM (FR120N module: PC817 + 4.7 kOhm gate resistors switch
+  // in ~20-45 us). Shorter pulses would spend most of their time in the MOSFET's
+  // linear region without dissipating much in the resistor; duties below this are
+  // dropped (the servo bleeder takes that small power). 10 % = 100 us at 1 kHz.
+  const float MIN_PWM_DUTY_01 = 0.10f;
   float appliedDuty_01_fl32 = 0.0f;
 
   // Baseline voltage (auto-learned from idle bus voltage or set via
@@ -227,6 +232,9 @@ public:
       is_voltage_fallback_active_b = false;
     }
     float duty_01 = constrain(feedforwardDuty_01, 0.0f, 1.0f);
+    if (duty_01 < MIN_PWM_DUTY_01) {
+      duty_01 = 0.0f;
+    }
     if (is_voltage_fallback_active_b) {
       duty_01 = 1.0f;
     }
