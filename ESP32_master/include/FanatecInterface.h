@@ -30,10 +30,15 @@ public:
     // Check if connected to the Fanatec device
     bool isConnected();
     bool isPlugged();
+    bool vibrationEnabled() const;
+    bool setVibrationEnabled(bool enabled);
+    uint8_t throttleVibration() const;
+    uint8_t brakeVibration() const;
 
 private:
     // Internal helper functions
     void performCommunicationSteps();
+    void resetConnection();
     void changeBaudRate(unsigned long baudrate);
     void makeCRCTable(uint8_t poly);
     uint8_t generateCRC(uint8_t* input, size_t length);
@@ -43,6 +48,7 @@ private:
     int _rxPin;
     int _txPin;
     int _plugPin;
+    unsigned long _lastBaudrate;
 
     // HardwareSerial object
     HardwareSerial* _serial;
@@ -58,12 +64,26 @@ private:
 
     // Connection status
     bool _connected;
+    volatile bool _vibrationEnabled; // setting is shared between tasks
+    volatile uint8_t _throttleVibration;
+    volatile uint8_t _brakeVibration;
+    volatile unsigned long _lastThrottleVibrationAt;
+    volatile unsigned long _lastBrakeVibrationAt;
+    uint8_t _rxFrame[12];
+    size_t _rxFrameIndex;
+    unsigned long _lastRxByteAt;
 
     // Connection callback function pointer
     void (*_connectedCallback)(bool);
 
-    // Initialization flag
+    // Hardware initialization and debounced cable state.
     bool _initialized;
+    bool _plugState;
+    bool _lastRawPlugState;
+    unsigned long _plugChangedAt;
+    size_t _handshakeStep;
+    size_t _handshakeMatched;
+    unsigned long _stepStartedAt;
 };
 
 #endif // FANATEC_INTERFACE_H

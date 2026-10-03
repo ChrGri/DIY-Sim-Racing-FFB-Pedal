@@ -9,7 +9,7 @@ namespace DiyFfbPedal
     static class Constants
     {
         // payload revisiom
-        public const uint pedalConfigPayload_version = 173;
+        public const uint pedalConfigPayload_version = 174;
 
 
         // pyload types
@@ -33,7 +33,7 @@ namespace DiyFfbPedal
         public const byte WIFI_CH_CMD_SET_REQ = 3;
         public const byte WIFI_CH_CMD_SET_ACK = 4;
         public const byte WIFI_CH_CMD_BEACON = 5;
-        public const string pluginVersion = "26.40.01";
+        public const string pluginVersion = "26.40.05";
         public const string version_control_url = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/version_control.json";
         public const int DEFAULTBAUD = 921600;
         public const int BAUD3M = 3000000;
@@ -61,7 +61,9 @@ namespace DiyFfbPedal
         BRIDGE_ACTION_DEBUG,
         BRIDGE_ACTION_JOYSTICK_FLASHING_MODE,
         BRIDGE_ACTION_JOYSTICK_DEBUG,
-        BRIDGE_ACTION_SET_PEDAL_WIRELESS_SYNC
+        BRIDGE_ACTION_SET_PEDAL_WIRELESS_SYNC,
+        BRIDGE_ACTION_FANATEC_VIBRATION_ON,
+        BRIDGE_ACTION_FANATEC_VIBRATION_OFF
     };
     public enum otaAction
     {

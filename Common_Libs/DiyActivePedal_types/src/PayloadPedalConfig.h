@@ -197,4 +197,8 @@ typedef struct __attribute__((packed)) PayloadPedalConfig
   // (debug/bench use only - servo braking energy will not be dissipated)
   uint8_t enableBrakeResistor_u8;
 
+  // brake resistor resistance in Ohm (1-255; 0 = default 10 Ohm). Sets the
+  // PWM duty for the regen power and the resistor's thermal model.
+  uint8_t brakeResistorResistance_Ohm_u8;
+
 } PayloadPedalConfig_t;

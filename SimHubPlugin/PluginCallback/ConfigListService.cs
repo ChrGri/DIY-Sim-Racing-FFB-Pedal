@@ -308,6 +308,7 @@ namespace DiyFfbPedal
                     if (config.payloadPedalConfig_.virtualPedalMass_u8 == 0 ) config.payloadPedalConfig_.virtualPedalMass_u8 = 60;
                     if (config.payloadPedalConfig_.coulombFrictionIn0p1N_u8 == 0) config.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = 0;
                     if (config.payloadPedalConfig_.virtualPedalDamping_u8 == 0) config.payloadPedalConfig_.virtualPedalDamping_u8 = 100;
+                    if (config.payloadPedalConfig_.brakeResistorResistance_Ohm_u8 == 0) config.payloadPedalConfig_.brakeResistorResistance_Ohm_u8 = 10; // Ohm
 
                     config.payloadPedalConfig_.configHash_u32 = hash;
 

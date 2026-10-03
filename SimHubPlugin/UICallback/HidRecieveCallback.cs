@@ -488,6 +488,8 @@ namespace DiyFfbPedal
                                         // write header
                                         if (!File.Exists(filePath))
                                         {
+                                            WritePedalConfigForTrace(filePath, pedalSelected);
+
                                             using (StreamWriter writer = new StreamWriter(filePath, true))
                                             {
                                                 // Write the content to the file
@@ -498,6 +500,7 @@ namespace DiyFfbPedal
                                                 writer.Write(", servoPositionError_i16");
                                                 writer.Write(", servoVoltage_fl32");
                                                 writer.Write(", servoCurrentPercent_i16");
+                                                writer.Write(", servoVelocityRpm_i16");
 
                                                 writer.Write(", timeInUs_u32");
                                                 writer.Write(", cycleCount_u32");
@@ -541,6 +544,7 @@ namespace DiyFfbPedal
                                                 $",{state.servoPositionError_i16}" +
                                                 $",{state.servoVoltage0p1V_i16 / 10.0f}" +
                                                 $",{state.servoCurrentPercent_i16}" +
+                                                $",{state.servoVelocityRpm_i16}" +
 
                                                 $",{state.timeInUs_u32}" +
                                                 $",{state.cycleCount_u32}" +
@@ -615,6 +619,7 @@ namespace DiyFfbPedal
 
                             if ((check_payload_state_b) && check_crc_state_b)
                             {
+                                UpdateFanatecVibrationStatus(bridge_state.payloadBridgeState_.Bridge_action);
                                 //Bridge_RSSI = bridge_state.payloadBridgeState_.Pedal_RSSI;
                                 if (Plugin._calculations.bridgeConnectionStatus == BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT)
                                 {

@@ -59,7 +59,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr0.24", 0 },  // Reserved parameter
             { "Pr1.00", 600 },  // 1st position loop gain
             { "Pr1.01", 400 },  // 1st velocity loop gain
-            { "Pr1.02", 200 },  // 1st time constant of velocity loop integration (redu?
+            { "Pr1.02", 200 },  // 1st time constant of velocity loop integration (20 ms,
             { "Pr1.03", 27 },  // 1st filter of velocity detection
             { "Pr1.04", 180 },  // 1st torque filter (erhoeht von 100 auf 180 = 1.8ms g?
             { "Pr1.05", 175 },  // 2nd position loop gain
@@ -67,10 +67,10 @@ namespace DiyFfbPedal.UIFunction
             { "Pr1.07", 10000 },  // 2nd time constant of velocity loop
             { "Pr1.08", 8 },  // 2nd filter of velocity detection
             { "Pr1.09", 200 },  // 2nd torque filter
-            { "Pr1.10", 35 },  // Velocity feed forward gain (35% Feedforward reduziert
+            { "Pr1.10", 35 },  // Velocity feed forward gain (unit 0.1 %: 35 = 3.5 %,
             { "Pr1.11", 0 },  // Velocity feed forward filter. Had better velocity er?
-            { "Pr1.12", 0 },  // Torque feed forward gain
-            { "Pr1.13", 1000 },  // Torque feed forward filter
+            { "Pr1.12", 0 },  // Torque feed forward gain (unit 0.1 %)
+            { "Pr1.13", 1000 },  // Torque feed forward filter (10 ms; inactive while
             { "Pr1.14", 1 },  // 2nd gain setup
             { "Pr1.15", 0 },  // Control switching mode
             { "Pr1.16", 50 },  // Position control switching delay time
@@ -271,7 +271,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr6.21", 200 },  // Trial running wait time
             { "Pr6.22", 1 },  // Trial running cycle times
             { "Pr6.23", 30 },  // Disturbance torque compensating gain (30% Disturbance
-            { "Pr6.24", 15 },  // Disturbance observer filter (1.5ms filter time const?
+            { "Pr6.24", 15 },  // Disturbance observer filter (unit 0.01 ms in the A5
             { "Pr6.25", 0 },  // Reserved parameter
             { "Pr6.26", 0 },  // Reserved parameter
             { "Pr6.27", 0 },  // Alarm latch time selection

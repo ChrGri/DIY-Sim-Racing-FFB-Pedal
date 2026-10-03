@@ -26,11 +26,12 @@
                 </StackPanel>
                 <StackPanel Height="50" Width="648" Orientation="Horizontal" HorizontalAlignment="Left">
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextKFSettingFilterModel, 'Filter Model:'}" Height="20" Width="60" FontSize="10" Padding="0,0,0,0" VerticalContentAlignment="Center" Margin="15,0,0,0"/>
-                    <ComboBox x:Name="KF_filter_order"    Width="120" Height="10" FontSize="10" SelectedIndex="0" Margin="0,0,0,0" BorderThickness="0,0,0,0" SelectionChanged="KF_filter_order_SelectionChanged">
+                    <ComboBox x:Name="KF_filter_order"    Width="120" Height="10" FontSize="10" SelectedIndex="0" Margin="0,0,0,0" BorderThickness="0,0,0,0" SelectionChanged="KF_filter_order_SelectionChanged" ToolTip="How the load cell force is denoised before it drives the pedal.&#x0a;KF const. vel.: Kalman filter, good default, little lag.&#x0a;KF const. accel.: follows fast force changes a bit better, slightly more noise.&#x0a;Exponential filter: simple smoothing, more lag at the same noise level.&#x0a;NONE: raw force, fastest but noisiest.&#x0a;IMM adaptive: switches between strong smoothing while holding and fast tracking while pressing.">
                         <ComboBoxItem Content="KF const. vel."/>
                         <ComboBoxItem Content="KF const. accel."/>
                         <ComboBoxItem Content="Exponential filter"/>
                         <ComboBoxItem Content="NONE"/>
+                        <ComboBoxItem Content="IMM adaptive (hold/move)"/>
                     </ComboBox>
                 </StackPanel>
                 <StackPanel Width="480" Height="50">
@@ -38,14 +39,14 @@
                         <Label  Width="250" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="{SLoc DIYFFBPedalPlugin_TextKFSettingKFDescription, 'Loadcell Denoising Factor (slow to fast)'}" Height="10" Padding="0,0,0,0"/>
                     </StackPanel>
 
-                    <localUI:SliderWithLabel x:Name="Slider_KF" SliderLength="480" SliderName="KF" SliderValue="128" MinValue="1" MaxValue="255" SliderValueChanged="KFValueChanged"/>
+                    <localUI:SliderWithLabel x:Name="Slider_KF" SliderLength="480" SliderName="KF" SliderValue="128" MinValue="1" MaxValue="255" SliderValueChanged="KFValueChanged" ToolTip="Speed of the load cell filter selected above (no effect with NONE).&#x0a;Higher: the pedal reacts faster to force changes, but more load cell noise reaches the pedal.&#x0a;Lower: smoother, calmer force signal, but the pedal responds with more delay and feels softer on quick inputs."/>
 
                 </StackPanel>
-                <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="15,0,0,0">
+                <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="15,0,0,0" ToolTip="Smooths only the joystick value sent to the game (force, travel and rudder output).&#x0a;Does not change how the pedal feels. Set the strength with the slider below.">
                     <styles:SHToggleButton x:Name="Checkbox_joystick_denoise" Content="" Checked="Checkbox_joystick_denoise_Checked" Unchecked="Checkbox_joystick_denoise_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextKFSettingJoystickDenoiseToggle, 'Denoise for Joystick output'}" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                 </StackPanel>
-                <localUI:SliderWithLabel x:Name="Slider_KF_Joystick" SliderLength="480" SliderName="{SLoc DIYFFBPedalPlugin_TextKFSettingJoystickDenoiseSliderName, 'KF for Joystick Denoise'}" SliderValue="1" MinValue="1" MaxValue="255" SliderValueChanged="Slider_KF_Joystick_SliderValueChanged" Width="480" Height="40"/>
+                <localUI:SliderWithLabel x:Name="Slider_KF_Joystick" SliderLength="480" SliderName="{SLoc DIYFFBPedalPlugin_TextKFSettingJoystickDenoiseSliderName, 'KF for Joystick Denoise'}" SliderValue="1" MinValue="1" MaxValue="255" SliderValueChanged="Slider_KF_Joystick_SliderValueChanged" Width="480" Height="40" ToolTip="Strength of the joystick output smoothing (only when the toggle above is on).&#x0a;Higher: less smoothing, the game input follows the pedal almost instantly (time constant down to ~2 ms).&#x0a;Lower: steadier game input without jitter, but it lags behind the pedal (up to ~125 ms)."/>
             </StackPanel>
 
         </Border>

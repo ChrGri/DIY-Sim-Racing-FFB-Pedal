@@ -40,8 +40,13 @@ namespace DiyFfbPedal
             public event Action OnDeviceDisconnected;
 #pragma warning restore CS0067
 
-            public bool IsConnected;
-            public bool IsDeviceAttached;
+            public volatile bool IsConnected;
+            public volatile bool IsDeviceAttached;
+            // Serializes Connect/Disconnect: DeviceList.Changed fires on a HidSharp thread for
+            // every USB change on the PC, concurrently with the UI calling in.
+            private readonly object _connectionLock = new object();
+            private const int ReadErrorBackoffMs = 50;
+            private const int MaxConsecutiveReadErrors = 20;
             public HidDeviceController(int VID, int PID, ushort targetUsagePage)
             {
                 _vid = VID;
@@ -82,70 +87,108 @@ namespace DiyFfbPedal
             }
             private void OnDeviceListChanged(object sender, DeviceListChangedEventArgs e)
             {
-                bool exists = DeviceList.Local.GetHidDevices(_vid, _pid).Any();
+                // Fires for any USB change on the PC, not just the bridge. Only (re)connect when the
+                // bridge's vendor interface is present; Connect() is a no-op if already connected.
+                bool exists = GetVendorPageDevice(_vid, _pid, _targetUsagePage) != null;
+                IsDeviceAttached = exists;
                 if (exists)
                 {
-                    IsDeviceAttached = true;
                     Connect(_vid, _pid, _targetUsagePage);
                 }
                 else
                 {
-                    IsConnected = false;
                     Disconnect();
                 }
             }
 
             public bool Connect(int vid, int pid, ushort targetUsagePage)
             {
-                //_uiContext = SynchronizationContext.Current;
-
-                var device = GetVendorPageDevice(vid, pid, targetUsagePage);
-                if (device == null) return false;
-
-                if (device.TryOpen(out _stream))
+                lock (_connectionLock)
                 {
+                    // Previously every DeviceList.Changed event opened another stream and started
+                    // another ReadLoop without stopping the old one. The piled-up loops contended on
+                    // the same stream and burned several CPU cores.
+                    if (IsConnected && _stream != null) return true;
+
+                    CloseStream();
+
+                    var device = GetVendorPageDevice(vid, pid, targetUsagePage);
+                    if (device == null) return false;
+
+                    if (!device.TryOpen(out HidStream stream)) return false;
+
+                    var cancelSource = new CancellationTokenSource();
                     _device = device;
-                    _cancelSource = new CancellationTokenSource();
+                    _stream = stream;
+                    _cancelSource = cancelSource;
                     IsConnected = true;
-                    
+
+                    int maxInputReportLength = device.GetMaxInputReportLength();
                     Task.Factory.StartNew(
-                        ReadLoop,
-                        _cancelSource.Token,
+                        () => ReadLoop(stream, maxInputReportLength, cancelSource.Token),
+                        cancelSource.Token,
                         TaskCreationOptions.LongRunning,
                         TaskScheduler.Default
                     );
-                    
-                    
 
                     return true;
                 }
-                return false;
             }
 
-            private void ReadLoop()
+            // Each loop owns its stream and token, so a replaced or disposed connection always ends
+            // its loop instead of leaving it running against whatever _stream currently holds.
+            private void ReadLoop(HidStream stream, int maxInputReportLength, CancellationToken token)
             {
-                byte[] buffer = new byte[_device.GetMaxInputReportLength()];
+                byte[] buffer = new byte[maxInputReportLength];
+                int consecutiveErrors = 0;
 
-                while (!_cancelSource.IsCancellationRequested && _stream != null)
+                while (!token.IsCancellationRequested)
                 {
+                    int count;
                     try
                     {
-                        int count = _stream.Read(buffer, 0, buffer.Length);
-                        if (count > 0)
-                        {
-                            byte[] actualData = new byte[count];
-                            Array.Copy(buffer, actualData, count);
-                            OnDataReceived?.Invoke(actualData);
-                            //OnDataReceived?.Invoke(actualData);
-                        }
+                        count = stream.Read(buffer, 0, buffer.Length);
+                        consecutiveErrors = 0;
+                    }
+                    catch (TimeoutException)
+                    {
+                        // No report within ReadTimeout (idle bridge) - normal, keep waiting.
+                        continue;
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        break;
                     }
                     catch (Exception)
                     {
-                        /*
-                        if (_uiContext != null) _uiContext.Post(_ => OnDeviceDisconnected?.Invoke(), null);
-                        else OnDeviceDisconnected?.Invoke();
-                        break;
-                        */
+                        if (token.IsCancellationRequested) break;
+
+                        // Back off instead of spinning; give up on a persistently broken handle so
+                        // the next device-list change can open a fresh one.
+                        if (++consecutiveErrors >= MaxConsecutiveReadErrors)
+                        {
+                            lock (_connectionLock)
+                            {
+                                if (ReferenceEquals(_stream, stream)) CloseStream();
+                            }
+                            break;
+                        }
+                        Thread.Sleep(ReadErrorBackoffMs);
+                        continue;
+                    }
+
+                    if (count > 0)
+                    {
+                        byte[] actualData = new byte[count];
+                        Array.Copy(buffer, actualData, count);
+                        try
+                        {
+                            OnDataReceived?.Invoke(actualData);
+                        }
+                        catch (Exception ex)
+                        {
+                            SimHub.Logging.Current.Error($"HID receive handler error: {ex.Message}");
+                        }
                     }
                 }
             }
@@ -192,12 +235,12 @@ namespace DiyFfbPedal
             public void Write(byte[] data)
             {
                 //_stream.WriteTimeout=3;
-                if (_stream != null)
+                HidStream stream = _stream;
+                if (stream != null)
                 {
-                    _stream.WriteTimeout = 3;
-                    
                     try {
-                        _stream.Write(data);
+                        stream.WriteTimeout = 3;
+                        stream.Write(data);
                     }
                     catch (Exception ex)
                     {
@@ -210,14 +253,31 @@ namespace DiyFfbPedal
 
             public void Disconnect()
             {
-                _cancelSource?.Cancel();
-                _stream?.Dispose();
-                _stream = null;
+                lock (_connectionLock)
+                {
+                    CloseStream();
+                }
+            }
+
+            // Caller must hold _connectionLock.
+            private void CloseStream()
+            {
                 IsConnected = false;
+                _cancelSource?.Cancel();
+                _cancelSource = null;
+                try
+                {
+                    _stream?.Dispose();
+                }
+                catch (Exception)
+                {
+                }
+                _stream = null;
             }
 
             public void Dispose()
             {
+                DeviceList.Local.Changed -= OnDeviceListChanged;
                 Disconnect();
             }
         }

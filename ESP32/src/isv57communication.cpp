@@ -74,16 +74,19 @@ void printDecodedAlarmString(uint16_t alarm_code) {
   }
 }
 
-// initialize the communication
-Isv57Communication::Isv57Communication() {
+Isv57Communication::Isv57Communication() {}
+
+// Initialize the communication (called once the servo has booted).
+void Isv57Communication::begin() {
 #if defined(ISV57_TXPIN) && (ISV57_TXPIN >= 0)
   pinMode(ISV57_TXPIN, OUTPUT);
   digitalWrite(ISV57_TXPIN,
                HIGH); // Assert idle UART state before serial controller init
 #endif
 #if defined(ISV57_RXPIN) && (ISV57_RXPIN >= 0)
-  pinMode(ISV57_RXPIN,
-          INPUT_PULLUP); // Pull up RX line to prevent floating UART noise
+  // Serial2.begin() only enables RX as input and keeps the pull state set
+  // here. PCBA V2 needs this pull-up to receive the servo's replies.
+  pinMode(ISV57_RXPIN, INPUT_PULLUP);
 #endif
 
 #if PCB_VERSION == 10 || PCB_VERSION == 9 || PCB_VERSION == 12 ||              \
@@ -119,11 +122,28 @@ void Isv57Communication::setupServoStateReading() {
   modbus.writeAndVerifyDeviceParameter(slaveId, 0x0193,
                                        reg_add_position_error_p);
   modbus.writeAndVerifyDeviceParameter(slaveId, 0x0194, reg_add_voltage_0p1V);
+  slot2IsVelocity_b = false;
   // modbus.writeAndVerifyDeviceParameter(slaveId, 0x0195,
   // reg_add_velocity_feedback_rpm);
 
   // modbus.writeAndVerifyDeviceParameter(slaveId, 0x0193,
   // reg_add_position_feedback_p);
+}
+
+bool Isv57Communication::setSlot2Velocity(bool velocity_b) {
+  // Unfiltered velocity: the Pr1.03 velocity detection filter would add its own
+  // delay to latency measurements.
+  int16_t target_i16 = velocity_b ? reg_add_velocity_feedback_no_filt_rpm
+                                  : reg_add_velocity_current_feedback_percent;
+  modbus.writeAndVerifyDeviceParameter(slaveId, 0x0192, target_i16);
+
+  int16_t readBack_i16 = -1;
+  if ((readRegisters(0x0192, 1, &readBack_i16) != 1) ||
+      (readBack_i16 != target_i16)) {
+    return false;
+  }
+  slot2IsVelocity_b = velocity_b;
+  return true;
 }
 
 void Isv57Communication::readAllServoParameters() {
@@ -449,7 +469,13 @@ void Isv57Communication::readServoStates() {
 
         // Update dynamic states immediately
         isv57dynamicStates_.servo_pos_given_p = regArray[0];
-        isv57dynamicStates_.servo_current_percent = regArray[1];
+        if (slot2IsVelocity_b) {
+          isv57dynamicStates_.servo_velocity_feedback_rpm_i16 = regArray[1];
+          isv57dynamicStates_.servo_current_percent = 0;
+        } else {
+          isv57dynamicStates_.servo_current_percent = regArray[1];
+          isv57dynamicStates_.servo_velocity_feedback_rpm_i16 = 0;
+        }
         isv57dynamicStates_.servo_pos_error_p = regArray[2];
         isv57dynamicStates_.servoVoltage0p1V_i16 = regArray[3];
 

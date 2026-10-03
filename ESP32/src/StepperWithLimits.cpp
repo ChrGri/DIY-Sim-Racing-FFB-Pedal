@@ -1,6 +1,7 @@
 #include "StepperWithLimits.h"
 #include "FunctionProfiler.h"
 #include "Main.h"
+#include "BrakeResistorPwm.h"
 #include "esp_task_wdt.h"
 #include <math.h>
 
@@ -97,11 +98,8 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
                                      uint8_t _endstopDetectionThreshold)
     : _endstopLimitMin(0), _endstopLimitMax(0), _posMin(0), _posMax(0),
       stepsPerMotorRev_u32(stepsPerMotorRev_arg_u32) {
-  // 1. Initialize pulse generator library for high-frequency step output
+  // 1. Create the pulse generator. begin() follows after the servo boot wait.
   _stepper = new FastNonAccelStepper(pinStep, pinDirection, invertMotorDir_b);
-  _stepper->begin();
-  _stepper->setExpectedCycleTimeUs(
-      REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64);
 
   invertMotorDir_global_b = invertMotorDir_b;
 
@@ -174,6 +172,19 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
   // ==============================================================================
 #endif
 
+  // Init the pulse generator only now that the servo has booted:
+  // FastNonAccelStepper::begin() runs mcpwm_init(), which already starts the
+  // 250 kHz timer, and routes it to STEP before forceStop(). That pulse burst
+  // during the servo's boot left it with a solid red LED on simultaneous
+  // power-on (servo powered first was fine). STEP stays LOW from setup() until
+  // here.
+  _stepper->begin();
+  _stepper->setExpectedCycleTimeUs(
+      REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64);
+
+  // Start the servo UART after the boot wait
+  isv57.begin();
+
   // 3. Attempt to discover the Modbus Slave ID of the connected iSV57 servo
   // with retry window
   if (ActiveSerial)
@@ -234,7 +245,12 @@ void StepperWithLimits::resetServoParametersToFactoryValues() {
   resetServoRegistersToFactoryValues_b = true;
 }
 void StepperWithLimits::clearAllServoAlarms() { clearAllServoAlarms_b = true; }
-void StepperWithLimits::printAllServoParameters() { logAllServoParams = true; }
+void StepperWithLimits::requestServoVelocityReadout(bool request_b) {
+  servoVelocityReadoutRequested_b = request_b;
+}
+bool StepperWithLimits::isServoVelocityReadoutActive() const {
+  return isv57.slot2IsVelocity_b;
+}
 void StepperWithLimits::configSetProfilingFlag(bool proFlag_b) {
   s_printProfilingFlag_b = proFlag_b;
 }
@@ -310,6 +326,20 @@ void StepperWithLimits::findMinMaxSensorless(DapConfig_t dap_config_st) {
         !servoRadingsTrustworthy_48VRange_b) {
       ActiveSerial->print(
           "Servo bus voltage not in expected range (16V-50V). Restarting ESP!");
+      ESP.restart();
+    }
+
+    // Endstop detection needs the servo current: switch the cyclic readout back
+    // from the debug velocity readout (done by the servo task, retried once per
+    // second) and wait for it.
+    servoVelocityReadoutRequested_b = false;
+    for (uint16_t waitIdx = 0;
+         isServoVelocityReadoutActive() && (waitIdx < 300); waitIdx++) {
+      delay(10);
+    }
+    if (isServoVelocityReadoutActive()) {
+      ActiveSerial->println("Servo still streams velocity instead of current; "
+                            "homing not possible. Restarting ESP!");
       ESP.restart();
     }
 
@@ -557,6 +587,11 @@ int32_t IRAM_ATTR StepperWithLimits::getServosVoltage() {
 int32_t IRAM_ATTR StepperWithLimits::getServosCurrent() {
   return isv57.isv57dynamicStates_.servo_current_percent;
 }
+int32_t IRAM_ATTR StepperWithLimits::getServosVelocityRpm() {
+  // same orientation as the servo position (readAndFormatServoPosition)
+  int32_t velocity_i32 = isv57.isv57dynamicStates_.servo_velocity_feedback_rpm_i16;
+  return invertMotorDir_global_b ? velocity_i32 : -velocity_i32;
+}
 int32_t IRAM_ATTR StepperWithLimits::getServosPos() {
   return isv57.getPosFromMin();
 }
@@ -646,11 +681,6 @@ void IRAM_ATTR StepperWithLimits::processPendingCommands() {
     resetServoRegistersToFactoryValues_b = false;
     delay(500); // Intended blocking wait before hard ESP reset
     ESP.restart();
-  }
-
-  if (logAllServoParams) {
-    logAllServoParams = false;
-    isv57.readAllServoParameters();
   }
 
   if (updateServoParams_b) {
@@ -817,7 +847,7 @@ void IRAM_ATTR StepperWithLimits::handleConnectionLoss() {
 // Safety requirement: Disable brake resistor instantly to prevent thermal
 // destruction
 #ifdef BRAKE_RESISTOR_PIN_U8
-  digitalWrite(BRAKE_RESISTOR_PIN_U8, LOW);
+  brakeResistorPwmWrite(0.0f);
   brakeResistorState_b = false;
 #endif
 }
@@ -1038,9 +1068,13 @@ void IRAM_ATTR StepperWithLimits::performSafetyChecks() {
         servo_offset_compensation_steps_local_i32;
   }
 
+  // Without the current reading (debug velocity readout) neither the crash
+  // relief nor the overcurrent trip can work: both are off then.
+  const bool currentReadingAvailable_b = !isServoVelocityReadoutActive();
+
   // Execute crash recovery bump only if genuinely stuck against a mechanical
   // hard stop Sustained stall against a hard block draws high current (>= 150%)
-  if (cond_stepperIsAtHardEndstop && cond_crash_detected &&
+  if (currentReadingAvailable_b && cond_stepperIsAtHardEndstop && cond_crash_detected &&
       enableCrashDetection_b && cycleCounterAdvanced_b &&
       cond_cyclesSinceServoPosCorrected) {
     if (abs(getServosCurrent()) >= 150) {
@@ -1066,7 +1100,9 @@ void IRAM_ATTR StepperWithLimits::performSafetyChecks() {
   // running. Latch the axis off (same sticky fault as the emergency-stop
   // path, requires a restart to clear) once current has stayed at or above
   // the trip threshold continuously for the trip duration.
-  if (servoStatus != SERVO_FORCE_STOP) {
+  if (!currentReadingAvailable_b) {
+    overcurrentSinceMs_u32 = 0; // no stale timer when the current returns
+  } else if (servoStatus != SERVO_FORCE_STOP) {
     if (abs(getServosCurrent()) >= SERVO_OVERCURRENT_TRIP_THRESHOLD_PERCENT) {
       if (overcurrentSinceMs_u32 == 0) {
         overcurrentSinceMs_u32 = (uint32_t)timeNow_l;
@@ -1116,6 +1152,22 @@ StepperWithLimits::processActiveServo(FunctionProfiler *profiler) {
     isv57.setupServoStateReading();
     previousIsv57LifeSignal_b = true;
     delay(50);
+  }
+
+  // Debug velocity readout: point cyclic slot 2 at the velocity or back at the
+  // current. Retried at most once per second until the servo confirms it (a
+  // failed write blocks this task for up to ~0.4 s).
+  static uint32_t s_lastReadoutSwitchAttemptMs_u32 = 0;
+  if ((servoVelocityReadoutRequested_b != isServoVelocityReadoutActive()) &&
+      ((millis() - s_lastReadoutSwitchAttemptMs_u32) >= 1000u)) {
+    s_lastReadoutSwitchAttemptMs_u32 = millis();
+    bool requested_b = servoVelocityReadoutRequested_b;
+    if (isv57.setSlot2Velocity(requested_b)) {
+      ActiveSerial->println(
+          requested_b ? "Servo velocity readout active: overcurrent trip and "
+                        "crash relief disabled"
+                      : "Servo current readout restored");
+    }
   }
 
   // Poll the servo via Modbus/Serial

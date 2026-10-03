@@ -115,8 +115,9 @@ ADS1220_WE& getADC()
     // continous reading mode
     s_adc_awe.setConversionMode(ADS1220_CONTINUOUS);  // Add this line in setup
 
-    // set 50HZ and 60Hz FIR filter
-    s_adc_awe.setFIRFilter(ADS1220_50HZ_60HZ);
+    // no 50/60 Hz FIR filter: per ADS1220 datasheet it is only valid at 20 SPS (normal mode)
+    // and 5 SPS (duty-cycle mode); for all other data rates the bits must be 00.
+    s_adc_awe.setFIRFilter(ADS1220_NONE);
 
     // set 
     //adc.setDrdyMode(ADS1220_DOUT_DRDY);

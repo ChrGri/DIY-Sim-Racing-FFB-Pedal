@@ -430,8 +430,45 @@ inline void syncPairingTableToPedals()
   }
 }
 
+#ifdef Fanatec_comunication
+static DapActions_t makeFanatecAction(uint8_t pedalTag, const DapActions_t* lastAction,
+                                     uint8_t brakeVibration, uint8_t throttleVibration)
+{
+  DapActions_t action = lastAction ? *lastAction : DapActions_t{};
+  action.payloadHeader_st = {SOF_BYTE_0_U8, SOF_BYTE_1_U8,
+      DAP_PAYLOAD_TYPE_ACTION_U8, DAP_VERSION_CONFIG_U8, 0, pedalTag};
+  if (!lastAction) action.payloadPedalAction_st.gValue_u8 = 128;
+  // Refresh continuous effects without replaying one-shot host commands.
+  auto &payload = action.payloadPedalAction_st;
+  payload.systemAction_u8 = 0;
+  payload.startSystemIdentification_u8 = 0;
+  payload.returnPedalConfig_u8 = 0;
+  payload.triggerCv1_u8 = 0;
+  payload.triggerCv2_u8 = 0;
+  payload.triggerCv3_u8 = 0;
+  payload.triggerCv4_u8 = 0;
+  payload.rudderAction_u8 = 0;
+  payload.rudderBrakeAction_u8 = 0;
+  payload.wheelSlip_u8 = 0;
+  payload.impactValue_u8 = 0;
+  if (pedalTag == PEDAL_ID_BRAKE) payload.triggerAbs_u8 = brakeVibration ? 1 : 0;
+  if (pedalTag == PEDAL_ID_THROTTLE && throttleVibration) payload.rpm_u8 = 100;
+  action.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+  action.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
+  action.payloadFooter_st.checkSum_u16 = checksumCalculator((uint8_t*)&action,
+      sizeof(action.payloadHeader_st) + sizeof(action.payloadPedalAction_st));
+  return action;
+}
+#endif
+
 void espNowCommunicationTxTask( void * pvParameters )
 {
+  #ifdef Fanatec_comunication
+    DapActions_t lastSimhubAction[3] = {};
+    bool hasSimhubAction[3] = {};
+    bool fanatecThrottleWasActive = false;
+    unsigned long lastFanatecRefreshAt[3] = {};
+  #endif
   for(;;)
   {
     if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) 
@@ -600,7 +637,18 @@ void espNowCommunicationTxTask( void * pvParameters )
             // dap_action_update[i] is already cleared above. Reordering
             // costs nothing here: the pairing table already exists in RAM
             // from boot/last sync, this call just refreshes it.
-            wirelessComm.sendActionToPedal(i, dap_actions_st[i]);
+            DapActions_t action = dap_actions_st[i];
+            #ifdef Fanatec_comunication
+              lastSimhubAction[i] = action;
+              hasSimhubAction[i] = true;
+              if (i == PEDAL_ID_BRAKE && fanatec.brakeVibration())
+                action.payloadPedalAction_st.triggerAbs_u8 = 1;
+              if (i == PEDAL_ID_THROTTLE && fanatec.throttleVibration())
+                action.payloadPedalAction_st.rpm_u8 = 100;
+              action.payloadFooter_st.checkSum_u16 = checksumCalculator((uint8_t*)&action,
+                  sizeof(action.payloadHeader_st) + sizeof(action.payloadPedalAction_st));
+            #endif
+            wirelessComm.sendActionToPedal(i, action);
             sentThisCycle = true;
             if (i == PEDAL_ID_BRAKE &&
                 dap_actions_st[i].payloadPedalAction_st.rudderAction_u8 != 0 &&
@@ -655,6 +703,30 @@ void espNowCommunicationTxTask( void * pvParameters )
       }
 
 
+
+      #ifdef Fanatec_comunication
+        const uint8_t brakeVibration = fanatec.brakeVibration();
+        const uint8_t throttleVibration = fanatec.throttleVibration();
+        const unsigned long now = millis();
+        if (throttleVibration) fanatecThrottleWasActive = true;
+        // Share the existing one-send-per-wake budget. Keep a stop pending
+        // until accepted so a busy radio cannot leave the RPM effect active.
+        for (uint8_t i = 1; i < 3 && !sentThisCycle; ++i) {
+          if (!wirelessComm.isPedalWirelessSyncEnabled(i) ||
+              dap_bridge_state_st.payloadBridgeState_st.pedalAvailability_au8[i] != 1) continue;
+          const bool active = i == PEDAL_ID_BRAKE ? brakeVibration != 0 : throttleVibration != 0;
+          const bool stopThrottle = i == PEDAL_ID_THROTTLE && !throttleVibration && fanatecThrottleWasActive;
+          if ((active && now - lastFanatecRefreshAt[i] >= 50) || stopThrottle) {
+            DapActions_t action = makeFanatecAction(i,
+                hasSimhubAction[i] ? &lastSimhubAction[i] : nullptr, brakeVibration, throttleVibration);
+            if (wirelessComm.sendActionToPedal(i, action) == ESP_OK) {
+              lastFanatecRefreshAt[i] = now;
+              if (stopThrottle) fanatecThrottleWasActive = false;
+            }
+            sentThisCycle = true;
+          }
+        }
+      #endif
 
       //forward the basic wifi info for pedals
       if(g_pedalOtaAction_b && !sentThisCycle)
@@ -1337,6 +1409,15 @@ void serialCommunicationRxTask( void * pvParameters)
                     ActiveSerial->println("[L]The command is not supported");
                   #endif
                 }
+                #ifdef Fanatec_comunication
+                if (dap_bridge_state_lcl.payloadBridgeState_st.bridgeAction_u8 == BRIDGE_ACTION_FANATEC_VIBRATION_ON ||
+                    dap_bridge_state_lcl.payloadBridgeState_st.bridgeAction_u8 == BRIDGE_ACTION_FANATEC_VIBRATION_OFF) {
+                  const bool enabled = dap_bridge_state_lcl.payloadBridgeState_st.bridgeAction_u8 == BRIDGE_ACTION_FANATEC_VIBRATION_ON;
+                  ActiveSerial->println(fanatec.setVibrationEnabled(enabled) ?
+                      (enabled ? "[L]Fanatec vibration enabled" : "[L]Fanatec vibration disabled") :
+                      "[L]Failed to save Fanatec vibration setting");
+                }
+                #endif
                 if (dap_bridge_state_lcl.payloadBridgeState_st.bridgeAction_u8 == BRIDGE_ACTION_SET_PEDAL_WIRELESS_SYNC)
                 {
                   wirelessComm.setPedalWirelessSyncEnabled(0, dap_bridge_state_lcl.payloadBridgeState_st.pedalAvailability_au8[0] != 0);
@@ -1649,6 +1730,9 @@ void serialCommunicationTxTask( void * pvParameters)
           dap_bridge_state_st.payloadHeader_st.payloadType_u8=DAP_PAYLOAD_TYPE_BRIDGE_STATE_U8;
           dap_bridge_state_st.payloadHeader_st.version_u8=DAP_VERSION_CONFIG_U8;
           dap_bridge_state_st.payloadBridgeState_st.bridgeAction_u8=0;
+          #ifdef Fanatec_comunication
+            dap_bridge_state_st.payloadBridgeState_st.bridgeAction_u8 = 0x40 | (fanatec.vibrationEnabled() ? 0x80 : 0);
+          #endif
           memcpy(dap_bridge_state_st.payloadBridgeState_st.pedalRssiRealtime_ai32,wirelessComm.getRssiArray(),sizeof(int32_t)*3);
           //parse_version(BRIDGE_FIRMWARE_VERSION,&dap_bridge_state_st.payloadBridgeState_st.Bridge_firmware_version_u8[0],&dap_bridge_state_st.payloadBridgeState_st.Bridge_firmware_version_u8[1],&dap_bridge_state_st.payloadBridgeState_st.Bridge_firmware_version_u8[2]);
           dap_bridge_state_st.payloadBridgeState_st.bridgeFirmwareVersion_au8[0]=versionMajor;
@@ -2185,10 +2269,10 @@ void fanatecUpdateTask(void * pvParameters)
           uint16_t clutchValue = g_pedalClutchValue_u16;
           uint16_t handbrakeValue = 0;             // Set if needed
 
-          // Pedal input values to 0 - 10000
-          throttleValue = map(throttleValue, 0, 10000, 0, 65535);
-          brakeValue = map(brakeValue, 0, 10000, 0, 22000);
-          clutchValue = map(clutchValue, 0, 10000, 0, 65535);
+          // Root pedals send the full unsigned 16-bit joystick range.
+          // Fanatec throttle/clutch use that same range; brake tops out at 22000.
+          // Widen before multiplying so intermediate values cannot wrap.
+          brakeValue = static_cast<uint32_t>(brakeValue) * 22000U / JOYSTICK_MAX_VALUE;
 
           // Set pedal values in FanatecInterface
           fanatec.setThrottle(throttleValue);
@@ -2210,6 +2294,7 @@ void miscTask(void *pvParameters)
   {
     if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
     {
+#ifdef WIRELESS_DEBUG_INFO
       // TEMP DIAGNOSTIC: periodic wireless link status, see printDiag().
       static uint32_t s_lastWirelessDiag_u32 = 0;
       if (millis() - s_lastWirelessDiag_u32 > 5000)
@@ -2217,6 +2302,7 @@ void miscTask(void *pvParameters)
         s_lastWirelessDiag_u32 = millis();
         wirelessComm.printDiag();
       }
+#endif
     }
   }
 }
@@ -2409,6 +2495,15 @@ void hidCommunicaitonRxTask(void *pvParameters)
               tinyusbJoystick_.printf("The command is not supported");
             #endif
           }
+          #ifdef Fanatec_comunication
+          if (dap_bridge_state_lcl.payloadBridgeState_st.bridgeAction_u8 == BRIDGE_ACTION_FANATEC_VIBRATION_ON ||
+              dap_bridge_state_lcl.payloadBridgeState_st.bridgeAction_u8 == BRIDGE_ACTION_FANATEC_VIBRATION_OFF) {
+            const bool enabled = dap_bridge_state_lcl.payloadBridgeState_st.bridgeAction_u8 == BRIDGE_ACTION_FANATEC_VIBRATION_ON;
+            ActiveSerial->println(fanatec.setVibrationEnabled(enabled) ?
+                (enabled ? "[L]Fanatec vibration enabled" : "[L]Fanatec vibration disabled") :
+                "[L]Failed to save Fanatec vibration setting");
+          }
+          #endif
           if (dap_bridge_state_lcl.payloadBridgeState_st.bridgeAction_u8 == BRIDGE_ACTION_SET_PEDAL_WIRELESS_SYNC)
           {
             wirelessComm.setPedalWirelessSyncEnabled(0, dap_bridge_state_lcl.payloadBridgeState_st.pedalAvailability_au8[0] != 0);
@@ -2598,6 +2693,9 @@ void hidCommunicaitonTxTask(void *pvParameters)
           dap_bridge_state_st.payloadHeader_st.payloadType_u8=DAP_PAYLOAD_TYPE_BRIDGE_STATE_U8;
           dap_bridge_state_st.payloadHeader_st.version_u8=DAP_VERSION_CONFIG_U8;
           dap_bridge_state_st.payloadBridgeState_st.bridgeAction_u8=0;
+          #ifdef Fanatec_comunication
+            dap_bridge_state_st.payloadBridgeState_st.bridgeAction_u8 = 0x40 | (fanatec.vibrationEnabled() ? 0x80 : 0);
+          #endif
           memcpy(dap_bridge_state_st.payloadBridgeState_st.pedalRssiRealtime_ai32,wirelessComm.getRssiArray(),sizeof(int32_t)*3);
           //parse_version(BRIDGE_FIRMWARE_VERSION,&dap_bridge_state_st.payloadBridgeState_st.Bridge_firmware_version_u8[0],&dap_bridge_state_st.payloadBridgeState_st.Bridge_firmware_version_u8[1],&dap_bridge_state_st.payloadBridgeState_st.Bridge_firmware_version_u8[2]);
           dap_bridge_state_st.payloadBridgeState_st.bridgeFirmwareVersion_au8[0]=versionMajor;

@@ -27,6 +27,7 @@ namespace DiyFfbPedal
                 {
                     Plugin._calculations.BridgeSerialConnectionStatus = false;
                     Plugin._calculations.BridgeSerialAvailability = false;
+                    if (!Plugin.BridgeHidService.IsConnected) UpdateFanatecVibrationStatus(0);
                     Plugin._calculations.RSSI_Value = 0;
                     for (int i = 0; i < 3; i++)
                     {

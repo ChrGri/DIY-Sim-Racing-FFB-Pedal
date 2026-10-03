@@ -17,6 +17,7 @@ namespace DiyFfbPedal
         public Int16 servoPositionError_i16;
         public Int16 servoVoltage0p1V_i16;
         public Int16 servoCurrentPercent_i16;
+        public Int16 servoVelocityRpm_i16; // only with debug flag 128 (servo streams velocity instead of current), else 0
 
         // values from ESP
         public UInt32 timeInUs_u32;

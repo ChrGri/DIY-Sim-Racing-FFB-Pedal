@@ -29,6 +29,8 @@ namespace DiyFfbPedal.UIFunction
             public payloadPedalState_Extended State;
         }
 
+        private const double SERVO_STEPS_PER_REV = 3200.0; // fixed microstep setting (Pr0.08)
+
         // All supported signals from payloadPedalState_Extended
         private static readonly List<SignalDef> AllSignals = new List<SignalDef>
         {
@@ -38,6 +40,9 @@ namespace DiyFfbPedal.UIFunction
             new SignalDef { Id = "servo_pos_err", Name = "Servo Pos Error", Subsystem = "Servo Registers", Unit = "cts", DefaultColor = Color.FromRgb(0xFF, 0x40, 0x81), Getter = s => s.servoPositionError_i16, Format = "F0" },
             new SignalDef { Id = "servo_voltage", Name = "Servo Voltage", Subsystem = "Servo Registers", Unit = "V", DefaultColor = Color.FromRgb(0xFF, 0xFF, 0x00), Getter = s => s.servoVoltage0p1V_i16 / 10.0, Format = "F1" },
             new SignalDef { Id = "servo_current", Name = "Servo Current", Subsystem = "Servo Registers", Unit = "%", DefaultColor = Color.FromRgb(0x69, 0xF0, 0xAE), Getter = s => s.servoCurrentPercent_i16, Format = "F0" },
+            // Only with debug flag 128 (servo streams velocity instead of current, the current
+            // then reads 0). In steps/s, directly comparable to "ESP Command Velocity".
+            new SignalDef { Id = "servo_velocity", Name = "Servo Velocity", Subsystem = "Servo Registers", Unit = "Hz", DefaultColor = Color.FromRgb(0xFF, 0x80, 0xAB), Getter = s => s.servoVelocityRpm_i16 * SERVO_STEPS_PER_REV / 60.0, Format = "F0" },
             new SignalDef { Id = "servo_cycle", Name = "Servo Cycle Count", Subsystem = "Servo Registers", Unit = "cts", DefaultColor = Color.FromRgb(0xB0, 0xBE, 0xC5), Getter = s => s.servoStateCycleCount_u32, Format = "F0" },
 
             // ESP32 & Physical Values
@@ -45,7 +50,8 @@ namespace DiyFfbPedal.UIFunction
             new SignalDef { Id = "force_raw", Name = "Raw Force", Subsystem = "ESP32 & Forces", Unit = "kg", DefaultColor = Color.FromRgb(0x40, 0xC4, 0xFF), Getter = s => s.pedalForceRaw_fl32, Format = "F2" },
             new SignalDef { Id = "force_vel_est", Name = "Force Velocity Est", Subsystem = "ESP32 & Forces", Unit = "kg/s", DefaultColor = Color.FromRgb(0x76, 0xFF, 0x03), Getter = s => s.forceVelEst_fl32, Format = "F2" },
             new SignalDef { Id = "esp_target_pos", Name = "ESP Target Pos", Subsystem = "ESP32 & Forces", Unit = "cts", DefaultColor = Color.FromRgb(0xFF, 0xAB, 0x00), Getter = s => s.targetPosition_i32, Format = "F0" },
-            new SignalDef { Id = "speed_hz", Name = "Current Speed", Subsystem = "ESP32 & Forces", Unit = "Hz", DefaultColor = Color.FromRgb(0xFF, 0x6D, 0x00), Getter = s => s.currentSpeedInHz_i32, Format = "F0" },
+            // Signed step rate last commanded to the stepper (moveToWithSpeed); holds its value at standstill
+            new SignalDef { Id = "speed_hz", Name = "ESP Command Velocity", Subsystem = "ESP32 & Forces", Unit = "Hz", DefaultColor = Color.FromRgb(0xFF, 0x6D, 0x00), Getter = s => s.currentSpeedInHz_i32, Format = "F0" },
             new SignalDef { Id = "brake_resistor", Name = "Brake Resistor", Subsystem = "ESP32 & Forces", Unit = "", DefaultColor = Color.FromRgb(0xEA, 0x80, 0xFC), Getter = s => s.brakeResistorState_b, Format = "F0" },
             new SignalDef { Id = "osc_monitor", Name = "Oscillation Monitor", Subsystem = "ESP32 & Forces", Unit = "", DefaultColor = Color.FromRgb(0xD5, 0x00, 0xF9), Getter = s => s.oscillationMonitorValue_u8, Format = "F0" },
             new SignalDef { Id = "esp_cycle", Name = "ESP Cycle Count", Subsystem = "ESP32 & Forces", Unit = "cts", DefaultColor = Color.FromRgb(0xCF, 0xD8, 0xDC), Getter = s => s.cycleCount_u32, Format = "F0" },
@@ -129,6 +135,32 @@ namespace DiyFfbPedal.UIFunction
         private double _panStartYMin = 0.0;
         private double _panStartYMax = 1.0;
 
+        // Preset "Latency check": oscilloscope-style trigger on Filtered Force rising
+        // above the preload force. Each qualified trigger captures [-PRE, +POST] around
+        // the trigger instant; the plot shows the latest capture with t = 0 at the trigger.
+        private const double TRIGGER_PRE_SEC = 0.2;
+        private const double TRIGGER_POST_SEC = 0.5;
+        private static readonly string[] LatencyCheckSignals = { "servo_pos_target", "esp_target_pos", "servo_pos_fb", "force_raw", "force_filtered", "speed_hz", "servo_velocity" };
+        private bool _triggerMode = false;
+        private float _trigPreloadKg = 0f;   // cached from the pedal config on the UI thread
+        private float _trigMaxForceKg = 0f;
+        private bool _triggerPending = false;   // edge seen, collecting post-trigger samples
+        private bool _triggerQualified = false; // force rose clearly above preload (not a noise blip)
+        private double _triggerTimeSec = 0.0;
+        private double _prevForceKg = double.NaN;
+        private List<TelemetryPoint> _capturePoints = new List<TelemetryPoint>(); // TimeSec relative to trigger
+        private int _captureCount = 0;
+        private double _capStandstillPos, _capFinalPos;
+        private double _capTMove = double.NaN, _capTMaxForce = double.NaN, _capTEnd = double.NaN;
+        private double _capFbStandstill, _capFbFinal;
+        private double _capEndBand, _capFbEndBand; // "end reached" tolerance in counts
+        private double _capTServoTgtMove = double.NaN, _capTServoTgtEnd = double.NaN;
+        private double _capTFbMove = double.NaN, _capTFbEnd = double.NaN;
+        private float _capPreloadKg, _capMaxForceKg;
+        private const int MARKER_COUNT = 6;
+        private readonly Line[] _markerLines = new Line[MARKER_COUNT];
+        private readonly TextBlock[] _markerLabels = new TextBlock[MARKER_COUNT];
+
         // References to SimHub plugin & parent UI
         public DIY_FFB_Pedal Plugin { get; set; }
         public DIYFFBPedalControlUI ParentUI { get; set; }
@@ -179,11 +211,7 @@ namespace DiyFfbPedal.UIFunction
             if (ParentUI == null || ParentUI.Plugin == null) return;
             try
             {
-                bool isRudderAssigned = ParentUI.Plugin.Rudder_status &&
-                    ParentUI.Plugin.Rudder_Pedal_idx != null &&
-                    (ParentUI.Plugin.Rudder_Pedal_idx[0] == pedalIndex || ParentUI.Plugin.Rudder_Pedal_idx[1] == pedalIndex);
-
-                if (isRudderAssigned)
+                if (IsRudderAssigned(pedalIndex))
                 {
                     // A rudder-assigned pedal's actual running config comes from
                     // dap_config_st_rudder (sent via RudderParameterLiveUpdate),
@@ -237,8 +265,33 @@ namespace DiyFfbPedal.UIFunction
             catch { }
         }
 
+        private bool IsRudderAssigned(int pedalIndex)
+        {
+            return ParentUI.Plugin.Rudder_status &&
+                ParentUI.Plugin.Rudder_Pedal_idx != null &&
+                (ParentUI.Plugin.Rudder_Pedal_idx[0] == pedalIndex || ParentUI.Plugin.Rudder_Pedal_idx[1] == pedalIndex);
+        }
+
+        // Preload / max force of the selected pedal's running config (kg, same unit
+        // as Filtered Force). Read on the UI thread and cached for the packet thread.
+        private void UpdateTriggerThresholds()
+        {
+            if (ParentUI == null || ParentUI.Plugin == null) return;
+            try
+            {
+                var cfg = IsRudderAssigned(_selectedPedal) ? ParentUI.dap_config_st_rudder : ParentUI.dap_config_st[_selectedPedal];
+                _trigPreloadKg = cfg.payloadPedalConfig_.preloadForce;
+                _trigMaxForceKg = cfg.payloadPedalConfig_.maxForce;
+            }
+            catch { }
+        }
+
         private void InitControls()
         {
+            cb_preset.Items.Add("None");
+            cb_preset.Items.Add("Latency check");
+            cb_preset.SelectedIndex = 0;
+
             cb_time_window.Items.Add("3s");
             cb_time_window.Items.Add("5s");
             cb_time_window.Items.Add("10s");
@@ -556,6 +609,7 @@ namespace DiyFfbPedal.UIFunction
                         TimeSec = 0.0,
                         State = packet.payloadPedalExtendedState_
                     });
+                    _prevForceKg = packet.payloadPedalExtendedState_.pedalForceFiltered_fl32;
                     return;
                 }
 
@@ -569,9 +623,10 @@ namespace DiyFfbPedal.UIFunction
                 _lastEspTimeUs = espUs;
                 _latestTimeSec = _unwrappedTimeSec;
 
-                // Subsample at 200 Hz (every 5000 µs = 5ms) for microsecond accuracy without queue explosion
+                // Subsample at 200 Hz (every 5000 µs = 5ms) for microsecond accuracy without queue explosion.
+                // Trigger mode keeps every packet: latency is measured in single cycles.
                 uint sampleDiffUs = espUs - _lastSampledEspTimeUs;
-                if (sampleDiffUs >= 5000 || sampleDiffUs > 5000000)
+                if (_triggerMode || sampleDiffUs >= 5000 || sampleDiffUs > 5000000)
                 {
                     _lastSampledEspTimeUs = espUs;
                     _points.Add(new TelemetryPoint
@@ -586,8 +641,278 @@ namespace DiyFfbPedal.UIFunction
                         _points.RemoveRange(0, 500);
                     }
                 }
+
+                if (_triggerMode)
+                {
+                    ProcessTrigger(_unwrappedTimeSec, packet.payloadPedalExtendedState_.pedalForceFiltered_fl32);
+                }
             }
         }
+
+        // ==================== TRIGGER (LATENCY CHECK PRESET) ====================
+
+        // Called under _dataLock for every packet while in trigger mode.
+        private void ProcessTrigger(double tNow, double forceKg)
+        {
+            double preload = _trigPreloadKg;
+
+            if (_triggerPending)
+            {
+                if (!_triggerQualified)
+                {
+                    // A real press keeps rising well above preload; a noise blip falls
+                    // back below it, which cancels the trigger and re-arms immediately.
+                    double qualifyDelta = Math.Max(0.3, 0.1 * (_trigMaxForceKg - preload));
+                    if (forceKg <= preload) _triggerPending = false;
+                    else if (forceKg >= preload + qualifyDelta) _triggerQualified = true;
+                }
+
+                if (_triggerPending && tNow >= _triggerTimeSec + TRIGGER_POST_SEC)
+                {
+                    _triggerPending = false;
+                    if (_triggerQualified) FinalizeCapture();
+                }
+            }
+            else if (!double.IsNaN(_prevForceKg) && _prevForceKg <= preload && forceKg > preload)
+            {
+                _triggerPending = true;
+                _triggerQualified = false;
+                _triggerTimeSec = tNow;
+            }
+
+            _prevForceKg = forceKg;
+        }
+
+        private void FinalizeCapture()
+        {
+            double t0 = _triggerTimeSec;
+            int start = _points.Count - 1;
+            while (start > 0 && _points[start - 1].TimeSec >= t0 - TRIGGER_PRE_SEC) start--;
+
+            var cap = new List<TelemetryPoint>(_points.Count - start);
+            int trigIdx = -1;
+            for (int i = start; i < _points.Count; i++)
+            {
+                double t = _points[i].TimeSec - t0;
+                if (t > TRIGGER_POST_SEC) break;
+                if (trigIdx < 0 && t >= 0.0) trigIdx = cap.Count;
+                cap.Add(new TelemetryPoint { TimeSec = t, State = _points[i].State });
+            }
+            if (trigIdx < 0) return;
+
+            // Standstill = ESP target position in the cycle before the trigger
+            double standstill = cap[trigIdx > 0 ? trigIdx - 1 : trigIdx].State.targetPosition_i32;
+            double final = double.MinValue;
+            double tMove = double.NaN, tMaxForce = double.NaN;
+            for (int i = trigIdx; i < cap.Count; i++)
+            {
+                var s = cap[i].State;
+                if (double.IsNaN(tMove) && s.targetPosition_i32 > standstill) tMove = cap[i].TimeSec;
+                if (double.IsNaN(tMaxForce) && s.pedalForceFiltered_fl32 > _trigMaxForceKg) tMaxForce = cap[i].TimeSec;
+                if (s.targetPosition_i32 > final) final = s.targetPosition_i32;
+            }
+
+            // Final value = end of travel reached in the capture (max target position);
+            // reached = within the end tolerance of it
+            double endBand = EndTolerance(final - standstill, 0.0);
+            double tEnd = double.NaN;
+            for (int i = trigIdx; i < cap.Count; i++)
+            {
+                if (cap[i].State.targetPosition_i32 >= final - endBand) { tEnd = cap[i].TimeSec; break; }
+            }
+
+            // Servo side: Servo Target Pos is the ESP target as read back from the servo,
+            // so its delay vs. ESP Target Pos is the Modbus/readout lag that is also
+            // contained in Servo Feedback Pos. Subtracting it gives the corrected timing.
+            ServoMoveTimes(cap, trigIdx, s => s.servoPositionTarget_i32, out double tTgtMove, out double tTgtEnd, out _, out _, out _);
+            ServoMoveTimes(cap, trigIdx, s => s.servoPositionFeedback_i32, out double tFbMove, out double tFbEnd, out double fbStandstill, out double fbFinal, out double fbEndBand);
+
+            _capturePoints = cap;
+            _capTServoTgtMove = tTgtMove;
+            _capTServoTgtEnd = tTgtEnd;
+            _capTFbMove = tFbMove;
+            _capTFbEnd = tFbEnd;
+            _capFbStandstill = fbStandstill;
+            _capFbFinal = fbFinal;
+            _capFbEndBand = fbEndBand;
+            _capEndBand = endBand;
+            _captureCount++;
+            _capStandstillPos = standstill;
+            _capFinalPos = final;
+            _capTMove = tMove;
+            _capTMaxForce = tMaxForce;
+            _capTEnd = tEnd;
+            _capPreloadKg = _trigPreloadKg;
+            _capMaxForceKg = _trigMaxForceKg;
+        }
+
+        // Servo registers can jitter at rest, so standstill is the pre-trigger band:
+        // "move" = first sample above that band, "end" = first sample within the end
+        // tolerance of the final (maximum) value reached in the capture.
+        private static void ServoMoveTimes(List<TelemetryPoint> cap, int trigIdx, Func<payloadPedalState_Extended, double> get,
+            out double tMove, out double tEnd, out double standstill, out double final, out double endBand)
+        {
+            double preMin = double.MaxValue, preMax = double.MinValue;
+            for (int i = 0; i < Math.Max(1, trigIdx); i++)
+            {
+                double v = get(cap[i].State);
+                if (v < preMin) preMin = v;
+                if (v > preMax) preMax = v;
+            }
+            double noiseBand = preMax - preMin;
+
+            tMove = double.NaN;
+            final = double.MinValue;
+            for (int i = trigIdx; i < cap.Count; i++)
+            {
+                double v = get(cap[i].State);
+                if (double.IsNaN(tMove) && v > preMax) tMove = cap[i].TimeSec;
+                if (v > final) final = v;
+            }
+
+            tEnd = double.NaN;
+            endBand = EndTolerance(final - preMax, noiseBand);
+            if (!double.IsNaN(tMove))
+            {
+                for (int i = trigIdx; i < cap.Count; i++)
+                {
+                    if (get(cap[i].State) >= final - endBand) { tEnd = cap[i].TimeSec; break; }
+                }
+            }
+            standstill = preMax;
+        }
+
+        // "End reached" tolerance: the last few counts are not perceptible (10 counts are
+        // ~0.016 mm of sled), but the servo removes them slowly while the foot holds the
+        // pedal at the end, so waiting for the exact final count measured that creep
+        // instead of the motion. END_TOLERANCE_FRACTION of the stroke, at least the
+        // jitter band.
+        private const double END_TOLERANCE_FRACTION = 0.005;
+        private static double EndTolerance(double stroke, double noiseBand)
+            => Math.Max(noiseBand, END_TOLERANCE_FRACTION * Math.Max(0.0, stroke));
+
+        private void ResetTriggerState()
+        {
+            lock (_dataLock)
+            {
+                _triggerPending = false;
+                _triggerQualified = false;
+                _prevForceKg = double.NaN;
+                _capturePoints = new List<TelemetryPoint>();
+                _captureCount = 0;
+                _capTMove = _capTMaxForce = _capTEnd = double.NaN;
+                _capTServoTgtMove = _capTServoTgtEnd = _capTFbMove = _capTFbEnd = double.NaN;
+            }
+        }
+
+        private void CbPreset_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            bool latency = cb_preset.SelectedIndex == 1;
+            if (latency == _triggerMode) return;
+
+            if (latency)
+            {
+                foreach (var id in LatencyCheckSignals) _activeSignalIds.Add(id);
+                RebuildPolylinesAndLegends();
+                UpdateTriggerThresholds();
+            }
+
+            ResetTriggerState();
+            _triggerMode = latency;
+            cb_time_window.IsEnabled = !latency;
+            if (_isPaused) BtnLivePause_Click(null, null);
+            ResetZoom();
+            foreach (var path in _signalPaths.Values) path.Data = null;
+            ClearAxisLabels();
+            HideDataTip();
+
+            card_trigger_info.Visibility = latency ? Visibility.Visible : Visibility.Collapsed;
+            canvas_markers.Visibility = latency ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void InitMarkers()
+        {
+            var colors = new[]
+            {
+                Color.FromRgb(0x00, 0xE5, 0xFF), // trigger: Filtered Force > preload
+                Color.FromRgb(0xFF, 0xAB, 0x00), // ESP target leaves standstill
+                Color.FromRgb(0x40, 0xC4, 0xFF), // Filtered Force > max force
+                Color.FromRgb(0xE0, 0x40, 0xFB), // ESP target reaches final value
+                Color.FromRgb(0xFF, 0x52, 0x52), // Servo feedback leaves standstill
+                Color.FromRgb(0xFF, 0x8A, 0x80)  // Servo feedback reaches final value
+            };
+            string[] names = { "trigger", "move", "F > max", "end", "servo move", "servo end" };
+            for (int i = 0; i < MARKER_COUNT; i++)
+            {
+                var brush = new SolidColorBrush(colors[i]);
+                _markerLines[i] = new Line { Stroke = brush, StrokeThickness = 1, StrokeDashArray = new DoubleCollection { 4, 3 }, Visibility = Visibility.Collapsed };
+                _markerLabels[i] = new TextBlock { Text = names[i], Foreground = brush, FontSize = 9, Visibility = Visibility.Collapsed };
+                Canvas.SetTop(_markerLabels[i], 18 + 12 * i);
+                canvas_markers.Children.Add(_markerLines[i]);
+                canvas_markers.Children.Add(_markerLabels[i]);
+            }
+        }
+
+        // Called under _dataLock from the render tick.
+        private void UpdateTriggerOverlay(double width, double height, double viewStart, double viewEnd)
+        {
+            if (_markerLines[0] == null) InitMarkers();
+
+            if (_isPaused) tb_trigger_status.Text = $"TRIGGER ❚❚ paused — {_captureCount} capture(s)";
+            else if (_triggerPending) tb_trigger_status.Text = "TRIGGER ● capturing…";
+            else tb_trigger_status.Text = $"TRIGGER ● armed: Filtered Force ↑ {_trigPreloadKg:F2} kg — {_captureCount} capture(s)";
+
+            double[] times = { _captureCount > 0 ? 0.0 : double.NaN, _capTMove, _capTMaxForce, _capTEnd, _capTFbMove, _capTFbEnd };
+            for (int i = 0; i < MARKER_COUNT; i++)
+            {
+                double t = times[i];
+                bool visible = !double.IsNaN(t) && t >= viewStart && t <= viewEnd;
+                _markerLines[i].Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+                _markerLabels[i].Visibility = _markerLines[i].Visibility;
+                if (!visible) continue;
+                double x = width * (t - viewStart) / (viewEnd - viewStart);
+                _markerLines[i].X1 = x;
+                _markerLines[i].X2 = x;
+                _markerLines[i].Y1 = 0;
+                _markerLines[i].Y2 = height;
+                Canvas.SetLeft(_markerLabels[i], x + 3);
+            }
+
+            if (_captureCount == 0)
+            {
+                tb_trigger_move.Text = "Time to move: waiting for trigger";
+                tb_trigger_end.Text = "Time to reach end: waiting for trigger";
+                tb_trigger_servo_move.Text = "Servo start move: waiting for trigger";
+                tb_trigger_servo_end.Text = "Servo finish move: waiting for trigger";
+                return;
+            }
+
+            // Servo start: relative to the trigger (Filtered Force > preload)
+            double lagMove = _capTServoTgtMove - _capTMove;
+            tb_trigger_servo_move.Text = double.IsNaN(_capTFbMove)
+                ? $"Servo start move: — (Servo Feedback stayed at {_capFbStandstill:F0} cts)"
+                : $"Servo start move: {_capTFbMove * 1000.0:F1} ms  →  corrected {FormatMs(_capTFbMove - lagMove)}  ·  behind ESP {FormatMs(_capTFbMove - lagMove - _capTMove)}   (Servo Feedback > {_capFbStandstill:F0} cts; servo target lag {FormatMs(lagMove)})";
+
+            // Servo finish: relative to Filtered Force > max force
+            double lagEnd = _capTServoTgtEnd - _capTEnd;
+            if (double.IsNaN(_capTMaxForce))
+                tb_trigger_servo_end.Text = $"Servo finish move: — (Filtered Force stayed below max force {_capMaxForceKg:F2} kg)";
+            else if (double.IsNaN(_capTFbEnd))
+                tb_trigger_servo_end.Text = "Servo finish move: — (Servo Feedback did not move)";
+            else
+                tb_trigger_servo_end.Text = $"Servo finish move: {(_capTFbEnd - _capTMaxForce) * 1000.0:F1} ms  →  corrected {FormatMs(_capTFbEnd - lagEnd - _capTMaxForce)}  ·  behind ESP {FormatMs(_capTFbEnd - lagEnd - _capTEnd)}   (Servo Feedback ≥ {_capFbFinal - _capFbEndBand:F0} cts = final − {_capFbEndBand:F0}; servo target lag {FormatMs(lagEnd)})";
+
+            tb_trigger_move.Text = double.IsNaN(_capTMove)
+                ? $"Time to move: — (ESP target stayed at {_capStandstillPos:F0} cts)"
+                : $"Time to move: {_capTMove * 1000.0:F1} ms   (ESP target > {_capStandstillPos:F0} cts  −  Filtered Force > {_capPreloadKg:F2} kg)";
+
+            if (double.IsNaN(_capTMaxForce))
+                tb_trigger_end.Text = $"Time to reach end: — (Filtered Force stayed below max force {_capMaxForceKg:F2} kg)";
+            else
+                tb_trigger_end.Text = $"Time to reach end: {(_capTEnd - _capTMaxForce) * 1000.0:F1} ms   (ESP target ≥ {_capFinalPos - _capEndBand:F0} cts = final − {_capEndBand:F0}  −  Filtered Force > {_capMaxForceKg:F2} kg)";
+        }
+
+        private static string FormatMs(double sec) => double.IsNaN(sec) ? "n/a" : $"{sec * 1000.0:F1} ms";
 
         private void RenderTimer_Tick(object sender, EventArgs e)
         {
@@ -624,14 +949,26 @@ namespace DiyFfbPedal.UIFunction
 
             DrawGridlines(width, height);
 
+            if (_triggerMode)
+            {
+                UpdateTriggerThresholds();
+                lock (_dataLock)
+                {
+                    double end = TRIGGER_POST_SEC - _xViewOffsetSec;
+                    UpdateTriggerOverlay(width, height, end - _windowSeconds, end);
+                }
+            }
+
             if (_activeSignalIds.Count == 0) return;
 
             lock (_dataLock)
             {
-                int ptCount = _points.Count;
+                // Trigger mode plots the latest capture (time relative to the trigger)
+                var src = _triggerMode ? _capturePoints : _points;
+                int ptCount = src.Count;
                 if (ptCount == 0) return;
 
-                double refTime = _isPaused ? _pauseTimeSec : _latestTimeSec;
+                double refTime = _triggerMode ? TRIGGER_POST_SEC : (_isPaused ? _pauseTimeSec : _latestTimeSec);
                 double viewEndTime = refTime - _xViewOffsetSec;
                 double viewStartTime = viewEndTime - _windowSeconds;
 
@@ -640,8 +977,8 @@ namespace DiyFfbPedal.UIFunction
                 _lastRenderViewEnd = viewEndTime;
 
                 // Binary search for visible window range [startIdx, endIdx]
-                int startIdx = FindFirstIndexAtOrAfter(viewStartTime);
-                int endIdx = FindLastIndexAtOrBefore(viewEndTime);
+                int startIdx = FindFirstIndexAtOrAfter(src, viewStartTime);
+                int endIdx = FindLastIndexAtOrBefore(src, viewEndTime);
 
                 _cachedStartIdx = startIdx;
                 _cachedEndIdx = endIdx;
@@ -666,7 +1003,7 @@ namespace DiyFfbPedal.UIFunction
 
                     for (int i = startIdx; i <= endIdx; i++)
                     {
-                        double v = sig.Getter(_points[i].State);
+                        double v = sig.Getter(src[i].State);
                         if (v < minVal) minVal = v;
                         if (v > maxVal) maxVal = v;
                         lastVal = v;
@@ -698,7 +1035,7 @@ namespace DiyFfbPedal.UIFunction
 
                     for (int i = startIdx; i <= endIdx; i++)
                     {
-                        var pt = _points[i];
+                        var pt = src[i];
                         double normX = 1.0 - ((viewEndTime - pt.TimeSec) * invWindow);
                         double x = width * normX;
 
@@ -756,16 +1093,16 @@ namespace DiyFfbPedal.UIFunction
             }
         }
 
-        private int FindFirstIndexAtOrAfter(double targetTime)
+        private static int FindFirstIndexAtOrAfter(List<TelemetryPoint> list, double targetTime)
         {
             int low = 0;
-            int high = _points.Count - 1;
-            int result = _points.Count;
+            int high = list.Count - 1;
+            int result = list.Count;
 
             while (low <= high)
             {
                 int mid = (low + high) >> 1;
-                if (_points[mid].TimeSec >= targetTime)
+                if (list[mid].TimeSec >= targetTime)
                 {
                     result = mid;
                     high = mid - 1;
@@ -778,16 +1115,16 @@ namespace DiyFfbPedal.UIFunction
             return Math.Max(0, result > 0 ? result - 1 : 0);
         }
 
-        private int FindLastIndexAtOrBefore(double targetTime)
+        private static int FindLastIndexAtOrBefore(List<TelemetryPoint> list, double targetTime)
         {
             int low = 0;
-            int high = _points.Count - 1;
+            int high = list.Count - 1;
             int result = -1;
 
             while (low <= high)
             {
                 int mid = (low + high) >> 1;
-                if (_points[mid].TimeSec <= targetTime)
+                if (list[mid].TimeSec <= targetTime)
                 {
                     result = mid;
                     low = mid + 1;
@@ -797,7 +1134,7 @@ namespace DiyFfbPedal.UIFunction
                     high = mid - 1;
                 }
             }
-            return result == -1 ? _points.Count - 1 : Math.Min(_points.Count - 1, result + 1);
+            return result == -1 ? list.Count - 1 : Math.Min(list.Count - 1, result + 1);
         }
 
         private void UpdateLegendDisplay(string sigId, double current, double min, double max, SignalDef sig)
@@ -879,7 +1216,15 @@ namespace DiyFfbPedal.UIFunction
 
                 double sec = _xViewOffsetSec + _windowSeconds * (1.0 - ((double)divIdx / divisions));
                 var tb = _gridTimeLabels[i];
-                tb.Text = sec < 10.0 ? $"-{sec:F2}s" : $"-{sec:F1}s";
+                if (_triggerMode)
+                {
+                    double t = TRIGGER_POST_SEC - sec; // relative to the trigger
+                    tb.Text = $"{t:+0.000;-0.000;0.000}s";
+                }
+                else
+                {
+                    tb.Text = sec < 10.0 ? $"-{sec:F2}s" : $"-{sec:F1}s";
+                }
                 Canvas.SetLeft(tb, x + 3);
             }
         }
@@ -1021,10 +1366,11 @@ namespace DiyFfbPedal.UIFunction
 
             lock (_dataLock)
             {
-                if (_points.Count > 0 && _cachedStartIdx <= _cachedEndIdx && _cachedStartIdx < _points.Count)
+                var src = _triggerMode ? _capturePoints : _points;
+                if (src.Count > 0 && _cachedStartIdx <= _cachedEndIdx && _cachedStartIdx < src.Count)
                 {
                     int start = Math.Max(0, _cachedStartIdx);
-                    int end = Math.Min(_points.Count - 1, _cachedEndIdx);
+                    int end = Math.Min(src.Count - 1, _cachedEndIdx);
 
                     // Binary search for closest point to targetTime
                     int low = start;
@@ -1034,15 +1380,15 @@ namespace DiyFfbPedal.UIFunction
                     while (low <= high)
                     {
                         int mid = (low + high) >> 1;
-                        double diff = Math.Abs(_points[mid].TimeSec - targetTime);
+                        double diff = Math.Abs(src[mid].TimeSec - targetTime);
                         if (diff < minDiff)
                         {
                             minDiff = diff;
-                            closest = _points[mid];
+                            closest = src[mid];
                             found = true;
                         }
 
-                        if (_points[mid].TimeSec < targetTime)
+                        if (src[mid].TimeSec < targetTime)
                         {
                             low = mid + 1;
                         }
@@ -1067,10 +1413,18 @@ namespace DiyFfbPedal.UIFunction
             line_crosshair.Y2 = height;
             line_crosshair.Visibility = Visibility.Visible;
 
-            // Display time offset relative to current render reference (fixed and rock-solid when paused)
-            double actualAge = _lastRenderRefTime - closest.TimeSec;
-            if (actualAge < 0) actualAge = 0;
-            tb_datatip_time.Text = actualAge < 10.0 ? $"Time: -{actualAge:F2}s" : $"Time: -{actualAge:F1}s";
+            if (_triggerMode)
+            {
+                // Time relative to the trigger instant
+                tb_datatip_time.Text = $"Time: {closest.TimeSec:+0.000;-0.000;0.000}s";
+            }
+            else
+            {
+                // Display time offset relative to current render reference (fixed and rock-solid when paused)
+                double actualAge = _lastRenderRefTime - closest.TimeSec;
+                if (actualAge < 0) actualAge = 0;
+                tb_datatip_time.Text = actualAge < 10.0 ? $"Time: -{actualAge:F3}s" : $"Time: -{actualAge:F2}s";
+            }
 
             tb_datatip_servo_cycle.Text = $"Servo Cycle: {closest.State.servoStateCycleCount_u32}";
             tb_datatip_esp_cycle.Text = $"ESP Cycle: {closest.State.cycleCount_u32}";
@@ -1233,7 +1587,11 @@ namespace DiyFfbPedal.UIFunction
             _isPanning = false;
             _isDraggingZoom = false;
             if (rect_zoom_selection != null) rect_zoom_selection.Visibility = Visibility.Collapsed;
-            if (cb_time_window.SelectedItem is string item)
+            if (_triggerMode)
+            {
+                _windowSeconds = TRIGGER_PRE_SEC + TRIGGER_POST_SEC;
+            }
+            else if (cb_time_window.SelectedItem is string item)
             {
                 string s = item.Replace("s", "");
                 if (double.TryParse(s, out double sec)) _windowSeconds = sec;
@@ -1365,6 +1723,7 @@ namespace DiyFfbPedal.UIFunction
                         _pauseTimeSec = 0.0;
                         _seenRanges.Clear();
                     }
+                    ResetTriggerState();
                     foreach (var path in _signalPaths.Values)
                     {
                         path.Data = null;
@@ -1377,9 +1736,9 @@ namespace DiyFfbPedal.UIFunction
 
         private void UpdatePedalButtonStyles()
         {
-            SetPedalButtonStyle(btn_pedal_clutch, _selectedPedal == 0, Color.FromRgb(0xE5, 0x39, 0x35));
-            SetPedalButtonStyle(btn_pedal_brake, _selectedPedal == 1, Color.FromRgb(0x43, 0xA0, 0x47));
-            SetPedalButtonStyle(btn_pedal_throttle, _selectedPedal == 2, Color.FromRgb(0x1E, 0x88, 0xE5));
+            SetPedalButtonStyle(btn_pedal_clutch, _selectedPedal == 0, Color.FromRgb(0x33, 0xD1, 0xCC));
+            SetPedalButtonStyle(btn_pedal_brake, _selectedPedal == 1, Color.FromRgb(0xE0, 0x24, 0x24));
+            SetPedalButtonStyle(btn_pedal_throttle, _selectedPedal == 2, Color.FromRgb(0x4C, 0xD1, 0x37));
         }
 
         private void SetPedalButtonStyle(Button btn, bool isSelected, Color activeColor)
@@ -1406,6 +1765,8 @@ namespace DiyFfbPedal.UIFunction
             _isPaused = !_isPaused;
             if (_isPaused)
             {
+                // A capture in progress would be completed across the pause gap - drop it
+                lock (_dataLock) { _triggerPending = false; _prevForceKg = double.NaN; }
                 _pauseTimeSec = _latestTimeSec;
                 btn_live_pause.Content = "▶ Live";
                 btn_live_pause.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xD7, 0x00));
@@ -1428,6 +1789,7 @@ namespace DiyFfbPedal.UIFunction
                 _pauseTimeSec = 0.0;
                 _seenRanges.Clear();
             }
+            ResetTriggerState();
             foreach (var path in _signalPaths.Values)
             {
                 path.Data = null;
@@ -1438,6 +1800,7 @@ namespace DiyFfbPedal.UIFunction
 
         private void CbTimeWindow_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (_triggerMode) return;
             if (cb_time_window.SelectedItem is string item)
             {
                 string s = item.Replace("s", "");
@@ -1457,6 +1820,8 @@ namespace DiyFfbPedal.UIFunction
         {
             canvas_grid.Width = canvas_plot.ActualWidth;
             canvas_grid.Height = canvas_plot.ActualHeight;
+            canvas_markers.Width = canvas_plot.ActualWidth;
+            canvas_markers.Height = canvas_plot.ActualHeight;
         }
     }
 }

@@ -14,12 +14,23 @@
 
 #define DEBUG_INFO_0_CYCLE_TIMER_U8 1U
 #define DEBUG_INFO_0_NET_RUNTIME_U8 2U
-// #define DEBUG_INFO_0_LOADCELL_READING 4
+// together with DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT_U8 (e.g. 64 + 4 = 68):
+// send the state structs only every EXTENDED_STRUCT_DECIMATION_FACTOR_U8-th
+// cycle (1 kHz at 4 kHz loop) to avoid USB CDC buffer overflows / trace gaps
+#define DEBUG_INFO_0_EXTENDED_STRUCT_DECIMATED_U8 4U
+#define EXTENDED_STRUCT_DECIMATION_FACTOR_U8 4U
+
+// millis()-based oscillation effects (RPM, bite point, wheel slip, custom
+// vibrations) are evaluated every Nth pedal cycle (1 kHz at 4 kHz)
+#define OSCILLATION_EFFECTS_DECIMATION_U8 4U
 #define DEBUG_INFO_0_SERVO_READINGS_U8 8U
 #define DEBUG_INFO_0_RESET_ALL_SERVO_ALARMS_U8 16U
 #define DEBUG_INFO_0_RESET_SERVO_TO_FACTORY_U8 32U
 #define DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT_U8 64U
-#define DEBUG_INFO_0_LOG_ALL_SERVO_PARAMS_U8 128U
+// servo streams its feedback velocity instead of the current (extended state
+// field servoVelocityRpm_i16; the current reads 0); overcurrent trip and crash
+// relief are off while set
+#define DEBUG_INFO_0_SERVO_VELOCITY_READOUT_U8 128U
 
 #define EFFECT_SCALING_FACTOR_FL32 4.0f
 #define EFFECT_POSITION_SCALING_FACTOR_FL32 0.1f
@@ -291,10 +302,8 @@ MovingAverageFilter g_averageFilterJoystick_st(40);
 /*                                                                                            */
 /**********************************************************************************************/
 #include "PredictiveBrakeController.h"
+#include "BrakeResistorPwm.h"
 PredictiveBrakeController brakeController;
-
-// #include "PredictiveBrakeControllerV2.h"
-// PredictiveBrakeControllerV2 brakeController;
 
 /**********************************************************************************************/
 /*                                                                                            */
@@ -353,6 +362,15 @@ UsbComManager usbManager;
 USBCDC customUsbSerial;
 #endif
 
+// One-shot helper to start the serial/USB stack on core 0 (see setup())
+static SemaphoreHandle_t s_usbInitDone_sh = NULL;
+static uint8_t s_usbInitPedalId_u8 = 0;
+static void usbInitTask(void *pvParameters) {
+  usbManager.begin(s_usbInitPedalId_u8);
+  xSemaphoreGive(s_usbInitDone_sh);
+  vTaskDelete(NULL);
+}
+
 /**********************************************************************************************/
 /*                                                                                            */
 /*                         pedal mechanics definitions */
@@ -373,6 +391,14 @@ KalmanFilter1stOrder *kalman = NULL;
 
 #include "SignalFilter_2nd_order.h"
 KalmanFilter2ndOrder *kalman_2nd_order = NULL;
+
+#include "SignalFilter_IMM.h"
+KalmanFilterIMM *kalman_imm = NULL;
+
+// plate inertia identification for the IMM filter, requested after each homing
+#include "PlateInertiaIdentification.h"
+PlateInertiaIdentification plateInertiaIdentification;
+volatile bool g_plateInertiaIdentificationRequested_b = false;
 
 /**********************************************************************************************/
 /*                                                                                            */
@@ -614,11 +640,10 @@ void IRAM_ATTR_FLAG loadcellReadingTask(void *pvParameters) {
           loadcellDataPackage_t newLoadcellPackage;
           newLoadcellPackage.loadcellReadingInKg_fl32 = medianReading_fl32;
 
-          // Send the package to the queue. Use a timeout of 0 (non-blocking).
-          // If the queue is full, the data is simply dropped. This prevents
-          // this high-priority control task from ever blocking on a full serial
-          // buffer.
-          xQueueSend(s_loadcellDataQueue, &newLoadcellPackage, (TickType_t)0);
+          // Send the package to the queue (length 1). Overwrite instead of
+          // send: if the previous sample was not consumed yet, the newest
+          // sample wins. Never blocks this high-priority control task.
+          xQueueOverwrite(s_loadcellDataQueue, &newLoadcellPackage);
         }
       }
 
@@ -901,8 +926,9 @@ void setup() {
   digitalWrite(ISV57_TXPIN, HIGH); // HIGH is the idle state for UART (Marking)
 #endif
 #if defined(ISV57_RXPIN) && (ISV57_RXPIN >= 0)
-  pinMode(ISV57_RXPIN,
-          INPUT_PULLUP); // Pull up RX line to prevent floating UART noise
+  // Pull up RX line to prevent floating UART noise. Required on PCBA V2: the
+  // UART driver does not set a pull-up on RX itself.
+  pinMode(ISV57_RXPIN, INPUT_PULLUP);
 #endif
 #if defined(STEP_PIN_STEPPER_U8) && (STEP_PIN_STEPPER_U8 >= 0)
   pinMode(STEP_PIN_STEPPER_U8, OUTPUT);
@@ -912,10 +938,7 @@ void setup() {
   pinMode(DIR_PIN_STEPPER_U8, OUTPUT);
   digitalWrite(DIR_PIN_STEPPER_U8, LOW);
 #endif
-#if defined(BRAKE_RESISTOR_PIN_U8) && (BRAKE_RESISTOR_PIN_U8 >= 0)
-  pinMode(BRAKE_RESISTOR_PIN_U8, OUTPUT);
-  digitalWrite(BRAKE_RESISTOR_PIN_U8, LOW);
-#endif
+  brakeResistorPwmInit();
 #if defined(ALM_PORT_GPIO) && (ALM_PORT_GPIO >= 0)
   pinMode(ALM_PORT_GPIO, INPUT_PULLUP);
 #endif
@@ -992,7 +1015,25 @@ void setup() {
 
   // Manager starten (er übernimmt CDC und Controller-Setup mit der finalen
   // Identität)
-  usbManager.begin(dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
+  // Start the serial/USB stack from core 0: ESP-IDF allocates the USB (TinyUSB)
+  // and UART interrupts on the core that initializes them, and the (unpinned,
+  // max priority) usbd task is woken from that interrupt. setup() runs on
+  // core 1 (ARDUINO_RUNNING_CORE=1), so streaming traffic used to preempt the
+  // pedal and loadcell tasks on core 1 (loadcell samples dropped from
+  // ~1900/s to 300-500/s while streaming the extended state).
+  s_usbInitPedalId_u8 = dap_config_st_local.payloadPedalConfig_st.pedalType_u8;
+  s_usbInitDone_sh = xSemaphoreCreateBinary();
+  if ((s_usbInitDone_sh != NULL) &&
+      (xTaskCreatePinnedToCore(usbInitTask, "usbInit", 6144, NULL, 2, NULL,
+                               0) == pdPASS)) {
+    xSemaphoreTake(s_usbInitDone_sh, portMAX_DELAY);
+  } else {
+    usbManager.begin(s_usbInitPedalId_u8); // fallback: init on this core
+  }
+  if (s_usbInitDone_sh != NULL) {
+    vSemaphoreDelete(s_usbInitDone_sh);
+    s_usbInitDone_sh = NULL;
+  }
 
   // System-Pointer auf den Manager umbiegen
   ActiveSerial = &usbManager;
@@ -1092,10 +1133,7 @@ void setup() {
       CORE_ID_CONFIG_HANDLING_TASK_U8);             /* pin task to core 1 */
 
 // setup brake resistor pin
-#if defined(BRAKE_RESISTOR_PIN_U8) && (BRAKE_RESISTOR_PIN_U8 >= 0)
-  pinMode(BRAKE_RESISTOR_PIN_U8, OUTPUT);   // Set GPIO as an output
-  digitalWrite(BRAKE_RESISTOR_PIN_U8, LOW); // Turn the LED on
-#endif
+  brakeResistorPwmInit();
 
 #ifdef EMERGENCY_PIN_U8
   pinMode(EMERGENCY_PIN_U8, INPUT_PULLUP);
@@ -1303,6 +1341,7 @@ void setup() {
   // setup Kalman filters
   kalman = new KalmanFilter1stOrder(loadcell->getVarianceEstimate());
   kalman_2nd_order = new KalmanFilter2ndOrder(loadcell->getVarianceEstimate());
+  kalman_imm = new KalmanFilterIMM(loadcell->getVarianceEstimate());
 
   // Check if wakeup only by plugin trigger is requested
   if (dap_config_st_local.payloadPedalConfig_st.wakeOnPluginOnly_u8 == 1) {
@@ -1317,6 +1356,7 @@ void setup() {
   } else {
     g_pedalOperationalState_u8 = (uint8_t)PEDAL_STATE_ACTIVE_E;
     performPedalHomingSequence(dap_config_st_local);
+    g_plateInertiaIdentificationRequested_b = true;
   }
 
   // send to config handling task
@@ -1338,7 +1378,7 @@ void setup() {
   addScheduledTask(pedalUpdateTask, "pedalUpdateTask",
                    REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64,
                    TASK_PRIORITY_PEDAL_UPDATE_TASK_UBASETYPE,
-                   CORE_ID_PEDAL_UPDATE_TASK_U8, 7000);
+                   CORE_ID_PEDAL_UPDATE_TASK_U8, 8000);
   addScheduledTask(serialCommunicationTaskRx, "serComRx",
                    REPETITION_INTERVAL_SERIALCOMMUNICATION_TASK_IN_US_I64,
                    TASK_PRIORITY_SERIALCOMMUNICATION_TASK_UBASETYPE,
@@ -1356,7 +1396,7 @@ void setup() {
   xTaskCreatePinnedToCore(
       serialCommunicationTaskTx, /* Task function. */
       "serComTx",                /* name of task. */
-      2000,                      /* Stack size of task */
+      3000,                      /* Stack size of task */
       NULL,                      /* parameter of the task */
       TASK_PRIORITY_SERIALCOMMUNICATION_TX_TASK_UBASETYPE, /* priority of the
                                                               task (e.g., 2,
@@ -1370,7 +1410,7 @@ void setup() {
   xTaskCreatePinnedToCore(
       loadcellReadingTask,                           /* Task function. */
       "loadcellReadingTask",                         /* name of task. */
-      1500,                                          /* Stack size of task */
+      2500,                                          /* Stack size of task */
       NULL,                                          /* parameter of the task */
       TASK_PRIORITY_LOADCELL_READING_TASK_UBASETYPE, /* priority of the task */
       &handle_loadcellReadingTask, /* Task handle to keep track of created task
@@ -1391,7 +1431,7 @@ void setup() {
   xTaskCreatePinnedToCore(
       profilerTask,                          /* Task function. */
       "profilerTask",                        /* name of task. */
-      3000,                                  /* Stack size of task */
+      4000,                                  /* Stack size of task */
       NULL,                                  /* parameter of the task */
       TASK_PRIORITY_PROFILER_TASK_UBASETYPE, /* priority of the task */
       &handle_profilerTask,      /* Task handle to keep track of created task */
@@ -1892,7 +1932,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
   bool local_OTA_status_b = false;
 
   AdmittanceDebugState_t admittanceDebugInfo_st;
-  AdmittanceStates_t admittanceStates_st;
+  AdmittanceStates_t admittanceStates_st = {};
 
   for (;;) {
 
@@ -2014,26 +2054,6 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           stepper->resetServoParametersToFactoryValues();
         }
 
-        // print all servo parameters for debug purposes
-        if ((dap_config_pedalUpdateTask_st.payloadPedalConfig_st
-                 .debugFlags0_u8 &
-             DEBUG_INFO_0_LOG_ALL_SERVO_PARAMS_U8)) {
-          DapConfig_t tmp;
-          global_dap_config_class.getConfig(&tmp, 500);
-          tmp.payloadPedalConfig_st.debugFlags0_u8 &=
-              (~(uint8_t)
-                   DEBUG_INFO_0_LOG_ALL_SERVO_PARAMS_U8); // clear the debug bit
-          // global_dap_config_class.setConfig(tmp);
-
-          configDataPackage_t configPackage_st;
-          configPackage_st.config_st = tmp;
-          xQueueSend(s_configUpdateAvailableQueue, &configPackage_st,
-                     portMAX_DELAY);
-
-          delay(1000);
-          stepper->printAllServoParameters();
-        }
-
         // ActiveSerial->printf("Abs ampl.: %0.3f\n",
         // (float)dap_calculationVariables_st.absAmplitude_fl32);
         // ActiveSerial->printf("force range.: %0.3f\n",
@@ -2075,6 +2095,21 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       uint32_t cycleCallTimeInUs_u32 = micros();
       cycleCount_u32++;
 
+      // Measured cycle time: the admittance model and the step command use
+      // the real elapsed time, so late cycles (task jitter) do not turn into
+      // start-stop motion. Clamped, so blocking phases (config update, slow
+      // repositioning) do not cause large integration steps.
+      static uint32_t s_lastCycleCallTimeInUs_u32 = 0;
+      const float nominalCycleTime_s_fl32 =
+          ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
+      float cycleTime_s_fl32 = nominalCycleTime_s_fl32;
+      if (s_lastCycleCallTimeInUs_u32 != 0) {
+        cycleTime_s_fl32 = constrain(
+            (float)(cycleCallTimeInUs_u32 - s_lastCycleCallTimeInUs_u32) * 1e-6f,
+            0.5f * nominalCycleTime_s_fl32, 3.0f * nominalCycleTime_s_fl32);
+      }
+      s_lastCycleCallTimeInUs_u32 = cycleCallTimeInUs_u32;
+
       // get current position
       stepperPosFraction_fl32 = stepper->getCurrentPositionFraction();
       stepperPosCurrent_i32 = stepper->getCurrentPosition();
@@ -2103,45 +2138,58 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       dap_calculationVariables_st.setDefaultPos();
 
       // trigger and compute effects
+      // Every cycle: ABS (its release decay advances per call), g-force and
+      // road impact (moving averages over a number of calls).
       absOscillation.forceOffset(
           &dap_calculationVariables_st,
           dap_config_pedalUpdateTask_st.payloadPedalConfig_st.absPattern_u8,
           dap_config_pedalUpdateTask_st.payloadPedalConfig_st
               .absForceOrTarvelBit_u8);
-      g_rpmOscillation_st.trigger();
-      g_rpmOscillation_st.forceOffset(&dap_calculationVariables_st);
-      g_bitePointOscillation_st.forceOffset(&dap_calculationVariables_st);
       g_gForceEffect_st.forceOffset(
           &dap_calculationVariables_st,
           dap_config_pedalUpdateTask_st.payloadPedalConfig_st.gMulti_u8);
-      g_wsOscillation_st.forceOffset(&dap_calculationVariables_st);
       g_roadImpactEffect_st.forceOffset(
           &dap_calculationVariables_st,
           dap_config_pedalUpdateTask_st.payloadPedalConfig_st.roadMulti_u8);
-      g_customVibration1_st.forceOffset(
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq1_u8,
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp1_u8,
-          dap_calculationVariables_st.stepperPosRange_fl32);
-      g_customVibration2_st.forceOffset(
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq2_u8,
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp2_u8,
-          dap_calculationVariables_st.stepperPosRange_fl32);
-      g_customVibration3_st.forceOffset(
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq3_u8,
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp3_u8,
-          dap_calculationVariables_st.stepperPosRange_fl32);
-      g_customVibration4_st.forceOffset(
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq4_u8,
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp4_u8,
-          dap_calculationVariables_st.stepperPosRange_fl32);
-      if (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.bpTrigger_u8 ==
-          1) {
-        if (Position_check > BP_trigger_min) {
-          if (Position_check < BP_trigger_max) {
-            g_bitePointOscillation_st.trigger();
+
+      // The oscillation effects below derive their time base from millis()
+      // differences, so their output changes at most once per millisecond:
+      // evaluating them every OSCILLATION_EFFECTS_DECIMATION_U8-th cycle
+      // (1 kHz at 4 kHz) gives the same waveform and frees CPU time for the
+      // control loop.
+      static uint8_t s_oscillationEffectsCounter_u8 = 0;
+      if (s_oscillationEffectsCounter_u8 == 0) {
+        g_rpmOscillation_st.trigger();
+        g_rpmOscillation_st.forceOffset(&dap_calculationVariables_st);
+        g_bitePointOscillation_st.forceOffset(&dap_calculationVariables_st);
+        g_wsOscillation_st.forceOffset(&dap_calculationVariables_st);
+        g_customVibration1_st.forceOffset(
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq1_u8,
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp1_u8,
+            dap_calculationVariables_st.stepperPosRange_fl32);
+        g_customVibration2_st.forceOffset(
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq2_u8,
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp2_u8,
+            dap_calculationVariables_st.stepperPosRange_fl32);
+        g_customVibration3_st.forceOffset(
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq3_u8,
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp3_u8,
+            dap_calculationVariables_st.stepperPosRange_fl32);
+        g_customVibration4_st.forceOffset(
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvFreq4_u8,
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.cvAmp4_u8,
+            dap_calculationVariables_st.stepperPosRange_fl32);
+        if (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.bpTrigger_u8 ==
+            1) {
+          if (Position_check > BP_trigger_min) {
+            if (Position_check < BP_trigger_max) {
+              g_bitePointOscillation_st.trigger();
+            }
           }
         }
       }
+      s_oscillationEffectsCounter_u8 =
+          (s_oscillationEffectsCounter_u8 + 1) % OSCILLATION_EFFECTS_DECIMATION_U8;
 
       // In admittance rudder mode, endstops remain at physical bounds.
       // Force coupling and centering are handled natively by
@@ -2190,10 +2238,32 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
 
       // read loadcell data, when available
       profiler_pedalUpdateTask.start(2);
+      bool newLoadcellSample_b = false;
       if (xQueueReceive(s_loadcellDataQueue, &loadcellDataReceived_st,
                         (TickType_t)0) == pdPASS) {
         loadcellReading = loadcellDataReceived_st.loadcellReadingInKg_fl32;
+        newLoadcellSample_b = true;
       }
+
+      // 1 Hz debug print of the number of fresh loadcell samples per second
+#ifdef PRINT_LOADCELL_READING_FREQUENCY
+      static uint32_t s_freshLoadcellSamples_u32 = 0;
+      static uint32_t s_lastLoadcellRatePrintMs_u32 = 0;
+      if (newLoadcellSample_b) {
+        s_freshLoadcellSamples_u32++;
+      }
+      if (millis() - s_lastLoadcellRatePrintMs_u32 >= 1000u) {
+        if (1/*dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 &
+            DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT_U8*/) {
+          ActiveSerial->printf(
+              "[LC] %lu fresh samples/s\n",
+              (unsigned long)(s_freshLoadcellSamples_u32 * 1000u /
+                              (millis() - s_lastLoadcellRatePrintMs_u32)));
+        }
+        s_freshLoadcellSamples_u32 = 0;
+        s_lastLoadcellRatePrintMs_u32 = millis();
+      }
+#endif
       profiler_pedalUpdateTask.end(2);
 
       // start profiler 3, loadcell reading conversion
@@ -2231,9 +2301,11 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
                       .kfModelNoise_u8) /
                      5000.0f;
       static float lastPedalForce_fl32 = 0.0f;
+      static uint8_t s_lastKfModelOrder_u8 = 0xFF;
+      uint8_t kfModelOrder_u8 =
+          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfModelOrder_u8;
       // const velocity model denoising filter
-      switch (
-          dap_config_pedalUpdateTask_st.payloadPedalConfig_st.kfModelOrder_u8) {
+      switch (kfModelOrder_u8) {
       case 0: // const. velocity Kalman filter
         filteredReading =
             kalman->filteredValue(pedalForce_fl32, 0.0f,
@@ -2258,6 +2330,45 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 * 1e-6f);
         lastPedalForce_fl32 = filteredReading;
         break;
+      case 4: // IMM Kalman filter (HOLD / MOVE hypotheses)
+      {
+        // the loadcell noise was identified in loadcell units, scale it to
+        // pedal force units (conversion is linear in the loadcell force)
+        float loadcellToPedalForceGain_fl32 = convertToPedalForce(
+            1.0f, sledPosition, &dap_config_pedalUpdateTask_st);
+        kalman_imm->setMeasurementVariance(
+            loadcell->getVarianceEstimate() * loadcellToPedalForceGain_fl32 *
+            loadcellToPedalForceGain_fl32);
+
+        // start from the current force when the filter gets selected
+        if (s_lastKfModelOrder_u8 != kfModelOrder_u8) {
+          kalman_imm->reset(pedalForce_fl32);
+        }
+
+        // known inputs: admittance model position and acceleration of the
+        // previous cycle (plate inertia and foot reaction are explained by them)
+        filteredReading = kalman_imm->filteredValue(
+            pedalForce_fl32, newLoadcellSample_b, cycleTime_s_fl32,
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                .kfModelNoise_u8,
+            admittanceStates_st.physicalPos_m,
+            admittanceStates_st.virtualAcc_mps2);
+        changeVelocity = kalman_imm->changeVelocity();
+
+        // 1 Hz debug print of the estimated foot stiffness
+        static uint32_t s_lastImmDebugPrintMs_u32 = 0;
+        if ((dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                 .debugFlags0_u8 &
+             DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT_U8) &&
+            (millis() - s_lastImmDebugPrintMs_u32 > 1000u)) {
+          s_lastImmDebugPrintMs_u32 = millis();
+          ActiveSerial->printf(
+              "[IMM] k_foot=%.0f kg/m, mu_hold=%.2f\n",
+              kalman_imm->footStiffness_kgPerM(),
+              kalman_imm->holdProbability());
+        }
+        break;
+      }
       default: // No filter
         filteredReading = pedalForce_fl32;
         changeVelocity =
@@ -2265,6 +2376,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 * 1e-6f);
         lastPedalForce_fl32 = filteredReading;
       }
+      s_lastKfModelOrder_u8 = kfModelOrder_u8;
       // write filter reading into calculation_st
       dap_calculationVariables_st.currentForceReading_fl32 = filteredReading;
 
@@ -2306,6 +2418,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         delay(100);
         ActiveSerial->println("Waking up pedal -> running homing sequence");
         performPedalHomingSequence(dap_config_pedalUpdateTask_st);
+        g_plateInertiaIdentificationRequested_b = true;
         stepper->servoStatus = SERVO_CONNECTED;
         g_pedalOperationalState_u8 = (uint8_t)PEDAL_STATE_ACTIVE_E;
         servoActionLast = millis();
@@ -2430,6 +2543,13 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       }
       */
 
+      // Debug velocity readout (flag 128), only while the pedal is active: homing
+      // needs the current reading and switches it back itself
+      stepper->requestServoVelocityReadout(
+          ((dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 &
+            DEBUG_INFO_0_SERVO_VELOCITY_READOUT_U8) != 0) &&
+          (g_pedalOperationalState_u8 == (uint8_t)PEDAL_STATE_ACTIVE_E));
+
       // --- Predictive Brake Resistor Activator ---
       // Cache servo state once per cycle; reused in extended debug struct
       // to avoid duplicate ISR-spinlock-contending calls later.
@@ -2438,57 +2558,85 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           stepper->getCurrentSpeedInHz();
       const int16_t cached_servosVoltage_i16 = stepper->getServosVoltage();
       const int16_t cached_servosCurrent_i16 = stepper->getServosCurrent();
+      // 0 unless the debug velocity readout (flag 128) is active
+      const int16_t cached_servosVelocityRpm_i16 =
+          (int16_t)stepper->getServosVelocityRpm();
       const uint32_t cached_servoCycleCounter_u32 =
           stepper->getServoCycleCounter();
       const int32_t cached_servosInternalPosCorrected_i32 =
           stepper->getServosInternalPositionCorrected();
       uint32_t current_time_us = micros();
 
-      bool brake_state = false;
-// Decide whether to use predictive brake resistor control or simple voltage
-// check based on compile-time flag and operating mode.
-#ifdef USE_PREDICTIVE_BRAKE_RESISTOR_CONTROL
+      float brakeResistorDuty_01 = 0.0f;
+      // duty requested by the admittance strategy in the previous cycle: the regen
+      // power above the servo's own share (see CalcRegenVelocityLimit)
+      static float s_brakeResistorDutyRequest_01 = 0.0f;
+      const bool brakeResistorEnabled_b =
+          (dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+               .enableBrakeResistor_u8 != 0);
       const bool isRudderModeActive_b =
           dap_calculationVariables_st.rudderStatus_b ||
           dap_calculationVariables_st.helicopterRudderStatus_b;
+      // fitted resistance for the thermal model (Ohm, 0 = BRAKE_RESISTOR_OHMS)
+      brakeController.setResistanceOhm(
+          (dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+               .brakeResistorResistance_Ohm_u8 > 0)
+              ? (float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                        .brakeResistorResistance_Ohm_u8
+              : BRAKE_RESISTOR_OHMS);
 
-      if (!isRudderModeActive_b) {
-        brake_state = brakeController.Update(
-            cached_servosPosError_i32,
-            stepper->getServosPosErrorChangeRateInStepsPerSecond(),
-            changeVelocity, cached_currentSpeedInHz_i32,
+      // Servo data freshness: the bus voltage is the value of the last valid servo
+      // packet and stays at that value when the communication breaks off (cable, servo
+      // powered off). The servo cycle counter only advances on CRC-valid packets
+      // (~100 Hz); without a new packet for SERVO_DATA_TIMEOUT_US the resistor stays off
+      // and the controller is not updated, so a stale voltage cannot trigger the backstop.
+      const uint32_t SERVO_DATA_TIMEOUT_US = 50000;
+      static uint32_t s_lastServoCycleCounter_u32 = 0;
+      static uint32_t s_lastServoCycleChangeUs_u32 = 0;
+      static bool s_servoDataStale_b = true; // until the first valid packet
+      if (cached_servoCycleCounter_u32 != s_lastServoCycleCounter_u32) {
+        s_lastServoCycleCounter_u32 = cached_servoCycleCounter_u32;
+        s_lastServoCycleChangeUs_u32 = current_time_us;
+        s_servoDataStale_b = false;
+      } else if ((uint32_t)(current_time_us - s_lastServoCycleChangeUs_u32) >=
+                 SERVO_DATA_TIMEOUT_US) {
+        // unsigned difference: correct across the micros() wraparound. Sticky until the
+        // next packet, so a frozen counter cannot look fresh again when the difference
+        // wraps after 71.6 min.
+        s_servoDataStale_b = true;
+      }
+      const bool servoDataFresh_b = !s_servoDataStale_b;
+
+      if (!servoDataFresh_b) {
+        brakeResistorDuty_01 = 0.0f;
+      } else if (isRudderModeActive_b) {
+        // rudder: reactive voltage check (on/off) as before
+        bool brakeResistorOn_b = brakeController.simpleVoltageCheck(
             ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
-            cached_servoCycleCounter_u32);
+            cached_currentSpeedInHz_i32, cached_servoCycleCounter_u32);
+        brakeResistorDuty_01 = brakeResistorOn_b ? 1.0f : 0.0f;
       } else {
-        brake_state = brakeController.simpleVoltageCheck(
+        // admittance: PWM feedforward from the regen governor, reactive backstop
+        // and thermal model in the controller
+        brakeResistorDuty_01 = brakeController.updateDuty(
+            brakeResistorEnabled_b ? s_brakeResistorDutyRequest_01 : 0.0f,
             ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
             cached_currentSpeedInHz_i32, cached_servoCycleCounter_u32);
       }
-#else
-      brake_state = brakeController.simpleVoltageCheck(
-          ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
-          cached_currentSpeedInHz_i32);
 
-      // brake_state = brakeController.simpleVoltageCheck(
-      //     ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
-      //     cached_currentSpeedInHz_i32, cached_servoCycleCounter_u32);
-#endif
-
-      // Config-driven brake resistor kill switch (default: enabled). Lets a
-      // user disable the brake resistor from Pedals > General for
-      // debug/bench use, without needing a firmware rebuild.
-      if (!(dap_config_pedalUpdateTask_st.payloadPedalConfig_st
-                .enableBrakeResistor_u8)) {
-        brake_state = false;
+      // Config-driven brake resistor kill switch (default: enabled). Off: the
+      // regen governor keeps the power within what the servo absorbs itself.
+      if (!brakeResistorEnabled_b) {
+        brakeResistorDuty_01 = 0.0f;
       }
+      brakeResistorPwmWrite(brakeResistorDuty_01);
+      // consumed; only a strategy run in this cycle requests it again (not in rudder
+      // mode, homing, ...)
+      s_brakeResistorDutyRequest_01 = 0.0f;
 
-#if defined(BRAKE_RESISTOR_PIN_U8) && (BRAKE_RESISTOR_PIN_U8 >= 0)
-      if (brake_state) {
-        digitalWrite(BRAKE_RESISTOR_PIN_U8, HIGH);
-      } else {
-        digitalWrite(BRAKE_RESISTOR_PIN_U8, LOW);
-      }
-#endif
+      // regen budget the admittance strategy may route into the resistor
+      const float brakeResistorAvailable_01 =
+          (brakeResistorEnabled_b && servoDataFresh_b) ? brakeController.availableFraction() : 0.0f;
 
       // compute next position with PID strategy
       // MPC control strataegy for rudder
@@ -2565,7 +2713,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             filteredReading, stepper, &dap_calculationVariables_st,
             &dap_config_pedalUpdateTask_st, effectOffsets_st,
             endstopBehavior_st, rudderOffsets_st, &admittanceDebugInfo_st,
-            &admittanceStates_st);
+            &admittanceStates_st, cycleTime_s_fl32);
 
         positionWithoutEffect = Position_Next_fl32;
         if (effectsCalculated_b) {
@@ -2588,12 +2736,110 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             endstopBehavior_st.travelRange_mm_fl32, 0.0f,
             10.0f); // constrain the stiffness to a max value for safety
 
+        // HOLD probability of the IMM force filter adds damping near standstill
+        float holdProbability_01 =
+            (dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                 .kfModelOrder_u8 == 4)
+                ? kalman_imm->holdProbability()
+                : 0.0f;
+
         // Racing Pedal control algorithm (Throttle / Brake / Clutch)
+        // debug telemetry (incl. the Landi detector) only when the extended
+        // state is streamed; admittanceStates_st is always needed (IMM inputs)
+        bool extendedTelemetry_b =
+            (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 &
+             DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT_U8) != 0;
         Position_Next_fl32 = MoveByAdmittanceStrategy(
             filteredReading, stepper, &forceCurve, &dap_calculationVariables_st,
-            &dap_config_pedalUpdateTask_st, effectOffsets_st,
-            endstopBehavior_st, &admittanceDebugInfo_st, &admittanceStates_st);
+            &dap_config_pedalUpdateTask_st, effectOffsets_st, endstopBehavior_st,
+            extendedTelemetry_b ? &admittanceDebugInfo_st : nullptr,
+            &admittanceStates_st, holdProbability_01, cycleTime_s_fl32,
+            brakeResistorAvailable_01,
+            stepper->getBrakeResistorActivationVoltage(),
+            &s_brakeResistorDutyRequest_01);
         positionWithoutEffect = (int32_t)Position_Next_fl32;
+      }
+
+      // Plate inertia identification (IMM filter only, not in rudder mode, only
+      // if the experimental inertia compensation is enabled): runs once after
+      // each homing, moves the pedal along a small two-tone trajectory and
+      // identifies inertia coefficient and delay of the plate.
+      static float s_identRestSledPos_mm_fl32 = 0.0f;
+      static float s_identArcPerSledMm_m_fl32 = 0.0f;
+      if (g_plateInertiaIdentificationRequested_b) {
+        g_plateInertiaIdentificationRequested_b = false;
+        bool isRudderModeActive_b =
+            dap_calculationVariables_st.rudderStatus_b ||
+            dap_calculationVariables_st.helicopterRudderStatus_b;
+        if ((dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                 .kfModelOrder_u8 == 4) &&
+            kalman_imm->isInertiaCompensationEnabled() &&
+            !isRudderModeActive_b &&
+            (g_pedalOperationalState_u8 == (uint8_t)PEDAL_STATE_ACTIVE_E)) {
+          // local gain pedal arc (m) per sled mm at the rest position
+          s_identRestSledPos_mm_fl32 = sledPosition;
+          float leverArm_m_fl32 =
+              ((float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                   .lengthPedalB_i16 +
+               (float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                   .lengthPedalD_i16) *
+              0.001f;
+          float angleAtRest_deg_fl32 = pedalInclineAngleDeg(
+              s_identRestSledPos_mm_fl32, &dap_config_pedalUpdateTask_st);
+          float angleAtRestPlus1mm_deg_fl32 =
+              pedalInclineAngleDeg(s_identRestSledPos_mm_fl32 + 1.0f,
+                                   &dap_config_pedalUpdateTask_st);
+          s_identArcPerSledMm_m_fl32 =
+              fabsf(angleAtRestPlus1mm_deg_fl32 - angleAtRest_deg_fl32) *
+              DEG_TO_RAD_FL32 * leverArm_m_fl32;
+
+          if (s_identArcPerSledMm_m_fl32 > 1e-5f) {
+            float loadcellToPedalForceGain_fl32 = convertToPedalForce(
+                1.0f, sledPosition, &dap_config_pedalUpdateTask_st);
+            ActiveSerial->println("[IMM] Plate inertia identification started");
+            plateInertiaIdentification.start(
+                loadcell->getVarianceEstimate() *
+                loadcellToPedalForceGain_fl32 * loadcellToPedalForceGain_fl32);
+          }
+        }
+      }
+      if (plateInertiaIdentification.isActive()) {
+        float arcOffset_m_fl32 = plateInertiaIdentification.update(
+            (float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 * 1e-6f,
+            newLoadcellSample_b, pedalForce_fl32);
+
+        // override the strategy target with the excitation trajectory
+        float sledMmPerStep_fl32 =
+            motorRevolutionsPerSteps_fl32 *
+            (float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                .spindlePitch_mmPerRev_u8;
+        float targetSledPos_mm_fl32 =
+            s_identRestSledPos_mm_fl32 +
+            arcOffset_m_fl32 / s_identArcPerSledMm_m_fl32;
+        Position_Next_fl32 = (float)stepper->getMinPosition() +
+                             targetSledPos_mm_fl32 / sledMmPerStep_fl32;
+        positionWithoutEffect = (int32_t)Position_Next_fl32;
+
+        if (!plateInertiaIdentification.isActive()) {
+          if (plateInertiaIdentification.isResultValid()) {
+            kalman_imm->setInertiaModel(
+                plateInertiaIdentification.getInertiaCoefficient_kgPerMps2(),
+                plateInertiaIdentification.getDelay_s());
+            ActiveSerial->printf(
+                "[IMM] Plate inertia: c_m=%.4f kg/(m/s^2) (m_eq=%.3f kg), "
+                "delay=%.2f ms, k_g=%.1f kg/m\n",
+                plateInertiaIdentification.getInertiaCoefficient_kgPerMps2(),
+                plateInertiaIdentification.getInertiaCoefficient_kgPerMps2() *
+                    9.81f,
+                plateInertiaIdentification.getDelay_s() * 1000.0f,
+                plateInertiaIdentification.getGravityStiffness_kgPerM());
+          } else {
+            ActiveSerial->println(
+                "[IMM] Plate inertia identification failed (foot on pedal?), "
+                "keeping previous inertia model");
+          }
+          kalman_imm->reset(pedalForce_fl32);
+        }
       }
       // end profiler 4, movement strategy
       profiler_pedalUpdateTask.end(5);
@@ -2651,71 +2897,111 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       if (doMovement_b) {
         static float Position_Last_fl32 = (float)stepper->getMinPosition();
         if (!moveSlowlyToPosition_b) {
-          static int32_t s_lastCommandedTarget_i32 = -1;
-          static uint32_t s_lastCommandedSpeed_u32 = 0;
+          // Jitter-tolerant step command:
+          // - speed = model velocity (feed-forward) + position correction
+          // - target = new setpoint + a lead of STEP_COMMAND_LEAD_S of travel,
+          //   so a late next cycle does not stop the pulses at the setpoint
+          //   (start-stop "grain"). On time, the next cycle retargets before
+          //   the lead is reached. No lead at standstill (exact positioning).
+          //   3 cycles (750 us): a logic analyzer + log session showed single
+          //   cycles of up to 713 us; with a 2-cycle lead these stopped the
+          //   pulses for 0.1-0.3 ms at 5-18 kHz.
+          const float STEP_COMMAND_LEAD_S = 3.0f * nominalCycleTime_s_fl32;
+          // time within which a standstill correction is completed (unchanged
+          // 2 cycles, independent of the motion lead)
+          const float STANDSTILL_REACH_S = 2.0f * nominalCycleTime_s_fl32;
+          const float STANDSTILL_SPEED_HZ = 10.0f;
 
-          // compute required speed to reach the target position within the next
-          // control cycle, so that the movement appears smooth and without
-          // delay. float distanceToMove = Position_Next_fl32 -
-          // (float)stepperPosCurrent_i32;
+          float previousSetpoint_fl32 = Position_Last_fl32;
           float distanceToMove = Position_Next_fl32 - Position_Last_fl32;
           Position_Last_fl32 = Position_Next_fl32;
 
-          // prevent very small movements, since it will induce pulse frequency
-          // of 1 / (REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64 * 1e-6) Hz
-          // = 4000Hz with sign flips
-          float distanceToMoveAbs_fl32 = fabsf(distanceToMove);
+          // model velocity over the model step just computed (steps/s, signed)
+          float feedForwardSpeedHz_fl32 = distanceToMove / cycleTime_s_fl32;
+          bool isStandstill_b =
+              fabsf(feedForwardSpeedHz_fl32) < STANDSTILL_SPEED_HZ;
 
-          // Hardware distance (integer steps) for fallback and step-loss checks
-          int32_t hardwareDistance_i32 =
-              (int32_t)Position_Last_fl32 - stepper->getCurrentPosition();
-
-          if (distanceToMoveAbs_fl32 != 0 || abs(hardwareDistance_i32) > 1) {
-            float deltaTime_s_fl32 =
-                ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) *
-                1e-6f;
-            float requiredSpeed = distanceToMoveAbs_fl32 / deltaTime_s_fl32;
-
-            // slightly overspeed to make sure pulses reach in time
-            // requiredSpeed *= 1.1f;
-
-            // Catch-up propotional speed gain
-            float catchUpSpeedHz = 0.0f;
-
-            // add catchup speed near standstill & near min endstop, or when
-            // correcting hardware offset
-            float targetPosFraction_fl32 =
-                stepper->getCurrentPositionFractionFromExternalPos(
-                    Position_Next_fl32 - stepper->getMinPosition());
-            bool isRudderModeActive =
-                dap_calculationVariables_st.rudderStatus_b ||
-                dap_calculationVariables_st.helicopterRudderStatus_b;
-            if ((fabsf(requiredSpeed) < 10) &&
-                (targetPosFraction_fl32 <= 0.05f || isRudderModeActive ||
-                 abs(hardwareDistance_i32) > 1)) {
-              // At endstops in rudder mode, do not overdrive against mechanical
-              // limit
-              bool nearEndstop = (targetPosFraction_fl32 <= 0.02f ||
-                                  targetPosFraction_fl32 >= 0.98f);
-              if (abs(hardwareDistance_i32) > 1 &&
-                  (!isRudderModeActive || !nearEndstop)) {
-                float catchUpKp = 400.0f;
-                catchUpSpeedHz =
-                    (float)(abs(hardwareDistance_i32) - 1) * catchUpKp;
-              }
+          // Position correction: the servo should now be at the previous
+          // setpoint. Standstill uses a high gain; in motion a milder gain, so
+          // lag is bled off during the stroke instead of dumped when the model
+          // slows (that dump is the felt jerk).
+          float currentPos_fl32 = (float)stepper->getCurrentPosition();
+          float positionError_fl32 = previousSetpoint_fl32 - currentPos_fl32;
+          float targetPosFraction_fl32 =
+              stepper->getCurrentPositionFractionFromExternalPos(
+                  Position_Next_fl32 - stepper->getMinPosition());
+          bool isRudderModeActive =
+              dap_calculationVariables_st.rudderStatus_b ||
+              dap_calculationVariables_st.helicopterRudderStatus_b;
+          bool nearEndstop = (targetPosFraction_fl32 <= 0.02f ||
+                              targetPosFraction_fl32 >= 0.98f);
+          float correctionSpeedHz_fl32 = 0.0f;
+          const float correctionDeadband_fl32 = isStandstill_b ? 1.0f : 4.0f;
+          if ((fabsf(positionError_fl32) > correctionDeadband_fl32) &&
+              (!isRudderModeActive || !nearEndstop)) {
+            float errorOutsideDeadband_fl32 =
+                positionError_fl32 -
+                copysignf(correctionDeadband_fl32, positionError_fl32);
+            if (isStandstill_b) {
+              correctionSpeedHz_fl32 = 400.0f * errorOutsideDeadband_fl32;
+            } else {
+              correctionSpeedHz_fl32 = constrain(
+                  80.0f * errorOutsideDeadband_fl32, -12000.0f, 12000.0f);
             }
+          }
 
-            // total speed
-            requiredSpeed = requiredSpeed + catchUpSpeedHz;
+          // target with lead, clipped to the hard endstops. At slow speed
+          // (< 1 step per cycle) the time-based lead is below one step, so
+          // keep at least MIN_LEAD_STEPS: the stepper ignores targets within
+          // 1 step, which made slow motion start-stop (logic analyzer: gaps
+          // after 10 % of the pulses at 2-3.3 kHz).
+          const float MIN_LEAD_STEPS = 2.0f;
+          float leadSteps_fl32 = 0.0f;
+          if (!isStandstill_b) {
+            leadSteps_fl32 = feedForwardSpeedHz_fl32 * STEP_COMMAND_LEAD_S;
+            if (fabsf(leadSteps_fl32) < MIN_LEAD_STEPS) {
+              leadSteps_fl32 = copysignf(MIN_LEAD_STEPS, feedForwardSpeedHz_fl32);
+            }
+          }
+          // The lead must not carry the target past the end of the travel range:
+          // when the model runs into full travel it stops within ~1 ms, and the
+          // pulses already sent ahead overshot by 2-3 steps and then reversed
+          // (a small knock at every full press). A setpoint that is itself
+          // beyond the range (soft endstop, effects) is still followed.
+          float leadUpperLimit_fl32 =
+              max(Position_Next_fl32,
+                  (float)dap_calculationVariables_st.softEndstopMaxStepperPos_i32);
+          float leadLowerLimit_fl32 =
+              min(Position_Next_fl32,
+                  (float)dap_calculationVariables_st.softEndstopMinStepperPos_i32);
+          float target_fl32 = constrain(Position_Next_fl32 + leadSteps_fl32,
+                                        leadLowerLimit_fl32, leadUpperLimit_fl32);
+          target_fl32 = constrain(target_fl32,
+                                  (float)stepper->getHardEndstopMinPosition(),
+                                  (float)stepper->getHardEndstopMaxPosition());
+          float distanceToTarget_fl32 = fabsf(target_fl32 - currentPos_fl32);
 
+          if (distanceToTarget_fl32 > 1.0f) {
+            float requiredSpeed =
+                fabsf(feedForwardSpeedHz_fl32 + correctionSpeedHz_fl32);
+            // at standstill never crawl: reach the target within
+            // (1 cycle + STANDSTILL_REACH_S) at least. Not while moving: there
+            // the target lies ahead on purpose and the speed must follow the model.
+            if (isStandstill_b) {
+              requiredSpeed = max(requiredSpeed,
+                                  distanceToTarget_fl32 /
+                                      (nominalCycleTime_s_fl32 + STANDSTILL_REACH_S));
+            }
             if (requiredSpeed > (float)MAXIMUM_STEPPER_SPEED_U32) {
               requiredSpeed = (float)MAXIMUM_STEPPER_SPEED_U32;
             }
-
-            stepper->moveToWithSpeed((int32_t)Position_Next_fl32,
-                                     requiredSpeed);
-            s_lastCommandedTarget_i32 = (int32_t)Position_Next_fl32;
-            s_lastCommandedSpeed_u32 = requiredSpeed;
+            stepper->moveToWithSpeed((int32_t)lroundf(target_fl32),
+                                     (uint32_t)requiredSpeed);
+          } else if (isStandstill_b && stepper->isRunning()) {
+            // model stopped and at the setpoint while still running toward
+            // an earlier lead target: stop here instead of overshooting.
+            // Not while moving: that stopped slow motion every few cycles.
+            stepper->forceStop();
           }
         } else {
           moveSlowlyToPosition_b = false;
@@ -2875,9 +3161,18 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             joystickDenoisedPercent_fl32 = joystickNormalizedToInt32_eval;
             joystickDenoiseInit_b = true;
           } else {
-            joystickDenoisedPercent_fl32 =
-                alpha_fl32 * joystickDenoisedPercent_fl32 +
-                (1.0f - alpha_fl32) * joystickNormalizedToInt32_eval;
+            float denoiseDelta_fl32 =
+                joystickNormalizedToInt32_eval - joystickDenoisedPercent_fl32;
+            // Snap once within 0.01% (~6 HID counts): with heavy smoothing
+            // the per-step increment drops below float32 resolution near the
+            // target and the EMA stalls short of it (e.g. 65532 instead of
+            // 65535 at full press).
+            if (fabsf(denoiseDelta_fl32) < 0.01f) {
+              joystickDenoisedPercent_fl32 = joystickNormalizedToInt32_eval;
+            } else {
+              joystickDenoisedPercent_fl32 +=
+                  (1.0f - alpha_fl32) * denoiseDelta_fl32;
+            }
           }
           joystickNormalizedToInt32_eval = joystickDenoisedPercent_fl32;
         } else {
@@ -2885,7 +3180,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         }
 
         float joystickRaw_fl32 = joystickNormalizedToInt32_eval / 100.0f *
-                                  (float)s_JOYSTICK_MAX_VALUE_U16;
+                                  (float)s_JOYSTICK_MAX_VALUE_U16 +
+                                  0.5f; // round, don't truncate
         joystickNormalizedToUInt16 = (uint16_t)constrain(
             joystickRaw_fl32, (float)s_JOYSTICK_MIN_VALUE_U16,
             (float)s_JOYSTICK_MAX_VALUE_U16);
@@ -2957,10 +3253,24 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       // check if data needs to be send
       if ((dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 &
            DEBUG_INFO_0_STATE_EXTENDED_INFO_STRUCT_U8)) {
-        // send data every frame
-        sendPedalStructsViaSerialCounter_u8 = 0;
-        sendBasicFlag_b = true;
-        sendExtendedFlag_b = true;
+        if (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 &
+            DEBUG_INFO_0_EXTENDED_STRUCT_DECIMATED_U8) {
+          // send data every N-th frame only, so the USB CDC buffer does not
+          // overflow and the trace has no gaps
+          sendPedalStructsViaSerialCounter_u8++;
+          bool sendNow_b = (sendPedalStructsViaSerialCounter_u8 >=
+                            EXTENDED_STRUCT_DECIMATION_FACTOR_U8);
+          if (sendNow_b) {
+            sendPedalStructsViaSerialCounter_u8 = 0;
+          }
+          sendBasicFlag_b = sendNow_b;
+          sendExtendedFlag_b = sendNow_b;
+        } else {
+          // send data every frame
+          sendPedalStructsViaSerialCounter_u8 = 0;
+          sendBasicFlag_b = true;
+          sendExtendedFlag_b = true;
+        }
       } else {
         // send data every N-th frame
         sendPedalStructsViaSerialCounter_u8++;
@@ -3081,6 +3391,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             .servoVoltage0p1V_i16 = cached_servosVoltage_i16;
         dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st
             .servoCurrentPercent_i16 = cached_servosCurrent_i16;
+        dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st
+            .servoVelocityRpm_i16 = cached_servosVelocityRpm_i16;
 
         // ESP states
         dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st
@@ -3099,9 +3411,16 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             .currentSpeedInHz_i32 = cached_currentSpeedInHz_i32;
         dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st
             .brakeResistorState_b =
-            brake_state * 255; // stepper->getBrakeResistorState();
+            (uint8_t)lroundf(brakeResistorDuty_01 * 255.0f); // PWM duty
         dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st
             .oscillationMonitorValue_u8 = 0.0f;
+        // IMM filter: probability of the MOVE hypothesis (0 = HOLD, 255 = MOVE)
+        if (dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                .kfModelOrder_u8 == 4) {
+          dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st
+              .oscillationMonitorValue_u8 =
+              (uint8_t)(kalman_imm->moveProbability() * 255.0f);
+        }
 
         dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st
             .admittance_expectedForce_N =
@@ -4649,6 +4968,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
           // guess. Rate-limited to every 2s (rudder fires every 2ms, so an
           // unconditional log here would flood the link). Remove once
           // rudder sync is confirmed working again.
+#ifdef WIRELESS_DEBUG_INFO
           static uint32_t s_lastRudderDiagLogTime = 0;
           if ((dap_calculationVariables_st.rudderStatus_b ||
                dap_calculationVariables_st.helicopterRudderStatus_b) &&
@@ -4663,8 +4983,10 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
                 wirelessComm.getRudderRxAcceptedCount(),
                 wirelessComm.getRudderRxRejectedCount());
           }
+#endif
         }
 
+#ifdef WIRELESS_DEBUG_INFO
         // TEMP DIAGNOSTIC: wireless link status every 5s, see printDiag().
         static uint32_t s_lastLinkDiagLogTime = 0;
         if (millis() - s_lastLinkDiagLogTime > 5000) {
@@ -4703,6 +5025,7 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
               wirelessComm.getTxBusySkipCount(),
               (uint32_t)g_currentSyncDelay_ms * 2);
         }
+#endif
       }
 
 #ifdef ESPNow_debugg_rudder_st

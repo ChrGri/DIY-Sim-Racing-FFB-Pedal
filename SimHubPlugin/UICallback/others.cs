@@ -411,6 +411,7 @@ namespace DiyFfbPedal
             dap_config_st_rudder.payloadPedalConfig_.configHash_u32 = 393938365;
             dap_config_st_rudder.payloadPedalConfig_.virtualPedalMass_u8 = 150;
             dap_config_st_rudder.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = 30;
+            dap_config_st_rudder.payloadPedalConfig_.brakeResistorResistance_Ohm_u8 = 10; // Ohm
             dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8 = 100;
             dap_config_st_rudder.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = 10;
             dap_config_st_rudder.payloadPedalConfig_.endstopTravelRange_mm_u8 = 0;

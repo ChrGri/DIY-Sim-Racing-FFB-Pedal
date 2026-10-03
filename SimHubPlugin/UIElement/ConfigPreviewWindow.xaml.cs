@@ -67,8 +67,11 @@ namespace DiyFfbPedal
                 case 2:
                     Textbox_Online_Profile_Description.Content += "KF Model: EXP.\n";
                     break;
-                case 4:
+                case 3:
                     Textbox_Online_Profile_Description.Content += "KF Model: None\n";
+                    break;
+                case 4:
+                    Textbox_Online_Profile_Description.Content += "KF Model: IMM adaptive\n";
                     break;
             }
             Textbox_Online_Profile_Description.Content += "KF :" + tmp_config.payloadPedalConfig_.kf_modelNoise + "\n";

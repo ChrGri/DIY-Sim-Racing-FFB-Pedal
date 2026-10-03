@@ -663,6 +663,37 @@ namespace DiyFfbPedal
                 }
             }
         }
+
+        // Writes the pedal config next to a pedal trace log (same name, .json extension),
+        // so each trace can be analysed together with the settings it was recorded with.
+        private void WritePedalConfigForTrace(string traceFilePath, int pedalIdx)
+        {
+            if (pedalIdx < 0 || pedalIdx >= dap_config_st.Length)
+            {
+                return;
+            }
+
+            try
+            {
+                DAP_config_st config = dap_config_st[pedalIdx];
+                config.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
+
+                using (var stream = new MemoryStream())
+                {
+                    var writer = JsonReaderWriterFactory.CreateJsonWriter(stream, Encoding.UTF8, true, true, "  ");
+                    var serializer = new DataContractJsonSerializer(typeof(DAP_config_st));
+                    serializer.WriteObject(writer, config);
+                    writer.Flush();
+
+                    string jsonPath = Path.ChangeExtension(traceFilePath, ".json");
+                    File.WriteAllBytes(jsonPath, stream.ToArray());
+                }
+            }
+            catch (Exception ex)
+            {
+                SimHub.Logging.Current.Error("Failed to write pedal config for trace: " + ex.Message);
+            }
+        }
         private void btn_reset_default_Click(object sender, RoutedEventArgs e)
         {
             DAP_config_set_default(indexOfSelectedPedal_u);
@@ -880,6 +911,27 @@ namespace DiyFfbPedal
                     }
                 }
             }
+        }
+
+        private void UpdateFanatecVibrationStatus(byte status)
+        {
+            bool supported = (status & 0x40) != 0;
+            SystemSetting_Section.FanatecVibrationPanel.Visibility = supported ? Visibility.Visible : Visibility.Collapsed;
+            _updatingFanatecVibrationToggle = true;
+            try
+            {
+                SystemSetting_Section.FanatecVibrationToggle.IsChecked = supported && (status & 0x80) != 0;
+            }
+            finally { _updatingFanatecVibrationToggle = false; }
+        }
+
+        private void FanatecVibrationToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_updatingFanatecVibrationToggle || Plugin == null) return;
+            DAP_bridge_state_st command = default;
+            command.payloadBridgeState_.Bridge_action = (byte)(SystemSetting_Section.FanatecVibrationToggle.IsChecked == true ?
+                bridgeAction.BRIDGE_ACTION_FANATEC_VIBRATION_ON : bridgeAction.BRIDGE_ACTION_FANATEC_VIBRATION_OFF);
+            Plugin.SendBridgeAction(command);
         }
 
         public void btn_Bridge_restart_Click(object sender, RoutedEventArgs e)

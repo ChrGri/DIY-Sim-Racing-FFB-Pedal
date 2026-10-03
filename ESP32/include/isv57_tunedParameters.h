@@ -2,6 +2,13 @@
 
 // Description: Array of tuned parameters derived from the file
 // 'tuned-130_13_09_2025.h' Size: 305 elements Type: Signed 32-bit integer
+//
+// Note: the firmware writes only the registers listed in
+// Isv57Communication::sendTunedServoParameters(). All other values here
+// (loop gains Pr1.xx, filters Pr2.xx, Pr6.xx) document the intended setup;
+// the servo uses its own NVM values, set with the Stepperonline app (read the
+// real values there). Signal flow and tuning notes:
+// docs/development/servoLoops.md
 #define ISV57_NMB_OF_REGISTERS 305
 const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     500,  // Pr0.00: Reserved parameters
@@ -33,8 +40,9 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     0,     // Pr0.24: Reserved parameter
     600,   // Pr1.00: 1st position loop gain
     400,   // Pr1.01: 1st velocity loop gain
-    200,   // Pr1.02: 1st time constant of velocity loop integration (reduziert
-           // von 500 auf 200 = 20ms gegen Nachschwingen)
+    200,   // Pr1.02: 1st time constant of velocity loop integration (20 ms,
+           // the usual value for a 40 Hz velocity loop. Note: a shorter Ti
+           // adds phase lag and ringing, it does not reduce it)
     27,    // Pr1.03: 1st filter of velocity detection
     180,   // Pr1.04: 1st torque filter (erhoeht von 100 auf 180 = 1.8ms gegen
            // Brems-Spannungsspitzen beim Error-Abbau)
@@ -43,15 +51,17 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     10000, // Pr1.07: 2nd time constant of velocity loop
     8,     // Pr1.08: 2nd filter of velocity detection
     200,   // Pr1.09: 2nd torque filter
-    35,    // Pr1.10: Velocity feed forward gain (35% Feedforward reduziert
-           // dynamischen Schleppfehler drastisch)
+    35,    // Pr1.10: Velocity feed forward gain (unit 0.1 %: 35 = 3.5 %,
+           // practically off. Following error e = (1 - VFF) * v / Kp)
     0, // Pr1.11: Velocity feed forward filter. Had better velocity error decay
        // with higher values and also less noise. Edit: 31.05.2026: Set to zero
        // to keep coherency between feed forward and feedback. With non-zero
        // values, the feed forward is smoothed, but the feedback is not, which
        // will cause overshoot.
-    0, // Pr1.12: Torque feed forward gain
-    1000,  // Pr1.13: Torque feed forward filter
+    0, // Pr1.12: Torque feed forward gain (unit 0.1 %)
+    1000,  // Pr1.13: Torque feed forward filter (10 ms; inactive while
+           // Pr1.12 = 0. When enabling torque FF set 0-50, otherwise the FF
+           // lags the feedback path, see docs/development/servoLoops.md)
     1,     // Pr1.14: 2nd gain setup
     0,     // Pr1.15: Control switching mode
     50,    // Pr1.16: Position control switching delay time
@@ -258,7 +268,8 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     1,      // Pr6.22: Trial running cycle times
     30,     // Pr6.23: Disturbance torque compensating gain (30% Disturbance
             // Observer for active cogging & stiction rejection)
-    15,     // Pr6.24: Disturbance observer filter (1.5ms filter time constant)
+    15,     // Pr6.24: Disturbance observer filter (unit 0.01 ms in the A5
+            // parameter map: 0.15 ms, not 1.5 ms. To be checked)
     0,      // Pr6.25: Reserved parameter
     0,      // Pr6.26: Reserved parameter
     0,      // Pr6.27: Alarm latch time selection
