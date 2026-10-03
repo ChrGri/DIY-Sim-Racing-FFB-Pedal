@@ -64,6 +64,54 @@ private:
   uint32_t prev_time_us_u32 = 0;
   bool is_voltage_fallback_active_b = false;
 
+  // --- Backstop input protection against corrupted servo packets ---
+  // A packet that passed the CRC can still carry wrong data (~1 in 65536 corrupted
+  // packets). Bus voltages outside this range are physically impossible here and are
+  // ignored (backstop off); the backstop switches on only when this many consecutive
+  // servo packets are above the threshold (~10 ms more delay per extra packet).
+  const float PLAUSIBLE_BUS_VOLTAGE_MIN_V = 16.0f;
+  const float PLAUSIBLE_BUS_VOLTAGE_MAX_V = 90.0f;
+  const uint8_t BACKSTOP_CONFIRM_PACKETS_U8 = 2;
+  uint32_t lastBackstopServoCycle_u32 = 0;
+  uint8_t backstopAboveCount_u8 = 0;
+
+  // Voltage for the thermal model: never below the learned rest voltage, never above
+  // the plausible maximum, so a corrupted reading can only overestimate the energy.
+  float thermalModelVoltage(float servoVoltage_fl32) const {
+    return constrain(max(servoVoltage_fl32, voltageThreshold_V_fl32),
+                     PLAUSIBLE_BUS_VOLTAGE_MIN_V, PLAUSIBLE_BUS_VOLTAGE_MAX_V);
+  }
+
+  // Reactive backstop with hysteresis, evaluated once per servo packet.
+  void updateBackstop(float servoVoltage_fl32, uint32_t servoCycleCounter_u32,
+                      float upperOffset_V, float lowerOffset_V) {
+    if (servoCycleCounter_u32 == lastBackstopServoCycle_u32) {
+      return; // same packet as in the previous pedal cycle
+    }
+    lastBackstopServoCycle_u32 = servoCycleCounter_u32;
+
+    if ((servoVoltage_fl32 < PLAUSIBLE_BUS_VOLTAGE_MIN_V) ||
+        (servoVoltage_fl32 > PLAUSIBLE_BUS_VOLTAGE_MAX_V)) {
+      // implausible: fail safe off
+      backstopAboveCount_u8 = 0;
+      is_voltage_fallback_active_b = false;
+      return;
+    }
+    if (servoVoltage_fl32 >= voltageThreshold_V_fl32 + upperOffset_V) {
+      if (backstopAboveCount_u8 < 255) {
+        backstopAboveCount_u8++;
+      }
+      if (backstopAboveCount_u8 >= BACKSTOP_CONFIRM_PACKETS_U8) {
+        is_voltage_fallback_active_b = true;
+      }
+    } else {
+      backstopAboveCount_u8 = 0;
+      if (servoVoltage_fl32 <= voltageThreshold_V_fl32 + lowerOffset_V) {
+        is_voltage_fallback_active_b = false;
+      }
+    }
+  }
+
   // --- Internal State Variables (Thermal Protection) ---
   bool is_hardware_active_b = false;
   uint32_t active_start_time_us_u32 = 0;
@@ -110,8 +158,9 @@ private:
 
     // 2. Update thermal energy accumulator
     if (is_hardware_active_b) {
+      float thermalVoltage_fl32 = thermalModelVoltage(servoVoltage_fl32);
       float power_in_w =
-          (servoVoltage_fl32 * servoVoltage_fl32) / RESISTOR_OHMS_FL32;
+          (thermalVoltage_fl32 * thermalVoltage_fl32) / RESISTOR_OHMS_FL32;
       accumulated_energy_j_fl32 +=
           (power_in_w - COOLING_POWER_W_FL32) * dt_s_fl32;
     } else {
@@ -212,7 +261,8 @@ public:
    * @return duty [0, 1] to apply
    */
   float updateDuty(float feedforwardDuty_01, float servoVoltage_fl32,
-                   uint32_t currentTimeUs_u32, int32_t currentSpeedInHz_i32) {
+                   uint32_t currentTimeUs_u32, int32_t currentSpeedInHz_i32,
+                   uint32_t servoCycleCounter_u32) {
     float dt_s_fl32 = 0.001f;
     if (prev_time_us_u32 != 0) {
       uint32_t dt_us = currentTimeUs_u32 - prev_time_us_u32;
@@ -225,12 +275,9 @@ public:
     updateVoltageBaseline(servoVoltage_fl32, appliedDuty_01_fl32 > 0.0f,
                           currentSpeedInHz_i32);
 
-    // reactive backstop with hysteresis
-    if (servoVoltage_fl32 >= voltageThreshold_V_fl32 + BACKSTOP_UPPER_THRESHOLD_VOLTAGE) {
-      is_voltage_fallback_active_b = true;
-    } else if (servoVoltage_fl32 <= voltageThreshold_V_fl32 + BACKSTOP_LOWER_THRESHOLD_VOLTAGE) {
-      is_voltage_fallback_active_b = false;
-    }
+    // reactive backstop with hysteresis (plausibility check, confirmed over 2 packets)
+    updateBackstop(servoVoltage_fl32, servoCycleCounter_u32,
+                   BACKSTOP_UPPER_THRESHOLD_VOLTAGE, BACKSTOP_LOWER_THRESHOLD_VOLTAGE);
     float duty_01 = constrain(feedforwardDuty_01, 0.0f, 1.0f);
     if (duty_01 < MIN_PWM_DUTY_01) {
       duty_01 = 0.0f;
@@ -240,7 +287,8 @@ public:
     }
 
     // thermal model: dissipated energy minus passive cooling
-    float fullOnPower_W = (servoVoltage_fl32 * servoVoltage_fl32) / RESISTOR_OHMS_FL32;
+    float thermalVoltage_fl32 = thermalModelVoltage(servoVoltage_fl32);
+    float fullOnPower_W = (thermalVoltage_fl32 * thermalVoltage_fl32) / RESISTOR_OHMS_FL32;
     accumulated_energy_j_fl32 +=
         (appliedDuty_01_fl32 * fullOnPower_W - COOLING_POWER_W_FL32) * dt_s_fl32;
     if (accumulated_energy_j_fl32 < 0.0f) {
@@ -285,8 +333,9 @@ public:
 
   // On/off reactive voltage check with the thermal governor (rudder mode)
   bool simpleVoltageCheck(float servoVoltage_fl32,
-                          uint32_t currentTimeUs_u32 = 0,
-                          int32_t currentSpeedInHz_i32 = 0) {
+                          uint32_t currentTimeUs_u32,
+                          int32_t currentSpeedInHz_i32,
+                          uint32_t servoCycleCounter_u32) {
     if (currentTimeUs_u32 == 0) {
       currentTimeUs_u32 = micros();
     }
@@ -300,16 +349,9 @@ public:
     }
     prev_time_us_u32 = currentTimeUs_u32;
 
-    float upperLimit_V =
-        voltageThreshold_V_fl32 + BRAKE_RESISTOR_UPPER_THRESHOLD_VOLTAGE;
-    float lowerLimit_V =
-        voltageThreshold_V_fl32 + BRAKE_RESISTOR_LOWER_THRESHOLD_VOLTAGE;
-
-    if (servoVoltage_fl32 >= upperLimit_V) {
-      is_voltage_fallback_active_b = true;
-    } else if (servoVoltage_fl32 <= lowerLimit_V) {
-      is_voltage_fallback_active_b = false;
-    }
+    updateBackstop(servoVoltage_fl32, servoCycleCounter_u32,
+                   BRAKE_RESISTOR_UPPER_THRESHOLD_VOLTAGE,
+                   BRAKE_RESISTOR_LOWER_THRESHOLD_VOLTAGE);
 
     return applyThermalSafetyGovernor(is_voltage_fallback_active_b,
                                       servoVoltage_fl32, currentTimeUs_u32,

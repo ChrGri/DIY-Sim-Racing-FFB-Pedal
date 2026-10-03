@@ -2613,7 +2613,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         // rudder: reactive voltage check (on/off) as before
         bool brakeResistorOn_b = brakeController.simpleVoltageCheck(
             ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
-            cached_currentSpeedInHz_i32);
+            cached_currentSpeedInHz_i32, cached_servoCycleCounter_u32);
         brakeResistorDuty_01 = brakeResistorOn_b ? 1.0f : 0.0f;
       } else {
         // admittance: PWM feedforward from the regen governor, reactive backstop
@@ -2621,7 +2621,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         brakeResistorDuty_01 = brakeController.updateDuty(
             brakeResistorEnabled_b ? s_brakeResistorDutyRequest_01 : 0.0f,
             ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
-            cached_currentSpeedInHz_i32);
+            cached_currentSpeedInHz_i32, cached_servoCycleCounter_u32);
       }
 
       // Config-driven brake resistor kill switch (default: enabled). Off: the
