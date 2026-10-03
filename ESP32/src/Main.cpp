@@ -2584,7 +2584,32 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
               ? (float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st
                         .brakeResistorResistance_Ohm_u8
               : BRAKE_RESISTOR_OHMS);
-      if (isRudderModeActive_b) {
+
+      // Servo data freshness: the bus voltage is the value of the last valid servo
+      // packet and stays at that value when the communication breaks off (cable, servo
+      // powered off). The servo cycle counter only advances on CRC-valid packets
+      // (~100 Hz); without a new packet for SERVO_DATA_TIMEOUT_US the resistor stays off
+      // and the controller is not updated, so a stale voltage cannot trigger the backstop.
+      const uint32_t SERVO_DATA_TIMEOUT_US = 50000;
+      static uint32_t s_lastServoCycleCounter_u32 = 0;
+      static uint32_t s_lastServoCycleChangeUs_u32 = 0;
+      static bool s_servoDataStale_b = true; // until the first valid packet
+      if (cached_servoCycleCounter_u32 != s_lastServoCycleCounter_u32) {
+        s_lastServoCycleCounter_u32 = cached_servoCycleCounter_u32;
+        s_lastServoCycleChangeUs_u32 = current_time_us;
+        s_servoDataStale_b = false;
+      } else if ((uint32_t)(current_time_us - s_lastServoCycleChangeUs_u32) >=
+                 SERVO_DATA_TIMEOUT_US) {
+        // unsigned difference: correct across the micros() wraparound. Sticky until the
+        // next packet, so a frozen counter cannot look fresh again when the difference
+        // wraps after 71.6 min.
+        s_servoDataStale_b = true;
+      }
+      const bool servoDataFresh_b = !s_servoDataStale_b;
+
+      if (!servoDataFresh_b) {
+        brakeResistorDuty_01 = 0.0f;
+      } else if (isRudderModeActive_b) {
         // rudder: reactive voltage check (on/off) as before
         bool brakeResistorOn_b = brakeController.simpleVoltageCheck(
             ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
@@ -2611,7 +2636,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
 
       // regen budget the admittance strategy may route into the resistor
       const float brakeResistorAvailable_01 =
-          brakeResistorEnabled_b ? brakeController.availableFraction() : 0.0f;
+          (brakeResistorEnabled_b && servoDataFresh_b) ? brakeController.availableFraction() : 0.0f;
 
       // compute next position with PID strategy
       // MPC control strataegy for rudder
