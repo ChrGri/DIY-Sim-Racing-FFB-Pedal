@@ -182,8 +182,7 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
   _stepper->setExpectedCycleTimeUs(
       REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64);
 
-  // Start the servo UART only now: driving TX before the servo has booted
-  // back-feeds its logic and blocks its power-on reset.
+  // Start the servo UART after the boot wait
   isv57.begin();
 
   // 3. Attempt to discover the Modbus Slave ID of the connected iSV57 servo
