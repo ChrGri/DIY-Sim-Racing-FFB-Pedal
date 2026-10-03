@@ -87,6 +87,7 @@ float g_tankEnergy_J = 2.0f;    // Energy tank level for passive parameter adapt
 float g_massAdaptationOffset_kg = 0.0f; // Dynamic mass offset from Energy Tank framework
 float g_lastActiveDamping_Ns_m = 0.0f;  // Track previous frame's damping for power calculation
 float g_lastNetForceTustin_N = 0.0f;    // Net force of the previous integration step (force memory)
+float g_servoVelEst_mps = 0.0f;         // Estimated servo (pedal) velocity: model velocity lagged by the servo
 
 
 // Oscillation Detector State (Landi et al.)
@@ -704,6 +705,26 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
 // electrical powers; the velocity budget converts them to mechanical power (/ efficiency)
 // and the brake resistor duty converts the mechanical power to electrical (* efficiency).
 #define REGEN_ELECTRICAL_EFFICIENCY_01 0.75f
+
+// Kinetic energy of the motor. When the servo decelerates, the rotor's kinetic energy
+// returns to the bus on top of the foot power: J_total = J_rotor * (1 + inertia ratio)
+// = 0.40 kg*cm^2 (Pr7.13) * (1 + 1.10) (Pr0.04), i.e. ~133 kg at the sled with a 5 mm
+// spindle, ~10 J at 0.39 m/s. A hard stop at the end of travel returned it within
+// ~20-30 ms and drove the bus to 79 V (2026-10-03).
+#define SERVO_ROTOR_INERTIA_KGM2 4.0e-5f
+#define SERVO_INERTIA_RATIO_01 1.10f
+// share of the kinetic energy that reaches the bus (copper losses at high braking current)
+#define REGEN_KINETIC_EFFICIENCY_01 0.8f
+// The servo follows the commanded velocity with a lag of ~(1 - VFF) / Kp
+// (Pr1.10 = 30 %, Pr1.00 = 60 1/s: ~12 ms; latency check: ~10-14 ms).
+#define SERVO_FOLLOW_TIME_CONSTANT_S 0.012f
+// Energy a stop may return without overvoltage: bus capacitors 36 -> ~55 V (~0.9 J) plus
+// the servo bleeder 40 W over ~30 ms (~1.2 J); plus the brake resistor's power over the
+// stop duration when it is available.
+#define STOP_ENERGY_SERVO_J 2.0f
+#define STOP_DURATION_S 0.03f
+// deceleration the approach cap assumes (= the model's acceleration clamp)
+#define STOP_APPROACH_DECELERATION_MPS2 30.0f
 // Legacy limit on the model force (rudder strategy)
 #define REGEN_POWER_MODEL_FORCE_W 40.0f
 
@@ -905,6 +926,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
     g_vModelPos_01 = actualPosFraction_01;
     g_vModelVel_mps = 0.0f;
     g_lastNetForceTustin_N = 0.0f;
+    g_servoVelEst_mps = 0.0f;
   }
 
   // --- 3. ELASTOMER PHYSICS & SPRING REACTION (Hunt-Crossley Model) ---
@@ -1395,14 +1417,42 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   );
 
   float forwardSpeedLimit = min(dynamicSpeedLimit, maxRegenVel_mps);
+
+  // Kinetic-energy limit on the approach to the end of travel: the model stops at the
+  // travel limit within a few cycles, and the servo then returns the kinetic energy of
+  // the motor (~10 J at full speed) within ~20-30 ms. Limit the speed by the distance to
+  // the limit so the stop returns at most what the servo (and the brake resistor, when
+  // available) can absorb: v_max = sqrt(v_stop^2 + 2 * a * d).
+  const float sledPerArc_01 = maxSledPos_m / max(totalTravel_m, 0.0001f);
+  const float sledMetersPerRad = max(spindlePitch_mm, 1.0f) * 0.001f / (2.0f * PI);
+  const float servoEquivalentMass_kg =
+      SERVO_ROTOR_INERTIA_KGM2 * (1.0f + SERVO_INERTIA_RATIO_01)
+      / (sledMetersPerRad * sledMetersPerRad) * sledPerArc_01 * sledPerArc_01;
+  const float stopEnergy_J = STOP_ENERGY_SERVO_J
+                           + brakeResistorAvailable_01 * brakeResistorRegenPower_W * STOP_DURATION_S;
+  const float stopVelocitySq = 2.0f * stopEnergy_J / max(servoEquivalentMass_kg, 0.001f);
+  const float distanceToEnd_m = max(0.0f, (upperTravelLimit_01 - g_vModelPos_01) * totalTravel_m);
+  const float approachSpeedLimit_mps =
+      sqrtf(stopVelocitySq + 2.0f * STOP_APPROACH_DECELERATION_MPS2 * distanceToEnd_m);
+  forwardSpeedLimit = min(forwardSpeedLimit, approachSpeedLimit_mps);
+
   g_vModelVel_mps = constrain(g_vModelVel_mps, -dynamicSpeedLimit, forwardSpeedLimit);
 
   // Brake resistor feedforward: dissipate the electrical regen power above the servo's
   // own share. Duty = excess power / full-on power V^2/R (at the nominal bus voltage).
   // With the full mechanical power the resistor took everything (incl. the servo's share,
   // whose bleeder only acts above ~40 V) and pulled the bus below its rest voltage.
+  // The servo follows the model with a lag: at a stop it keeps moving and decelerating
+  // after the model velocity has collapsed, so the duty uses an estimate of the servo
+  // velocity (first-order lag) and adds the kinetic power of its deceleration.
+  const float servoVelEstPrev_mps = g_servoVelEst_mps;
+  g_servoVelEst_mps += (g_vModelVel_mps - g_servoVelEst_mps)
+                     * (1.0f - expf(-dt_s / SERVO_FOLLOW_TIME_CONSTANT_S));
+  const float servoDecel_mps2 = max(0.0f, (servoVelEstPrev_mps - g_servoVelEst_mps) / dt_s);
   if (brakeResistorDutyRequest_01 != nullptr) {
-    float regenPower_W = REGEN_ELECTRICAL_EFFICIENCY_01 * totalOpposingForce_N * max(g_vModelVel_mps, 0.0f);
+    const float servoVelForward_mps = max(g_servoVelEst_mps, 0.0f);
+    float regenPower_W = REGEN_ELECTRICAL_EFFICIENCY_01 * totalOpposingForce_N * servoVelForward_mps
+                       + REGEN_KINETIC_EFFICIENCY_01 * servoEquivalentMass_kg * servoVelForward_mps * servoDecel_mps2;
     float excessPower_W = regenPower_W - ADMITTANCE_REGEN_POWER_SERVO_W;
     *brakeResistorDutyRequest_01 = (brakeResistorAvailable_01 > 0.0f)
         ? constrain(excessPower_W / brakeResistorFullOnPower_W, 0.0f, 1.0f)
@@ -1524,7 +1574,6 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // pedal arc length (task space, see CalcSoftEndstopForce): convert it to sled mm with the
   // mean sled-per-arc ratio of the travel.
   float endstopTravelArc_mm = (endstopBehavior_st.travelRange_mm_fl32 > 0.01f) ? endstopBehavior_st.travelRange_mm_fl32 : 0.0f;
-  float sledPerArc_01 = (totalTravel_m > 0.0001f) ? (maxSledPos_m / totalTravel_m) : 1.0f;
   float endstopTravel_mm = endstopTravelArc_mm * sledPerArc_01;
   float endstopTravel_steps = endstopTravel_mm / (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm);
 
