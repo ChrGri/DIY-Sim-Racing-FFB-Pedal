@@ -294,6 +294,28 @@ namespace DiyFfbPedal
         }
 
         
+        private readonly DateTime[] consoleLastEffectAt = new DateTime[3];
+        private readonly long[] consoleQueuedActions = new long[3];
+        private DateTime consoleLastUpdateAt;
+        private DateTime consoleLastAbsAt = DateTime.MinValue;
+        private DateTime consoleLastTcAt = DateTime.MinValue;
+        private string consoleStatus = "";
+        public string ConsoleEffectStatus => String.IsNullOrEmpty(consoleStatus) ? "" :
+            (DateTime.UtcNow - consoleLastUpdateAt > TimeSpan.FromSeconds(2)
+                ? "Console: no telemetry callbacks" : consoleStatus);
+
+        private string ConsoleOutputRoute(int pedal)
+        {
+            string route = Settings.Pedal_ESPNow_Sync_flag[pedal]
+                ? (BridgeHidService.IsConnected ? "HID bridge" : ESPsync_serialPort.IsOpen ? "COM bridge" : "Bridge disconnected")
+                : (_serialPort[pedal].IsOpen ? "Pedal COM" : "Pedal disconnected");
+            string effect = Settings.ABS_enable_flag[pedal] == 1 ? (pedal == 1 ? "ABS" : "TC") : "";
+            if (Settings.RPM_enable_flag[pedal] == 1) effect += " RPM";
+            if (String.IsNullOrWhiteSpace(effect)) effect = "Effects off";
+            return Rudder_status ? "Rudder mode blocks effects" :
+                $"{route} / {effect.Trim()} / TX queued {consoleQueuedActions[pedal]}";
+        }
+
         unsafe public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
 			
@@ -316,6 +338,35 @@ namespace DiyFfbPedal
             bool Flight_running_simhub = false;
             
             //bool WS_flag = false;
+
+            string selectedGame = Convert.ToString(pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame"));
+            if (String.IsNullOrWhiteSpace(selectedGame)) selectedGame = data.GameName;
+            // SimHub receives console telemetry without a local game process.
+            // GT7 remains identifiable even while waiting for its first packet.
+            bool isConsole = ConsoleEffectPolicy.IsConsoleSession(selectedGame, data.GameRunning,
+                data.RunningGameProcessDetected, data.NewData != null);
+            bool consoleActive = ConsoleEffectPolicy.IsActive(data.GameRunning, data.NewData != null,
+                data.GamePaused, data.GameInMenu, data.GameReplay);
+            bool effectTelemetryActive = isConsole ? consoleActive : data.GameRunning;
+            consoleLastUpdateAt = DateTime.UtcNow;
+            if (isConsole && consoleActive)
+            {
+                if (data.NewData.ABSActive > 0) consoleLastAbsAt = consoleLastUpdateAt;
+                if (data.NewData.TCActive > 0) consoleLastTcAt = consoleLastUpdateAt;
+            }
+            else
+            {
+                consoleLastAbsAt = consoleLastTcAt = DateTime.MinValue;
+            }
+            if (isConsole)
+            {
+                string state = consoleActive ? "Live" : data.GamePaused ? "Paused" :
+                    data.GameReplay ? "Replay" : data.GameInMenu ? "Menu" : "Waiting for telemetry";
+                string inputs = data.NewData == null ? "No data" :
+                    $"ABS {data.NewData.ABSActive} / TC {data.NewData.TCActive} / RPM {data.NewData.Rpms:0}";
+                consoleStatus = $"{selectedGame}: {state}\n{inputs}\nBrake: {ConsoleOutputRoute(1)}\nThrottle: {ConsoleOutputRoute(2)}";
+            }
+            else consoleStatus = "";
 
             bool gameProcessDetected = data.GameRunning || data.RunningGameProcessDetected;
             if (gameProcessDetected)
@@ -343,7 +394,7 @@ namespace DiyFfbPedal
                 autoProfileStateCleared = true;
             }
 
-            if (data.GamePaused || (!data.GameRunning))
+            if (data.GamePaused || !effectTelemetryActive)
             {
                 in_game_flag = 0;
             }
@@ -363,7 +414,7 @@ namespace DiyFfbPedal
 
 
             // Send ABS signal when triggered by the game
-            if (data.GameRunning)
+            if (effectTelemetryActive)
             {
                 if (Settings.profileAutoChange)
                 {
@@ -439,7 +490,7 @@ namespace DiyFfbPedal
                     }
                 }
 
-                if (data.OldData != null && data.NewData != null)
+                if (data.NewData != null && (isConsole || data.OldData != null))
                 {
                     if (data.NewData.ABSActive > 0)
                     {
@@ -449,6 +500,13 @@ namespace DiyFfbPedal
                     if (data.NewData.TCActive > 0)
                     {
                         sendTcSignal_local_b = true;
+                    }
+
+                    if (isConsole)
+                    {
+                        // Keep short telemetry pulses across the 50 ms output interval.
+                        sendAbsSignal_local_b = ConsoleEffectPolicy.HasRecentTrigger(consoleLastUpdateAt, consoleLastAbsAt);
+                        sendTcSignal_local_b = ConsoleEffectPolicy.HasRecentTrigger(consoleLastUpdateAt, consoleLastTcAt);
                     }
 
 
@@ -509,7 +567,7 @@ namespace DiyFfbPedal
             absTrigger_currentTime = DateTime.UtcNow;
             TimeSpan diff = absTrigger_currentTime - absTrigger_lastTime;
             int millisceonds = (int)diff.TotalMilliseconds;
-            if (millisceonds <= 10)
+            if (!isConsole && millisceonds <= 10)
             {
                 sendAbsSignal_local_b = false;
                 sendTcSignal_local_b = false;
@@ -526,11 +584,12 @@ namespace DiyFfbPedal
 
             bool update_flag = false;
 
-            if (data.GameRunning && data.NewData!=data.OldData)
+            if (ConsoleEffectPolicy.ShouldProcess(isConsole, effectTelemetryActive, data.NewData != data.OldData))
             {
                 // Send ABS trigger signal via serial
                 for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
                 {
+                    if (isConsole) update_flag = false;
                     DAP_action_st tmp;
                     tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
                     tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
@@ -567,9 +626,10 @@ namespace DiyFfbPedal
                         if (Math.Abs(RPM_value - rpm_last_value[pedalIdx]) > 3 )
                         {
                             //update rpm value every frame when HID bridge is connected
-                            tmp.payloadPedalAction_.RPM_u8 = (Byte)RPM_value;
+                            tmp.payloadPedalAction_.RPM_u8 = isConsole
+                                ? ConsoleEffectPolicy.ClampPercent(RPM_value) : (Byte)RPM_value;
                             update_flag = true;
-                            rpm_last_value[pedalIdx] = (Byte)RPM_value;
+                            rpm_last_value[pedalIdx] = tmp.payloadPedalAction_.RPM_u8;
                         }
                     }
                     else
@@ -818,9 +878,18 @@ namespace DiyFfbPedal
 
                         }
                     }
+                    // Console telemetry samples need no OldData object and may reuse the same object.
+                    // Refresh even at constant RPM, including zero values after disabling an effect.
+                    if (isConsole)
+                    {
+                        tmp.payloadPedalAction_.RPM_u8 = Settings.RPM_enable_flag[pedalIdx] == 1
+                            ? ConsoleEffectPolicy.ClampPercent(RPM_value) : (byte)0;
+                        rpm_last_value[pedalIdx] = tmp.payloadPedalAction_.RPM_u8;
+                        update_flag = ConsoleEffectPolicy.IsDue(DateTime.UtcNow, consoleLastEffectAt[pedalIdx]);
+                    }
                     // check the update interval
                     // if connect with HID bridge, ignore the fps limit, update all the time.
-                    if (update_flag && !BridgeHidService.IsConnected)
+                    if (update_flag && !isConsole && !BridgeHidService.IsConnected)
                     {
                         Action_currentTime[pedalIdx] = DateTime.UtcNow;
                         TimeSpan diff_action = Action_currentTime[pedalIdx] - Action_lastTime[pedalIdx];
@@ -851,7 +920,12 @@ namespace DiyFfbPedal
 
                         byte* p = (byte*)v;
                         tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
-                        SendPedalAction(tmp, (byte)pedalIdx);
+                        bool queued = SendPedalAction(tmp, (byte)pedalIdx, isConsole);
+                        if (isConsole)
+                        {
+                            consoleLastEffectAt[pedalIdx] = DateTime.UtcNow;
+                            if (queued) consoleQueuedActions[pedalIdx]++;
+                        }
                     }
                     
                 }

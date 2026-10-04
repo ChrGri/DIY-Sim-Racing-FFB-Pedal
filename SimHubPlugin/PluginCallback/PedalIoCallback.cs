@@ -25,7 +25,7 @@ namespace DiyFfbPedal
             fixed (byte* p = myBuffer) { return *(DAP_mac_addresses_st*)p; }
         }
 
-        public void SendPedalAction(DAP_action_st action_tmp, Byte PedalID)
+        public bool SendPedalAction(DAP_action_st action_tmp, Byte PedalID, bool preserveIncomingData = false)
         {
 
             action_tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
@@ -53,13 +53,15 @@ namespace DiyFfbPedal
                     if (BridgeHidService.IsConnected)
                     {
                         Task.Run(() => BridgeHidService.SendLargeDataAsync(newBuffer));
+                        return true;
                     }
                     else
                     {
                         if (ESPsync_serialPort.IsOpen)
                         {
-                            ESPsync_serialPort.DiscardInBuffer();
+                            if (!preserveIncomingData) ESPsync_serialPort.DiscardInBuffer();
                             ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
+                            return true;
                         }
                     }
                 }
@@ -70,10 +72,11 @@ namespace DiyFfbPedal
                     {
 
                         // clear inbuffer 
-                        _serialPort[PedalID].DiscardInBuffer();
-                        _serialPort[PedalID].DiscardOutBuffer();
+                        if (!preserveIncomingData) _serialPort[PedalID].DiscardInBuffer();
+                        if (!preserveIncomingData) _serialPort[PedalID].DiscardOutBuffer();
                         // send data
                         _serialPort[PedalID].Write(newBuffer, 0, newBuffer.Length);
+                        return true;
                     }
                 }
             }
@@ -82,7 +85,7 @@ namespace DiyFfbPedal
                 string errorMessage = caughtEx.Message;
                 SimHub.Logging.Current.Error("FFB_Pedal_Action_Sending_error:" + errorMessage);
             }
-
+            return false;
         }
         public void SendPedalActionWireless(DAP_action_st action_tmp, Byte PedalID)
         {
