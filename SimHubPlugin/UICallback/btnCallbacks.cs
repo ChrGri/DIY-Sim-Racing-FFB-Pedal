@@ -1528,7 +1528,7 @@ namespace DiyFfbPedal
             Plugin.SendPedalAction(tmp, (byte)indexOfSelectedPedal_u);
         }
 
-        private void btn_Plugin_OTA_Click(object sender, RoutedEventArgs e)
+        private async void btn_Plugin_OTA_Click(object sender, RoutedEventArgs e)
         {
             UpdateSettingWindow sideWindow = new UpdateSettingWindow(Plugin.Settings, Plugin._calculations);
             double screenWidth = SystemParameters.PrimaryScreenWidth;
@@ -1568,72 +1568,29 @@ namespace DiyFfbPedal
                 }
                 */
 
-                string targetPath = Directory.GetCurrentDirectory() + "\\";
-                //System.Windows.MessageBox.Show(targetPath);
-                //targetPath = "C:\\Program Files (x86)\\SimHub\\";
-
-
-
                 MSG_tmp += "The update requires administrators permission to delete the original plugin and download the new one. If you agree, please click OK.";
                 var result = System.Windows.MessageBox.Show(MSG_tmp, "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);
                 if (result == MessageBoxResult.OK)
                 {
-                    string exeName = "SimHubWPF.exe";
-                    string exePath = targetPath + exeName;
-                    string targetDllPath = targetPath + "DiyFfbPedal.dll";
-                    string rsexTargetPath = targetPath + "languages\\DiyFfbPedal.resx";
-                    string psScript2 = $@"
-                $processName = 'SimHubWPF'
-                $downloadUrl = '{downloadUrl}'
-                $targetDllPath = '{targetDllPath}'
-                $rsexUrl = '{rsexDownloadUrl}'
-                $rsexTargetPath = '{rsexTargetPath}'
-                $exePath = '{exePath}'
-                $tempPath = $env:TEMP + '\plugin_temp.dll'
-                $tempRsexPath = $env:TEMP + '\plugin_temp.resx'
-
-                Write-Host 'Closing Simhub...'
-                $procs = Get-Process -Name $processName -ErrorAction SilentlyContinue
-                foreach ($proc in $procs) {{
-                    Stop-Process -Id $proc.Id -Force
-                    $proc.WaitForExit()
-                }}
-                Start-Sleep -Seconds 2
-
-                Write-Host 'Download new files...'
-                Invoke-WebRequest -Uri $downloadUrl -OutFile $tempPath -UseBasicParsing
-                Invoke-WebRequest -Uri $rsexUrl -OutFile $tempRsexPath -UseBasicParsing
-
-                Write-Host 'Backup .dll file...'
-                if (Test-Path $targetDllPath) {{
-                    Copy-Item -Path $targetDllPath -Destination ($targetDllPath + '.bak') -Force
-                }}
-
-                Write-Host 'Preparing Language folder...'
-                $langDir = Split-Path -Path $rsexTargetPath
-                if (!(Test-Path $langDir)) {{
-                    New-Item -ItemType Directory -Path $langDir -Force
-                }}
-
-                Write-Host 'Copying files to target folders...'
-                Copy-Item -Path $tempPath -Destination $targetDllPath -Force
-                Copy-Item -Path $tempRsexPath -Destination $rsexTargetPath -Force
-
-                Write-Host 'Restart Simhub...'
-                Start-Process -FilePath $exePath
-                ";
-                    string escapedScript2 = psScript2.Replace("\"", "`\"").Replace("`r", "").Replace("`n", "; ");
-                    var psi = new ProcessStartInfo
+                    System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+                    try
                     {
-                        FileName = "powershell.exe",
-                        Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{escapedScript2}\"",
-                        Verb = "runas", // force run with admin
-                        UseShellExecute = true
-                    };
+                        await PluginUpdateHelper.DownloadAsync(downloadUrl, rsexDownloadUrl);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Windows.MessageBox.Show("The update could not be downloaded: " + ex.Message, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    finally
+                    {
+                        System.Windows.Input.Mouse.OverrideCursor = null;
+                    }
+                    System.Windows.MessageBox.Show("The update was downloaded. SimHub will now restart to install it.", "Plugin update", MessageBoxButton.OK, MessageBoxImage.Information);
 
                     try
                     {
-                        Process.Start(psi);
+                        PluginUpdateHelper.InstallAndRestart();
                     }
                     catch (Exception)
                     {

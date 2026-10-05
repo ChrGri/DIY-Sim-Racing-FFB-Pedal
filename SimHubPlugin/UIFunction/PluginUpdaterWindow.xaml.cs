@@ -89,7 +89,7 @@ namespace DiyFfbPedal.UIFunction
             }
         }
 
-        private void BtnUpdate_Click(object sender, RoutedEventArgs e)
+        private async void BtnUpdate_Click(object sender, RoutedEventArgs e)
         {
             if (CboVersions.SelectedItem == null)
             {
@@ -98,66 +98,29 @@ namespace DiyFfbPedal.UIFunction
             }
 
             var selected = (KeyValuePair<string, string>)CboVersions.SelectedItem;
-            string downloadUrl = selected.Value;
-            
-            string pluginFolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\";
-            
-            TxtLog.AppendText($"Starting update to {selected.Key}...\n");
-            
-            string exeName = "SimHubWPF.exe";
-            string exePath = pluginFolder + exeName;
-            
-            string psScript = $@"
-            $downloadUrl = '{downloadUrl}'
-            $pluginFolder = '{pluginFolder}'
-            $exePath = '{exePath}'
-            $targetDllPath = Join-Path $pluginFolder 'DiyFfbPedal.dll'
-            $tempPath = Join-Path $env:TEMP 'DiyFfbPedal_update.dll'
-            
-            Write-Host 'SimHub Plugin Updater' -ForegroundColor Cyan
-            Write-Host '=====================' -ForegroundColor Cyan
-            
-            Write-Host 'Closing SimHub...'
-            $procs = Get-Process -Name 'SimHubWPF' -ErrorAction SilentlyContinue
-            foreach ($proc in $procs) {{
-                Stop-Process -Id $proc.Id -Force
-                $proc.WaitForExit()
-            }}
-            Start-Sleep -Seconds 2
-
-            Write-Host 'Downloading update...'
-            Invoke-WebRequest -Uri $downloadUrl -OutFile $tempPath -UseBasicParsing
-
-            Write-Host 'Copying file to plugin folder...'
-            Copy-Item -Path $tempPath -Destination $targetDllPath -Force
-
-            Write-Host 'Cleaning up...'
-            Remove-Item $tempPath -Force
-
-            Write-Host 'Update completed successfully! Restarting SimHub...' -ForegroundColor Green
-            Start-Sleep -Seconds 2
-            Start-Process -FilePath $exePath
-            ";
-
-            string escapedScript = psScript.Replace("\"", "`\"").Replace("`r", "").Replace("`n", "; ");
-
-            // Launch powershell script
-            var psi = new ProcessStartInfo
-            {
-                FileName = "powershell.exe",
-                Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{escapedScript}\"",
-                Verb = "runas", // force run with admin
-                UseShellExecute = true
-            };
-
+            BtnUpdate.IsEnabled = false;
+            TxtLog.AppendText($"Downloading {selected.Key}...\n");
             try
             {
-                Process.Start(psi);
-                TxtLog.AppendText("Update script launched. Please follow the instructions in the PowerShell window.\n");
+                await PluginUpdateHelper.DownloadAsync(selected.Value, null);
             }
             catch (Exception ex)
             {
-                TxtLog.AppendText($"Error launching script: {ex.Message}\n");
+                TxtLog.AppendText($"Download failed: {ex.Message}\n");
+                BtnUpdate.IsEnabled = true;
+                return;
+            }
+
+            TxtLog.AppendText("Download finished. SimHub will now restart to install it.\n");
+            MessageBox.Show("The update was downloaded. SimHub will now restart to install it.", "Plugin update", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                PluginUpdateHelper.InstallAndRestart();
+            }
+            catch (Exception ex)
+            {
+                TxtLog.AppendText($"Error launching update: {ex.Message}\n");
+                BtnUpdate.IsEnabled = true;
             }
         }
     }
