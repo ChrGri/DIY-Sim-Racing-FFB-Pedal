@@ -345,6 +345,7 @@
     <Compile Include="UIFunction\OtaFlasherWindow.xaml.cs">
       <DependentUpon>OtaFlasherWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\PluginUpdateHelper.cs" />
     <Compile Include="UIFunction\PluginUpdaterWindow.xaml.cs">
       <DependentUpon>PluginUpdaterWindow.xaml</DependentUpon>
     </Compile>
