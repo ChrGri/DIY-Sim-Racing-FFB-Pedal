@@ -224,6 +224,21 @@ bool Isv57Communication::setServoVoltage(uint16_t voltageInVolt_u16) {
           2); // bleeder braking voltage. Voltage when braking is activated
 }
 
+// Internal bleeder (reactive pump-lift suppression, Pr7.31) and its threshold
+// (Pr7.32). Returns true once the servo holds both values: writeAndVerifyDeviceParameter
+// returns "a write was needed", so a second pass that finds the value in place confirms it.
+bool Isv57Communication::setInternalBleeder(bool enable_b,
+                                            uint16_t thresholdVoltage_u16) {
+  const int32_t mode_i32 = enable_b ? tuned_parameters[pr_7_00 + 31] : 0;
+  modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00 + 31, mode_i32);
+  modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00 + 32, thresholdVoltage_u16);
+  bool modeConfirmed_b =
+      !modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00 + 31, mode_i32);
+  bool thresholdConfirmed_b = !modbus.writeAndVerifyDeviceParameter(
+      slaveId, pr_7_00 + 32, thresholdVoltage_u16);
+  return modeConfirmed_b && thresholdConfirmed_b;
+}
+
 bool Isv57Communication::setPositionSmoothingFactor(
     uint16_t posSmoothingFactor_u16) {
   return modbus.writeAndVerifyDeviceParameter(

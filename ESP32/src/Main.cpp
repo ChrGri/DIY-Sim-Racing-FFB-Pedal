@@ -1321,6 +1321,10 @@ void setup() {
       STEP_PIN_STEPPER_U8, DIR_PIN_STEPPER_U8, invMotorDir_b,
       dap_calculationVariables_st.stepsPerMotorRevolution_u32,
       dap_config_st_local.payloadPedalConfig_st.endstopDetectionThreshold_u8);
+  // regen mode of the stored config, before the servo task configures the servo
+  stepper->requestInternalBleederOff(
+      dap_config_st_local.payloadPedalConfig_st.enableBrakeResistor_u8 ==
+      BRAKE_RESISTOR_MODE_HARDWARE_CIRCUIT_U8);
 
   motorRevolutionsPerSteps_fl32 =
       1.0f / ((float)dap_calculationVariables_st.stepsPerMotorRevolution_u32);
@@ -2004,6 +2008,10 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         stepper->configSteplossRecovAndCrashDetection(
             dap_config_pedalUpdateTask_st.payloadPedalConfig_st
                 .stepLossFunctionFlags_u8);
+        // regen mode: servo internal bleeder off for the hardware circuit, on otherwise
+        stepper->requestInternalBleederOff(
+            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.enableBrakeResistor_u8 ==
+            BRAKE_RESISTOR_MODE_HARDWARE_CIRCUIT_U8);
         stepper->configSetProfilingFlag((
             dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 &
             DEBUG_INFO_0_CYCLE_TIMER_U8));
@@ -2571,9 +2579,11 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       // duty requested by the admittance strategy in the previous cycle: the regen
       // power above the servo's own share (see CalcRegenVelocityLimit)
       static float s_brakeResistorDutyRequest_01 = 0.0f;
+      // only mode 1 switches the brake resistor from software; mode 2 (hardware circuit)
+      // keeps the pin LOW, mode 0 relies on the servo's internal bleeder
       const bool brakeResistorEnabled_b =
-          (dap_config_pedalUpdateTask_st.payloadPedalConfig_st
-               .enableBrakeResistor_u8 != 0);
+          (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.enableBrakeResistor_u8 ==
+           BRAKE_RESISTOR_MODE_SERVO_BLEEDER_AND_EXTERNAL_U8);
       const bool isRudderModeActive_b =
           dap_calculationVariables_st.rudderStatus_b ||
           dap_calculationVariables_st.helicopterRudderStatus_b;
@@ -2624,8 +2634,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             cached_currentSpeedInHz_i32, cached_servoCycleCounter_u32);
       }
 
-      // Config-driven brake resistor kill switch (default: enabled). Off: the
-      // regen governor keeps the power within what the servo absorbs itself.
+      // Config-driven brake resistor mode. Mode 0: the regen governor keeps the power
+      // within what the servo absorbs itself. Mode 2: the hardware circuit clamps the
+      // bus on its own, the software pin stays LOW (also in rudder mode).
       if (!brakeResistorEnabled_b) {
         brakeResistorDuty_01 = 0.0f;
       }

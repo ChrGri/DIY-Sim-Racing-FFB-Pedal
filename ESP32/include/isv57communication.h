@@ -120,6 +120,8 @@ class Isv57Communication {
     bool readCurrentAlarm();
     void resetToFactoryParams();
     bool setServoVoltage(uint16_t voltageInVolt_u16);
+    // Pr7.31 (tuned mode or 0 = off) and Pr7.32 threshold; true when both are confirmed
+    bool setInternalBleeder(bool enable_b, uint16_t thresholdVoltage_u16);
     bool setPositionSmoothingFactor(uint16_t posSmoothingFactor_u16);
 	
 	void clearServoUnitPosition();

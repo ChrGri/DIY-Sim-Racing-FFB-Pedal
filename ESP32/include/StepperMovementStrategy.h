@@ -693,9 +693,13 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
 // measured force during a press, i.e. ~50-68 W real.)
 #define ADMITTANCE_REGEN_POWER_SERVO_W 40.0f
 // Additional regen power routed into the external brake resistor when it is
-// enabled (enableBrakeResistor_u8), capped at 80 % of the full-on power V^2/R
+// enabled (enableBrakeResistor_u8 = mode 1), capped at 80 % of the full-on power V^2/R
 // (5 Ohm at 38 V: 289 W full on, 200 W = duty ~0.69; 10 Ohm: capped at ~115 W).
 #define ADMITTANCE_REGEN_POWER_BRAKE_RESISTOR_W 200.0f
+// Mode 2 (hardware brake resistor circuit): the circuit clamps the bus voltage on its
+// own and fast enough, so the regen power no longer limits the pedal speed (practically
+// unlimited; the back-EMF / step-rate limit in CalcRegenVelocityLimit still applies).
+#define ADMITTANCE_REGEN_POWER_HARDWARE_CIRCUIT_W 100000.0f
 // fallback when the config holds no resistance (brakeResistorResistance_Ohm_u8 = 0)
 #define BRAKE_RESISTOR_OHMS 5.0f
 // Share of the mechanical foot power F*v that reaches the DC bus as electrical regen
@@ -1413,6 +1417,11 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float regenPowerBudget_W = (ADMITTANCE_REGEN_POWER_SERVO_W
                               + brakeResistorAvailable_01 * brakeResistorRegenPower_W)
                            / REGEN_BUDGET_EFFICIENCY_01;
+  if (config_st->payloadPedalConfig_st.enableBrakeResistor_u8 ==
+      BRAKE_RESISTOR_MODE_HARDWARE_CIRCUIT_U8) {
+    // the hardware circuit absorbs the regen power, no software budget needed
+    regenPowerBudget_W = ADMITTANCE_REGEN_POWER_HARDWARE_CIRCUIT_W;
+  }
 
   float maxRegenVel_mps = CalcRegenVelocityLimit(
       totalOpposingForce_N,

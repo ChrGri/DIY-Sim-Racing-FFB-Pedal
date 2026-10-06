@@ -199,8 +199,10 @@ namespace DiyFfbPedal
         public byte joystickMapMappedToe09;
         public byte joystickMapMappedToe10;
 
-        // 1 = brake resistor allowed to switch on as normal, 0 = force it off
-        // (debug/bench use only - servo braking energy will not be dissipated)
+        // Regen energy handling (name kept for profile compatibility; former 0/1 = modes 0/1):
+        // 0 = servo internal bleeder only
+        // 1 = servo internal bleeder + external brake resistor switched by the firmware (PWM)
+        // 2 = hardware brake resistor circuit only (firmware pin LOW, no regen power limit)
         public byte enableBrakeResistor_u8;
 
         // brake resistor resistance in Ohm (1-255; 0 = default 10 Ohm)

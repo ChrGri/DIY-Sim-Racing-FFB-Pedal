@@ -193,8 +193,12 @@ typedef struct __attribute__((packed)) PayloadPedalConfig
   uint8_t joystickMapMappedToe09_u8;
   uint8_t joystickMapMappedToe10_u8;
 
-  // 1 = brake resistor allowed to switch on as normal, 0 = force it off
-  // (debug/bench use only - servo braking energy will not be dissipated)
+  // Regen energy handling (BRAKE_RESISTOR_MODE_*). The name is kept for config/profile
+  // compatibility: the former 0 (off) / 1 (on) map to modes 0 and 1.
+  //  0 = servo internal bleeder only (software brake resistor off)
+  //  1 = servo internal bleeder + external brake resistor switched by the firmware (PWM)
+  //  2 = hardware brake resistor circuit only (autonomous voltage clamp): the firmware
+  //      keeps its brake resistor pin LOW and lifts the regen power limit of the pedal
   uint8_t enableBrakeResistor_u8;
 
   // brake resistor resistance in Ohm (1-255; 0 = default 10 Ohm). Sets the
@@ -202,3 +206,8 @@ typedef struct __attribute__((packed)) PayloadPedalConfig
   uint8_t brakeResistorResistance_Ohm_u8;
 
 } PayloadPedalConfig_t;
+
+// values of PayloadPedalConfig_t::enableBrakeResistor_u8
+#define BRAKE_RESISTOR_MODE_SERVO_BLEEDER_U8 0U
+#define BRAKE_RESISTOR_MODE_SERVO_BLEEDER_AND_EXTERNAL_U8 1U
+#define BRAKE_RESISTOR_MODE_HARDWARE_CIRCUIT_U8 2U
