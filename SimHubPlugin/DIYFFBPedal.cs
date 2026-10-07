@@ -601,6 +601,8 @@ namespace DiyFfbPedal
                     tmp.payloadPedalAction_.impact_value = 0;
                     tmp.payloadPedalAction_.Trigger_CV_1 = 0;
                     tmp.payloadPedalAction_.Trigger_CV_2 = 0;
+                    tmp.payloadPedalAction_.Trigger_CV_3 = 0;
+                    tmp.payloadPedalAction_.Trigger_CV_4 = 0;
                     tmp.payloadPedalAction_.Rudder_action = 0;
                     tmp.payloadPedalAction_.Rudder_brake_action = (byte)(Rudder_status ? (Settings.rudderMode == 3 ? 2 : (Settings.rudderMode == 2 ? (Rudder_brake_status ? 2 : 3) : 0)) : 0);
                     if (Settings.rudderMode == 3)
@@ -988,6 +990,8 @@ namespace DiyFfbPedal
                 tmp.payloadPedalAction_.impact_value = 0;
                 tmp.payloadPedalAction_.Trigger_CV_1 = 0;
                 tmp.payloadPedalAction_.Trigger_CV_2 = 0;
+                tmp.payloadPedalAction_.Trigger_CV_3 = 0;
+                tmp.payloadPedalAction_.Trigger_CV_4 = 0;
                 tmp.payloadPedalAction_.Rudder_action = 0;
                 tmp.payloadPedalAction_.Rudder_brake_action = 0;
 
@@ -1050,6 +1054,8 @@ namespace DiyFfbPedal
                 tmp.payloadPedalAction_.impact_value = 0;
                 tmp.payloadPedalAction_.Trigger_CV_1 = 0;
                 tmp.payloadPedalAction_.Trigger_CV_2 = 0;
+                tmp.payloadPedalAction_.Trigger_CV_3 = 0;
+                tmp.payloadPedalAction_.Trigger_CV_4 = 0;
                 if (!Rudder_status)
                 {
                     tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.ClearRudderStatus;
@@ -1164,6 +1170,8 @@ namespace DiyFfbPedal
                             //tmp.payloadPedalAction_.impact_value = 0;
                             tmp.payloadPedalAction_.Trigger_CV_1 = 0;
                             tmp.payloadPedalAction_.Trigger_CV_2 = 0;
+                            tmp.payloadPedalAction_.Trigger_CV_3 = 0;
+                            tmp.payloadPedalAction_.Trigger_CV_4 = 0;
                             tmp.payloadPedalAction_.Rudder_action = 0;
                             tmp.payloadPedalAction_.Rudder_brake_action = 0;
                             //action here
@@ -1321,6 +1329,8 @@ namespace DiyFfbPedal
                 tmp.payloadPedalAction_.impact_value = 0;
                 tmp.payloadPedalAction_.Trigger_CV_1 = 0;
                 tmp.payloadPedalAction_.Trigger_CV_2 = 0;
+                tmp.payloadPedalAction_.Trigger_CV_3 = 0;
+                tmp.payloadPedalAction_.Trigger_CV_4 = 0;
                 tmp.payloadPedalAction_.Rudder_action = 0;
                 tmp.payloadPedalAction_.Rudder_brake_action = (byte)(Rudder_brake_status ? 2 : 3);
 
@@ -1355,6 +1365,8 @@ namespace DiyFfbPedal
                 tmp.payloadPedalAction_.impact_value = 0;
                 tmp.payloadPedalAction_.Trigger_CV_1 = 0;
                 tmp.payloadPedalAction_.Trigger_CV_2 = 0;
+                tmp.payloadPedalAction_.Trigger_CV_3 = 0;
+                tmp.payloadPedalAction_.Trigger_CV_4 = 0;
                 tmp.payloadPedalAction_.Rudder_action = 0;
                 tmp.payloadPedalAction_.Rudder_brake_action = 0;
                 

@@ -223,7 +223,8 @@ namespace DiyFfbPedal
                         Write(buffer);
 
                         offset += chunkLen;
-                        await Task.Delay(2);
+                        // pace multi-chunk transfers only; a trailing delay just stalls the next send
+                        if (offset < totalLen) await Task.Delay(2);
                     }
                 }
                 finally
