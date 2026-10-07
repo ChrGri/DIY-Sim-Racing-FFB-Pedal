@@ -44,8 +44,10 @@ const int32_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
            // the usual value for a 40 Hz velocity loop. Note: a shorter Ti
            // adds phase lag and ringing, it does not reduce it)
     27,    // Pr1.03: 1st filter of velocity detection
-    180,   // Pr1.04: 1st torque filter (erhoeht von 100 auf 180 = 1.8ms gegen
-           // Brems-Spannungsspitzen beim Error-Abbau)
+    20,    // Pr1.04: 1st torque filter, unit 0.01 ms (0.2 ms). 180 (1.8 ms, against
+           // braking voltage spikes) added ~30 deg lag at 50 Hz to the velocity loop,
+           // which then no longer rejected the motor torque ripple (6 x 4 pole pairs
+           // = 24 per revolution): the pedal felt rough (2026-10-07)
     175,   // Pr1.05: 2nd position loop gain
     110,   // Pr1.06: 2nd velocity loop gain
     10000, // Pr1.07: 2nd time constant of velocity loop

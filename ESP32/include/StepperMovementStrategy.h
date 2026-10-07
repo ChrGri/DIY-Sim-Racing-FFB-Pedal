@@ -7,6 +7,13 @@
 // tremor). Comment out to compare against the previous behaviour.
 #define ADMITTANCE_STICTION_ENABLED
 
+// Sign of the contact damping force-derivative term (A/B test, override with a build flag):
+// +1 = adds tau * dF/dt (contact damping, since 2026-10-01), -1 = subtracts it (before),
+// 0 = off. +1 also amplifies the drivetrain force ripple (~24 per motor revolution) 1.44x at 50 Hz.
+#ifndef CONTACT_DAMPING_DERIV_SIGN
+#define CONTACT_DAMPING_DERIV_SIGN +1
+#endif
+
 // Task dependent structs and variables
 typedef struct {
   float travelRange_mm_fl32;
@@ -1036,7 +1043,8 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   s_filteredForceRate_Nps = (alpha_rate * rawForceRate_Nps) + ((1.0f - alpha_rate) * s_filteredForceRate_Nps);
 
   const float K_FORCE_DERIV_S = 0.004f; // 4ms contact damping time
-  float contactDampedPilotForce_N = cleanPilotForce_N + (K_FORCE_DERIV_S * s_filteredForceRate_Nps);
+  float contactDampedPilotForce_N = cleanPilotForce_N
+                                  + ((float)CONTACT_DAMPING_DERIV_SIGN * K_FORCE_DERIV_S * s_filteredForceRate_Nps);
   if (contactDampedPilotForce_N < 0.0f) {
     contactDampedPilotForce_N = 0.0f;
   }
