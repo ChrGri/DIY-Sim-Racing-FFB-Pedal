@@ -907,6 +907,7 @@
                                     <Border Style="{StaticResource Card}" Padding="5" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Width="192">
                                             <localFunction:InfoSection_System x:Name="SystemInfo" />
+                                            <TextBlock x:Name="ConsoleTelemetryStatus" Visibility="Collapsed" TextWrapping="Wrap" FontSize="10" Margin="0,4,0,4" />
                                             <StackPanel HorizontalAlignment="Left" Height="22" VerticalAlignment="Top" Width="192" Orientation="Horizontal" Margin="0,2,0,0">
                                                 <ComboBox x:Name="SerialPortSelection_ESPNow" DropDownOpened="ESPNow_SerialPortSelection_DropDownOpened" SelectionChanged="ESPNow_SerialPortSelectionChanged" Width="130" ItemsSource="{Binding}" DisplayMemberPath="Display" SelectedValuePath="Value" FontSize="8" Height="20" HorizontalAlignment="Left" MinHeight="20"/>
                                                 <Button x:Name="btn_connect_espnow_port" Style="{StaticResource ConnectPillButton}" Click="btn_connect_espnow_port_Click" Width="55" Content="Connect" Height="20" Margin="3,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />

@@ -176,6 +176,7 @@
     <Compile Include="PluginCallback\FileIoHelper.cs" />
     <Compile Include="PluginCallback\HidService.cs" />
     <Compile Include="PluginCallback\PedalIoCallback.cs" />
+    <Compile Include="PluginCallback\ConsoleEffectPolicy.cs" />
     <Compile Include="PluginCallback\PluginMiscHelper.cs" />
     <Compile Include="PluginCallback\ProfileService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

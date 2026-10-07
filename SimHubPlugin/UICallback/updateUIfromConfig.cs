@@ -132,6 +132,9 @@ namespace DiyFfbPedal
 
                 //SettingOTA_Tab.calculation = Plugin._calculations;
                 SystemInfo.calculation = Plugin._calculations;
+                ConsoleTelemetryStatus.Text = Plugin.ConsoleEffectStatus;
+                ConsoleTelemetryStatus.Visibility = String.IsNullOrEmpty(ConsoleTelemetryStatus.Text)
+                    ? Visibility.Collapsed : Visibility.Visible;
                 PedalInfo.calculation = Plugin._calculations;
                 RudderInfo.calculation = Plugin._calculations;
                 if (firstAssignPlugin)
