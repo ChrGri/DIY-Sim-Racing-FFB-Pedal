@@ -144,8 +144,12 @@
                               ColumnHeaderStyle="{StaticResource HeaderStyle}"
                               RowStyle="{StaticResource RowStyle}"
                               CellStyle="{StaticResource CellStyle}"
-                              EnableRowVirtualization="False"
-                              ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                              Height="400"
+                              EnableRowVirtualization="True"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              ScrollViewer.CanContentScroll="True"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
                               CellEditEnding="ServoRegisterGrid_CellEditEnding"
                               PreviewMouseWheel="ServoRegisterGrid_PreviewMouseWheel">
 
