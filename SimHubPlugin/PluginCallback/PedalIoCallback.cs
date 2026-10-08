@@ -372,6 +372,8 @@ namespace DiyFfbPedal
         {
             int length;
             tmp.payloadHeader_.PedalTag = deviceID;
+            // the pedal's ESP-NOW receiver drops OTA packets whose header version mismatches
+            tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             byte[] newBuffer_2;
             unsafe
             {
@@ -411,6 +413,7 @@ namespace DiyFfbPedal
         public void SendOTAActionBridge(DAP_action_ota_st tmp)
         {
             int length;
+            tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             byte[] newBuffer_2;
             unsafe
             {

@@ -309,14 +309,9 @@ namespace DiyFfbPedal.UIFunction
         {
             try
             {
-                // 1. Try native DNS resolution first
-                try {
-                    var hostEntry = await System.Net.Dns.GetHostEntryAsync(hostname);
-                    var ip = hostEntry.AddressList.FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
-                    if (ip != null) return ip.ToString();
-                } catch { }
-
-                // 2. Fallback: Robust mDNS query across all network interfaces
+                // 1. mDNS query across all network interfaces. Asked first because only the
+                //    ESP itself answers it; the router's DNS (e.g. FritzBox) may still hold a
+                //    stale lease for "pedal_ota" from an earlier session and return a dead IP.
                 List<byte> query = new List<byte>();
                 query.AddRange(new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
                 foreach (string part in hostname.Split('.'))
@@ -401,6 +396,13 @@ namespace DiyFfbPedal.UIFunction
                 foreach (var c in udpClients) { try { c.Close(); } catch { } }
             }
             catch { }
+
+            // 2. Fallback: native DNS resolution
+            try {
+                var hostEntry = await System.Net.Dns.GetHostEntryAsync(hostname);
+                var ip = hostEntry.AddressList.FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+                if (ip != null) return ip.ToString();
+            } catch { }
             return null;
         }
     }
