@@ -61,7 +61,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr1.01", 400 },  // 1st velocity loop gain
             { "Pr1.02", 200 },  // 1st time constant of velocity loop integration (20 ms,
             { "Pr1.03", 27 },  // 1st filter of velocity detection
-            { "Pr1.04", 180 },  // 1st torque filter (erhoeht von 100 auf 180 = 1.8ms g?
+            { "Pr1.04", 20 },  // 1st torque filter, unit 0.01 ms (0.2 ms). 180 (1.8 m?
             { "Pr1.05", 175 },  // 2nd position loop gain
             { "Pr1.06", 110 },  // 2nd velocity loop gain
             { "Pr1.07", 10000 },  // 2nd time constant of velocity loop
