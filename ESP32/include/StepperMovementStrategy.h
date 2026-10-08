@@ -14,6 +14,13 @@
 #define CONTACT_DAMPING_DERIV_SIGN +1
 #endif
 
+// Tracking-error damping: raises the model damping up to 3.5x while the servo lags its target
+// by more than expected (see CalcActiveDamping). A/B test: set to 0 (or build with
+// -DADMITTANCE_TRACKING_ERROR_DAMPING=0) to disable it.
+#ifndef ADMITTANCE_TRACKING_ERROR_DAMPING
+#define ADMITTANCE_TRACKING_ERROR_DAMPING 0
+#endif
+
 // Task dependent structs and variables
 typedef struct {
   float travelRange_mm_fl32;
@@ -561,7 +568,8 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
         // increased proportionally so that the servo can catch up without oscillating.
         // Faded in between 20 and 40 mm/s instead of switched, so the damping does not jump.
         float velocityWeight_01 = constrain((fabsf(vModelVel_mps) - 0.02f) / 0.02f, 0.0f, 1.0f);
-        if (s_smoothedTrackingError_01 > 0.005f) {
+        // the lag estimate and the smoothing above keep running when disabled
+        if ((ADMITTANCE_TRACKING_ERROR_DAMPING != 0) && (s_smoothedTrackingError_01 > 0.005f)) {
             float excessError = s_smoothedTrackingError_01 - 0.005f;
             dampingMultiplier += velocityWeight_01 * constrain(excessError * 35.0f, 0.0f, 2.5f);
         }
