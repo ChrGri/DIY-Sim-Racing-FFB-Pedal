@@ -77,8 +77,11 @@
                         <Button x:Name="btn_reset_zoom" Content="⟲ Fit" ToolTip="Reset Zoom &amp; Pan to Fit All (or Double-Click plot)" Click="BtnResetZoom_Click" Width="42" Height="22" Style="{StaticResource ModernPillButton}"/>
                     </StackPanel>
 
-                    <!-- Signals Menu Button (Always right-aligned) -->
-                    <Button x:Name="btn_signals_menu" Content="Signals ▾" Click="BtnSignalsMenu_Click" HorizontalAlignment="Right" Width="64" Height="22" Style="{StaticResource ModernPillButton}"/>
+                    <!-- Export & Signals Menu Buttons (Always right-aligned) -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button x:Name="btn_export" Content="💾 Export" ToolTip="Export the displayed time range in the pedal state log format (.txt + config .json)" Click="BtnExport_Click" Width="58" Height="22" Style="{StaticResource ModernPillButton}" Margin="0,0,3,0"/>
+                        <Button x:Name="btn_signals_menu" Content="Signals ▾" Click="BtnSignalsMenu_Click" Width="64" Height="22" Style="{StaticResource ModernPillButton}"/>
+                    </StackPanel>
                 </Grid>
             </StackPanel>
         </Border>

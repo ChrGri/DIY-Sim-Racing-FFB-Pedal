@@ -668,13 +668,97 @@ namespace DiyFfbPedal
         // so each trace can be analysed together with the settings it was recorded with.
         // Unix time in ms (invariant culture), written per state-log row so a
         // trace can be aligned with an external log of the Windows joystick axes.
-        private static string HostTimeUnixMsForTrace()
+        internal static string HostTimeUnixMsForTrace()
         {
             double unixMs = (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds;
             return unixMs.ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
         }
 
-        private void WritePedalConfigForTrace(string traceFilePath, int pedalIdx)
+        // Column header of the pedal state trace log (wired, wireless and the live plot export).
+        // joystickOutput_u16/_pct is the last basic-state joystick value seen by the host,
+        // joystickOutputCycle_u16 the joystick value of this very cycle from the extended state.
+        internal const string PedalTraceHeader =
+            "WriterIdx" +
+            ", servoStateCycleCount_u32" +
+            ", servoPositionTarget_i32" +
+            ", servoPositionFeedback_i32" +
+            ", servoPositionError_i16" +
+            ", servoVoltage_fl32" +
+            ", servoCurrentPercent_i16" +
+            ", servoVelocityRpm_i16" +
+
+            ", timeInUs_u32" +
+            ", cycleCount_u32" +
+            ", pedalForceRaw_fl32" +
+            ", pedalForceFiltered_fl32" +
+            ", forceVelEst_fl32" +
+            ", targetPosition_i32" +
+            ", currentSpeedInHz_i32" +
+            ", brakeResistorState_b" +
+            ", oscillationMonitorValue_u8" +
+
+            ", admittance_expectedForce_N" +
+            ", admittance_isOscillating" +
+            ", admittance_admittancePsi_N" +
+            ", admittance_virtualMass_kg" +
+            ", admittance_virtualDamping_Ns_m" +
+
+            ", admittance_virtualPosition_m" +
+            ", admittance_virtualVelocity_mps" +
+            ", admittance_virtualAcceleration_mps2" +
+            ", joystickOutput_u16" +
+            ", joystickOutput_pct" +
+            ", joystickOutputCycle_u16" +
+            ", joystickPreCurve_u16" +
+            ", pedalTravel_pct" +
+            // host wall-clock, to align with the Windows-side joystick log
+            ", hostTimeUnixMs";
+
+        internal static string FormatPedalTraceRow(Int64 writerIdx, payloadPedalState_Extended state, double joystickReading, string hostTimeUnixMs)
+        {
+            return
+                $"{writerIdx}" +
+
+                $",{state.servoStateCycleCount_u32}" +
+                $",{state.servoPositionTarget_i32}" +
+                $",{state.servoPositionFeedback_i32}" +
+                $",{state.servoPositionError_i16}" +
+                $",{state.servoVoltage0p1V_i16 / 10.0f}" +
+                $",{state.servoCurrentPercent_i16}" +
+                $",{state.servoVelocityRpm_i16}" +
+
+                $",{state.timeInUs_u32}" +
+                $",{state.cycleCount_u32}" +
+                $",{state.pedalForceRaw_fl32}" +
+                $",{state.pedalForceFiltered_fl32}" +
+                $",{state.forceVelEst_fl32}" +
+                $",{state.targetPosition_i32}" +
+                $",{state.currentSpeedInHz_i32}" +
+                $",{state.brakeResistorState_b}" +
+                $",{state.oscillationMonitorValue_u8}" +
+                $",{state.admittance_expectedForce_N}" +
+                $",{state.admittance_isOscillating}" +
+                $",{state.admittance_admittancePsi_N}" +
+                $",{state.admittance_virtualMass_kg}" +
+                $",{state.admittance_virtualDamping_Ns_m}" +
+                $",{state.admittance_virtualPosition_m}" +
+                $",{state.admittance_virtualVelocity_mps}" +
+                $",{state.admittance_virtualAcceleration_mps2}" +
+                $",{(UInt16)joystickReading}" +
+                $",{(joystickReading / 65535.0 * 100.0).ToString("G9")}" +
+                $",{state.joystickOutput_u16}" +
+                $",{state.joystickPreCurve_u16}" +
+                $",{state.pedalTravel_fl32 * 100.0f}" +
+                $",{hostTimeUnixMs}";
+        }
+
+        // Last basic-state joystick value received for a pedal (logged alongside the extended state)
+        internal double GetPedalPositionReading(int pedalIdx)
+        {
+            return pedalIdx >= 0 && pedalIdx < Pedal_position_reading.Length ? Pedal_position_reading[pedalIdx] : 0.0;
+        }
+
+        internal void WritePedalConfigForTrace(string traceFilePath, int pedalIdx)
         {
             if (pedalIdx < 0 || pedalIdx >= dap_config_st.Length)
             {
