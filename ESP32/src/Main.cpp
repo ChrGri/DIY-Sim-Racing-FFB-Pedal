@@ -1903,6 +1903,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
   // Post-curve joystick HID denoise state (see "compute joystick value").
   bool joystickDenoiseInit_b = false;
   float joystickDenoisedPercent_fl32 = 0.0f;
+
+  // Preload gate latch for travel-as-joystick (see "compute joystick value").
+  bool travelJoystickGateOpen_b = false;
   uint32_t joystickDenoiseLastMicros_u32 = 0;
 
   uint8_t sendPedalStructsViaSerialCounter_u8 = 0;
@@ -3043,6 +3046,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         // Force a fresh (non-smoothed) start next time the pedal re-activates,
         // instead of slowly ramping in from whatever was smoothed last.
         joystickDenoiseInit_b = false;
+        travelJoystickGateOpen_b = false;
       } else {
         // Load whichever joystick curve (yaw/regular vs toe-brake) the
         // upcoming EvalJoystickCubicSpline() calls below need. No-ops unless
@@ -3074,13 +3078,22 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           if (1 == dap_config_pedalUpdateTask_st.payloadPedalConfig_st
                        .travelAsJoystickOutput_u8) {
             // Preload gate: travel alone can't tell idle servo
-            // hunting/vibration from real pedal input, so below forceMin the
-            // travel output is forced to a clean 0 rather than smoothing it
-            // (the EMA denoise above only softens the noise, it doesn't
-            // remove it).
+            // hunting/vibration from real pedal input, so the travel output
+            // stays a clean 0 until the force has reached forceMin once.
+            // Latched, i.e. it only closes again once the pedal is back in
+            // the 0.5% start deadzone of NormalizeControllerOutputValue():
+            // just above preload the expected force rises by only
+            // range/100 per % travel (0.03kg for a 3kg range), well below
+            // the loadcell noise (~0.1kg), so a force-based close made the
+            // output chatter between 0 and the travel value on release.
             float travelJoystick_01 =
                 constrain(pedalArcPercentage_fl32, 0.0f, 1.0f);
-            if (filteredReading < dap_calculationVariables_st.forceMin_fl32) {
+            if (filteredReading >= dap_calculationVariables_st.forceMin_fl32) {
+              travelJoystickGateOpen_b = true;
+            } else if (travelJoystick_01 <= 0.005f) {
+              travelJoystickGateOpen_b = false;
+            }
+            if (!travelJoystickGateOpen_b) {
               travelJoystick_01 = 0.0f;
             }
             joystickNormalizedToInt32_orig = NormalizeControllerOutputValue(
@@ -3456,6 +3469,16 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st
             .admittance_virtualAcceleration_mps2 =
             admittanceStates_st.virtualAcc_mps2;
+
+        dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st
+            .joystickOutput_u16 = joystickNormalizedToUInt16;
+        dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st
+            .joystickPreCurve_u16 =
+            (g_pedalOperationalState_u8 == (uint8_t)PEDAL_STATE_ACTIVE_E)
+                ? (uint16_t)joystickNormalizedToInt32_orig
+                : 0;
+        dap_state_extended_st_lcl_pedalUpdateTask.payloadPedalStateExtended_st
+            .pedalTravel_fl32 = pedalArcPercentage_fl32;
       }
 
       // Package the new state data into a unified struct

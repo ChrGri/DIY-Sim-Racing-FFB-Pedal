@@ -40,6 +40,11 @@ namespace DiyFfbPedal
         public float admittance_virtualVelocity_mps;
         public float admittance_virtualAcceleration_mps2;
 
+        // joystick output of this cycle (the basic state only carries every N-th one)
+        public UInt16 joystickOutput_u16;    // final HID value, after curve + denoise
+        public UInt16 joystickPreCurve_u16;  // force/travel mapping incl. preload gate, before curve + denoise
+        public float pedalTravel_fl32;       // pedal arc fraction (0..1) used by travel-as-joystick
+
 
 
     };

@@ -523,6 +523,11 @@ namespace DiyFfbPedal
                                                 writer.Write(", admittance_virtualAcceleration_mps2");
                                                 writer.Write(", joystickOutput_u16");
                                                 writer.Write(", joystickOutput_pct");
+                                                writer.Write(", joystickOutputCycle_u16");
+                                                writer.Write(", joystickPreCurve_u16");
+                                                writer.Write(", pedalTravel_pct");
+                                                // host wall-clock, to align with the Windows-side joystick log
+                                                writer.Write(", hostTimeUnixMs");
 
                                                 writer.Write("\n");
                                             }
@@ -564,7 +569,11 @@ namespace DiyFfbPedal
                                                 $",{state.admittance_virtualVelocity_mps}" +
                                                 $",{state.admittance_virtualAcceleration_mps2}" +
                                                 $",{(UInt16)Pedal_position_reading[pedalSelected]}" +
-                                                $",{(Pedal_position_reading[pedalSelected] / 65535.0 * 100.0).ToString("G9")}"
+                                                $",{(Pedal_position_reading[pedalSelected] / 65535.0 * 100.0).ToString("G9")}" +
+                                                $",{state.joystickOutput_u16}" +
+                                                $",{state.joystickPreCurve_u16}" +
+                                                $",{state.pedalTravel_fl32 * 100.0f}" +
+                                                $",{HostTimeUnixMsForTrace()}"
                                                 );
                                         }
 

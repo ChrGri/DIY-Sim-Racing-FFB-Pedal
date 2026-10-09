@@ -666,6 +666,14 @@ namespace DiyFfbPedal
 
         // Writes the pedal config next to a pedal trace log (same name, .json extension),
         // so each trace can be analysed together with the settings it was recorded with.
+        // Unix time in ms (invariant culture), written per state-log row so a
+        // trace can be aligned with an external log of the Windows joystick axes.
+        private static string HostTimeUnixMsForTrace()
+        {
+            double unixMs = (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds;
+            return unixMs.ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
+        }
+
         private void WritePedalConfigForTrace(string traceFilePath, int pedalIdx)
         {
             if (pedalIdx < 0 || pedalIdx >= dap_config_st.Length)

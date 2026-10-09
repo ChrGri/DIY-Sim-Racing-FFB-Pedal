@@ -54,6 +54,10 @@ namespace DiyFfbPedal.UIFunction
             new SignalDef { Id = "speed_hz", Name = "ESP Command Velocity", Subsystem = "ESP32 & Forces", Unit = "Hz", DefaultColor = Color.FromRgb(0xFF, 0x6D, 0x00), Getter = s => s.currentSpeedInHz_i32, Format = "F0" },
             new SignalDef { Id = "brake_resistor", Name = "Brake Resistor", Subsystem = "ESP32 & Forces", Unit = "", DefaultColor = Color.FromRgb(0xEA, 0x80, 0xFC), Getter = s => s.brakeResistorState_b, Format = "F0" },
             new SignalDef { Id = "osc_monitor", Name = "Oscillation Monitor", Subsystem = "ESP32 & Forces", Unit = "", DefaultColor = Color.FromRgb(0xD5, 0x00, 0xF9), Getter = s => s.oscillationMonitorValue_u8, Format = "F0" },
+            // Per-cycle joystick output: final HID value and the value before curve + denoise
+            new SignalDef { Id = "joystick_out", Name = "Joystick Output", Subsystem = "ESP32 & Forces", Unit = "%", DefaultColor = Color.FromRgb(0xFF, 0xEB, 0x3B), Getter = s => s.joystickOutput_u16 / 655.35, Format = "F2" },
+            new SignalDef { Id = "joystick_pre_curve", Name = "Joystick Pre-Curve", Subsystem = "ESP32 & Forces", Unit = "%", DefaultColor = Color.FromRgb(0xFF, 0xC4, 0x00), Getter = s => s.joystickPreCurve_u16 / 655.35, Format = "F2" },
+            new SignalDef { Id = "pedal_travel", Name = "Pedal Travel", Subsystem = "ESP32 & Forces", Unit = "%", DefaultColor = Color.FromRgb(0x64, 0xFF, 0xDA), Getter = s => s.pedalTravel_fl32 * 100.0, Format = "F2" },
             new SignalDef { Id = "esp_cycle", Name = "ESP Cycle Count", Subsystem = "ESP32 & Forces", Unit = "cts", DefaultColor = Color.FromRgb(0xCF, 0xD8, 0xDC), Getter = s => s.cycleCount_u32, Format = "F0" },
 
             // Admittance Model
