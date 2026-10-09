@@ -865,8 +865,20 @@ namespace DiyFfbPedal.UIFunction
         // ---------------------------------------------------------------
         // DataGrid MouseWheel Bubble handler
         // ---------------------------------------------------------------
+        // The grid scrolls itself (row virtualization needs a bounded height - realizing all
+        // ~300 rows made the first tab open take seconds). Hand the wheel to the outer page
+        // only once the grid is at its top/bottom, so the page stays scrollable.
         private void ServoRegisterGrid_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
+            var gridScroll = FindDescendant<ScrollViewer>((DependencyObject)sender);
+            if (gridScroll != null)
+            {
+                bool atTop = gridScroll.VerticalOffset <= 0;
+                bool atBottom = gridScroll.VerticalOffset >= gridScroll.ScrollableHeight;
+                if ((e.Delta > 0 && !atTop) || (e.Delta < 0 && !atBottom))
+                    return; // let the grid scroll
+            }
+
             if (!e.Handled)
             {
                 e.Handled = true;
@@ -879,6 +891,18 @@ namespace DiyFfbPedal.UIFunction
                 var parent = ((Control)sender).Parent as System.Windows.UIElement;
                 parent?.RaiseEvent(eventArg);
             }
+        }
+
+        private static T FindDescendant<T>(DependencyObject root) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+            {
+                var child = VisualTreeHelper.GetChild(root, i);
+                if (child is T match) return match;
+                var nested = FindDescendant<T>(child);
+                if (nested != null) return nested;
+            }
+            return null;
         }
 
         // ---------------------------------------------------------------

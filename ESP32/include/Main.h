@@ -53,6 +53,10 @@
 
 #define SERVO_MAX_VOLTAGE_IN_V_36V 38.0f
 #define SERVO_MAX_VOLTAGE_IN_V_48V 50.0f
+// Pr7.32 while the internal bleeder is off (regen mode "hardware brake resistor
+// circuit only"): above the hardware circuit's clamp level, so the servo leaves the
+// regen energy to the circuit
+#define INTERNAL_BLEEDER_OFF_THRESHOLD_V 60.0f
 
 /********************************************************************/
 /*                      Loadcell defines                            */

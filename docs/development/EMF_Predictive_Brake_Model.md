@@ -515,6 +515,37 @@ Where $P_{\text{diss}} = 10.0\,\text{W}$ is the continuous dissipation rate. If 
 
 ---
 
+### 5.7 Regen Governor and Resistor Feedforward: Efficiency Factors
+
+The admittance strategy (`MoveByAdmittanceStrategy`, `StepperMovementStrategy.h`) limits the pedal speed so the
+regenerated power stays within an electrical budget:
+- **Servo share:** `ADMITTANCE_REGEN_POWER_SERVO_W`, absorbed by the servo's reactive pump-lift suppression above
+  `Pr7.32` = 40 V. Without the resistor, the bus then settles at ~42 V.
+- **Resistor share:** while the external brake resistor is enabled, up to 0.8 · V²/R in addition.
+
+The brake resistor's PWM duty dissipates the power above the servo's share. Two factors convert between the
+mechanical foot power F·v and electrical power:
+
+| Constant | Used for | Effect of a smaller value |
+|---|---|---|
+| `REGEN_BUDGET_EFFICIENCY_01` | speed limit: mechanical budget = electrical budget / factor | faster pedal under load, less margin |
+| `REGEN_DUTY_EFFICIENCY_01` | duty: electrical regen power = factor · F · v | smaller duty; if too small, the surplus raises the bus |
+
+Measurements:
+- **Throttle, 2026-10-02:** about 0.75. At F·v = 240 W the resistor took ~180 W with the bus near its rest
+  voltage.
+- **Brake, 2026-10-04** (5 mm spindle, 33 Ω resistor):
+  - 0.75 for both factors: the bus reached ~58 V and the servo tripped its overvoltage alarm.
+  - 1.0 for both: no alarm.
+  - At brake forces a larger share of F·v reaches the bus.
+
+The duty therefore uses 1.0. Overestimating it only costs some extra resistor power, and the thermal model
+counts the power actually dissipated (duty · V²/R). The budget also stays at 1.0 for now, which is the tested
+state. A test with budget 0.75 and duty 1.0 shows whether the faster pedal is safe as well.
+
+With a high-ohm resistor the extra budget is small. At 33 Ω the resistor share is only ~35 W (0.8 · 38²/33),
+next to the servo's 40 W.
+
 ## 6. Telemetry Verification & Tuning Guidelines
 
 ### 6.1 Telemetry Validation via `VisualizePedalLog.ipynb`

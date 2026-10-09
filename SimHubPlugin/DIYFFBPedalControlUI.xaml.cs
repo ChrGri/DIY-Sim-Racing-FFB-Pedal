@@ -382,7 +382,7 @@ namespace DiyFfbPedal
         private void ESPNow_SerialPortSelection_DropDownOpened(object sender, EventArgs e)
         {
             // 1. Store the currently selected value, if any.
-            var currentSelectedValue = SerialPortSelection.SelectedValue;
+            var currentSelectedValue = SerialPortSelection_ESPNow.SelectedValue;
 
             // 2. Your logic to get the updated list of items.
             //    For example, querying for available serial ports.
@@ -434,6 +434,9 @@ namespace DiyFfbPedal
         public void SerialPortSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string tmp = (string)SerialPortSelection.SelectedValue;
+            // Selection is cleared when the item list is refreshed or the stored port
+            // is not in it - don't overwrite the stored port with null/placeholder.
+            if (string.IsNullOrEmpty(tmp) || tmp == "NA") return;
             //string tmp_2= Plugin.comportList[SerialPortSelection.SelectedIndex].ComPortName;
             //System.Windows.MessageBox.Show("connect to " + tmp_2);
             //Plugin._serialPort[indexOfSelectedPedal_u].PortName = tmp;
@@ -470,6 +473,7 @@ namespace DiyFfbPedal
         public void ESPNow_SerialPortSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string tmp = (string)SerialPortSelection_ESPNow.SelectedValue;
+            if (string.IsNullOrEmpty(tmp) || tmp == "NA") return;
             try
             {
                 //if (Plugin.Settings.connect_status[indexOfSelectedPedal_u] == 0)

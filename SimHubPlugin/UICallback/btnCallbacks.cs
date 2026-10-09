@@ -666,7 +666,99 @@ namespace DiyFfbPedal
 
         // Writes the pedal config next to a pedal trace log (same name, .json extension),
         // so each trace can be analysed together with the settings it was recorded with.
-        private void WritePedalConfigForTrace(string traceFilePath, int pedalIdx)
+        // Unix time in ms (invariant culture), written per state-log row so a
+        // trace can be aligned with an external log of the Windows joystick axes.
+        internal static string HostTimeUnixMsForTrace()
+        {
+            double unixMs = (DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds;
+            return unixMs.ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        // Column header of the pedal state trace log (wired, wireless and the live plot export).
+        // joystickOutput_u16/_pct is the last basic-state joystick value seen by the host,
+        // joystickOutputCycle_u16 the joystick value of this very cycle from the extended state.
+        internal const string PedalTraceHeader =
+            "WriterIdx" +
+            ", servoStateCycleCount_u32" +
+            ", servoPositionTarget_i32" +
+            ", servoPositionFeedback_i32" +
+            ", servoPositionError_i16" +
+            ", servoVoltage_fl32" +
+            ", servoCurrentPercent_i16" +
+            ", servoVelocityRpm_i16" +
+
+            ", timeInUs_u32" +
+            ", cycleCount_u32" +
+            ", pedalForceRaw_fl32" +
+            ", pedalForceFiltered_fl32" +
+            ", forceVelEst_fl32" +
+            ", targetPosition_i32" +
+            ", currentSpeedInHz_i32" +
+            ", brakeResistorState_b" +
+            ", oscillationMonitorValue_u8" +
+
+            ", admittance_expectedForce_N" +
+            ", admittance_isOscillating" +
+            ", admittance_admittancePsi_N" +
+            ", admittance_virtualMass_kg" +
+            ", admittance_virtualDamping_Ns_m" +
+
+            ", admittance_virtualPosition_m" +
+            ", admittance_virtualVelocity_mps" +
+            ", admittance_virtualAcceleration_mps2" +
+            ", joystickOutput_u16" +
+            ", joystickOutput_pct" +
+            ", joystickOutputCycle_u16" +
+            ", joystickPreCurve_u16" +
+            ", pedalTravel_pct" +
+            // host wall-clock, to align with the Windows-side joystick log
+            ", hostTimeUnixMs";
+
+        internal static string FormatPedalTraceRow(Int64 writerIdx, payloadPedalState_Extended state, double joystickReading, string hostTimeUnixMs)
+        {
+            return
+                $"{writerIdx}" +
+
+                $",{state.servoStateCycleCount_u32}" +
+                $",{state.servoPositionTarget_i32}" +
+                $",{state.servoPositionFeedback_i32}" +
+                $",{state.servoPositionError_i16}" +
+                $",{state.servoVoltage0p1V_i16 / 10.0f}" +
+                $",{state.servoCurrentPercent_i16}" +
+                $",{state.servoVelocityRpm_i16}" +
+
+                $",{state.timeInUs_u32}" +
+                $",{state.cycleCount_u32}" +
+                $",{state.pedalForceRaw_fl32}" +
+                $",{state.pedalForceFiltered_fl32}" +
+                $",{state.forceVelEst_fl32}" +
+                $",{state.targetPosition_i32}" +
+                $",{state.currentSpeedInHz_i32}" +
+                $",{state.brakeResistorState_b}" +
+                $",{state.oscillationMonitorValue_u8}" +
+                $",{state.admittance_expectedForce_N}" +
+                $",{state.admittance_isOscillating}" +
+                $",{state.admittance_admittancePsi_N}" +
+                $",{state.admittance_virtualMass_kg}" +
+                $",{state.admittance_virtualDamping_Ns_m}" +
+                $",{state.admittance_virtualPosition_m}" +
+                $",{state.admittance_virtualVelocity_mps}" +
+                $",{state.admittance_virtualAcceleration_mps2}" +
+                $",{(UInt16)joystickReading}" +
+                $",{(joystickReading / 65535.0 * 100.0).ToString("G9")}" +
+                $",{state.joystickOutput_u16}" +
+                $",{state.joystickPreCurve_u16}" +
+                $",{state.pedalTravel_fl32 * 100.0f}" +
+                $",{hostTimeUnixMs}";
+        }
+
+        // Last basic-state joystick value received for a pedal (logged alongside the extended state)
+        internal double GetPedalPositionReading(int pedalIdx)
+        {
+            return pedalIdx >= 0 && pedalIdx < Pedal_position_reading.Length ? Pedal_position_reading[pedalIdx] : 0.0;
+        }
+
+        internal void WritePedalConfigForTrace(string traceFilePath, int pedalIdx)
         {
             if (pedalIdx < 0 || pedalIdx >= dap_config_st.Length)
             {
@@ -1528,7 +1620,7 @@ namespace DiyFfbPedal
             Plugin.SendPedalAction(tmp, (byte)indexOfSelectedPedal_u);
         }
 
-        private void btn_Plugin_OTA_Click(object sender, RoutedEventArgs e)
+        private async void btn_Plugin_OTA_Click(object sender, RoutedEventArgs e)
         {
             UpdateSettingWindow sideWindow = new UpdateSettingWindow(Plugin.Settings, Plugin._calculations);
             double screenWidth = SystemParameters.PrimaryScreenWidth;
@@ -1568,72 +1660,29 @@ namespace DiyFfbPedal
                 }
                 */
 
-                string targetPath = Directory.GetCurrentDirectory() + "\\";
-                //System.Windows.MessageBox.Show(targetPath);
-                //targetPath = "C:\\Program Files (x86)\\SimHub\\";
-
-
-
                 MSG_tmp += "The update requires administrators permission to delete the original plugin and download the new one. If you agree, please click OK.";
                 var result = System.Windows.MessageBox.Show(MSG_tmp, "Warning", MessageBoxButton.OKCancel, MessageBoxImage.Question);
                 if (result == MessageBoxResult.OK)
                 {
-                    string exeName = "SimHubWPF.exe";
-                    string exePath = targetPath + exeName;
-                    string targetDllPath = targetPath + "DiyFfbPedal.dll";
-                    string rsexTargetPath = targetPath + "languages\\DiyFfbPedal.resx";
-                    string psScript2 = $@"
-                $processName = 'SimHubWPF'
-                $downloadUrl = '{downloadUrl}'
-                $targetDllPath = '{targetDllPath}'
-                $rsexUrl = '{rsexDownloadUrl}'
-                $rsexTargetPath = '{rsexTargetPath}'
-                $exePath = '{exePath}'
-                $tempPath = $env:TEMP + '\plugin_temp.dll'
-                $tempRsexPath = $env:TEMP + '\plugin_temp.resx'
-
-                Write-Host 'Closing Simhub...'
-                $procs = Get-Process -Name $processName -ErrorAction SilentlyContinue
-                foreach ($proc in $procs) {{
-                    Stop-Process -Id $proc.Id -Force
-                    $proc.WaitForExit()
-                }}
-                Start-Sleep -Seconds 2
-
-                Write-Host 'Download new files...'
-                Invoke-WebRequest -Uri $downloadUrl -OutFile $tempPath -UseBasicParsing
-                Invoke-WebRequest -Uri $rsexUrl -OutFile $tempRsexPath -UseBasicParsing
-
-                Write-Host 'Backup .dll file...'
-                if (Test-Path $targetDllPath) {{
-                    Copy-Item -Path $targetDllPath -Destination ($targetDllPath + '.bak') -Force
-                }}
-
-                Write-Host 'Preparing Language folder...'
-                $langDir = Split-Path -Path $rsexTargetPath
-                if (!(Test-Path $langDir)) {{
-                    New-Item -ItemType Directory -Path $langDir -Force
-                }}
-
-                Write-Host 'Copying files to target folders...'
-                Copy-Item -Path $tempPath -Destination $targetDllPath -Force
-                Copy-Item -Path $tempRsexPath -Destination $rsexTargetPath -Force
-
-                Write-Host 'Restart Simhub...'
-                Start-Process -FilePath $exePath
-                ";
-                    string escapedScript2 = psScript2.Replace("\"", "`\"").Replace("`r", "").Replace("`n", "; ");
-                    var psi = new ProcessStartInfo
+                    System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+                    try
                     {
-                        FileName = "powershell.exe",
-                        Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{escapedScript2}\"",
-                        Verb = "runas", // force run with admin
-                        UseShellExecute = true
-                    };
+                        await PluginUpdateHelper.DownloadAsync(downloadUrl, rsexDownloadUrl);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Windows.MessageBox.Show("The update could not be downloaded: " + ex.Message, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    finally
+                    {
+                        System.Windows.Input.Mouse.OverrideCursor = null;
+                    }
+                    System.Windows.MessageBox.Show("The update was downloaded. SimHub will now restart to install it.", "Plugin update", MessageBoxButton.OK, MessageBoxImage.Information);
 
                     try
                     {
-                        Process.Start(psi);
+                        PluginUpdateHelper.InstallAndRestart();
                     }
                     catch (Exception)
                     {

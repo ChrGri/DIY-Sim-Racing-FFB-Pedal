@@ -61,6 +61,12 @@ private:
     uint16_t posCommandSmoothingFactor_u16 = 0;    // Smoothing parameter for the iSV57 internal trajectory generator
 
     volatile bool servoVelocityReadoutRequested_b = false; // Debug: stream servo velocity instead of current
+    // Internal bleeder: off (with a raised threshold) while a hardware brake resistor
+    // circuit clamps the bus. Requested by the pedal task, applied on the servo task;
+    // invalidated whenever the connection setup rewrites Pr7.31 / Pr7.32.
+    volatile bool internalBleederOffRequested_b = false;
+    bool internalBleederOffApplied_b = false;
+    volatile bool internalBleederConfigValid_b = false;
     bool clearAllServoAlarms_b = false;            // Trigger flag to clear servo fault states
     bool resetServoRegistersToFactoryValues_b = false; // Trigger flag to perform a factory reset
     bool updateServoParams_b = false;              // Trigger flag to push new parameters to the servo
@@ -193,6 +199,9 @@ public:
     // trip, crash relief, homing endstop detection) is disabled.
     void requestServoVelocityReadout(bool request_b);
     bool isServoVelocityReadoutActive() const;
+    // Regen mode "hardware brake resistor circuit only": switch the servo's internal
+    // bleeder off and raise its threshold; false restores the tuned bleeder settings.
+    void requestInternalBleederOff(bool off_b);
     void clearAllServoAlarms();
     void resetServoParametersToFactoryValues();
     void configSetProfilingFlag(bool proFlag_b);

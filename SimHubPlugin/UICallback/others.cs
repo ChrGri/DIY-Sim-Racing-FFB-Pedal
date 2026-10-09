@@ -836,23 +836,14 @@ namespace DiyFfbPedal
                 Plugin._serialPort[pedalIdx].Encoding = System.Text.Encoding.GetEncoding(28591);
                 Plugin._serialPort[pedalIdx].NewLine = "\r\n";
                 Plugin._serialPort[pedalIdx].ReadBufferSize = 10000;
-                if (Plugin.Settings.auto_connect_flag[pedalIdx] == 1 & Plugin.Settings.connect_flag[pedalIdx] == 1)
+                // Always connect to the port the user selected. The former auto-connect
+                // branch assigned the "NA" placeholder whenever the pedal had never
+                // connected before, which reverted the selection (issue #126).
+                string selectedPort = Plugin.Settings.selectedComPortNames[pedalIdx];
+                if (!string.IsNullOrEmpty(selectedPort) && selectedPort != "NA")
                 {
-                    if (Plugin.Settings.autoconnectComPortNames[pedalIdx] == "NA")
-                    {
-                        Plugin._serialPort[pedalIdx].PortName = Plugin.Settings.autoconnectComPortNames[pedalIdx];
-                    }
-                    else
-                    {
-                        Plugin._serialPort[pedalIdx].PortName = Plugin.Settings.selectedComPortNames[pedalIdx];
-                        Plugin.Settings.autoconnectComPortNames[pedalIdx] = Plugin.Settings.selectedComPortNames[pedalIdx];
-                    }
-
-                }
-                else
-                {
-                    Plugin._serialPort[pedalIdx].PortName = Plugin.Settings.selectedComPortNames[pedalIdx];
-                    Plugin.Settings.autoconnectComPortNames[pedalIdx] = Plugin.Settings.selectedComPortNames[pedalIdx];
+                    Plugin._serialPort[pedalIdx].PortName = selectedPort;
+                    Plugin.Settings.autoconnectComPortNames[pedalIdx] = selectedPort;
                 }
 
                 if (Plugin.PortExists(Plugin._serialPort[pedalIdx].PortName))

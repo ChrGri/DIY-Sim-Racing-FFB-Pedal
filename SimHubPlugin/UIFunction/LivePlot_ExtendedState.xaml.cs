@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -27,9 +28,12 @@ namespace DiyFfbPedal.UIFunction
         {
             public double TimeSec;
             public payloadPedalState_Extended State;
+            public double JoystickReading;   // last basic-state joystick value at receive time
+            public double HostTimeUnixMs;    // host wall-clock at receive time
         }
 
         private const double SERVO_STEPS_PER_REV = 3200.0; // fixed microstep setting (Pr0.08)
+        private static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         // All supported signals from payloadPedalState_Extended
         private static readonly List<SignalDef> AllSignals = new List<SignalDef>
@@ -54,6 +58,10 @@ namespace DiyFfbPedal.UIFunction
             new SignalDef { Id = "speed_hz", Name = "ESP Command Velocity", Subsystem = "ESP32 & Forces", Unit = "Hz", DefaultColor = Color.FromRgb(0xFF, 0x6D, 0x00), Getter = s => s.currentSpeedInHz_i32, Format = "F0" },
             new SignalDef { Id = "brake_resistor", Name = "Brake Resistor", Subsystem = "ESP32 & Forces", Unit = "", DefaultColor = Color.FromRgb(0xEA, 0x80, 0xFC), Getter = s => s.brakeResistorState_b, Format = "F0" },
             new SignalDef { Id = "osc_monitor", Name = "Oscillation Monitor", Subsystem = "ESP32 & Forces", Unit = "", DefaultColor = Color.FromRgb(0xD5, 0x00, 0xF9), Getter = s => s.oscillationMonitorValue_u8, Format = "F0" },
+            // Per-cycle joystick output: final HID value and the value before curve + denoise
+            new SignalDef { Id = "joystick_out", Name = "Joystick Output", Subsystem = "ESP32 & Forces", Unit = "%", DefaultColor = Color.FromRgb(0xFF, 0xEB, 0x3B), Getter = s => s.joystickOutput_u16 / 655.35, Format = "F2" },
+            new SignalDef { Id = "joystick_pre_curve", Name = "Joystick Pre-Curve", Subsystem = "ESP32 & Forces", Unit = "%", DefaultColor = Color.FromRgb(0xFF, 0xC4, 0x00), Getter = s => s.joystickPreCurve_u16 / 655.35, Format = "F2" },
+            new SignalDef { Id = "pedal_travel", Name = "Pedal Travel", Subsystem = "ESP32 & Forces", Unit = "%", DefaultColor = Color.FromRgb(0x64, 0xFF, 0xDA), Getter = s => s.pedalTravel_fl32 * 100.0, Format = "F2" },
             new SignalDef { Id = "esp_cycle", Name = "ESP Cycle Count", Subsystem = "ESP32 & Forces", Unit = "cts", DefaultColor = Color.FromRgb(0xCF, 0xD8, 0xDC), Getter = s => s.cycleCount_u32, Format = "F0" },
 
             // Admittance Model
@@ -83,6 +91,11 @@ namespace DiyFfbPedal.UIFunction
         private readonly object _dataLock = new object();
         private readonly List<TelemetryPoint> _points = new List<TelemetryPoint>(15000);
         private const int MAX_BUFFER_POINTS = 12000; // 60s at 200 Hz
+
+        // Every received packet (no 200 Hz subsampling), only used by the export so it
+        // has the same rows as the pedal state trace log. Kept for RAW_BUFFER_SEC.
+        private readonly List<TelemetryPoint> _rawPoints = new List<TelemetryPoint>(70000);
+        private const double RAW_BUFFER_SEC = 62.0;
 
         // Monotonic ESP32 hardware time tracking
         private bool _firstPacket = true;
@@ -594,6 +607,10 @@ namespace DiyFfbPedal.UIFunction
 
             uint espUs = packet.payloadPedalExtendedState_.timeInUs_u32;
 
+            // Host-side values the pedal trace log writes next to the extended state (for the export)
+            double joystickReading = ParentUI != null ? ParentUI.GetPedalPositionReading(pedalIdx) : 0.0;
+            double hostTimeUnixMs = (DateTime.UtcNow - UnixEpoch).TotalMilliseconds;
+
             lock (_dataLock)
             {
                 if (_firstPacket)
@@ -604,11 +621,15 @@ namespace DiyFfbPedal.UIFunction
                     _unwrappedTimeSec = 0.0;
                     _latestTimeSec = 0.0;
 
-                    _points.Add(new TelemetryPoint
+                    var firstPoint = new TelemetryPoint
                     {
                         TimeSec = 0.0,
-                        State = packet.payloadPedalExtendedState_
-                    });
+                        State = packet.payloadPedalExtendedState_,
+                        JoystickReading = joystickReading,
+                        HostTimeUnixMs = hostTimeUnixMs
+                    };
+                    _points.Add(firstPoint);
+                    _rawPoints.Add(firstPoint);
                     _prevForceKg = packet.payloadPedalExtendedState_.pedalForceFiltered_fl32;
                     return;
                 }
@@ -623,17 +644,29 @@ namespace DiyFfbPedal.UIFunction
                 _lastEspTimeUs = espUs;
                 _latestTimeSec = _unwrappedTimeSec;
 
+                var point = new TelemetryPoint
+                {
+                    TimeSec = _unwrappedTimeSec,
+                    State = packet.payloadPedalExtendedState_,
+                    JoystickReading = joystickReading,
+                    HostTimeUnixMs = hostTimeUnixMs
+                };
+
+                _rawPoints.Add(point);
+                // Prune at most about once per second: drop everything older than RAW_BUFFER_SEC
+                if (_rawPoints[0].TimeSec < _unwrappedTimeSec - RAW_BUFFER_SEC - 1.0)
+                {
+                    int drop = FindFirstExportIndex(_rawPoints, _unwrappedTimeSec - RAW_BUFFER_SEC);
+                    _rawPoints.RemoveRange(0, drop);
+                }
+
                 // Subsample at 200 Hz (every 5000 µs = 5ms) for microsecond accuracy without queue explosion.
                 // Trigger mode keeps every packet: latency is measured in single cycles.
                 uint sampleDiffUs = espUs - _lastSampledEspTimeUs;
                 if (_triggerMode || sampleDiffUs >= 5000 || sampleDiffUs > 5000000)
                 {
                     _lastSampledEspTimeUs = espUs;
-                    _points.Add(new TelemetryPoint
-                    {
-                        TimeSec = _unwrappedTimeSec,
-                        State = packet.payloadPedalExtendedState_
-                    });
+                    _points.Add(point);
 
                     // Bulk prune once every ~2.5 seconds (500 samples) instead of shifting memory every frame
                     if (_points.Count > MAX_BUFFER_POINTS + 500)
@@ -696,7 +729,7 @@ namespace DiyFfbPedal.UIFunction
                 double t = _points[i].TimeSec - t0;
                 if (t > TRIGGER_POST_SEC) break;
                 if (trigIdx < 0 && t >= 0.0) trigIdx = cap.Count;
-                cap.Add(new TelemetryPoint { TimeSec = t, State = _points[i].State });
+                cap.Add(new TelemetryPoint { TimeSec = t, State = _points[i].State, JoystickReading = _points[i].JoystickReading, HostTimeUnixMs = _points[i].HostTimeUnixMs });
             }
             if (trigIdx < 0) return;
 
@@ -1113,6 +1146,21 @@ namespace DiyFfbPedal.UIFunction
                 }
             }
             return Math.Max(0, result > 0 ? result - 1 : 0);
+        }
+
+        // Exact lower bound: index of the first point with TimeSec >= targetTime (list.Count if none),
+        // without the one-sample padding the render lookups above add
+        private static int FindFirstExportIndex(List<TelemetryPoint> list, double targetTime)
+        {
+            int low = 0;
+            int high = list.Count;
+            while (low < high)
+            {
+                int mid = (low + high) >> 1;
+                if (list[mid].TimeSec < targetTime) low = mid + 1;
+                else high = mid;
+            }
+            return low;
         }
 
         private static int FindLastIndexAtOrBefore(List<TelemetryPoint> list, double targetTime)
@@ -1717,6 +1765,7 @@ namespace DiyFfbPedal.UIFunction
                     lock (_dataLock)
                     {
                         _points.Clear();
+                        _rawPoints.Clear();
                         _firstPacket = true;
                         _unwrappedTimeSec = 0.0;
                         _latestTimeSec = 0.0;
@@ -1783,6 +1832,7 @@ namespace DiyFfbPedal.UIFunction
             lock (_dataLock)
             {
                 _points.Clear();
+                _rawPoints.Clear();
                 _firstPacket = true;
                 _unwrappedTimeSec = 0.0;
                 _latestTimeSec = 0.0;
@@ -1796,6 +1846,63 @@ namespace DiyFfbPedal.UIFunction
             }
             ClearAxisLabels();
             HideDataTip();
+        }
+
+        // Writes the samples of the currently displayed time range (window length, zoom
+        // and pan as last rendered; latest capture in trigger mode) in the pedal state
+        // trace log format, so the same analysis scripts can read it.
+        private void BtnExport_Click(object sender, RoutedEventArgs e)
+        {
+            List<TelemetryPoint> snapshot;
+            lock (_dataLock)
+            {
+                // Trigger captures are already full rate; otherwise use the unsubsampled buffer
+                var src = _triggerMode ? _capturePoints : _rawPoints;
+                int startIdx = FindFirstExportIndex(src, _lastRenderViewStart);
+                int endIdx = FindFirstExportIndex(src, _lastRenderViewEnd + 1e-9); // exclusive
+                snapshot = src.GetRange(startIdx, Math.Max(0, endIdx - startIdx));
+            }
+            if (snapshot.Count == 0)
+            {
+                MessageBox.Show("No extended state data in the displayed time range.", "Export", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            string pedalName = _selectedPedal >= 0 && _selectedPedal < PedalConstStrings.PedalID.Length ? PedalConstStrings.PedalID[_selectedPedal] : "Pedal" + _selectedPedal;
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Export extended state data",
+                Filter = "Pedal state log (*.txt)|*.txt|CSV file (*.csv)|*.csv|All files (*.*)|*.*",
+                DefaultExt = ".txt",
+                AddExtension = true,
+                FileName = $"DiyFfbPedalStateLog_{pedalName}_LivePlot{(_triggerMode ? "Capture" : "")}{DateTime.Now:yyyyMMdd_HHmmss}.txt"
+            };
+            if (Plugin != null && System.IO.Directory.Exists(Plugin.logFolderPath))
+            {
+                dlg.InitialDirectory = Plugin.logFolderPath;
+            }
+            if (dlg.ShowDialog() != true) return;
+
+            // Same format as the pedal state trace log, incl. the pedal config next to it (.json)
+            try
+            {
+                ParentUI?.WritePedalConfigForTrace(dlg.FileName, _selectedPedal);
+                using (var writer = new System.IO.StreamWriter(dlg.FileName, false))
+                {
+                    writer.Write(DIYFFBPedalControlUI.PedalTraceHeader + "\n");
+                    Int64 writerIdx = 0;
+                    foreach (var p in snapshot)
+                    {
+                        writerIdx++;
+                        writer.WriteLine(DIYFFBPedalControlUI.FormatPedalTraceRow(writerIdx, p.State, p.JoystickReading,
+                            p.HostTimeUnixMs.ToString("F3", CultureInfo.InvariantCulture)));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Export failed: " + ex.Message, "Export", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void CbTimeWindow_SelectionChanged(object sender, SelectionChangedEventArgs e)

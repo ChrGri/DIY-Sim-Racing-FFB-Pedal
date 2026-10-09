@@ -152,7 +152,16 @@ namespace DiyFfbPedal.UIFunction
                         //checkbox
                         if(control.CheckBox_JoystickOutput!=null) control.CheckBox_JoystickOutput.IsChecked = newData.payloadPedalConfig_.travelAsJoystickOutput_u8 == 1;
                         if (control.CheckBox_WakeOnPluginOnly != null) control.CheckBox_WakeOnPluginOnly.IsChecked = newData.payloadPedalConfig_.wakeOnPluginOnly_u8 == 1;
-                        if (control.CheckBox_EnableBrakeResistor != null) control.CheckBox_EnableBrakeResistor.IsChecked = newData.payloadPedalConfig_.enableBrakeResistor_u8 == 1;
+                        if (control.ComboBox_BrakeResistorMode != null)
+                        {
+                            int mode = Math.Min((int)newData.payloadPedalConfig_.enableBrakeResistor_u8, BRAKE_RESISTOR_MODE_HARDWARE_CIRCUIT);
+                            if (control.ComboBox_BrakeResistorMode.SelectedIndex != mode) control.ComboBox_BrakeResistorMode.SelectedIndex = mode;
+                        }
+                        if (control.TextBox_BrakeResistorResistance != null)
+                        {
+                            // the resistance only matters for the firmware-switched resistor
+                            control.TextBox_BrakeResistorResistance.IsEnabled = newData.payloadPedalConfig_.enableBrakeResistor_u8 == BRAKE_RESISTOR_MODE_SERVO_BLEEDER_AND_EXTERNAL;
+                        }
                         if (control.TextBox_BrakeResistorResistance != null && !control.TextBox_BrakeResistorResistance.IsKeyboardFocusWithin)
                         {
                             control.TextBox_BrakeResistorResistance.Text = FormatBrakeResistorResistance(newData.payloadPedalConfig_.brakeResistorResistance_Ohm_u8);
@@ -360,20 +369,34 @@ namespace DiyFfbPedal.UIFunction
             ConfigChangedEvent(dap_config_st);
         }
 
-        private void CheckBox_EnableBrakeResistor_Checked(object sender, RoutedEventArgs e)
-        {
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.enableBrakeResistor_u8 = (byte)1;
-            dap_config_st = tmp;
-            ConfigChangedEvent(dap_config_st);
-        }
+        // values of enableBrakeResistor_u8 (= BRAKE_RESISTOR_MODE_* in the firmware)
+        private const int BRAKE_RESISTOR_MODE_SERVO_BLEEDER = 0;
+        private const int BRAKE_RESISTOR_MODE_SERVO_BLEEDER_AND_EXTERNAL = 1;
+        private const int BRAKE_RESISTOR_MODE_HARDWARE_CIRCUIT = 2;
 
-        private void CheckBox_EnableBrakeResistor_Unchecked(object sender, RoutedEventArgs e)
+        private void ComboBox_BrakeResistorMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.enableBrakeResistor_u8 = (byte)0;
-            dap_config_st = tmp;
-            ConfigChangedEvent(dap_config_st);
+            // the XAML default selection fires during InitializeComponent: not a user change
+            if (ComboBox_BrakeResistorMode == null || !ComboBox_BrakeResistorMode.IsLoaded)
+            {
+                return;
+            }
+            int mode = ComboBox_BrakeResistorMode.SelectedIndex;
+            if (mode < BRAKE_RESISTOR_MODE_SERVO_BLEEDER || mode > BRAKE_RESISTOR_MODE_HARDWARE_CIRCUIT)
+            {
+                return;
+            }
+            if (TextBox_BrakeResistorResistance != null)
+            {
+                TextBox_BrakeResistorResistance.IsEnabled = mode == BRAKE_RESISTOR_MODE_SERVO_BLEEDER_AND_EXTERNAL;
+            }
+            if (dap_config_st.payloadPedalConfig_.enableBrakeResistor_u8 != (byte)mode)
+            {
+                var tmp = dap_config_st;
+                tmp.payloadPedalConfig_.enableBrakeResistor_u8 = (byte)mode;
+                dap_config_st = tmp;
+                ConfigChangedEvent(dap_config_st);
+            }
         }
 
         // Brake resistor resistance in whole Ohm (0 = firmware default 10 Ohm)

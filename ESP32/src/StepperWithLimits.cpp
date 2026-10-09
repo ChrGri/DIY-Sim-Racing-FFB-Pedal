@@ -248,6 +248,9 @@ void StepperWithLimits::clearAllServoAlarms() { clearAllServoAlarms_b = true; }
 void StepperWithLimits::requestServoVelocityReadout(bool request_b) {
   servoVelocityReadoutRequested_b = request_b;
 }
+void StepperWithLimits::requestInternalBleederOff(bool off_b) {
+  internalBleederOffRequested_b = off_b;
+}
 bool StepperWithLimits::isServoVelocityReadoutActive() const {
   return isv57.slot2IsVelocity_b;
 }
@@ -1145,6 +1148,30 @@ StepperWithLimits::processActiveServo(FunctionProfiler *profiler) {
   if (!s_servoBusVoltageParameterized_b) {
     isv57.setServoVoltage(s_servoBusVoltageParameterized_fl32);
     s_servoBusVoltageParameterized_b = true;
+    internalBleederConfigValid_b = false; // Pr7.32 rewritten
+  }
+
+  // Internal bleeder per regen mode: off with the threshold raised to
+  // INTERNAL_BLEEDER_OFF_THRESHOLD_V for a hardware brake resistor circuit, the tuned
+  // mode (Pr7.31) and supply threshold (Pr7.32 = supply class + 2 V) otherwise.
+  // Retried at most once per second until the servo confirms both registers.
+  static uint32_t s_lastBleederWriteAttemptMs_u32 = 0;
+  const bool bleederOffRequested_b = internalBleederOffRequested_b;
+  if ((!internalBleederConfigValid_b ||
+       (bleederOffRequested_b != internalBleederOffApplied_b)) &&
+      ((millis() - s_lastBleederWriteAttemptMs_u32) >= 1000u)) {
+    s_lastBleederWriteAttemptMs_u32 = millis();
+    const uint16_t threshold_u16 =
+        bleederOffRequested_b
+            ? (uint16_t)INTERNAL_BLEEDER_OFF_THRESHOLD_V
+            : (uint16_t)(s_servoBusVoltageParameterized_fl32 + 2.0f);
+    if (isv57.setInternalBleeder(!bleederOffRequested_b, threshold_u16)) {
+      internalBleederOffApplied_b = bleederOffRequested_b;
+      internalBleederConfigValid_b = true;
+      ActiveSerial->printf("Servo internal bleeder %s (threshold %u V)\n",
+                           bleederOffRequested_b ? "off" : "on",
+                           (unsigned)threshold_u16);
+    }
   }
 
   // Initialize telemetry reading registers on fresh connection
@@ -1283,6 +1310,9 @@ void StepperWithLimits::configureServoRegistersAfterPowerOn() {
     s_servoBusVoltageParameterized_b = true;
     delay(30);
   }
+  // the tuned parameters restored the bleeder (Pr7.31 / Pr7.32): re-apply the regen
+  // mode in processActiveServo()
+  internalBleederConfigValid_b = false;
 
   // 6. Verify and establish the communication lifeline
   setLifelineSignal();

@@ -58,7 +58,7 @@
                         <Label Content="{SLoc DIYFFBPedalPlugin_TabItemCustom1, 'CUSTOM1'}"  FontFamily="Arial Black" FontSize="12" Height="30" Width="120" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
                     </Border>
                 </TabItem.Header>
-                <Border Style="{StaticResource Card}" Margin="0" Height="240" Width="525">
+                <Border Style="{StaticResource Card}" Margin="0" Padding="0,0,0,6" Height="240" Width="525">
                     <StackPanel HorizontalAlignment="Left" Height="240" VerticalAlignment="Top" Width="525">
                         <StackPanel Height="20" Width="480" Orientation="Horizontal" HorizontalAlignment="Left">
                             <styles:SHToggleButton x:Name="checkbox_enable_CV1" Content="" Checked="checkbox_enable_CV1_Checked" Unchecked="checkbox_enable_CV1_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="The effect trigger was save in local, no need send config to Pedal"/>
@@ -85,7 +85,7 @@
                         <Label Content="{SLoc DIYFFBPedalPlugin_TabItemCustom2, 'CUSTOM2'}"  FontFamily="Arial Black" FontSize="12" Height="30" Width="120" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
                     </Border>
                 </TabItem.Header>
-                <Border Style="{StaticResource Card}" Margin="0" Height="240" Width="525">
+                <Border Style="{StaticResource Card}" Margin="0" Padding="0,0,0,6" Height="240" Width="525">
                     <StackPanel Height="240" VerticalAlignment="Top" Width="525">
                         <StackPanel Height="20" Width="480" Orientation="Horizontal" HorizontalAlignment="Left">
                             <styles:SHToggleButton x:Name="checkbox_enable_CV2" Content="" Checked="checkbox_enable_CV2_Checked" Unchecked="checkbox_enable_CV2_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="The effect trigger was save in local, no need send config to Pedal"/>
@@ -111,7 +111,7 @@
                         <Label Content="{SLoc DIYFFBPedalPlugin_TabItemCustom3, 'CUSTOM3'}"  FontFamily="Arial Black" FontSize="12" Height="30" Width="120" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
                     </Border>
                 </TabItem.Header>
-                <Border Style="{StaticResource Card}" Margin="0" Height="240" Width="525">
+                <Border Style="{StaticResource Card}" Margin="0" Padding="0,0,0,6" Height="240" Width="525">
                     <StackPanel Height="240" VerticalAlignment="Top" Width="525">
                         <StackPanel Height="20" Width="480" Orientation="Horizontal" HorizontalAlignment="Left">
                             <styles:SHToggleButton x:Name="checkbox_enable_CV3" Content="" Checked="checkbox_enable_CV3_Checked" Unchecked="checkbox_enable_CV3_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="The effect trigger was save in local, no need send config to Pedal"/>
@@ -137,7 +137,7 @@
                         <Label Content="{SLoc DIYFFBPedalPlugin_TabItemCustom4, 'CUSTOM4'}"  FontFamily="Arial Black" FontSize="12" Height="30" Width="120" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
                     </Border>
                 </TabItem.Header>
-                <Border Style="{StaticResource Card}" Margin="0" Height="240" Width="525">
+                <Border Style="{StaticResource Card}" Margin="0" Padding="0,0,0,6" Height="240" Width="525">
                     <StackPanel Height="240" VerticalAlignment="Top" Width="525">
                         <StackPanel Height="20" Width="480" Orientation="Horizontal" HorizontalAlignment="Left">
                             <styles:SHToggleButton x:Name="checkbox_enable_CV4" Content="" Checked="checkbox_enable_CV4_Checked" Unchecked="checkbox_enable_CV4_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="The effect trigger was save in local, no need send config to Pedal"/>

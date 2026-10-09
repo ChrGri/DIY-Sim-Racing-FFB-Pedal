@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using IPlugin = SimHub.Plugins.IPlugin;
 
@@ -25,7 +26,76 @@ namespace DiyFfbPedal
             fixed (byte* p = myBuffer) { return *(DAP_mac_addresses_st*)p; }
         }
 
-        public void SendPedalAction(DAP_action_st action_tmp, Byte PedalID)
+        // Effect actions (ABS, RPM, custom effects, ...) are streamed every frame while active, but one
+        // HID send takes ~16 ms (Task.Delay timer resolution). Queuing every packet built up a backlog
+        // that kept delivering stale triggers long after the effect ended. Keep only the newest
+        // pending effect packet per pedal and let a single pump drain the slots.
+        private readonly byte[][] _pendingHidAction = new byte[3][];
+        private int _hidActionPumpRunning = 0;
+
+        private static bool IsRegularEffectAction(DAP_action_st action)
+        {
+            // one-shot requests must never be overwritten by a newer effect packet
+            return action.payloadPedalAction_.system_action_u8 == 0
+                && action.payloadPedalAction_.startSystemIdentification_u8 == 0
+                && action.payloadPedalAction_.returnPedalConfig_u8 == 0;
+        }
+
+        private void SendPedalActionHid(byte[] buffer, byte PedalID, bool coalesce)
+        {
+            if (!coalesce || PedalID >= _pendingHidAction.Length)
+            {
+                Task.Run(() => BridgeHidService.SendLargeDataAsync(buffer));
+                return;
+            }
+
+            Interlocked.Exchange(ref _pendingHidAction[PedalID], buffer);
+            if (Interlocked.CompareExchange(ref _hidActionPumpRunning, 1, 0) == 0)
+            {
+                Task.Run(PumpPendingHidActions);
+            }
+        }
+
+        private async Task PumpPendingHidActions()
+        {
+            while (true)
+            {
+                try
+                {
+                    bool sentAny = true;
+                    while (sentAny)
+                    {
+                        sentAny = false;
+                        for (int i = 0; i < _pendingHidAction.Length; i++)
+                        {
+                            byte[] buffer = Interlocked.Exchange(ref _pendingHidAction[i], null);
+                            if (buffer == null) continue;
+                            await BridgeHidService.SendLargeDataAsync(buffer);
+                            sentAny = true;
+                        }
+                    }
+                }
+                catch (Exception caughtEx)
+                {
+                    SimHub.Logging.Current.Error("FFB_Pedal_Action_Hid_Pump_error:" + caughtEx.Message);
+                }
+
+                Volatile.Write(ref _hidActionPumpRunning, 0);
+
+                // a packet may have been queued after the last scan but before the flag was cleared
+                bool pending = false;
+                for (int i = 0; i < _pendingHidAction.Length; i++)
+                {
+                    if (Volatile.Read(ref _pendingHidAction[i]) != null) { pending = true; break; }
+                }
+                if (!pending || Interlocked.CompareExchange(ref _hidActionPumpRunning, 1, 0) != 0)
+                {
+                    return;
+                }
+            }
+        }
+
+        public bool SendPedalAction(DAP_action_st action_tmp, Byte PedalID, bool preserveIncomingData = false)
         {
 
             action_tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
@@ -52,14 +122,17 @@ namespace DiyFfbPedal
                 {
                     if (BridgeHidService.IsConnected)
                     {
-                        Task.Run(() => BridgeHidService.SendLargeDataAsync(newBuffer));
+                        SendPedalActionHid(newBuffer, PedalID, IsRegularEffectAction(action_tmp));
+                        return true;
                     }
                     else
                     {
                         if (ESPsync_serialPort.IsOpen)
                         {
-                            ESPsync_serialPort.DiscardInBuffer();
+                            if (!preserveIncomingData) ESPsync_serialPort.DiscardInBuffer();
+                            if (!preserveIncomingData) ESPsync_serialPort.DiscardOutBuffer();
                             ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
+                            return true;
                         }
                     }
                 }
@@ -70,10 +143,11 @@ namespace DiyFfbPedal
                     {
 
                         // clear inbuffer 
-                        _serialPort[PedalID].DiscardInBuffer();
-                        _serialPort[PedalID].DiscardOutBuffer();
+                        if (!preserveIncomingData) _serialPort[PedalID].DiscardInBuffer();
+                        if (!preserveIncomingData) _serialPort[PedalID].DiscardOutBuffer();
                         // send data
                         _serialPort[PedalID].Write(newBuffer, 0, newBuffer.Length);
+                        return true;
                     }
                 }
             }
@@ -82,7 +156,7 @@ namespace DiyFfbPedal
                 string errorMessage = caughtEx.Message;
                 SimHub.Logging.Current.Error("FFB_Pedal_Action_Sending_error:" + errorMessage);
             }
-
+            return false;
         }
         public void SendPedalActionWireless(DAP_action_st action_tmp, Byte PedalID)
         {
@@ -109,8 +183,7 @@ namespace DiyFfbPedal
             {
                 if (BridgeHidService.IsConnected)
                 {
-                    Task.Delay(100);
-                    Task.Run(() => BridgeHidService.SendLargeDataAsync(newBuffer));
+                    SendPedalActionHid(newBuffer, PedalID, IsRegularEffectAction(action_tmp));
                 }
                 else
                 {
@@ -299,6 +372,8 @@ namespace DiyFfbPedal
         {
             int length;
             tmp.payloadHeader_.PedalTag = deviceID;
+            // the pedal's ESP-NOW receiver drops OTA packets whose header version mismatches
+            tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             byte[] newBuffer_2;
             unsafe
             {
@@ -338,6 +413,7 @@ namespace DiyFfbPedal
         public void SendOTAActionBridge(DAP_action_ota_st tmp)
         {
             int length;
+            tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             byte[] newBuffer_2;
             unsafe
             {

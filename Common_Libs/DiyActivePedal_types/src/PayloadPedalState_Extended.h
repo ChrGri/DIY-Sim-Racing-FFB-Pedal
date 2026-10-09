@@ -33,4 +33,9 @@ typedef struct __attribute__((packed)) PayloadPedalStateExtended
   float admittance_virtualVelocity_mps;
   float admittance_virtualAcceleration_mps2;
 
+  // joystick output of this cycle (the basic state only carries every N-th one)
+  uint16_t joystickOutput_u16;    // final HID value, after curve + denoise
+  uint16_t joystickPreCurve_u16;  // force/travel mapping incl. preload gate, before curve + denoise
+  float pedalTravel_fl32;         // pedal arc fraction (0..1) used by travel-as-joystick
+
 } PayloadPedalStateExtended_t;

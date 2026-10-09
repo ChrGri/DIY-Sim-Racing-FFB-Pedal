@@ -492,39 +492,7 @@ namespace DiyFfbPedal
 
                                             using (StreamWriter writer = new StreamWriter(filePath, true))
                                             {
-                                                // Write the content to the file
-                                                writer.Write("WriterIdx");
-                                                writer.Write(", servoStateCycleCount_u32");
-                                                writer.Write(", servoPositionTarget_i32");
-                                                writer.Write(", servoPositionFeedback_i32");
-                                                writer.Write(", servoPositionError_i16");
-                                                writer.Write(", servoVoltage_fl32");
-                                                writer.Write(", servoCurrentPercent_i16");
-                                                writer.Write(", servoVelocityRpm_i16");
-
-                                                writer.Write(", timeInUs_u32");
-                                                writer.Write(", cycleCount_u32");
-                                                writer.Write(", pedalForceRaw_fl32");
-                                                writer.Write(", pedalForceFiltered_fl32");
-                                                writer.Write(", forceVelEst_fl32");
-                                                writer.Write(", targetPosition_i32");
-                                                writer.Write(", currentSpeedInHz_i32");
-                                                writer.Write(", brakeResistorState_b");
-                                                writer.Write(", oscillationMonitorValue_u8");
-
-                                                writer.Write(", admittance_expectedForce_N");
-                                                writer.Write(", admittance_isOscillating");
-                                                writer.Write(", admittance_admittancePsi_N");
-                                                writer.Write(", admittance_virtualMass_kg");
-                                                writer.Write(", admittance_virtualDamping_Ns_m");
-
-                                                writer.Write(", admittance_virtualPosition_m");
-                                                writer.Write(", admittance_virtualVelocity_mps");
-                                                writer.Write(", admittance_virtualAcceleration_mps2");
-                                                writer.Write(", joystickOutput_u16");
-                                                writer.Write(", joystickOutput_pct");
-
-                                                writer.Write("\n");
+                                                writer.Write(PedalTraceHeader + "\n");
                                             }
 
                                         }
@@ -534,38 +502,7 @@ namespace DiyFfbPedal
                                             var state = pedalState_ext_read_st.payloadPedalExtendedState_;
                                             writeCntr++;
 
-                                            // Build the entire string in one line using interpolation
-                                            writer.WriteLine(
-                                                $"{writeCntr}" +
-
-                                                $",{state.servoStateCycleCount_u32}" +
-                                                $",{state.servoPositionTarget_i32}" +
-                                                $",{state.servoPositionFeedback_i32}" +
-                                                $",{state.servoPositionError_i16}" +
-                                                $",{state.servoVoltage0p1V_i16 / 10.0f}" +
-                                                $",{state.servoCurrentPercent_i16}" +
-                                                $",{state.servoVelocityRpm_i16}" +
-
-                                                $",{state.timeInUs_u32}" +
-                                                $",{state.cycleCount_u32}" +
-                                                $",{state.pedalForceRaw_fl32}" +
-                                                $",{state.pedalForceFiltered_fl32}" +
-                                                $",{state.forceVelEst_fl32}" +
-                                                $",{state.targetPosition_i32}" +
-                                                $",{state.currentSpeedInHz_i32}" +
-                                                $",{state.brakeResistorState_b}" +
-                                                $",{state.oscillationMonitorValue_u8}" +
-                                                $",{state.admittance_expectedForce_N}" +
-                                                $",{state.admittance_isOscillating}" +
-                                                $",{state.admittance_admittancePsi_N}" +
-                                                $",{state.admittance_virtualMass_kg}" +
-                                                $",{state.admittance_virtualDamping_Ns_m}" +
-                                                $",{state.admittance_virtualPosition_m}" +
-                                                $",{state.admittance_virtualVelocity_mps}" +
-                                                $",{state.admittance_virtualAcceleration_mps2}" +
-                                                $",{(UInt16)Pedal_position_reading[pedalSelected]}" +
-                                                $",{(Pedal_position_reading[pedalSelected] / 65535.0 * 100.0).ToString("G9")}"
-                                                );
+                                            writer.WriteLine(FormatPedalTraceRow(writeCntr, state, Pedal_position_reading[pedalSelected], HostTimeUnixMsForTrace()));
                                         }
 
 

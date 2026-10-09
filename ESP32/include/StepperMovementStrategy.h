@@ -7,6 +7,20 @@
 // tremor). Comment out to compare against the previous behaviour.
 #define ADMITTANCE_STICTION_ENABLED
 
+// Sign of the contact damping force-derivative term (A/B test, override with a build flag):
+// +1 = adds tau * dF/dt (contact damping, since 2026-10-01), -1 = subtracts it (before),
+// 0 = off. +1 also amplifies the drivetrain force ripple (~24 per motor revolution) 1.44x at 50 Hz.
+#ifndef CONTACT_DAMPING_DERIV_SIGN
+#define CONTACT_DAMPING_DERIV_SIGN +1
+#endif
+
+// Tracking-error damping: raises the model damping up to 3.5x while the servo lags its target
+// by more than expected (see CalcActiveDamping). A/B test: set to 0 (or build with
+// -DADMITTANCE_TRACKING_ERROR_DAMPING=0) to disable it.
+#ifndef ADMITTANCE_TRACKING_ERROR_DAMPING
+#define ADMITTANCE_TRACKING_ERROR_DAMPING 0
+#endif
+
 // Task dependent structs and variables
 typedef struct {
   float travelRange_mm_fl32;
@@ -554,7 +568,8 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
         // increased proportionally so that the servo can catch up without oscillating.
         // Faded in between 20 and 40 mm/s instead of switched, so the damping does not jump.
         float velocityWeight_01 = constrain((fabsf(vModelVel_mps) - 0.02f) / 0.02f, 0.0f, 1.0f);
-        if (s_smoothedTrackingError_01 > 0.005f) {
+        // the lag estimate and the smoothing above keep running when disabled
+        if ((ADMITTANCE_TRACKING_ERROR_DAMPING != 0) && (s_smoothedTrackingError_01 > 0.005f)) {
             float excessError = s_smoothedTrackingError_01 - 0.005f;
             dampingMultiplier += velocityWeight_01 * constrain(excessError * 35.0f, 0.0f, 2.5f);
         }
@@ -693,18 +708,31 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
 // measured force during a press, i.e. ~50-68 W real.)
 #define ADMITTANCE_REGEN_POWER_SERVO_W 40.0f
 // Additional regen power routed into the external brake resistor when it is
-// enabled (enableBrakeResistor_u8), capped at 80 % of the full-on power V^2/R
+// enabled (enableBrakeResistor_u8 = mode 1), capped at 80 % of the full-on power V^2/R
 // (5 Ohm at 38 V: 289 W full on, 200 W = duty ~0.69; 10 Ohm: capped at ~115 W).
 #define ADMITTANCE_REGEN_POWER_BRAKE_RESISTOR_W 200.0f
+// Mode 2 (hardware brake resistor circuit): the circuit clamps the bus voltage on its
+// own and fast enough, so the regen power no longer limits the pedal speed (practically
+// unlimited; the back-EMF / step-rate limit in CalcRegenVelocityLimit still applies).
+#define ADMITTANCE_REGEN_POWER_HARDWARE_CIRCUIT_W 100000.0f
 // fallback when the config holds no resistance (brakeResistorResistance_Ohm_u8 = 0)
 #define BRAKE_RESISTOR_OHMS 5.0f
 // Share of the mechanical foot power F*v that reaches the DC bus as electrical regen
-// power (spindle/sled friction, motor copper losses, inverter). Estimated from a
-// throttle press 2026-10-02: at F*v = 240 W the resistor took ~180 W with the bus near
-// its rest voltage (servo bleeder off), so ~0.75. The servo and resistor shares are
-// electrical powers; the velocity budget converts them to mechanical power (/ efficiency)
-// and the brake resistor duty converts the mechanical power to electrical (* efficiency).
-#define REGEN_ELECTRICAL_EFFICIENCY_01 0.75f
+// power (spindle/sled friction, motor copper losses, inverter). The servo and resistor
+// shares are electrical powers; two separate factors convert between them and F*v:
+// - Budget: the velocity limit converts the electrical budget to mechanical foot power
+//   (/ efficiency). A smaller value allows a faster pedal under load.
+// - Duty: the brake resistor duty converts the mechanical power to electrical
+//   (* efficiency). Overestimating it only costs some extra resistor power (the thermal
+//   model counts the power actually dissipated), underestimating it lets the bus rise.
+// Measurements: throttle 2026-10-02: at F*v = 240 W the resistor took ~180 W with the bus
+// near its rest voltage, i.e. ~0.75. Brake 2026-10-04 (5 mm spindle, 33 Ohm resistor):
+// with 0.75 for both the bus reached ~58 V and the servo tripped its overvoltage alarm;
+// with 1.0 for both, no alarm. At brake forces more of F*v reaches the bus, so the duty
+// is conservative (1.0). The budget stays at 1.0 (tested state) until a test with the
+// duty at 1.0 and the budget at 0.75 shows whether the faster pedal is safe as well.
+#define REGEN_BUDGET_EFFICIENCY_01 1.0f
+#define REGEN_DUTY_EFFICIENCY_01 1.0f
 
 // Kinetic energy of the motor. When the servo decelerates, the rotor's kinetic energy
 // returns to the bus on top of the foot power: J_total = J_rotor * (1 + inertia ratio)
@@ -1023,7 +1051,8 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   s_filteredForceRate_Nps = (alpha_rate * rawForceRate_Nps) + ((1.0f - alpha_rate) * s_filteredForceRate_Nps);
 
   const float K_FORCE_DERIV_S = 0.004f; // 4ms contact damping time
-  float contactDampedPilotForce_N = cleanPilotForce_N + (K_FORCE_DERIV_S * s_filteredForceRate_Nps);
+  float contactDampedPilotForce_N = cleanPilotForce_N
+                                  + ((float)CONTACT_DAMPING_DERIV_SIGN * K_FORCE_DERIV_S * s_filteredForceRate_Nps);
   if (contactDampedPilotForce_N < 0.0f) {
     contactDampedPilotForce_N = 0.0f;
   }
@@ -1403,7 +1432,12 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // electrical budget (servo + resistor share) as mechanical foot power F*v
   float regenPowerBudget_W = (ADMITTANCE_REGEN_POWER_SERVO_W
                               + brakeResistorAvailable_01 * brakeResistorRegenPower_W)
-                           / REGEN_ELECTRICAL_EFFICIENCY_01;
+                           / REGEN_BUDGET_EFFICIENCY_01;
+  if (config_st->payloadPedalConfig_st.enableBrakeResistor_u8 ==
+      BRAKE_RESISTOR_MODE_HARDWARE_CIRCUIT_U8) {
+    // the hardware circuit absorbs the regen power, no software budget needed
+    regenPowerBudget_W = ADMITTANCE_REGEN_POWER_HARDWARE_CIRCUIT_W;
+  }
 
   float maxRegenVel_mps = CalcRegenVelocityLimit(
       totalOpposingForce_N,
@@ -1436,7 +1470,18 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       sqrtf(stopVelocitySq + 2.0f * STOP_APPROACH_DECELERATION_MPS2 * distanceToEnd_m);
   forwardSpeedLimit = min(forwardSpeedLimit, approachSpeedLimit_mps);
 
-  g_vModelVel_mps = constrain(g_vModelVel_mps, -dynamicSpeedLimit, forwardSpeedLimit);
+  // Same on the return stroke towards the rest position: after a release the pedal runs
+  // back without foot force (no F*v regen, so no power limit), up to the full step rate
+  // (5 mm spindle: ~0.39 m/s at the sled, ~10 J in the motor). The model stopped at the
+  // lower limit at once, the servo braked the rotor within a few ms and the returned
+  // energy drove the bus to ~57 V (brake pedal, 2026-10-04). Decelerate into the rest
+  // position so the stop returns at most the stop energy.
+  const float distanceToStart_m = max(0.0f, (g_vModelPos_01 - lowerTravelLimit_01) * totalTravel_m);
+  const float returnApproachSpeedLimit_mps =
+      sqrtf(stopVelocitySq + 2.0f * STOP_APPROACH_DECELERATION_MPS2 * distanceToStart_m);
+  const float backwardSpeedLimit = min(dynamicSpeedLimit, returnApproachSpeedLimit_mps);
+
+  g_vModelVel_mps = constrain(g_vModelVel_mps, -backwardSpeedLimit, forwardSpeedLimit);
 
   // Brake resistor feedforward: dissipate the electrical regen power above the servo's
   // own share. Duty = excess power / full-on power V^2/R (at the nominal bus voltage).
@@ -1448,11 +1493,15 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   const float servoVelEstPrev_mps = g_servoVelEst_mps;
   g_servoVelEst_mps += (g_vModelVel_mps - g_servoVelEst_mps)
                      * (1.0f - expf(-dt_s / SERVO_FOLLOW_TIME_CONSTANT_S));
-  const float servoDecel_mps2 = max(0.0f, (servoVelEstPrev_mps - g_servoVelEst_mps) / dt_s);
+  // deceleration in either direction (speed magnitude decreasing): the rotor's kinetic
+  // energy returns to the bus also when the return stroke stops at the rest position
+  const float servoSpeedEst_mps = fabsf(g_servoVelEst_mps);
+  const float servoDecel_mps2 = max(0.0f, (fabsf(servoVelEstPrev_mps) - servoSpeedEst_mps) / dt_s);
   if (brakeResistorDutyRequest_01 != nullptr) {
+    // the foot only feeds power in while the pedal moves forward against it
     const float servoVelForward_mps = max(g_servoVelEst_mps, 0.0f);
-    float regenPower_W = REGEN_ELECTRICAL_EFFICIENCY_01 * totalOpposingForce_N * servoVelForward_mps
-                       + REGEN_KINETIC_EFFICIENCY_01 * servoEquivalentMass_kg * servoVelForward_mps * servoDecel_mps2;
+    float regenPower_W = REGEN_DUTY_EFFICIENCY_01 * totalOpposingForce_N * servoVelForward_mps
+                       + REGEN_KINETIC_EFFICIENCY_01 * servoEquivalentMass_kg * servoSpeedEst_mps * servoDecel_mps2;
     float excessPower_W = regenPower_W - ADMITTANCE_REGEN_POWER_SERVO_W;
     *brakeResistorDutyRequest_01 = (brakeResistorAvailable_01 > 0.0f)
         ? constrain(excessPower_W / brakeResistorFullOnPower_W, 0.0f, 1.0f)
