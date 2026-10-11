@@ -2012,9 +2012,12 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             dap_config_pedalUpdateTask_st.payloadPedalConfig_st
                 .stepLossFunctionFlags_u8);
         // regen mode: servo internal bleeder off for the hardware circuit, on otherwise
+        // and always in rudder mode
         stepper->requestInternalBleederOff(
-            dap_config_pedalUpdateTask_st.payloadPedalConfig_st.enableBrakeResistor_u8 ==
-            BRAKE_RESISTOR_MODE_HARDWARE_CIRCUIT_U8);
+            !(dap_calculationVariables_st.rudderStatus_b ||
+              dap_calculationVariables_st.helicopterRudderStatus_b) &&
+            (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.enableBrakeResistor_u8 ==
+             BRAKE_RESISTOR_MODE_HARDWARE_CIRCUIT_U8));
         stepper->configSetProfilingFlag((
             dap_config_pedalUpdateTask_st.payloadPedalConfig_st.debugFlags0_u8 &
             DEBUG_INFO_0_CYCLE_TIMER_U8));
@@ -2582,14 +2585,23 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       // duty requested by the admittance strategy in the previous cycle: the regen
       // power above the servo's own share (see CalcRegenVelocityLimit)
       static float s_brakeResistorDutyRequest_01 = 0.0f;
-      // only mode 1 switches the brake resistor from software; mode 2 (hardware circuit)
-      // keeps the pin LOW, mode 0 relies on the servo's internal bleeder
-      const bool brakeResistorEnabled_b =
-          (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.enableBrakeResistor_u8 ==
-           BRAKE_RESISTOR_MODE_SERVO_BLEEDER_AND_EXTERNAL_U8);
       const bool isRudderModeActive_b =
           dap_calculationVariables_st.rudderStatus_b ||
           dap_calculationVariables_st.helicopterRudderStatus_b;
+      // only mode 1 switches the brake resistor from software; mode 2 (hardware circuit)
+      // keeps the pin LOW, mode 0 relies on the servo's internal bleeder. Rudder mode
+      // relies on the internal bleeder only, whatever the configured mode: the rudder
+      // strategy keeps the regen power within the servo's own budget.
+      const bool brakeResistorEnabled_b =
+          !isRudderModeActive_b &&
+          (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.enableBrakeResistor_u8 ==
+           BRAKE_RESISTOR_MODE_SERVO_BLEEDER_AND_EXTERNAL_U8);
+      // internal bleeder off only for the hardware circuit outside rudder mode (the servo
+      // task applies a change within ~1 s; the rudder status can change at runtime)
+      stepper->requestInternalBleederOff(
+          !isRudderModeActive_b &&
+          (dap_config_pedalUpdateTask_st.payloadPedalConfig_st.enableBrakeResistor_u8 ==
+           BRAKE_RESISTOR_MODE_HARDWARE_CIRCUIT_U8));
       // fitted resistance for the thermal model (Ohm, 0 = BRAKE_RESISTOR_OHMS)
       brakeController.setResistanceOhm(
           (dap_config_pedalUpdateTask_st.payloadPedalConfig_st
@@ -2620,14 +2632,9 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
       }
       const bool servoDataFresh_b = !s_servoDataStale_b;
 
-      if (!servoDataFresh_b) {
+      if (!servoDataFresh_b || isRudderModeActive_b) {
+        // rudder: internal bleeder only
         brakeResistorDuty_01 = 0.0f;
-      } else if (isRudderModeActive_b) {
-        // rudder: reactive voltage check (on/off) as before
-        bool brakeResistorOn_b = brakeController.simpleVoltageCheck(
-            ((float)cached_servosVoltage_i16) * 0.1f, current_time_us,
-            cached_currentSpeedInHz_i32, cached_servoCycleCounter_u32);
-        brakeResistorDuty_01 = brakeResistorOn_b ? 1.0f : 0.0f;
       } else {
         // admittance: PWM feedforward from the regen governor, reactive backstop
         // and thermal model in the controller
@@ -2639,7 +2646,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
 
       // Config-driven brake resistor mode. Mode 0: the regen governor keeps the power
       // within what the servo absorbs itself. Mode 2: the hardware circuit clamps the
-      // bus on its own, the software pin stays LOW (also in rudder mode).
+      // bus on its own, the software pin stays LOW. Rudder mode: always LOW.
       if (!brakeResistorEnabled_b) {
         brakeResistorDuty_01 = 0.0f;
       }
@@ -3081,7 +3088,7 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             // hunting/vibration from real pedal input, so the travel output
             // stays a clean 0 until the force has reached forceMin once.
             // Latched, i.e. it only closes again once the pedal is back in
-            // the 0.5% start deadzone of NormalizeControllerOutputValue():
+            // the 0.5% start deadzone of NormalizeConam lautesten trollerOutputValue():
             // just above preload the expected force rises by only
             // range/100 per % travel (0.03kg for a 3kg range), well below
             // the loadcell noise (~0.1kg), so a force-based close made the
