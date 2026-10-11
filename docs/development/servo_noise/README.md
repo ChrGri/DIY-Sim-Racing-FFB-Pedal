@@ -1,7 +1,14 @@
-# Servo noise measurement
+# Servo noise and pedal roughness measurement
 
-[servo_noise.py](servo_noise.py) records the servo noise with a microphone, so that servo parameter sets
-can be compared by numbers instead of by ear.
+Two scripts compare servo parameter sets by numbers instead of by ear:
+
+| Script | Measures |
+|---|---|
+| [servo_noise.py](servo_noise.py) | Servo noise, recorded with a microphone (this page) |
+| [pedal_roughness.py](pedal_roughness.py) | Pedal roughness: the load cell force ripple at 24 orders per motor revolution while the pedal moves, from SimHub state logs (debug flag 64 or 192, ~30 s of presses). See its docstring. |
+
+The results of the 2026-10-11 tuning session, roughness included, are in
+[servoLoops.md](../servoLoops.md#tuning-results-2026-10-11-throttle).
 
 ```
 python servo_noise.py devices

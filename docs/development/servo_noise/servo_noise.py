@@ -136,6 +136,7 @@ def record(label, segments, use_beep, out_root):
     for s in streams:
         s.start()
     t0 = time.monotonic()
+    start_unix_s = time.time()   # to align with the SimHub state log (column hostTimeUnixMs)
     marks = []
     for n, (name, dur) in enumerate(segments):
         marks.append((name, time.monotonic() - t0, dur))
@@ -152,7 +153,7 @@ def record(label, segments, use_beep, out_root):
 
     out_dir = os.path.join(out_root, datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + label)
     os.makedirs(out_dir, exist_ok=True)
-    result = {"label": label, "microphones": list(buffers),
+    result = {"label": label, "microphones": list(buffers), "start_unix_s": start_unix_s,
               "segments": [{"name": name, "start_s": round(start, 2), "duration_s": dur}
                            for name, start, dur in marks]}
     for key, chunks in buffers.items():
