@@ -1022,7 +1022,7 @@
                                                     <Label Content="License"  FontFamily="Arial Black" FontSize="10" Height="30" Width="162" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <localFunction:SystemSetting_License x:Name="SystemLicense_Tab" btn_test_Click_event="SystemLicense_Tab_btn_test_Click_event"/>
+                                            <localFunction:SystemSetting_License x:Name="SystemLicense_Tab"/>
                                         </TabItem>
                                         <TabItem x:Name="TabItem_Wireless" Width="162" Height="30" Padding="0,0,0,0" >
                                             <TabItem.Header>

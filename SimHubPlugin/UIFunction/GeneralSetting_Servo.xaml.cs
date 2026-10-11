@@ -858,6 +858,15 @@ namespace DiyFfbPedal.UIFunction
             if (e.EditAction != DataGridEditAction.Commit) return;
             if (!(e.Row.Item is ServoRegisterEntry entry)) return;
 
+            // Enter commits while the TextBox still has focus, so its LostFocus binding has not
+            // written LiveValue yet - push it now, otherwise the old value would be sent.
+            var editor = e.EditingElement as TextBox ?? FindDescendant<TextBox>(e.EditingElement);
+            if (editor != null)
+            {
+                editor.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+                if (Validation.GetHasError(editor)) return; // not a number - nothing to send
+            }
+
             // Raise event so ServoCallbacks sends the new LiveValue to the servo
             ServoRegisterValueChanged?.Invoke(this, entry);
         }

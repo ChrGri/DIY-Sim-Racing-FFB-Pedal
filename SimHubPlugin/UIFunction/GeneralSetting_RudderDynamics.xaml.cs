@@ -64,6 +64,8 @@ namespace DiyFfbPedal.UIFunction
                     // Mode Adaptive sections visibility
                     if (panel_AirplaneDynamics != null) panel_AirplaneDynamics.Visibility = isHeli ? Visibility.Collapsed : Visibility.Visible;
                     if (panel_HeliDynamics != null) panel_HeliDynamics.Visibility = isHeli ? Visibility.Visible : Visibility.Collapsed;
+                    // push-pull sync stiffness is not used by the helicopter model (Hidden keeps the mass slider in place)
+                    if (Slider_PushPullSyncForce != null) Slider_PushPullSyncForce.Visibility = isHeli ? Visibility.Hidden : Visibility.Visible;
 
                     if (lbl_DynamicsHeader != null)
                     {
