@@ -121,9 +121,21 @@
                         <Button Content="Flash to servo"
                                 x:Name="Btn_FlashToServo"
                                 Click="Btn_FlashToServo_Click"
-                                FontSize="8" Padding="3,1"
+                                FontSize="8" Padding="3,1" Margin="0,0,3,0"
                                 VerticalAlignment="Center"
                                 ToolTip="Writes 0x5555 to register 0x019A — forces the servo to persist all parameters to NVM (requires power-cycle)"/>
+                        <Button Content="Export"
+                                x:Name="Btn_ExportServoParameters"
+                                Click="Btn_ExportServoParameters_Click"
+                                FontSize="8" Padding="3,1" Margin="0,0,3,0"
+                                VerticalAlignment="Center"
+                                ToolTip="Saves the live values to a CSV file (read them with 'Load from servo' first)"/>
+                        <Button Content="Import"
+                                x:Name="Btn_ImportServoParameters"
+                                Click="Btn_ImportServoParameters_Click"
+                                FontSize="8" Padding="3,1"
+                                VerticalAlignment="Center"
+                                ToolTip="Loads a CSV file, writes its values to the servo and stores them in the servo's NVM (requires power-cycle)"/>
                     </StackPanel>
 
                     <DataGrid x:Name="ServoRegisterGrid"

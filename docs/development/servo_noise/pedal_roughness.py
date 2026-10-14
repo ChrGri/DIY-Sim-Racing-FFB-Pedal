@@ -82,6 +82,48 @@ def servo_velocity_deviation(d):
     return best
 
 
+def servo_tracking(d):
+    """Following lag (error / target speed), settling after stops, overshoot and the error
+    while holding a force at standstill, from the servo's Modbus data (~100 Hz)."""
+    fresh = np.concatenate([[True], np.diff(d["servoStateCycleCount_u32"]) != 0])
+    ts = d["t"][fresh]
+    target = d["servoPositionTarget_i32"][fresh]
+    err = d["servoPositionError_i16"][fresh]
+    force = d["pedalForceFiltered_fl32"][fresh]
+    v = np.gradient(target, ts)
+    moving = np.abs(v) > 2000
+    lag = -np.polyfit(v[moving], err[moving], 1)[0] if moving.sum() > 20 else float("nan")
+    settle, overshoot = [], []
+    i = 1
+    while i < len(target) - 1:
+        if abs(v[i - 1]) > 3000 and abs(target[i + 1] - target[i]) <= 2:
+            direction = np.sign(v[i - 1])
+            j = i
+            peak_over = 0.0
+            while j < len(target) and abs(target[j] - target[i]) <= 2 and abs(err[j]) > 10:
+                # error sign: pressing (v > 0) lags with a negative error; the opposite sign is overshoot
+                peak_over = max(peak_over, err[j] * direction)
+                j += 1
+            if j < len(target) and abs(target[j] - target[i]) <= 2:
+                settle.append(ts[j] - ts[i])
+                overshoot.append(peak_over)
+            i = j + 1
+        else:
+            i += 1
+    # holding: target unchanged for at least 0.3 s (the settling after a stop excluded)
+    since_change = np.zeros(len(target))
+    last_change = ts[0]
+    for k in range(1, len(target)):
+        if abs(target[k] - target[k - 1]) > 1:
+            last_change = ts[k]
+        since_change[k] = ts[k] - last_change
+    still = (since_change > 0.3) & (force > 2.0)
+    hold_err = np.std(err[still]) if still.sum() > 20 else float("nan")
+    return dict(lag_ms=lag * 1e3, stops=len(settle),
+                settle_ms=np.median(settle) * 1e3 if settle else float("nan"),
+                overshoot=np.max(overshoot) if overshoot else float("nan"), hold_err=hold_err)
+
+
 def main(paths):
     print(f"force ripple per step-rate band, median over {WINDOW_S * 1e3:.0f} ms windows, grams rms "
           f"(ripple = orders {ORDER_MIN:.0f}-{ORDER_MAX:.0f}/rev, buzz = {BUZZ_BAND_HZ[0]:.0f}-"
@@ -98,6 +140,10 @@ def main(paths):
                      if len(v) >= 5 else f"{'too few windows':>26s}")
         name = os.path.basename(path).replace("DiyFfbPedalStateLog_", "")[:32]
         print(f"{name:34s}{cols}")
+        tr = servo_tracking(d)
+        print(f"{'':34s}servo following lag {tr['lag_ms']:.1f} ms, {tr['stops']} stops: settle to 10 counts "
+              f"{tr['settle_ms']:.0f} ms, max overshoot {tr['overshoot']:.0f} counts, error while "
+              f"holding force at standstill {tr['hold_err']:.1f} counts std")
         dev = servo_velocity_deviation(d)
         if dev is not None:
             print(f"{'':34s}servo velocity deviation from command: {dev[0] * 100:.1f} % of speed "

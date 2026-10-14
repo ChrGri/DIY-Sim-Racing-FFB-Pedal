@@ -851,6 +851,160 @@ namespace DiyFfbPedal.UIFunction
         }
 
         // ---------------------------------------------------------------
+        // Export / import of the register values (CSV: register,value,name)
+        // ---------------------------------------------------------------
+        /// <summary>
+        /// &lt;SimHub&gt;\PluginsData\Common\DiyFfbPedal\servo, next to the configs, profiles and log
+        /// folders (SimHub's working directory is its install directory, see FileIoHelper.cs).
+        /// Created on first use; falls back to the SimHub directory if that fails.
+        /// </summary>
+        private static string ServoParameterDirectory()
+        {
+            string simhubDirectory = System.IO.Directory.GetCurrentDirectory();
+            string servoDirectory = System.IO.Path.Combine(simhubDirectory, "PluginsData", "Common", "DiyFfbPedal", "servo");
+            try
+            {
+                System.IO.Directory.CreateDirectory(servoDirectory);
+                return servoDirectory;
+            }
+            catch (Exception)
+            {
+                return simhubDirectory;
+            }
+        }
+
+        /// <summary>
+        /// Saves the live values (as read with "Load from servo") to a CSV file.
+        /// </summary>
+        private void Btn_ExportServoParameters_Click(object sender, RoutedEventArgs e)
+        {
+            var known = ServoRegisters.Where(r => r.LiveValue.HasValue).ToList();
+            if (known.Count == 0)
+            {
+                MessageBox.Show("No live values yet. Click 'Load from servo' first.",
+                                "Export servo parameters", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            int unknown = ServoRegisters.Count - known.Count;
+            if (unknown > 0 &&
+                MessageBox.Show($"{unknown} registers have not been read from the servo. Export only the {known.Count} read values?",
+                                "Export servo parameters", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Export servo parameters",
+                Filter = "Servo parameters (*.csv)|*.csv|All files (*.*)|*.*",
+                DefaultExt = ".csv",
+                AddExtension = true,
+                InitialDirectory = ServoParameterDirectory(),
+                FileName = $"ServoParameters_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            var sb = new StringBuilder();
+            sb.AppendLine("register,value,name");
+            foreach (var entry in known.OrderBy(r => r.Index))
+            {
+                sb.AppendLine($"{entry.Address},{entry.LiveValue.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)},{entry.Name}");
+            }
+            try
+            {
+                System.IO.File.WriteAllText(dlg.FileName, sb.ToString(), Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not write the file:\n{ex.Message}", "Export servo parameters",
+                                MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// Loads a CSV file written by the export, writes its values to the servo and stores them
+        /// in the servo's NVM (same sequence as "Reset to recommended").
+        /// </summary>
+        private void Btn_ImportServoParameters_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Import servo parameters",
+                Filter = "Servo parameters (*.csv)|*.csv|All files (*.*)|*.*",
+                InitialDirectory = ServoParameterDirectory()
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            var values = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var invalidLines = new List<int>();
+            try
+            {
+                string[] lines = System.IO.File.ReadAllLines(dlg.FileName);
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i].Trim();
+                    if (line.Length == 0 || line.StartsWith("register", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    // the name (third column) may contain commas, only the first two fields count
+                    string[] fields = line.Split(new[] { ',' }, 3);
+                    if (fields.Length >= 2 &&
+                        int.TryParse(fields[1].Trim(), System.Globalization.NumberStyles.Integer,
+                                     System.Globalization.CultureInfo.InvariantCulture, out int value))
+                    {
+                        values[fields[0].Trim()] = value;
+                    }
+                    else
+                    {
+                        invalidLines.Add(i + 1);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not read the file:\n{ex.Message}", "Import servo parameters",
+                                MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var matched = ServoRegisters.Where(r => values.ContainsKey(r.Address)).ToList();
+            int unknownRegisters = values.Count - matched.Count;
+            if (matched.Count == 0)
+            {
+                MessageBox.Show("The file contains no known servo registers.", "Import servo parameters",
+                                MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var changed = matched.Where(r => r.LiveValue != values[r.Address])
+                                 .Select(r => $"{r.Address}: {(r.LiveValue.HasValue ? r.LiveValue.Value.ToString() : "?")} -> {values[r.Address]}")
+                                 .ToList();
+            var message = new StringBuilder();
+            message.AppendLine($"Write {matched.Count} registers to the servo and store them in its NVM?");
+            message.AppendLine("The servo needs a power-cycle afterwards.");
+            if (unknownRegisters > 0)
+                message.AppendLine($"\n{unknownRegisters} unknown registers in the file are skipped.");
+            if (invalidLines.Count > 0)
+                message.AppendLine($"Lines without a valid value are skipped: {string.Join(", ", invalidLines.Take(10))}{(invalidLines.Count > 10 ? ", ..." : "")}");
+            if (changed.Count > 0)
+            {
+                message.AppendLine($"\nChanges against the table ({changed.Count}):");
+                foreach (string c in changed.Take(15))
+                    message.AppendLine("  " + c);
+                if (changed.Count > 15)
+                    message.AppendLine("  ...");
+            }
+            if (MessageBox.Show(message.ToString(), "Import servo parameters",
+                                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+
+            foreach (var entry in matched)
+                entry.LiveValue = values[entry.Address];
+            ServoRegisterGrid.Items.Refresh();
+
+            WriteAllRegistersToServo();
+        }
+
+        // ---------------------------------------------------------------
         // DataGrid cell-edit handler
         // ---------------------------------------------------------------
         private void ServoRegisterGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
