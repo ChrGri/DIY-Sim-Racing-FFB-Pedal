@@ -14,6 +14,19 @@
                 <Setter Property="MinHeight" Value="38"/>
                 <Setter Property="MinWidth" Value="90"/>
             </Style>
+            <!-- SimHub's ProgressBar theme ignores Foreground; draw the fill in each pedal's colour -->
+            <Style TargetType="ProgressBar">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ProgressBar">
+                            <Grid>
+                                <Border x:Name="PART_Track" Background="{TemplateBinding Background}" BorderBrush="#FF333A42" BorderThickness="1"/>
+                                <Border x:Name="PART_Indicator" HorizontalAlignment="Left" Background="{TemplateBinding Foreground}"/>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid Margin="14,10">
