@@ -118,25 +118,25 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="DIYFFBPedalPlugin_BtnTextExponent" xml:space="preserve">
-    <value>Exponent</value>
+    <value>Expo</value>
   </data>
   <data name="DIYFFBPedalPlugin_BtnTextLinear" xml:space="preserve">
     <value>Linear</value>
   </data>
   <data name="DIYFFBPedalPlugin_BtnTextLogarithm" xml:space="preserve">
-    <value>Logarithm</value>
+    <value>Log</value>
   </data>
   <data name="DIYFFBPedalPlugin_BtnTextSCurve" xml:space="preserve">
     <value>S-Curve</value>
   </data>
   <data name="DIYFFBPedalPlugin_ButtonTextGetOnlineConfig" xml:space="preserve">
-    <value>Cloud Config</value>
+    <value>Online Configs</value>
   </data>
   <data name="DIYFFBPedalPlugin_ButtonTextGetPedalInfo" xml:space="preserve">
     <value>Pedal Info</value>
   </data>
   <data name="DIYFFBPedalPlugin_ButtonTextPedalOta" xml:space="preserve">
-    <value>OTA</value>
+    <value>Wi-Fi Update</value>
   </data>
   <data name="DIYFFBPedalPlugin_ButtonTextPedalRestart" xml:space="preserve">
     <value>Restart</value>
@@ -148,7 +148,7 @@
     <value>Pedal Roles</value>
   </data>
   <data name="DIYFFBPedalPlugin_LabelDebugFlag0" xml:space="preserve">
-    <value>Debug Flag 0:</value>
+    <value>Debug flags:</value>
   </data>
   <data name="DIYFFBPedalPlugin_LabelPedalSetting" xml:space="preserve">
     <value>Pedal Settings</value>
@@ -157,19 +157,19 @@
     <value>Advanced Mode</value>
   </data>
   <data name="DIYFFBPedalPlugin_LabelSystemSettingAutoComConnect" xml:space="preserve">
-    <value>Automatic Com Connect</value>
+    <value>Auto-connect COM ports</value>
   </data>
   <data name="DIYFFBPedalPlugin_LabelSystemSettingAutoConnectBridge" xml:space="preserve">
-    <value>Automatic Bridge Connect</value>
+    <value>Auto-connect bridge</value>
   </data>
   <data name="DIYFFBPedalPlugin_LabelSystemSettingAutoProfileSwitch" xml:space="preserve">
-    <value>Automatic Profile Switch</value>
+    <value>Auto profile switch</value>
   </data>
   <data name="DIYFFBPedalPlugin_LabelSystemSettingFanatecOrPicoSupport" xml:space="preserve">
-    <value>Fanatec Or Pico Support</value>
+    <value>Fanatec / Pico support</value>
   </data>
   <data name="DIYFFBPedalPlugin_LabelSystemSettingTittle" xml:space="preserve">
-    <value>System Setting</value>
+    <value>System Settings</value>
   </data>
   <data name="DIYFFBPedalPlugin_LabelSystemSettingVjoyOutput" xml:space="preserve">
     <value>vJoy Output</value>
@@ -208,7 +208,7 @@
     <value>Auto Clear</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextAutomaticPedalConnect" xml:space="preserve">
-    <value>Automatic Pedal Connect</value>
+    <value>Auto-connect pedal</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextBridgeId" xml:space="preserve">
     <value>Bridge</value>
@@ -238,19 +238,19 @@
     <value>Plugin Update</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextConfigListAddNewConfig" xml:space="preserve">
-    <value>Add new Config</value>
+    <value>Add new config</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextConfigListPreview" xml:space="preserve">
     <value>Preview</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextConfigListReset" xml:space="preserve">
-    <value>Reset Active Config</value>
+    <value>Reset active config</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextConfigListSaveAs" xml:space="preserve">
-    <value>Save as New Config</value>
+    <value>Save as new config</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextConfigListSetAsStartup" xml:space="preserve">
-    <value>Set as Startup</value>
+    <value>Set as startup config</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextConfigListTittle" xml:space="preserve">
     <value>Config List</value>
@@ -259,28 +259,28 @@
     <value>Delete</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderEndstopStiffness" xml:space="preserve">
-    <value>Endstop Stiffness</value>
+    <value>Soft endstop stiffness</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderEndstopTravel" xml:space="preserve">
-    <value>Endstop Travel</value>
+    <value>Soft endstop travel</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderVirtualPedalDamping" xml:space="preserve">
-    <value>Virtual Pedal Damping (zeta value)</value>
+    <value>Damping ratio (ζ)</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderPedalProgression" xml:space="preserve">
-    <value>Damping progression</value>
+    <value>Elastomer damping</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderVirtualPedalMass" xml:space="preserve">
-    <value>Virtual Pedal Mass</value>
+    <value>Virtual pedal mass</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectABSEffectApply" xml:space="preserve">
-    <value>Effect Apply By:</value>
+    <value>Modulates:</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectABSEffectProfile" xml:space="preserve">
-    <value>Effect Profile:</value>
+    <value>Waveform:</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectABSSimulateABS" xml:space="preserve">
-    <value>Simulate ABS</value>
+    <value>ABS above force threshold</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectABSSliderAmp" xml:space="preserve">
     <value>ABS/TC Amplitude</value>
@@ -316,22 +316,22 @@
     <value>Custom Effect 4</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectCustomAmp" xml:space="preserve">
-    <value>Effect Amplitude</value>
+    <value>Amplitude</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectCustomFreq" xml:space="preserve">
-    <value>Effect Frequency</value>
+    <value>Frequency</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectCustomTrigger" xml:space="preserve">
-    <value>Effect Trigger</value>
+    <value>Trigger</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectEngineAmp" xml:space="preserve">
-    <value>Effect Amplitude</value>
+    <value>Amplitude</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectEngineDepend" xml:space="preserve">
-    <value>Effect depend:</value>
+    <value>Driven by:</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectEngineFreq" xml:space="preserve">
-    <value>Effect Frequency:</value>
+    <value>Frequency:</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectEngineRPM" xml:space="preserve">
     <value>Engine RPM</value>
@@ -343,19 +343,19 @@
     <value>Engine RPM / Speed Rumble Effect</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectGforceMultiplier" xml:space="preserve">
-    <value>G Force Multiplier</value>
+    <value>G-force gain</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectGforceSmoothness" xml:space="preserve">
-    <value>G Force Smoothness</value>
+    <value>G-force smoothing</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectGforceTittle" xml:space="preserve">
     <value>G-Force Effect</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectImpactMultiplier" xml:space="preserve">
-    <value>Impact Multiplier</value>
+    <value>Impact gain</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectImpactSmoothness" xml:space="preserve">
-    <value>Impact Smoothness</value>
+    <value>Impact smoothing</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectImpactTittle" xml:space="preserve">
     <value>Road Impact Effect</value>
@@ -370,22 +370,22 @@
     <value>Engine RPM Rumble Effect</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectUpdateRate" xml:space="preserve">
-    <value>Effects Update Rate:</value>
+    <value>Effect update rate:</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectWheelSlipAmp" xml:space="preserve">
-    <value>Notification Amplitude</value>
+    <value>Amplitude</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectWheelSlipFreq" xml:space="preserve">
-    <value>Notification Frequency</value>
+    <value>Frequency</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectWheelSlipProperty" xml:space="preserve">
-    <value>Effect Property</value>
+    <value>SimHub property</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectWheelSlipTittle" xml:space="preserve">
     <value>Wheel Slip Notification</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextEffectWheelSlipTrigger" xml:space="preserve">
-    <value>Notification Trigger</value>
+    <value>Trigger</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextForceCurveAdjustment" xml:space="preserve">
     <value>FORCE CURVE ADJUSTMENT</value>
@@ -397,37 +397,37 @@
     <value>General Settings</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextGeneralSettingCrashDetect" xml:space="preserve">
-    <value>Enable crash detect.</value>
+    <value>Endstop crash protection</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextGeneralSettingDampingFactor" xml:space="preserve">
     <value>Damping Factor</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextGeneralSettingJoystickOutputFromTravel" xml:space="preserve">
-    <value>Joystick output from travel</value>
+    <value>Game output from travel</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextGeneralSettingLinearPitch" xml:space="preserve">
-    <value>Linear Module Pitch:</value>
+    <value>Spindle pitch (mm/rev):</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextGeneralSettingLoadcellRate" xml:space="preserve">
-    <value>Loadcell Rate</value>
+    <value>Load cell capacity</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextGeneralSettingMaxGameOut" xml:space="preserve">
-    <value>Max Game Output</value>
+    <value>Max game output</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextGeneralSettingReverseLCReading" xml:space="preserve">
-    <value>Reverse LC reading</value>
+    <value>Invert load cell signal</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextGeneralSettingReverseServoDirection" xml:space="preserve">
-    <value>Reverse Servo Direction</value>
+    <value>Invert servo direction</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextGeneralSettingServoIdleTimeout" xml:space="preserve">
     <value>Servo Idle Timeout</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextGeneralSettingStepLossRecor" xml:space="preserve">
-    <value>Enable step loss recov.</value>
+    <value>Step loss recovery</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextGlobalEffectsSettingSliderEffectThresholdForce" xml:space="preserve">
-    <value>Threshold Force for Effect</value>
+    <value>Minimum force for effects</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextGlobalEffectsSettingTittle" xml:space="preserve">
     <value>Global Effects Setting</value>
@@ -436,34 +436,34 @@
     <value>JOYSTICK MAPPING</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextJoystickMappingArrangeInExponential" xml:space="preserve">
-    <value>Arrange in Exponential</value>
+    <value>Expo</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextJoystickMappingArrangeInLine" xml:space="preserve">
-    <value>Arrange in Line</value>
+    <value>Linear</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextJoystickMappingArrangeInLogarithm" xml:space="preserve">
-    <value>Arrange in Logarithm</value>
+    <value>Log</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextJoystickMappingArrangeInSCurve" xml:space="preserve">
-    <value>Arrange in S Curve</value>
+    <value>S-Curve</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextJoystickMappingTittle" xml:space="preserve">
     <value>JOYSTICK MAPPING</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextKFSettingFilterModel" xml:space="preserve">
-    <value>Filter Model:</value>
+    <value>Filter type:</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextKFSettingJoystickDenoiseSliderName" xml:space="preserve">
-    <value>KF for Joystick Denoise</value>
+    <value>Joystick smoothing (smooth → fast)</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextKFSettingJoystickDenoiseToggle" xml:space="preserve">
-    <value>Denoise for Joystick output</value>
+    <value>Smooth joystick output</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextKFSettingKFDescription" xml:space="preserve">
-    <value>Loadcell Denoising Factor (slow to fast)</value>
+    <value>Load cell filter speed (smooth → fast)</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextKFSettingTittle" xml:space="preserve">
-    <value>Noise Reduction Filter</value>
+    <value>Load Cell Filter</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextLabelBridgeVersion" xml:space="preserve">
     <value>Bridge Version</value>
@@ -472,7 +472,7 @@
     <value>Connection</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextLabelDAPVersion" xml:space="preserve">
-    <value>DAP Version</value>
+    <value>Protocol Version</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextLabelPedalVersion" xml:space="preserve">
     <value>Pedal Version</value>
@@ -487,13 +487,13 @@
     <value>Leave without Change</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextLogPedalStates" xml:space="preserve">
-    <value>Capture pedal trace</value>
+    <value>Record pedal trace</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextNcalcEditorTitle" xml:space="preserve">
     <value>Ncalc Script Editor</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextOverloadWarning1" xml:space="preserve">
-    <value>Caution, the config and pedal kinematics may cause servo overloaded!!</value>
+    <value>Caution: this config and pedal kinematics may overload the servo!</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextOverloadWarning2" xml:space="preserve">
     <value>Max servo output force</value>
@@ -517,25 +517,25 @@
     <value>PEDAL KINEMATICS</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextPedalKinematicsError" xml:space="preserve">
-    <value>Pedal Kinematic calculation error</value>
+    <value>Pedal kinematics calculation error</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextPedalKinematicsExpectedMaxForce" xml:space="preserve">
     <value>Expected max force at max travel</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextPedalKinematicsTitle" xml:space="preserve">
-    <value>PEDAL KINEMATIC SETTING</value>
+    <value>PEDAL KINEMATICS</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextPedals" xml:space="preserve">
     <value>PEDALS</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextProfileListAddNewProfile" xml:space="preserve">
-    <value>Add new Profile</value>
+    <value>Add new profile</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextProfileListGameOrCar" xml:space="preserve">
-    <value>Game or Car ID:</value>
+    <value>Game or car ID:</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextProfileListSaveAs" xml:space="preserve">
-    <value>Save as New Profile</value>
+    <value>Save as new profile</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextProfileListTittle" xml:space="preserve">
     <value>Profile List</value>
@@ -550,7 +550,7 @@
     <value>Profile Shortcut</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextProfileShortcutWarning" xml:space="preserve">
-    <value>*The change of Custom Action Name will be applied after a simhub restart.</value>
+    <value>*Changes to the custom action name take effect after restarting SimHub.</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextRead" xml:space="preserve">
     <value>Read</value>
@@ -571,13 +571,13 @@
     <value>Rudder Info</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextServoSettingSliderEndstopCurrent" xml:space="preserve">
-    <value>Endstop Detection Threshold</value>
+    <value>Homing endstop threshold</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextServoSettingSliderServoInertia" xml:space="preserve">
-    <value>Ratio of Inertia (Pr0.04)</value>
+    <value>Inertia ratio (Pr0.04)</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextServoSettingSliderServoSmoothness" xml:space="preserve">
-    <value>Servo position smoothing factor  (Pr2.22)</value>
+    <value>Position smoothing (Pr2.22)</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextServoSettingTittle" xml:space="preserve">
     <value>Servo Settings</value>
@@ -598,10 +598,10 @@
     <value>Upload from PlatformIO</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextUpdateTestBuildWarning" xml:space="preserve">
-    <value>Test Build DO NOT USE</value>
+    <value>Test build (do not use)</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextUpdateWindowPass" xml:space="preserve">
-    <value>PASS:</value>
+    <value>Password:</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextUpdateWindowSSID" xml:space="preserve">
     <value>SSID:</value>
@@ -619,12 +619,12 @@
     <value>USB Flash</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderCoulombFriction" xml:space="preserve">
-    <value>Coulomb Friction</value>
+    <value>Friction</value>
   </data>
   <data name="DIYFFBPedalPlugin_ButtonTextFWFlash" xml:space="preserve">
-    <value>Flash Mode</value>
+    <value>Bootloader</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextGeneralSettingWakeOnPluginOnly" xml:space="preserve">
-    <value>Wakeup only by plugin trigger</value>
+    <value>Wait for SimHub before homing</value>
   </data>
 </root>

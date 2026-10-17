@@ -17,21 +17,21 @@
     </UserControl.Resources>
     <Grid>
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Width="192">
-                <Label Content="{SLoc DIYFFBPedalPlugin_LabelSystemSettingTittle, 'System Setting'}" Height="20" Width="180" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" FontSize="10" Margin="2,0,0,0"/>
+                <Label Content="{SLoc DIYFFBPedalPlugin_LabelSystemSettingTittle, 'System Settings'}" Height="20" Width="180" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" FontSize="10" Margin="2,0,0,0"/>
                 <StackPanel Height="20" Width="192" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
                     <styles:SHToggleButton x:Name="CheckBox_FanatecOrPico" Content="" Checked="CheckBox_FanatecOrPico_Checked" Unchecked="CheckBox_FanatecOrPico_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                    <Label Content="{SLoc DIYFFBPedalPlugin_LabelSystemSettingFanatecOrPicoSupport, 'Fanatec Or Pico Support'}" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_LabelSystemSettingFanatecOrPicoSupport, 'Fanatec / Pico support'}" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                 </StackPanel>
                 <StackPanel Height="20" Width="192" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
                     <styles:SHToggleButton x:Name="CheckBox_Pedal_ESPNow_autoconnect" Content="" Checked="CheckBox_Pedal_ESPNow_autoconnect_Checked" Unchecked="CheckBox_Pedal_ESPNow_autoconnect_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" IsEnabled="False" />
-                    <Label Content="{SLoc DIYFFBPedalPlugin_LabelSystemSettingAutoComConnect, 'Automatic Com Connect'}" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_LabelSystemSettingAutoComConnect, 'Auto-connect COM ports'}" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                 </StackPanel>
                 <StackPanel Height="20" Width="192" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
-                    <styles:SHToggleButton x:Name="CheckBox_ProfileAutoChange" Content="" Checked="CheckBox_ProfileAutoChange_Checked" Unchecked="CheckBox_ProfileAutoChange_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Some opttions were hidden..." RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
-                    <Label Content="{SLoc DIYFFBPedalPlugin_LabelSystemSettingAutoProfileSwitch, 'Automatic Profile Switch'}" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
+                    <styles:SHToggleButton x:Name="CheckBox_ProfileAutoChange" Content="" Checked="CheckBox_ProfileAutoChange_Checked" Unchecked="CheckBox_ProfileAutoChange_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Some options are hidden in basic mode" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
+                    <Label Content="{SLoc DIYFFBPedalPlugin_LabelSystemSettingAutoProfileSwitch, 'Auto profile switch'}" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                 </StackPanel>
                 <StackPanel Height="20" Width="192" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0">
-                    <styles:SHToggleButton x:Name="Debug_check" Content="" Checked="Debug_check_Checked" Unchecked="Debug_check_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Some opttions were hidden..." RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
+                    <styles:SHToggleButton x:Name="Debug_check" Content="" Checked="Debug_check_Checked" Unchecked="Debug_check_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Some options are hidden in basic mode" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
                     <Label Content="{SLoc DIYFFBPedalPlugin_LabelSystemSettingAdvancedMode, 'Advanced Mode'}" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                 </StackPanel>
 

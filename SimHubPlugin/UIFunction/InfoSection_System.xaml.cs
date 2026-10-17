@@ -90,7 +90,7 @@ namespace DiyFfbPedal.UIFunction
         }
         private void updateUI()
         { 
-            if(info_label_system!=null) info_label_system.Content= SLoc.GetValue("DIYFFBPedalPlugin_TextBridgeId", "Bridge") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelDAPVersion", "DAP Version") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelPluginVersion", "Plugin Version") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelBridgeVersion", "Bridge Version") + ":\n";
+            if(info_label_system!=null) info_label_system.Content= SLoc.GetValue("DIYFFBPedalPlugin_TextBridgeId", "Bridge") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelDAPVersion", "Protocol Version") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelPluginVersion", "Plugin Version") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelBridgeVersion", "Bridge Version") + ":\n";
             if (calculation != null)
             {
                 calculation.SystemStatusString = "Waiting...";

@@ -17,7 +17,7 @@
                     <Label x:Name="Label_SSID" Content=""  Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="2,0,0,0"/>
                 </StackPanel>
                 <StackPanel HorizontalAlignment="Left" Height="25" VerticalAlignment="Top" Width="400" Grid.Column="1" Grid.Row="5" Orientation="Horizontal">
-                    <Label x:Name="Label_PassName" Content="{SLoc DIYFFBPedalPlugin_TextUpdateWindowPass, 'PASS:'}" Height="15" Width="40" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="2,0,0,0" FontSize="10"/>
+                    <Label x:Name="Label_PassName" Content="{SLoc DIYFFBPedalPlugin_TextUpdateWindowPass, 'Password:'}" Height="15" Width="40" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="2,0,0,0" FontSize="10"/>
                     <PasswordBox x:Name="textbox_PASS"   PasswordChanged="textbox_PASS_PasswordChanged" Height="20" Width="150" Padding="0,0,0,0" FontFamily="Arial" HorizontalAlignment="Left" BorderThickness="0,0,0,0" MaxLength="64" MinHeight="15" VerticalAlignment="Center"/>
                     <Label x:Name="Label_PASS" Content="" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" Margin="2,0,0,0"/>
                 </StackPanel>
@@ -27,7 +27,7 @@
                         <Label Content="{SLoc DIYFFBPedalPlugin_TextUpdateForceFlash, 'Force Flash Firmware'}" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                     </StackPanel>
                     <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                        <styles:SHToggleButton x:Name="Checkbox_PlatformIO_upload" Content="" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="DO NOT USE, not use in Bridge, Pedal only" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" Checked="Checkbox_platformIo_upload_Checked" Unchecked="Checkbox_platformIo_upload_Unchecked"/>
+                        <styles:SHToggleButton x:Name="Checkbox_PlatformIO_upload" Content="" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Do not use. Pedal only, not supported on the bridge." RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" Checked="Checkbox_platformIo_upload_Checked" Unchecked="Checkbox_platformIo_upload_Unchecked"/>
                         <Label Content="{SLoc DIYFFBPedalPlugin_TextUpdateFromPlatformio, 'Upload from PlatformIO'}" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                     </StackPanel>
                 </StackPanel>

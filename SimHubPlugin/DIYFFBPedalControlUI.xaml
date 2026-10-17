@@ -223,13 +223,13 @@
                                                     <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_OnlineProfile_Click" ToolTip="Community Config" Margin="5,0,0,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource CommunityConfig}" />
-                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextGetOnlineConfig, 'Cloud Config'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextGetOnlineConfig, 'Online Configs'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
-                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_PedalBootMode_Click" ToolTip="Get Pedal Sensor Info" Margin="5,0,0,0">
+                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_PedalBootMode_Click" ToolTip="Restart the pedal into USB download mode for flashing" Margin="5,0,0,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource FirmwareDownload}" />
-                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextFWFlash, 'Flash Mode'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextFWFlash, 'Bootloader'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
                                                 </StackPanel>
@@ -244,7 +244,7 @@
                                                     <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_OTA_enable_Click" MouseRightButtonUp="btn_OtaHidden_Click" ToolTip="OTA update" Margin="5,0,0,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource OTA}" />
-                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextPedalOta, 'OTA'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextPedalOta, 'Wi-Fi Update'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
                                                     <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_SerialMonitorWindow_Click" ToolTip="Serial Monitor" Margin="5,0,0,0">
@@ -936,7 +936,7 @@
                                                         <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnUsbFlash, 'USB Flash'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
-                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Plugin_OTA_Click" MouseRightButtonUp="btn_PluginUpdate_Click" ToolTip="Left-Click for update to Latest, RIght-Click to open Rollback window">
+                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Plugin_OTA_Click" MouseRightButtonUp="btn_PluginUpdate_Click" ToolTip="Left-click: update to latest. Right-click: open rollback window">
                                                     <StackPanel>
                                                         <Image Width="30" Height="30" Source="{StaticResource PluginUpdate}" />
                                                         <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnPluginUpdate, 'Plugin Update'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>

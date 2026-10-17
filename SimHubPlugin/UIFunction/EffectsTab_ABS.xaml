@@ -19,7 +19,7 @@
         <Border Style="{StaticResource Card}" Margin="0" Height="240" Padding="0,0,0,8">
             <StackPanel HorizontalAlignment="Left" Height="232" VerticalAlignment="Top" Width="648">
                 <StackPanel Height="20" Width="648" Orientation="Horizontal" Margin="0,2,0,0">
-                    <styles:SHToggleButton x:Name="checkbox_enable_ABS" Content="" Checked="checkbox_enable_ABS_Checked" Unchecked="checkbox_enable_ABS_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" Margin="15,0,0,0" ToolTip="Enable for ABS/TC effect, the trigger was save in local, no need send config to Pedal"/>
+                    <styles:SHToggleButton x:Name="checkbox_enable_ABS" Content="" Checked="checkbox_enable_ABS_Checked" Unchecked="checkbox_enable_ABS_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" Margin="15,0,0,0" ToolTip="Trigger is evaluated in the plugin; no need to send the config to the pedal."/>
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSTittle, 'ABS/TC Effect'}" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="6,0,0,0"/>
                 </StackPanel>
 
@@ -28,9 +28,9 @@
                 </Canvas>
 
                 <StackPanel Height="36" Width="648" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,3,0,0">
-                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSEffectProfile, 'Effect Profile:'}" Height="20" Width="70" FontSize="10" Padding="0,0,0,0" VerticalContentAlignment="Center" Margin="15,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSEffectProfile, 'Waveform:'}" Height="20" Width="70" FontSize="10" Padding="0,0,0,0" VerticalContentAlignment="Center" Margin="15,0,0,0"/>
                     <ComboBox x:Name="AbsPattern" SelectionChanged="AbsPattern_SelectionChanged" Width="90" Height="20" FontSize="10" SelectedIndex="0" Margin="8,0,0,0" BorderThickness="0,0,0,0">
-                        <ComboBoxItem Content="Sinewave"/>
+                        <ComboBoxItem Content="Sine"/>
                         <ComboBoxItem Content="Sawtooth"/>
                     </ComboBox>
                     <Button Style="{StaticResource ModernPillButton}" x:Name="btn_testABS" Content="{SLoc DIYFFBPedalPlugin_TextEffectABSTestABS, 'Test ABS/TC'}" Click="btn_testABS_Click" Height="20" FontWeight="Bold" FontSize="9" Width="85" HorizontalAlignment="Left" Margin="15,0,0,0" ToolTip="Click for testing ABS/TC, click again to cancel" MinHeight="20" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
@@ -38,14 +38,14 @@
                 </StackPanel>
 
                 <StackPanel Height="36" Width="648" Orientation="Horizontal" Margin="0,2,0,0">
-                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSEffectApply, 'Effect Apply By:'}" Height="25" Width="80" FontSize="10" Margin="15,0,0,0" FontFamily="Arial" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Left" Padding="0,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSEffectApply, 'Modulates:'}" Height="25" Width="80" FontSize="10" Margin="15,0,0,0" FontFamily="Arial" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Left" Padding="0,0,0,0"/>
                     <ComboBox x:Name="EffectAppliedOnForceOrTravel_combobox" SelectionChanged="EffectAppliedOnForceOrTravel_combobox_SelectionChanged" Width="90" Height="20" FontSize="10" SelectedIndex="0" BorderThickness="0,0,0,0" Margin="8,0,0,0">
                         <ComboBoxItem Content="Force"/>
                         <ComboBoxItem Content="Travel"/>
                     </ComboBox>
                     <StackPanel Height="20" Width="200" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="15,0,0,0">
-                        <styles:SHToggleButton x:Name="Simulate_ABS_check" Content="" Checked="Simulate_ABS_check_Checked" Unchecked="Simulate_ABS_check_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="the effect will trigger by the setup force range." RenderTransformOrigin="0.5,0.5" Margin="0,0,0,0" />
-                        <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSSimulateABS, 'Simulate ABS'}" Height="20" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="6,0,0,0"/>
+                        <styles:SHToggleButton x:Name="Simulate_ABS_check" Content="" Checked="Simulate_ABS_check_Checked" Unchecked="Simulate_ABS_check_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Triggers the ABS effect in the pedal whenever the pedal force exceeds the ABS threshold set on the force curve." RenderTransformOrigin="0.5,0.5" Margin="0,0,0,0" />
+                        <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSSimulateABS, 'ABS above force threshold'}" Height="20" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="6,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
 
