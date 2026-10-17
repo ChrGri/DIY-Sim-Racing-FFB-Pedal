@@ -7,7 +7,6 @@ using System.Windows;
 using System.Windows.Controls;
 
 using System.Windows.Media.TextFormatting;
-using System.Text.Json;
 using FMOD;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
@@ -31,8 +30,6 @@ using System.Windows.Media;
 using System.Runtime.Remoting.Messaging;
 using SimHub.Plugins.OutputPlugins.GraphicalDash.Behaviors.DoubleText.Imp;
 using System.Reflection;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Text.RegularExpressions;
