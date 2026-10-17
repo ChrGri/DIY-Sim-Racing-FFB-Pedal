@@ -74,6 +74,8 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 #define MAXIMUM_STEPPER_SPEED_U32                                              \
   (uint32_t)MAX_SPEED_IN_HZ // 100000//  max steps per second, see
                             // https://github.com/gin66/FastAccelStepper
+// sled speed for repositioning after a config change or a rudder mode change
+#define SLOW_REPOSITION_SPEED_MM_PER_S_FL32 25.0f
 
 /********************************************************************/
 /*                      PIN defines                                 */

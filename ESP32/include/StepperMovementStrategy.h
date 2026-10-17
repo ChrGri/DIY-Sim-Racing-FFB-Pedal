@@ -97,6 +97,7 @@ typedef struct {
 // These variables maintain state across control cycles
 float g_vModelPos_01 = 0.0f;    // Normalized virtual position [0.0 to 1.0]
 float g_vModelVel_mps = 0.0f;   // Physical virtual velocity [meters/second]
+volatile bool g_admittanceReanchorRequest_b = false; // re-anchor the model at the actual position (e.g. after rudder mode)
 float g_tankEnergy_J = 2.0f;    // Energy tank level for passive parameter adaptation [Joules]
 float g_massAdaptationOffset_kg = 0.0f; // Dynamic mass offset from Energy Tank framework
 float g_lastActiveDamping_Ns_m = 0.0f;  // Track previous frame's damping for power calculation
@@ -948,7 +949,9 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   static int32_t s_lastSoftEndstopMin_i32 = 0;
   static int32_t s_lastSoftEndstopMax_i32 = 0;
   if ((calc_st->softEndstopMinStepperPos_i32 != s_lastSoftEndstopMin_i32) ||
-      (calc_st->softEndstopMaxStepperPos_i32 != s_lastSoftEndstopMax_i32)) {
+      (calc_st->softEndstopMaxStepperPos_i32 != s_lastSoftEndstopMax_i32) ||
+      g_admittanceReanchorRequest_b) {
+    g_admittanceReanchorRequest_b = false;
     s_lastSoftEndstopMin_i32 = calc_st->softEndstopMinStepperPos_i32;
     s_lastSoftEndstopMax_i32 = calc_st->softEndstopMaxStepperPos_i32;
     g_vModelPos_01 = actualPosFraction_01;

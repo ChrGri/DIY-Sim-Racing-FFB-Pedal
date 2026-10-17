@@ -22,6 +22,10 @@ static float s_smoothedSyncTargetPos_01 = 0.50f;
 static bool s_wasRudderActive = false;
 static bool s_prevBrakeStatus = false;
 static float s_couplingBlendFactor = 1.0f; // 1.0 = rigid yaw coupling, 0.0 = decoupled toe braking
+// Settling after activation / mode change: the model starts at the actual position (e.g. the
+// start position) and is limited to the slow reposition speed until it has reached the center
+static bool s_rudderSettling_b = false;
+static float s_rudderSettlingTime_s = 0.0f;
 
 /**
  * @brief Resets all virtual admittance states and filters for rudder flight
@@ -31,6 +35,8 @@ inline void ResetRudderStrategyState() {
   s_wasRudderActive = false;
   s_prevBrakeStatus = false;
   s_couplingBlendFactor = 1.0f;
+  s_rudderSettling_b = false;
+  s_rudderSettlingTime_s = 0.0f;
   g_vRudderModelPos_01 = 0.50f;
   g_vRudderModelVel_mps = 0.0f;
   s_activeCenterPos_01 = 0.50f;
@@ -104,8 +110,16 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
       (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) ? 2.5f : 1.4f;
 
   static uint8_t s_prevRudderMode = 255;
-  if (!s_wasRudderActive || s_prevRudderMode != rudderOffsets_st.rudderMode_u8) {
+  // Also re-anchor when the travel changes (pedal start/end position): the model position is
+  // a fraction of the travel, the old fraction would map to a different sled position.
+  static int32_t s_lastRudderSoftEndstopMin_i32 = 0;
+  static int32_t s_lastRudderSoftEndstopMax_i32 = 0;
+  if (!s_wasRudderActive || s_prevRudderMode != rudderOffsets_st.rudderMode_u8 ||
+      (calc_st->softEndstopMinStepperPos_i32 != s_lastRudderSoftEndstopMin_i32) ||
+      (calc_st->softEndstopMaxStepperPos_i32 != s_lastRudderSoftEndstopMax_i32)) {
     s_prevRudderMode = rudderOffsets_st.rudderMode_u8;
+    s_lastRudderSoftEndstopMin_i32 = calc_st->softEndstopMinStepperPos_i32;
+    s_lastRudderSoftEndstopMax_i32 = calc_st->softEndstopMaxStepperPos_i32;
     float initialCenter_01 = constrain(rudderOffsets_st.centerPosition_01 +
                                            rudderOffsets_st.trimOffset_01,
                                        0.05f, 0.95f);
@@ -120,6 +134,8 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
     s_filteredPilotForce_N = 0.0f;
     s_smoothedSyncTargetPos_01 = initialCenter_01;
     s_wasRudderActive = true;
+    s_rudderSettling_b = true;
+    s_rudderSettlingTime_s = 0.0f;
   }
 
   float targetCenter_01 = constrain(rudderOffsets_st.centerPosition_01 +
@@ -496,6 +512,27 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
       (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER) ? 0.12f
                                                                  : 0.80f;
   dynamicSpeedLimit = min(dynamicSpeedLimit, maxPedalArcVel_mps);
+
+  // Settling after activation: move into position at the slow reposition speed (sled speed
+  // converted to pedal arc speed). Ends at the center, when the model has come to rest
+  // elsewhere (e.g. helicopter mode without centering spring) or after a timeout.
+  if (s_rudderSettling_b) {
+    const float SETTLING_CENTER_TOLERANCE_01 = 0.01f;
+    const float SETTLING_REST_VELOCITY_MPS = 0.002f;
+    const float SETTLING_MIN_TIME_S = 0.3f;
+    const float SETTLING_TIMEOUT_S = 8.0f;
+    s_rudderSettlingTime_s += dt_s;
+    bool atCenter_b = fabsf(g_vRudderModelPos_01 - s_activeCenterPos_01) < SETTLING_CENTER_TOLERANCE_01;
+    bool atRest_b = (s_rudderSettlingTime_s > SETTLING_MIN_TIME_S) &&
+                    (fabsf(g_vRudderModelVel_mps) < SETTLING_REST_VELOCITY_MPS);
+    if (atCenter_b || atRest_b || (s_rudderSettlingTime_s > SETTLING_TIMEOUT_S)) {
+      s_rudderSettling_b = false;
+    } else {
+      float settlingSpeedLimit_mps =
+          SLOW_REPOSITION_SPEED_MM_PER_S_FL32 * 0.001f * (totalTravel_m / maxSledPos_m);
+      dynamicSpeedLimit = min(dynamicSpeedLimit, settlingSpeedLimit_mps);
+    }
+  }
 
   // Regenerative Power & Back-EMF Clamping:
   // Dynamically governs speed so regeneration <= 35W and motor RPM stays within the

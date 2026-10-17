@@ -904,7 +904,9 @@ void performPedalHomingSequence(DapConfig_t dap_config_st_homing) {
   updatePedalCalcParameters(dap_config_st_homing);
 
   // move slowly to the configured soft min position
-  stepper->moveSlowlyToPos(stepper->getMinPosition());
+  stepper->moveSlowlyToPos(
+      stepper->getMinPosition(),
+      dap_config_st_homing.payloadPedalConfig_st.spindlePitch_mmPerRev_u8);
 
 #ifdef USB_JOYSTICK
   if (usbManager.isJoystickReady()) {
@@ -2082,6 +2084,34 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         BP_trigger_max = (bpTriggerValue_u8 + 4);
       }
 
+      // Slow return to the start position before the movement strategy runs,
+      // after a config update or when rudder mode was left. Otherwise the
+      // admittance strategy anchors its model at the current position (inside
+      // the travel) and the return stroke drives the pedal back at full model
+      // speed. Not in rudder mode: never block the physics loop there (the
+      // rudder strategy limits its speed after activation itself).
+      {
+        static bool s_wasRudderModeActive_b = false;
+        const bool rudderModeActive_b =
+            dap_calculationVariables_st.rudderStatus_b ||
+            dap_calculationVariables_st.helicopterRudderStatus_b;
+        const bool leftRudderMode_b =
+            s_wasRudderModeActive_b && !rudderModeActive_b;
+        s_wasRudderModeActive_b = rudderModeActive_b;
+
+        if (!rudderModeActive_b && (moveSlowlyToPosition_b || leftRudderMode_b) &&
+            (stepper->getCurrentPosition() > stepper->getMinPosition())) {
+          stepper->moveSlowlyToPos(
+              stepper->getMinPosition(),
+              dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                  .spindlePitch_mmPerRev_u8);
+        }
+        if (leftRudderMode_b) {
+          // the admittance model still holds its state from before rudder mode
+          g_admittanceReanchorRequest_b = true;
+        }
+      }
+
       // Deferred EEPROM commit: only write to flash when the stepper is idle,
       // so the ipc1 cache-disable window cannot collide with step/PCNT
       // interrupts.
@@ -3035,7 +3065,10 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             stepper->moveToWithSpeed((int32_t)Position_Next_fl32,
                                      (uint32_t)(MAXIMUM_STEPPER_SPEED_U32 / 4));
           } else {
-            stepper->moveSlowlyToPos((int32_t)Position_Next_fl32);
+            stepper->moveSlowlyToPos(
+                (int32_t)Position_Next_fl32,
+                dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                    .spindlePitch_mmPerRev_u8);
           }
           Position_Last_fl32 = Position_Next_fl32;
         }
