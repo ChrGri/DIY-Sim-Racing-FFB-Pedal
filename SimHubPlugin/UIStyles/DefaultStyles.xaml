@@ -167,6 +167,13 @@
             </DrawingGroup>
         </DrawingImage.Drawing>
     </DrawingImage>
+    <DrawingImage x:Key="Home">
+        <DrawingImage.Drawing>
+            <DrawingGroup ClipGeometry="M0,0 V24 H24 V0 H0 Z">
+                <GeometryDrawing Brush="White" Geometry="F1 M24,24z M0,0z M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" />
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
     <Style x:Key="IconGridButtonStyle" TargetType="Button">
         <Setter Property="Width" Value="50"/>
         <Setter Property="Height" Value="50"/>
@@ -205,6 +212,29 @@
         </Setter>
     </Style>
     <SolidColorBrush x:Key="TestBrush" Color="White"/>
+
+    <!-- Tailwind Palette (Set 3) -->
+    <Color x:Key="TailwindRedColor">#FFEF4444</Color>
+    <Color x:Key="TailwindGreenColor">#FF10B981</Color>
+    <Color x:Key="TailwindBlueColor">#FF3B82F6</Color>
+    <Color x:Key="TailwindYellowColor">#FFF59E0B</Color>
+
+    <SolidColorBrush x:Key="TailwindRedBrush" Color="{StaticResource TailwindRedColor}"/>
+    <SolidColorBrush x:Key="TailwindGreenBrush" Color="{StaticResource TailwindGreenColor}"/>
+    <SolidColorBrush x:Key="TailwindBlueBrush" Color="{StaticResource TailwindBlueColor}"/>
+    <SolidColorBrush x:Key="TailwindYellowBrush" Color="{StaticResource TailwindYellowColor}"/>
+
+    <!-- Soft Palette (Set 4) -->
+    <Color x:Key="SoftRedColor">#FFF87171</Color>
+    <Color x:Key="SoftGreenColor">#FF34D399</Color>
+    <Color x:Key="SoftBlueColor">#FF60A5FA</Color>
+    <Color x:Key="SoftYellowColor">#FFFBBF24</Color>
+
+    <SolidColorBrush x:Key="SoftRedBrush" Color="{StaticResource SoftRedColor}"/>
+    <SolidColorBrush x:Key="SoftGreenBrush" Color="{StaticResource SoftGreenColor}"/>
+    <SolidColorBrush x:Key="SoftBlueBrush" Color="{StaticResource SoftBlueColor}"/>
+    <SolidColorBrush x:Key="SoftYellowBrush" Color="{StaticResource SoftYellowColor}"/>
+
     <DropShadowEffect x:Key="mousedragging" Color="White" BlurRadius="15" Opacity="1" ShadowDepth="0"/>
     <DropShadowEffect x:Key="mouseoutdragging" Color="White" BlurRadius="15" Opacity="0" ShadowDepth="0"/>
     <Style x:Key="HorizontalSliderThumb" TargetType="{x:Type Thumb}">

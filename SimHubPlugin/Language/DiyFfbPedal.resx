@@ -627,4 +627,7 @@
   <data name="DIYFFBPedalPlugin_TextGeneralSettingWakeOnPluginOnly" xml:space="preserve">
     <value>Wait for SimHub before homing</value>
   </data>
+  <data name="DIYFFBPedalPlugin_TextHome" xml:space="preserve">
+    <value>HOME</value>
+  </data>
 </root>
