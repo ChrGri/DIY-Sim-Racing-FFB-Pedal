@@ -1,5 +1,5 @@
 
-const char *DAP_FIRMWARE_VERSION = "26.42.06";
+const char *DAP_FIRMWARE_VERSION = "26.43.03";
 
 #if PCB_VERSION==3
 	#define CONTROL_BOARD "V3_ESP32"
@@ -56,6 +56,13 @@ const char *DAP_FIRMWARE_VERSION = "26.42.06";
 		#define CONTROL_BOARD "V7_ESP32S3"
 	#else
 		#define CONTROL_BOARD "V7_ESP32S3_Without_Wireless"
+	#endif
+#endif
+#if PCB_VERSION==15
+	#ifdef ENABLE_ESP_NOW
+		#define CONTROL_BOARD "V8_ESP32S3"
+	#else
+		#define CONTROL_BOARD "V8_ESP32S3_Without_Wireless"
 	#endif
 #endif
 uint8_t g_versionMajor;
