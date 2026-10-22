@@ -484,6 +484,15 @@ namespace User.PluginSdkDemo.Language {
         }
         
         /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Open folder ähnelt.
+        /// </summary>
+        internal static string DIYFFBPedalPlugin_TextOpenFolder {
+            get {
+                return ResourceManager.GetString("DIYFFBPedalPlugin_TextOpenFolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Sucht eine lokalisierte Zeichenfolge, die Endstop Stiffness ähnelt.
         /// </summary>
         internal static string DIYFFBPedalPlugin_TextDynamicsSettingSliderEndstopStiffness {

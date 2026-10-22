@@ -258,6 +258,9 @@
   <data name="DIYFFBPedalPlugin_TextDelete" xml:space="preserve">
     <value>Delete</value>
   </data>
+  <data name="DIYFFBPedalPlugin_TextOpenFolder" xml:space="preserve">
+    <value>Open folder</value>
+  </data>
   <data name="DIYFFBPedalPlugin_TextDynamicsSettingSliderEndstopStiffness" xml:space="preserve">
     <value>Soft endstop stiffness</value>
   </data>
