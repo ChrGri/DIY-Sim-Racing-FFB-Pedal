@@ -32,6 +32,8 @@ jobs:
           - project: ESP32
             env: ControlBoard_V7_without_espnow
           - project: ESP32
+            env: ControlBoard_V8
+          - project: ESP32
             env: ControlBoard_PCBA_V1X
           - project: ESP32
             env: ControlBoard_PCBA_V2X
