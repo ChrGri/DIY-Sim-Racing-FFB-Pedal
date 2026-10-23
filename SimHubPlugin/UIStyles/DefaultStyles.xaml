@@ -213,6 +213,15 @@
     </Style>
     <SolidColorBrush x:Key="TestBrush" Color="White"/>
 
+    <!-- Pedal identity colours: change here only -->
+    <Color x:Key="ClutchColor">#FF33D1CC</Color>
+    <Color x:Key="BrakeColor">#FFE02424</Color>
+    <Color x:Key="ThrottleColor">#FF4CD137</Color>
+
+    <SolidColorBrush x:Key="ClutchBrush" Color="{StaticResource ClutchColor}"/>
+    <SolidColorBrush x:Key="BrakeBrush" Color="{StaticResource BrakeColor}"/>
+    <SolidColorBrush x:Key="ThrottleBrush" Color="{StaticResource ThrottleColor}"/>
+
     <!-- Tailwind Palette (Set 3) -->
     <Color x:Key="TailwindRedColor">#FFEF4444</Color>
     <Color x:Key="TailwindGreenColor">#FF10B981</Color>
