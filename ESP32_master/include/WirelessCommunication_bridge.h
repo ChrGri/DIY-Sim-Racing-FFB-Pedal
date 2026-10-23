@@ -165,7 +165,7 @@ public:
                            i, _pedalMac[i][0], _pedalMac[i][1], _pedalMac[i][2],
                            _pedalMac[i][3], _pedalMac[i][4], _pedalMac[i][5]);
 #ifdef USB_JOYSTICK
-      tinyusbJoystick_.printf("[L]Configured Pedal #%d Mac: %02X:%02X:%02X:%02X:%02X:%02X",
+      tinyusbJoystick_.printf("Configured Pedal #%d Mac: %02X:%02X:%02X:%02X:%02X:%02X",
                            i, _pedalMac[i][0], _pedalMac[i][1], _pedalMac[i][2],
                            _pedalMac[i][3], _pedalMac[i][4], _pedalMac[i][5]);
 #endif
@@ -185,7 +185,7 @@ public:
     if (peerOk) {
       ActiveSerial->println("[L]Peers added successfully.");
     #ifdef USB_JOYSTICK
-      tinyusbJoystick_.printf("[L]Peers added successfully.\n");
+      tinyusbJoystick_.printf("Peers added successfully.");
     #endif
     }
 
@@ -193,16 +193,16 @@ public:
     wifi_second_chan_t secChan;
     esp_wifi_get_channel(&hwChan, &secChan);
 #ifdef USB_JOYSTICK
-    tinyusbJoystick_.printf("[L]Bridge HW MAC: %02X:%02X:%02X:%02X:%02X:%02X\n",
+    tinyusbJoystick_.printf("Bridge HW MAC: %02X:%02X:%02X:%02X:%02X:%02",
                             _ownMac[0], _ownMac[1], _ownMac[2], _ownMac[3], _ownMac[4], _ownMac[5]);
-    tinyusbJoystick_.printf("[L]Bridge Radio HW-Channel: %d (cfg: %d)\n", hwChan, _currentChannel);
+    tinyusbJoystick_.printf("Bridge Radio HW-Channel: %d (cfg: %d", hwChan, _currentChannel);
 #endif
 
     ESPNow.reg_recv_cb(sWirelessCommRecvTrampoline);
     ESPNow.reg_send_cb(sWirelessCommSentTrampoline);
     ActiveSerial->printf("[L]ESPNow Channel: %d\n", _currentChannel);
 #ifdef USB_JOYSTICK
-    tinyusbJoystick_.printf("[L]ESPNow Channel: %d\n", _currentChannel);
+    tinyusbJoystick_.printf("ESPNow Channel: %d", _currentChannel);
 #endif
     _started = true;
     ActiveSerial->println("[L]ESPNow Initialized");
