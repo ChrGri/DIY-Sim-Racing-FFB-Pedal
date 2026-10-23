@@ -123,9 +123,12 @@ namespace DiyFfbPedal.UIFunction
             {
                 NodeIndex = 3,
                 RoleName = "BRIDGE",
-                RoleBadgeForeground = new SolidColorBrush(Color.FromRgb(255, 215, 0)),
-                RoleBadgeBackground = new SolidColorBrush(Color.FromArgb(34, 255, 215, 0)),
-                RoleBadgeBorder = new SolidColorBrush(Color.FromArgb(68, 255, 215, 0)),
+                // RoleBadgeForeground = new SolidColorBrush(Color.FromRgb(255, 215, 0)),
+                // RoleBadgeBackground = new SolidColorBrush(Color.FromArgb(34, 255, 215, 0)),
+                // RoleBadgeBorder = new SolidColorBrush(Color.FromArgb(68, 255, 215, 0)),
+                RoleBadgeForeground = (Brush)TryFindResource("SoftYellowBrush") ?? new SolidColorBrush(Color.FromRgb(251, 191, 36)),
+                RoleBadgeBackground = (Brush)TryFindResource("SoftYellowBrush33%") ?? new SolidColorBrush(Color.FromArgb(103, 251, 191, 36)),
+                RoleBadgeBorder = (Brush)TryFindResource("SoftYellowBrush33%") ?? new SolidColorBrush(Color.FromArgb(103, 251, 191, 36)),
                 CanBeep = false
             });
 
@@ -134,9 +137,12 @@ namespace DiyFfbPedal.UIFunction
             {
                 NodeIndex = 0,
                 RoleName = "CLUTCH",
-                RoleBadgeForeground = new SolidColorBrush(Color.FromRgb(51, 209, 204)),
-                RoleBadgeBackground = new SolidColorBrush(Color.FromArgb(34, 51, 209, 204)),
-                RoleBadgeBorder = new SolidColorBrush(Color.FromArgb(68, 51, 209, 204)),
+                // RoleBadgeForeground = new SolidColorBrush(Color.FromRgb(51, 209, 204)),
+                // RoleBadgeBackground = new SolidColorBrush(Color.FromArgb(34, 51, 209, 204)),
+                // RoleBadgeBorder = new SolidColorBrush(Color.FromArgb(68, 51, 209, 204)),
+                RoleBadgeForeground = (Brush)TryFindResource("SoftBlueBrush") ?? new SolidColorBrush(Color.FromRgb(96, 165, 250)),
+                RoleBadgeBackground = (Brush)TryFindResource("SoftBlueBrush33%") ?? new SolidColorBrush(Color.FromArgb(103, 96, 165, 250)),
+                RoleBadgeBorder = (Brush)TryFindResource("SoftBlueBrush33%") ?? new SolidColorBrush(Color.FromArgb(103, 96, 165, 250)),
                 CanBeep = true
             });
 
@@ -145,9 +151,12 @@ namespace DiyFfbPedal.UIFunction
             {
                 NodeIndex = 1,
                 RoleName = "BRAKE",
-                RoleBadgeForeground = new SolidColorBrush(Color.FromRgb(224, 36, 36)),
-                RoleBadgeBackground = new SolidColorBrush(Color.FromArgb(34, 224, 36, 36)),
-                RoleBadgeBorder = new SolidColorBrush(Color.FromArgb(68, 224, 36, 36)),
+                // RoleBadgeForeground = new SolidColorBrush(Color.FromRgb(224, 36, 36)),
+                // RoleBadgeBackground = new SolidColorBrush(Color.FromArgb(34, 224, 36, 36)),
+                // RoleBadgeBorder = new SolidColorBrush(Color.FromArgb(68, 224, 36, 36)),
+                RoleBadgeForeground = (Brush)TryFindResource("SoftRedBrush") ?? new SolidColorBrush(Color.FromRgb(248, 113, 113)),
+                RoleBadgeBackground = (Brush)TryFindResource("SoftRedBrush33%") ?? new SolidColorBrush(Color.FromArgb(103, 248, 113, 113)),
+                RoleBadgeBorder = (Brush)TryFindResource("SoftRedBrush33%") ?? new SolidColorBrush(Color.FromArgb(103, 248, 113, 113)),
                 CanBeep = true
             });
 
@@ -156,9 +165,12 @@ namespace DiyFfbPedal.UIFunction
             {
                 NodeIndex = 2,
                 RoleName = "THROTTLE",
-                RoleBadgeForeground = new SolidColorBrush(Color.FromRgb(76, 209, 55)),
-                RoleBadgeBackground = new SolidColorBrush(Color.FromArgb(34, 76, 209, 55)),
-                RoleBadgeBorder = new SolidColorBrush(Color.FromArgb(68, 76, 209, 55)),
+                // RoleBadgeForeground = new SolidColorBrush(Color.FromRgb(76, 209, 55)),
+                // RoleBadgeBackground = new SolidColorBrush(Color.FromArgb(34, 76, 209, 55)),
+                // RoleBadgeBorder = new SolidColorBrush(Color.FromArgb(68, 76, 209, 55)),
+                RoleBadgeForeground = (Brush)TryFindResource("SoftGreenBrush") ?? new SolidColorBrush(Color.FromRgb(52, 211, 153)),
+                RoleBadgeBackground = (Brush)TryFindResource("SoftGreenBrush33%") ?? new SolidColorBrush(Color.FromArgb(103, 52, 211, 153)),
+                RoleBadgeBorder = (Brush)TryFindResource("SoftGreenBrush33%") ?? new SolidColorBrush(Color.FromArgb(103, 52, 211, 153)),
                 CanBeep = true
             });
         }

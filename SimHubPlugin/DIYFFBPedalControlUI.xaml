@@ -539,7 +539,7 @@
                                     <Border Style="{StaticResource Card}" Margin="0" Padding="0,0,0,0" Height="498" Width="202" HorizontalAlignment="Center" >
                                         <StackPanel HorizontalAlignment="Center" Height="498" VerticalAlignment="Top" Width="192">
                                             <localFunction:InfoSection_Rudder x:Name="RudderInfo" Margin="0,5,0,0" />
-                                            <Button x:Name="btn_SidebarRudderDocs" Click="btn_RudderDocs_Click" Content="📖 Flight Docs ↗" Width="158" Height="18" Margin="0,2,0,4" Background="#2600AAFF" Foreground="#00CCFF" BorderBrush="#3300CCFF" BorderThickness="1" FontSize="9" FontFamily="Arial" Cursor="Hand" ToolTip="Open Rudder Flight Dynamics Documentation on GitHub" HorizontalAlignment="Center"/>
+                                            <Button x:Name="btn_SidebarRudderDocs" Click="btn_RudderDocs_Click" Content="📖 Flight Docs ↗" Width="158" Height="18" Margin="0,2,0,4" Background="{DynamicResource SoftBlueBrushTrans}" Foreground="{DynamicResource SoftBlueBrush}" BorderBrush="{DynamicResource SoftBlueBrushTrans}" BorderThickness="1" FontSize="9" FontFamily="Arial" Cursor="Hand" ToolTip="Open Rudder Flight Dynamics Documentation on GitHub" HorizontalAlignment="Center"/>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,0">
                                                 <ComboBox x:Name="combo_rudderMode" SelectedValuePath="Tag" Width="106" SelectedValue="{Binding Plugin.Settings.rudderMode, Mode=TwoWay}" SelectionChanged="RudderMode_SelectionChanged" Height="22" Padding="2,0,0,0" BorderThickness="0,0,0,0" MinHeight="20" ToolTip="Rudder Mode: Airplane, Helicopter, or Airplane with Toe Brake">
                                                     <ComboBoxItem Content="Airplane">
@@ -567,10 +567,10 @@
                                             </StackPanel>
                                             
                                             <!-- Mode 2/3 Brake Switch / Status Button -->
-                                            <Button x:Name="btn_rudder_brake" Click="btn_rudder_brake_Click" Content="Toe Brake: OFF (Yaw)" Width="158" Height="22" Margin="0,4,0,0" Background="#33FF9900" Foreground="#FFAA33" BorderBrush="#66FF9900" BorderThickness="1" FontSize="9.5" FontWeight="SemiBold" FontFamily="Arial" Cursor="Hand" ToolTip="Toggle between Yaw Steering and Toe Braking (SimHub Action: 'Toe Brake')" HorizontalAlignment="Center"/>
+                                            <Button x:Name="btn_rudder_brake" Click="btn_rudder_brake_Click" Content="Toe Brake: OFF (Yaw)" Width="158" Height="22" Margin="0,4,0,0" Background="{DynamicResource SoftYellowBrushTrans}" Foreground="{DynamicResource SoftYellowBrush}" BorderBrush="{DynamicResource SoftYellowBrushTrans}" BorderThickness="1" FontSize="9.5" FontWeight="SemiBold" FontFamily="Arial" Cursor="Hand" ToolTip="Toggle between Yaw Steering and Toe Braking (SimHub Action: 'Toe Brake')" HorizontalAlignment="Center"/>
                                             
                                             <!-- Rudder Status & Operation Monitor Box -->
-                                            <TextBox x:Name="text_rudder_log" HorizontalAlignment="Center" VerticalAlignment="Top" Text="Rudder Monitor Ready..." Width="158" Foreground="#00FFCC" Height="314" Margin="0,6,0,0" FontSize="9" FontFamily="Consolas" Background="#EE141720" BorderBrush="#3300FFCC" BorderThickness="1" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="4"/>
+                                            <TextBox x:Name="text_rudder_log" HorizontalAlignment="Center" VerticalAlignment="Top" Text="Rudder Monitor Ready..." Width="158" Foreground="{DynamicResource SoftBlueBrush}" Height="314" Margin="0,6,0,0" FontSize="9" FontFamily="Consolas" Background="#EE141720" BorderBrush="{DynamicResource SoftBlueBrushTrans}" BorderThickness="1" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="4"/>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
@@ -706,15 +706,15 @@
                                                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
                                                     <!-- Clean Vector WiFi / Broadcast Icon (no emoji corruption) -->
                                                     <Canvas Width="14" Height="12" Margin="0,0,6,0" VerticalAlignment="Center">
-                                                        <Path Data="M1,2.5 A9,9 0 0,1 13,2.5 M3,5.5 A6,6 0 0,1 11,5.5 M5.5,8.5 A3,3 0 0,1 8.5,8.5" Stroke="#00E5FF" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
-                                                        <Ellipse Width="2" Height="2" Fill="#00E5FF" Canvas.Left="6" Canvas.Top="9"/>
+                                                        <Path Data="M1,2.5 A9,9 0 0,1 13,2.5 M3,5.5 A6,6 0 0,1 11,5.5 M5.5,8.5 A3,3 0 0,1 8.5,8.5" Stroke="White" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                                                        <Ellipse Width="2" Height="2" Fill="White" Canvas.Left="6" Canvas.Top="9"/>
                                                     </Canvas>
-                                                    <TextBlock Text="ESP-NOW WIRELESS TELEMETRY &amp; SYNC" FontFamily="Arial Black" FontSize="10" Foreground="#00E5FF" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="ESP-NOW WIRELESS TELEMETRY &amp; SYNC" FontFamily="Arial Black" FontSize="10" VerticalAlignment="Center"/>
                                                 </StackPanel>
                                                 
                                                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
-                                                    <Border Background="#3300FFCC" BorderBrush="#6600FFCC" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="2,0">
-                                                        <TextBlock x:Name="tb_rudder_sync_delay" Text="Delay: -- ms" FontFamily="Consolas" FontSize="9" Foreground="#00FFCC" FontWeight="Bold"/>
+                                                    <Border Background="{DynamicResource SoftGreenBrushTrans}" BorderBrush="{DynamicResource SoftGreenBrushTrans}" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="2,0">
+                                                        <TextBlock x:Name="tb_rudder_sync_delay" Text="Delay: -- ms" FontFamily="Consolas" FontSize="9" Foreground="{DynamicResource SoftGreenBrush}" FontWeight="Bold"/>
                                                     </Border>
                                                     <Border Background="#22FFFFFF" BorderBrush="#44FFFFFF" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="2,0">
                                                         <TextBlock x:Name="tb_rudder_sync_rate" Text="Rate: -- Hz" FontFamily="Consolas" FontSize="9" Foreground="#E0E0E0"/>
@@ -751,7 +751,7 @@
 
                                                         <!-- Live Polyline Graph -->
                                                         <Polygon x:Name="poly_rudder_latency_fill" Fill="#1200FFCC"/>
-                                                        <Polyline x:Name="poly_rudder_latency_trace" Stroke="#00FFCC" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                                        <Polyline x:Name="poly_rudder_latency_trace" Stroke="{DynamicResource SoftBlueBrush}" StrokeThickness="1.5" StrokeLineJoin="Round"/>
                                                     </Canvas>
 
                                                     <!-- Divider between subplots -->
@@ -762,12 +762,12 @@
                                                         <!-- Legend & Subplot Title Tag -->
                                                         <StackPanel Orientation="Horizontal" Canvas.Left="5" Canvas.Top="2">
                                                             <TextBlock Text="PEDAL RSSI" Foreground="#55FFFFFF" FontSize="8" FontFamily="Arial" FontWeight="Bold" Margin="0,0,8,0"/>
-                                                            <TextBlock Text="&#x25A0; Clutch: " Foreground="#33D1CC" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
-                                                            <TextBlock x:Name="tb_rssi_clutch_val" Text="--" Foreground="#33D1CC" FontSize="8" FontFamily="Consolas" Margin="0,0,8,0"/>
-                                                            <TextBlock Text="&#x25A0; Brake: " Foreground="#E02424" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
-                                                            <TextBlock x:Name="tb_rssi_brake_val" Text="--" Foreground="#E02424" FontSize="8" FontFamily="Consolas" Margin="0,0,8,0"/>
-                                                            <TextBlock Text="&#x25A0; Throttle: " Foreground="#4CD137" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
-                                                            <TextBlock x:Name="tb_rssi_throttle_val" Text="--" Foreground="#4CD137" FontSize="8" FontFamily="Consolas"/>
+                                                            <TextBlock Text="&#x25A0; Clutch: " Foreground="{DynamicResource SoftBlueBrush}" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
+                                                            <TextBlock x:Name="tb_rssi_clutch_val" Text="--" Foreground="{DynamicResource SoftBlueBrush}" FontSize="8" FontFamily="Consolas" Margin="0,0,8,0"/>
+                                                            <TextBlock Text="&#x25A0; Brake: " Foreground="{DynamicResource SoftRedBrush}" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
+                                                            <TextBlock x:Name="tb_rssi_brake_val" Text="--" Foreground="{DynamicResource SoftRedBrush}" FontSize="8" FontFamily="Consolas" Margin="0,0,8,0"/>
+                                                            <TextBlock Text="&#x25A0; Throttle: " Foreground="{DynamicResource SoftGreenBrush}" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
+                                                            <TextBlock x:Name="tb_rssi_throttle_val" Text="--" Foreground="{DynamicResource SoftGreenBrush}" FontSize="8" FontFamily="Consolas"/>
                                                         </StackPanel>
 
                                                         <!-- Horizontal Reference Grid Lines (-30 to -100 dBm scale) -->
@@ -835,16 +835,16 @@
                                             <DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,3">
                                                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
                                                     <Canvas Width="14" Height="12" Margin="0,0,6,0" VerticalAlignment="Center">
-                                                        <Path Data="M1,2.5 A9,9 0 0,1 13,2.5 M3,5.5 A6,6 0 0,1 11,5.5 M5.5,8.5 A3,3 0 0,1 8.5,8.5" Stroke="#00E5FF" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
-                                                        <Ellipse Width="2" Height="2" Fill="#00E5FF" Canvas.Left="6" Canvas.Top="9.5"/>
+                                                        <Path Data="M1,2.5 A9,9 0 0,1 13,2.5 M3,5.5 A6,6 0 0,1 11,5.5 M5.5,8.5 A3,3 0 0,1 8.5,8.5" Stroke="White" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                                                        <Ellipse Width="2" Height="2" Fill="White" Canvas.Left="6" Canvas.Top="9.5"/>
                                                     </Canvas>
-                                                    <TextBlock Text="WI-FI SPECTRUM &amp; CHANNEL OPTIMIZER" FontFamily="Arial Black" FontSize="9.5" Foreground="#00E5FF" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="WI-FI SPECTRUM &amp; CHANNEL OPTIMIZER" FontFamily="Arial Black" FontSize="9.5" VerticalAlignment="Center"/>
                                                 </StackPanel>
 
                                                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
-                                                    <Button x:Name="btn_scan_wifi_channels" Click="btn_scan_wifi_channels_Click" Content="🔍 Scan Spectrum" Width="108" Height="18" Margin="0,0,4,0" Background="#2600AAFF" Foreground="#00CCFF" BorderBrush="#3300CCFF" BorderThickness="1" FontSize="8.5" FontFamily="Arial" FontWeight="SemiBold" Cursor="Hand" VerticalAlignment="Center" ToolTip="Scan all 2.4 GHz channels (1-13) for RF interference"/>
+                                                    <Button x:Name="btn_scan_wifi_channels" Click="btn_scan_wifi_channels_Click" Content="🔍 Scan Spectrum" Width="108" Height="18" Margin="0,0,4,0" Background="{DynamicResource SoftBlueBrushTrans}" Foreground="{DynamicResource SoftBlueBrush}" BorderBrush="{DynamicResource SoftBlueBrushTrans}" BorderThickness="1" FontSize="8.5" FontFamily="Arial" FontWeight="SemiBold" Cursor="Hand" VerticalAlignment="Center" ToolTip="Scan all 2.4 GHz channels (1-13) for RF interference"/>
                                                     <Border Background="#22FFFFFF" BorderBrush="#44FFFFFF" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="2,0" VerticalAlignment="Center">
-                                                        <TextBlock x:Name="tb_wifi_ch_active" Text="Active: Ch 11" FontFamily="Consolas" FontSize="8.5" Foreground="#00FFCC" FontWeight="Bold"/>
+                                                        <TextBlock x:Name="tb_wifi_ch_active" Text="Active: Ch 11" FontFamily="Consolas" FontSize="8.5" Foreground="{DynamicResource SoftGreenBrush}" FontWeight="Bold"/>
                                                     </Border>
                                                     <Border Background="#22FFFFFF" BorderBrush="#44FFFFFF" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="2,0" VerticalAlignment="Center">
                                                         <TextBlock x:Name="tb_wifi_ch_rec" Text="Rec: --" FontFamily="Consolas" FontSize="8.5" Foreground="#E0E0E0"/>
@@ -968,7 +968,7 @@
                                     </Border>
                                 </StackPanel>
                                 <StackPanel Width="648" Height="900" Margin="3,0,0,0">
-                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="325" Grid.Row="4" VerticalAlignment="Top" Width="648" Padding="0,6,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent">
+                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="306" Grid.Row="4" VerticalAlignment="Top" Width="648" Padding="0,6,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
                                                 <Setter Property="Template">
@@ -1066,7 +1066,7 @@
                     <TabItem.Header>
                         <Border Width="184.8" Height="40" Margin="0,0,0,0">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock Text="📈" FontSize="20" VerticalAlignment="Center" Margin="0,0,0,0" />
+                                <Image Width="26" Height="26" Source="{StaticResource Chart}" />
                                 <Label Content="LIVE PLOT" FontFamily="Arial Black" FontSize="26" Height="40" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
                             </StackPanel>
                         </Border>

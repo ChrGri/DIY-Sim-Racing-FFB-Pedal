@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins"
              mc:Ignorable="d" 
-             d:DesignHeight="290" d:DesignWidth="648">
+             d:DesignHeight="270" d:DesignWidth="648">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -49,8 +49,8 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid Width="648" HorizontalAlignment="Left" VerticalAlignment="Top">
-        <Border Style="{StaticResource Card}" Margin="0" Padding="8,6" VerticalAlignment="Top">
+    <Grid Width="648" HorizontalAlignment="Left" VerticalAlignment="Top" Height="270">
+        <Border Style="{StaticResource Card}" Margin="0" Padding="8,6" VerticalAlignment="Top" Width="648" Height="270">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -63,12 +63,7 @@
                 <!-- Top Row: Title & Channel Selector -->
                 <DockPanel Grid.Row="0" LastChildFill="False" Margin="1,1,1,3">
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
-                        <!-- Wi-Fi Vector Icon -->
-                        <Canvas Width="14" Height="12" Margin="0,0,5,0" VerticalAlignment="Center">
-                            <Path Data="M1,2.5 A8.5,8.5 0 0,1 13,2.5 M3,5.5 A5.5,5.5 0 0,1 11,5.5 M5,8.5 A2.5,2.5 0 0,1 9,8.5" Stroke="#00E5FF" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
-                            <Ellipse Width="2" Height="2" Fill="#00E5FF" Canvas.Left="6" Canvas.Top="9.5"/>
-                        </Canvas>
-                        <TextBlock Text="WIRELESS MANAGEMENT (UNICAST)" FontFamily="Arial Black" FontSize="9.5" Foreground="#00E5FF" VerticalAlignment="Center"/>
+                        <TextBlock Text="WIRELESS MANAGEMENT (UNICAST)" FontFamily="Arial Black" FontSize="20" Foreground="White" VerticalAlignment="Center" Height="25"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
@@ -94,14 +89,14 @@
                 <!-- Row 1: Action Toolbar Buttons -->
                 <DockPanel Grid.Row="1" LastChildFill="False" Margin="1,0,1,3">
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                        <Button x:Name="btn_autodetect_usb" Click="btn_autodetect_usb_Click" Style="{StaticResource WirelessActionButtonStyle}" Content="🔍 Auto-Detect" Height="19" Padding="5,0" Background="#2600AAFF" Foreground="#00CCFF" BorderBrush="#4400CCFF" ToolTip="Query connected USB Bridge (HID) and Pedals (COM) for hardware MACs"/>
-                        <Button x:Name="btn_read_eeprom" Click="btn_read_eeprom_Click" Style="{StaticResource WirelessActionButtonStyle}" Content="📥 Read Device" Height="19" Padding="5,0" Background="#22FFFFFF" Foreground="#D0D0D0" BorderBrush="#44FFFFFF" ToolTip="Read stored MAC addresses from connected Bridge or active pedal EEPROM"/>
-                        <Button x:Name="btn_open_docs" Click="btn_open_docs_Click" Style="{StaticResource WirelessActionButtonStyle}" Content="📖 Pairing Guide" Height="19" Padding="5,0" Background="#22FFB300" Foreground="#FFD54F" BorderBrush="#44FFB300" ToolTip="Open the step-by-step Wireless Pairing &amp; MAC Sharing documentation"/>
+                        <Button x:Name="btn_autodetect_usb" Click="btn_autodetect_usb_Click" Style="{StaticResource WirelessActionButtonStyle}" Content="Auto-Detect" Height="19" Padding="5,0" Background="{DynamicResource SoftBlueBrushTrans}" Foreground="{DynamicResource SoftBlueBrush}" BorderBrush="{DynamicResource SoftBlueBrush33%}" ToolTip="Query connected USB Bridge (HID) and Pedals (COM) for hardware MACs" Width="65"/>
+                        <Button x:Name="btn_read_eeprom" Click="btn_read_eeprom_Click" Style="{StaticResource WirelessActionButtonStyle}" Content="Read Device" Height="19" Padding="5,0" Background="#22FFFFFF" Foreground="#D0D0D0" BorderBrush="#44FFFFFF" ToolTip="Read stored MAC addresses from connected Bridge or active pedal EEPROM" Width="55"/>
+                        <Button x:Name="btn_open_docs" Click="btn_open_docs_Click" Style="{StaticResource WirelessActionButtonStyle}" Content="Pairing Guide" Height="19" Padding="5,0" Background="{DynamicResource SoftYellowBrushTrans}" Foreground="{DynamicResource SoftYellowBrush}" BorderBrush="#44FFB300" ToolTip="Open the step-by-step Wireless Pairing &amp; MAC Sharing documentation" Width="60"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                        <Button x:Name="btn_clear_mac_usb" Click="btn_clear_mac_usb_Click" Style="{StaticResource WirelessActionButtonStyle}" Content="🗑️ Clear MAC List" Height="19" Padding="7,0" Background="#33FF5252" Foreground="#FF5252" BorderBrush="#66FF5252" ToolTip="Erase the MAC address table (Bridge + all Pedals) in EEPROM and in this table - forces re-pairing"/>
-                        <Button x:Name="btn_write_all_usb" Click="btn_write_all_usb_Click" Style="{StaticResource WirelessActionButtonStyle}" Content="💾 Sync to All Devices" Height="19" Padding="7,0" Background="#3300E676" Foreground="#00E676" BorderBrush="#6600E676" ToolTip="Write MAC mapping table and Wi-Fi channel into EEPROM of all connected USB nodes"/>
+                        <Button x:Name="btn_clear_mac_usb" Click="btn_clear_mac_usb_Click" Style="{StaticResource WirelessActionButtonStyle}" Content="Clear MAC List" Height="19" Padding="7,0" Background="{DynamicResource SoftRedBrushTrans}" Foreground="{DynamicResource SoftRedBrush}" BorderBrush="{DynamicResource SoftRedBrush33%}" ToolTip="Erase the MAC address table (Bridge + all Pedals) in EEPROM and in this table - forces re-pairing" Width="65"/>
+                        <Button x:Name="btn_write_all_usb" Click="btn_write_all_usb_Click" Style="{StaticResource WirelessActionButtonStyle}" Content="Sync to All Devices" Height="19" Padding="7,0" Background="{DynamicResource SoftGreenBrushTrans}" Foreground="{DynamicResource SoftGreenBrush}" BorderBrush="{DynamicResource SoftGreenBrush33%}" ToolTip="Write MAC mapping table and Wi-Fi channel into EEPROM of all connected USB nodes" Width="80"/>
                     </StackPanel>
                 </DockPanel>
 
@@ -132,7 +127,7 @@
                                 <TextBlock Grid.Column="0" Text="ROLE" FontFamily="Arial Black" FontSize="7.5" Foreground="#777777" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="1" Text="USB PORT" FontFamily="Arial Black" FontSize="7.5" Foreground="#777777" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="2" Text="MAC ADDRESS" FontFamily="Arial Black" FontSize="7.5" Foreground="#777777" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="3" Text="CH" FontFamily="Arial Black" FontSize="7.5" Foreground="#00E5FF" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" Text="CH" FontFamily="Arial Black" FontSize="7.5" Foreground="{DynamicResource SoftBlueBrush}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                 <TextBlock Grid.Column="4" Text="WIRELESS" FontFamily="Arial Black" FontSize="7.5" Foreground="#777777" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                 <TextBlock Grid.Column="5" Text="ACTION" FontFamily="Arial Black" FontSize="7.5" Foreground="#777777" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,2,0"/>
                             </Grid>
@@ -193,7 +188,7 @@
                 </Border>
 
                 <!-- Row 4: Footer Tip -->
-                <TextBlock Grid.Row="4" Text="💡 Hint: When syncing pedals via USB COM, disable 'Wireless Communication' in that pedal tab so USB exchange is active." FontFamily="Arial" FontSize="7" Foreground="#888888" Margin="3,1,3,0"/>
+                <TextBlock Grid.Row="4" Text="Hint: When syncing pedals via USB COM, disable 'Wireless Communication' in that pedal tab so USB exchange is active." FontFamily="Arial" FontSize="7" Foreground="#888888" Margin="3,1,3,0"/>
             </Grid>
         </Border>
     </Grid>

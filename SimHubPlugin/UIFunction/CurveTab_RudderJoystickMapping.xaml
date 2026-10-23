@@ -26,8 +26,8 @@
                 <StackPanel Grid.Column="0" HorizontalAlignment="Center" Width="317" Margin="0,0,0,0">
                     <StackPanel Height="20" Orientation="Horizontal" HorizontalAlignment="Left" Margin="22,2,0,2">
                         <Label Content="YAW MAPPING (50% - 100%)" Foreground="White" FontFamily="Arial Black" FontSize="10" Padding="0" VerticalAlignment="Center"/>
-                        <Border Background="#3300FFCC" CornerRadius="3" Padding="4,1" Margin="6,0,0,0" VerticalAlignment="Center">
-                            <TextBlock Text="SYMMETRICAL" Foreground="#00FFCC" FontSize="8" FontWeight="Bold" FontFamily="Arial"/>
+                        <Border Background="{DynamicResource SoftGreenBrushTrans}" CornerRadius="3" Padding="4,1" Margin="6,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="SYMMETRICAL" Foreground="{DynamicResource SoftGreenBrush}" FontSize="8" FontWeight="Bold" FontFamily="Arial"/>
                         </Border>
                     </StackPanel>
                     <Canvas x:Name="canvasYaw" Height="190" Width="264" Background="#141414" HorizontalAlignment="Center" MouseRightButtonDown="CanvasYaw_MouseRightButtonDown" ToolTip="Right-click canvas to add point, right-click point to remove">
@@ -69,8 +69,8 @@
                 <StackPanel Grid.Column="2" HorizontalAlignment="Center" Width="317" Margin="0,0,0,0">
                     <StackPanel Height="20" Orientation="Horizontal" HorizontalAlignment="Left" Margin="22,2,0,2">
                         <Label Content="TOE BRAKE MAPPING (0% - 100%)" Foreground="White" FontFamily="Arial Black" FontSize="10" Padding="0" VerticalAlignment="Center"/>
-                        <Border Background="#33FFCC00" CornerRadius="3" Padding="4,1" Margin="6,0,0,0" VerticalAlignment="Center">
-                            <TextBlock Text="UNIPOLAR" Foreground="#FFCC00" FontSize="8" FontWeight="Bold" FontFamily="Arial"/>
+                        <Border Background="{DynamicResource SoftYellowBrushTrans}" CornerRadius="3" Padding="4,1" Margin="6,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="UNIPOLAR" Foreground="{DynamicResource SoftYellowBrush}" FontSize="8" FontWeight="Bold" FontFamily="Arial"/>
                         </Border>
                     </StackPanel>
                     <Canvas x:Name="canvasToe" Height="190" Width="264" Background="#141414" HorizontalAlignment="Center" MouseRightButtonDown="CanvasToe_MouseRightButtonDown" ToolTip="Right-click canvas to add point, right-click point to remove">
