@@ -9,7 +9,7 @@
              xmlns:ui="clr-namespace:SimHub.Plugins.UI;assembly=SimHub.Plugins"
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="648"
+             d:DesignHeight="200" d:DesignWidth="648"
              d:DataContext="{d:DesignInstance Type=localFunction:GeneralSetting_Servo}">
 
     <UserControl.Resources>
@@ -17,50 +17,10 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/DiyFfbPedal;component/UIStyles/DefaultStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            <!-- Column header style -->
-            <Style x:Key="HeaderStyle" TargetType="DataGridColumnHeader">
-                <Setter Property="Background" Value="#FF303030"/>
-                <Setter Property="Foreground" Value="#FFD0D0D0"/>
-                <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Padding" Value="6,4"/>
-                <Setter Property="BorderBrush" Value="#FF555555"/>
-                <Setter Property="BorderThickness" Value="0,0,0,1"/>
-            </Style>
-            <!-- Row style: alternate shading -->
-            <Style x:Key="RowStyle" TargetType="DataGridRow">
-                <Setter Property="Background" Value="#FF2A2A2A"/>
-                <Style.Triggers>
-                    <Trigger Property="AlternationIndex" Value="1">
-                        <Setter Property="Background" Value="#FF323232"/>
-                    </Trigger>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#FF3A3A5A"/>
-                    </Trigger>
-                    <Trigger Property="IsSelected" Value="True">
-                        <Setter Property="Background" Value="#FF2D5A8E"/>
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
-            <!-- Cell style -->
-            <Style x:Key="CellStyle" TargetType="DataGridCell">
-                <Setter Property="Foreground" Value="#FFDADADA"/>
-                <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Padding" Value="4,2"/>
-                <Style.Triggers>
-                    <Trigger Property="IsSelected" Value="True">
-                        <Setter Property="Foreground" Value="White"/>
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <!-- Outer scroll so everything is reachable when panel is small -->
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Margin="4,0,4,8">
-
-            <!-- ??? Servo Settings (sliders) ??????????????????????????????? -->
+    <!-- ─── Servo Settings (sliders) ─────────────────────────────── -->
             <Border Style="{StaticResource Card}"
                     Margin="0,0,0,6" Padding="0,0,0,0">
                 <StackPanel Width="648">
@@ -89,148 +49,18 @@
                             SliderValueChanged="Slider_ServoTimeoutValueChanged"
                             ToolTip="Only works with PCBA v2. Set to 0 to disable."/>
                     </StackPanel>
-                </StackPanel>
-            </Border>
+            <Label Content="{SLoc DIYFFBPedalPlugin_TextServoRegistersTitle, 'Servo Registers'}" Height="20" Padding="0,0,0,4" VerticalContentAlignment="Center" FontFamily="Arial Black" Foreground="White" FontSize="12" HorizontalAlignment="Left" Margin="15,0,0,0"/>
+            <StackPanel Width="510">
 
-            <!-- ??? Servo Register Table ???????????????????????????????????? -->
-            <Border Style="{StaticResource Card}"
-                    Margin="0" Padding="8,6,8,8">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4" VerticalAlignment="Center">
-                        <Label Content="Servo Registers"
-                               FontFamily="Arial Black"
-                               Foreground="White"
-                               Padding="0,0,8,0"
-                               VerticalContentAlignment="Center"/>
-                        <Button Content="Load from servo"
-                                x:Name="Btn_LoadFromServo"
-                                Click="Btn_LoadFromServo_Click"
-                                FontSize="8" Padding="3,1" Margin="0,0,3,0"
-                                VerticalAlignment="Center"/>
-                        <Button Content="Reset to recommended"
-                                x:Name="Btn_ResetToRecommended"
-                                Click="Btn_ResetToRecommended_Click"
-                                FontSize="8" Padding="3,1" Margin="0,0,3,0"
-                                VerticalAlignment="Center"
-                                ToolTip="Writes the silent or the smooth (gain switching) parameter set to the servo and stores it in its NVM"/>
-                        <Button Content="Reset to factory"
-                                x:Name="Btn_ResetToFactory"
-                                Click="Btn_ResetToFactory_Click"
-                                FontSize="8" Padding="3,1" Margin="0,0,3,0"
-                                VerticalAlignment="Center"
-                                ToolTip="Resets all servo parameters to factory values (power-cycle the servo afterwards)"/>
-                        <Button Content="Flash to servo"
-                                x:Name="Btn_FlashToServo"
-                                Click="Btn_FlashToServo_Click"
-                                FontSize="8" Padding="3,1" Margin="0,0,3,0"
-                                VerticalAlignment="Center"
-                                ToolTip="Saves the current parameters permanently in the servo (power-cycle required)"/>
-                        <Button Content="Export"
-                                x:Name="Btn_ExportServoParameters"
-                                Click="Btn_ExportServoParameters_Click"
-                                FontSize="8" Padding="3,1" Margin="0,0,3,0"
-                                VerticalAlignment="Center"
-                                ToolTip="Saves the live values to a CSV file (read them with 'Load from servo' first)"/>
-                        <Button Content="Import"
-                                x:Name="Btn_ImportServoParameters"
-                                Click="Btn_ImportServoParameters_Click"
-                                FontSize="8" Padding="3,1"
-                                VerticalAlignment="Center"
-                                ToolTip="Loads a CSV file, writes its values to the servo and stores them in the servo's NVM (requires power-cycle)"/>
+                        <StackPanel Orientation="Horizontal">
+                            <styles:SHButtonPrimary x:Name="Btn_OpenServoRegisterWindow"
+                                Content="Open Servo Register Editor"
+                                Width="220" Height="30"
+                                HorizontalAlignment="Left"
+                                Click="Btn_OpenServoRegisterWindow_Click"
+                                ToolTip="Opens the independent Servo Register Editor window" Margin="0,0,0,0"/>
+                        </StackPanel>
                     </StackPanel>
-
-                    <DataGrid x:Name="ServoRegisterGrid"
-                              ItemsSource="{Binding ServoRegisters,
-                                  RelativeSource={RelativeSource AncestorType=localFunction:GeneralSetting_Servo}}"
-                              AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              CanUserDeleteRows="False"
-                              CanUserReorderColumns="False"
-                              CanUserSortColumns="True"
-                              CanUserResizeColumns="True"
-                              SelectionMode="Single"
-                              AlternatingRowBackground="#FF323232"
-                              GridLinesVisibility="Horizontal"
-                              HorizontalGridLinesBrush="#FF404040"
-                              BorderThickness="1"
-                              BorderBrush="#FF555555"
-                              ColumnHeaderStyle="{StaticResource HeaderStyle}"
-                              RowStyle="{StaticResource RowStyle}"
-                              CellStyle="{StaticResource CellStyle}"
-                              Height="400"
-                              EnableRowVirtualization="True"
-                              VirtualizingPanel.IsVirtualizing="True"
-                              VirtualizingPanel.VirtualizationMode="Recycling"
-                              ScrollViewer.CanContentScroll="True"
-                              ScrollViewer.VerticalScrollBarVisibility="Auto"
-                              CellEditEnding="ServoRegisterGrid_CellEditEnding"
-                              PreviewMouseWheel="ServoRegisterGrid_PreviewMouseWheel">
-
-                        <DataGrid.Columns>
-                            <!-- Address -->
-                            <DataGridTemplateColumn Header="Register"
-                                                    Width="80"
-                                                    IsReadOnly="True"
-                                                    SortMemberPath="Index">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Address}"
-                                                   ToolTip="{Binding Name}"
-                                                   VerticalAlignment="Center"
-                                                   Foreground="#FF9ECFFF"
-                                                   Padding="4,2"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-
-                            <!-- Full name (read-only) -->
-                            <DataGridTextColumn Header="Name"
-                                                Binding="{Binding Name}"
-                                                Width="*"
-                                                IsReadOnly="True"/>
-
-                            <!-- Live value – editable; sends to servo on commit -->
-                            <DataGridTemplateColumn Header="Live (Servo)"
-                                                    Width="105"
-                                                    SortMemberPath="LiveValue">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding LiveValueDisplay}"
-                                                   Foreground="{Binding LiveValueColor}"
-                                                   VerticalAlignment="Center"
-                                                   Padding="4,2"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                                <DataGridTemplateColumn.CellEditingTemplate>
-                                    <DataTemplate>
-                                        <TextBox Text="{Binding LiveValue,
-                                                     UpdateSourceTrigger=LostFocus}"
-                                                 BorderThickness="0"
-                                                 Background="Transparent"
-                                                 Foreground="#FFDADADA"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellEditingTemplate>
-                            </DataGridTemplateColumn>
-
-                            <!-- Recommended value (read-only, muted color) -->
-                            <DataGridTemplateColumn Header="Recommended (silent)"
-                                                    Width="150"
-                                                    IsReadOnly="True"
-                                                    SortMemberPath="RecommendedValue">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding RecommendedValue}"
-                                                   Foreground="#FF888888"
-                                                   VerticalAlignment="Center"
-                                                   Padding="4,2"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
                 </StackPanel>
             </Border>
-
-        </StackPanel>
-    </ScrollViewer>
 </UserControl>

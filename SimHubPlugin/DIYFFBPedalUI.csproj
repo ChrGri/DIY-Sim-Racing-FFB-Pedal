@@ -289,6 +289,9 @@
     <Compile Include="UIFunction\GeneralSetting_Servo.xaml.cs">
       <DependentUpon>GeneralSetting_Servo.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\ServoRegisterWindow.xaml.cs">
+      <DependentUpon>ServoRegisterWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\GeneralSetting_Dynamics.xaml.cs">
       <DependentUpon>GeneralSetting_Dynamics.xaml</DependentUpon>
     </Compile>
@@ -498,6 +501,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UIFunction\GeneralSetting_Servo.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UIFunction\ServoRegisterWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

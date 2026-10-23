@@ -400,7 +400,7 @@
                                                     <Label Content="{SLoc DIYFFBPedalPlugin_TabTextServo, 'Servo'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="129.6" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <localFunction:GeneralSetting_Servo x:Name="Servo_Tab" ConfigChanged="Tab_ConfigChanged" ServoRegisterValueChanged="Servo_Tab_ServoRegisterValueChanged" ServoModbusReadRequested="Servo_Tab_ServoModbusReadRequested" ServoModbusBatchReadRequested="Servo_Tab_ServoModbusBatchReadRequested" FlashToServoRequested="Servo_Tab_FlashToServoRequested" ResetToFactoryRequested="Servo_Tab_ResetToFactoryRequested"/>
+                                            <localFunction:GeneralSetting_Servo x:Name="Servo_Tab" ConfigChanged="Tab_ConfigChanged" ServoRegisterValueChanged="Servo_Tab_ServoRegisterValueChanged" ServoModbusReadRequested="Servo_Tab_ServoModbusReadRequested" ServoModbusBatchReadRequested="Servo_Tab_ServoModbusBatchReadRequested" FlashToServoRequested="Servo_Tab_FlashToServoRequested" ResetToFactoryRequested="Servo_Tab_ResetToFactoryRequested" OpenServoRegisterWindowRequested="Servo_Tab_OpenServoRegisterWindowRequested"/>
                                         </TabItem>
 
 										<TabItem Width="129.6" Height="30" Padding="0,0,0,0">

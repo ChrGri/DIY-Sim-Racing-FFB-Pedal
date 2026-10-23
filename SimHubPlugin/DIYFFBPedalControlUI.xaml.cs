@@ -115,6 +115,7 @@ namespace DiyFfbPedal
         public bool Version_warning_first_show_b_bridge = false;
         public byte[] Pedal_version = new byte[3];
         public SerialMonitor_Window _serial_monitor_window;
+        public ServoRegisterWindow _servoRegisterWindow;
         public bool Pedal_Log_warning_1st_show_b = true;
         private string[] Rudder_Pedal_idx_Name= new string[3] {"Clutch", "Brake","Throttle"};
         public byte Pedal_connect_status = 0;
@@ -287,6 +288,8 @@ namespace DiyFfbPedal
                 Servo_Tab.FlashToServoRequested += Servo_Tab_FlashToServoRequested;
                 Servo_Tab.ResetToFactoryRequested -= Servo_Tab_ResetToFactoryRequested;
                 Servo_Tab.ResetToFactoryRequested += Servo_Tab_ResetToFactoryRequested;
+                Servo_Tab.OpenServoRegisterWindowRequested -= Servo_Tab_OpenServoRegisterWindowRequested;
+                Servo_Tab.OpenServoRegisterWindowRequested += Servo_Tab_OpenServoRegisterWindowRequested;
             }
 
             //auto connection with timmer
@@ -865,5 +868,27 @@ namespace DiyFfbPedal
             return "--";
         }
         #endregion
+    
+        public void OpenServoRegisterWindow()
+        {
+            if (_servoRegisterWindow == null || !_servoRegisterWindow.IsLoaded)
+            {
+                _servoRegisterWindow = new ServoRegisterWindow(this);
+                _servoRegisterWindow.Closed += (s, e) => { _servoRegisterWindow = null; };
+                _servoRegisterWindow.Show();
+            }
+            else
+            {
+                _servoRegisterWindow.Activate();
+                if (_servoRegisterWindow.WindowState == WindowState.Minimized)
+                    _servoRegisterWindow.WindowState = WindowState.Normal;
+            }
+        }
+
+        private void Servo_Tab_OpenServoRegisterWindowRequested(object sender, EventArgs e)
+        {
+            OpenServoRegisterWindow();
+        }
+
     }
 }
