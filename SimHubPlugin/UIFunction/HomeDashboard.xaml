@@ -40,34 +40,34 @@
         <Grid Margin="6,4">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
             <StackPanel VerticalAlignment="Center">
-                <TextBlock Text="PEDAL OVERVIEW" Foreground="White" FontSize="27" FontWeight="Bold"/>
-                <TextBlock Text="Live output and current profile at a glance" Foreground="#FFABB4BE" FontSize="12" Margin="0,5,0,0"/>
+                <TextBlock Text="PEDAL OVERVIEW" Foreground="White" FontSize="30" FontWeight="Bold" FontFamily="Arial Black"/>
+                <TextBlock Text="Live output and current profile at a glance" Foreground="#FFABB4BE" FontSize="12" Margin="0,5,0,0" FontFamily="Arial"/>
             </StackPanel>
             <Border Grid.Column="1" Background="#1E1E1E" BorderBrush="#333333" BorderThickness="1" CornerRadius="5" Padding="14,8" VerticalAlignment="Center">
-                <StackPanel><TextBlock Text="ACTIVE PROFILE" Foreground="#FFABB4BE" FontSize="10"/><TextBlock x:Name="ActiveProfile" Text="None" Foreground="White" FontSize="16" FontWeight="SemiBold"/></StackPanel>
+                <StackPanel><TextBlock Text="ACTIVE PROFILE" Foreground="#FFABB4BE" FontSize="10" FontFamily="Arial"/><TextBlock x:Name="ActiveProfile" Text="None" Foreground="White" FontSize="16" FontWeight="SemiBold" FontFamily="Arial Black"/></StackPanel>
             </Border>
         </Grid>
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
             <Border Grid.Column="0" Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Text="CLUTCH" Foreground="{StaticResource ClutchBrush}"  FontWeight="Bold"/><TextBlock x:Name="Status0" Text="Disconnected" Foreground="#FFABB4BE" FontSize="11" Margin="0,5,0,0"/><TextBlock x:Name="Value0" Text="0%" Foreground="White" FontSize="34" FontWeight="Bold" Margin="0,6,0,2"/><ProgressBar x:Name="Bar0" Maximum="100" Height="10" Foreground="{StaticResource ClutchBrush}" Background="#FF1D2228"/><TextBlock x:Name="Config0" Text="Force / travel —" Foreground="#FFCCD2D9" FontSize="11" Margin="0,16,0,0" TextWrapping="Wrap"/><TextBlock x:Name="Effects0" Text="Effects: none" Foreground="#FFABB4BE" FontSize="11" Margin="0,9,0,0" TextWrapping="Wrap"/></StackPanel>
+                    <TextBlock Text="CLUTCH" Foreground="{StaticResource ClutchBrush}" FontWeight="Bold" FontFamily="Arial Black" FontSize="14"/><TextBlock x:Name="Status0" Text="Disconnected" Foreground="#FFABB4BE" FontSize="11" Margin="0,5,0,0" FontFamily="Arial"/><TextBlock x:Name="Value0" Text="0%" Foreground="White" FontSize="34" FontWeight="Bold" Margin="0,6,0,2" FontFamily="Arial Black"/><ProgressBar x:Name="Bar0" Maximum="100" Height="10" Foreground="{StaticResource ClutchBrush}" Background="#FF1D2228"/><TextBlock x:Name="Config0" Text="Force / travel —" Foreground="#FFCCD2D9" FontSize="11" Margin="0,16,0,0" TextWrapping="Wrap" FontFamily="Arial"/><TextBlock x:Name="Effects0" Text="Effects: none" Foreground="#FFABB4BE" FontSize="11" Margin="0,9,0,0" TextWrapping="Wrap" FontFamily="Arial"/></StackPanel>
             </Border>
             <Border Grid.Column="1" Style="{StaticResource Card}">
-                <StackPanel><TextBlock Text="BRAKE" Foreground="{StaticResource BrakeBrush}" FontWeight="Bold"/><TextBlock x:Name="Status1" Text="Disconnected" Foreground="#FFABB4BE" FontSize="11" Margin="0,5,0,0"/><TextBlock x:Name="Value1" Text="0%" Foreground="White" FontSize="34" FontWeight="Bold" Margin="0,6,0,2"/><ProgressBar x:Name="Bar1" Maximum="100" Height="10" Foreground="{StaticResource BrakeBrush}" Background="#FF1D2228"/><TextBlock x:Name="Config1" Text="Force / travel —" Foreground="#FFCCD2D9" FontSize="11" Margin="0,16,0,0" TextWrapping="Wrap"/><TextBlock x:Name="Effects1" Text="Effects: none" Foreground="#FFABB4BE" FontSize="11" Margin="0,9,0,0" TextWrapping="Wrap"/></StackPanel>
+                <StackPanel><TextBlock Text="BRAKE" Foreground="{StaticResource BrakeBrush}" FontWeight="Bold" FontFamily="Arial Black" FontSize="14"/><TextBlock x:Name="Status1" Text="Disconnected" Foreground="#FFABB4BE" FontSize="11" Margin="0,5,0,0" FontFamily="Arial"/><TextBlock x:Name="Value1" Text="0%" Foreground="White" FontSize="34" FontWeight="Bold" Margin="0,6,0,2" FontFamily="Arial Black"/><ProgressBar x:Name="Bar1" Maximum="100" Height="10" Foreground="{StaticResource BrakeBrush}" Background="#FF1D2228"/><TextBlock x:Name="Config1" Text="Force / travel —" Foreground="#FFCCD2D9" FontSize="11" Margin="0,16,0,0" TextWrapping="Wrap" FontFamily="Arial"/><TextBlock x:Name="Effects1" Text="Effects: none" Foreground="#FFABB4BE" FontSize="11" Margin="0,9,0,0" TextWrapping="Wrap" FontFamily="Arial"/></StackPanel>
             </Border>
             <Border Grid.Column="2" Style="{StaticResource Card}">
-                <StackPanel><TextBlock Text="THROTTLE" Foreground="{StaticResource ThrottleBrush}" FontWeight="Bold"/><TextBlock x:Name="Status2" Text="Disconnected" Foreground="#FFABB4BE" FontSize="11" Margin="0,5,0,0"/><TextBlock x:Name="Value2" Text="0%" Foreground="White" FontSize="34" FontWeight="Bold" Margin="0,6,0,2"/><ProgressBar x:Name="Bar2" Maximum="100" Height="10" Foreground="{StaticResource ThrottleBrush}" Background="#FF1D2228"/><TextBlock x:Name="Config2" Text="Force / travel —" Foreground="#FFCCD2D9" FontSize="11" Margin="0,16,0,0" TextWrapping="Wrap"/><TextBlock x:Name="Effects2" Text="Effects: none" Foreground="#FFABB4BE" FontSize="11" Margin="0,9,0,0" TextWrapping="Wrap"/></StackPanel>
+                <StackPanel><TextBlock Text="THROTTLE" Foreground="{StaticResource ThrottleBrush}" FontWeight="Bold" FontFamily="Arial Black" FontSize="14"/><TextBlock x:Name="Status2" Text="Disconnected" Foreground="#FFABB4BE" FontSize="11" Margin="0,5,0,0" FontFamily="Arial"/><TextBlock x:Name="Value2" Text="0%" Foreground="White" FontSize="34" FontWeight="Bold" Margin="0,6,0,2" FontFamily="Arial Black"/><ProgressBar x:Name="Bar2" Maximum="100" Height="10" Foreground="{StaticResource ThrottleBrush}" Background="#FF1D2228"/><TextBlock x:Name="Config2" Text="Force / travel —" Foreground="#FFCCD2D9" FontSize="11" Margin="0,16,0,0" TextWrapping="Wrap" FontFamily="Arial"/><TextBlock x:Name="Effects2" Text="Effects: none" Foreground="#FFABB4BE" FontSize="11" Margin="0,9,0,0" TextWrapping="Wrap" FontFamily="Arial"/></StackPanel>
             </Border>
         </Grid>
         <Border Grid.Row="2" Style="{StaticResource Card}" Padding="14,10">
             <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-                <Grid><TextBlock Text="LIVE PEDAL OUTPUT" Foreground="White" FontWeight="Bold"/><TextBlock HorizontalAlignment="Right" FontSize="10">
-                    <Run Text="● CLUTCH" Foreground="{StaticResource ClutchBrush}"/>
-                    <Run Text="    " Foreground="#FFABB4BE"/>
-                    <Run Text="● BRAKE" Foreground="{StaticResource BrakeBrush}"/>
-                    <Run Text="    " Foreground="#FFABB4BE"/>
-                    <Run Text="● THROTTLE" Foreground="{StaticResource ThrottleBrush}"/></TextBlock>
+                <Grid><TextBlock Text="LIVE PEDAL OUTPUT" Foreground="White" FontWeight="Bold" FontFamily="Arial Black" FontSize="14"/><TextBlock HorizontalAlignment="Right" FontSize="10">
+                    <Run Text="● CLUTCH" Foreground="{StaticResource ClutchBrush}" FontFamily="Arial Black"/>
+                    <Run Text="    " Foreground="#FFABB4BE" FontFamily="Arial Black"/>
+                    <Run Text="● BRAKE" Foreground="{StaticResource BrakeBrush}" FontFamily="Arial Black"/>
+                    <Run Text="    " Foreground="#FFABB4BE" FontFamily="Arial Black"/>
+                    <Run Text="● THROTTLE" Foreground="{StaticResource ThrottleBrush}" FontFamily="Arial Black"/></TextBlock>
                 </Grid>
                 <Border Grid.Row="1" Background="#141414" BorderBrush="#333333" BorderThickness="1" CornerRadius="5" Margin="0,8,0,0" ClipToBounds="True">
                     <Viewbox Stretch="Fill">
@@ -83,8 +83,8 @@
         <Border Grid.Row="3" Style="{StaticResource Card}" Padding="14,10">
             <Grid>
                 <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="90"/><RowDefinition Height="42"/></Grid.RowDefinitions>
-                <TextBlock Text="QUICK PROFILES" Foreground="White" FontSize="16" FontWeight="Bold"/>
-                <TextBlock Grid.Row="1" Text="Apply saved pedal settings and effects in one click" Foreground="#FFABB4BE" FontSize="11" Margin="0,4,0,5"/>
+                <TextBlock Text="QUICK PROFILES" Foreground="White" FontSize="16" FontWeight="Bold" FontFamily="Arial Black"/>
+                <TextBlock Grid.Row="1" Text="Apply saved pedal settings and effects in one click" Foreground="#FFABB4BE" FontSize="11" Margin="0,4,0,5" FontFamily="Arial"/>
                 <Grid Grid.Row="2" HorizontalAlignment="Left"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
                     <Button x:Name="Quick0" Grid.Column="0" Grid.Row="0" Style="{StaticResource QuickButton}" Width="140" Content="Profile 1" Tag="0" Click="QuickApply_Click"/><Button x:Name="Quick1" Grid.Column="1" Grid.Row="0" Style="{StaticResource QuickButton}" Width="140" Content="Profile 2" Tag="1" Click="QuickApply_Click"/><Button x:Name="Quick2" Grid.Column="2" Grid.Row="0" Style="{StaticResource QuickButton}" Width="140" Content="Profile 3" Tag="2" Click="QuickApply_Click"/><Button x:Name="Quick3" Grid.Column="0" Grid.Row="1" Style="{StaticResource QuickButton}" Width="140" Content="Profile 4" Tag="3" Click="QuickApply_Click"/><Button x:Name="Quick4" Grid.Column="1" Grid.Row="1" Style="{StaticResource QuickButton}" Width="140" Content="Profile 5" Tag="4" Click="QuickApply_Click"/><Button x:Name="Quick5" Grid.Column="2" Grid.Row="1" Style="{StaticResource QuickButton}" Width="140" Content="Profile 6" Tag="5" Click="QuickApply_Click"/>
                 </Grid>
@@ -92,7 +92,7 @@
             </Grid>
         </Border>
         <Border Grid.Row="4" Style="{StaticResource Card}" Padding="14,10">
-            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel VerticalAlignment="Center"><TextBlock Text="SYSTEM STATUS" Foreground="White" FontSize="16" FontWeight="Bold"/><TextBlock x:Name="ConnectionSummary" Text="Checking pedal connections…" Foreground="#FFCCD2D9" FontSize="13" Margin="0,8,0,0"/><TextBlock Text="Open a detailed page to tune or manage profiles." Foreground="#FFABB4BE" FontSize="11" Margin="0,5,0,0"/></StackPanel><StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"><Button Style="{StaticResource QuickButton}" Content="Pedals →" Click="OpenPedals_Click"/><Button Style="{StaticResource QuickButton}" Content="System →" Click="OpenSystem_Click"/></StackPanel></Grid>
+            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel VerticalAlignment="Center"><TextBlock Text="SYSTEM STATUS" Foreground="White" FontSize="16" FontWeight="Bold" FontFamily="Arial Black"/><TextBlock x:Name="ConnectionSummary" Text="Checking pedal connections…" Foreground="#FFCCD2D9" FontSize="13" Margin="0,8,0,0" FontFamily="Arial"/><TextBlock Text="Open a detailed page to tune or manage profiles." Foreground="#FFABB4BE" FontSize="11" Margin="0,5,0,0" FontFamily="Arial"/></StackPanel><StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"><Button Style="{StaticResource QuickButton}" Content="Pedals →" Click="OpenPedals_Click"/><Button Style="{StaticResource QuickButton}" Content="System →" Click="OpenSystem_Click"/></StackPanel></Grid>
         </Border>
     </Grid>
 </UserControl>

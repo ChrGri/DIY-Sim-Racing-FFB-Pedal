@@ -130,9 +130,12 @@ namespace DiyFfbPedal.UIFunction
             {
                 NodeIndex = 3,
                 RoleName = "BRIDGE",
-                RoleBadgeForeground = new SolidColorBrush(Color.FromRgb(255, 215, 0)),
-                RoleBadgeBackground = new SolidColorBrush(Color.FromArgb(34, 255, 215, 0)),
-                RoleBadgeBorder = new SolidColorBrush(Color.FromArgb(68, 255, 215, 0)),
+                // RoleBadgeForeground = new SolidColorBrush(Color.FromRgb(255, 215, 0)),
+                // RoleBadgeBackground = new SolidColorBrush(Color.FromArgb(34, 255, 215, 0)),
+                // RoleBadgeBorder = new SolidColorBrush(Color.FromArgb(68, 255, 215, 0)),
+                RoleBadgeForeground = (Brush)TryFindResource("SoftYellowBrush") ?? new SolidColorBrush(Color.FromRgb(251, 191, 36)),
+                RoleBadgeBackground = (Brush)TryFindResource("SoftYellowBrush33%") ?? new SolidColorBrush(Color.FromArgb(103, 251, 191, 36)),
+                RoleBadgeBorder = (Brush)TryFindResource("SoftYellowBrush33%") ?? new SolidColorBrush(Color.FromArgb(103, 251, 191, 36)),
                 CanBeep = false
             });
 

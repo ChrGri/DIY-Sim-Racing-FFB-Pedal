@@ -7,7 +7,7 @@
              xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="183" d:DesignWidth="648">
+             d:DesignHeight="270" d:DesignWidth="648">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -64,8 +64,8 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border Style="{StaticResource Card}" Margin="0" Height="177" VerticalAlignment="Top">
-            <StackPanel>
+        <Border Style="{StaticResource Card}" Margin="0" Height="270" VerticalAlignment="Top" Padding="0,0,0,0">
+            <StackPanel HorizontalAlignment="Center">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <Label Content="{SLoc DIYFFBPedalPlugin_TextProfileShortcutTittle, 'Profile Shortcut'}"  FontFamily="Arial Black" FontSize="20" Height="25" Width="200" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" RenderTransformOrigin="0,0" VerticalContentAlignment="Center" Margin="15,0,0,0"  />

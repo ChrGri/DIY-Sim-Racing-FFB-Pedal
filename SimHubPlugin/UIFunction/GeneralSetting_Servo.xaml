@@ -9,7 +9,7 @@
              xmlns:ui="clr-namespace:SimHub.Plugins.UI;assembly=SimHub.Plugins"
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="580"
+             d:DesignHeight="600" d:DesignWidth="648"
              d:DataContext="{d:DesignInstance Type=localFunction:GeneralSetting_Servo}">
 
     <UserControl.Resources>
@@ -62,30 +62,30 @@
 
             <!-- ??? Servo Settings (sliders) ??????????????????????????????? -->
             <Border Style="{StaticResource Card}"
-                    Margin="0,0,0,6" Padding="0,4,0,8">
-                <StackPanel>
+                    Margin="0,0,0,6" Padding="0,0,0,0">
+                <StackPanel Width="648">
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextServoSettingTittle, 'Servo Settings'}"
                            Height="20" Padding="15,0,0,0"
                            VerticalContentAlignment="Center"
                            FontFamily="Arial Black"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0" Width="510" HorizontalAlignment="Center">
                         <localUI:SliderWithLabel
                             x:Name="Slider_ServoEndstopDetecionThreshold"
-                            SliderLength="190"
+                            SliderLength="250"
                             SliderName="{SLoc DIYFFBPedalPlugin_TextServoSettingSliderEndstopCurrent, 'Homing endstop threshold'}"
-                            Width="200" Height="40"
+                            Width="250" Height="40"
                             SliderValue="30" MinValue="10" MaxValue="50"
                             TickFrequency="1" Unit="%"
-                            Margin="15,0,0,0"
+                            Margin="0,0,0,0"
                             SliderValueChanged="Slider_ServoEndstopDetecionThreshold_SliderValueChanged"
                             ToolTip="Increase if homing does not reach full travel. Takes effect after config reset and pedal restart."/>
                         <localUI:SliderWithLabel
                             x:Name="Slider_ServoTimeout"
-                            SliderLength="190"
+                            SliderLength="250"
                             SliderName="{SLoc DIYFFBPedalPlugin_TextGeneralSettingServoIdleTimeout, 'Servo Idle Timeout'}"
-                            Width="200" Height="40"
+                            Width="250" Height="40"
                             MaxValue="50" TickFrequency="1" Unit="mins"
-                            Margin="10,0,0,0"
+                            Margin="5,0,0,0"
                             SliderValueChanged="Slider_ServoTimeoutValueChanged"
                             ToolTip="Only works with PCBA v2. Set to 0 to disable."/>
                     </StackPanel>
