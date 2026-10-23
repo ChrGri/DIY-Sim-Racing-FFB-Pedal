@@ -72,7 +72,7 @@
                         <localUI:SliderWithLabel
                             x:Name="Slider_ServoEndstopDetecionThreshold"
                             SliderLength="190"
-                            SliderName="{SLoc DIYFFBPedalPlugin_TextServoSettingSliderEndstopCurrent, 'Endstop Detection Threshold'}"
+                            SliderName="{SLoc DIYFFBPedalPlugin_TextServoSettingSliderEndstopCurrent, 'Homing endstop threshold'}"
                             Width="200" Height="40"
                             SliderValue="30" MinValue="10" MaxValue="50"
                             TickFrequency="1" Unit="%"
@@ -111,19 +111,32 @@
                                 x:Name="Btn_ResetToRecommended"
                                 Click="Btn_ResetToRecommended_Click"
                                 FontSize="8" Padding="3,1" Margin="0,0,3,0"
-                                VerticalAlignment="Center"/>
+                                VerticalAlignment="Center"
+                                ToolTip="Writes the silent or the smooth (gain switching) parameter set to the servo and stores it in its NVM"/>
                         <Button Content="Reset to factory"
                                 x:Name="Btn_ResetToFactory"
                                 Click="Btn_ResetToFactory_Click"
                                 FontSize="8" Padding="3,1" Margin="0,0,3,0"
                                 VerticalAlignment="Center"
-                                ToolTip="Calls Isv57Communication::resetToFactoryParams() on the servo (sets debugFlags0 bit 32, requires power-cycle)"/>
+                                ToolTip="Resets all servo parameters to factory values (power-cycle the servo afterwards)"/>
                         <Button Content="Flash to servo"
                                 x:Name="Btn_FlashToServo"
                                 Click="Btn_FlashToServo_Click"
+                                FontSize="8" Padding="3,1" Margin="0,0,3,0"
+                                VerticalAlignment="Center"
+                                ToolTip="Saves the current parameters permanently in the servo (power-cycle required)"/>
+                        <Button Content="Export"
+                                x:Name="Btn_ExportServoParameters"
+                                Click="Btn_ExportServoParameters_Click"
+                                FontSize="8" Padding="3,1" Margin="0,0,3,0"
+                                VerticalAlignment="Center"
+                                ToolTip="Saves the live values to a CSV file (read them with 'Load from servo' first)"/>
+                        <Button Content="Import"
+                                x:Name="Btn_ImportServoParameters"
+                                Click="Btn_ImportServoParameters_Click"
                                 FontSize="8" Padding="3,1"
                                 VerticalAlignment="Center"
-                                ToolTip="Writes 0x5555 to register 0x019A — forces the servo to persist all parameters to NVM (requires power-cycle)"/>
+                                ToolTip="Loads a CSV file, writes its values to the servo and stores them in the servo's NVM (requires power-cycle)"/>
                     </StackPanel>
 
                     <DataGrid x:Name="ServoRegisterGrid"
@@ -200,8 +213,8 @@
                             </DataGridTemplateColumn>
 
                             <!-- Recommended value (read-only, muted color) -->
-                            <DataGridTemplateColumn Header="Recommended"
-                                                    Width="105"
+                            <DataGridTemplateColumn Header="Recommended (silent)"
+                                                    Width="150"
                                                     IsReadOnly="True"
                                                     SortMemberPath="RecommendedValue">
                                 <DataGridTemplateColumn.CellTemplate>

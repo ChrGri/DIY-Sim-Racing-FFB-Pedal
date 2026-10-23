@@ -35,8 +35,8 @@
 
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsHighlighted" Value="True">
-                                    <Setter TargetName="Border" Property="Background" Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}"/>
-                                    <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}"/>
+                                    <Setter TargetName="Border" Property="Background" Value="{DynamicResource AccentColorBrush}"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource IdealForegroundColorBrush}"/>
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
                                     <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
@@ -70,7 +70,7 @@
             <ListBox x:Name="ConfigListBox" Height="115" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="10" FontFamily="Arial" Width="192" ItemsSource="{Binding ItemList}">
                 <ListBox.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListAddNewConfig, 'Add new Config'}" Command="{Binding AddNewConfigCommand}" FontFamily="Arial" FontSize="10"/>
+                        <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListAddNewConfig, 'Add new config'}" Command="{Binding AddNewConfigCommand}" FontFamily="Arial" FontSize="10"/>
                     </ContextMenu>
                 </ListBox.ContextMenu>
 
@@ -78,22 +78,55 @@
                     <Style TargetType="{x:Type ListBoxItem}">
 
                         <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListBox}}, Path=DataContext}"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Padding" Value="4,2,4,2"/>
+                        <Setter Property="SnapsToDevicePixels" Value="True"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                    <Border x:Name="Bd" 
+                                            Background="{TemplateBinding Background}" 
+                                            BorderBrush="{TemplateBinding BorderBrush}" 
+                                            BorderThickness="{TemplateBinding BorderThickness}" 
+                                            Padding="{TemplateBinding Padding}" 
+                                            SnapsToDevicePixels="True">
+                                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" 
+                                                          SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="#22FFFFFF"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentColorBrush}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource IdealForegroundColorBrush}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
 
                         <Setter Property="ContextMenu">
                             <Setter.Value>
                                 <ContextMenu>
                                     <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListPreview, 'Preview'}" Command="{Binding PlacementTarget.Tag.PreviewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                     <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextApply, 'Apply'}" Command="{Binding PlacementTarget.Tag.ApplyConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListSetAsStartup, 'Set as Startup'}" Command="{Binding PlacementTarget.Tag.SetDefaultConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListSetAsStartup, 'Set as startup config'}" Command="{Binding PlacementTarget.Tag.SetDefaultConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                     <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
                                     <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextRefreshList, 'Refresh List'}" Command="{Binding PlacementTarget.Tag.RefreshListCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                     <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextOverwrite, 'Overwrite'}" Command="{Binding PlacementTarget.Tag.OverwriteConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListSaveAs, 'Save as New Config'}" Command="{Binding PlacementTarget.Tag.SaveAsNewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
-                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListAddNewConfig, 'Add new Config'}" Command="{Binding PlacementTarget.Tag.AddNewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListSaveAs, 'Save as new config'}" Command="{Binding PlacementTarget.Tag.SaveAsNewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListAddNewConfig, 'Add new config'}" Command="{Binding PlacementTarget.Tag.AddNewConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                     <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
-                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListReset, 'Reset Active Config'}" Command="{Binding PlacementTarget.Tag.ResetEditingConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextConfigListReset, 'Reset active config'}" Command="{Binding PlacementTarget.Tag.ResetEditingConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                     <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextRename, 'Rename'}" Command="{Binding PlacementTarget.Tag.RenameConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                     <Separator Style="{StaticResource CustomContextMenuSeparator}"/>
+                                    <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextOpenFolder, 'Open folder'}" Command="{Binding PlacementTarget.Tag.OpenFolderCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                     <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextDelete, 'Delete'}" Command="{Binding PlacementTarget.Tag.DeleteConfigCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ContextMenu}}}" CommandParameter="{Binding}" FontFamily="Arial" FontSize="10"/>
                                 </ContextMenu>
                             </Setter.Value>

@@ -120,7 +120,7 @@ namespace DiyFfbPedal.UIFunction
 
             }
 
-            if(info_label!=null) info_label.Content = SLoc.GetValue("DIYFFBPedalPlugin_TextLabelConnection","Connection")+":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelServoState", "Servo State") +":\n"+ SLoc.GetValue("DIYFFBPedalPlugin_TextLabelDAPVersion", "DAP Version") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelPluginVersion", "Plugin Version") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelPedalVersion", "Pedal Version") + ":\n";
+            if(info_label!=null) info_label.Content = SLoc.GetValue("DIYFFBPedalPlugin_TextLabelConnection","Connection")+":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelServoState", "Servo State") +":\n"+ SLoc.GetValue("DIYFFBPedalPlugin_TextLabelDAPVersion", "Protocol Version") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelPluginVersion", "Plugin Version") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelPedalVersion", "Pedal Version") + ":\n";
             if (info_label_2 != null) info_label_2.Content = calculation.PedalStatusString;
 
 

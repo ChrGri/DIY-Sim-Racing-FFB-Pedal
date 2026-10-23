@@ -472,8 +472,17 @@ void IRAM_ATTR StepperWithLimits::moveToPosWithSpeedBlocking(
 void IRAM_ATTR StepperWithLimits::setSpeedLive(uint32_t speedInHz_u32) {
   _stepper->setSpeedLive(speedInHz_u32);
 }
-void IRAM_ATTR StepperWithLimits::moveSlowlyToPos(int32_t targetPos_ui32) {
-  _stepper->setSpeedLive((uint32_t)(MAXIMUM_STEPPER_SPEED_U32 / 8));
+void IRAM_ATTR StepperWithLimits::moveSlowlyToPos(int32_t targetPos_ui32,
+                                                  uint8_t spindlePitch_mmPerRev_u8) {
+  // Speed in mm/s (independent of the spindle pitch), same as the homing
+  // endstop approach. No ramp: the step generator has no acceleration, so the
+  // speed must stay low enough for a gentle start.
+  float spindlePitch_fl32 = (float)max(spindlePitch_mmPerRev_u8, (uint8_t)1);
+  float slowMoveSpeed_fl32 = SLOW_REPOSITION_SPEED_MM_PER_S_FL32 /
+                             spindlePitch_fl32 * (float)stepsPerMotorRev_u32;
+  slowMoveSpeed_fl32 = constrain(slowMoveSpeed_fl32, 1000.0f,
+                                 (float)(MAXIMUM_STEPPER_SPEED_U32 / 8));
+  _stepper->setSpeedLive((uint32_t)slowMoveSpeed_fl32);
   _stepper->moveTo(targetPos_ui32, true);
 }
 void IRAM_ATTR StepperWithLimits::pauseTask() {

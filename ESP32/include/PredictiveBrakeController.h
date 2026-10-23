@@ -14,7 +14,7 @@
  * @brief Brake resistor controller: PWM duty from the regen governor's feedforward
  * (admittance strategy) or a reactive voltage check (rudder), reactive backstop with
  * Schmitt hysteresis, dynamic voltage auto-baselining, thermal lockout and a
- * leaky-bucket energy accumulator. Timer-rollover safe (unsigned deltas).
+ * first-order (PT1) thermal energy model. Timer-rollover safe (unsigned deltas).
  */
 class PredictiveBrakeController {
 private:
@@ -44,20 +44,29 @@ private:
   // Increased from 1.0 s to 3.0 s to allow physical thermal dissipation
   const uint32_t THERMAL_COOLDOWN_TIME_US = 3000000;
 
-  // --- 3. Leaky-Bucket Energy Accumulator (I^2*t Thermal Model) ---
+  // --- 3. PT1 Thermal Energy Model (first-order thermal RC) ---
+  // The stored energy E = C_th * dT (above ambient) follows dE/dt = P_in - E / tau,
+  // i.e. passive cooling is proportional to the temperature rise.
+  // Measured on the 5 W / 10 Ohm aluminum-housed resistor (5W-10R-LVKE), open air,
+  // step response at 2.4 W: R_th = 26.3 K/W, C_th = 7.65 J/K, tau = 201 s
+  // (+63.2 K rise to ~85.7 degC, ~480 J stored).
+  // Safety margins for unknown start temperature (MCU reboot with a warm resistor,
+  // hot summer ambient) and restricted airflow in an enclosure:
+  //  - energy cap 250 J (~32.7 K rise), ~48 % below the tested 480 J steady state,
+  //    leaving headroom for warm restarts and wire-to-case thermal lag
+  //  - tau raised from 201 s to 250 s (~25 % worse convection), so the assumed
+  //    cooling at the cap is at most 250 J / 250 s = 1.0 W
   // brake resistor resistance, set from the config (setResistanceOhm)
   float RESISTOR_OHMS_FL32 = 10.0f;
-  const float COOLING_POWER_W_FL32 =
-      3.0f; // Passive continuous dissipation capacity
-  // 10 Ohm / 5 W cement resistor (~19 mm): typical short-time overload 5x rated
-  // power for 5 s (~125 J); half of it as burst budget = 2-3 hard stomps in a row.
-  // The 3 W cooling keeps the long-term average at ~60 % of the rating.
+  const float THERMAL_TAU_S_FL32 =
+      250.0f; // Conservative thermal time constant [s] (measured open air: 201 s)
   const float MAX_ENERGY_JOULES_FL32 =
-      60.0f; // Max energy capacity before thermal trip
-  // resistor share of the regen budget starts to shrink at this fraction of the budget
+      250.0f; // Max energy capacity before thermal trip (~32.7 K at C_th = 7.65 J/K)
+  // resistor share of the regen budget starts to shrink at this fraction of the
+  // budget (above 175 J)
   const float AVAILABILITY_RAMP_START_01 = 0.7f;
   const float RECOVERY_ENERGY_JOULES_FL32 =
-      50.0f; // Energy threshold to clear thermal lockout
+      200.0f; // Energy threshold to clear thermal lockout (20 % hysteresis)
   float accumulated_energy_j_fl32 = 0.0f;
 
   // --- Internal State Variables (Hysteresis) ---
@@ -156,15 +165,15 @@ private:
     updateVoltageBaseline(servoVoltage_fl32, is_hardware_active_b,
                           currentSpeedInHz_i32);
 
-    // 2. Update thermal energy accumulator
+    // 2. Update PT1 thermal energy model (cooling proportional to stored energy)
+    float cooling_power_w = accumulated_energy_j_fl32 / THERMAL_TAU_S_FL32;
     if (is_hardware_active_b) {
       float thermalVoltage_fl32 = thermalModelVoltage(servoVoltage_fl32);
       float power_in_w =
           (thermalVoltage_fl32 * thermalVoltage_fl32) / RESISTOR_OHMS_FL32;
-      accumulated_energy_j_fl32 +=
-          (power_in_w - COOLING_POWER_W_FL32) * dt_s_fl32;
+      accumulated_energy_j_fl32 += (power_in_w - cooling_power_w) * dt_s_fl32;
     } else {
-      accumulated_energy_j_fl32 -= COOLING_POWER_W_FL32 * dt_s_fl32;
+      accumulated_energy_j_fl32 -= cooling_power_w * dt_s_fl32;
     }
     if (accumulated_energy_j_fl32 < 0.0f) {
       accumulated_energy_j_fl32 = 0.0f;
@@ -286,11 +295,13 @@ public:
       duty_01 = 1.0f;
     }
 
-    // thermal model: dissipated energy minus passive cooling
+    // PT1 thermal model: dissipated energy minus passive cooling (proportional to
+    // the stored energy, i.e. to the temperature rise)
     float thermalVoltage_fl32 = thermalModelVoltage(servoVoltage_fl32);
     float fullOnPower_W = (thermalVoltage_fl32 * thermalVoltage_fl32) / RESISTOR_OHMS_FL32;
+    float cooling_power_w = accumulated_energy_j_fl32 / THERMAL_TAU_S_FL32;
     accumulated_energy_j_fl32 +=
-        (appliedDuty_01_fl32 * fullOnPower_W - COOLING_POWER_W_FL32) * dt_s_fl32;
+        (appliedDuty_01_fl32 * fullOnPower_W - cooling_power_w) * dt_s_fl32;
     if (accumulated_energy_j_fl32 < 0.0f) {
       accumulated_energy_j_fl32 = 0.0f;
     }

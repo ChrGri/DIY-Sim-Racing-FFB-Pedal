@@ -52,12 +52,14 @@ def ripple(path, steps_per_rev):
         if not RATE_MIN_HZ < rate < RATE_MAX_HZ:
             continue
         seg = seg - np.polyval(np.polyfit(k, seg, 3), k)
-        amp = np.abs(np.fft.rfft(seg * win, 4096)) / win.sum() * 2   # amplitude per bin
+        spec = np.fft.rfft(seg * win, 4096)
         rev_hz = rate / steps_per_rev
         in_order = (f > ORDER_MIN * rev_hz) & (f < ORDER_MAX * rev_hz)
         in_ref = (f > REF_BAND_HZ[0]) & (f < REF_BAND_HZ[1])
-        order_rms.append(np.sqrt(np.sum(amp[in_order] ** 2)))
-        ref_rms.append(np.sqrt(np.sum(amp[in_ref] ** 2)))
+        # band rms by Parseval (window power and FFT length): zero padding must not inflate it
+        scale = 2.0 / (np.sum(win ** 2) * 4096)
+        order_rms.append(np.sqrt(scale * np.sum(np.abs(spec[in_order]) ** 2)))
+        ref_rms.append(np.sqrt(scale * np.sum(np.abs(spec[in_ref]) ** 2)))
     return len(order_rms), np.median(order_rms) if order_rms else float('nan'), \
         np.median(ref_rms) if ref_rms else float('nan')
 

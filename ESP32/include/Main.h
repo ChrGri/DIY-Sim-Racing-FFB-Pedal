@@ -18,6 +18,7 @@
 // #define PCB_VERSION 4 // speedcrafter PCB V1.3
 // #define PCB_VERSION 5 // speedcrafter PCB V1.4
 // #define PCB_VERSION 6 // V1 for ESP32 S3
+// #define PCB_VERSION 15 // V8 for ESP32-S3-Zero
 #endif
 
 /********************************************************************/
@@ -74,6 +75,8 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 #define MAXIMUM_STEPPER_SPEED_U32                                              \
   (uint32_t)MAX_SPEED_IN_HZ // 100000//  max steps per second, see
                             // https://github.com/gin66/FastAccelStepper
+// sled speed for repositioning after a config change or a rudder mode change
+#define SLOW_REPOSITION_SPEED_MM_PER_S_FL32 25.0f
 
 /********************************************************************/
 /*                      PIN defines                                 */
@@ -504,6 +507,54 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 
 // Alarm Pin vom Servo
 #define ALM_PORT_GPIO 6
+
+#define USING_LED
+#define LED_GPIO_U8 21
+
+#define USE_CDC_INSTEAD_OF_UART
+#endif
+
+// V8 version of dev PCB for ESP32-S3-Zero
+#if PCB_VERSION == 15
+// ADC defines (ADS1220)
+#define USES_ADS1220
+#define FFB_ADS1220_SCLK 9
+#define FFB_ADS1220_DIN 10  // MOSI
+#define FFB_ADS1220_DOUT 11 // MISO
+#define FFB_ADS1220_DRDY 12
+#define FFB_ADS1220_CS 8
+#define FFB_ADS1220_CLK 7
+
+// stepper pins
+#define DIR_PIN_STEPPER_U8 3
+#define STEP_PIN_STEPPER_U8 4
+
+// servo UART (via TTL-RS232 SP3232)
+#define ISV57_TXPIN 5
+#define ISV57_RXPIN 6
+
+// no brake resistor on V8
+
+// servo alarm pin
+#define ALM_PORT_GPIO 2
+
+// debug header pins (Servo_Pul/Dir/Alm1 connector)
+#define DEBUG_PIN_1_U8 1
+#define DEBUG_PIN_2_U8 44 // RX
+#define DEBUG_PIN_3_U8 43 // TX
+
+#ifndef DEBUG_KEEP_USB_SERIAL_JTAG
+#define USB_JOYSTICK
+#endif
+
+#define PAIRING_GPIO_U8 0 // boot button of the S3-Zero
+
+#ifndef DEBUG_KEEP_USB_SERIAL_JTAG
+#define CONTROLLER_SPECIFIC_VIDPID
+#endif
+
+#define BAUDRATE3M
+#define PEDAL_SOFTWARE_ASSIGNMENT
 
 #define USING_LED
 #define LED_GPIO_U8 21

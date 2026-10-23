@@ -19,7 +19,7 @@
         <Border Style="{StaticResource Card}" Margin="0" Height="190" Padding="0,0,0,6" VerticalAlignment="Top">
             <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="648">
                 <StackPanel Height="20" Width="648" Orientation="Horizontal">
-                    <styles:SHToggleButton x:Name="checkbox_Rudder_ACC_effect" Content="" Checked="checkbox_Rudder_ACC_effect_Checked" Unchecked="checkbox_Rudder_ACC_effect_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="15,0,0,0" ToolTip="Enable for RPM/Spped rumble, the trigger was save in local, no need sned config to Pedal"/>
+                    <styles:SHToggleButton x:Name="checkbox_Rudder_ACC_effect" Content="" Checked="checkbox_Rudder_ACC_effect_Checked" Unchecked="checkbox_Rudder_ACC_effect_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="15,0,0,0" ToolTip="Trigger is evaluated in the plugin; no need to send the config to the pedal."/>
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectRudderAccTittle, 'Acceleration Effect'}" Height="15" Width="300" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="4,0,0,0"/>
                 </StackPanel>
                 <StackPanel Height="20" Width="200" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="15,5,0,0">

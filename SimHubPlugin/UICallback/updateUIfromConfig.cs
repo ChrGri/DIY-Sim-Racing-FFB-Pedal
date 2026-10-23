@@ -113,7 +113,6 @@ namespace DiyFfbPedal
                 CurveRudderForce_Tab.updateUI();
                 RudderDynamics_Tab.updateUI();
                 //SettingOTA_Tab.Settings = Plugin.Settings;
-                SystemLicense_Tab.Settings = Plugin.Settings;
                 if (SystemWireless_Tab != null) { SystemWireless_Tab.Plugin = Plugin; SystemWireless_Tab.ParentUI = this; SystemWireless_Tab.UpdateLiveTable(); }
                 SystemSetting_Section.Settings = Plugin.Settings;
                 SystemInfo.Settings = Plugin.Settings;

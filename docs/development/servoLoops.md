@@ -72,7 +72,7 @@ flowchart LR
   subgraph VLOOP["Velocity loop"]
     VERR(("ω* − ω̂"))
     PI["PI: Pr1.01 Kv 40 Hz<br/>× J·(1 + Pr0.04 110 %)<br/>Pr1.02 Ti 20 ms"]
-    VDET["Pr1.03 velocity<br/>detection filter 27"]
+    VDET["Pr1.03 velocity<br/>detection filter 27 (200 Hz)"]
     VERR --> PI
   end
   VSUM --> VERR
@@ -82,7 +82,7 @@ flowchart LR
 
   subgraph TPATH["Torque path"]
     DOB["Pr6.23 disturbance observer 30 %<br/>Pr6.24 filter 15<br/>(0.15 ms in A5 units)"]
-    TFILT["Pr1.04 torque filter<br/>1.8 ms"]
+    TFILT["Pr1.04 torque filter<br/>0.2 ms"]
     NOTCH["Pr2.01 notch 50 Hz · Pr2.04 notch 90 Hz<br/>width 20 · depth 99"]
     TLIM["Pr0.13 torque limit 500 %"]
     TFILT --> NOTCH --> TLIM
@@ -151,11 +151,67 @@ Estimated phase lag at the 40 Hz velocity crossover:
 
 | Source | Phase lag |
 |---|---|
-| Torque filter, 1.8 ms | ≈ 24° |
+| Torque filter Pr1.04: 1.8 ms (before 2026-10-07) / 0.2 ms (now) | ≈ 24° / ≈ 3° |
+| Velocity detection filter Pr1.03 = 27 (200 Hz low-pass, see below) | ≈ 11° |
 | PI zero, Ti 20 ms | ≈ 11° |
 | Current loop at 50 % response | ≈ 5° |
 | Drive sampling | ≈ 4° |
-| Velocity detection filter, observer | unknown units, not included |
+| Disturbance observer | unknown, not included |
+
+**Pr1.03 (1st speed detection filter)** is a step setting from 0 to 31 that selects the cutoff frequency
+of a low-pass filter on the detected speed (iSV57 manual; factory setting 15):
+
+| Setting | Cutoff | Setting | Cutoff | Setting | Cutoff | Setting | Cutoff |
+|---|---|---|---|---|---|---|---|
+| 0 | 2500 Hz | 8 | 1300 Hz | 16 | 750 Hz | 24 | 350 Hz |
+| 1 | 2250 Hz | 9 | 1200 Hz | 17 | 700 Hz | 25 | 300 Hz |
+| 2 | 2100 Hz | 10 | 1100 Hz | 18 | 650 Hz | 26 | 250 Hz |
+| 3 | 2000 Hz | 11 | 1000 Hz | 19 | 600 Hz | 27 | 200 Hz |
+| 4 | 1800 Hz | 12 | 950 Hz | 20 | 550 Hz | 28 | 175 Hz |
+| 5 | 1600 Hz | 13 | 900 Hz | 21 | 500 Hz | 29 | 150 Hz |
+| 6 | 1500 Hz | 14 | 850 Hz | 22 | 450 Hz | 30 | 125 Hz |
+| 7 | 1400 Hz | 15 | 800 Hz | 23 | 400 Hz | 31 | 100 Hz |
+
+A larger setting reduces motor noise but slows the response.
+
+### Tuning results (2026-10-11, throttle)
+
+Roughness was measured as the load cell force ripple at 24 orders per motor revolution
+([`servo_noise/pedal_roughness.py`](servo_noise/pedal_roughness.py)). The table gives the median at
+7–12 kHz step rate as rms in orders 20–30 (recomputed 2026-10-23: the first version of the script
+reported 4.5x too much); the baseline is the full set from `isv57_tunedParameters.h`. The noise was measured
+with [`servo_noise/servo_noise.py`](servo_noise/servo_noise.py), see its README.
+
+| Change from the tuned set | Ripple at 7–12 kHz | Noise | Feel | Decision |
+|---|---|---|---|---|
+| None (baseline) | 10.3 g (was ~20 g with Pr1.04 = 180) | – | – | – |
+| Pr2.01 = 5000 (50 Hz notch off) | 9.3 g | louder at rest without both notches | same | keep 50 |
+| Pr6.23 = 60 (observer) | 12.2 g | no effect at 0 / 30 | – | keep 30 |
+| Pr1.02 = 120 (Ti 12 ms) | 11.5 g; servo velocity deviation 6 → 14 % | – | – | keep 200 |
+| Pr1.03 = 15 (800 Hz) | 8.7 g (−16 %) | whine audibly louder | hardly different | keep 27 |
+| Pr1.04 = 50 | – | 1–2 dB quieter | rougher | keep 20 |
+| Pr1.10 = 300 (velocity FF 30 %) | – | no change | rougher | keep 35 |
+| Pr1.01 = 800 | – | loud: broadband 270–2000 Hz | – | keep 400 |
+| Pr7.00 = 400 / 700 (current loop) | – | no effect; at the end stop the noise follows the current | – | keep 500 |
+
+### Two parameter sets: silent and smooth (2026-10-23)
+
+The roughness is the iSV57's cogging: 24 detents per revolution, which can be felt by turning the
+unpowered motor by hand. Only the velocity loop rejects it, and a faster velocity loop also turns the
+encoder quantization noise into an audible whine (Pr1.01, Pr1.03, Pr1.04 trade one against the other).
+Gain switching separates the two: the servo uses a quiet gain set at standstill and while holding,
+and a fast set while the pedal moves (Pr1.15 = 10, iSV2 manual chapter 5.4.2).
+
+| Set | File | Standstill (Pr1.00-1.04) | Moving (Pr1.05-1.09) | Ripple 4-7 / 7-12 kHz |
+|---|---|---|---|---|
+| Silent (default) | `isv57_tunedParameters.h` | 600 / 400 / 200 / 27 / 20 | not used | 8.1 / 10.4 g |
+| Smooth | `isv57_tunedParameters_smooth.h` | 600 / 200 / 200 / 27 / 20 | 600 / 800 / 200 / 5 / 10 | 5.3 / 6.0 g |
+
+The smooth set is louder while the pedal moves. The plugin's Servo tab asks for the set on
+"Reset to recommended". The firmware writes only a few registers at boot, always from the silent file;
+the gain registers stay in the servo's NVM. The smooth file therefore does not change Pr0.00 (MFC
+bandwidth), which the firmware writes at boot.
+Measurement details: [logic_analyzer/README.md](logic_analyzer/README.md#reference-pedal-roughness-from-the-load-cell-gain-switching-2026-10-23).
 
 ---
 

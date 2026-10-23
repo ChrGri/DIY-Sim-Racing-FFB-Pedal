@@ -109,7 +109,7 @@ namespace DiyFfbPedal.UIFunction
             {
                 if (Settings != null)
                 {
-                    string labeltext= SLoc.GetValue("DIYFFBPedalPlugin_TextEffectUpdateRate", "Effects Update Rate:");
+                    string labeltext= SLoc.GetValue("DIYFFBPedalPlugin_TextEffectUpdateRate", "Effect update rate:");
                     Label_Pedal_interval_trigger.Content = labeltext + Settings.Pedal_action_fps[Settings.table_selected]+"Hz";
                     Slider_Pedal_interval_trigger.Value = Settings.Pedal_action_fps[Settings.table_selected];
 
@@ -230,7 +230,7 @@ namespace DiyFfbPedal.UIFunction
         private void Slider_Pedal_interval_trigger_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             Settings.Pedal_action_fps[Settings.table_selected] = (byte)e.NewValue;
-            string labeltext = SLoc.GetValue("DIYFFBPedalPlugin_TextEffectUpdateRate", "Effects Update Rate:");
+            string labeltext = SLoc.GetValue("DIYFFBPedalPlugin_TextEffectUpdateRate", "Effect update rate:");
             Label_Pedal_interval_trigger.Content = labeltext + Settings.Pedal_action_fps[Settings.table_selected] + "Hz";
             SettingsChangedEvent(Settings);
         }
@@ -542,7 +542,7 @@ namespace DiyFfbPedal.UIFunction
                 }
                 Settings.Pedal_action_fps[Settings.table_selected] = closest;
                 if (Slider_Pedal_interval_trigger != null) Slider_Pedal_interval_trigger.Value = closest;
-                string labeltext = SLoc.GetValue("DIYFFBPedalPlugin_TextEffectUpdateRate", "Effects Update Rate:");
+                string labeltext = SLoc.GetValue("DIYFFBPedalPlugin_TextEffectUpdateRate", "Effect update rate:");
                 if (Label_Pedal_interval_trigger != null) Label_Pedal_interval_trigger.Content = labeltext + closest + "Hz";
                 SettingsChangedEvent(Settings);
             }

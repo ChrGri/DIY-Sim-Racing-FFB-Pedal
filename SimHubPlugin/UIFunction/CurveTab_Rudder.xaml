@@ -106,7 +106,7 @@
                     </Grid>
 
                     <!-- Vertical Centering Force Range Slider -->
-                    <StackPanel Width="60" Height="200" Margin="5,0,0,0">
+                    <StackPanel x:Name="panel_ForceRange" Width="60" Height="200" Margin="5,0,0,0">
                         <Grid Width="65" Height="30">
                             <Label x:Name="Label_max_force_rudder" Width="65" Height="30" Foreground="White" FontSize="9" FontFamily="Arial" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Max Force:&#x0a;10.0 kg" Padding="0" Margin="0,0,0,0" Background="Transparent" Cursor="Hand" ToolTip="Click to type max force in kg" MouseLeftButtonDown="Label_max_force_rudder_MouseLeftButtonDown"/>
                             <TextBox x:Name="TextBox_edit_max_force_rudder" Width="55" Height="20" FontSize="9" FontFamily="Arial" VerticalAlignment="Center" Visibility="Collapsed" Background="#FF3F3F46" Foreground="White" BorderBrush="{DynamicResource AccentBaseColorBrush}" KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>

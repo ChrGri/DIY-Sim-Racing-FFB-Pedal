@@ -198,12 +198,14 @@ trajectory the admittance model commanded:
   50 Hz the force input now has a gain of 1.44, against 0.59 before.
 
 [analyze_ripple.py](analyze_ripple.py) measures the ripple in the step command: rms of orders 20–30
-per motor revolution, in 200 ms windows at 3–9 kHz step rate.
+per motor revolution, in 200 ms windows at 3–9 kHz step rate. (Values before 2026-10-23 were
+4.5–6.4x too high: the band power was summed over a zero-padded FFT without scaling. The
+tables below are recomputed.)
 
 | Capture | Firmware | Ripple [steps rms] |
 |---|---|---|
-| 2026-09-30, five sessions | `- tau · dF/dt` | 2.9–3.7 |
-| 2026-10-07 | `+ tau · dF/dt` | 7.4 |
+| 2026-09-30, five sessions | `- tau · dF/dt` | 0.52–0.66 |
+| 2026-10-07 | `+ tau · dF/dt` | 1.33 |
 
 The sign of the term can be set with the build flag `CONTACT_DAMPING_DERIV_SIGN` (+1, −1, 0) in
 `StepperMovementStrategy.h` for A/B tests. A/B test, same pedal and config, each with presses and
@@ -211,20 +213,104 @@ a heel hold at ~3 kg:
 
 | `CONTACT_DAMPING_DERIV_SIGN` | Ripple [steps rms] | Heel hold |
 |---|---|---|
-| +1 | 6.5 | calm (force 7 g at 9 Hz), contact oscillation detector never triggered |
-| −1 | 2.9 | 20 Hz contact oscillation (57 g), detector triggered, damping raised to 3x |
-| 0 | 4.9 | detector triggered for 5 s, damping raised to 3x |
+| +1 | 1.17 | calm (force 6 g at 9 Hz), contact oscillation detector never triggered |
+| −1 | 0.53 | 20 Hz contact oscillation (47 g), detector triggered, damping raised to 3x |
+| 0 | 0.87 | detector triggered for 5 s, damping raised to 3x |
 
 The sign trades the ripple during strokes against stability of a held heel contact. By feel, the
 three variants could not be told apart: the sign only changes how much of the ripple enters the
 step command, not the ripple itself.
 
-**Actual cause: the servo's torque filter.** The ripple is the motor's torque ripple at 6 × the
-electrical frequency (4 pole pairs, Pr7.05, so 24 per revolution). Only the servo's velocity loop
+**Actual cause: the servo's torque filter.** The ripple is the iSV57 motor's torque ripple at 24 per
+revolution: its cogging (24 detents per revolution can be felt by turning the unpowered motor by
+hand; a Stepperonline A6 servo has none). Only the servo's velocity loop
 (Pr1.01 = 400, i.e. 40 Hz) can reject it, and the 1st torque filter Pr1.04 (unit 0.01 ms) sits
 inside that loop. Raising Pr1.04 from 100 to 180 (1.8 ms, on 2026-09-10) added about 30° of lag at
 50 Hz, and the pedal felt rough. With Pr1.04 = 20 (0.2 ms) it feels clearly smoother. At 7–12 kHz
-step rate the force ripple dropped from 128 g to 57 g.
+step rate the force ripple (orders 20–30) dropped from ~20 g to ~10 g rms.
 
 A higher velocity loop gain (Pr1.01 = 800) made the servo loud: broadband 270–2000 Hz encoder noise.
 Combinations of a higher Pr1.01 with a larger Pr1.04 felt less smooth than 400 / 20.
+
+### Reference: pedal roughness from the load cell, gain switching (2026-10-23)
+
+The roughness the foot feels can also be measured without a logic analyzer: the load cell force
+in the SimHub state log (debug flag 64 or 192) contains the cogging ripple.
+[`../servo_noise/pedal_roughness.py`](../servo_noise/pedal_roughness.py) computes the ripple number
+used below. The plots compare two throttle sessions with the same pedal and config:
+
+- **Recommended:** the silent servo set (2026-10-13), one fixed gain set.
+- **Gain switching:** the smooth set (2026-10-23). The servo uses a quiet gain set at standstill and a
+  fast one while the pedal moves (velocity loop 80 Hz instead of 40 Hz, speed detection filter
+  1600 Hz instead of 200 Hz). See `ESP32/include/isv57_tunedParameters_smooth.h`.
+
+**How the ripple is measured**
+
+1. Resample the load cell force and the ESP pulse counter to 2 kHz.
+2. Cut the log into 150 ms windows, with 75 % overlap.
+   - Group each window by its mean step rate (pedal speed).
+   - Skip windows with a gap of more than 5 ms in the log. The USB stream drops rows, and the
+     interpolation would bridge the gap with a straight line, hiding the ripple.
+3. Remove a cubic trend from the force: the press itself.
+4. Apply a Hann window and an FFT, zero-padded to 4096 points.
+5. Convert frequency to **order**: frequency divided by motor revolutions per second
+   (step rate / 3200). The cogging repeats 24 times per revolution, so it appears at order 24 at
+   every pedal speed.
+6. The **ripple number** is the rms of the force in orders 20–30.
+   - It is computed by Parseval from the window's power and the FFT length, so the zero padding does
+     not inflate it: a sine of amplitude A gives A/√2.
+   - The median over all windows of a speed band is reported.
+
+![A medium-speed stroke](images/roughness_1_stroke.png)
+
+**One stroke.** Top: the measured force. Bottom: its fast part (a ~6 Hz high-pass); dotted lines mark
+every 1/24 motor revolution (estimated from the step command and a fixed 14 ms servo lag). The fast
+part is dominated by slow waves of the foot and leg, not by a detent pattern.
+
+![One window: trend, band-pass and FFT](images/roughness_2_window_fft.png)
+
+**One 150 ms window**, at about 2 motor revolutions per second in both sessions:
+
+1. The force and the cubic trend that is removed.
+2. The detrended force with the Hann window. The ~12 Hz waves left here are real force changes
+   (foot, leg, pedal model), not a trend error. A 25 Hz high-pass in front of the FFT changes the
+   ripple number at 4–12 kHz by less than 0.6 g.
+3. The force band-passed to orders 20–30. This is the detent ripple alone, a ~50 Hz oscillation:
+   up to ±14 g with the silent set, ±8 g with gain switching.
+4. The FFT of the window. Shaded: orders 20–30. Dotted: order 24.
+
+![Order spectra per speed band](images/roughness_3_order_spectra.png)
+
+**Order spectra**, averaged over all windows of a speed band:
+
+- **Low orders (5–12):** the large hump is foot, leg and pedal model. Its height depends on how the
+  pedal is pressed, not on the servo.
+- **Order 24:** the cogging peak. It is clearly visible at 7–12 kHz, about 11 g with the silent set
+  and about 7.5 g with gain switching.
+
+![Ripple number per speed band](images/roughness_4_ripple_per_speed.png)
+
+**Ripple number per speed band.**
+
+| Step rate | Silent | Gain switching |
+|---|---|---|
+| 2–4 kHz | 5.7 g | 8.4 g |
+| 4–7 kHz | 8.1 g | 5.3 g (−35 %) |
+| 7–12 kHz | 10.4 g | 6.0 g (−42 %) |
+
+At 2–4 kHz the band (12–37 Hz) overlaps the foot motion, so that value is not reliable.
+
+![Force spectrum at slow pedal motion](images/roughness_5_slow_speed_spectrum.png)
+
+**Why slow strokes cannot be judged this way.** At 2–4 kHz step rate the force spectrum peaks at a
+fixed ~12 Hz in both sessions, independent of the speed: the foot and leg. It covers the lower part of
+the detent band. The averaged spectrum is even slightly lower with gain switching.
+
+**Angle-synchronous averaging does not work with this data.** Averaging the force over the motor
+angle within one detent would isolate the cogging. It needs the motor angle to a few steps, though.
+The angle estimated from the step command with a fixed lag is off by tens of steps (the servo lag
+varies), and samples at the rest and end positions all fall into one angle bin and fake a ripple.
+After excluding those, the profile did not differ from 23 or 25 periods per revolution.
+
+**Result:** gain switching reduces the cogging ripple at medium and fast strokes by 35–40 %. The
+servo is louder while moving: the fast gain set turns more encoder quantization noise into current.

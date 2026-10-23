@@ -19,13 +19,13 @@
         <Border Style="{StaticResource Card}" Margin="0" Height="190" Padding="0,0,0,6" VerticalAlignment="Top">
             <StackPanel HorizontalAlignment="Left" Height="190" VerticalAlignment="Top" Width="648">
                 <StackPanel Height="20" Width="648" Orientation="Horizontal">
-                    <styles:SHToggleButton x:Name="checkbox_enable_RPM_rudder" Content="" Checked="checkbox_enable_RPM_rudder_Checked" Unchecked="checkbox_enable_RPM_rudder_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="15,0,0,0" ToolTip="Enable for RPM/Spped rumble, the trigger was save in local, no need sned config to Pedal"/>
+                    <styles:SHToggleButton x:Name="checkbox_enable_RPM_rudder" Content="" Checked="checkbox_enable_RPM_rudder_Checked" Unchecked="checkbox_enable_RPM_rudder_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial"  Margin="15,0,0,0" ToolTip="Trigger is evaluated in the plugin; no need to send the config to the pedal."/>
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectRudderEngineTittle, 'Engine RPM Rumble Effect'}" Height="15" Width="300" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="4,0,0,0"/>
                 </StackPanel>
-                <localUI:SliderWithLabel x:Name="Slider_RPM_AMP_rudder" Width="480" Height="40" SliderLength="480" TickFrequency="0.02" MaxValue="4" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectEngineAmp, 'Effect Amplitude'}" Unit="%" SliderValueChanged="Slider_RPM_AMP_rudder_SliderValueChanged"/>
+                <localUI:SliderWithLabel x:Name="Slider_RPM_AMP_rudder" Width="480" Height="40" SliderLength="480" TickFrequency="0.02" MaxValue="4" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectEngineAmp, 'Amplitude'}" Unit="%" SliderValueChanged="Slider_RPM_AMP_rudder_SliderValueChanged"/>
                 <StackPanel Width="480" Height="50">
                     <StackPanel Width="480" Height="12" Orientation="Horizontal">
-                        <Label x:Name="label_RPM_freq_rudder"  Width="250" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="{SLoc DIYFFBPedalPlugin_TextEffectEngineFreq, 'Effect Frequency:'}" Height="12" Padding="0,0,0,0"/>
+                        <Label x:Name="label_RPM_freq_rudder"  Width="250" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Top="3" FontSize="10" FontFamily="Arial" Canvas.Left="5" HorizontalAlignment="Left" VerticalAlignment="Top" Content="{SLoc DIYFFBPedalPlugin_TextEffectEngineFreq, 'Frequency:'}" Height="12" Padding="0,0,0,0"/>
                     </StackPanel>
                     <StackPanel Width="480" Height="16" Orientation="Horizontal">
                         <Grid Width="55" Height="16">

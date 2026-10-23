@@ -1,45 +1,73 @@
 <UserControl x:Class="DiyFfbPedal.UIFunction.SystemSetting_License"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:DiyFfbPedal.UIFunction"
              xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
-             xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
+             xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d"
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="183" d:DesignWidth="648">
+             d:DesignHeight="330" d:DesignWidth="648">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/DiyFfbPedal;component/UIStyles/DefaultStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="NoticeText" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="Arial"/>
+                <Setter Property="FontSize" Value="10"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+                <Setter Property="Width" Value="510"/>
+                <Setter Property="HorizontalAlignment" Value="Center"/>
+                <Setter Property="Margin" Value="0,4,0,0"/>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border Style="{StaticResource Card}" Margin="0" Height="177" VerticalAlignment="Top">
-            <StackPanel Width="648" Height="177" HorizontalAlignment="Left" VerticalAlignment="Top">
-                <StackPanel HorizontalAlignment="Left" Height="220" VerticalAlignment="Top" Width="648" Grid.RowSpan="2" Grid.ColumnSpan="3" Grid.Row="6" Grid.Column="1">
-                    <StackPanel HorizontalAlignment="Left" Height="25" VerticalAlignment="Top" Width="648" Grid.RowSpan="2" Grid.ColumnSpan="3" Grid.Row="6" Grid.Column="1" Orientation="Horizontal">
+        <Border Style="{StaticResource Card}" Margin="0" VerticalAlignment="Top">
+            <StackPanel Width="648" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,0,10">
+                <StackPanel HorizontalAlignment="Left" Height="25" VerticalAlignment="Top" Width="648" Orientation="Horizontal">
 
-                        <Label Content="LICENSE"  FontFamily="Arial Black" FontSize="20" Height="25" Width="150" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" RenderTransformOrigin="0,0" VerticalContentAlignment="Center" Margin="15,0,0,0"  />
-                        <Button Style="{StaticResource ModernPillButton}" x:Name="btn_test" Click="btn_test_Click" Width="30" Content="TEST" Height="20" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="6" MinHeight="20" Background="{x:Null}" />
-                        
-                    </StackPanel>
-                    <TextBlock HorizontalAlignment="Center" Width="510" Height="10" FontFamily="Arial" FontSize="10" VerticalAlignment="Center" Foreground="White" Margin="0,10,0,0">           
-                        This work is licensed under a
-                                <Hyperlink NavigateUri="http://creativecommons.org/licenses/by-nc-sa/4.0/" RequestNavigate="Hyperlink_RequestNavigate" FontFamily="Arial" FontSize="10">
-                            Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
-                        </Hyperlink>
-                    </TextBlock>
-                    <TextBlock HorizontalAlignment="Center" Width="510" Height="10" FontFamily="Arial" FontSize="10" VerticalAlignment="Center" Foreground="White">           
-                        Please check github repo for detail:
-                        <Hyperlink NavigateUri="https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/" RequestNavigate="Hyperlink_RequestNavigate" FontFamily="Arial" FontSize="10">
-                            https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/
-                        </Hyperlink>
-                    </TextBlock>
-                    <TextBox x:Name="TextBox_debug_count" TextWrapping="Wrap" Width="648" AutomationProperties.Name="TextBox2" Height="120" FontSize="10" Background="#004E4E4E" BorderBrush="#00CCCCCC" IsHitTestVisible="False" AllowDrop="True" HorizontalAlignment="Center"/>
+                    <Label Content="LICENSE"  FontFamily="Arial Black" FontSize="20" Height="25" Width="150" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" RenderTransformOrigin="0,0" VerticalContentAlignment="Center" Margin="15,0,0,0"  />
+
                 </StackPanel>
+                <TextBlock Style="{StaticResource NoticeText}" Margin="0,10,0,0">
+                    This work is licensed under a
+                    <Hyperlink NavigateUri="http://creativecommons.org/licenses/by-nc-sa/4.0/" RequestNavigate="Hyperlink_RequestNavigate">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.</Hyperlink>
+                </TextBlock>
+                <TextBlock Style="{StaticResource NoticeText}">
+                    Please check github repo for detail:
+                    <Hyperlink NavigateUri="https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/" RequestNavigate="Hyperlink_RequestNavigate">https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/</Hyperlink>
+                </TextBlock>
 
+                <Label Content="THIRD-PARTY SOFTWARE" FontFamily="Arial Black" FontSize="12" Height="20" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="15,12,0,0" />
+                <TextBlock Style="{StaticResource NoticeText}">
+                    The plugin bundles the following tools as separate, unmodified executables. They are not covered by the license above;
+                    each is distributed under its own license, and its source code is available at the linked repository.
+                </TextBlock>
+                <TextBlock Style="{StaticResource NoticeText}" Margin="0,6,0,0">
+                    <Bold>esptool</Bold> (USB firmware flashing) - Copyright (C) Espressif Systems and contributors.
+                    Licensed under the
+                    <Hyperlink NavigateUri="https://github.com/espressif/esptool/blob/master/LICENSE" RequestNavigate="Hyperlink_RequestNavigate">GNU General Public License v2.0 or later</Hyperlink>.
+                    Source:
+                    <Hyperlink NavigateUri="https://github.com/espressif/esptool" RequestNavigate="Hyperlink_RequestNavigate">https://github.com/espressif/esptool</Hyperlink>
+                </TextBlock>
+                <TextBlock Style="{StaticResource NoticeText}">
+                    <Bold>espota</Bold> (wireless OTA flashing) - part of the Arduino core for ESP32, Copyright (C) Ivan Grokhotkov, Espressif Systems and contributors.
+                    Licensed under the
+                    <Hyperlink NavigateUri="https://github.com/espressif/arduino-esp32/blob/master/LICENSE.md" RequestNavigate="Hyperlink_RequestNavigate">GNU Lesser General Public License v2.1</Hyperlink>.
+                    Source:
+                    <Hyperlink NavigateUri="https://github.com/espressif/arduino-esp32/blob/master/tools/espota.py" RequestNavigate="Hyperlink_RequestNavigate">https://github.com/espressif/arduino-esp32</Hyperlink>
+                </TextBlock>
+                <TextBlock Style="{StaticResource NoticeText}">
+                    Both executables are packaged with
+                    <Hyperlink NavigateUri="https://pyinstaller.org/en/stable/license.html" RequestNavigate="Hyperlink_RequestNavigate">PyInstaller</Hyperlink>
+                    and contain the Python runtime, Copyright (C) Python Software Foundation, licensed under the
+                    <Hyperlink NavigateUri="https://docs.python.org/3/license.html" RequestNavigate="Hyperlink_RequestNavigate">PSF License Agreement</Hyperlink>,
+                    as well as pySerial, Copyright (C) Chris Liechti, licensed under the
+                    <Hyperlink NavigateUri="https://github.com/pyserial/pyserial/blob/master/LICENSE.txt" RequestNavigate="Hyperlink_RequestNavigate">BSD 3-Clause License</Hyperlink>.
+                </TextBlock>
             </StackPanel>
         </Border>
     </Grid>

@@ -531,7 +531,7 @@ namespace DiyFfbPedal.UIFunction
             else
             {
 
-                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
+                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal kinematics calculation error");
             }
         }
 
@@ -566,7 +566,7 @@ namespace DiyFfbPedal.UIFunction
                     }
                     else
                     {
-                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
+                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal kinematics calculation error");
                     }
                 }
             }
@@ -589,7 +589,7 @@ namespace DiyFfbPedal.UIFunction
                     }
                     else
                     {
-                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
+                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal kinematics calculation error");
                     }
                 }
             }
@@ -612,7 +612,7 @@ namespace DiyFfbPedal.UIFunction
                     }
                     else
                     {
-                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
+                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal kinematics calculation error");
                     }
                 }
             }
@@ -635,7 +635,7 @@ namespace DiyFfbPedal.UIFunction
                     }
                     else
                     {
-                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
+                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal kinematics calculation error");
                     }
                 }
             }
@@ -654,7 +654,7 @@ namespace DiyFfbPedal.UIFunction
                     }
                     else
                     {
-                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
+                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal kinematics calculation error");
                     }
                 }
             }
@@ -673,7 +673,7 @@ namespace DiyFfbPedal.UIFunction
                     }
                     else
                     {
-                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
+                        TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal kinematics calculation error");
                     }
                 }
             }
@@ -698,7 +698,7 @@ namespace DiyFfbPedal.UIFunction
             else
             {
 
-                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
+                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal kinematics calculation error");
             }
         }
 
@@ -721,7 +721,7 @@ namespace DiyFfbPedal.UIFunction
             else
             {
 
-                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
+                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal kinematics calculation error");
             }
         }
 
@@ -744,7 +744,7 @@ namespace DiyFfbPedal.UIFunction
             else
             {
 
-                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
+                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal kinematics calculation error");
             }
         }
 
@@ -768,7 +768,7 @@ namespace DiyFfbPedal.UIFunction
             else
             {
 
-                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
+                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal kinematics calculation error");
             }
         }
 
@@ -791,7 +791,7 @@ namespace DiyFfbPedal.UIFunction
             else
             {
 
-                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
+                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal kinematics calculation error");
             }
         }
 
@@ -814,7 +814,7 @@ namespace DiyFfbPedal.UIFunction
             else
             {
 
-                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
+                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal kinematics calculation error");
             }
         }
 
@@ -837,7 +837,7 @@ namespace DiyFfbPedal.UIFunction
             else
             {
 
-                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal Kinematic calculation error");
+                TextBlock_Warning_kinematics.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextPedalKinematicsError", "Pedal kinematics calculation error");
             }
         }
 

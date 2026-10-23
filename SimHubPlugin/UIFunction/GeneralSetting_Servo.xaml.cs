@@ -33,8 +33,18 @@ namespace DiyFfbPedal.UIFunction
         /// <summary>Human-readable register name shown as tooltip and in the Name column.</summary>
         public string Name { get; set; }
 
-        /// <summary>Factory-tuned recommended value (read-only).</summary>
-        public int RecommendedValue { get; set; }
+        private int _recommendedValue;
+        /// <summary>Recommended value of the selected parameter set (silent or smooth).</summary>
+        public int RecommendedValue
+        {
+            get => _recommendedValue;
+            set
+            {
+                _recommendedValue = value;
+                Notify(nameof(RecommendedValue));
+                Notify(nameof(LiveValueColor));
+            }
+        }
 
         // ---- Live read-back from servo ----
         private int? _liveValue;
@@ -445,7 +455,7 @@ namespace DiyFfbPedal.UIFunction
             int idx = 0;
             foreach (var def in s_registerDefs)
             {
-                Isv57TunedParameters.Values.TryGetValue(def.addr, out int recommended);
+                Isv57TunedParameters.TryGetValue(def.addr, false, out int recommended);
                 ServoRegisters.Add(new ServoRegisterEntry
                 {
                     Index            = idx++,
@@ -630,6 +640,7 @@ namespace DiyFfbPedal.UIFunction
                 {
                     _progressWindow.Close();
                 }
+                ShowParameterSetOfServo();
                 return;
             }
 
@@ -729,6 +740,10 @@ namespace DiyFfbPedal.UIFunction
         /// </summary>
         private void Btn_ResetToRecommended_Click(object sender, RoutedEventArgs e)
         {
+            bool? smooth = AskParameterSet();
+            if (!smooth.HasValue) return;
+
+            ShowRecommendedSet(smooth.Value);
             // Update the table
             foreach (var entry in ServoRegisters)
                 entry.LiveValue = entry.RecommendedValue;
@@ -736,6 +751,91 @@ namespace DiyFfbPedal.UIFunction
             ServoRegisterGrid.Items.Refresh();
 
             WriteAllRegistersToServo();
+        }
+
+        // ---------------------------------------------------------------
+        // Recommended parameter sets: "silent" (default) and "smooth" (gain switching),
+        // ESP32/include/isv57_tunedParameters.h and isv57_tunedParameters_smooth.h
+        // ---------------------------------------------------------------
+        private bool _smoothSetShown;
+
+        /// <summary>
+        /// Shows the recommended values of the silent or the smooth set in the table.
+        /// </summary>
+        private void ShowRecommendedSet(bool smooth)
+        {
+            _smoothSetShown = smooth;
+            foreach (var entry in ServoRegisters)
+            {
+                Isv57TunedParameters.TryGetValue(entry.Address, smooth, out int recommended);
+                entry.RecommendedValue = recommended;
+            }
+            if (ServoRegisterGrid.Columns.Count > 3)
+                ServoRegisterGrid.Columns[3].Header = smooth ? "Recommended (smooth)" : "Recommended (silent)";
+        }
+
+        /// <summary>
+        /// After "Load from servo": compares the gain switching mode Pr1.15 with both sets, so
+        /// the Recommended column shows the set the servo actually runs.
+        /// </summary>
+        private void ShowParameterSetOfServo()
+        {
+            var mode = ServoRegisters.FirstOrDefault(r => r.Address == "Pr1.15");
+            if (mode == null || !mode.LiveValue.HasValue) return;
+            Isv57TunedParameters.TryGetValue("Pr1.15", true, out int smoothMode);
+            Isv57TunedParameters.TryGetValue("Pr1.15", false, out int silentMode);
+            if (smoothMode == silentMode) return;
+            ShowRecommendedSet(mode.LiveValue.Value == smoothMode);
+        }
+
+        /// <summary>
+        /// Asks for the parameter set to write: true = smooth, false = silent, null = cancelled.
+        /// </summary>
+        private bool? AskParameterSet()
+        {
+            bool? result = null;
+            var dialog = new Window
+            {
+                Title = "Reset to recommended",
+                Width = 460,
+                SizeToContent = SizeToContent.Height,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                WindowStyle = WindowStyle.ToolWindow,
+                ResizeMode = ResizeMode.NoResize,
+                Topmost = true,
+                // explicit colors: the window inherits SimHub's dark theme background,
+                // but not a matching text color
+                Background = new SolidColorBrush(Color.FromRgb(0x2A, 0x2A, 0x2A))
+            };
+            var panel = new StackPanel { Margin = new Thickness(16) };
+            panel.Children.Add(new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = new SolidColorBrush(Color.FromRgb(0xF0, 0xF0, 0xF0)),
+                FontSize = 13,
+                Margin = new Thickness(0, 0, 0, 12),
+                Text = "Which servo parameter set should be written to the servo and stored in its NVM?\n\n" +
+                       "Silent: one fixed gain set. Quiet, slightly rougher pedal feel (motor cogging).\n\n" +
+                       "Smooth: gain switching. A fast gain set while the pedal moves rejects the motor " +
+                       "cogging better (smoother feel), but the servo is louder while moving. At " +
+                       "standstill a quiet gain set is used.\n\n" +
+                       "The servo needs a power-cycle afterwards."
+            });
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+            Button MakeButton(string text, bool? value)
+            {
+                var b = new Button { Content = text, MinWidth = 90, Margin = new Thickness(6, 0, 0, 0), Padding = new Thickness(8, 3, 8, 3) };
+                b.Click += (s, ev) => { result = value; dialog.Close(); };
+                buttons.Children.Add(b);
+                return b;
+            }
+            MakeButton("Silent", false).IsDefault = !_smoothSetShown;
+            MakeButton("Smooth", true).IsDefault = _smoothSetShown;
+            MakeButton("Cancel", null).IsCancel = true;
+            panel.Children.Add(buttons);
+            dialog.Content = panel;
+            dialog.ShowDialog();
+            return result;
         }
 
         private void WriteAllRegistersToServo()
@@ -851,12 +951,175 @@ namespace DiyFfbPedal.UIFunction
         }
 
         // ---------------------------------------------------------------
+        // Export / import of the register values (CSV: register,value,name)
+        // ---------------------------------------------------------------
+        /// <summary>
+        /// &lt;SimHub&gt;\PluginsData\Common\DiyFfbPedal\servo, next to the configs, profiles and log
+        /// folders (SimHub's working directory is its install directory, see FileIoHelper.cs).
+        /// Created on first use; falls back to the SimHub directory if that fails.
+        /// </summary>
+        private static string ServoParameterDirectory()
+        {
+            string simhubDirectory = System.IO.Directory.GetCurrentDirectory();
+            string servoDirectory = System.IO.Path.Combine(simhubDirectory, "PluginsData", "Common", "DiyFfbPedal", "servo");
+            try
+            {
+                System.IO.Directory.CreateDirectory(servoDirectory);
+                return servoDirectory;
+            }
+            catch (Exception)
+            {
+                return simhubDirectory;
+            }
+        }
+
+        /// <summary>
+        /// Saves the live values (as read with "Load from servo") to a CSV file.
+        /// </summary>
+        private void Btn_ExportServoParameters_Click(object sender, RoutedEventArgs e)
+        {
+            var known = ServoRegisters.Where(r => r.LiveValue.HasValue).ToList();
+            if (known.Count == 0)
+            {
+                MessageBox.Show("No live values yet. Click 'Load from servo' first.",
+                                "Export servo parameters", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            int unknown = ServoRegisters.Count - known.Count;
+            if (unknown > 0 &&
+                MessageBox.Show($"{unknown} registers have not been read from the servo. Export only the {known.Count} read values?",
+                                "Export servo parameters", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Export servo parameters",
+                Filter = "Servo parameters (*.csv)|*.csv|All files (*.*)|*.*",
+                DefaultExt = ".csv",
+                AddExtension = true,
+                InitialDirectory = ServoParameterDirectory(),
+                FileName = $"ServoParameters_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            var sb = new StringBuilder();
+            sb.AppendLine("register,value,name");
+            foreach (var entry in known.OrderBy(r => r.Index))
+            {
+                sb.AppendLine($"{entry.Address},{entry.LiveValue.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)},{entry.Name}");
+            }
+            try
+            {
+                System.IO.File.WriteAllText(dlg.FileName, sb.ToString(), Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not write the file:\n{ex.Message}", "Export servo parameters",
+                                MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        /// <summary>
+        /// Loads a CSV file written by the export, writes its values to the servo and stores them
+        /// in the servo's NVM (same sequence as "Reset to recommended").
+        /// </summary>
+        private void Btn_ImportServoParameters_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Import servo parameters",
+                Filter = "Servo parameters (*.csv)|*.csv|All files (*.*)|*.*",
+                InitialDirectory = ServoParameterDirectory()
+            };
+            if (dlg.ShowDialog() != true) return;
+
+            var values = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var invalidLines = new List<int>();
+            try
+            {
+                string[] lines = System.IO.File.ReadAllLines(dlg.FileName);
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i].Trim();
+                    if (line.Length == 0 || line.StartsWith("register", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    // the name (third column) may contain commas, only the first two fields count
+                    string[] fields = line.Split(new[] { ',' }, 3);
+                    if (fields.Length >= 2 &&
+                        int.TryParse(fields[1].Trim(), System.Globalization.NumberStyles.Integer,
+                                     System.Globalization.CultureInfo.InvariantCulture, out int value))
+                    {
+                        values[fields[0].Trim()] = value;
+                    }
+                    else
+                    {
+                        invalidLines.Add(i + 1);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not read the file:\n{ex.Message}", "Import servo parameters",
+                                MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var matched = ServoRegisters.Where(r => values.ContainsKey(r.Address)).ToList();
+            int unknownRegisters = values.Count - matched.Count;
+            if (matched.Count == 0)
+            {
+                MessageBox.Show("The file contains no known servo registers.", "Import servo parameters",
+                                MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var changed = matched.Where(r => r.LiveValue != values[r.Address])
+                                 .Select(r => $"{r.Address}: {(r.LiveValue.HasValue ? r.LiveValue.Value.ToString() : "?")} -> {values[r.Address]}")
+                                 .ToList();
+            var message = new StringBuilder();
+            message.AppendLine($"Write {matched.Count} registers to the servo and store them in its NVM?");
+            message.AppendLine("The servo needs a power-cycle afterwards.");
+            if (unknownRegisters > 0)
+                message.AppendLine($"\n{unknownRegisters} unknown registers in the file are skipped.");
+            if (invalidLines.Count > 0)
+                message.AppendLine($"Lines without a valid value are skipped: {string.Join(", ", invalidLines.Take(10))}{(invalidLines.Count > 10 ? ", ..." : "")}");
+            if (changed.Count > 0)
+            {
+                message.AppendLine($"\nChanges against the table ({changed.Count}):");
+                foreach (string c in changed.Take(15))
+                    message.AppendLine("  " + c);
+                if (changed.Count > 15)
+                    message.AppendLine("  ...");
+            }
+            if (MessageBox.Show(message.ToString(), "Import servo parameters",
+                                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+
+            foreach (var entry in matched)
+                entry.LiveValue = values[entry.Address];
+            ServoRegisterGrid.Items.Refresh();
+
+            WriteAllRegistersToServo();
+        }
+
+        // ---------------------------------------------------------------
         // DataGrid cell-edit handler
         // ---------------------------------------------------------------
         private void ServoRegisterGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
         {
             if (e.EditAction != DataGridEditAction.Commit) return;
             if (!(e.Row.Item is ServoRegisterEntry entry)) return;
+
+            // Enter commits while the TextBox still has focus, so its LostFocus binding has not
+            // written LiveValue yet - push it now, otherwise the old value would be sent.
+            var editor = e.EditingElement as TextBox ?? FindDescendant<TextBox>(e.EditingElement);
+            if (editor != null)
+            {
+                editor.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+                if (Validation.GetHasError(editor)) return; // not a number - nothing to send
+            }
 
             // Raise event so ServoCallbacks sends the new LiveValue to the servo
             ServoRegisterValueChanged?.Invoke(this, entry);

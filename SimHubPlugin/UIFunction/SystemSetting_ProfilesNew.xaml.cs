@@ -78,6 +78,7 @@ namespace DiyFfbPedal.UIFunction
         public ICommand RefreshListCommand { get; }
         public ICommand OverwriteProfileCommand { get; }
         public ICommand SaveAsNewProfileCommand { get; }
+        public ICommand OpenFolderCommand { get; }
         public ICommand DeleteProfileCommand { get; }
         public ICommand RenameProfileCommand { get; }
         private string _currentProfileName = string.Empty;
@@ -136,6 +137,7 @@ namespace DiyFfbPedal.UIFunction
             RefreshListCommand = new RelayCommand(RefreshProfileList);
             OverwriteProfileCommand = new RelayCommand(OverwriteProfile);
             SaveAsNewProfileCommand = new RelayCommand(SaveAsNewProfile);
+            OpenFolderCommand = new RelayCommand(OpenFolder);
             DeleteProfileCommand = new RelayCommand(DeleteProfile);
             RenameProfileCommand = new RelayCommand(RenameProfile);
             this.DataContext = this;
@@ -332,6 +334,31 @@ namespace DiyFfbPedal.UIFunction
             }
             this.tmpProfile = tmp;
             OnPropertyChanged(nameof(tmpProfile));
+        }
+        private void OpenFolder(object parameter)
+        {
+            if (parameter is ProfileListItem item && !string.IsNullOrEmpty(item.FullPath))
+            {
+                try
+                {
+                    if (File.Exists(item.FullPath))
+                    {
+                        System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{item.FullPath}\"");
+                    }
+                    else
+                    {
+                        string folder = System.IO.Path.GetDirectoryName(item.FullPath);
+                        if (Directory.Exists(folder))
+                        {
+                            System.Diagnostics.Process.Start("explorer.exe", $"\"{folder}\"");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SimHub.Logging.Current.Error($"Profile open folder error: {ex.Message}");
+                }
+            }
         }
         private void DeleteProfile(object parameter)
         {

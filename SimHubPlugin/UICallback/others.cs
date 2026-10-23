@@ -1106,35 +1106,6 @@ namespace DiyFfbPedal
         }
 
 
-        void PrintUnknownStructParameters(object obj)
-        {
-            if (obj == null) throw new ArgumentNullException(nameof(obj));
-
-            Type type = obj.GetType();
-            _serial_monitor_window.TextBox_SerialMonitor.Text += $"Structure: {type.Name}" + "\n";
-            _serial_monitor_window.TextBox_SerialMonitor.ScrollToEnd();
-
-
-            // Get and print all fields
-            foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
-            {
-                _serial_monitor_window.TextBox_SerialMonitor.Text += $"Field: {field.Name}, Value: {field.GetValue(obj)}" + "\n";
-                _serial_monitor_window.TextBox_SerialMonitor.ScrollToEnd();
-
-            }
-
-            // Get and print all properties
-            foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-            {
-                if (property.CanRead) // Ensure the property is readable
-                {
-                    _serial_monitor_window.TextBox_SerialMonitor.Text += $"Property: {property.Name}, Value: {property.GetValue(obj)}" + "\n";
-                    _serial_monitor_window.TextBox_SerialMonitor.ScrollToEnd();
-
-                }
-            }
-        }
-
         public async void CheckForUpdateAsync()
         {
             try

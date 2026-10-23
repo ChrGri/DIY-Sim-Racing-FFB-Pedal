@@ -40,6 +40,7 @@ namespace DiyFfbPedal.UIFunction
         public ICommand SaveAsNewConfigCommand { get; }
         public ICommand ResetEditingConfigCommand { get; }
         public ICommand PreviewConfigCommand { get; }
+        public ICommand OpenFolderCommand { get; }
         public ICommand DeleteConfigCommand { get; }
         public ICommand RenameConfigCommand { get; }
         public Listbox_PedalConfig()
@@ -55,6 +56,7 @@ namespace DiyFfbPedal.UIFunction
             SaveAsNewConfigCommand = new RelayCommand(SaveAsNewConfig);
             ResetEditingConfigCommand = new RelayCommand(ResetConfig);
             PreviewConfigCommand = new RelayCommand(PreviewConfig);
+            OpenFolderCommand = new RelayCommand(OpenFolder);
             DeleteConfigCommand = new RelayCommand(DeleteConfig);
             RenameConfigCommand = new RelayCommand(RenameConfig);
             this.DataContext = this;
@@ -340,6 +342,31 @@ namespace DiyFfbPedal.UIFunction
                 sideWindow.Show();
             }
 
+        }
+        private void OpenFolder(object parameter)
+        {
+            if (parameter is ConfigListItem item && !string.IsNullOrEmpty(item.FullPath))
+            {
+                try
+                {
+                    if (File.Exists(item.FullPath))
+                    {
+                        System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{item.FullPath}\"");
+                    }
+                    else
+                    {
+                        string folder = Path.GetDirectoryName(item.FullPath);
+                        if (Directory.Exists(folder))
+                        {
+                            System.Diagnostics.Process.Start("explorer.exe", $"\"{folder}\"");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SimHub.Logging.Current.Error($"Config open folder error: {ex.Message}");
+                }
+            }
         }
         private void DeleteConfig(object parameter)
         {

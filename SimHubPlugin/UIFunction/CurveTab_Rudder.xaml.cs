@@ -71,6 +71,8 @@ namespace DiyFfbPedal.UIFunction
                     if (panel_AirplaneProfiles != null) panel_AirplaneProfiles.Visibility = isHeli ? Visibility.Collapsed : Visibility.Visible;
                     if (border_HeliBadge != null) border_HeliBadge.Visibility = isHeli ? Visibility.Visible : Visibility.Collapsed;
                     if (border_HeliOverlay != null) border_HeliOverlay.Visibility = isHeli ? Visibility.Visible : Visibility.Collapsed;
+                    // no return spring in helicopter mode: max/center force have no effect (Hidden keeps the layout)
+                    if (panel_ForceRange != null) panel_ForceRange.Visibility = isHeli ? Visibility.Hidden : Visibility.Visible;
                     if (border_ToeBrakeBadge != null)
                     {
                         border_ToeBrakeBadge.Visibility = (isAirToeBrake || isToeBrakeOnly) ? Visibility.Visible : Visibility.Collapsed;

@@ -7,7 +7,6 @@ using System.Windows;
 using System.Windows.Controls;
 
 using System.Windows.Media.TextFormatting;
-using System.Text.Json;
 using FMOD;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
@@ -31,8 +30,6 @@ using System.Windows.Media;
 using System.Runtime.Remoting.Messaging;
 using SimHub.Plugins.OutputPlugins.GraphicalDash.Behaviors.DoubleText.Imp;
 using System.Reflection;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Text.RegularExpressions;
@@ -628,33 +625,6 @@ namespace DiyFfbPedal
 
 
 
-
-        private void SystemLicense_Tab_btn_test_Click_event(object sender, EventArgs e)
-        {
-            //uint hash =Plugin.ConfigService.ConfigHashMap.Fnv1aHash("RudderConfig");
-            ToastNotification("Debug", "Print All parameter and available com portin Serial log\n"+"current Plugin version:" + Plugin._calculations.pluginVersionReading[0]);
-            //readRudderSettingToConfig();
-            //PrintUnknownStructParameters(dap_config_st_rudder.payloadPedalConfig_);
-            if (_serial_monitor_window != null)
-            {
-                //_serial_monitor_window.TextBox_SerialMonitor.Text += "\n\nDefaultConfig Hash:" + hash+"\n";
-                PrintUnknownStructParameters(dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_);
-                PrintUnknownStructParameters(dap_config_st_rudder.payloadPedalConfig_);
-                UpdateSerialPortList_click();
-                _serial_monitor_window.TextBox_SerialMonitor.Text += "\nCom port count: " + Plugin.comportList.Count;
-                foreach (var items in Plugin.comportList)
-                {              
-                    _serial_monitor_window.TextBox_SerialMonitor.Text += "\ndevice name:" + items.DeviceName + "\nVID:" + items.Vid + " PID:" + items.Pid+"\n";
-                }
-                
-                    
-            }
-            
-
-
-        }
-		
-		
 
         private void btn_RudderDocs_Click(object sender, RoutedEventArgs e)
         {

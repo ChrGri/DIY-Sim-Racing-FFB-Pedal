@@ -7,7 +7,7 @@
         xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
         xmlns:ui="clr-namespace:SimHub.Plugins.UI;assembly=SimHub.Plugins" 
         xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-        Title="Serial Monitor (only wired mode/non bridge mode)" Height="815" Width="380" Background="{x:Null}" WindowStyle="ToolWindow" SizeChanged="Window_SizeChanged" MinWidth="380" MinHeight="500">
+        Title="Serial Monitor (USB only, not via bridge)" Height="815" Width="380" Background="{x:Null}" WindowStyle="ToolWindow" SizeChanged="Window_SizeChanged" MinWidth="380" MinHeight="500">
     <Grid Background="#CC252525">
         <Border Background="#7F4E4E4E" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" VerticalAlignment="Top" Grid.RowSpan="1" Grid.ColumnSpan="1" Margin="0,2,0,0" >
             <StackPanel x:Name="StackPanel_UI" HorizontalAlignment="Center" VerticalAlignment="Top">

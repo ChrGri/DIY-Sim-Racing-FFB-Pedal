@@ -68,7 +68,13 @@
                 </TabControl.Background>
                 <TabItem x:Name="Tab_Home" Width="184.8" Height="40" Padding="0" HorizontalAlignment="Left" VerticalAlignment="Top">
                     <TabItem.Header>
-                        <Border Width="184.8" Height="40"><TextBlock Text="HOME" FontFamily="Arial Black" FontSize="24" VerticalAlignment="Center" HorizontalAlignment="Center"/></Border>
+                        
+                        <Border Width="184.8" Height="40">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Image Width="26" Height="26" Source="{StaticResource Home}" />
+                                <Label Content="{SLoc DIYFFBPedalPlugin_TextHome, 'HOME'}" FontFamily="Arial Black" FontSize="26" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
                     </TabItem.Header>
                     <Border HorizontalAlignment="Left" Height="860" VerticalAlignment="Top" Width="924" CornerRadius="5,5,5,5" Margin="0,3,0,0">
                         <StackPanel Height="905" Width="924" HorizontalAlignment="Left" VerticalAlignment="Top">
@@ -187,12 +193,12 @@
                                     <StackPanel HorizontalAlignment="Center" Height="827" Grid.Row="3" VerticalAlignment="Top" Width="202" Grid.RowSpan="3">
 
                                         <!-- Connection -->
-                                        <Border Style="{StaticResource Card}" Padding="5" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
+                                        <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
                                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Width="192">
                                                 <localFunction:InfoSection_Pedal x:Name="PedalInfo" />
                                                 <TextBox x:Name="textBox_VersionUpdate" HorizontalAlignment="Left" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="192" Height="25" AutomationProperties.Name="TextBox2" BorderBrush="#00CCCCCC" Background="#00252525" FontSize="8" FontFamily="Arial" />
                                                 <StackPanel Height="30" Orientation="Horizontal" Margin="0,4,0,0">
-                                                    <ComboBox x:Name="SerialPortSelection" DropDownOpened="SerialPortSelection_DropDownOpened" SelectionChanged="SerialPortSelectionChanged" Width="124" ItemsSource="{Binding}" DisplayMemberPath="Display" SelectedValuePath="Value" FontSize="8" Height="20" MinHeight="20"/>
+                                                    <ComboBox x:Name="SerialPortSelection" DropDownOpened="SerialPortSelection_DropDownOpened" SelectionChanged="SerialPortSelectionChanged" Width="124" ItemsSource="{Binding}" DisplayMemberPath="Display" SelectedValuePath="Value" FontSize="8" Height="20" MinHeight="20" Padding="0,0,0,0"/>
                                                     <!-- Hidden connect/disconnect state flag read/written by ConnectToPedal_click and updateUIfromConfig.cs - not a visible control -->
                                                     <CheckBox x:Name="ConnectToPedal" IsChecked="False" Visibility="Collapsed"/>
                                                     <Button x:Name="btn_pedal_connect" Style="{StaticResource ConnectPillButton}" Click="ConnectToPedal_click" Width="55"  Height="20" Content="Connect" HorizontalAlignment="Center" Margin="8,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0" MinHeight="20"  FontFamily="Arial" FontSize="10"/>
@@ -201,18 +207,18 @@
                                         </Border>
 
                                         <!-- Config Profiles -->
-                                        <Border Style="{StaticResource Card}" Padding="5" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
-                                            <localFunction:Listbox_PedalConfig x:Name="Listbox_PedalConfig"/>
+                                        <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
+                                            <localFunction:Listbox_PedalConfig x:Name="Listbox_PedalConfig" Margin="0,0,0,5" Width="192"/>
                                         </Border>
 
                                         <!-- Pedal Settings -->
-                                        <Border Style="{StaticResource Card}" Padding="5" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
+                                        <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
                                             <localFunction:SettingSection_Pedal x:Name="PedalSettingsSection" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
                                         </Border>
 
                                         <!-- Actions -->
-                                        <Border Style="{StaticResource Card}" Padding="5" Margin="0" Width="202" HorizontalAlignment="Center">
-                                            <StackPanel HorizontalAlignment="Center">
+                                        <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0" Width="202" HorizontalAlignment="Center">
+                                            <StackPanel HorizontalAlignment="Center" Margin="0,5,0,5">
                                                 <StackPanel Orientation="Horizontal">
                                                     <Button Style="{StaticResource IconGridButtonStyle}" Click="RestartPedal_click" ToolTip="Restart Pedal">
                                                         <StackPanel>
@@ -223,13 +229,13 @@
                                                     <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_OnlineProfile_Click" ToolTip="Community Config" Margin="5,0,0,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource CommunityConfig}" />
-                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextGetOnlineConfig, 'Cloud Config'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextGetOnlineConfig, 'Online Configs'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
-                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_PedalBootMode_Click" ToolTip="Get Pedal Sensor Info" Margin="5,0,0,0">
+                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_PedalBootMode_Click" ToolTip="Restart the pedal into USB download mode for flashing" Margin="5,0,0,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource FirmwareDownload}" />
-                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextFWFlash, 'Flash Mode'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextFWFlash, 'Bootloader'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
                                                 </StackPanel>
@@ -244,7 +250,7 @@
                                                     <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_OTA_enable_Click" MouseRightButtonUp="btn_OtaHidden_Click" ToolTip="OTA update" Margin="5,0,0,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource OTA}" />
-                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextPedalOta, 'OTA'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextPedalOta, 'Wi-Fi Update'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
                                                     <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_SerialMonitorWindow_Click" ToolTip="Serial Monitor" Margin="5,0,0,0">
@@ -258,7 +264,7 @@
                                         </Border>
 
                                         <!-- Status -->
-                                        <Border Style="{StaticResource Card}" Padding="5" Margin="0,5,0,0" Width="202" HorizontalAlignment="Center">
+                                        <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0,5,0,0" Width="202" HorizontalAlignment="Center">
                                             <StackPanel Width="192">
                                                 <Label Content="Status" Height="16" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" FontSize="9" Foreground="#FFABB4BE"/>
                                                 <TextBox x:Name="TextBox2" TextWrapping="Wrap" Width="192" AutomationProperties.Name="TextBox2" Height="60" FontSize="9" Background="#141414" Foreground="White" BorderBrush="#00CCCCCC" IsHitTestVisible="False" AllowDrop="True" HorizontalAlignment="Center" VerticalScrollBarVisibility="Auto"/>
@@ -530,11 +536,11 @@
                                 </Canvas>
                                 <StackPanel HorizontalAlignment="Center" Height="498" Grid.Row="3" VerticalAlignment="Top" Width="202" Grid.RowSpan="3" Margin="2,0,0,0">
 
-                                    <Border Style="{StaticResource Card}" Margin="0" Padding="5" Height="498" Width="202" HorizontalAlignment="Center" >
+                                    <Border Style="{StaticResource Card}" Margin="0" Padding="0,0,0,0" Height="498" Width="202" HorizontalAlignment="Center" >
                                         <StackPanel HorizontalAlignment="Center" Height="498" VerticalAlignment="Top" Width="192">
-                                            <localFunction:InfoSection_Rudder x:Name="RudderInfo" />
+                                            <localFunction:InfoSection_Rudder x:Name="RudderInfo" Margin="0,5,0,0" />
                                             <Button x:Name="btn_SidebarRudderDocs" Click="btn_RudderDocs_Click" Content="📖 Flight Docs ↗" Width="158" Height="18" Margin="0,2,0,4" Background="#2600AAFF" Foreground="#00CCFF" BorderBrush="#3300CCFF" BorderThickness="1" FontSize="9" FontFamily="Arial" Cursor="Hand" ToolTip="Open Rudder Flight Dynamics Documentation on GitHub" HorizontalAlignment="Center"/>
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,0">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,0">
                                                 <ComboBox x:Name="combo_rudderMode" SelectedValuePath="Tag" Width="106" SelectedValue="{Binding Plugin.Settings.rudderMode, Mode=TwoWay}" SelectionChanged="RudderMode_SelectionChanged" Height="22" Padding="2,0,0,0" BorderThickness="0,0,0,0" MinHeight="20" ToolTip="Rudder Mode: Airplane, Helicopter, or Airplane with Toe Brake">
                                                     <ComboBoxItem Content="Airplane">
                                                         <ComboBoxItem.Tag>
@@ -893,7 +899,7 @@
                     </TabItem.Header>
 
                     <Border  HorizontalAlignment="Left" Height="860" VerticalAlignment="Top" Width="1200" CornerRadius="5,5,5,5" Margin="0,3,0,0">
-                        <StackPanel Height="905" Width="1180" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.ColumnSpan="4">
+                        <StackPanel Height="905" Width="1180" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.ColumnSpan="4" Margin="0,0,0,5">
                             <Canvas  Height="6" Width="870" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Grid.Row="2" Grid.ColumnSpan="3" Margin="0,1,0,1" >
                                 <Line  X1="2" Y1="3" X2="916" Y2="3" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="2" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
                             </Canvas>
@@ -904,9 +910,9 @@
                                 <StackPanel HorizontalAlignment="Center" Height="900" Grid.Row="3" VerticalAlignment="Top" Width="202" Grid.RowSpan="3" Margin="2,0,0,0">
 
                                     <!-- Connection -->
-                                    <Border Style="{StaticResource Card}" Padding="5" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
-                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Width="192">
-                                            <localFunction:InfoSection_System x:Name="SystemInfo" />
+                                    <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Width="192" Margin="0,0,0,5">
+                                            <localFunction:InfoSection_System x:Name="SystemInfo" Margin="0,5,0,0" />
                                             <TextBlock x:Name="ConsoleTelemetryStatus" Visibility="Collapsed" TextWrapping="Wrap" FontSize="10" Margin="0,4,0,4" />
                                             <StackPanel HorizontalAlignment="Left" Height="22" VerticalAlignment="Top" Width="192" Orientation="Horizontal" Margin="0,2,0,0">
                                                 <ComboBox x:Name="SerialPortSelection_ESPNow" DropDownOpened="ESPNow_SerialPortSelection_DropDownOpened" SelectionChanged="ESPNow_SerialPortSelectionChanged" Width="130" ItemsSource="{Binding}" DisplayMemberPath="Display" SelectedValuePath="Value" FontSize="8" Height="20" HorizontalAlignment="Left" MinHeight="20"/>
@@ -916,14 +922,14 @@
                                     </Border>
 
                                     <!-- System Setting -->
-                                    <Border Style="{StaticResource Card}" Padding="5" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
+                                    <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
                                         <localFunction:SettingSection_System x:Name="SystemSetting_Section" SettingsChanged="Tab_SettingsChanged"/>
                                     </Border>
 
                                     <!-- Actions -->
-                                    <Border Style="{StaticResource Card}" Padding="5" Margin="0" Width="202" HorizontalAlignment="Center">
-                                        <StackPanel HorizontalAlignment="Center">
-                                            <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0" Width="202" HorizontalAlignment="Center">
+                                        <StackPanel HorizontalAlignment="Center" Margin="0,5,0,0">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Width="160">
                                                 <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Bridge_restart_Click" ToolTip="Restart Bridge">
                                                     <StackPanel>
                                                         <Image Width="30" Height="30" Source="{StaticResource Restart}" />
@@ -936,23 +942,23 @@
                                                         <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnUsbFlash, 'USB Flash'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
-                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Plugin_OTA_Click" MouseRightButtonUp="btn_PluginUpdate_Click" ToolTip="Left-Click for update to Latest, RIght-Click to open Rollback window">
+                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Plugin_OTA_Click" MouseRightButtonUp="btn_PluginUpdate_Click" ToolTip="Left-click: update to latest. Right-click: open rollback window">
                                                     <StackPanel>
                                                         <Image Width="30" Height="30" Source="{StaticResource PluginUpdate}" />
                                                         <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnPluginUpdate, 'Plugin Update'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
                                             </StackPanel>
-                                            <StackPanel Margin="0,5,0,0" HorizontalAlignment="Center" Orientation="Horizontal" Width="192">
-                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Bridge_print_debug_Click" ToolTip="Bridge Debug Tool">
+                                            <StackPanel Margin="0,5,0,5" HorizontalAlignment="Center" Orientation="Horizontal" Width="160">
+                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Bridge_print_debug_Click" ToolTip="Bridge Debug Tool" HorizontalAlignment="Center">
                                                     <StackPanel>
                                                         <Image Width="30" Height="30" Source="{StaticResource BridgeDebug}" />
                                                         <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnBridgeDebug, 'Bridge Debug'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
 
-                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="Btn_OpenLanguageDownload_Click" ToolTip="Localization" Margin="5,0,5,0">
-                                                    <StackPanel>
+                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="Btn_OpenLanguageDownload_Click" ToolTip="Localization" Margin="5,0,5,0" HorizontalAlignment="Center">
+                                                    <StackPanel HorizontalAlignment="Center">
                                                         <Image Width="30" Height="30" Source="{StaticResource Localization}" />
                                                         <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnLocalization, 'Localization'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                                                     </StackPanel>
@@ -1022,7 +1028,7 @@
                                                     <Label Content="License"  FontFamily="Arial Black" FontSize="10" Height="30" Width="162" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <localFunction:SystemSetting_License x:Name="SystemLicense_Tab" btn_test_Click_event="SystemLicense_Tab_btn_test_Click_event"/>
+                                            <localFunction:SystemSetting_License x:Name="SystemLicense_Tab"/>
                                         </TabItem>
                                         <TabItem x:Name="TabItem_Wireless" Width="162" Height="30" Padding="0,0,0,0" >
                                             <TabItem.Header>
@@ -1060,8 +1066,8 @@
                     <TabItem.Header>
                         <Border Width="184.8" Height="40" Margin="0,0,0,0">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock Text="📈" FontSize="22" VerticalAlignment="Center" Margin="0,0,4,0" />
-                                <Label Content="LIVE PLOT" FontFamily="Arial Black" FontSize="24" Height="40" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
+                                <TextBlock Text="📈" FontSize="20" VerticalAlignment="Center" Margin="0,0,0,0" />
+                                <Label Content="LIVE PLOT" FontFamily="Arial Black" FontSize="26" Height="40" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
                             </StackPanel>
                         </Border>
                     </TabItem.Header>
