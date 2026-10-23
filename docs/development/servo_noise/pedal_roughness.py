@@ -34,6 +34,15 @@ STEPS_PER_REV = 3200
 RATE_BANDS_HZ = [(2000, 4000), (4000, 7000), (7000, 12000)]
 ORDER_MIN, ORDER_MAX = 20.0, 30.0
 BUZZ_BAND_HZ = (30.0, 150.0)
+MAX_LOG_GAP_S = 0.005
+
+
+def band_rms(windowed, win, f, lo_hz, hi_hz):
+    """RMS of the signal within lo_hz..hi_hz (Parseval with the window's power and the FFT
+    length, so zero padding does not inflate it; a sine of amplitude A gives A / sqrt(2))."""
+    spec = np.fft.rfft(windowed, len(f) * 2 - 2)
+    band = (f > lo_hz) & (f < hi_hz)
+    return np.sqrt(2 * np.sum(np.abs(spec[band]) ** 2) / (np.sum(win ** 2) * (len(f) * 2 - 2)))
 
 
 def force_ripple(d):
@@ -41,6 +50,9 @@ def force_ripple(d):
     tu = np.arange(0, t[-1], 1 / FS_HZ)
     force_kg = np.interp(tu, t, d["pedalForceRaw_fl32"])
     pos = np.interp(tu, t, d["targetPosition_i32"])
+    # gap between logged rows around each point: the USB stream drops rows, and the interpolation
+    # bridges a gap with a straight line, which would hide the ripple in that window
+    gap = np.interp(tu, t[1:], np.diff(t))
     n = int(WINDOW_S * FS_HZ)
     k = np.arange(n)
     win = np.hanning(n)
@@ -49,14 +61,13 @@ def force_ripple(d):
     for start in range(0, len(tu) - n, n // 4):
         rate = abs(pos[start + n - 1] - pos[start]) / WINDOW_S
         band = next((b for b in RATE_BANDS_HZ if b[0] <= rate < b[1]), None)
-        if band is None:
+        if band is None or gap[start:start + n].max() > MAX_LOG_GAP_S:
             continue
         seg = force_kg[start:start + n]
         seg = seg - np.polyval(np.polyfit(k, seg, 3), k)
-        amp = np.abs(np.fft.rfft(seg * win, 4096)) * 2 / win.sum()
         rev_hz = rate / STEPS_PER_REV
-        ripple = np.sqrt(np.sum(amp[(f > ORDER_MIN * rev_hz) & (f < ORDER_MAX * rev_hz)] ** 2) / 2)
-        buzz = np.sqrt(np.sum(amp[(f > BUZZ_BAND_HZ[0]) & (f < BUZZ_BAND_HZ[1])] ** 2) / 2)
+        ripple = band_rms(seg * win, win, f, ORDER_MIN * rev_hz, ORDER_MAX * rev_hz)
+        buzz = band_rms(seg * win, win, f, *BUZZ_BAND_HZ)
         res[band].append((ripple * 1000, buzz * 1000))
     return res
 

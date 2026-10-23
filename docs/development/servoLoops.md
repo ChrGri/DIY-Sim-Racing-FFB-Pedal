@@ -178,20 +178,40 @@ A larger setting reduces motor noise but slows the response.
 
 Roughness was measured as the load cell force ripple at 24 orders per motor revolution
 ([`servo_noise/pedal_roughness.py`](servo_noise/pedal_roughness.py)). The table gives the median at
-7–12 kHz step rate; the baseline is the full set from `isv57_tunedParameters.h`. The noise was measured
+7–12 kHz step rate as rms in orders 20–30 (recomputed 2026-10-23: the first version of the script
+reported 4.5x too much); the baseline is the full set from `isv57_tunedParameters.h`. The noise was measured
 with [`servo_noise/servo_noise.py`](servo_noise/servo_noise.py), see its README.
 
 | Change from the tuned set | Ripple at 7–12 kHz | Noise | Feel | Decision |
 |---|---|---|---|---|
-| None (baseline) | 44 g (was 91–106 g with Pr1.04 = 180) | – | – | – |
-| Pr2.01 = 5000 (50 Hz notch off) | 42 g | louder at rest without both notches | same | keep 50 |
-| Pr6.23 = 60 (observer) | 46 g | no effect at 0 / 30 | – | keep 30 |
-| Pr1.02 = 120 (Ti 12 ms) | 50 g; servo velocity deviation 6 → 14 % | – | – | keep 200 |
-| Pr1.03 = 15 (800 Hz) | 36 g (−17 %) | whine audibly louder | hardly different | keep 27 |
+| None (baseline) | 10.3 g (was ~20 g with Pr1.04 = 180) | – | – | – |
+| Pr2.01 = 5000 (50 Hz notch off) | 9.3 g | louder at rest without both notches | same | keep 50 |
+| Pr6.23 = 60 (observer) | 12.2 g | no effect at 0 / 30 | – | keep 30 |
+| Pr1.02 = 120 (Ti 12 ms) | 11.5 g; servo velocity deviation 6 → 14 % | – | – | keep 200 |
+| Pr1.03 = 15 (800 Hz) | 8.7 g (−16 %) | whine audibly louder | hardly different | keep 27 |
 | Pr1.04 = 50 | – | 1–2 dB quieter | rougher | keep 20 |
 | Pr1.10 = 300 (velocity FF 30 %) | – | no change | rougher | keep 35 |
 | Pr1.01 = 800 | – | loud: broadband 270–2000 Hz | – | keep 400 |
 | Pr7.00 = 400 / 700 (current loop) | – | no effect; at the end stop the noise follows the current | – | keep 500 |
+
+### Two parameter sets: silent and smooth (2026-10-23)
+
+The roughness is the iSV57's cogging: 24 detents per revolution, which can be felt by turning the
+unpowered motor by hand. Only the velocity loop rejects it, and a faster velocity loop also turns the
+encoder quantization noise into an audible whine (Pr1.01, Pr1.03, Pr1.04 trade one against the other).
+Gain switching separates the two: the servo uses a quiet gain set at standstill and while holding,
+and a fast set while the pedal moves (Pr1.15 = 10, iSV2 manual chapter 5.4.2).
+
+| Set | File | Standstill (Pr1.00-1.04) | Moving (Pr1.05-1.09) | Ripple 4-7 / 7-12 kHz |
+|---|---|---|---|---|
+| Silent (default) | `isv57_tunedParameters.h` | 600 / 400 / 200 / 27 / 20 | not used | 8.1 / 10.4 g |
+| Smooth | `isv57_tunedParameters_smooth.h` | 600 / 200 / 200 / 27 / 20 | 600 / 800 / 200 / 5 / 10 | 5.3 / 6.0 g |
+
+The smooth set is louder while the pedal moves. The plugin's Servo tab asks for the set on
+"Reset to recommended". The firmware writes only a few registers at boot, always from the silent file;
+the gain registers stay in the servo's NVM. The smooth file therefore does not change Pr0.00 (MFC
+bandwidth), which the firmware writes at boot.
+Measurement details: [logic_analyzer/README.md](logic_analyzer/README.md#reference-pedal-roughness-from-the-load-cell-gain-switching-2026-10-23).
 
 ---
 
