@@ -229,7 +229,7 @@ bool Isv57Communication::setServoVoltage(uint16_t voltageInVolt_u16) {
 // returns "a write was needed", so a second pass that finds the value in place confirms it.
 bool Isv57Communication::setInternalBleeder(bool enable_b,
                                             uint16_t thresholdVoltage_u16) {
-  const int32_t mode_i32 = enable_b ? tuned_parameters[pr_7_00 + 31] : 0;
+  const int32_t mode_i32 = enable_b ? tuned_parameters[pr_7_00 + 31].value_i32 : 0;
   modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00 + 31, mode_i32);
   modbus.writeAndVerifyDeviceParameter(slaveId, pr_7_00 + 32, thresholdVoltage_u16);
   bool modeConfirmed_b =
@@ -275,25 +275,25 @@ void Isv57Communication::sendTunedServoParameters(
 
   // Pr0 register
   retValue_b |= modbus.writeAndVerifyDeviceParameter(
-      slaveId, pr_0_00 + 0, tuned_parameters[pr_0_00 + 0]); // control mode
+      slaveId, pr_0_00 + 0, tuned_parameters[pr_0_00 + 0].value_i32); // control mode
 
   // according to the iSV2 manual chapter 5.6, the model following control (MFC)
   // parameter should be larger then Pr1.01, velocity loop gain float
-  // mfcLowerLimit_fl32 = tuned_parameters[pr_1_00+1] ;
+  // mfcLowerLimit_fl32 = tuned_parameters[pr_1_00+1].value_i32 ;
   retValue_b |= modbus.writeAndVerifyDeviceParameter(
-      slaveId, pr_0_00 + 1, tuned_parameters[pr_0_00 + 1]); // control mode #
+      slaveId, pr_0_00 + 1, tuned_parameters[pr_0_00 + 1].value_i32); // control mode #
   retValue_b |= modbus.writeAndVerifyDeviceParameter(
       slaveId, pr_0_00 + 6,
-      tuned_parameters[pr_0_00 + 6]); // motor command direction
+      tuned_parameters[pr_0_00 + 6].value_i32); // motor command direction
   retValue_b |= modbus.writeAndVerifyDeviceParameter(
       slaveId, pr_0_00 + 8, (long)stepsPerMotorRev_u32); // microsteps
   retValue_b |= modbus.writeAndVerifyDeviceParameter(
-      slaveId, pr_0_00 + 9, tuned_parameters[pr_0_00 + 9]); // 1st numerator
+      slaveId, pr_0_00 + 9, tuned_parameters[pr_0_00 + 9].value_i32); // 1st numerator
   retValue_b |= modbus.writeAndVerifyDeviceParameter(
-      slaveId, pr_0_00 + 10, tuned_parameters[pr_0_00 + 10]); // & denominator
+      slaveId, pr_0_00 + 10, tuned_parameters[pr_0_00 + 10].value_i32); // & denominator
   retValue_b |= modbus.writeAndVerifyDeviceParameter(
       slaveId, pr_0_00 + 14,
-      tuned_parameters[pr_0_00 + 14]); // position deviation setup
+      tuned_parameters[pr_0_00 + 14].value_i32); // position deviation setup
 
   // Pr1 register
   uint16_t special_function_flags = 0x4 | 0x8 | 0x10;
@@ -314,23 +314,23 @@ void Isv57Communication::sendTunedServoParameters(
   // Pr4 register
   retValue_b |= modbus.writeAndVerifyDeviceParameter(
       slaveId, pr_4_00 + 10,
-      tuned_parameters[pr_4_00 + 10]); // Alarm port signal
+      tuned_parameters[pr_4_00 + 10].value_i32); // Alarm port signal
 
   // Pr5 register
   retValue_b |= modbus.writeAndVerifyDeviceParameter(
       slaveId, pr_5_00 + 20,
       tuned_parameters[pr_5_00 +
-                       20]); // encoder output resolution  {0: Encoder units; 1:
+                       20].value_i32); // encoder output resolution  {0: Encoder units; 1:
                              // Command units; 2: 10000pulse/rotation}
   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId, pr_5_00 + 35,
                                                      1); // lock front panel
 
   // Pr7 register
   retValue_b |= modbus.writeAndVerifyDeviceParameter(
-      slaveId, pr_7_00 + 0, tuned_parameters[pr_7_00 + 0]); // current loop gain
+      slaveId, pr_7_00 + 0, tuned_parameters[pr_7_00 + 0].value_i32); // current loop gain
   retValue_b |= modbus.writeAndVerifyDeviceParameter(
       slaveId, pr_7_00 + 1,
-      tuned_parameters[pr_7_00 + 1]); // current loop integral time
+      tuned_parameters[pr_7_00 + 1].value_i32); // current loop integral time
 
   // Enable & tune reactive pumping. This will act like a braking resistor and
   // reduce EMF voltage. See https://en.wikipedia.org/wiki/Bleeder_resistor Info
@@ -339,12 +339,12 @@ void Isv57Communication::sendTunedServoParameters(
   // actual bus voltage is lower than Pr7.32 minus Pr7.33
   retValue_b |= modbus.writeAndVerifyDeviceParameter(
       slaveId, pr_7_00 + 31,
-      tuned_parameters[pr_7_00 + 31]); // bleeder control mode (1 = reactive
+      tuned_parameters[pr_7_00 + 31].value_i32); // bleeder control mode (1 = reactive
                                        // pump lift suppression)
   retValue_b |= setServoVoltage(SERVO_MAX_VOLTAGE_IN_V_36V);
   retValue_b |= modbus.writeAndVerifyDeviceParameter(
       slaveId, pr_7_00 + 33,
-      tuned_parameters[pr_7_00 + 33]); // bleeder hysteresis voltage
+      tuned_parameters[pr_7_00 + 33].value_i32); // bleeder hysteresis voltage
 
   // Writes above only change the servo's RAM. Parameters like Pr0.08 (microsteps)
   // and the electronic gear are loaded from NVM at servo power-up, so a servo
@@ -637,7 +637,7 @@ void Isv57Communication::resetToFactoryParams() {
   // ISV57_NMB_OF_REGISTERS; registerIndex_u16++)
   // {
   //   retValue_b |= modbus.writeAndVerifyDeviceParameter(slaveId,
-  //   registerIndex_u16, tuned_parameters[registerIndex_u16]);
+  //   registerIndex_u16, tuned_parameters[registerIndex_u16].value_i32);
   // }
 
   // // store the settings to servos NVM if necesssary
