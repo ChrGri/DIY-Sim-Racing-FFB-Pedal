@@ -18,17 +18,17 @@
     <Grid>
         <Border Style="{StaticResource Card}" Margin="0" Height="240" Padding="0,0,0,8">
             <StackPanel HorizontalAlignment="Left" Height="232" VerticalAlignment="Top" Width="648">
-                <StackPanel Height="20" Width="648" Orientation="Horizontal" Margin="0,2,0,0">
+                <StackPanel Height="20" Width="648" Orientation="Horizontal">
                     <styles:SHToggleButton x:Name="checkbox_enable_ABS" Content="" Checked="checkbox_enable_ABS_Checked" Unchecked="checkbox_enable_ABS_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" Margin="15,0,0,0" ToolTip="Trigger is evaluated in the plugin; no need to send the config to the pedal."/>
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSTittle, 'ABS/TC Effect'}" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="6,0,0,0"/>
                 </StackPanel>
 
-                <Canvas x:Name="canvas_plot_ABS" Height="50" Width="510" Background="#141414" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center" Margin="15,4,0,0" >
+                <Canvas x:Name="canvas_plot_ABS" Height="50" Width="510" Background="#141414" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center" Margin="0,2,0,0" >
                     <Polyline x:Name="Polyline_plot_ABS" Height="50" Width="510" Points="0,25 102,25 204,25 306,25 408,25 510,25" Stroke="{DynamicResource AccentColorBrush}" Opacity="0.7" HorizontalAlignment="Left" VerticalAlignment="Center" StrokeThickness="2" />
                 </Canvas>
 
                 <StackPanel Height="36" Width="510" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,3,0,0">
-                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSEffectProfile, 'Waveform:'}" Height="20" Width="70" FontSize="10" Padding="0,0,0,0" VerticalContentAlignment="Center" Margin="15,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSEffectProfile, 'Waveform:'}" Height="20" Width="70" FontSize="10" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                     <ComboBox x:Name="AbsPattern" SelectionChanged="AbsPattern_SelectionChanged" Width="90" Height="20" FontSize="10" SelectedIndex="0" Margin="8,0,0,0" BorderThickness="0,0,0,0">
                         <ComboBoxItem Content="Sine"/>
                         <ComboBoxItem Content="Sawtooth"/>
@@ -38,7 +38,7 @@
                 </StackPanel>
 
                 <StackPanel Height="36" Width="510" Orientation="Horizontal" Margin="0,2,0,0">
-                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSEffectApply, 'Modulates:'}" Height="25" Width="80" FontSize="10" Margin="15,0,0,0" FontFamily="Arial" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Left" Padding="0,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSEffectApply, 'Modulates:'}" Height="25" Width="80" FontSize="10" FontFamily="Arial" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Left" Padding="0,0,0,0"/>
                     <ComboBox x:Name="EffectAppliedOnForceOrTravel_combobox" SelectionChanged="EffectAppliedOnForceOrTravel_combobox_SelectionChanged" Width="90" Height="20" FontSize="10" SelectedIndex="0" BorderThickness="0,0,0,0" Margin="8,0,0,0">
                         <ComboBoxItem Content="Force"/>
                         <ComboBoxItem Content="Travel"/>
@@ -49,8 +49,8 @@
                     </StackPanel>
                 </StackPanel>
 
-                <localUI:SliderWithLabel x:Name="Slider_ABS_AMP" Width="510" Height="40" SliderLength="510" MaxValue="20" TickFrequency="0.1" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectABSSliderAmp, 'ABS/TC Amplitude'}" Unit="%" SliderValueChanged="Slider_ABS_AMP_SliderValueChanged" Margin="15,2,0,0"/>
-                <localUI:SliderWithLabel x:Name="Slider_ABS_freq" Width="510" Height="40" SliderLength="510" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectABSSliderFreq, 'ABS/TC Frequency'}" MaxValue="50" Unit="Hz" SliderValueChanged="Slider_ABS_freq_SliderValueChanged" Margin="15,2,0,0"/>
+                <localUI:SliderWithLabel x:Name="Slider_ABS_AMP" Width="510" Height="40" SliderLength="510" MaxValue="20" TickFrequency="0.1" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectABSSliderAmp, 'ABS/TC Amplitude'}" Unit="%" SliderValueChanged="Slider_ABS_AMP_SliderValueChanged" Margin="0,2,0,0"/>
+                <localUI:SliderWithLabel x:Name="Slider_ABS_freq" Width="510" Height="40" SliderLength="510" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectABSSliderFreq, 'ABS/TC Frequency'}" MaxValue="50" Unit="Hz" SliderValueChanged="Slider_ABS_freq_SliderValueChanged" Margin="0,2,0,0"/>
 
             </StackPanel>
         </Border>

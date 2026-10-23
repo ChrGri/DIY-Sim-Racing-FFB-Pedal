@@ -24,12 +24,12 @@
 
 
                 </StackPanel>
-                <Canvas x:Name="canvas_plot_WS" Height="50" Width="510" Background="#141414" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center" Margin="15,2,0,0" >
+                <Canvas x:Name="canvas_plot_WS" Height="50" Width="510" Background="#141414" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center" Margin="0,2,0,0" >
                     <Polyline x:Name="Polyline_plot_WS" Height="50" Width="510" Points="0,25 80,25 160,25 240,25 320,25 400,25" Stroke="{DynamicResource AccentColorBrush}" Opacity="0.7" HorizontalAlignment="Left" VerticalAlignment="Center" StrokeThickness="2" />
 
                 </Canvas>
                 <StackPanel  Height="30" Width="510" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectWheelSlipProperty, 'SimHub property'}" Height="20" Width="80" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="15,0,0,0"/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectWheelSlipProperty, 'SimHub property'}" Height="20" Width="80" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10"/>
                     <TextBox x:Name="textBox_wheelslip_effect_string" Width="270" Height="20"  Margin="2,0,0,0" HorizontalAlignment="Left" MinHeight="20" FontSize="8" ToolTip="Bind a ShakeIt property here" BorderThickness="0,0,0,0"/>
                     <Button Style="{StaticResource ModernPillButton}" x:Name="Bind_WSeffect" Click="Bind_WSeffect_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnBind, 'Bind'}" Height="20" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                     <Button Style="{StaticResource ModernPillButton}" x:Name="Clear_WSeffect" Click="Clear_WSeffect_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="2,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
