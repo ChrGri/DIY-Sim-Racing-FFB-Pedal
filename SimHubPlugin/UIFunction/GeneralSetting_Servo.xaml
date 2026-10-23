@@ -111,7 +111,8 @@
                                 x:Name="Btn_ResetToRecommended"
                                 Click="Btn_ResetToRecommended_Click"
                                 FontSize="8" Padding="3,1" Margin="0,0,3,0"
-                                VerticalAlignment="Center"/>
+                                VerticalAlignment="Center"
+                                ToolTip="Writes the silent or the smooth (gain switching) parameter set to the servo and stores it in its NVM"/>
                         <Button Content="Reset to factory"
                                 x:Name="Btn_ResetToFactory"
                                 Click="Btn_ResetToFactory_Click"
@@ -212,8 +213,8 @@
                             </DataGridTemplateColumn>
 
                             <!-- Recommended value (read-only, muted color) -->
-                            <DataGridTemplateColumn Header="Recommended"
-                                                    Width="105"
+                            <DataGridTemplateColumn Header="Recommended (silent)"
+                                                    Width="150"
                                                     IsReadOnly="True"
                                                     SortMemberPath="RecommendedValue">
                                 <DataGridTemplateColumn.CellTemplate>

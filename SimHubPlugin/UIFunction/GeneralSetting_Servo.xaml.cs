@@ -33,8 +33,18 @@ namespace DiyFfbPedal.UIFunction
         /// <summary>Human-readable register name shown as tooltip and in the Name column.</summary>
         public string Name { get; set; }
 
-        /// <summary>Factory-tuned recommended value (read-only).</summary>
-        public int RecommendedValue { get; set; }
+        private int _recommendedValue;
+        /// <summary>Recommended value of the selected parameter set (silent or smooth).</summary>
+        public int RecommendedValue
+        {
+            get => _recommendedValue;
+            set
+            {
+                _recommendedValue = value;
+                Notify(nameof(RecommendedValue));
+                Notify(nameof(LiveValueColor));
+            }
+        }
 
         // ---- Live read-back from servo ----
         private int? _liveValue;
@@ -445,7 +455,7 @@ namespace DiyFfbPedal.UIFunction
             int idx = 0;
             foreach (var def in s_registerDefs)
             {
-                Isv57TunedParameters.Values.TryGetValue(def.addr, out int recommended);
+                Isv57TunedParameters.TryGetValue(def.addr, false, out int recommended);
                 ServoRegisters.Add(new ServoRegisterEntry
                 {
                     Index            = idx++,
@@ -630,6 +640,7 @@ namespace DiyFfbPedal.UIFunction
                 {
                     _progressWindow.Close();
                 }
+                ShowParameterSetOfServo();
                 return;
             }
 
@@ -729,6 +740,10 @@ namespace DiyFfbPedal.UIFunction
         /// </summary>
         private void Btn_ResetToRecommended_Click(object sender, RoutedEventArgs e)
         {
+            bool? smooth = AskParameterSet();
+            if (!smooth.HasValue) return;
+
+            ShowRecommendedSet(smooth.Value);
             // Update the table
             foreach (var entry in ServoRegisters)
                 entry.LiveValue = entry.RecommendedValue;
@@ -736,6 +751,91 @@ namespace DiyFfbPedal.UIFunction
             ServoRegisterGrid.Items.Refresh();
 
             WriteAllRegistersToServo();
+        }
+
+        // ---------------------------------------------------------------
+        // Recommended parameter sets: "silent" (default) and "smooth" (gain switching),
+        // ESP32/include/isv57_tunedParameters.h and isv57_tunedParameters_smooth.h
+        // ---------------------------------------------------------------
+        private bool _smoothSetShown;
+
+        /// <summary>
+        /// Shows the recommended values of the silent or the smooth set in the table.
+        /// </summary>
+        private void ShowRecommendedSet(bool smooth)
+        {
+            _smoothSetShown = smooth;
+            foreach (var entry in ServoRegisters)
+            {
+                Isv57TunedParameters.TryGetValue(entry.Address, smooth, out int recommended);
+                entry.RecommendedValue = recommended;
+            }
+            if (ServoRegisterGrid.Columns.Count > 3)
+                ServoRegisterGrid.Columns[3].Header = smooth ? "Recommended (smooth)" : "Recommended (silent)";
+        }
+
+        /// <summary>
+        /// After "Load from servo": compares the gain switching mode Pr1.15 with both sets, so
+        /// the Recommended column shows the set the servo actually runs.
+        /// </summary>
+        private void ShowParameterSetOfServo()
+        {
+            var mode = ServoRegisters.FirstOrDefault(r => r.Address == "Pr1.15");
+            if (mode == null || !mode.LiveValue.HasValue) return;
+            Isv57TunedParameters.TryGetValue("Pr1.15", true, out int smoothMode);
+            Isv57TunedParameters.TryGetValue("Pr1.15", false, out int silentMode);
+            if (smoothMode == silentMode) return;
+            ShowRecommendedSet(mode.LiveValue.Value == smoothMode);
+        }
+
+        /// <summary>
+        /// Asks for the parameter set to write: true = smooth, false = silent, null = cancelled.
+        /// </summary>
+        private bool? AskParameterSet()
+        {
+            bool? result = null;
+            var dialog = new Window
+            {
+                Title = "Reset to recommended",
+                Width = 460,
+                SizeToContent = SizeToContent.Height,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                WindowStyle = WindowStyle.ToolWindow,
+                ResizeMode = ResizeMode.NoResize,
+                Topmost = true,
+                // explicit colors: the window inherits SimHub's dark theme background,
+                // but not a matching text color
+                Background = new SolidColorBrush(Color.FromRgb(0x2A, 0x2A, 0x2A))
+            };
+            var panel = new StackPanel { Margin = new Thickness(16) };
+            panel.Children.Add(new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = new SolidColorBrush(Color.FromRgb(0xF0, 0xF0, 0xF0)),
+                FontSize = 13,
+                Margin = new Thickness(0, 0, 0, 12),
+                Text = "Which servo parameter set should be written to the servo and stored in its NVM?\n\n" +
+                       "Silent: one fixed gain set. Quiet, slightly rougher pedal feel (motor cogging).\n\n" +
+                       "Smooth: gain switching. A fast gain set while the pedal moves rejects the motor " +
+                       "cogging better (smoother feel), but the servo is louder while moving. At " +
+                       "standstill a quiet gain set is used.\n\n" +
+                       "The servo needs a power-cycle afterwards."
+            });
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+            Button MakeButton(string text, bool? value)
+            {
+                var b = new Button { Content = text, MinWidth = 90, Margin = new Thickness(6, 0, 0, 0), Padding = new Thickness(8, 3, 8, 3) };
+                b.Click += (s, ev) => { result = value; dialog.Close(); };
+                buttons.Children.Add(b);
+                return b;
+            }
+            MakeButton("Silent", false).IsDefault = !_smoothSetShown;
+            MakeButton("Smooth", true).IsDefault = _smoothSetShown;
+            MakeButton("Cancel", null).IsCancel = true;
+            panel.Children.Add(buttons);
+            dialog.Content = panel;
+            dialog.ShowDialog();
+            return result;
         }
 
         private void WriteAllRegistersToServo()
