@@ -7,7 +7,7 @@
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins"
              mc:Ignorable="d" 
              d:DesignHeight="850" d:DesignWidth="917"
-             HorizontalAlignment="Left" Width="917" Height="850" Background="Transparent">
+             HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="Transparent">
 
     <UserControl.Resources>
         <ResourceDictionary>
@@ -17,10 +17,15 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <StackPanel Orientation="Vertical" Width="917" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,0,0">
+    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="100"/>
+        </Grid.RowDefinitions>
         
-        <!-- Header & Control Bar (Width 764 matching tab bar) -->
-        <Border Background="#202020" CornerRadius="5" BorderBrush="#333333" BorderThickness="1" Padding="10,6" Width="917">
+        <!-- Header & Control Bar -->
+        <Border x:Name="border_toolbar" Grid.Row="0" Background="#202020" CornerRadius="5" BorderBrush="#333333" BorderThickness="1" Padding="10,6" HorizontalAlignment="Stretch">
             <StackPanel Orientation="Vertical">
                 <!-- Row 1: Title and Stream Status Badge -->
                 <Grid>
@@ -77,8 +82,9 @@
                         <Button x:Name="btn_reset_zoom" Content="⟲ Fit" ToolTip="Reset Zoom &amp; Pan to Fit All (or Double-Click plot)" Click="BtnResetZoom_Click" Width="42" Height="22" Style="{StaticResource ModernPillButton}"/>
                     </StackPanel>
 
-                    <!-- Export & Signals Menu Buttons (Always right-aligned) -->
+                    <!-- Export, Signals & Pop Out Menu Buttons (Always right-aligned) -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button x:Name="btn_popout" Content="↗ Pop Out" ToolTip="Open in an independent semi-transparent HUD window" Click="BtnPopOut_Click" Width="72" Height="22" Style="{StaticResource ModernPillButton}" Margin="0,0,3,0"/>
                         <Button x:Name="btn_export" Content="💾 Export" ToolTip="Export the displayed time range in the pedal state log format (.txt + config .json)" Click="BtnExport_Click" Width="58" Height="22" Style="{StaticResource ModernPillButton}" Margin="0,0,3,0"/>
                         <Button x:Name="btn_signals_menu" Content="Signals ▾" Click="BtnSignalsMenu_Click" Width="64" Height="22" Style="{StaticResource ModernPillButton}"/>
                     </StackPanel>
@@ -86,17 +92,20 @@
             </StackPanel>
         </Border>
 
-        <!-- Enlarged Plot Canvas Area (Width 764 matching tab bar, Height 580px) -->
-        <Border Background="#141414" BorderBrush="#333333" BorderThickness="1" CornerRadius="5" Margin="0,6,0,0" Width="917" Height="580" ClipToBounds="True">
+        <!-- Enlarged Plot Canvas Area (Responsive, automatically fills available space) -->
+        <Border x:Name="border_plot_host" Grid.Row="1" Background="#141414" BorderBrush="#333333" BorderThickness="1" CornerRadius="5" Margin="0,6,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ClipToBounds="True">
             <Grid x:Name="grid_plot_host">
                 <!-- Background Gridlines & Axis Labels -->
-                <Canvas x:Name="canvas_grid" Width="914" Height="578" IsHitTestVisible="False"/>
+                <Canvas x:Name="canvas_grid" IsHitTestVisible="False"/>
+
+                <!-- High-performance WriteableBitmap Direct Memory Pixel Surface (Plan B) -->
+                <Image x:Name="img_plot_surface" Stretch="Fill" IsHitTestVisible="False"/>
 
                 <!-- Trigger mode event markers (trigger, move start, max force, end reached) -->
-                <Canvas x:Name="canvas_markers" Width="914" Height="578" IsHitTestVisible="False"/>
+                <Canvas x:Name="canvas_markers" IsHitTestVisible="False"/>
 
                 <!-- Main Polyline Trace Canvas with Right-Click Context Menu & Hover Data Tip -->
-                <Canvas x:Name="canvas_plot" Width="914" Height="578" Background="Transparent" Cursor="Cross"
+                <Canvas x:Name="canvas_plot" Background="Transparent" Cursor="Cross"
                         SizeChanged="Canvas_plot_SizeChanged"
                         MouseDown="Canvas_plot_MouseDown"
                         MouseMove="Canvas_plot_MouseMove"
@@ -141,11 +150,23 @@
 
                 <!-- No signals placeholder text -->
                 <TextBlock x:Name="tb_no_signals_hint" Text="Right-click canvas to select signals to plot" Foreground="#444444" FontSize="14" FontFamily="Segoe UI, Arial" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed"/>
+
+                <!-- Popped out placeholder overlay (stops rendering in tab while window is open) -->
+                <Border x:Name="panel_popped_out_overlay" Background="#F0141414" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="Collapsed">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="📈 Live Plot is running in independent HUD window" FontSize="14" FontWeight="SemiBold" Foreground="#ECECEC" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                        <TextBlock Text="Rendering in this tab is paused to save system resources." FontSize="11" Foreground="#888888" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Content="Bring Window to Front" Click="BtnBringPopOutToFront_Click" Width="150" Height="26" Style="{StaticResource ModernPillButton}" Margin="0,0,10,0"/>
+                            <Button Content="Dock Back (Close Window)" Click="BtnDockBack_Click" Width="160" Height="26" Style="{StaticResource ModernPillButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
             </Grid>
         </Border>
 
-        <!-- Compact Active Signals & Legend Card (Width 764, Height 100px) -->
-        <Border Background="#1E1E1E" BorderBrush="#333333" BorderThickness="1" CornerRadius="5" Margin="0,6,0,0" Width="917" Height="100" Padding="8,5">
+        <!-- Compact Active Signals & Legend Card -->
+        <Border x:Name="border_legends" Grid.Row="2" Background="#1E1E1E" BorderBrush="#333333" BorderThickness="1" CornerRadius="5" Margin="0,6,0,0" Height="100" Padding="8,5" HorizontalAlignment="Stretch">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -170,5 +191,5 @@
             </Grid>
         </Border>
 
-    </StackPanel>
+    </Grid>
 </UserControl>

@@ -60,10 +60,13 @@ namespace DiyFfbPedal
             if (e.Source is TabControl)
             {
                 bool isLivePlot = Tab_LivePlot != null && Tab_LivePlot.IsSelected;
-                LivePlotSection?.OnTabSelected(isLivePlot);
+                bool isPoppedOut = _livePlotWindow != null && _livePlotWindow.IsLoaded;
+                if (!isPoppedOut)
+                {
+                    LivePlotSection?.OnTabSelected(isLivePlot);
+                }
             }
         }
-
 
         private void TabControl_SelectionChanged_1(object sender, SelectionChangedEventArgs e)
         {

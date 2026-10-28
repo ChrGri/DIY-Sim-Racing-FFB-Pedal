@@ -231,6 +231,37 @@ namespace DiyFfbPedal
 
 
 
+        public DiyFfbPedal.UIFunction.LivePlotWindow _livePlotWindow;
+
+        public void OpenLivePlotWindow()
+        {
+            if (_livePlotWindow == null || !_livePlotWindow.IsLoaded)
+            {
+                _livePlotWindow = new DiyFfbPedal.UIFunction.LivePlotWindow(Plugin, this);
+                _livePlotWindow.Closed += (s, e) =>
+                {
+                    _livePlotWindow = null;
+                    LivePlotSection?.SetPoppedOut(false);
+                };
+                _livePlotWindow.Show();
+                LivePlotSection?.SetPoppedOut(true);
+            }
+            else
+            {
+                if (_livePlotWindow.WindowState == WindowState.Minimized)
+                {
+                    _livePlotWindow.WindowState = WindowState.Normal;
+                }
+                _livePlotWindow.Activate();
+                LivePlotSection?.SetPoppedOut(true);
+            }
+        }
+
+        private void BtnOpenLivePlotWindow_Click(object sender, RoutedEventArgs e)
+        {
+            OpenLivePlotWindow();
+        }
+
         public DIYFFBPedalControlUI(DIY_FFB_Pedal plugin) : this()
         {
             this.Plugin = plugin;
@@ -257,6 +288,9 @@ namespace DiyFfbPedal
             if (LivePlotSection != null)
             {
                 LivePlotSection.SetReferences(plugin, this);
+            }
+            {
+                HomeDashboardSection.Initialize(plugin, this);
             }
             for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
             {

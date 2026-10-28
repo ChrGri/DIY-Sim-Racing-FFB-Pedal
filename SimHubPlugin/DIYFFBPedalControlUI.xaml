@@ -1077,7 +1077,7 @@
                             <Canvas Height="6" Width="917" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Margin="0,1,0,1">
                                 <Line X1="2" Y1="3" X2="917" Y2="3" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="2" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
                             </Canvas>
-                            <localFunction:LivePlot_ExtendedState x:Name="LivePlotSection" HorizontalAlignment="Left" Width="917"/>
+                            <localFunction:LivePlot_ExtendedState x:Name="LivePlotSection" HorizontalAlignment="Left" Width="917" Height="850"/>
                         </StackPanel>
                     </Border>
                 </TabItem>
