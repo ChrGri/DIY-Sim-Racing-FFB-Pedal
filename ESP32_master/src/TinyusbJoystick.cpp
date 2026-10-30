@@ -1,4 +1,7 @@
 #include "TinyusbJoystick.h"
+#if defined(ARDUINO_ARCH_ESP32)
+#include "USB.h"
+#endif
 #include <cstdint>
 #include <cstring>
 #include <cstdarg>
@@ -38,7 +41,18 @@ void TinyusbJoystick::begin(int VID, int PID)
 {
     instance=this;
     //Serial.println("[L]starting USB joystick");
+
+    // Manual begin() is required on core without built-in support e.g. mbed rp2040
+    if (!TinyUSBDevice.isInitialized())
+    {
+        TinyUSBDevice.begin(0);
+    }
+
+    // Clear configuration to ensure no CDC descriptor is included and bDeviceClass is 0
+    TinyUSBDevice.clearConfiguration();
+
     TinyUSBDevice.setID(VID, PID);
+    TinyUSBDevice.setDeviceVersion(0x0101);
     TinyUSBDevice.setProductDescriptor("DIY_FFB_PEDAL_JOYSTICK");
     TinyUSBDevice.setManufacturerDescriptor("OPENSOURCE");
     
@@ -46,13 +60,6 @@ void TinyusbJoystick::begin(int VID, int PID)
     uint64_t chipid = ESP.getEfuseMac();
     snprintf(serialStr, sizeof(serialStr), "DIY_PEDAL_%04X%08X", (uint16_t)(chipid >> 32), (uint32_t)chipid);
     TinyUSBDevice.setSerialDescriptor(serialStr);
-    
-    //ActiveSerial->
-    // Manual begin() is required on core without built-in support e.g. mbed rp2040
-    if (!TinyUSBDevice.isInitialized())
-    {
-        TinyUSBDevice.begin(0);
-    }
 
     // Setup HID Gamepad
     usb_hid.setPollInterval(1); // time in ms
@@ -65,6 +72,13 @@ void TinyusbJoystick::begin(int VID, int PID)
     usb_hid_vendor.setReportDescriptor(desc_hid_vendor, sizeof(desc_hid_vendor));
     usb_hid_vendor.begin();
     usb_hid_vendor.setReportCallback(NULL, TinyusbJoystick::context_callback);
+
+#if defined(ARDUINO_ARCH_ESP32)
+    if (!TinyUSBDevice.isInitialized())
+    {
+        USB.begin();
+    }
+#endif
 
     // If already enumerated, additional class driverr begin() e.g msc, hid, midi won't take effect until re-enumeration
     if (TinyUSBDevice.mounted())
