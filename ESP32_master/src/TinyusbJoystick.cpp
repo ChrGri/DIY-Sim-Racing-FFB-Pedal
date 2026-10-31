@@ -10,10 +10,6 @@
 
 extern DAP_servo_config_st_t dap_servo_config_st[3];
 extern bool update_servo_config[3];
-// Declared (and defined) in Main.h/Main.cpp - not pulling in the whole
-// header here to avoid its dependency graph, just this one extern needed
-// for the TEMP DIAGNOSTIC prints below.
-extern Stream *ActiveSerial;
 
 TinyusbJoystick* TinyusbJoystick::instance = nullptr;
 TinyusbJoystick::TinyusbJoystick() 
@@ -309,12 +305,12 @@ void TinyusbJoystick::ProcessFullData(uint8_t *rxBuffer, uint8_t totalLen)
                 // TEMP DIAGNOSTIC (unconditional - "Load From Servo" is rare/
                 // user-triggered from the host, not continuous). Remove once
                 // wireless servo register exchange is confirmed fixed.
-                ActiveSerial->printf("[L][DIAG] ServoConfig RX from host for Pedal #%d\n", pedalTag);
+                Serial.printf("[L][DIAG] ServoConfig RX from host for Pedal #%d\n", pedalTag);
             }
         }
         else
         {
-            ActiveSerial->println("[L][DIAG] ServoConfig RX from host: structChecker FAILED");
+            Serial.println("[L][DIAG] ServoConfig RX from host: structChecker FAILED");
         }
     }
 }

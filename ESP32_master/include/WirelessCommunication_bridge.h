@@ -11,7 +11,7 @@
 #define ESPNOW_ASSIGNMENT_MAGIC_KEY_U8 0x99
 
 // Uncomment to enable verbose wireless transport debug logging, mirrored to
-// both ActiveSerial and (when built with USB_JOYSTICK) the USB HID text log.
+// both Serial and (when built with USB_JOYSTICK) the USB HID text log.
 // #define WIRELESS_COMM_DEBUG
 
 #ifndef EEPROM_offset
@@ -138,13 +138,13 @@ public:
     WiFi.disconnect(false, false);
     WiFi.setSleep(false);
     esp_wifi_set_ps(WIFI_PS_NONE);
-    ActiveSerial->println("[L]Initializing Wifi.");
+    Serial.println("[L]Initializing Wifi.");
     delay(1000);
     WiFi.macAddress(_ownMac);
-    ActiveSerial->printf("[L]Bridge Factory Hardware Mac: %02X:%02X:%02X:%02X:%02X:%02X\n",
+    Serial.printf("[L]Bridge Factory Hardware Mac: %02X:%02X:%02X:%02X:%02X:%02X\n",
                          _ownMac[0], _ownMac[1], _ownMac[2], _ownMac[3], _ownMac[4], _ownMac[5]);
 
-    ActiveSerial->println("[L]Initializing ESP-NOW");
+    Serial.println("[L]Initializing ESP-NOW");
     ESPNow.init();
     delay(1000);
 
@@ -155,13 +155,13 @@ public:
     esp_wifi_config_espnow_rate(WIFI_IF_STA, WIFI_PHY_RATE_11M_L);
       #ifdef LOW_TX_POWER
       esp_wifi_set_max_tx_power(WIFI_POWER_8_5dBm);
-      ActiveSerial->println("[L]Setting Wifi strength to 8.5dbm ");
+      Serial.println("[L]Setting Wifi strength to 8.5dbm ");
       #endif
     #endif
 
     applyMacConfig(macCfg);
     for (int i = 0; i < 3; i++) {
-      ActiveSerial->printf("[L]Configured Pedal #%d Mac: %02X:%02X:%02X:%02X:%02X:%02X\n",
+      Serial.printf("[L]Configured Pedal #%d Mac: %02X:%02X:%02X:%02X:%02X:%02X\n",
                            i, _pedalMac[i][0], _pedalMac[i][1], _pedalMac[i][2],
                            _pedalMac[i][3], _pedalMac[i][4], _pedalMac[i][5]);
 #ifdef USB_JOYSTICK
@@ -183,7 +183,7 @@ public:
       }
     }
     if (peerOk) {
-      ActiveSerial->println("[L]Peers added successfully.");
+      Serial.println("[L]Peers added successfully.");
     #ifdef USB_JOYSTICK
       tinyusbJoystick_.printf("Peers added successfully.");
     #endif
@@ -200,12 +200,12 @@ public:
 
     ESPNow.reg_recv_cb(sWirelessCommRecvTrampoline);
     ESPNow.reg_send_cb(sWirelessCommSentTrampoline);
-    ActiveSerial->printf("[L]ESPNow Channel: %d\n", _currentChannel);
+    Serial.printf("[L]ESPNow Channel: %d\n", _currentChannel);
 #ifdef USB_JOYSTICK
     tinyusbJoystick_.printf("ESPNow Channel: %d", _currentChannel);
 #endif
     _started = true;
-    ActiveSerial->println("[L]ESPNow Initialized");
+    Serial.println("[L]ESPNow Initialized");
   }
 
   // Updates channel + trusted pedal MAC table only (no WiFi/ESP-NOW re-init)
@@ -386,7 +386,7 @@ public:
     s_rxCount++;
     if (millis() - lastRxDiagTime > 3000) {
       lastRxDiagTime = millis();
-//       ActiveSerial->printf("[ESPNOW RX] Packet len=%d from %02X:%02X:%02X:%02X:%02X:%02X (ch=%d)\n",
+//       Serial.printf("[ESPNOW RX] Packet len=%d from %02X:%02X:%02X:%02X:%02X:%02X (ch=%d)\n",
 //                            len,
 //                            info->src_addr[0], info->src_addr[1], info->src_addr[2],
 //                            info->src_addr[3], info->src_addr[4], info->src_addr[5],
@@ -435,7 +435,7 @@ public:
       if (millis() - lastRejectPrint_u32 > 3000) {
         lastRejectPrint_u32 = millis();
         const uint8_t *m = info->src_addr;
-        ActiveSerial->printf(
+        Serial.printf(
             "[ESPNOW RX] Rejected unknown sender %02X:%02X:%02X:%02X:%02X:%02X "
             "(len=%d, type=%u)\n",
             m[0], m[1], m[2], m[3], m[4], m[5], len, data[2]);
@@ -537,7 +537,7 @@ private:
   volatile int8_t _txInFlightSlot_i8 = -1;
 
   void emitDiagLine(const char *line) {
-    ActiveSerial->printf("[L]%s\n", line);
+    Serial.printf("[L]%s\n", line);
 #ifdef USB_JOYSTICK
     tinyusbJoystick_.printf("%s", line);
 #endif
@@ -713,7 +713,7 @@ private:
   void handleConfigEchoPacket(const uint8_t *data, uint8_t pedalTag) {
     // TEMP DIAGNOSTIC (unconditional, low-volume - config echoes are rare).
     // Remove once the root cause is confirmed.
-    ActiveSerial->printf("[L][DIAG] ConfigEcho RX from pedal=%u, syncEnabled=%u\n",
+    Serial.printf("[L][DIAG] ConfigEcho RX from pedal=%u, syncEnabled=%u\n",
                          pedalTag, (unsigned)_pedalWirelessSyncEnabled[pedalTag]);
     #ifdef USB_JOYSTICK
     tinyusbJoystick_.printf("[DIAG] ConfigEcho RX from pedal=%u, syncEnabled=%u",
@@ -747,7 +747,7 @@ private:
     // TEMP DIAGNOSTIC (unconditional - "Load From Servo" is rare/user-
     // triggered, not continuous). Tracking down why servo register
     // exchange doesn't complete over wireless. Remove once confirmed fixed.
-    ActiveSerial->printf("[L][DIAG] ServoConfig response RX from pedal=%u, syncEnabled=%u\n",
+    Serial.printf("[L][DIAG] ServoConfig response RX from pedal=%u, syncEnabled=%u\n",
                          pedalTag, (unsigned)_pedalWirelessSyncEnabled[pedalTag]);
     #ifdef USB_JOYSTICK
     tinyusbJoystick_.printf("[DIAG] ServoConfig response RX from pedal=%u, syncEnabled=%u",
@@ -784,8 +784,8 @@ private:
     va_start(args, fmt);
     vsnprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
-    ActiveSerial->print("[WirelessComm] ");
-    ActiveSerial->println(buf);
+    Serial.print("[WirelessComm] ");
+    Serial.println(buf);
 #ifdef USB_JOYSTICK
     tinyusbJoystick_.printf("[WirelessComm] %s\n", buf);
 #endif
@@ -811,10 +811,10 @@ inline void sWirelessCommSentTrampoline(const esp_now_send_info_t *info, esp_now
 inline void printStructHex(DapBridgeState_t* s) {
   const uint8_t* p = (const uint8_t*)s;
   for (size_t i = 0; i < sizeof(DapBridgeState_t); i++) {
-    ActiveSerial->print("0x");
-    if (p[i] < 16) ActiveSerial->print('0');
-    ActiveSerial->print(p[i], HEX);
-    ActiveSerial->print("-");
+    Serial.print("0x");
+    if (p[i] < 16) Serial.print('0');
+    Serial.print(p[i], HEX);
+    Serial.print("-");
   }
-  ActiveSerial->println("");
+  Serial.println("");
 }
