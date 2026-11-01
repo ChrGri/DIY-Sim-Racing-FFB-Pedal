@@ -169,5 +169,43 @@ namespace DiyFfbPedal
 
         // friction parameters
         public byte coulombFrictionIn0p1N_u8;
+        public byte wakeOnPluginOnly_u8;
+
+        // Rudder toe-brake joystick curve - separate from joystickMapOrig/Mapped
+        // above (yaw / regular pedal output) so both can be sent and stored
+        // independently; only one is active on the device at a time, selected
+        // by the Toe Brake toggle, but both need to be present in the config.
+        public byte numOfJoystickMapControlToe;
+        public byte joystickMapOrigToe00;
+        public byte joystickMapOrigToe01;
+        public byte joystickMapOrigToe02;
+        public byte joystickMapOrigToe03;
+        public byte joystickMapOrigToe04;
+        public byte joystickMapOrigToe05;
+        public byte joystickMapOrigToe06;
+        public byte joystickMapOrigToe07;
+        public byte joystickMapOrigToe08;
+        public byte joystickMapOrigToe09;
+        public byte joystickMapOrigToe10;
+        public byte joystickMapMappedToe00;
+        public byte joystickMapMappedToe01;
+        public byte joystickMapMappedToe02;
+        public byte joystickMapMappedToe03;
+        public byte joystickMapMappedToe04;
+        public byte joystickMapMappedToe05;
+        public byte joystickMapMappedToe06;
+        public byte joystickMapMappedToe07;
+        public byte joystickMapMappedToe08;
+        public byte joystickMapMappedToe09;
+        public byte joystickMapMappedToe10;
+
+        // Regen energy handling (name kept for profile compatibility; former 0/1 = modes 0/1):
+        // 0 = servo internal bleeder only
+        // 1 = servo internal bleeder + external brake resistor switched by the firmware (PWM)
+        // 2 = hardware brake resistor circuit only (firmware pin LOW, no regen power limit)
+        public byte enableBrakeResistor_u8;
+
+        // brake resistor resistance in Ohm (1-255; 0 = default 10 Ohm)
+        public byte brakeResistorResistance_Ohm_u8;
     }
 }

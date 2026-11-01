@@ -53,7 +53,7 @@ class Joystick_ : public USBHIDDevice {
     int32_t   _yAxisRotation;
     int32_t   _zAxisRotation;
     int32_t   _throttle;
-    int32_t   _rudder;
+    int32_t   g_rudder_st;
     int32_t   _accelerator;
     int32_t   _brake;
     int32_t   _steering;
@@ -81,8 +81,8 @@ class Joystick_ : public USBHIDDevice {
     int32_t  _ryAxisMaximum = JOYSTICK_DEFAULT_AXIS_MAXIMUM;
     int32_t  _rzAxisMinimum = JOYSTICK_DEFAULT_AXIS_MINIMUM;
     int32_t  _rzAxisMaximum = JOYSTICK_DEFAULT_AXIS_MAXIMUM;
-    int32_t  _rudderMinimum = JOYSTICK_DEFAULT_SIMULATOR_MINIMUM;
-    int32_t  _rudderMaximum = JOYSTICK_DEFAULT_SIMULATOR_MAXIMUM;
+    int32_t  g_rudder_stMinimum = JOYSTICK_DEFAULT_SIMULATOR_MINIMUM;
+    int32_t  g_rudder_stMaximum = JOYSTICK_DEFAULT_SIMULATOR_MAXIMUM;
     int32_t  _throttleMinimum = JOYSTICK_DEFAULT_SIMULATOR_MINIMUM;
     int32_t  _throttleMaximum = JOYSTICK_DEFAULT_SIMULATOR_MAXIMUM;
     int32_t  _acceleratorMinimum = JOYSTICK_DEFAULT_SIMULATOR_MINIMUM;
@@ -101,7 +101,9 @@ class Joystick_ : public USBHIDDevice {
     int buildAndSetAxisValue(bool includeAxis, int32_t axisValue, int32_t axisMinimum, int32_t axisMaximum, uint8_t dataLocation[]);
     int buildAndSetSimulationValue(bool includeValue, int32_t value, int32_t valueMinimum, int32_t valueMaximum, uint8_t dataLocation[]);
     uint16_t _onGetDescriptor(uint8_t* buffer) override;
+    uint16_t _onGetFeature(uint8_t report_id, uint8_t* buffer, uint16_t len) override;
     void _onOutput(uint8_t report_id, const uint8_t* buffer, uint16_t len) override;
+    uint16_t fillReport(uint8_t *data, uint16_t maxLen);
 
   public:
     uint8_t *customHidReportDescriptor;
@@ -136,7 +138,7 @@ class Joystick_ : public USBHIDDevice {
     inline void setRxAxisRange(int32_t minimum, int32_t maximum) { _rxAxisMinimum = minimum; _rxAxisMaximum = maximum; }
     inline void setRyAxisRange(int32_t minimum, int32_t maximum) { _ryAxisMinimum = minimum; _ryAxisMaximum = maximum; }
     inline void setRzAxisRange(int32_t minimum, int32_t maximum) { _rzAxisMinimum = minimum; _rzAxisMaximum = maximum; }
-    inline void setRudderRange(int32_t minimum, int32_t maximum) { _rudderMinimum = minimum; _rudderMaximum = maximum; }
+    inline void setRudderRange(int32_t minimum, int32_t maximum) { g_rudder_stMinimum = minimum; g_rudder_stMaximum = maximum; }
     inline void setThrottleRange(int32_t minimum, int32_t maximum) { _throttleMinimum = minimum; _throttleMaximum = maximum; }
     inline void setAcceleratorRange(int32_t minimum, int32_t maximum) { _acceleratorMinimum = minimum; _acceleratorMaximum = maximum; }
     inline void setBrakeRange(int32_t minimum, int32_t maximum) { _brakeMinimum = minimum; _brakeMaximum = maximum; }

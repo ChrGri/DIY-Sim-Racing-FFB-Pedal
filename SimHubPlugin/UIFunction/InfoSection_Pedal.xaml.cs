@@ -120,25 +120,25 @@ namespace DiyFfbPedal.UIFunction
 
             }
 
-            if(info_label!=null) info_label.Content = SLoc.GetValue("DIYFFBPedalPlugin_TextLabelConnection","Connection")+":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelServoState", "Servo State") +":\n"+ SLoc.GetValue("DIYFFBPedalPlugin_TextLabelDAPVersion", "DAP Version") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelPluginVersion", "Plugin Version") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelPedalVersion", "Pedal Version") + ":\n";
+            if(info_label!=null) info_label.Content = SLoc.GetValue("DIYFFBPedalPlugin_TextLabelConnection","Connection")+":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelServoState", "Servo State") +":\n"+ SLoc.GetValue("DIYFFBPedalPlugin_TextLabelDAPVersion", "Protocol Version") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelPluginVersion", "Plugin Version") + ":\n" + SLoc.GetValue("DIYFFBPedalPlugin_TextLabelPedalVersion", "Pedal Version") + ":\n";
             if (info_label_2 != null) info_label_2.Content = calculation.PedalStatusString;
 
 
             if(rssibar!=null) rssibar.updateRSSI(calculation.rssi[Settings.table_selected]);
-            if (Label_RSSI != null && calculation.rssi[Settings.table_selected] < -20 && calculation.rssi[Settings.table_selected] > -100 && calculation.pedalWirelessStatus[Settings.table_selected]==WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY)
+            if (Label_RSSI != null && Settings != null && Settings.Pedal_ESPNow_Sync_flag[Settings.table_selected] && calculation.rssi[Settings.table_selected] < -20 && calculation.rssi[Settings.table_selected] > -100 && calculation.pedalWirelessStatus[Settings.table_selected]==WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY)
             {
                 if (calculation.BridgeSerialAvailability)
                 {
                     Label_RSSI.Content = "" + calculation.rssi[Settings.table_selected] + "dBm";
                     Label_RSSI.Visibility = Visibility.Visible;
-                    rssibar.Visibility = Visibility.Visible ;
+                    if (rssibar != null) rssibar.Visibility = Visibility.Visible;
                 }
 
             }
             else
             {
-                Label_RSSI.Visibility = Visibility.Hidden;
-                rssibar.Visibility = Visibility.Hidden;
+                if (Label_RSSI != null) Label_RSSI.Visibility = Visibility.Hidden;
+                if (rssibar != null) rssibar.Visibility = Visibility.Hidden;
             } 
 
             

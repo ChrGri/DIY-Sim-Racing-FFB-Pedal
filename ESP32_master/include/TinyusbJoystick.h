@@ -45,7 +45,7 @@ uint8_t const desc_hid_report_old[] = {
 #define HID_LOGICAL_MAX_32(n) 0x27, (uint8_t)((n) & 0xFF), (uint8_t)(((n) >> 8) & 0xFF), (uint8_t)(((n) >> 16) & 0xFF), (uint8_t)(((n) >> 24) & 0xFF)
 
 
-uint8_t const desc_hid_report[] = 
+uint8_t const desc_hid_gamepad[] = 
 {
     HID_USAGE_PAGE ( HID_USAGE_PAGE_DESKTOP     ),
     HID_USAGE      ( HID_USAGE_DESKTOP_JOYSTICK ),
@@ -53,23 +53,23 @@ uint8_t const desc_hid_report[] =
         HID_REPORT_ID(JOYSTICK_STRUCT)
         
         HID_USAGE_PAGE ( HID_USAGE_PAGE_DESKTOP ),
-        HID_USAGE      ( HID_USAGE_DESKTOP_POINTER ),
+        HID_USAGE ( HID_USAGE_DESKTOP_X  ),
+        HID_USAGE ( HID_USAGE_DESKTOP_Y  ),
+        HID_USAGE ( HID_USAGE_DESKTOP_Z  ),
+        HID_USAGE ( HID_USAGE_DESKTOP_RX ),
+        HID_USAGE ( HID_USAGE_DESKTOP_RY ),
+        HID_USAGE ( HID_USAGE_DESKTOP_RZ ),
         HID_LOGICAL_MIN( 0 ),
-        HID_LOGICAL_MAX_32( 65535 ), 
-        HID_REPORT_SIZE( 32 ),
+        HID_LOGICAL_MAX_N( 65535, 3 ), 
+        HID_REPORT_SIZE( 16 ),
         HID_REPORT_COUNT( 6 ),
+        HID_INPUT ( HID_DATA | HID_VARIABLE | HID_ABSOLUTE ),
         
-        HID_COLLECTION ( HID_COLLECTION_PHYSICAL ),
-            HID_USAGE ( HID_USAGE_DESKTOP_X  ),
-            HID_USAGE ( HID_USAGE_DESKTOP_Y  ),
-            HID_USAGE ( HID_USAGE_DESKTOP_Z  ),
-            HID_USAGE ( HID_USAGE_DESKTOP_RX ),
-            HID_USAGE ( HID_USAGE_DESKTOP_RY ),
-            HID_USAGE ( HID_USAGE_DESKTOP_RZ ),
-            HID_INPUT ( HID_DATA | HID_VARIABLE | HID_ABSOLUTE ),
-        HID_COLLECTION_END,
-        
-    HID_COLLECTION_END,
+    HID_COLLECTION_END
+};
+
+uint8_t const desc_hid_vendor[] = 
+{
     HID_USAGE_PAGE_N ( HID_USAGE_PAGE_VENDOR, 2 ),
     HID_USAGE        ( 0x01 ),
     HID_COLLECTION   ( HID_COLLECTION_APPLICATION ),
@@ -84,8 +84,7 @@ uint8_t const desc_hid_report[] =
         HID_REPORT_COUNT(63),
         HID_OUTPUT(HID_DATA | HID_VARIABLE | HID_ABSOLUTE),
         
-    HID_COLLECTION_END,
-    
+    HID_COLLECTION_END
 };
 
 class TinyusbJoystick {
@@ -95,15 +94,15 @@ private:
     static const uint16_t JOYSTICK_RANGE = JOYSTICK_MAX_VALUE - JOYSTICK_MIN_VALUE;
 
     // USB HID object
-    // Report payload for the two axes
+    // Report payload for the axes
     typedef struct
     {
-        int32_t x;
-        int32_t y;
-        int32_t z;
-        int32_t rx;
-        int32_t ry;
-        int32_t rz;
+        uint16_t x;
+        uint16_t y;
+        uint16_t z;
+        uint16_t rx;
+        uint16_t ry;
+        uint16_t rz;
     } hid_report_t;
     
     hid_report_t hid_report = {0};
@@ -120,6 +119,7 @@ public:
   bool isReceiving = false;
   bool isGetData=false;
   Adafruit_USBD_HID usb_hid;
+  Adafruit_USBD_HID usb_hid_vendor;
   bool isActionGet[8];
   bool isConfigGet[3];
   bool isTestConfigGet[3];
@@ -130,6 +130,10 @@ public:
   DapConfig_t tmpConfig[3];
   DapBridgeState_t tmpBridgeAction;
   DapActionOta_t tmpOtaAction;
+  bool isWifiChannelGet;
+  bool isMacAddressesGet;
+  DapMacAddresses_t tmpMacAddresses;
+  DapWifiChannel_t tmpWifiChannel;
   uint8_t rawLength;
   static TinyusbJoystick* instance;
   TinyusbJoystick();

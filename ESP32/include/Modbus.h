@@ -23,10 +23,9 @@ private:
     int32_t dataRxBufferLength_i32 = 0;
     int32_t slaveId_i32 = 0x01;
     uint8_t txBuffer_au8[9] = {0,0,0,0,0,0,0,0,0};
-
-    int32_t computeCrc(uint8_t *buffer_pu8, int32_t bufferLength_i32);
     
 public:
+    static int32_t computeCrc(const uint8_t *buffer_pu8, int32_t bufferLength_i32);
     
     Modbus();
     Modbus(HardwareSerial &serial_pHS);
@@ -68,12 +67,6 @@ public:
     int32_t readDiscreteRegisterFromDevice(int32_t registerAddress_i32);
     int32_t readDiscreteRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32);
     int32_t readDiscreteRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32, int32_t numberOfBits_i32);
-
-    // Read Holding Register    0x03
-    int32_t readHoldingRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32);
-
-    // Read Input Register      0x04
-    int32_t readInputRegisterFromDevice(int32_t slaveId_i32, int32_t registerAddress_i32);
 
     int16_t convertRxBufferToInt16(int32_t index_i32);
 };

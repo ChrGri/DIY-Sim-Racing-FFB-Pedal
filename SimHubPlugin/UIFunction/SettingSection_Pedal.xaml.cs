@@ -25,7 +25,6 @@ namespace DiyFfbPedal.UIFunction
     {
         
         public vJoyInterfaceWrap.vJoy _joystick;
-        private bool IsJoystickInitialized = false;
         public SettingSection_Pedal()
         {
             InitializeComponent();
@@ -110,7 +109,7 @@ namespace DiyFfbPedal.UIFunction
             {
                 if (Settings != null)
                 {
-                    string labeltext= SLoc.GetValue("DIYFFBPedalPlugin_TextEffectUpdateRate", "Effects Update Rate:");
+                    string labeltext= SLoc.GetValue("DIYFFBPedalPlugin_TextEffectUpdateRate", "Effect update rate:");
                     Label_Pedal_interval_trigger.Content = labeltext + Settings.Pedal_action_fps[Settings.table_selected]+"Hz";
                     Slider_Pedal_interval_trigger.Value = Settings.Pedal_action_fps[Settings.table_selected];
 
@@ -231,7 +230,7 @@ namespace DiyFfbPedal.UIFunction
         private void Slider_Pedal_interval_trigger_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             Settings.Pedal_action_fps[Settings.table_selected] = (byte)e.NewValue;
-            string labeltext = SLoc.GetValue("DIYFFBPedalPlugin_TextEffectUpdateRate", "Effects Update Rate:");
+            string labeltext = SLoc.GetValue("DIYFFBPedalPlugin_TextEffectUpdateRate", "Effect update rate:");
             Label_Pedal_interval_trigger.Content = labeltext + Settings.Pedal_action_fps[Settings.table_selected] + "Hz";
             SettingsChangedEvent(Settings);
         }
@@ -285,6 +284,26 @@ namespace DiyFfbPedal.UIFunction
         private void CheckBox_Pedal_ESPNow_SyncFlag_Unchecked(object sender, RoutedEventArgs e)
         {
             Settings.Pedal_ESPNow_Sync_flag[Settings.table_selected] = false;
+            if (calculation != null)
+            {
+                calculation.rssi[Settings.table_selected] = 0;
+                calculation.pedalWirelessStatus[Settings.table_selected] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+            }
+            if (Settings.vjoy_output_flag == 1 && _joystick != null)
+            {
+                switch (Settings.table_selected)
+                {
+                    case 0:
+                        _joystick.SetAxis(0, Settings.vjoy_order, HID_USAGES.HID_USAGE_RX);
+                        break;
+                    case 1:
+                        _joystick.SetAxis(0, Settings.vjoy_order, HID_USAGES.HID_USAGE_RY);
+                        break;
+                    case 2:
+                        _joystick.SetAxis(0, Settings.vjoy_order, HID_USAGES.HID_USAGE_RZ);
+                        break;
+                }
+            }
             SettingsChangedEvent(Settings);
         }
 
@@ -460,6 +479,81 @@ namespace DiyFfbPedal.UIFunction
         {
             Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
             e.Handled = true;
+        }
+        // Inline Keyboard / Numeric Input Handlers
+        private void Label_Pedal_interval_trigger_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (Settings != null)
+                BeginInlineEdit(Label_Pedal_interval_trigger, TextBox_edit_Pedal_interval, Settings.Pedal_action_fps[Settings.table_selected]);
+            e.Handled = true;
+        }
+
+        private void BeginInlineEdit(FrameworkElement displayElem, TextBox box, double currentValue)
+        {
+            if (displayElem == null || box == null) return;
+            box.Text = currentValue.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+            displayElem.Visibility = Visibility.Collapsed;
+            box.Visibility = Visibility.Visible;
+            box.Focus();
+            box.SelectAll();
+        }
+
+        private void EditBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            var box = sender as TextBox;
+            if (box == null) return;
+            if (e.Key == Key.Enter)
+            {
+                CommitInlineEdit(box);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                EndInlineEdit(box);
+                e.Handled = true;
+            }
+        }
+
+        private void EditBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            var box = sender as TextBox;
+            if (box != null && box.Visibility == Visibility.Visible)
+                CommitInlineEdit(box);
+        }
+
+        private void CommitInlineEdit(TextBox box)
+        {
+            if (Settings == null || box == null) return;
+
+            string text = (box.Text ?? string.Empty).Trim().Replace(',', '.');
+            if (double.TryParse(text, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double value))
+            {
+                byte[] validFps = new byte[] { 15, 20, 30, 60 };
+                byte closest = 30;
+                double minDiff = double.MaxValue;
+                foreach (var fps in validFps)
+                {
+                    double diff = Math.Abs(fps - value);
+                    if (diff < minDiff)
+                    {
+                        minDiff = diff;
+                        closest = fps;
+                    }
+                }
+                Settings.Pedal_action_fps[Settings.table_selected] = closest;
+                if (Slider_Pedal_interval_trigger != null) Slider_Pedal_interval_trigger.Value = closest;
+                string labeltext = SLoc.GetValue("DIYFFBPedalPlugin_TextEffectUpdateRate", "Effect update rate:");
+                if (Label_Pedal_interval_trigger != null) Label_Pedal_interval_trigger.Content = labeltext + closest + "Hz";
+                SettingsChangedEvent(Settings);
+            }
+            EndInlineEdit(box);
+        }
+
+        private void EndInlineEdit(TextBox box)
+        {
+            if (box == null) return;
+            box.Visibility = Visibility.Collapsed;
+            if (Label_Pedal_interval_trigger != null) Label_Pedal_interval_trigger.Visibility = Visibility.Visible;
         }
     }
 }

@@ -27,6 +27,7 @@ obj/
 !OTA/ReleaseBuild/Plugin/DiyFfbPedal.dll
 *.exe
 !SimHubPlugin/Resources/esptool.exe
+!SimHubPlugin/Resources/espota.exe
 *.pdb
 *.cache
 *.ilk
@@ -48,3 +49,10 @@ SimHubPlugin/SettingsControlDemo.xaml.cs
 /Firmware_for_V3/SimHubPlugin/obj
 /Firmware_for_V3/SimHubPlugin/.vs
 /SimHubPlugin/Resources/Firmware
+ESP32/.vscode/extensions.json
+ESP32/.vscode/extensions.json
+ESP32/.vscode/extensions.json
+ESP32_master/.vscode/extensions.json
+.DS_Store
+
+GEMINI.md

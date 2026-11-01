@@ -1,0 +1,29 @@
+<Window x:Class="DiyFfbPedal.UIElement.LanguageDownloadWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
+        Title="Download Localization Files" Height="300" Width="400" Background="{x:Null}" WindowStyle="ToolWindow" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Border Background="#7F4E4E4E" CornerRadius="5,5,5,5" BorderThickness="0,2,0,0">
+            <StackPanel Margin="10">
+                <Label Content="Available Languages on GitHub" Height="25" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Foreground="White"/>
+                
+                <ListBox x:Name="Listbox_Languages" Height="180" Background="#FF1E1E1E" Foreground="White" BorderBrush="#FF3F3F46" Margin="0,5,0,10">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DisplayText}" Padding="5"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <styles:SHButtonPrimary x:Name="Btn_Refresh" Click="Btn_Refresh_Click" Content="Refresh" Width="60" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                    <styles:SHButtonPrimary x:Name="Btn_Download" Click="Btn_Download_Click" Content="Download" Width="60" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                    <styles:SHButtonPrimary x:Name="Btn_Close" Click="Btn_Close_Click" Content="Close" Width="60" Height="20" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

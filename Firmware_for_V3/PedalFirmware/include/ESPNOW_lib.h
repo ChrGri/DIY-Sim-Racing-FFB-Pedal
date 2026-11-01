@@ -553,6 +553,7 @@ void ESPNow_initialize()
   DAP_config_st dap_config_espnow_init_st = global_dap_config_class.getConfig();
   
   WiFi.mode(WIFI_MODE_STA);
+  WiFi.setSleep(false);
   Serial.println("Initializing ESPNow, please wait");
   // Serial.print("Current MAC Address:  ");
   // Serial.println(WiFi.macAddress());

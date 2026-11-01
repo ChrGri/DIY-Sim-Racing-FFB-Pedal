@@ -7,6 +7,8 @@
 const char* ota_hostname="pedal_ota";
 void ota_arduinoota_initialize()
 {
+    // Zwingt den WLAN-Chip, dauerhaft wach zu bleiben, um Paketverluste beim OTA zu verhindern!
+    WiFi.setSleep(false);
     ArduinoOTA.setHostname(ota_hostname); 
     ArduinoOTA
         .onStart([]() {

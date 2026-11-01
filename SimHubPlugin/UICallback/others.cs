@@ -1,7 +1,9 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
@@ -29,13 +31,13 @@ namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
-        public void ToastNotification(string message1, string message2)
+        public void ToastNotification(string message1, string message2, string actionButtonText = null, Action actionButtonCallback = null)
         {
-            System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            System.Windows.Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
             {
                 try
                 {
-                    ToastWithCustumizedWindow(message1, message2);
+                    ToastWithCustumizedWindow(message1, message2, actionButtonText, actionButtonCallback);
                 }
                 catch (Exception ex)
                 {
@@ -43,6 +45,28 @@ namespace DiyFfbPedal
                 }
             }));
 
+        }
+
+        public void NavigateToSystemWirelessTab()
+        {
+            System.Windows.Application.Current?.Dispatcher?.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    if (Tab_System != null)
+                    {
+                        Tab_System.IsSelected = true;
+                    }
+                    if (TabItem_Wireless != null)
+                    {
+                        TabItem_Wireless.IsSelected = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SimHub.Logging.Current.Error($"NavigateToSystemWirelessTab error: {ex.Message}");
+                }
+            }));
         }
 
         public void ToastWithToastmanager(string message1, string message2)
@@ -78,7 +102,7 @@ namespace DiyFfbPedal
             Process.Start(psi);
         }
 
-        public void ToastWithCustumizedWindow(string title, string message)
+        public void ToastWithCustumizedWindow(string title, string message, string actionButtonText = null, Action actionButtonCallback = null)
         {
             Grid mainGrid = new Grid();
             StackPanel container = new StackPanel
@@ -107,6 +131,40 @@ namespace DiyFfbPedal
 
             container.Children.Add(titleLabel);
             container.Children.Add(messageLabel);
+
+            Window toast = null;
+
+            if (!string.IsNullOrEmpty(actionButtonText) && actionButtonCallback != null)
+            {
+                Button actionBtn = new Button
+                {
+                    Content = actionButtonText,
+                    FontSize = 11,
+                    FontFamily = new FontFamily("Arial"),
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.White,
+                    Background = new SolidColorBrush(Color.FromRgb(0, 122, 204)),
+                    BorderThickness = new Thickness(0),
+                    Padding = new Thickness(12, 4, 12, 4),
+                    Margin = new Thickness(0, 8, 0, 0),
+                    HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
+                    Cursor = Cursors.Hand
+                };
+                actionBtn.Click += (s, e) =>
+                {
+                    try
+                    {
+                        actionButtonCallback.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        SimHub.Logging.Current.Error($"Toast button action error: {ex.Message}");
+                    }
+                    toast?.Close();
+                };
+                container.Children.Add(actionBtn);
+            }
+
             mainGrid.Children.Add(container);
             System.Windows.Controls.Button closeButton = new Button
             {
@@ -123,15 +181,15 @@ namespace DiyFfbPedal
                 Height = 25,
                 Cursor = Cursors.Hand
             };
-            Window toast = null; 
             closeButton.Click += (s, e) => toast?.Close();
             closeButton.MouseEnter += (s, e) => closeButton.Foreground = Brushes.White;
             closeButton.MouseLeave += (s, e) => closeButton.Foreground = Brushes.Gray;
             mainGrid.Children.Add(closeButton);
             toast = new Window
             {
-                Width = 350,
-                Height = 100,
+                Width = 360,
+                SizeToContent = SizeToContent.Height,
+                MinHeight = 100,
                 WindowStyle = WindowStyle.None,
                 AllowsTransparency = true,
                 Background = Brushes.Transparent,
@@ -145,16 +203,18 @@ namespace DiyFfbPedal
                 CornerRadius = new CornerRadius(5),
                 BorderBrush = Brushes.Gray,
                 BorderThickness = new Thickness(1),
+                Padding = new Thickness(0, 0, 0, 8),
                 Child = mainGrid 
             };
 
             var area = SystemParameters.WorkArea;
-            toast.Left = area.Right - toast.Width - 3;
-            toast.Top = area.Bottom - toast.Height - 3;
+            toast.Left = area.Right - toast.Width - 10;
+            toast.Top = area.Bottom - (string.IsNullOrEmpty(actionButtonText) ? 110 : 145);
 
             toast.Show();
             System.Media.SystemSounds.Beep.Play();
-            Task.Delay(3500).ContinueWith(_ => {
+            int delayMs = string.IsNullOrEmpty(actionButtonText) ? 3500 : 8000;
+            Task.Delay(delayMs).ContinueWith(_ => {
                 try { toast.Dispatcher.Invoke(() => toast.Close()); }
                 catch {  }
             });
@@ -165,29 +225,17 @@ namespace DiyFfbPedal
 
             var SerialPortSelectionArray = new List<SerialPortChoice>();
             
-            string[] comPorts = SerialPort.GetPortNames();
-            var SerialPortList = new List<string>();
-            comPorts = comPorts.Distinct().ToArray(); // unique
+            // Only ports of devices that are actually connected (see GetPresentPorts).
+            var presentPorts = ComPortHelper.GetPresentPorts(forceRefresh: true);
             Plugin.comportList.Clear();
-            SerialPortList.Clear();
-     
-            if (comPorts.Length > 0)
+
+            if (presentPorts.Count > 0)
             {
-
-                foreach (string portName in comPorts)
+                foreach (var port in presentPorts)
                 {
-                    
-                    //SerialPortSelectionArray.Add(new SerialPortChoice(portName, portName));
-                    //int index = Plugin.comportList.FindIndex(item => item.ComPortName == portName);
-                    var parseResult= ComPortHelper.GetVidPidFromComPort(portName);
-                    Plugin.comportList.Add(parseResult);
-                    var portDeviceName = portName+" "+parseResult.DeviceName;
-                    //SerialPortList.Add((string)Plugin.comportList[index].DeviceName);
-                    SerialPortSelectionArray.Add(new SerialPortChoice(portDeviceName, portName));
-                    
-
+                    Plugin.comportList.Add(port);
+                    SerialPortSelectionArray.Add(new SerialPortChoice(ComPortHelper.DisplayName(port), port.ComPortName));
                 }
-                
             }
             else
             {
@@ -217,7 +265,7 @@ namespace DiyFfbPedal
 
         public void DAP_config_set_default_rudder()
         {
-
+            
             dap_config_st_rudder.payloadHeader_.payloadType = (byte)Constants.pedalConfigPayload_type;
             dap_config_st_rudder.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition = 5;
@@ -235,8 +283,8 @@ namespace DiyFfbPedal
 
             dap_config_st_rudder.payloadPedalConfig_.quantityOfControl = 6;
             dap_config_st_rudder.payloadPedalConfig_.relativeForce00 = 0;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce01 = 20;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce02 = 40;
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce01 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce02 = 0;
             dap_config_st_rudder.payloadPedalConfig_.relativeForce03 = 60;
             dap_config_st_rudder.payloadPedalConfig_.relativeForce04 = 80;
             dap_config_st_rudder.payloadPedalConfig_.relativeForce05 = 100;
@@ -281,6 +329,30 @@ namespace DiyFfbPedal
             dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig08 = 0;
             dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig09 = 0;
             dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig10 = 0;
+
+            dap_config_st_rudder.payloadPedalConfig_.numOfJoystickMapControlToe = 6;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe00 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe01 = 20;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe02 = 40;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe03 = 60;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe04 = 80;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe05 = 100;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe06 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe07 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe08 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe09 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapMappedToe10 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe00 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe01 = 20;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe02 = 40;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe03 = 60;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe04 = 80;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe05 = 100;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe06 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe07 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe08 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe09 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe10 = 0;
 
             dap_config_st_rudder.payloadPedalConfig_.absFrequency = 5;
             dap_config_st_rudder.payloadPedalConfig_.absAmplitude = 20;
@@ -338,124 +410,81 @@ namespace DiyFfbPedal
             dap_config_st_rudder.payloadPedalConfig_.minForceForEffects = 0;
             dap_config_st_rudder.payloadPedalConfig_.configHash_u32 = 393938365;
             dap_config_st_rudder.payloadPedalConfig_.virtualPedalMass_u8 = 150;
-            dap_config_st_rudder.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = 0;
-            dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8 = 200;
+            dap_config_st_rudder.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = 30;
+            dap_config_st_rudder.payloadPedalConfig_.brakeResistorResistance_Ohm_u8 = 10; // Ohm
+            dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8 = 100;
             dap_config_st_rudder.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = 10;
             dap_config_st_rudder.payloadPedalConfig_.endstopTravelRange_mm_u8 = 0;
-            dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = 10;
+            dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = 0;
         }
-        public byte[] getBytesPayload(payloadPedalConfig aux)
+        unsafe public byte[] getBytesPayload(payloadPedalConfig aux)
         {
-            int length = Marshal.SizeOf(aux);
-            IntPtr ptr = Marshal.AllocHGlobal(length);
-            byte[] myBuffer = new byte[length];
-
-            Marshal.StructureToPtr(aux, ptr, true);
-            Marshal.Copy(ptr, myBuffer, 0, length);
-            Marshal.FreeHGlobal(ptr);
-
+            byte[] myBuffer = new byte[sizeof(payloadPedalConfig)];
+            fixed (byte* p = myBuffer) { *(payloadPedalConfig*)p = aux; }
             return myBuffer;
         }
-
 
         unsafe public byte[] getBytes(DAP_config_st aux)
         {
-            int length = Marshal.SizeOf(aux);
-            IntPtr ptr = Marshal.AllocHGlobal(length);
-
-            //int length = sizeof(DAP_config_st);
-            byte[] myBuffer = new byte[length];
-
-            Marshal.StructureToPtr(aux, ptr, true);
-            Marshal.Copy(ptr, myBuffer, 0, length);
-            Marshal.FreeHGlobal(ptr);
-
-
-            //DAP_config_st* v = &aux;
-            //for (UInt16 ptrIdx = 0; ptrIdx < length; ptrIdx++)
-            //{
-            //    myBuffer[ptrIdx] = *((byte*)v + ptrIdx);
-            //}
-
+            byte[] myBuffer = new byte[sizeof(DAP_config_st)];
+            fixed (byte* p = myBuffer) { *(DAP_config_st*)p = aux; }
             return myBuffer;
         }
 
-        public DAP_config_st getConfigFromBytes(byte[] myBuffer)
+        unsafe public DAP_config_st getConfigFromBytes(byte[] myBuffer)
         {
-            DAP_config_st aux;
-
-            // see https://stackoverflow.com/questions/31045358/how-do-i-copy-bytes-into-a-struct-variable-in-c
-            int size = Marshal.SizeOf(typeof(DAP_config_st));
-            IntPtr ptr = Marshal.AllocHGlobal(size);
-
-            Marshal.Copy(myBuffer, 0, ptr, size);
-
-            aux = (DAP_config_st)Marshal.PtrToStructure(ptr, typeof(DAP_config_st));
-            Marshal.FreeHGlobal(ptr);
-
-            return aux;
-        }
-        public Dap_hidmessage_st getHidMessageFromBytes(byte[] myBuffer)
-        {
-            Dap_hidmessage_st aux;
-
-            // see https://stackoverflow.com/questions/31045358/how-do-i-copy-bytes-into-a-struct-variable-in-c
-            int size = Marshal.SizeOf(typeof(Dap_hidmessage_st));
-            IntPtr ptr = Marshal.AllocHGlobal(size);
-
-            Marshal.Copy(myBuffer, 0, ptr, size);
-
-            aux = (Dap_hidmessage_st)Marshal.PtrToStructure(ptr, typeof(Dap_hidmessage_st));
-            Marshal.FreeHGlobal(ptr);
-
-            return aux;
+            if (myBuffer == null || myBuffer.Length < sizeof(DAP_config_st)) return default(DAP_config_st);
+            fixed (byte* p = myBuffer) { return *(DAP_config_st*)p; }
         }
 
-        public DAP_state_basic_st getStateFromBytes(byte[] myBuffer)
+        unsafe public Dap_hidmessage_st getHidMessageFromBytes(byte[] myBuffer)
         {
-            DAP_state_basic_st aux;
-
-            // see https://stackoverflow.com/questions/31045358/how-do-i-copy-bytes-into-a-struct-variable-in-c
-            int size = Marshal.SizeOf(typeof(DAP_state_basic_st));
-            IntPtr ptr = Marshal.AllocHGlobal(size);
-
-            Marshal.Copy(myBuffer, 0, ptr, size);
-
-            aux = (DAP_state_basic_st)Marshal.PtrToStructure(ptr, typeof(DAP_state_basic_st));
-            Marshal.FreeHGlobal(ptr);
-
-            return aux;
+            if (myBuffer == null || myBuffer.Length < sizeof(Dap_hidmessage_st)) return default(Dap_hidmessage_st);
+            fixed (byte* p = myBuffer) { return *(Dap_hidmessage_st*)p; }
         }
 
-        public DAP_state_extended_st getStateExtFromBytes(byte[] myBuffer)
+        unsafe public DAP_state_basic_st getStateFromBytes(byte[] myBuffer)
         {
-            DAP_state_extended_st aux;
-
-            // see https://stackoverflow.com/questions/31045358/how-do-i-copy-bytes-into-a-struct-variable-in-c
-            int size = Marshal.SizeOf(typeof(DAP_state_extended_st));
-            IntPtr ptr = Marshal.AllocHGlobal(size);
-
-            Marshal.Copy(myBuffer, 0, ptr, size);
-
-            aux = (DAP_state_extended_st)Marshal.PtrToStructure(ptr, typeof(DAP_state_extended_st));
-            Marshal.FreeHGlobal(ptr);
-
-            return aux;
+            if (myBuffer == null || myBuffer.Length < sizeof(DAP_state_basic_st)) return default(DAP_state_basic_st);
+            fixed (byte* p = myBuffer) { return *(DAP_state_basic_st*)p; }
         }
-        public DAP_bridge_state_st getStateBridgeFromBytes(byte[] myBuffer)
+
+        unsafe public DAP_state_extended_st getStateExtFromBytes(byte[] myBuffer)
         {
-            DAP_bridge_state_st aux;
+            if (myBuffer == null || myBuffer.Length < sizeof(DAP_state_extended_st)) return default(DAP_state_extended_st);
+            fixed (byte* p = myBuffer) { return *(DAP_state_extended_st*)p; }
+        }
 
-            // see https://stackoverflow.com/questions/31045358/how-do-i-copy-bytes-into-a-struct-variable-in-c
-            int size = Marshal.SizeOf(typeof(DAP_bridge_state_st));
-            IntPtr ptr = Marshal.AllocHGlobal(size);
+        unsafe public DAP_bridge_state_st getStateBridgeFromBytes(byte[] myBuffer)
+        {
+            if (myBuffer == null || myBuffer.Length < sizeof(DAP_bridge_state_st)) return default(DAP_bridge_state_st);
+            fixed (byte* p = myBuffer) { return *(DAP_bridge_state_st*)p; }
+        }
 
-            Marshal.Copy(myBuffer, 0, ptr, size);
+                unsafe public byte[] getBytes_MacAddresses(DAP_mac_addresses_st aux)
+        {
+            byte[] myBuffer = new byte[sizeof(DAP_mac_addresses_st)];
+            fixed (byte* p = myBuffer) { *(DAP_mac_addresses_st*)p = aux; }
+            return myBuffer;
+        }
 
-            aux = (DAP_bridge_state_st)Marshal.PtrToStructure(ptr, typeof(DAP_bridge_state_st));
-            Marshal.FreeHGlobal(ptr);
+        unsafe public DAP_mac_addresses_st getMacAddressesFromBytes(byte[] myBuffer)
+        {
+            if (myBuffer == null || myBuffer.Length < sizeof(DAP_mac_addresses_st)) return default(DAP_mac_addresses_st);
+            fixed (byte* p = myBuffer) { return *(DAP_mac_addresses_st*)p; }
+        }
 
-            return aux;
+        unsafe public byte[] getBytes_WifiChannel(DAP_wifi_channel_st aux)
+        {
+            byte[] myBuffer = new byte[sizeof(DAP_wifi_channel_st)];
+            fixed (byte* p = myBuffer) { *(DAP_wifi_channel_st*)p = aux; }
+            return myBuffer;
+        }
+
+        unsafe public DAP_wifi_channel_st getWifiChannelFromBytes(byte[] myBuffer)
+        {
+            if (myBuffer == null || myBuffer.Length < sizeof(DAP_wifi_channel_st)) return default(DAP_wifi_channel_st);
+            fixed (byte* p = myBuffer) { return *(DAP_wifi_channel_st*)p; }
         }
         private void PedalParameterLiveUpdate()
         {
@@ -584,10 +613,6 @@ namespace DiyFfbPedal
                         Plugin.ESPsync_serialPort.DiscardOutBuffer();
                         // send data
                         Plugin.ESPsync_serialPort.Write(newBuffer, 0, newBuffer.Length);
-
-
-                        //Plugin._serialPort[indexOfSelectedPedal_u].Write("\n");
-                        System.Threading.Thread.Sleep(100);
                     }
                     catch (Exception caughtEx)
                     {
@@ -630,6 +655,12 @@ namespace DiyFfbPedal
             dap_config_st_rudder.payloadHeader_.PedalTag = (byte)pedalIdx;
             dap_config_st_rudder.payloadHeader_.storeToEeprom = 0;
             dap_config_st_rudder.payloadPedalConfig_.pedal_type = (byte)pedalIdx;
+
+            // Push-pull differential trim offset:
+            // Left pedal (index 0) gets +trim, Right pedal (index 1) gets -trim
+            bool isLeft = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 0 && pedalIdx == Plugin.Rudder_Pedal_idx[0]);
+            float trimForPedal = isLeft ? -Plugin.Settings.rudderTrimOffset : Plugin.Settings.rudderTrimOffset;
+            dap_config_st_rudder.payloadPedalConfig_.preloadForce = trimForPedal;
             dap_config_st_rudder.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
             dap_config_st_rudder.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
             dap_config_st_rudder.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
@@ -649,9 +680,10 @@ namespace DiyFfbPedal
             // compute checksum
             DAP_action_st tmp = default;
             tmp.payloadPedalAction_.returnPedalConfig_u8 = 1;
+            tmp.payloadPedalAction_.system_action_u8 = (byte)PedalSystemAction.WAKEUP_PEDAL;
             waiting_for_pedal_config[i] = true;
             Plugin.SendPedalAction(tmp, (byte)i);
-            /*
+        /*
             tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
             tmp.payloadHeader_.PedalTag = (byte)i;
@@ -711,6 +743,16 @@ namespace DiyFfbPedal
 
         }
 
+        unsafe public void Reading_config_auto_wireless(uint i)
+        {
+            // compute checksum
+            DAP_action_st tmp = default;
+            tmp.payloadPedalAction_.returnPedalConfig_u8 = 1;
+            tmp.payloadPedalAction_.system_action_u8 = (byte)PedalSystemAction.WAKEUP_PEDAL;
+            waiting_for_pedal_config[i] = true;
+            Plugin.SendPedalActionWireless(tmp, (byte)i);
+        }
+
         public string[] STOPCHAR = { "\r\n" };
 
         public byte[] STARTOFFRAMCHAR = { 0xAA , 0x55};
@@ -722,6 +764,8 @@ namespace DiyFfbPedal
         public byte[] STARTOFFRAME_BRIDGE_BASIC_STRUCT = { 0xAA, 0x55, 210 };
         public byte[] STARTOFFRAME_CONFIG = { 0xAA, 0x55, 100 };
         public byte[] STARTOFFRAME_SERVO_CONFIG = { 0xAA, 0x55, 170 };
+        public byte[] STARTOFFRAME_WIFI_CHANNEL = { 0xAA, 0x55, 180 };
+        public byte[] STARTOFFRAME_MAC_ADDRESSES = { 0xAA, 0x55, 190 };
 
         public byte[] STARTOFFRAMCHAR_SOF_byte0 = { 0xAA};
         public byte[] STARTOFFRAMCHAR_SOF_byte1 = { 0x55};
@@ -761,30 +805,27 @@ namespace DiyFfbPedal
                 // serial port settings
                 //Plugin._serialPort[pedalIdx].BaudRate = 921600;
                 var serialInfo = ComPortHelper.GetVidPidFromComPort(Plugin._serialPort[pedalIdx].PortName);
+                if (serialInfo.Vid == "1A86" && serialInfo.Pid == "55D3")
+                {
+                    //target CH343
+                    //change baud here
+                    
+                    //MessageBox.Show("CH343 connected");
+                }
+                Plugin._serialPort[pedalIdx].Handshake = Handshake.None;
+                Plugin._serialPort[pedalIdx].Parity = Parity.None;
+                Plugin._serialPort[pedalIdx].BaudRate = Constants.BAUD3M;
                 if (serialInfo.Vid == "303A")// && serialInfo.Pid == "1001")
                 {
                     //CDC serial enabled
                     Plugin.isCdcSerial[pedalIdx] = true;
+                    Plugin._serialPort[pedalIdx].BaudRate = Constants.DEFAULTBAUD;
                     //MessageBox.Show("CDC connected");
                 }
                 else
                 {
                     Plugin.isCdcSerial[pedalIdx] = false;
                 }
-
-                if (serialInfo.Vid == "1A86" && serialInfo.Pid == "55D3")
-                {
-                    //target CH343
-                    //change baud here
-                    Plugin._serialPort[pedalIdx].BaudRate = Constants.BAUD3M;
-                    //MessageBox.Show("CH343 connected");
-                }
-                else
-                {
-                    Plugin._serialPort[pedalIdx].BaudRate = Constants.DEFAULTBAUD;
-                }
-                Plugin._serialPort[pedalIdx].Handshake = Handshake.None;
-                Plugin._serialPort[pedalIdx].Parity = Parity.None;
                 //_serialPort[pedalIdx].StopBits = StopBits.None;
 
 
@@ -795,23 +836,14 @@ namespace DiyFfbPedal
                 Plugin._serialPort[pedalIdx].Encoding = System.Text.Encoding.GetEncoding(28591);
                 Plugin._serialPort[pedalIdx].NewLine = "\r\n";
                 Plugin._serialPort[pedalIdx].ReadBufferSize = 10000;
-                if (Plugin.Settings.auto_connect_flag[pedalIdx] == 1 & Plugin.Settings.connect_flag[pedalIdx] == 1)
+                // Always connect to the port the user selected. The former auto-connect
+                // branch assigned the "NA" placeholder whenever the pedal had never
+                // connected before, which reverted the selection (issue #126).
+                string selectedPort = Plugin.Settings.selectedComPortNames[pedalIdx];
+                if (!string.IsNullOrEmpty(selectedPort) && selectedPort != "NA")
                 {
-                    if (Plugin.Settings.autoconnectComPortNames[pedalIdx] == "NA")
-                    {
-                        Plugin._serialPort[pedalIdx].PortName = Plugin.Settings.autoconnectComPortNames[pedalIdx];
-                    }
-                    else
-                    {
-                        Plugin._serialPort[pedalIdx].PortName = Plugin.Settings.selectedComPortNames[pedalIdx];
-                        Plugin.Settings.autoconnectComPortNames[pedalIdx] = Plugin.Settings.selectedComPortNames[pedalIdx];
-                    }
-
-                }
-                else
-                {
-                    Plugin._serialPort[pedalIdx].PortName = Plugin.Settings.selectedComPortNames[pedalIdx];
-                    Plugin.Settings.autoconnectComPortNames[pedalIdx] = Plugin.Settings.selectedComPortNames[pedalIdx];
+                    Plugin._serialPort[pedalIdx].PortName = selectedPort;
+                    Plugin.Settings.autoconnectComPortNames[pedalIdx] = selectedPort;
                 }
 
                 if (Plugin.PortExists(Plugin._serialPort[pedalIdx].PortName))
@@ -827,17 +859,7 @@ namespace DiyFfbPedal
                         }
 
                         Plugin._serialPort[pedalIdx].Open();
-
-
-
-                        
-
-
-
                         System.Threading.Thread.Sleep(200);
-
-
-
                         Plugin.Settings.connect_status[pedalIdx] = 1;
                         // read callback
                         if (pedal_serial_read_timer[pedalIdx] != null)
@@ -853,6 +875,7 @@ namespace DiyFfbPedal
                         System.Threading.Thread.Sleep(100);
                         Serial_connect_status[pedalIdx] = true;
                         Plugin._calculations.pedalSerialStatus[pedalIdx] = ConnectStateEnum.PEDAL_ENTRY_CONNECT;
+                        Reading_config_auto(pedalIdx);
                     }
                     catch (Exception ex)
                     {
@@ -869,7 +892,7 @@ namespace DiyFfbPedal
                     Serial_connect_status[pedalIdx] = false;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             { }
 
 
@@ -988,7 +1011,7 @@ namespace DiyFfbPedal
             if (Plugin.Page_update_flag == true)
             {
                 Plugin.Page_update_flag = false;
-                MyTab.SelectedIndex = (int)Plugin.Settings.table_selected;
+                SelectPedalTab(Plugin.Settings.table_selected);
                 Plugin.pedal_select_update_flag = false;
                 Plugin.simhub_theme_color = defaultcolor.ToString();
                 switch (Plugin.Settings.table_selected)
@@ -1032,13 +1055,13 @@ namespace DiyFfbPedal
             DelayCall(400, () =>
             {
                 Reading_config_auto(Plugin.Rudder_Pedal_idx[0]);//read brk config from pedal
-                CurveRudderForce_Tab.text_rudder_log.Text += "Read Config from" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[0]] + "\n";
+                text_rudder_log.Text += "Read Config from" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[0]] + "\n";
             });
 
             DelayCall(600, () =>
             {
                 Reading_config_auto(Plugin.Rudder_Pedal_idx[1]);//read gas config from pedal
-                CurveRudderForce_Tab.text_rudder_log.Text += "Read Config from" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[1]] + "\n";
+                text_rudder_log.Text += "Read Config from" + Rudder_Pedal_idx_Name[Plugin.Rudder_Pedal_idx[1]] + "\n";
             });
             //System.Threading.Thread.Sleep(200);
             DelayCall((int)(900), () =>
@@ -1047,15 +1070,17 @@ namespace DiyFfbPedal
                 for (uint idx = 0; idx < 2; idx++)
                 {   
                     uint i = Plugin.Rudder_Pedal_idx[idx];
-                    CurveRudderForce_Tab.text_rudder_log.Visibility = Visibility.Visible;
+                    text_rudder_log.Visibility = Visibility.Visible;
                     //read pedal kinematic
-                    CurveRudderForce_Tab.text_rudder_log.Text += "Create Rudder config for Pedal: " + i + "\n";
+                    text_rudder_log.Text += "Create Rudder config for Pedal: " + i + "\n";
                     dap_config_st_rudder.payloadPedalConfig_.lengthPedal_a = dap_config_st[i].payloadPedalConfig_.lengthPedal_a;
                     dap_config_st_rudder.payloadPedalConfig_.lengthPedal_b = dap_config_st[i].payloadPedalConfig_.lengthPedal_b;
                     dap_config_st_rudder.payloadPedalConfig_.lengthPedal_c_horizontal = dap_config_st[i].payloadPedalConfig_.lengthPedal_c_horizontal;
                     dap_config_st_rudder.payloadPedalConfig_.lengthPedal_c_vertical = dap_config_st[i].payloadPedalConfig_.lengthPedal_c_vertical;
                     dap_config_st_rudder.payloadPedalConfig_.lengthPedal_travel = dap_config_st[i].payloadPedalConfig_.lengthPedal_travel;
-                    dap_config_st_rudder.payloadPedalConfig_.spindlePitch_mmPerRev_u8 = dap_config_st[i].payloadPedalConfig_.spindlePitch_mmPerRev_u8;
+                    byte pitch_init = dap_config_st[i].payloadPedalConfig_.spindlePitch_mmPerRev_u8;
+                    if (pitch_init == 0) pitch_init = 5;
+                    dap_config_st_rudder.payloadPedalConfig_.spindlePitch_mmPerRev_u8 = pitch_init;
                     dap_config_st_rudder.payloadPedalConfig_.invertLoadcellReading_u8 = dap_config_st[i].payloadPedalConfig_.invertLoadcellReading_u8;
                     dap_config_st_rudder.payloadPedalConfig_.invertMotorDirection_u8 = dap_config_st[i].payloadPedalConfig_.invertMotorDirection_u8;
                     dap_config_st_rudder.payloadPedalConfig_.loadcell_rating = dap_config_st[i].payloadPedalConfig_.loadcell_rating;
@@ -1064,7 +1089,7 @@ namespace DiyFfbPedal
                     dap_config_st_rudder.payloadPedalConfig_.Simulate_ABS_value = dap_config_st[i].payloadPedalConfig_.Simulate_ABS_value;
                     Sendconfig_Rudder(i);
                     System.Threading.Thread.Sleep(200);
-                    CurveRudderForce_Tab.text_rudder_log.Text += "Send Rudder config to Pedal: " + i + "\n";
+                    text_rudder_log.Text += "Send Rudder config to Pedal: " + i + "\n";
                 }
             });
 
@@ -1081,56 +1106,23 @@ namespace DiyFfbPedal
         }
 
 
-        void PrintUnknownStructParameters(object obj)
-        {
-            if (obj == null) throw new ArgumentNullException(nameof(obj));
-
-            Type type = obj.GetType();
-            _serial_monitor_window.TextBox_SerialMonitor.Text += $"Structure: {type.Name}" + "\n";
-            _serial_monitor_window.TextBox_SerialMonitor.ScrollToEnd();
-
-
-            // Get and print all fields
-            foreach (FieldInfo field in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
-            {
-                _serial_monitor_window.TextBox_SerialMonitor.Text += $"Field: {field.Name}, Value: {field.GetValue(obj)}" + "\n";
-                _serial_monitor_window.TextBox_SerialMonitor.ScrollToEnd();
-
-            }
-
-            // Get and print all properties
-            foreach (PropertyInfo property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-            {
-                if (property.CanRead) // Ensure the property is readable
-                {
-                    _serial_monitor_window.TextBox_SerialMonitor.Text += $"Property: {property.Name}, Value: {property.GetValue(obj)}" + "\n";
-                    _serial_monitor_window.TextBox_SerialMonitor.ScrollToEnd();
-
-                }
-            }
-        }
-
         public async void CheckForUpdateAsync()
         {
             try
             {
                 using (var client = new HttpClient())
                 {
-                    string json = await client.GetStringAsync(Constants.version_control_url);
+                    client.DefaultRequestHeaders.Add("User-Agent", "SimHub-Plugin");
+                    string json = await client.GetStringAsync("https://api.github.com/repos/ChrGri/DIY-Sim-Racing-FFB-Pedal/releases/latest");
                     JObject obj = JObject.Parse(json);
-                    var results = new List<string>();
+                    
+                    string tagName = (string)obj["tag_name"];
+                    string cleanedVersion = System.Text.RegularExpressions.Regex.Match(tagName ?? "", @"\d+(\.\d+)+").Value;
+                    if (string.IsNullOrEmpty(cleanedVersion)) cleanedVersion = "0.0.0.0";
 
                     for (int i = 0; i < Plugin._calculations.updateChannelString.Length; i++)
                     {
-                        string channel = Plugin._calculations.updateChannelString[i];
-                        if (obj.ContainsKey(channel))
-                        {
-                            Plugin._calculations.pluginVersionReading[i] = (string)obj[channel]["version"];
-                        }
-                        else
-                        {
-                            Plugin._calculations.pluginVersionReading[i] = "N/A";
-                        }
+                        Plugin._calculations.pluginVersionReading[i] = cleanedVersion;
                     }
                     Plugin._calculations.versionCheck_b = true;
                     
@@ -1138,7 +1130,7 @@ namespace DiyFfbPedal
                 //textBox_VersionUpdate.Text = "Stable:"+ Plugin._calculations.pluginVersionReading[0]+" nightly:"+ Plugin._calculations.pluginVersionReading[1]; ;
 
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 //MessageBox.Show($"Error:{ex.Message}");
                 Plugin._calculations.versionCheck_b = false;
@@ -1147,38 +1139,161 @@ namespace DiyFfbPedal
 
         public void readRudderSettingToConfig()
         {
-            dap_config_st_rudder.payloadPedalConfig_.quantityOfControl=Plugin.Settings.rudderControlQuantity;
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce00 = Plugin.Settings.rudderForce[0];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce01 = Plugin.Settings.rudderForce[1];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce02 = Plugin.Settings.rudderForce[2];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce03 = Plugin.Settings.rudderForce[3];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce04 = Plugin.Settings.rudderForce[4];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce05 = Plugin.Settings.rudderForce[5];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce06 = Plugin.Settings.rudderForce[6];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce07 = Plugin.Settings.rudderForce[7];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce08 = Plugin.Settings.rudderForce[8];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce09 = Plugin.Settings.rudderForce[9];
-            dap_config_st_rudder.payloadPedalConfig_.relativeForce10 = Plugin.Settings.rudderForce[10];
+            dap_config_st_rudder.payloadPedalConfig_.quantityOfControl = 6;
+            dap_config_st_rudder.payloadPedalConfig_.relativeTravel00 = 0;
+            dap_config_st_rudder.payloadPedalConfig_.relativeTravel01 = 20;
+            dap_config_st_rudder.payloadPedalConfig_.relativeTravel02 = 40;
+            dap_config_st_rudder.payloadPedalConfig_.relativeTravel03 = 60;
+            dap_config_st_rudder.payloadPedalConfig_.relativeTravel04 = 80;
+            dap_config_st_rudder.payloadPedalConfig_.relativeTravel05 = 100;
 
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel00 = Plugin.Settings.rudderTravel[0];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel01 = Plugin.Settings.rudderTravel[1];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel02 = Plugin.Settings.rudderTravel[2];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel03 = Plugin.Settings.rudderTravel[3];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel04 = Plugin.Settings.rudderTravel[4];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel05 = Plugin.Settings.rudderTravel[5];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel06 = Plugin.Settings.rudderTravel[6];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel07 = Plugin.Settings.rudderTravel[7];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel08 = Plugin.Settings.rudderTravel[8];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel09 = Plugin.Settings.rudderTravel[9];
-            dap_config_st_rudder.payloadPedalConfig_.relativeTravel10 = Plugin.Settings.rudderTravel[10];
+            uint profile = Plugin.Settings.rudderCenteringProfile;
+            double deadzone = Plugin.Settings.rudderDeadzone / 100.0;
 
-            dap_config_st_rudder.payloadPedalConfig_.maxForce = Plugin.Settings.rudderMaxForce;
-            dap_config_st_rudder.payloadPedalConfig_.preloadForce = Plugin.Settings.rudderMinForce;
+            double[] travels = new double[6] { 0.0, 0.2, 0.4, 0.6, 0.8, 1.0 };
+            byte[] forces = new byte[6];
+
+            for (int i = 0; i < 6; i++)
+            {
+                double u = travels[i];
+                double effectiveU = 0.0;
+                if (u > deadzone)
+                {
+                    effectiveU = (u - deadzone) / Math.Max(0.01, 1.0 - deadzone);
+                    effectiveU = Math.Min(1.0, Math.Max(0.0, effectiveU));
+                }
+                double forceFraction = 0.0;
+                if (profile == 0) // Linear
+                {
+                    forceFraction = effectiveU;
+                }
+                else if (profile == 1) // Progressive
+                {
+                    forceFraction = Math.Pow(effectiveU, 1.8);
+                }
+                else if (profile == 2) // S-Curve
+                {
+                    forceFraction = 0.5 * (1.0 - Math.Cos(effectiveU * Math.PI));
+                }
+                forces[i] = (byte)Math.Round(forceFraction * 100.0);
+            }
+
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce00 = forces[0];
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce01 = forces[1];
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce02 = forces[2];
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce03 = forces[3];
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce04 = forces[4];
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce05 = forces[5];
+
+            if (Plugin.Settings.rudderMode == 1)
+            {
+                // Helicopter Mode: Zero Centering Force (0 N Return Spring in admittance loop; set safe maxForce 1.0f for firmware config validator)
+                dap_config_st_rudder.payloadPedalConfig_.maxForce = 1.0f;
+                dap_config_st_rudder.payloadPedalConfig_.preloadForce = 0.0f;
+                dap_config_st_rudder.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = (byte)Math.Round(Plugin.Settings.rudderHeliFriction * 10);
+                dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8 = Plugin.Settings.rudderHeliDamping;
+            }
+            else
+            {
+                // Airplane Mode & Airplane with Toe Brake Mode: Configured Aerodynamic Centering Force
+                dap_config_st_rudder.payloadPedalConfig_.maxForce = Plugin.Settings.rudderCenteringForce;
+                dap_config_st_rudder.payloadPedalConfig_.preloadForce = 0.0f;
+                dap_config_st_rudder.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = Plugin.Settings.rudderCoulombFriction;
+                dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8 = Plugin.Settings.rudderVirtualDamping;
+            }
+
+            dap_config_st_rudder.payloadPedalConfig_.virtualPedalMass_u8 = Plugin.Settings.rudderVirtualPedalMass;
+            // Pack rudderMinForce (center force) into relativeForce00 (0.0 to 25.5 kg in 0.1 kg steps)
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce00 = (byte)Math.Round(Math.Max(0.0f, Math.Min(25.5f, Plugin.Settings.rudderMinForce)) * 10.0f);
+            // Pack rudderMode (0: Airplane, 1: Helicopter, 2: Toe Brake) into relativeForce01
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce01 = (byte)Plugin.Settings.rudderMode;
+            // Pack rudderCenteringProfile (0: Linear, 1: Progressive, 2: S-Curve) into relativeForce02
+            dap_config_st_rudder.payloadPedalConfig_.relativeForce02 = (byte)Plugin.Settings.rudderCenteringProfile;
+            // Pack rudderDeadzone into dampingProgression_u8 (e.g. 0 to 50 representing 0.0% to 5.0%)
+            dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8 = (byte)Math.Round(Plugin.Settings.rudderDeadzone * 10.0);
+            // Pack bilateral sync stiffness into minForceForEffects_u8 (e.g. 20 to 150 N)
+            dap_config_st_rudder.payloadPedalConfig_.minForceForEffects = (byte)Math.Round(Plugin.Settings.rudderBilateralSyncForce);
+            dap_config_st_rudder.payloadPedalConfig_.endstopTravelRange_mm_u8 = Plugin.Settings.rudderEndstopTravelRange;
+            dap_config_st_rudder.payloadPedalConfig_.endstopStiffness_kg_mm_u8 = Plugin.Settings.rudderEndstopStiffness;
+            
             dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition = Plugin.Settings.rudderMinTravel;
             dap_config_st_rudder.payloadPedalConfig_.pedalEndPosition = Plugin.Settings.rudderMaxTravel;
-            dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq= Plugin.Settings.rudderRPMMaxFrequency;
+            dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq = Plugin.Settings.rudderRPMMaxFrequency;
             dap_config_st_rudder.payloadPedalConfig_.RPM_min_freq = Plugin.Settings.rudderRPMMinFrequency;
             dap_config_st_rudder.payloadPedalConfig_.RPM_AMP = Plugin.Settings.rudderRPMAmp;
+
+            // Load Rudder Joystick Mapping from settings
+            if (Plugin.Settings.rudderJoystickMapOrig != null && Plugin.Settings.rudderJoystickMapOrig.Length == 11)
+            {
+                dap_config_st_rudder.payloadPedalConfig_.numOfJoystickMapControl = Plugin.Settings.rudderNumOfJoystickMapControl;
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig00 = Plugin.Settings.rudderJoystickMapOrig[0];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig01 = Plugin.Settings.rudderJoystickMapOrig[1];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig02 = Plugin.Settings.rudderJoystickMapOrig[2];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig03 = Plugin.Settings.rudderJoystickMapOrig[3];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig04 = Plugin.Settings.rudderJoystickMapOrig[4];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig05 = Plugin.Settings.rudderJoystickMapOrig[5];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig06 = Plugin.Settings.rudderJoystickMapOrig[6];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig07 = Plugin.Settings.rudderJoystickMapOrig[7];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig08 = Plugin.Settings.rudderJoystickMapOrig[8];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig09 = Plugin.Settings.rudderJoystickMapOrig[9];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig10 = Plugin.Settings.rudderJoystickMapOrig[10];
+
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped00 = Plugin.Settings.rudderJoystickMapMapped[0];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped01 = Plugin.Settings.rudderJoystickMapMapped[1];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped02 = Plugin.Settings.rudderJoystickMapMapped[2];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped03 = Plugin.Settings.rudderJoystickMapMapped[3];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped04 = Plugin.Settings.rudderJoystickMapMapped[4];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped05 = Plugin.Settings.rudderJoystickMapMapped[5];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped06 = Plugin.Settings.rudderJoystickMapMapped[6];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped07 = Plugin.Settings.rudderJoystickMapMapped[7];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped08 = Plugin.Settings.rudderJoystickMapMapped[8];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped09 = Plugin.Settings.rudderJoystickMapMapped[9];
+                dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped10 = Plugin.Settings.rudderJoystickMapMapped[10];
+            }
+        }
+
+        public void RudderParameterLiveUpdate()
+        {
+            if (Plugin != null && (Plugin.Rudder_status || Plugin._calculations.Rudder_status))
+            {
+                readRudderSettingToConfig();
+                for (uint idx = 0; idx < 2; idx++)
+                {
+                    uint pedalIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > idx)
+                                    ? Plugin.Rudder_Pedal_idx[idx]
+                                    : (idx == 0 ? 1u : 2u);
+
+                    dap_config_st_rudder.payloadPedalConfig_.lengthPedal_a = dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_a;
+                    dap_config_st_rudder.payloadPedalConfig_.lengthPedal_b = dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_b;
+                    dap_config_st_rudder.payloadPedalConfig_.lengthPedal_c_horizontal = dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_c_horizontal;
+                    dap_config_st_rudder.payloadPedalConfig_.lengthPedal_c_vertical = dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_c_vertical;
+                    dap_config_st_rudder.payloadPedalConfig_.lengthPedal_travel = dap_config_st[pedalIdx].payloadPedalConfig_.lengthPedal_travel;
+                    byte pitch_live = dap_config_st[pedalIdx].payloadPedalConfig_.spindlePitch_mmPerRev_u8;
+                    if (pitch_live == 0) pitch_live = 5;
+                    dap_config_st_rudder.payloadPedalConfig_.spindlePitch_mmPerRev_u8 = pitch_live;
+                    dap_config_st_rudder.payloadPedalConfig_.invertLoadcellReading_u8 = dap_config_st[pedalIdx].payloadPedalConfig_.invertLoadcellReading_u8;
+                    dap_config_st_rudder.payloadPedalConfig_.invertMotorDirection_u8 = dap_config_st[pedalIdx].payloadPedalConfig_.invertMotorDirection_u8;
+                    dap_config_st_rudder.payloadPedalConfig_.loadcell_rating = dap_config_st[pedalIdx].payloadPedalConfig_.loadcell_rating;
+                    dap_config_st_rudder.payloadPedalConfig_.stepLossFunctionFlags_u8 = dap_config_st[pedalIdx].payloadPedalConfig_.stepLossFunctionFlags_u8;
+                    dap_config_st_rudder.payloadPedalConfig_.Simulate_ABS_value = dap_config_st[pedalIdx].payloadPedalConfig_.Simulate_ABS_value;
+
+                    DAP_config_st cfg = dap_config_st_rudder;
+                    cfg.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
+                    cfg.payloadHeader_.payloadType = (byte)Constants.pedalConfigPayload_type;
+                    cfg.payloadHeader_.PedalTag = (byte)pedalIdx;
+                    cfg.payloadHeader_.storeToEeprom = 0;
+                    cfg.payloadPedalConfig_.pedal_type = (byte)pedalIdx;
+
+                    // Push-pull differential trim offset:
+                    // Left pedal (idx == 0) gets +trim, Right pedal (idx == 1) gets -trim
+                    float trimForPedal = (idx == 0) ? -Plugin.Settings.rudderTrimOffset : Plugin.Settings.rudderTrimOffset;
+                    cfg.payloadPedalConfig_.preloadForce = trimForPedal;
+
+                    Plugin.BufferConfig_st[pedalIdx] = cfg;
+                    Plugin.IsGetConfigSendRequest[pedalIdx] = true;
+                    Plugin.ConfigBufferGet_lastTime[pedalIdx] = DateTime.Now;
+                }
+            }
         }
         public void writeRudderConfigToSetting()
         {
@@ -1208,12 +1323,52 @@ namespace DiyFfbPedal
             Plugin.Settings.rudderTravel[10] = dap_config_st_rudder.payloadPedalConfig_.relativeTravel10;
 
             Plugin.Settings.rudderMaxForce = dap_config_st_rudder.payloadPedalConfig_.maxForce;
-            Plugin.Settings.rudderMinForce = dap_config_st_rudder.payloadPedalConfig_.preloadForce;
+
+            Plugin.Settings.rudderVirtualPedalMass = dap_config_st_rudder.payloadPedalConfig_.virtualPedalMass_u8;
+            Plugin.Settings.rudderCoulombFriction = dap_config_st_rudder.payloadPedalConfig_.coulombFrictionIn0p1N_u8;
+            Plugin.Settings.rudderVirtualDamping = dap_config_st_rudder.payloadPedalConfig_.virtualPedalDamping_u8;
+            Plugin.Settings.rudderDampingProgression = dap_config_st_rudder.payloadPedalConfig_.dampingProgression_u8;
+            Plugin.Settings.rudderEndstopTravelRange = dap_config_st_rudder.payloadPedalConfig_.endstopTravelRange_mm_u8;
+            Plugin.Settings.rudderEndstopStiffness = dap_config_st_rudder.payloadPedalConfig_.endstopStiffness_kg_mm_u8;
+
+            Plugin.Settings.rudderMinForce = ((float)dap_config_st_rudder.payloadPedalConfig_.relativeForce00) * 0.1f;
             Plugin.Settings.rudderMinTravel = dap_config_st_rudder.payloadPedalConfig_.pedalStartPosition;
             Plugin.Settings.rudderMaxTravel = dap_config_st_rudder.payloadPedalConfig_.pedalEndPosition;
             Plugin.Settings.rudderRPMMaxFrequency = dap_config_st_rudder.payloadPedalConfig_.RPM_max_freq;
             Plugin.Settings.rudderRPMMinFrequency = dap_config_st_rudder.payloadPedalConfig_.RPM_min_freq;
             Plugin.Settings.rudderRPMAmp = dap_config_st_rudder.payloadPedalConfig_.RPM_AMP;
+            Plugin.Settings.rudderCenteringProfile = dap_config_st_rudder.payloadPedalConfig_.relativeForce02;
+
+            // Save Rudder Joystick Mapping to settings
+            Plugin.Settings.rudderNumOfJoystickMapControl = dap_config_st_rudder.payloadPedalConfig_.numOfJoystickMapControl;
+            if (Plugin.Settings.rudderJoystickMapOrig == null || Plugin.Settings.rudderJoystickMapOrig.Length != 11)
+                Plugin.Settings.rudderJoystickMapOrig = new byte[11];
+            if (Plugin.Settings.rudderJoystickMapMapped == null || Plugin.Settings.rudderJoystickMapMapped.Length != 11)
+                Plugin.Settings.rudderJoystickMapMapped = new byte[11];
+
+            Plugin.Settings.rudderJoystickMapOrig[0] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig00;
+            Plugin.Settings.rudderJoystickMapOrig[1] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig01;
+            Plugin.Settings.rudderJoystickMapOrig[2] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig02;
+            Plugin.Settings.rudderJoystickMapOrig[3] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig03;
+            Plugin.Settings.rudderJoystickMapOrig[4] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig04;
+            Plugin.Settings.rudderJoystickMapOrig[5] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig05;
+            Plugin.Settings.rudderJoystickMapOrig[6] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig06;
+            Plugin.Settings.rudderJoystickMapOrig[7] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig07;
+            Plugin.Settings.rudderJoystickMapOrig[8] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig08;
+            Plugin.Settings.rudderJoystickMapOrig[9] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig09;
+            Plugin.Settings.rudderJoystickMapOrig[10] = dap_config_st_rudder.payloadPedalConfig_.joystickMapOrig10;
+
+            Plugin.Settings.rudderJoystickMapMapped[0] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped00;
+            Plugin.Settings.rudderJoystickMapMapped[1] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped01;
+            Plugin.Settings.rudderJoystickMapMapped[2] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped02;
+            Plugin.Settings.rudderJoystickMapMapped[3] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped03;
+            Plugin.Settings.rudderJoystickMapMapped[4] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped04;
+            Plugin.Settings.rudderJoystickMapMapped[5] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped05;
+            Plugin.Settings.rudderJoystickMapMapped[6] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped06;
+            Plugin.Settings.rudderJoystickMapMapped[7] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped07;
+            Plugin.Settings.rudderJoystickMapMapped[8] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped08;
+            Plugin.Settings.rudderJoystickMapMapped[9] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped09;
+            Plugin.Settings.rudderJoystickMapMapped[10] = dap_config_st_rudder.payloadPedalConfig_.joystickMapMapped10;
         }
 
         public bool OpenBridgeSerialConnection()
@@ -1228,16 +1383,16 @@ namespace DiyFfbPedal
                     Plugin.ESPsync_serialPort.Handshake = Handshake.None;
                     Plugin.ESPsync_serialPort.Parity = Parity.None;
                     //_serialPort[pedalIdx].StopBits = StopBits.None;
-                    Plugin.ESPsync_serialPort.ReadTimeout = 2000;
-                    Plugin.ESPsync_serialPort.WriteTimeout = 500;
+                    // Non-blocking timeouts: Timer runs on WPF UI thread; keep timeouts low (50ms)
+                    // to prevent SimHub from freezing ('Not Responding') if serial packets are delayed.
+                    Plugin.ESPsync_serialPort.ReadTimeout = 50;
+                    Plugin.ESPsync_serialPort.WriteTimeout = 50;
                     Plugin.ESPsync_serialPort.BaudRate = Bridge_baudrate;
                     // https://stackoverflow.com/questions/7178655/serialport-encoding-how-do-i-get-8-bit-ascii
                     Plugin.ESPsync_serialPort.Encoding = System.Text.Encoding.GetEncoding(28591);
                     Plugin.ESPsync_serialPort.NewLine = "\r\n";
                     Plugin.ESPsync_serialPort.ReadBufferSize = 40960;
                     Plugin.ESPsync_serialPort.Open();
-                    System.Threading.Thread.Sleep(200);
-                    //Plugin.Sync_esp_connection_flag = true;
                     // add timer
                     ESP_host_serial_timer = new System.Windows.Forms.Timer();
                     ESP_host_serial_timer.Tick += new EventHandler(timerCallback_serial_esphost_orig);
@@ -1245,7 +1400,6 @@ namespace DiyFfbPedal
                     ESP_host_serial_timer.Interval = 8; // in miliseconds
                     ESP_host_serial_timer.Start();
                     status = true;
-                    System.Threading.Thread.Sleep(100);
                 }
                 catch (Exception ex)
                 {
@@ -1254,6 +1408,191 @@ namespace DiyFfbPedal
             }
             
             return status;
+        }
+
+        public void SendWifiChannelCommand(byte command, byte channel = 0)
+        {
+            DAP_wifi_channel_st pkt = new DAP_wifi_channel_st();
+            pkt.payloadHeader_.startOfFrame0_u8 = STARTOFFRAME_WIFI_CHANNEL[0];
+            pkt.payloadHeader_.startOfFrame1_u8 = STARTOFFRAME_WIFI_CHANNEL[1];
+            pkt.payloadHeader_.payloadType = (byte)Constants.wifiChannelPayloadType;
+            pkt.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
+            pkt.payloadHeader_.PedalTag = 3; // Master / Bridge
+
+            pkt.payloadWifiChannel_.command_u8 = command;
+            pkt.payloadWifiChannel_.currentChannel_u8 = channel;
+            pkt.payloadWifiChannel_.recommendedChannel_u8 = channel;
+
+            pkt.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
+            pkt.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
+
+            byte[] packet = getBytes_WifiChannel(pkt);
+            ushort crc = Plugin.checksumCalcArray(packet,
+                System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadHeader)) +
+                System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadWifiChannel)));
+            pkt.payloadFooter_.checkSum = crc;
+            packet = getBytes_WifiChannel(pkt);
+
+            if (Plugin.BridgeHidService != null && Plugin.BridgeHidService.IsConnected)
+            {
+                Task.Run(() => Plugin.BridgeHidService.SendLargeDataAsync(packet));
+            }
+            else if (Plugin.ESPsync_serialPort != null && Plugin.ESPsync_serialPort.IsOpen)
+            {
+                try { Plugin.ESPsync_serialPort.Write(packet, 0, packet.Length); }
+                catch (Exception ex) { SimHub.Logging.Current.Error("WifiChannel serial error: " + ex.Message); }
+            }
+        }
+
+        public ObservableCollection<WifiChannelBar> WifiChannelBars { get; } = new ObservableCollection<WifiChannelBar>();
+        private byte _wifiCurrentChannel = 0;
+        private byte _wifiRecommendedChannel = 0;
+        private byte _wifiUserSelectedChannel = 0;
+
+        public void InitWifiChannelBars()
+        {
+            if (ic_wifi_channel_bars == null) return;
+            WifiChannelBars.Clear();
+            for (int ch = 1; ch <= payloadWifiChannel.ChannelCount; ch++)
+            {
+                WifiChannelBars.Add(new WifiChannelBar
+                {
+                    Channel = ch,
+                    ChannelLabel = ch.ToString(),
+                    BarHeight = 3,
+                    BarColor = new SolidColorBrush(Color.FromRgb(60, 60, 70)),
+                    HighlightThickness = new Thickness(0),
+                    Tooltip = $"Channel {ch}: not scanned yet",
+                    LabelWeight = FontWeights.Normal,
+                    LabelColor = new SolidColorBrush(Color.FromRgb(170, 170, 170))
+                });
+            }
+            ic_wifi_channel_bars.ItemsSource = WifiChannelBars;
+        }
+
+        private void ApplyWifiBarHighlight(WifiChannelBar bar)
+        {
+            bool isCurrent = bar.Channel == _wifiCurrentChannel;
+            bool isRecommended = bar.Channel == _wifiRecommendedChannel;
+            bool isSelected = bar.Channel == _wifiUserSelectedChannel;
+
+            bar.HighlightThickness = isSelected ? new Thickness(2) : (isCurrent || isRecommended) ? new Thickness(1.5) : new Thickness(0);
+            bar.LabelWeight = (isCurrent || isSelected) ? FontWeights.Bold : FontWeights.Normal;
+            bar.LabelColor = isSelected ? new SolidColorBrush(Color.FromRgb(0, 229, 255)) :
+                              isCurrent ? new SolidColorBrush(Color.FromRgb(0, 255, 204)) :
+                              isRecommended ? new SolidColorBrush(Color.FromRgb(0, 230, 118)) :
+                              new SolidColorBrush(Color.FromRgb(170, 170, 170));
+        }
+
+        public void HandleWifiChannelResponse(DAP_wifi_channel_st wc)
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                if (wc.payloadWifiChannel_.command_u8 == Constants.WIFI_CH_CMD_SCAN_RES)
+                {
+                    _wifiCurrentChannel = wc.payloadWifiChannel_.currentChannel_u8;
+                    _wifiRecommendedChannel = wc.payloadWifiChannel_.recommendedChannel_u8;
+
+                    if (tb_wifi_ch_active != null) tb_wifi_ch_active.Text = $"Active: Ch {wc.payloadWifiChannel_.currentChannel_u8}";
+                    if (tb_wifi_ch_rec != null) tb_wifi_ch_rec.Text = $"Rec: Ch {wc.payloadWifiChannel_.recommendedChannel_u8}";
+
+                    for (int ch = 1; ch <= payloadWifiChannel.ChannelCount && ch - 1 < WifiChannelBars.Count; ch++)
+                    {
+                        var bar = WifiChannelBars[ch - 1];
+                        byte score = wc.payloadWifiChannel_.GetApScore(ch);
+                        byte apCount = wc.payloadWifiChannel_.GetApCount(ch);
+                        sbyte rssi = wc.payloadWifiChannel_.GetRssi(ch);
+
+                        bar.BarHeight = 3 + (score / 100.0) * 27.0;
+                        bar.BarColor = GetCongestionBrush(score);
+                        ApplyWifiBarHighlight(bar);
+
+                        string rssiText = apCount > 0 ? $"{rssi} dBm" : "no signal";
+                        string suffix = ch == _wifiCurrentChannel ? " (active)" : ch == _wifiRecommendedChannel ? " (recommended)" : "";
+                        bar.Tooltip = $"Channel {ch}: {apCount} AP{(apCount == 1 ? "" : "s")}, {rssiText}, congestion {score}%{suffix}";
+                        bar.Refresh();
+                    }
+
+                    if (tb_wifi_scan_status != null)
+                    {
+                        tb_wifi_scan_status.Text = $"Scan complete. Recommended: Channel {wc.payloadWifiChannel_.recommendedChannel_u8}. Apply it from System > Wireless.";
+                        tb_wifi_scan_status.Foreground = new SolidColorBrush(Color.FromRgb(0, 230, 118));
+                    }
+                }
+                else if (wc.payloadWifiChannel_.command_u8 == Constants.WIFI_CH_CMD_SET_ACK)
+                {
+                    _wifiCurrentChannel = wc.payloadWifiChannel_.currentChannel_u8;
+
+                    if (tb_wifi_ch_active != null) tb_wifi_ch_active.Text = $"Active: Ch {wc.payloadWifiChannel_.currentChannel_u8}";
+                    if (Plugin?.Settings != null && wc.payloadWifiChannel_.currentChannel_u8 >= 1 && wc.payloadWifiChannel_.currentChannel_u8 <= 14)
+                    {
+                        Plugin.Settings.ActiveWifiChannel = wc.payloadWifiChannel_.currentChannel_u8;
+                        Plugin.SavePluginSettings();
+                    }
+                    if (tb_wifi_scan_status != null)
+                    {
+                        tb_wifi_scan_status.Text = $"Channel {wc.payloadWifiChannel_.currentChannel_u8} applied successfully! Master & Pedals synchronized.";
+                        tb_wifi_scan_status.Foreground = new SolidColorBrush(Color.FromRgb(0, 229, 255));
+                    }
+                    foreach (var bar in WifiChannelBars) ApplyWifiBarHighlight(bar);
+                    ToastNotification("Wi-Fi Channel Switch", $"Switched active channel to {wc.payloadWifiChannel_.currentChannel_u8}");
+                }
+            });
+        }
+
+        private Brush GetCongestionBrush(byte score)
+        {
+            if (score <= 25) return new SolidColorBrush(Color.FromRgb(0, 230, 118));
+            if (score <= 60) return new SolidColorBrush(Color.FromRgb(255, 167, 38));
+            return new SolidColorBrush(Color.FromRgb(255, 82, 82));
+        }
+
+        private void btn_scan_wifi_channels_Click(object sender, RoutedEventArgs e)
+        {
+            if (tb_wifi_scan_status != null)
+            {
+                tb_wifi_scan_status.Text = "Scanning all 2.4 GHz channels (1-13)... please wait (~1s)...";
+                tb_wifi_scan_status.Foreground = new SolidColorBrush(Color.FromRgb(255, 235, 59));
+            }
+            SendWifiChannelCommand(Constants.WIFI_CH_CMD_SCAN_REQ);
+        }
+
+        private void WifiChannelBar_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (!(sender is FrameworkElement fe) || !(fe.Tag is WifiChannelBar clicked)) return;
+
+            _wifiUserSelectedChannel = (byte)clicked.Channel;
+            foreach (var bar in WifiChannelBars)
+            {
+                ApplyWifiBarHighlight(bar);
+                bar.Refresh();
+            }
+
+            if (tb_wifi_ch_rec != null) tb_wifi_ch_rec.Text = $"Rec: Ch {clicked.Channel}";
+            if (tb_wifi_scan_status != null)
+            {
+                tb_wifi_scan_status.Text = $"Channel {clicked.Channel} selected as target. Apply it from System > Wireless.";
+                tb_wifi_scan_status.Foreground = new SolidColorBrush(Color.FromRgb(0, 229, 255));
+            }
+        }
+
+    }
+
+    public class WifiChannelBar : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler PropertyChanged;
+        public int Channel { get; set; }
+        public string ChannelLabel { get; set; }
+        public double BarHeight { get; set; }
+        public Brush BarColor { get; set; }
+        public Thickness HighlightThickness { get; set; }
+        public string Tooltip { get; set; }
+        public FontWeight LabelWeight { get; set; }
+        public Brush LabelColor { get; set; }
+
+        public void Refresh()
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
         }
     }
 }

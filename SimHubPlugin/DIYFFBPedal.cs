@@ -1,4 +1,4 @@
-﻿﻿using FMOD;
+﻿using FMOD;
 using GameReaderCommon;
 using log4net.Plugin;
 using NCalc;
@@ -74,6 +74,7 @@ namespace DiyFfbPedal
         public bool Rudder_brake_enable_flag = false;
         public bool Rudder_brake_status = false;
         public byte pedal_state_in_ratio = 0;
+        public ushort[] rawPedalPos = new ushort[3] { 0, 0, 0 };
         //public bool Sync_esp_connection_flag=false;
         public byte PedalErrorCode = 0;
         public byte PedalErrorIndex = 0;
@@ -87,6 +88,8 @@ namespace DiyFfbPedal
         public bool Version_Check_Simhub_MSFS = false;
         public byte[] Rudder_Pedal_idx = new byte[2] { 1, 2 };
         public string Current_Game = "";
+        private DateTime lastRunningGameSeenUtc = DateTime.MinValue;
+        private bool autoProfileStateCleared = true;
         public byte TrackSurfaceCondition = 0;
         //public bool[] PedalConfigRead_b = new bool[3] { false, false, false };
         public bool[] isCdcSerial = new bool[3] { false, false, false };
@@ -102,7 +105,7 @@ namespace DiyFfbPedal
         public bool[] IsGetConfigSendRequest = new bool[3] { false, false, false };
         public DAP_config_st[] BufferConfig_st = new DAP_config_st[3] { new DAP_config_st(), new DAP_config_st(), new DAP_config_st() };
         public int ConfigSendInterval_ms = 100;
-        public DateTime[] ConfigBufferGet_lastTime = new DateTime[3] { DateTime.Now, DateTime.Now, DateTime.Now };
+        public DateTime[] ConfigBufferGet_lastTime = new DateTime[3] { DateTime.UtcNow, DateTime.UtcNow, DateTime.UtcNow };
         public PedalStatus PedalStatusInstance = new PedalStatus();
         //public vJoyInterfaceWrap.vJoy joystick;
 
@@ -112,19 +115,19 @@ namespace DiyFfbPedal
         
 
         // ABS trigger timer
-        DateTime absTrigger_currentTime = DateTime.Now;
-        DateTime absTrigger_lastTime = DateTime.Now;
+        DateTime absTrigger_currentTime = DateTime.UtcNow;
+        DateTime absTrigger_lastTime = DateTime.UtcNow;
 
         //G force timer
-        DateTime GTrigger_currentTime = DateTime.Now;
-        DateTime GTrigger_lastTime = DateTime.Now;
+        DateTime GTrigger_currentTime = DateTime.UtcNow;
+        DateTime GTrigger_lastTime = DateTime.UtcNow;
 
         //Road effect
-        DateTime RoadTrigger_currentTime = DateTime.Now;
-        DateTime RoadTrigger_lastTime = DateTime.Now;
+        DateTime RoadTrigger_currentTime = DateTime.UtcNow;
+        DateTime RoadTrigger_lastTime = DateTime.UtcNow;
         //Rudder update
-        DateTime Rudder_Action_currentTime = DateTime.Now;
-        DateTime Rudder_Action_lastTime = DateTime.Now;
+        DateTime Rudder_Action_currentTime = DateTime.UtcNow;
+        DateTime Rudder_Action_lastTime = DateTime.UtcNow;
 
         
 
@@ -183,133 +186,104 @@ namespace DiyFfbPedal
         /// 
         unsafe public UInt16 checksumCalc(byte* data, int length)
         {
-
-            UInt16 curr_crc = 0x0000;
-            byte sum1 = (byte)curr_crc;
-            byte sum2 = (byte)(curr_crc >> 8);
-            int index;
-            for (index = 0; index < length; index = index + 1)
+            uint sum1 = 0;
+            uint sum2 = 0;
+            while (length > 0)
             {
-                int v = (sum1 + (*data));
-                sum1 = (byte)v;
-                sum1 = (byte)(v % 255);
-
-                int w = (sum1 + sum2) % 255;
-                sum2 = (byte)w;
-
-                data++;// = data++;
+                int block = length > 20 ? 20 : length;
+                length -= block;
+                while (block-- > 0)
+                {
+                    sum1 += *data++;
+                    sum2 += sum1;
+                }
+                sum1 %= 255;
+                sum2 %= 255;
             }
-
-            int x = (sum2 << 8) | sum1;
-            return (UInt16)x;
+            return (UInt16)((sum2 << 8) | sum1);
         }
-
 
         unsafe public UInt16 checksumCalcArray(byte[] data, int length)
         {
-
-            UInt16 curr_crc = 0x0000;
-            byte sum1 = (byte)curr_crc;
-            byte sum2 = (byte)(curr_crc >> 8);
-            int index;
-            for (index = 0; index < length; index = index + 1)
+            if (data == null || length == 0) return 0;
+            fixed (byte* p = data)
             {
-                int v = (sum1 + data[index]);
-                sum1 = (byte)v;
-                sum1 = (byte)(v % 255);
-
-                int w = (sum1 + sum2) % 255;
-                sum2 = (byte)w;
-
+                return checksumCalc(p, length);
             }
-
-            int x = (sum2 << 8) | sum1;
-            return (UInt16)x;
         }
-
         unsafe public byte[] getBytesConfig(DAP_config_st aux)
         {
-            int length = Marshal.SizeOf(aux);
-            IntPtr ptr = Marshal.AllocHGlobal(length);
-
-            //int length = sizeof(DAP_config_st);
-            byte[] myBuffer = new byte[length];
-
-            Marshal.StructureToPtr(aux, ptr, true);
-            Marshal.Copy(ptr, myBuffer, 0, length);
-            Marshal.FreeHGlobal(ptr);
+            byte[] myBuffer = new byte[sizeof(DAP_config_st)];
+            fixed (byte* p = myBuffer) { *(DAP_config_st*)p = aux; }
             return myBuffer;
         }
-        public byte[] getBytes_Action(DAP_action_st aux)
+        unsafe public byte[] getBytes_Action(DAP_action_st aux)
         {
-            int length = Marshal.SizeOf(aux);
-            IntPtr ptr = Marshal.AllocHGlobal(length);
-            byte[] myBuffer = new byte[length];
-
-            Marshal.StructureToPtr(aux, ptr, true);
-            Marshal.Copy(ptr, myBuffer, 0, length);
-            Marshal.FreeHGlobal(ptr);
-
+            byte[] myBuffer = new byte[sizeof(DAP_action_st)];
+            fixed (byte* p = myBuffer) { *(DAP_action_st*)p = aux; }
             return myBuffer;
         }
-        public byte[] getBytes_Bridge(DAP_bridge_state_st aux)
+        unsafe public byte[] getBytes_Bridge(DAP_bridge_state_st aux)
         {
-            int length = Marshal.SizeOf(aux);
-            IntPtr ptr = Marshal.AllocHGlobal(length);
-            byte[] myBuffer = new byte[length];
-
-            Marshal.StructureToPtr(aux, ptr, true);
-            Marshal.Copy(ptr, myBuffer, 0, length);
-            Marshal.FreeHGlobal(ptr);
-
+            byte[] myBuffer = new byte[sizeof(DAP_bridge_state_st)];
+            fixed (byte* p = myBuffer) { *(DAP_bridge_state_st*)p = aux; }
             return myBuffer;
         }
 
-        public byte[] getBytes_HidMessage(Dap_hidmessage_st aux)
+        unsafe public byte[] getBytes_HidMessage(Dap_hidmessage_st aux)
         {
-            int length = Marshal.SizeOf(aux);
-            IntPtr ptr = Marshal.AllocHGlobal(length);
-            byte[] myBuffer = new byte[length];
-
-            Marshal.StructureToPtr(aux, ptr, true);
-            Marshal.Copy(ptr, myBuffer, 0, length);
-            Marshal.FreeHGlobal(ptr);
-
+            byte[] myBuffer = new byte[sizeof(Dap_hidmessage_st)];
+            fixed (byte* p = myBuffer) { *(Dap_hidmessage_st*)p = aux; }
             return myBuffer;
         }
 
-        public byte[] getBytes_Action_Ota(DAP_action_ota_st aux)
+        unsafe public byte[] getBytes_Action_Ota(DAP_action_ota_st aux)
         {
-            int length = Marshal.SizeOf(aux);
-            IntPtr ptr = Marshal.AllocHGlobal(length);
-            byte[] myBuffer = new byte[length];
-
-            Marshal.StructureToPtr(aux, ptr, true);
-            Marshal.Copy(ptr, myBuffer, 0, length);
-            Marshal.FreeHGlobal(ptr);
-
+            byte[] myBuffer = new byte[sizeof(DAP_action_ota_st)];
+            fixed (byte* p = myBuffer) { *(DAP_action_ota_st*)p = aux; }
             return myBuffer;
         }
+
+        unsafe public byte[] getBytes_WifiChannel(DAP_wifi_channel_st aux)
+        {
+            byte[] myBuffer = new byte[sizeof(DAP_wifi_channel_st)];
+            fixed (byte* p = myBuffer) { *(DAP_wifi_channel_st*)p = aux; }
+            return myBuffer;
+        }
+
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, NCalc.Expression> _ncalcExpressionCache =
+            new System.Collections.Concurrent.ConcurrentDictionary<string, NCalc.Expression>();
+
         public string Ncalc_reading(String expression)
         {
+            if (string.IsNullOrWhiteSpace(expression)) return "0";
             string value = "Error";
             try
             {
-                NCalc.Expression exp = new NCalc.Expression(expression);
-                exp.ResolveParameter += delegate (string name, ParameterResolveArgs rarg)
+                NCalc.Expression exp;
+                if (!_ncalcExpressionCache.TryGetValue(expression, out exp))
                 {
-                    rarg.Result = () => PluginManager.GetPropertyValue(name);
-                };
+                    exp = new NCalc.Expression(expression);
+                    exp.ResolveParameter += delegate (string name, ParameterResolveArgs rarg)
+                    {
+                        rarg.Result = () => PluginManager.GetPropertyValue(name);
+                    };
 
-                if (exp.HasErrors() == false)
-                {
-                    value = exp.Evaluate().ToString();
-                }
-                else
-                {
-                    value = "Error";
+                    if (!exp.HasErrors())
+                    {
+                        _ncalcExpressionCache.TryAdd(expression, exp);
+                    }
+                    else
+                    {
+                        return "Error";
+                    }
                 }
 
+                object evalResult = exp.Evaluate();
+                if (evalResult != null)
+                {
+                    value = evalResult.ToString();
+                }
             }
             catch (Exception ex)
             {
@@ -320,6 +294,28 @@ namespace DiyFfbPedal
         }
 
         
+        private readonly DateTime[] consoleLastEffectAt = new DateTime[3];
+        private readonly long[] consoleQueuedActions = new long[3];
+        private DateTime consoleLastUpdateAt;
+        private DateTime consoleLastAbsAt = DateTime.MinValue;
+        private DateTime consoleLastTcAt = DateTime.MinValue;
+        private string consoleStatus = "";
+        public string ConsoleEffectStatus => String.IsNullOrEmpty(consoleStatus) ? "" :
+            (DateTime.UtcNow - consoleLastUpdateAt > TimeSpan.FromSeconds(2)
+                ? "Console: no telemetry callbacks" : consoleStatus);
+
+        private string ConsoleOutputRoute(int pedal)
+        {
+            string route = Settings.Pedal_ESPNow_Sync_flag[pedal]
+                ? (BridgeHidService.IsConnected ? "HID bridge" : ESPsync_serialPort.IsOpen ? "COM bridge" : "Bridge disconnected")
+                : (_serialPort[pedal].IsOpen ? "Pedal COM" : "Pedal disconnected");
+            string effect = Settings.ABS_enable_flag[pedal] == 1 ? (pedal == 1 ? "ABS" : "TC") : "";
+            if (Settings.RPM_enable_flag[pedal] == 1) effect += " RPM";
+            if (String.IsNullOrWhiteSpace(effect)) effect = "Effects off";
+            return Rudder_status ? "Rudder mode blocks effects" :
+                $"{route} / {effect.Trim()} / TX queued {consoleQueuedActions[pedal]}";
+        }
+
         unsafe public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
 			
@@ -343,7 +339,62 @@ namespace DiyFfbPedal
             
             //bool WS_flag = false;
 
-            if (data.GamePaused || (!data.GameRunning))
+            string selectedGame = Convert.ToString(pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame"));
+            if (String.IsNullOrWhiteSpace(selectedGame)) selectedGame = data.GameName;
+            // SimHub receives console telemetry without a local game process.
+            // GT7 remains identifiable even while waiting for its first packet.
+            bool isConsole = ConsoleEffectPolicy.IsConsoleSession(selectedGame, data.GameRunning,
+                data.RunningGameProcessDetected, data.NewData != null);
+            bool consoleActive = ConsoleEffectPolicy.IsActive(data.GameRunning, data.NewData != null,
+                data.GamePaused, data.GameInMenu, data.GameReplay);
+            bool effectTelemetryActive = isConsole ? consoleActive : data.GameRunning;
+            consoleLastUpdateAt = DateTime.UtcNow;
+            if (isConsole && consoleActive)
+            {
+                if (data.NewData.ABSActive > 0) consoleLastAbsAt = consoleLastUpdateAt;
+                if (data.NewData.TCActive > 0) consoleLastTcAt = consoleLastUpdateAt;
+            }
+            else
+            {
+                consoleLastAbsAt = consoleLastTcAt = DateTime.MinValue;
+            }
+            if (isConsole)
+            {
+                string state = consoleActive ? "Live" : data.GamePaused ? "Paused" :
+                    data.GameReplay ? "Replay" : data.GameInMenu ? "Menu" : "Waiting for telemetry";
+                string inputs = data.NewData == null ? "No data" :
+                    $"ABS {data.NewData.ABSActive} / TC {data.NewData.TCActive} / RPM {data.NewData.Rpms:0}";
+                consoleStatus = $"{selectedGame}: {state}\n{inputs}\nBrake: {ConsoleOutputRoute(1)}\nThrottle: {ConsoleOutputRoute(2)}";
+            }
+            else consoleStatus = "";
+
+            bool gameProcessDetected = data.GameRunning || data.RunningGameProcessDetected;
+            if (gameProcessDetected)
+            {
+                string runningGame = Convert.ToString(pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame"));
+                if (String.IsNullOrWhiteSpace(runningGame) && pluginManager.GameDescription != null)
+                    runningGame = pluginManager.GameDescription.Code;
+                if (String.IsNullOrWhiteSpace(runningGame)) runningGame = data.GameName;
+                if (!String.IsNullOrWhiteSpace(runningGame))
+                {
+                    Current_Game = runningGame;
+                    currentGame = runningGame;
+                    lastRunningGameSeenUtc = DateTime.UtcNow;
+                    autoProfileStateCleared = false;
+                    if (Settings.profileAutoChange)
+                        ProfileServicePlugin.ApplyProfileAutoForGame(runningGame);
+                }
+            }
+            else if (!autoProfileStateCleared &&
+                DateTime.UtcNow - lastRunningGameSeenUtc > TimeSpan.FromSeconds(2))
+            {
+                Current_Game = "";
+                currentGame = null;
+                ProfileServicePlugin.ClearAutoSwitchStatus();
+                autoProfileStateCleared = true;
+            }
+
+            if (data.GamePaused || !effectTelemetryActive)
             {
                 in_game_flag = 0;
             }
@@ -363,19 +414,11 @@ namespace DiyFfbPedal
 
 
             // Send ABS signal when triggered by the game
-            if (data.GameRunning)
+            if (effectTelemetryActive)
             {
-                Current_Game = data.GameName;//(string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame");
-                currentGame = data.GameName;
                 if (Settings.profileAutoChange)
                 {
-                    if (PedalConstStrings.AutoProfileSwitchGameList.Contains(Current_Game) && IsGameChanged)
-                    {
-                        //set default game profile first;
-                        ProfileServicePlugin.ApplyProfileAutoForGame(data.GameName);
-                        IsGameChanged = false;
-                    }
-                    //overwrite with car profile
+                    // A car-specific profile takes precedence once telemetry is available.
                     ProfileServicePlugin.ApplyProfileAutoForCar(data.NewData.CarId);
 
                 }
@@ -447,7 +490,7 @@ namespace DiyFfbPedal
                     }
                 }
 
-                if (data.OldData != null && data.NewData != null)
+                if (data.NewData != null && (isConsole || data.OldData != null))
                 {
                     if (data.NewData.ABSActive > 0)
                     {
@@ -457,6 +500,13 @@ namespace DiyFfbPedal
                     if (data.NewData.TCActive > 0)
                     {
                         sendTcSignal_local_b = true;
+                    }
+
+                    if (isConsole)
+                    {
+                        // Keep short telemetry pulses across the 50 ms output interval.
+                        sendAbsSignal_local_b = ConsoleEffectPolicy.HasRecentTrigger(consoleLastUpdateAt, consoleLastAbsAt);
+                        sendTcSignal_local_b = ConsoleEffectPolicy.HasRecentTrigger(consoleLastUpdateAt, consoleLastTcAt);
                     }
 
 
@@ -514,10 +564,10 @@ namespace DiyFfbPedal
 
 
 
-            absTrigger_currentTime = DateTime.Now;
+            absTrigger_currentTime = DateTime.UtcNow;
             TimeSpan diff = absTrigger_currentTime - absTrigger_lastTime;
             int millisceonds = (int)diff.TotalMilliseconds;
-            if (millisceonds <= 10)
+            if (!isConsole && millisceonds <= 10)
             {
                 sendAbsSignal_local_b = false;
                 sendTcSignal_local_b = false;
@@ -526,7 +576,7 @@ namespace DiyFfbPedal
             }
             else
             {
-                absTrigger_lastTime = DateTime.Now;
+                absTrigger_lastTime = DateTime.UtcNow;
             }
 
 
@@ -534,11 +584,12 @@ namespace DiyFfbPedal
 
             bool update_flag = false;
 
-            if (data.GameRunning && data.NewData!=data.OldData)
+            if (ConsoleEffectPolicy.ShouldProcess(isConsole, effectTelemetryActive, data.NewData != data.OldData))
             {
                 // Send ABS trigger signal via serial
                 for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
                 {
+                    if (isConsole) update_flag = false;
                     DAP_action_st tmp;
                     tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
                     tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
@@ -550,8 +601,18 @@ namespace DiyFfbPedal
                     tmp.payloadPedalAction_.impact_value = 0;
                     tmp.payloadPedalAction_.Trigger_CV_1 = 0;
                     tmp.payloadPedalAction_.Trigger_CV_2 = 0;
+                    tmp.payloadPedalAction_.Trigger_CV_3 = 0;
+                    tmp.payloadPedalAction_.Trigger_CV_4 = 0;
                     tmp.payloadPedalAction_.Rudder_action = 0;
-                    tmp.payloadPedalAction_.Rudder_brake_action = 0;
+                    tmp.payloadPedalAction_.Rudder_brake_action = (byte)(Rudder_status ? (Settings.rudderMode == 3 ? 2 : (Settings.rudderMode == 2 ? (Rudder_brake_status ? 2 : 3) : 0)) : 0);
+                    if (Settings.rudderMode == 3)
+                    {
+                        Rudder_brake_status = Rudder_status;
+                    }
+                    else if (Settings.rudderMode != 2)
+                    {
+                        Rudder_brake_status = false;
+                    }
                     if (Settings.G_force_enable_flag[pedalIdx] == 1)
                     {
                         tmp.payloadPedalAction_.G_value = (Byte)g_force_last_value;
@@ -567,9 +628,10 @@ namespace DiyFfbPedal
                         if (Math.Abs(RPM_value - rpm_last_value[pedalIdx]) > 3 )
                         {
                             //update rpm value every frame when HID bridge is connected
-                            tmp.payloadPedalAction_.RPM_u8 = (Byte)RPM_value;
+                            tmp.payloadPedalAction_.RPM_u8 = isConsole
+                                ? ConsoleEffectPolicy.ClampPercent(RPM_value) : (Byte)RPM_value;
                             update_flag = true;
-                            rpm_last_value[pedalIdx] = (Byte)RPM_value;
+                            rpm_last_value[pedalIdx] = tmp.payloadPedalAction_.RPM_u8;
                         }
                     }
                     else
@@ -586,7 +648,7 @@ namespace DiyFfbPedal
                     if (pedalIdx == 1)
                     {
 
-                        GTrigger_currentTime = DateTime.Now;
+                        GTrigger_currentTime = DateTime.UtcNow;
                         TimeSpan diff_G = GTrigger_currentTime - GTrigger_lastTime;
                         int millisceonds_G = (int)diff_G.TotalMilliseconds;
                         if (millisceonds <= 10)
@@ -595,7 +657,7 @@ namespace DiyFfbPedal
                         }
                         else
                         {
-                            GTrigger_lastTime = DateTime.Now;
+                            GTrigger_lastTime = DateTime.UtcNow;
                         }
                         if (Settings.G_force_enable_flag[pedalIdx] == 1)
                         {
@@ -637,7 +699,7 @@ namespace DiyFfbPedal
                         {
                             Road_impact_value = Convert.ToByte(pluginManager.GetPropertyValue(Settings.Road_impact_bind));
 
-                            RoadTrigger_currentTime = DateTime.Now;
+                            RoadTrigger_currentTime = DateTime.UtcNow;
                             TimeSpan diff_Road = RoadTrigger_currentTime - RoadTrigger_lastTime;
                             int millisceonds_G = (int)diff_Road.TotalMilliseconds;
                             if (millisceonds <= 10)
@@ -646,7 +708,7 @@ namespace DiyFfbPedal
                             }
                             else
                             {
-                                RoadTrigger_lastTime = DateTime.Now;
+                                RoadTrigger_lastTime = DateTime.UtcNow;
                             }
                             if (true)
                             {
@@ -749,7 +811,7 @@ namespace DiyFfbPedal
                             {
                                 SimHub.Logging.Current.Error("CV3 value exceed limit");
                             }
-                            if (CV3_value > (Settings.CV2_trigger[pedalIdx]))
+                            if (CV3_value > (Settings.CV3_trigger[pedalIdx]))
                             {
                                 tmp.payloadPedalAction_.Trigger_CV_3 = 1;
                                 update_flag = true;
@@ -781,9 +843,9 @@ namespace DiyFfbPedal
                             {
                                 SimHub.Logging.Current.Error("CV4 value exceed limit");
                             }
-                            if (CV4_value > (Settings.CV2_trigger[pedalIdx]))
+                            if (CV4_value > (Settings.CV4_trigger[pedalIdx]))
                             {
-                                tmp.payloadPedalAction_.Trigger_CV_3 = 1;
+                                tmp.payloadPedalAction_.Trigger_CV_4 = 1;
                                 update_flag = true;
                             }
                         }
@@ -818,11 +880,20 @@ namespace DiyFfbPedal
 
                         }
                     }
+                    // Console telemetry samples need no OldData object and may reuse the same object.
+                    // Refresh even at constant RPM, including zero values after disabling an effect.
+                    if (isConsole)
+                    {
+                        tmp.payloadPedalAction_.RPM_u8 = Settings.RPM_enable_flag[pedalIdx] == 1
+                            ? ConsoleEffectPolicy.ClampPercent(RPM_value) : (byte)0;
+                        rpm_last_value[pedalIdx] = tmp.payloadPedalAction_.RPM_u8;
+                        update_flag = ConsoleEffectPolicy.IsDue(DateTime.UtcNow, consoleLastEffectAt[pedalIdx]);
+                    }
                     // check the update interval
                     // if connect with HID bridge, ignore the fps limit, update all the time.
-                    if (update_flag && !BridgeHidService.IsConnected)
+                    if (update_flag && !isConsole && !BridgeHidService.IsConnected)
                     {
-                        Action_currentTime[pedalIdx] = DateTime.Now;
+                        Action_currentTime[pedalIdx] = DateTime.UtcNow;
                         TimeSpan diff_action = Action_currentTime[pedalIdx] - Action_lastTime[pedalIdx];
                         int millisceonds_action = (int)diff_action.TotalMilliseconds;
                         float time_interval= (1000.0f / Settings.Pedal_action_fps[pedalIdx])-actionIntervalTolerance;
@@ -832,7 +903,7 @@ namespace DiyFfbPedal
                         }
                         else
                         {
-                            Action_lastTime[pedalIdx] = DateTime.Now;
+                            Action_lastTime[pedalIdx] = DateTime.UtcNow;
                             
                         }
 
@@ -851,7 +922,12 @@ namespace DiyFfbPedal
 
                         byte* p = (byte*)v;
                         tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
-                        SendPedalAction(tmp, (byte)pedalIdx);
+                        bool queued = SendPedalAction(tmp, (byte)pedalIdx, isConsole);
+                        if (isConsole)
+                        {
+                            consoleLastEffectAt[pedalIdx] = DateTime.UtcNow;
+                            if (queued) consoleQueuedActions[pedalIdx]++;
+                        }
                     }
                     
                 }
@@ -914,18 +990,20 @@ namespace DiyFfbPedal
                 tmp.payloadPedalAction_.impact_value = 0;
                 tmp.payloadPedalAction_.Trigger_CV_1 = 0;
                 tmp.payloadPedalAction_.Trigger_CV_2 = 0;
+                tmp.payloadPedalAction_.Trigger_CV_3 = 0;
+                tmp.payloadPedalAction_.Trigger_CV_4 = 0;
                 tmp.payloadPedalAction_.Rudder_action = 0;
                 tmp.payloadPedalAction_.Rudder_brake_action = 0;
 
                 for (uint PIDX = 0; PIDX < 3; PIDX++)
                 {
                     bool update_b = false;
-                    TimeSpan diff_action =  DateTime.Now - Action_lastTime[PIDX];
+                    TimeSpan diff_action =  DateTime.UtcNow - Action_lastTime[PIDX];
                     int millisceonds_action = (int)diff_action.TotalMilliseconds;
                     float time_interval = (1000.0f / Settings.Pedal_action_fps[PIDX]) - actionIntervalTolerance;
                     if ( millisceonds_action> 30)
                     {
-                        Action_lastTime[PIDX] = DateTime.Now;
+                        Action_lastTime[PIDX] = DateTime.UtcNow;
                         update_b = true;
                     }
 
@@ -942,7 +1020,6 @@ namespace DiyFfbPedal
                         byte* p = (byte*)v;
                         tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
                         SendPedalAction(tmp, (byte)PIDX);
-                        Task.Delay(2);
                     }
 
                 }
@@ -977,31 +1054,54 @@ namespace DiyFfbPedal
                 tmp.payloadPedalAction_.impact_value = 0;
                 tmp.payloadPedalAction_.Trigger_CV_1 = 0;
                 tmp.payloadPedalAction_.Trigger_CV_2 = 0;
-                if (Settings.rudderMode == 0)
+                tmp.payloadPedalAction_.Trigger_CV_3 = 0;
+                tmp.payloadPedalAction_.Trigger_CV_4 = 0;
+                if (!Rudder_status)
                 {
-                    if (Rudder_Pedal_idx[0] == 0)
-                    {
-                        tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableRudderThreePedals;
-                    }
-                    else
-                    {
-                        tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableRudderTwoPedals;
-                    }
+                    tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.ClearRudderStatus;
+                    Rudder_brake_status = false;
                 }
-                if (Settings.rudderMode == 1)
+                else
                 {
-                    if (Rudder_Pedal_idx[0] == 0)
+                    if (Settings.rudderMode == 0 || Settings.rudderMode == 2 || Settings.rudderMode == 3)
                     {
-                        tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableHeliRudderThreePedals;
+                        if (Rudder_Pedal_idx[0] == 0)
+                        {
+                            tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableRudderThreePedals;
+                        }
+                        else
+                        {
+                            tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableRudderTwoPedals;
+                        }
                     }
-                    else
+                    else if (Settings.rudderMode == 1)
                     {
-                        tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableHeliRudderTwoPedals;
+                        if (Rudder_Pedal_idx[0] == 0)
+                        {
+                            tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableHeliRudderThreePedals;
+                        }
+                        else
+                        {
+                            tmp.payloadPedalAction_.Rudder_action = (byte)RudderAction.EnableHeliRudderTwoPedals;
+                        }
                     }
                 }
 
                 
-                tmp.payloadPedalAction_.Rudder_brake_action = 0;
+                if (Settings.rudderMode == 3)
+                {
+                    Rudder_brake_status = Rudder_status;
+                    tmp.payloadPedalAction_.Rudder_brake_action = 2;
+                }
+                else if (Settings.rudderMode == 2)
+                {
+                    tmp.payloadPedalAction_.Rudder_brake_action = (byte)(Rudder_brake_status ? 2 : 3);
+                }
+                else
+                {
+                    Rudder_brake_status = false;
+                    tmp.payloadPedalAction_.Rudder_brake_action = 0;
+                }
 
                 for (uint i = 0; i < 2; i++)
                 {
@@ -1015,6 +1115,7 @@ namespace DiyFfbPedal
                     byte* p = (byte*)v;
                     tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
                     SendPedalAction(tmp, (byte)PIDX);
+                    System.Threading.Thread.Sleep(100);
                 }
                 Rudder_enable_flag = false;
                 SystemSounds.Beep.Play();
@@ -1051,7 +1152,7 @@ namespace DiyFfbPedal
                     }
                     if (MSFS_status || Flight_running_simhub)
                     {
-                        Rudder_Action_currentTime = DateTime.Now;
+                        Rudder_Action_currentTime = DateTime.UtcNow;
                         TimeSpan diff_action = Rudder_Action_currentTime - Rudder_Action_lastTime;
                         int millisceonds_action = (int)diff_action.TotalMilliseconds;
                         
@@ -1069,6 +1170,8 @@ namespace DiyFfbPedal
                             //tmp.payloadPedalAction_.impact_value = 0;
                             tmp.payloadPedalAction_.Trigger_CV_1 = 0;
                             tmp.payloadPedalAction_.Trigger_CV_2 = 0;
+                            tmp.payloadPedalAction_.Trigger_CV_3 = 0;
+                            tmp.payloadPedalAction_.Trigger_CV_4 = 0;
                             tmp.payloadPedalAction_.Rudder_action = 0;
                             tmp.payloadPedalAction_.Rudder_brake_action = 0;
                             //action here
@@ -1097,7 +1200,7 @@ namespace DiyFfbPedal
                                 {
                                     tmp.payloadPedalAction_.RPM_u8 = Rudder_RPM_value;
                                     Rudder_Effect_update_b = true;
-                                    Rudder_Action_lastTime = DateTime.Now;
+                                    Rudder_Action_lastTime = DateTime.UtcNow;
                                     Rudder_RPM_Effect_last_value = Rudder_RPM_value;
                                 }
                             }
@@ -1157,7 +1260,7 @@ namespace DiyFfbPedal
                                 {
                                     tmp.payloadPedalAction_.impact_value = (Byte)Rudder_G_Wind_combined;
                                     Rudder_Effect_update_b = true;
-                                    Rudder_Action_lastTime = DateTime.Now;
+                                    Rudder_Action_lastTime = DateTime.UtcNow;
                                     Rudder_G_last_value = (Byte)Rudder_G_Wind_combined;
                                 }
                             }
@@ -1226,8 +1329,10 @@ namespace DiyFfbPedal
                 tmp.payloadPedalAction_.impact_value = 0;
                 tmp.payloadPedalAction_.Trigger_CV_1 = 0;
                 tmp.payloadPedalAction_.Trigger_CV_2 = 0;
+                tmp.payloadPedalAction_.Trigger_CV_3 = 0;
+                tmp.payloadPedalAction_.Trigger_CV_4 = 0;
                 tmp.payloadPedalAction_.Rudder_action = 0;
-                tmp.payloadPedalAction_.Rudder_brake_action = 1;
+                tmp.payloadPedalAction_.Rudder_brake_action = (byte)(Rudder_brake_status ? 2 : 3);
 
                 for (uint i = 0; i < 2; i++)
                 {
@@ -1241,9 +1346,8 @@ namespace DiyFfbPedal
                     byte* p = (byte*)v;
                     tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
                     SendPedalAction(tmp, (byte)PIDX);
-                    Rudder_brake_enable_flag = false;
-                    
                 }
+                Rudder_brake_enable_flag = false;
 
             }
 
@@ -1261,6 +1365,8 @@ namespace DiyFfbPedal
                 tmp.payloadPedalAction_.impact_value = 0;
                 tmp.payloadPedalAction_.Trigger_CV_1 = 0;
                 tmp.payloadPedalAction_.Trigger_CV_2 = 0;
+                tmp.payloadPedalAction_.Trigger_CV_3 = 0;
+                tmp.payloadPedalAction_.Trigger_CV_4 = 0;
                 tmp.payloadPedalAction_.Rudder_action = 0;
                 tmp.payloadPedalAction_.Rudder_brake_action = 0;
                 
@@ -1303,6 +1409,7 @@ namespace DiyFfbPedal
             pluginManager.SetPropertyValue("debugvalue", this.GetType(), debug_value);
             pluginManager.SetPropertyValue("rudder_status", this.GetType(), Rudder_status);
             pluginManager.SetPropertyValue("rudder_brake_status", this.GetType(), Rudder_brake_status);
+            pluginManager.SetPropertyValue("rudder_mode", this.GetType(), Settings.rudderMode);
             pluginManager.SetPropertyValue("pedal_position", this.GetType(), pedal_state_in_ratio);
             pluginManager.SetPropertyValue("PedalErrorIndex", this.GetType(), PedalErrorIndex);
             pluginManager.SetPropertyValue("PedalErrorCode", this.GetType(), PedalErrorCode);
@@ -1343,7 +1450,7 @@ namespace DiyFfbPedal
                     {
                         PedalRestartAction();
                     }
-                    catch (Exception caughtEx)
+                    catch (Exception)
                     {
                     }
                 }
@@ -1366,7 +1473,7 @@ namespace DiyFfbPedal
                     
                     
                 }
-                catch (Exception caughtEx)
+                catch (Exception)
                 { 
                 }
                 
@@ -1388,6 +1495,12 @@ namespace DiyFfbPedal
         }
 
 
+
+                public void SavePluginSettings()
+        {
+            try { this.SaveCommonSettings("GeneralSettings", Settings); }
+            catch (Exception ex) { SimHub.Logging.Current.Error("Error saving settings: " + ex.Message); }
+        }
 
         public bool PortExists(string portName)
         {
@@ -1413,6 +1526,24 @@ namespace DiyFfbPedal
 
             // Load settings
             Settings = this.ReadCommonSettings<DIYFFBPedalSettings>("GeneralSettings", () => new DIYFFBPedalSettings());
+            if (Settings.AssignedPedalMac == null || Settings.AssignedPedalMac.Length < 4)
+            {
+                string[] newMacs = new string[4] { "", "", "", "" };
+                if (Settings.AssignedPedalMac != null)
+                {
+                    Array.Copy(Settings.AssignedPedalMac, newMacs, Math.Min(Settings.AssignedPedalMac.Length, 4));
+                }
+                Settings.AssignedPedalMac = newMacs;
+            }
+            if (Settings.PedalDetectedChannel == null || Settings.PedalDetectedChannel.Length < 4)
+            {
+                int[] newChs = new int[4] { 0, 0, 0, 0 };
+                if (Settings.PedalDetectedChannel != null)
+                {
+                    Array.Copy(Settings.PedalDetectedChannel, newChs, Math.Min(Settings.PedalDetectedChannel.Length, 4));
+                }
+                Settings.PedalDetectedChannel = newChs;
+            }
             Simhub_version = (String)pluginManager.GetPropertyValue("DataCorePlugin.SimHubVersion");
             // Declare a property available in the property list, this gets evaluated "on demand" (when shown or used in formulas)
             //this.AttachDelegate("CurrentDateTime", () => DateTime.Now);
@@ -1429,6 +1560,7 @@ namespace DiyFfbPedal
             pluginManager.AddProperty("debugvalue", this.GetType(), debug_value);
             pluginManager.AddProperty("rudder_status", this.GetType(), Rudder_status);
             pluginManager.AddProperty("rudder_brake_status", this.GetType(), Rudder_brake_status);
+            pluginManager.AddProperty("rudder_mode", this.GetType(), Settings.rudderMode);
             pluginManager.AddProperty("pedal_position", this.GetType(), pedal_state_in_ratio);
             pluginManager.AddProperty("PedalErrorIndex", this.GetType(), PedalErrorIndex);
             pluginManager.AddProperty("PedalErrorCode", this.GetType(), PedalErrorCode);
@@ -1446,9 +1578,9 @@ namespace DiyFfbPedal
             for (uint pedali = 0; pedali < 3; pedali++)
             {
                 Action_currentTime[pedali] = new DateTime();
-                Action_currentTime[pedali] = DateTime.Now;
+                Action_currentTime[pedali] = DateTime.UtcNow;
                 Action_lastTime[pedali] = new DateTime();
-                Action_lastTime[pedali] = DateTime.Now;
+                Action_lastTime[pedali] = DateTime.UtcNow;
             }
 
             //get version length
@@ -1713,6 +1845,34 @@ namespace DiyFfbPedal
                 SimHub.Logging.Current.Info("Rudder Brake");
 
             });
+            this.AddAction("Toe Brake", (a, b) =>
+            {
+                Rudder_brake_enable_flag = true;
+                SimHub.Logging.Current.Info("Toe Brake");
+
+            });
+            this.AddAction("Toe Brake On", (a, b) =>
+            {
+                if (!Rudder_brake_status)
+                {
+                    Rudder_brake_enable_flag = true;
+                }
+                SimHub.Logging.Current.Info("Toe Brake On");
+            });
+            this.AddAction("Toe Brake Off", (a, b) =>
+            {
+                if (Rudder_brake_status)
+                {
+                    Rudder_brake_enable_flag = true;
+                }
+                SimHub.Logging.Current.Info("Toe Brake Off");
+            });
+            this.AddAction("Airplane with Toe Brake", (a, b) =>
+            {
+                Rudder_brake_enable_flag = true;
+                SimHub.Logging.Current.Info("Airplane with Toe Brake");
+
+            });
             this.AddAction("Log Pedal State", (a, b) =>
             {
                 if (!_calculations.dumpPedalToResponseFile[Settings.table_selected])
@@ -1757,7 +1917,7 @@ namespace DiyFfbPedal
                     {
                         _serialPort[pedalIdx].PortName = Settings.selectedComPortNames[pedalIdx];
                     }
-                    catch (Exception caughtEx)
+                    catch (Exception)
                     {
                     }
                     

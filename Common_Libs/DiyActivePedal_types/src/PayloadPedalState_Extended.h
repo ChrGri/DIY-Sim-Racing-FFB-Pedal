@@ -9,7 +9,8 @@ typedef struct __attribute__((packed)) PayloadPedalStateExtended
   int16_t servoPositionError_i16;
   int16_t servoVoltage0p1V_i16;
   int16_t servoCurrentPercent_i16;
-  
+  int16_t servoVelocityRpm_i16; // only with debug flag 128 (servo streams velocity instead of current), else 0
+
 
   // values from ESP
   uint32_t timeInUs_u32;
@@ -31,5 +32,10 @@ typedef struct __attribute__((packed)) PayloadPedalStateExtended
   float admittance_virtualPosition_m;
   float admittance_virtualVelocity_mps;
   float admittance_virtualAcceleration_mps2;
+
+  // joystick output of this cycle (the basic state only carries every N-th one)
+  uint16_t joystickOutput_u16;    // final HID value, after curve + denoise
+  uint16_t joystickPreCurve_u16;  // force/travel mapping incl. preload gate, before curve + denoise
+  float pedalTravel_fl32;         // pedal arc fraction (0..1) used by travel-as-joystick
 
 } PayloadPedalStateExtended_t;

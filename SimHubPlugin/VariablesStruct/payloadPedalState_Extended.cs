@@ -17,6 +17,7 @@ namespace DiyFfbPedal
         public Int16 servoPositionError_i16;
         public Int16 servoVoltage0p1V_i16;
         public Int16 servoCurrentPercent_i16;
+        public Int16 servoVelocityRpm_i16; // only with debug flag 128 (servo streams velocity instead of current), else 0
 
         // values from ESP
         public UInt32 timeInUs_u32;
@@ -38,6 +39,11 @@ namespace DiyFfbPedal
         public float admittance_virtualPosition_m;
         public float admittance_virtualVelocity_mps;
         public float admittance_virtualAcceleration_mps2;
+
+        // joystick output of this cycle (the basic state only carries every N-th one)
+        public UInt16 joystickOutput_u16;    // final HID value, after curve + denoise
+        public UInt16 joystickPreCurve_u16;  // force/travel mapping incl. preload gate, before curve + denoise
+        public float pedalTravel_fl32;       // pedal arc fraction (0..1) used by travel-as-joystick
 
 
 

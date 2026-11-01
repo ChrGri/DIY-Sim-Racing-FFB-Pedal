@@ -164,13 +164,13 @@ namespace DiyFfbPedal
                         }
                         UpdateConfigLabelDefaultAndEditing();
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
 
                     }
 
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                 }
             }
@@ -209,7 +209,7 @@ namespace DiyFfbPedal
                             compatibleForce[5] = (byte)data["payloadPedalConfig_"]["relativeForce_p100"];
                         }
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
 
                     }
@@ -242,6 +242,19 @@ namespace DiyFfbPedal
                         config.payloadPedalConfig_.joystickMapOrig03 = 60;
                         config.payloadPedalConfig_.joystickMapOrig04 = 80;
                         config.payloadPedalConfig_.joystickMapOrig05 = 100;
+                        config.payloadPedalConfig_.numOfJoystickMapControlToe = 6;
+                        config.payloadPedalConfig_.joystickMapMappedToe00 = 0;
+                        config.payloadPedalConfig_.joystickMapMappedToe01 = 20;
+                        config.payloadPedalConfig_.joystickMapMappedToe02 = 40;
+                        config.payloadPedalConfig_.joystickMapMappedToe03 = 60;
+                        config.payloadPedalConfig_.joystickMapMappedToe04 = 80;
+                        config.payloadPedalConfig_.joystickMapMappedToe05 = 100;
+                        config.payloadPedalConfig_.joystickMapOrigToe00 = 0;
+                        config.payloadPedalConfig_.joystickMapOrigToe01 = 20;
+                        config.payloadPedalConfig_.joystickMapOrigToe02 = 40;
+                        config.payloadPedalConfig_.joystickMapOrigToe03 = 60;
+                        config.payloadPedalConfig_.joystickMapOrigToe04 = 80;
+                        config.payloadPedalConfig_.joystickMapOrigToe05 = 100;
 
                     }
 
@@ -295,6 +308,7 @@ namespace DiyFfbPedal
                     if (config.payloadPedalConfig_.virtualPedalMass_u8 == 0 ) config.payloadPedalConfig_.virtualPedalMass_u8 = 60;
                     if (config.payloadPedalConfig_.coulombFrictionIn0p1N_u8 == 0) config.payloadPedalConfig_.coulombFrictionIn0p1N_u8 = 0;
                     if (config.payloadPedalConfig_.virtualPedalDamping_u8 == 0) config.payloadPedalConfig_.virtualPedalDamping_u8 = 100;
+                    if (config.payloadPedalConfig_.brakeResistorResistance_Ohm_u8 == 0) config.payloadPedalConfig_.brakeResistorResistance_Ohm_u8 = 10; // Ohm
 
                     config.payloadPedalConfig_.configHash_u32 = hash;
 

@@ -41,7 +41,11 @@ namespace DiyFfbPedal
         public bool[] dumpPedalToResponseFile;
         public string current_profile = "NA";
         public bool ForceUpdate_b;
-        public uint UpdateChannel;
+
+        public DAP_state_extended_st[] pedalState_extended = new DAP_state_extended_st[3];
+        public long[] pedalState_extended_counter = new long[3] { 0, 0, 0 };
+        public Action<int, DAP_state_extended_st> OnExtendedStateReceived;
+        //public uint UpdateChannel;
         public uint _rssi_value;
         public byte[,] PedalFirmwareVersion;
         public byte[] BridgeFirmwareVersion;
@@ -61,7 +65,7 @@ namespace DiyFfbPedal
         public vJoyInterfaceWrap.vJoy _joystick;
         public bool IsJoystickInitialized = false;
         public uint rudderType;
-        public bool IsTestBuild = false;
+        //public bool IsTestBuild = false;
         public bool IsOtaUploadFromPlatformIO = false;
         public byte[][] unassignedPedalMacaddress;
         public BridgeConnectStateEnum bridgeConnectionStatus= BridgeConnectStateEnum.BRIDGE_DISCONNECT;
@@ -142,7 +146,7 @@ namespace DiyFfbPedal
             dumpPedalToResponseFile_clearFile = new bool[3] { false, false, false };
             dumpPedalToResponseFile = new bool[3] { false, false, false };
             ForceUpdate_b = false;
-            UpdateChannel = 0;
+            //UpdateChannel = 0;
             _rssi_value = 0;
             _systemStatusString = "";
             _bridgeSerialConnecitonStatus = false;

@@ -82,6 +82,12 @@ namespace User.PluginSdkDemo
                     {
                         TextBox2.Text = ex.Message;
                         //ConnectToPedal.IsChecked = false;
+                        // The port is gone (device unplugged or tty hung up), but SerialPort stays
+                        // IsOpen, so every tick would throw again. Close it, so that
+                        // connection_timmer_tick reopens it once the pedal is back.
+                        SimHub.Logging.Current.Error("Pedal serial read error: " + ex.Message + ", closing " + sp.PortName + " to reconnect");
+                        try { sp.Close(); }
+                        catch (Exception) { } // expected on a dead port; Close() still releases it
                         return;
                     }
 

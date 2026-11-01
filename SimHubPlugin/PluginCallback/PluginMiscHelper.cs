@@ -28,6 +28,8 @@ namespace DiyFfbPedal
             tmp2.payloadPedalAction_.impact_value = 0;
             tmp2.payloadPedalAction_.Trigger_CV_1 = 0;
             tmp2.payloadPedalAction_.Trigger_CV_2 = 0;
+            tmp2.payloadPedalAction_.Trigger_CV_3 = 0;
+            tmp2.payloadPedalAction_.Trigger_CV_4 = 0;
             tmp2.payloadPedalAction_.Rudder_action = 0;
             tmp2.payloadPedalAction_.system_action_u8 = (byte)PedalSystemAction.PEDAL_RESTART;
             for (uint i = 0; i < 3; i++)

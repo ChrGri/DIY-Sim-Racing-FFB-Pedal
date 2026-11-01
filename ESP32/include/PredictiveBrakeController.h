@@ -3,181 +3,369 @@
 #include <Arduino.h>
 #include <math.h>
 
+// TESTING ONLY: disables the energy-based thermal lockout of the brake resistor and
+// the reduction of its regen budget share (availableFraction() stays 1), to check
+// whether the thermal governor causes inconsistent pedal speed. The energy is still
+// integrated; the dead-man timer and the 80 ms full-on limit stay active.
+// Remove for release: a 10 Ohm / 5 W resistor relies on this protection.
+// #define BRAKE_RESISTOR_THERMAL_LOCKOUT_DISABLED_FOR_TESTING
+
 /**
- * @brief Predictive brake resistor controller (Time-To-Impact & Foot Dynamics Observer)
- * 100% timer-rollover safe (Unsigned Delta Logic), thermal lockout & Schmitt hysteresis.
+ * @brief Brake resistor controller: PWM duty from the regen governor's feedforward
+ * (admittance strategy) or a reactive voltage check (rudder), reactive backstop with
+ * Schmitt hysteresis, dynamic voltage auto-baselining, thermal lockout and a
+ * first-order (PT1) thermal energy model. Timer-rollover safe (unsigned deltas).
  */
 class PredictiveBrakeController {
 private:
-    // --- 1. Tuning Parameters (Prediction) ---
-    const float FOOT_ESCAPE_RATE_KG_S = -100.0f; 
-    const float TTZ_WARNING_S = 0.04f; 
-    const int32_t MIN_SPEED_HZ = 30000; 
-    const uint32_t HOLD_TIME_US = 30000; 
-    const int32_t ERROR_WAS_LARGE_TRHESHOLD_STEPS_I32 = -100; 
+  // --- 1. Hysteresis Parameters (Reactive Overvoltage Protection) ---
+  // simpleVoltageCheck() (rudder)
+  const float BRAKE_RESISTOR_UPPER_THRESHOLD_VOLTAGE = 4.0f;
+  const float BRAKE_RESISTOR_LOWER_THRESHOLD_VOLTAGE = 1.5f;
+  // Backstop of updateDuty() (feedforward mode): above the servo bleeder level
+  // (~rest + 7 V measured), so it only engages when the feedforward falls short
+  const float BACKSTOP_UPPER_THRESHOLD_VOLTAGE = 10.0f;
+  const float BACKSTOP_LOWER_THRESHOLD_VOLTAGE = 7.0f;
+  // Minimum on-time of the PWM (FR120N module: PC817 + 4.7 kOhm gate resistors switch
+  // in ~20-45 us). Shorter pulses would spend most of their time in the MOSFET's
+  // linear region without dissipating much in the resistor; duties below this are
+  // dropped (the servo bleeder takes that small power). 10 % = 100 us at 1 kHz.
+  const float MIN_PWM_DUTY_01 = 0.10f;
+  float appliedDuty_01_fl32 = 0.0f;
 
-    // --- 2. Hysteresis Parameters (Reactive Overvoltage Protection) ---
-    const float BRAKE_RESISTOR_UPPER_THRESHOLD_VOLTAGE = 4.0f;
-    const float BRAKE_RESISTOR_LOWER_THRESHOLD_VOLTAGE = 1.0f;
-    
-    // NEW: No longer 'const', allowing the value to be set externally.
-    // Default value is 38.0V (for a 36V power supply).
-    float voltageThreshold_V_fl32 = 38.0f; 
+  // Baseline voltage (auto-learned from idle bus voltage or set via
+  // setVoltageThreshold)
+  float voltageThreshold_V_fl32 = 38.0f;
+  bool is_baseline_initialized_b = false;
 
-    // --- 3. Safety Parameters (Thermal Protection) ---
-    const uint32_t MAX_CONTINUOUS_ON_TIME_US = 500000; 
-    const uint32_t THERMAL_COOLDOWN_TIME_US = 1000000; 
+  // --- 2. Safety Parameters (Thermal Protection) ---
+  // Reduced from 500 ms to 80 ms to prevent power supply contention and burnout
+  const uint32_t MAX_CONTINUOUS_ON_TIME_US = 80000;
+  // Increased from 1.0 s to 3.0 s to allow physical thermal dissipation
+  const uint32_t THERMAL_COOLDOWN_TIME_US = 3000000;
 
-    // --- Internal State Variables (Prediction & Hysteresis) ---
-    float prev_error_fl32 = 0.0f;
-    uint32_t prev_time_us_u32 = 0;
-    bool is_initialized_b = false;
-    
-    // Rollover-safe timer variables
-    bool is_timer_active_b = false;
-    uint32_t timer_start_time_us_u32 = 0;
-    
-    bool is_voltage_fallback_active_b = false; 
+  // --- 3. PT1 Thermal Energy Model (first-order thermal RC) ---
+  // The stored energy E = C_th * dT (above ambient) follows dE/dt = P_in - E / tau,
+  // i.e. passive cooling is proportional to the temperature rise.
+  // Measured on the 5 W / 10 Ohm aluminum-housed resistor (5W-10R-LVKE), open air,
+  // step response at 2.4 W: R_th = 26.3 K/W, C_th = 7.65 J/K, tau = 201 s
+  // (+63.2 K rise to ~85.7 degC, ~480 J stored).
+  // Safety margins for unknown start temperature (MCU reboot with a warm resistor,
+  // hot summer ambient) and restricted airflow in an enclosure:
+  //  - energy cap 250 J (~32.7 K rise), ~48 % below the tested 480 J steady state,
+  //    leaving headroom for warm restarts and wire-to-case thermal lag
+  //  - tau raised from 201 s to 250 s (~25 % worse convection), so the assumed
+  //    cooling at the cap is at most 250 J / 250 s = 1.0 W
+  // brake resistor resistance, set from the config (setResistanceOhm)
+  float RESISTOR_OHMS_FL32 = 10.0f;
+  const float THERMAL_TAU_S_FL32 =
+      250.0f; // Conservative thermal time constant [s] (measured open air: 201 s)
+  const float MAX_ENERGY_JOULES_FL32 =
+      250.0f; // Max energy capacity before thermal trip (~32.7 K at C_th = 7.65 J/K)
+  // resistor share of the regen budget starts to shrink at this fraction of the
+  // budget (above 175 J)
+  const float AVAILABILITY_RAMP_START_01 = 0.7f;
+  const float RECOVERY_ENERGY_JOULES_FL32 =
+      200.0f; // Energy threshold to clear thermal lockout (20 % hysteresis)
+  float accumulated_energy_j_fl32 = 0.0f;
 
-    // --- Internal State Variables (Thermal Protection) ---
-    bool is_hardware_active_b = false;
-    uint32_t active_start_time_us_u32 = 0;
-    bool is_in_lockout_b = false;
-    uint32_t lockout_start_time_us_u32 = 0;
+  // --- Internal State Variables (Hysteresis) ---
+  uint32_t prev_time_us_u32 = 0;
+  bool is_voltage_fallback_active_b = false;
+
+  // --- Backstop input protection against corrupted servo packets ---
+  // A packet that passed the CRC can still carry wrong data (~1 in 65536 corrupted
+  // packets). Bus voltages outside this range are physically impossible here and are
+  // ignored (backstop off); the backstop switches on only when this many consecutive
+  // servo packets are above the threshold (~10 ms more delay per extra packet).
+  const float PLAUSIBLE_BUS_VOLTAGE_MIN_V = 16.0f;
+  const float PLAUSIBLE_BUS_VOLTAGE_MAX_V = 90.0f;
+  const uint8_t BACKSTOP_CONFIRM_PACKETS_U8 = 2;
+  uint32_t lastBackstopServoCycle_u32 = 0;
+  uint8_t backstopAboveCount_u8 = 0;
+
+  // Voltage for the thermal model: never below the learned rest voltage, never above
+  // the plausible maximum, so a corrupted reading can only overestimate the energy.
+  float thermalModelVoltage(float servoVoltage_fl32) const {
+    return constrain(max(servoVoltage_fl32, voltageThreshold_V_fl32),
+                     PLAUSIBLE_BUS_VOLTAGE_MIN_V, PLAUSIBLE_BUS_VOLTAGE_MAX_V);
+  }
+
+  // Reactive backstop with hysteresis, evaluated once per servo packet.
+  void updateBackstop(float servoVoltage_fl32, uint32_t servoCycleCounter_u32,
+                      float upperOffset_V, float lowerOffset_V) {
+    if (servoCycleCounter_u32 == lastBackstopServoCycle_u32) {
+      return; // same packet as in the previous pedal cycle
+    }
+    lastBackstopServoCycle_u32 = servoCycleCounter_u32;
+
+    if ((servoVoltage_fl32 < PLAUSIBLE_BUS_VOLTAGE_MIN_V) ||
+        (servoVoltage_fl32 > PLAUSIBLE_BUS_VOLTAGE_MAX_V)) {
+      // implausible: fail safe off
+      backstopAboveCount_u8 = 0;
+      is_voltage_fallback_active_b = false;
+      return;
+    }
+    if (servoVoltage_fl32 >= voltageThreshold_V_fl32 + upperOffset_V) {
+      if (backstopAboveCount_u8 < 255) {
+        backstopAboveCount_u8++;
+      }
+      if (backstopAboveCount_u8 >= BACKSTOP_CONFIRM_PACKETS_U8) {
+        is_voltage_fallback_active_b = true;
+      }
+    } else {
+      backstopAboveCount_u8 = 0;
+      if (servoVoltage_fl32 <= voltageThreshold_V_fl32 + lowerOffset_V) {
+        is_voltage_fallback_active_b = false;
+      }
+    }
+  }
+
+  // --- Internal State Variables (Thermal Protection) ---
+  bool is_hardware_active_b = false;
+  uint32_t active_start_time_us_u32 = 0;
+  bool is_in_lockout_b = false;
+  uint32_t lockout_start_time_us_u32 = 0;
+
+  /**
+   * @brief Automatically baseline the resting/idle DC bus voltage.
+   * Prevents false triggers when operating on 48V (or custom voltage) power
+   * supplies.
+   */
+  void updateVoltageBaseline(float servoVoltage_fl32, bool isHardwareActive_b,
+                             int32_t currentSpeedInHz_i32 = 0) {
+    if (!isHardwareActive_b && abs(currentSpeedInHz_i32) < 1000 &&
+        servoVoltage_fl32 >= 16.0f && servoVoltage_fl32 <= 65.0f) {
+      if (!is_baseline_initialized_b) {
+        voltageThreshold_V_fl32 = servoVoltage_fl32;
+        is_baseline_initialized_b = true;
+      } else if (servoVoltage_fl32 < voltageThreshold_V_fl32) {
+        // Quickly track downwards toward true nominal resting voltage
+        voltageThreshold_V_fl32 =
+            0.95f * voltageThreshold_V_fl32 + 0.05f * servoVoltage_fl32;
+      } else {
+        // Very slowly track upwards (e.g. if user adjusts power supply trim
+        // pot)
+        voltageThreshold_V_fl32 =
+            0.9999f * voltageThreshold_V_fl32 + 0.0001f * servoVoltage_fl32;
+      }
+    }
+  }
+
+  /**
+   * @brief Thermal safety governor of the on/off voltage check (rudder): enforces
+   * max continuous on-time, thermal cooldown lockout, and cumulative I^2*t energy
+   * tracking. updateDuty() has its own duty-based equivalent.
+   */
+  bool applyThermalSafetyGovernor(bool logical_activate_b,
+                                  float servoVoltage_fl32,
+                                  uint32_t currentTimeUs_u32, float dt_s_fl32,
+                                  int32_t currentSpeedInHz_i32 = 0) {
+    // 1. Update dynamic bus baseline voltage
+    updateVoltageBaseline(servoVoltage_fl32, is_hardware_active_b,
+                          currentSpeedInHz_i32);
+
+    // 2. Update PT1 thermal energy model (cooling proportional to stored energy)
+    float cooling_power_w = accumulated_energy_j_fl32 / THERMAL_TAU_S_FL32;
+    if (is_hardware_active_b) {
+      float thermalVoltage_fl32 = thermalModelVoltage(servoVoltage_fl32);
+      float power_in_w =
+          (thermalVoltage_fl32 * thermalVoltage_fl32) / RESISTOR_OHMS_FL32;
+      accumulated_energy_j_fl32 += (power_in_w - cooling_power_w) * dt_s_fl32;
+    } else {
+      accumulated_energy_j_fl32 -= cooling_power_w * dt_s_fl32;
+    }
+    if (accumulated_energy_j_fl32 < 0.0f) {
+      accumulated_energy_j_fl32 = 0.0f;
+    }
+
+    // 3. Trip thermal lockout if cumulative energy exceeds thermal budget
+    if (accumulated_energy_j_fl32 >= MAX_ENERGY_JOULES_FL32 &&
+        !is_in_lockout_b) {
+      is_in_lockout_b = true;
+      lockout_start_time_us_u32 = currentTimeUs_u32;
+      is_hardware_active_b = false;
+      is_voltage_fallback_active_b = false;
+    }
+
+    // 4. Evaluate lockout recovery
+    if (is_in_lockout_b) {
+      bool time_cooled_b = (currentTimeUs_u32 - lockout_start_time_us_u32) >
+                           THERMAL_COOLDOWN_TIME_US;
+      bool energy_cooled_b =
+          accumulated_energy_j_fl32 <= RECOVERY_ENERGY_JOULES_FL32;
+      if (time_cooled_b && energy_cooled_b) {
+        is_in_lockout_b = false;
+      } else {
+        logical_activate_b = false;
+      }
+    }
+
+    // 5. Hardware on-time monitoring & hard cutoff
+    if (logical_activate_b) {
+      if (!is_hardware_active_b) {
+        is_hardware_active_b = true;
+        active_start_time_us_u32 = currentTimeUs_u32;
+      } else {
+        if ((currentTimeUs_u32 - active_start_time_us_u32) >
+            MAX_CONTINUOUS_ON_TIME_US) {
+          // EMERGENCY SHUTDOWN: continuous on-time exceeded
+          is_hardware_active_b = false;
+          logical_activate_b = false;
+          is_in_lockout_b = true;
+          lockout_start_time_us_u32 = currentTimeUs_u32;
+          is_voltage_fallback_active_b = false;
+        }
+      }
+    } else {
+      is_hardware_active_b = false;
+    }
+
+    return logical_activate_b;
+  }
 
 public:
-    PredictiveBrakeController() {}
+  PredictiveBrakeController() {}
 
-    // =========================================================
-    // Setter function for the voltage limit
-    // =========================================================
-    /**
-     * @brief Sets the reactive overvoltage threshold base value.
-     * @param threshold_V The new threshold in Volts (e.g., 38.0f for 36V power supplies)
-     */
-    void setVoltageThreshold(float threshold_V) {
-        // Optional: A sanity check to prevent accidentally setting it to 5V or 1000V.
-        if (threshold_V > 37.0f && threshold_V < 80.0f) {
-            voltageThreshold_V_fl32 = threshold_V; 
-        }
+  void setVoltageThreshold(float threshold_V) {
+    if (threshold_V > 16.0f && threshold_V < 80.0f) {
+      voltageThreshold_V_fl32 = threshold_V;
+      is_baseline_initialized_b = true;
+    }
+  }
+
+  // resistance of the fitted brake resistor (pedal config); used by the thermal model
+  void setResistanceOhm(float resistance_Ohm) {
+    if (resistance_Ohm >= 1.0f) {
+      RESISTOR_OHMS_FL32 = resistance_Ohm;
+    }
+  }
+
+  /**
+   * @brief Share of the brake resistor that the regen power budget may count on:
+   * 1 while cool, ramping to 0 between 70 % and 100 % of the thermal energy budget,
+   * 0 during a thermal lockout. Lets the admittance strategy fall back to the servo's
+   * own regen budget before the resistor cuts out.
+   */
+  float availableFraction() const {
+    if (is_in_lockout_b) {
+      return 0.0f;
+    }
+#ifdef BRAKE_RESISTOR_THERMAL_LOCKOUT_DISABLED_FOR_TESTING
+    return 1.0f;
+#else
+    float usedFraction_fl32 = accumulated_energy_j_fl32 / MAX_ENERGY_JOULES_FL32;
+    return constrain((1.0f - usedFraction_fl32) / (1.0f - AVAILABILITY_RAMP_START_01), 0.0f, 1.0f);
+#endif
+  }
+
+  /**
+   * @brief PWM duty for the brake resistor (admittance strategy).
+   *
+   * Feedforward: the strategy requests the duty that dissipates the estimated regen
+   * power above the servo's own share. A reactive backstop (full on) only engages well
+   * above the servo's bleeder level, so it no longer fires on every press. The thermal
+   * model integrates the actually dissipated power duty * V^2 / R.
+   *
+   * @return duty [0, 1] to apply
+   */
+  float updateDuty(float feedforwardDuty_01, float servoVoltage_fl32,
+                   uint32_t currentTimeUs_u32, int32_t currentSpeedInHz_i32,
+                   uint32_t servoCycleCounter_u32) {
+    float dt_s_fl32 = 0.001f;
+    if (prev_time_us_u32 != 0) {
+      uint32_t dt_us = currentTimeUs_u32 - prev_time_us_u32;
+      if (dt_us > 0 && dt_us < 100000) {
+        dt_s_fl32 = (float)dt_us * 1e-6f;
+      }
+    }
+    prev_time_us_u32 = currentTimeUs_u32;
+
+    updateVoltageBaseline(servoVoltage_fl32, appliedDuty_01_fl32 > 0.0f,
+                          currentSpeedInHz_i32);
+
+    // reactive backstop with hysteresis (plausibility check, confirmed over 2 packets)
+    updateBackstop(servoVoltage_fl32, servoCycleCounter_u32,
+                   BACKSTOP_UPPER_THRESHOLD_VOLTAGE, BACKSTOP_LOWER_THRESHOLD_VOLTAGE);
+    float duty_01 = constrain(feedforwardDuty_01, 0.0f, 1.0f);
+    if (duty_01 < MIN_PWM_DUTY_01) {
+      duty_01 = 0.0f;
+    }
+    if (is_voltage_fallback_active_b) {
+      duty_01 = 1.0f;
     }
 
-    void Reset() {
-        is_initialized_b = false;
-        is_timer_active_b = false;
-        is_voltage_fallback_active_b = false;
-        is_hardware_active_b = false;
+    // PT1 thermal model: dissipated energy minus passive cooling (proportional to
+    // the stored energy, i.e. to the temperature rise)
+    float thermalVoltage_fl32 = thermalModelVoltage(servoVoltage_fl32);
+    float fullOnPower_W = (thermalVoltage_fl32 * thermalVoltage_fl32) / RESISTOR_OHMS_FL32;
+    float cooling_power_w = accumulated_energy_j_fl32 / THERMAL_TAU_S_FL32;
+    accumulated_energy_j_fl32 +=
+        (appliedDuty_01_fl32 * fullOnPower_W - cooling_power_w) * dt_s_fl32;
+    if (accumulated_energy_j_fl32 < 0.0f) {
+      accumulated_energy_j_fl32 = 0.0f;
+    }
+#ifndef BRAKE_RESISTOR_THERMAL_LOCKOUT_DISABLED_FOR_TESTING
+    if (accumulated_energy_j_fl32 >= MAX_ENERGY_JOULES_FL32 && !is_in_lockout_b) {
+      is_in_lockout_b = true;
+      lockout_start_time_us_u32 = currentTimeUs_u32;
+    }
+#endif
+
+    // continuous full-on limit (the feedforward stays far below 100 %)
+    if (duty_01 >= 0.99f) {
+      if (!is_hardware_active_b) {
+        is_hardware_active_b = true;
+        active_start_time_us_u32 = currentTimeUs_u32;
+      } else if ((currentTimeUs_u32 - active_start_time_us_u32) > MAX_CONTINUOUS_ON_TIME_US) {
+        is_in_lockout_b = true;
+        lockout_start_time_us_u32 = currentTimeUs_u32;
+      }
+    } else {
+      is_hardware_active_b = false;
+    }
+
+    if (is_in_lockout_b) {
+      bool time_cooled_b = (currentTimeUs_u32 - lockout_start_time_us_u32) >
+                           THERMAL_COOLDOWN_TIME_US;
+      bool energy_cooled_b = accumulated_energy_j_fl32 <= RECOVERY_ENERGY_JOULES_FL32;
+      if (time_cooled_b && energy_cooled_b) {
         is_in_lockout_b = false;
+      } else {
+        duty_01 = 0.0f;
+        is_hardware_active_b = false;
+        is_voltage_fallback_active_b = false;
+      }
     }
 
-    bool Update(int32_t servoPositionError_i32
-                , float servoPositionErrorChangeRateInStepsPerSecond_fl32
-                , float forceVelEst_fl32
-                , int32_t currentSpeedInHz_i32
-                , float servoVoltage_fl32
-                , uint32_t currentTimeUs_u32) 
-    {
-        if (!is_initialized_b) {
-            prev_error_fl32 = (float)servoPositionError_i32;
-            prev_time_us_u32 = currentTimeUs_u32;
-            is_initialized_b = true;
-            return false;
-        }
+    appliedDuty_01_fl32 = duty_01;
+    return duty_01;
+  }
 
-        uint32_t dt_us_u32 = currentTimeUs_u32 - prev_time_us_u32;
-        if (dt_us_u32 == 0) dt_us_u32 = 1000; 
-        float dt_s_fl32 = (float)dt_us_u32 * 1e-6f;
-        float current_error_fl32 = (float)servoPositionError_i32;
-
-        // --- 1. Time-To-Zero (TTZ) Calculation ---
-        //float d_error_fl32 = (current_error_fl32 - prev_error_fl32) / dt_s_fl32;
-        float d_error_fl32 = servoPositionErrorChangeRateInStepsPerSecond_fl32;
-        float ttz_s_fl32 = 999.0f;
-        
-        if ((current_error_fl32 * d_error_fl32) < 0.0f) {
-            ttz_s_fl32 = fabsf(current_error_fl32 / d_error_fl32);
-        }
-
-        // --- 2. Foot Dynamics & Kinetic Checks ---
-        //bool foot_is_escaping_b = (forceVelEst_fl32 < FOOT_ESCAPE_RATE_KG_S);
-        bool high_kinetic_energy_b = (abs(currentSpeedInHz_i32) > MIN_SPEED_HZ);
-
-        // overwerite foot escaping value. Sometimes positive values have been seen here too. 
-        bool foot_is_dynamic_b = ( fabsf(forceVelEst_fl32) > fabsf(FOOT_ESCAPE_RATE_KG_S) );
-
-        bool errorWasLarge_b = (prev_error_fl32 < ERROR_WAS_LARGE_TRHESHOLD_STEPS_I32) || (current_error_fl32 < ERROR_WAS_LARGE_TRHESHOLD_STEPS_I32);
-
-        // --- 3. The Precision Trigger ("Sniper Trigger") ---
-        bool trigger_b = foot_is_dynamic_b && high_kinetic_energy_b && (ttz_s_fl32 < TTZ_WARNING_S) && errorWasLarge_b;
-
-        // --- 4. Rollover-Safe Timer Logic ---
-        if (trigger_b) {
-            is_timer_active_b = true;
-            timer_start_time_us_u32 = currentTimeUs_u32; // Simply reset the start time
-        }
-
-        prev_error_fl32 = current_error_fl32;
-        prev_time_us_u32 = currentTimeUs_u32;
-
-        // --- 5. Logical Evaluation ---
-        bool logical_activate_b = false;
-        
-        // 5a. Evaluate predictive timer (100% rollover-safe)
-        if (is_timer_active_b) {
-            if ((currentTimeUs_u32 - timer_start_time_us_u32) <= HOLD_TIME_US) {
-                logical_activate_b = true;
-            } else {
-                is_timer_active_b = false; // Timer has expired
-            }
-        }
-        
-        // 5b. Reactive Hysteresis
-        float upperLimit_V = voltageThreshold_V_fl32 + BRAKE_RESISTOR_UPPER_THRESHOLD_VOLTAGE;
-        float lowerLimit_V = voltageThreshold_V_fl32 + BRAKE_RESISTOR_LOWER_THRESHOLD_VOLTAGE;
-
-        if (servoVoltage_fl32 >= upperLimit_V) {
-            is_voltage_fallback_active_b = true; 
-        } else if (servoVoltage_fl32 <= lowerLimit_V) {
-            is_voltage_fallback_active_b = false;
-        }
-
-        if (is_voltage_fallback_active_b) {
-            logical_activate_b = true;
-        }
-
-        // =========================================================
-        // 6. THERMAL OVERLOAD PROTECTION (Also rollover-safe)
-        // =========================================================
-        if (is_in_lockout_b) {
-            if ((currentTimeUs_u32 - lockout_start_time_us_u32) > THERMAL_COOLDOWN_TIME_US) {
-                is_in_lockout_b = false; 
-            } else {
-                logical_activate_b = false; 
-            }
-        }
-
-        if (logical_activate_b) {
-            if (!is_hardware_active_b) {
-                is_hardware_active_b = true;
-                active_start_time_us_u32 = currentTimeUs_u32;
-            } else {
-                if ((currentTimeUs_u32 - active_start_time_us_u32) > MAX_CONTINUOUS_ON_TIME_US) {
-                    // EMERGENCY SHUTDOWN!
-                    is_hardware_active_b = false;
-                    logical_activate_b = false;       
-                    
-                    is_in_lockout_b = true;           
-                    lockout_start_time_us_u32 = currentTimeUs_u32;
-                    
-                    // Hard reset of all internal triggers!
-                    is_voltage_fallback_active_b = false; 
-                    is_timer_active_b = false; 
-                }
-            }
-        } else {
-            is_hardware_active_b = false;
-        }
-
-        return logical_activate_b;
+  // On/off reactive voltage check with the thermal governor (rudder mode)
+  bool simpleVoltageCheck(float servoVoltage_fl32,
+                          uint32_t currentTimeUs_u32,
+                          int32_t currentSpeedInHz_i32,
+                          uint32_t servoCycleCounter_u32) {
+    if (currentTimeUs_u32 == 0) {
+      currentTimeUs_u32 = micros();
     }
+
+    float dt_s_fl32 = 0.001f;
+    if (prev_time_us_u32 != 0) {
+      uint32_t dt_us = currentTimeUs_u32 - prev_time_us_u32;
+      if (dt_us > 0 && dt_us < 100000) {
+        dt_s_fl32 = (float)dt_us * 1e-6f;
+      }
+    }
+    prev_time_us_u32 = currentTimeUs_u32;
+
+    updateBackstop(servoVoltage_fl32, servoCycleCounter_u32,
+                   BRAKE_RESISTOR_UPPER_THRESHOLD_VOLTAGE,
+                   BRAKE_RESISTOR_LOWER_THRESHOLD_VOLTAGE);
+
+    return applyThermalSafetyGovernor(is_voltage_fallback_active_b,
+                                      servoVoltage_fl32, currentTimeUs_u32,
+                                      dt_s_fl32, currentSpeedInHz_i32);
+  }
 };

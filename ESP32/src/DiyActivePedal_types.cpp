@@ -1,4 +1,4 @@
-﻿#include "DiyActivePedal_types.h"
+#include "DiyActivePedal_types.h"
 
 
 #include "PedalGeometry.h"
@@ -10,7 +10,54 @@ static const float s_absScaling_fl32 = 50.0f;
 
 #define WAIT_TIME_IN_MS_TO_ACQUIRE_GLOBAL_STRUCT_U32 500U
 
-static const uint32_t s_eepromOffset_u32 = ASSIGNMENT_EEPROM_OFFSET_U32 + sizeof(DapAssignmentReg_t) + ASSIGNMENT_EEPROM_OFFSET_U32/*+(DAP_VERSION_CONFIG_U8-128) * sizeof(DapConfig_t) % (2048-sizeof(DapConfig_t))*/;
+static const uint32_t s_eepromOffset_u32 = DAP_CONFIG_EEPROM_OFFSET_U32;
+
+static_assert(DAP_MAC_ADDRESSES_EEPROM_OFFSET_U32 + sizeof(DapMacAddresses_t) <=
+                  DAP_MAC_ADDRESSES_EEPROM_RESERVED_U32,
+              "MAC table outgrew its reserved EEPROM region");
+static_assert(DAP_CONFIG_EEPROM_OFFSET_U32 >= DAP_MAC_ADDRESSES_EEPROM_RESERVED_U32,
+              "Config overlaps the MAC table region");
+static_assert(DAP_CONFIG_EEPROM_OFFSET_U32 + sizeof(DapConfig_t) <= DAP_EEPROM_SIZE_U32,
+              "Config does not fit into the EEPROM");
+
+// One-time migration from the old layout (config at offset 64, directly
+// behind the MAC table): if the new location holds no config but the legacy
+// one does, copy it over raw - the regular version/CRC/plausibility checks
+// at boot then decide whether it is used, exactly as before the move. The
+// legacy header is wiped afterwards so the stale bytes can't be picked up
+// again; that area (64..127) lies inside the MAC table's reserved region,
+// so the wipe never touches the new config.
+static void migrateLegacyConfigLocation()
+{
+  DapConfig_t current_st;
+  EEPROM.get(s_eepromOffset_u32, current_st);
+  if (current_st.payloadHeader_st.payloadType_u8 == DAP_PAYLOAD_TYPE_CONFIG_U8)
+  {
+    return;
+  }
+
+  DapConfig_t legacy_st;
+  EEPROM.get(DAP_CONFIG_EEPROM_LEGACY_OFFSET_U32, legacy_st);
+  if (legacy_st.payloadHeader_st.startOfFrame0_u8 != SOF_BYTE_0_U8 ||
+      legacy_st.payloadHeader_st.startOfFrame1_u8 != SOF_BYTE_1_U8 ||
+      legacy_st.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_CONFIG_U8)
+  {
+    return;
+  }
+
+  EEPROM.put(s_eepromOffset_u32, legacy_st);
+  for (uint32_t addr = DAP_CONFIG_EEPROM_LEGACY_OFFSET_U32; addr < DAP_MAC_ADDRESSES_EEPROM_RESERVED_U32; addr++)
+  {
+    EEPROM.write(addr, 0xFF);
+  }
+  EEPROM.commit();
+  // Runs from the very first config load in setup(), before ActiveSerial
+  // is assigned.
+  if (ActiveSerial != nullptr)
+  {
+    ActiveSerial->println("Migrated pedal config to new EEPROM location");
+  }
+}
 
 void DapConfig_t::initializeDefaults()
 {
@@ -85,6 +132,30 @@ void DapConfig_t::initializeDefaults()
   payloadPedalConfig_st.joystickMapMapped09_u8 = 0;
   payloadPedalConfig_st.joystickMapMapped10_u8 = 0;
 
+  payloadPedalConfig_st.numOfJoystickMapControlToe_u8 = 6;
+  payloadPedalConfig_st.joystickMapOrigToe00_u8 = 0;
+  payloadPedalConfig_st.joystickMapOrigToe01_u8 = 20;
+  payloadPedalConfig_st.joystickMapOrigToe02_u8 = 40;
+  payloadPedalConfig_st.joystickMapOrigToe03_u8 = 60;
+  payloadPedalConfig_st.joystickMapOrigToe04_u8 = 80;
+  payloadPedalConfig_st.joystickMapOrigToe05_u8 = 100;
+  payloadPedalConfig_st.joystickMapOrigToe06_u8 = 0;
+  payloadPedalConfig_st.joystickMapOrigToe07_u8 = 0;
+  payloadPedalConfig_st.joystickMapOrigToe08_u8 = 0;
+  payloadPedalConfig_st.joystickMapOrigToe09_u8 = 0;
+  payloadPedalConfig_st.joystickMapOrigToe10_u8 = 0;
+  payloadPedalConfig_st.joystickMapMappedToe00_u8 = 0;
+  payloadPedalConfig_st.joystickMapMappedToe01_u8 = 20;
+  payloadPedalConfig_st.joystickMapMappedToe02_u8 = 40;
+  payloadPedalConfig_st.joystickMapMappedToe03_u8 = 60;
+  payloadPedalConfig_st.joystickMapMappedToe04_u8 = 80;
+  payloadPedalConfig_st.joystickMapMappedToe05_u8 = 100;
+  payloadPedalConfig_st.joystickMapMappedToe06_u8 = 0;
+  payloadPedalConfig_st.joystickMapMappedToe07_u8 = 0;
+  payloadPedalConfig_st.joystickMapMappedToe08_u8 = 0;
+  payloadPedalConfig_st.joystickMapMappedToe09_u8 = 0;
+  payloadPedalConfig_st.joystickMapMappedToe10_u8 = 0;
+
   payloadPedalConfig_st.absFrequency_u8 = 15;
   payloadPedalConfig_st.absAmplitude_u8 = 0;
   payloadPedalConfig_st.absPattern_u8 = 0;
@@ -144,6 +215,9 @@ void DapConfig_t::initializeDefaults()
   payloadPedalConfig_st.endstopTravelRange_mm_u8 = 10;
 
   payloadPedalConfig_st.coulombFrictionIn0p1N_u8 = 0;
+  payloadPedalConfig_st.wakeOnPluginOnly_u8 = 0;
+  payloadPedalConfig_st.enableBrakeResistor_u8 = 1;
+  payloadPedalConfig_st.brakeResistorResistance_Ohm_u8 = 10; // Ohm
 }
 
 
@@ -169,6 +243,7 @@ void DapConfig_t::loadConfigFromEeprom(DapConfig_t& config_st)
 {
   DapConfig_t local_config_st;
 
+  migrateLegacyConfigLocation();
   EEPROM.get(s_eepromOffset_u32, local_config_st);
   //EEPROM.commit();
 
@@ -247,38 +322,59 @@ void DapCalculationVariables_t::updateFromConfig(DapConfig_t& config_st)
   */
   
   //testing code
-  numOfJoystickControl_u8 = config_st.payloadPedalConfig_st.numOfJoystickMapControl_u8;
-  joystickOrig_afl32[0] = config_st.payloadPedalConfig_st.joystickMapOrig00_u8;
-  joystickOrig_afl32[1] = config_st.payloadPedalConfig_st.joystickMapOrig01_u8;
-  joystickOrig_afl32[2] = config_st.payloadPedalConfig_st.joystickMapOrig02_u8;
-  joystickOrig_afl32[3] = config_st.payloadPedalConfig_st.joystickMapOrig03_u8;
-  joystickOrig_afl32[4] = config_st.payloadPedalConfig_st.joystickMapOrig04_u8;
-  joystickOrig_afl32[5] = config_st.payloadPedalConfig_st.joystickMapOrig05_u8;
-  joystickOrig_afl32[6] = config_st.payloadPedalConfig_st.joystickMapOrig06_u8;
-  joystickOrig_afl32[7] = config_st.payloadPedalConfig_st.joystickMapOrig07_u8;
-  joystickOrig_afl32[8] = config_st.payloadPedalConfig_st.joystickMapOrig08_u8;
-  joystickOrig_afl32[9] = config_st.payloadPedalConfig_st.joystickMapOrig09_u8;
-  joystickOrig_afl32[10] = config_st.payloadPedalConfig_st.joystickMapOrig10_u8;
-  joystickMapping_afl32[0] = config_st.payloadPedalConfig_st.joystickMapMapped00_u8;
-  joystickMapping_afl32[1] = config_st.payloadPedalConfig_st.joystickMapMapped01_u8;
-  joystickMapping_afl32[2] = config_st.payloadPedalConfig_st.joystickMapMapped02_u8;
-  joystickMapping_afl32[3] = config_st.payloadPedalConfig_st.joystickMapMapped03_u8;
-  joystickMapping_afl32[4] = config_st.payloadPedalConfig_st.joystickMapMapped04_u8;
-  joystickMapping_afl32[5] = config_st.payloadPedalConfig_st.joystickMapMapped05_u8;
-  joystickMapping_afl32[6] = config_st.payloadPedalConfig_st.joystickMapMapped06_u8;
-  joystickMapping_afl32[7] = config_st.payloadPedalConfig_st.joystickMapMapped07_u8;
-  joystickMapping_afl32[8] = config_st.payloadPedalConfig_st.joystickMapMapped08_u8;
-  joystickMapping_afl32[9] = config_st.payloadPedalConfig_st.joystickMapMapped09_u8;
-  joystickMapping_afl32[10] = config_st.payloadPedalConfig_st.joystickMapMapped10_u8;
-  
-  float joystick_x_afl32[numOfJoystickControl_u8] = {0};
-  float joystick_y_afl32[numOfJoystickControl_u8] = {0};
-  for (int index_i32 = 0; index_i32 < numOfJoystickControl_u8; index_i32++)
-  {
-    joystick_x_afl32[index_i32] = joystickOrig_afl32[index_i32] - joystickOrig_afl32[0];
-    joystick_y_afl32[index_i32] = joystickMapping_afl32[index_i32];
-  }
-  joystickInterpolator_st.interpolate1D(joystick_x_afl32, joystick_y_afl32, numOfJoystickControl_u8, 100);
+  numOfJoystickControlPrimarySrc_u8 = config_st.payloadPedalConfig_st.numOfJoystickMapControl_u8;
+  joystickOrigPrimarySrc_afl32[0] = config_st.payloadPedalConfig_st.joystickMapOrig00_u8;
+  joystickOrigPrimarySrc_afl32[1] = config_st.payloadPedalConfig_st.joystickMapOrig01_u8;
+  joystickOrigPrimarySrc_afl32[2] = config_st.payloadPedalConfig_st.joystickMapOrig02_u8;
+  joystickOrigPrimarySrc_afl32[3] = config_st.payloadPedalConfig_st.joystickMapOrig03_u8;
+  joystickOrigPrimarySrc_afl32[4] = config_st.payloadPedalConfig_st.joystickMapOrig04_u8;
+  joystickOrigPrimarySrc_afl32[5] = config_st.payloadPedalConfig_st.joystickMapOrig05_u8;
+  joystickOrigPrimarySrc_afl32[6] = config_st.payloadPedalConfig_st.joystickMapOrig06_u8;
+  joystickOrigPrimarySrc_afl32[7] = config_st.payloadPedalConfig_st.joystickMapOrig07_u8;
+  joystickOrigPrimarySrc_afl32[8] = config_st.payloadPedalConfig_st.joystickMapOrig08_u8;
+  joystickOrigPrimarySrc_afl32[9] = config_st.payloadPedalConfig_st.joystickMapOrig09_u8;
+  joystickOrigPrimarySrc_afl32[10] = config_st.payloadPedalConfig_st.joystickMapOrig10_u8;
+  joystickMappingPrimarySrc_afl32[0] = config_st.payloadPedalConfig_st.joystickMapMapped00_u8;
+  joystickMappingPrimarySrc_afl32[1] = config_st.payloadPedalConfig_st.joystickMapMapped01_u8;
+  joystickMappingPrimarySrc_afl32[2] = config_st.payloadPedalConfig_st.joystickMapMapped02_u8;
+  joystickMappingPrimarySrc_afl32[3] = config_st.payloadPedalConfig_st.joystickMapMapped03_u8;
+  joystickMappingPrimarySrc_afl32[4] = config_st.payloadPedalConfig_st.joystickMapMapped04_u8;
+  joystickMappingPrimarySrc_afl32[5] = config_st.payloadPedalConfig_st.joystickMapMapped05_u8;
+  joystickMappingPrimarySrc_afl32[6] = config_st.payloadPedalConfig_st.joystickMapMapped06_u8;
+  joystickMappingPrimarySrc_afl32[7] = config_st.payloadPedalConfig_st.joystickMapMapped07_u8;
+  joystickMappingPrimarySrc_afl32[8] = config_st.payloadPedalConfig_st.joystickMapMapped08_u8;
+  joystickMappingPrimarySrc_afl32[9] = config_st.payloadPedalConfig_st.joystickMapMapped09_u8;
+  joystickMappingPrimarySrc_afl32[10] = config_st.payloadPedalConfig_st.joystickMapMapped10_u8;
+
+  numOfJoystickControlToeSrc_u8 = config_st.payloadPedalConfig_st.numOfJoystickMapControlToe_u8;
+  joystickOrigToeSrc_afl32[0] = config_st.payloadPedalConfig_st.joystickMapOrigToe00_u8;
+  joystickOrigToeSrc_afl32[1] = config_st.payloadPedalConfig_st.joystickMapOrigToe01_u8;
+  joystickOrigToeSrc_afl32[2] = config_st.payloadPedalConfig_st.joystickMapOrigToe02_u8;
+  joystickOrigToeSrc_afl32[3] = config_st.payloadPedalConfig_st.joystickMapOrigToe03_u8;
+  joystickOrigToeSrc_afl32[4] = config_st.payloadPedalConfig_st.joystickMapOrigToe04_u8;
+  joystickOrigToeSrc_afl32[5] = config_st.payloadPedalConfig_st.joystickMapOrigToe05_u8;
+  joystickOrigToeSrc_afl32[6] = config_st.payloadPedalConfig_st.joystickMapOrigToe06_u8;
+  joystickOrigToeSrc_afl32[7] = config_st.payloadPedalConfig_st.joystickMapOrigToe07_u8;
+  joystickOrigToeSrc_afl32[8] = config_st.payloadPedalConfig_st.joystickMapOrigToe08_u8;
+  joystickOrigToeSrc_afl32[9] = config_st.payloadPedalConfig_st.joystickMapOrigToe09_u8;
+  joystickOrigToeSrc_afl32[10] = config_st.payloadPedalConfig_st.joystickMapOrigToe10_u8;
+  joystickMappingToeSrc_afl32[0] = config_st.payloadPedalConfig_st.joystickMapMappedToe00_u8;
+  joystickMappingToeSrc_afl32[1] = config_st.payloadPedalConfig_st.joystickMapMappedToe01_u8;
+  joystickMappingToeSrc_afl32[2] = config_st.payloadPedalConfig_st.joystickMapMappedToe02_u8;
+  joystickMappingToeSrc_afl32[3] = config_st.payloadPedalConfig_st.joystickMapMappedToe03_u8;
+  joystickMappingToeSrc_afl32[4] = config_st.payloadPedalConfig_st.joystickMapMappedToe04_u8;
+  joystickMappingToeSrc_afl32[5] = config_st.payloadPedalConfig_st.joystickMapMappedToe05_u8;
+  joystickMappingToeSrc_afl32[6] = config_st.payloadPedalConfig_st.joystickMapMappedToe06_u8;
+  joystickMappingToeSrc_afl32[7] = config_st.payloadPedalConfig_st.joystickMapMappedToe07_u8;
+  joystickMappingToeSrc_afl32[8] = config_st.payloadPedalConfig_st.joystickMapMappedToe08_u8;
+  joystickMappingToeSrc_afl32[9] = config_st.payloadPedalConfig_st.joystickMapMappedToe09_u8;
+  joystickMappingToeSrc_afl32[10] = config_st.payloadPedalConfig_st.joystickMapMappedToe10_u8;
+
+  // Force the active slot to be refitted from the correct source next time
+  // it's needed (refreshActiveJoystickCurve is called from the joystick
+  // computation in Main.cpp before every eval) - a fresh config may have
+  // changed either curve, and the currently-active one may not be primary.
+  activeJoystickCurveIsToe_i8 = -1;
   /*
   for (int i = 0; i < 5; ++i)
   {
@@ -319,18 +415,61 @@ void DapCalculationVariables_t::updateFromConfig(DapConfig_t& config_st)
   forceMaxDefault_fl32 = ((float)config_st.payloadPedalConfig_st.maxForce_fl32);
   pedalType_u8 = config_st.payloadPedalConfig_st.pedalType_u8;
 
-  // calculate steps per motor revolution
-  float helper_fl32 = (float)MAXIMUM_STEPPER_SPEED_U32 / ((float)s_maximumStepperRpm_u32 / (float)s_secondsPerMinute_u32);
-  helper_fl32 = floor(helper_fl32 / 10.0f) * 10.0f;
-  helper_fl32 = constrain(helper_fl32, 2000.0f, 10000.0f);
-  stepsPerMotorRevolution_u32 = helper_fl32;
+  // Microsteps per motor revolution:
+  // 3200 steps/rev (16x microstepping) divides cleanly into the 4 pole pairs (800 steps per electrical cycle).
+  // At 4000 RPM, pulse frequency is (4000 / 60) * 3200 = 213.33 kHz, well within the motor's 250 kHz limit.
+  // Maximum motor speed at 250 kHz is (250,000 / 3200) * 60 = 4,687.5 RPM.
+  stepsPerMotorRevolution_u32 = 3200;
+}
 
-    // // when spindle pitch is smaller than 8, choose coarse microstepping
-    // if ( 8 > config_st.payloadPedalConfig_st.spindlePitch_mmPerRev_u8)
-    // {stepsPerMotorRevolution_u32 = 3200;}
-    // else{stepsPerMotorRevolution_u32 = 6400;}
+// (Re)fits the single shared joystickInterpolator_st from whichever curve
+// source is requested, but only when the requested curve differs from what's
+// currently loaded - the fit itself (interpolate1D) is a matrix solve, not
+// something to redo every ~600us tick. wantToe just mirrors
+// rudderBrakeStatus_b: true while toe-braking, false for yaw or a regular
+// (non-rudder) pedal's own curve.
+void DapCalculationVariables_t::refreshActiveJoystickCurve(bool wantToe)
+{
+  int8_t wantFlag_i8 = wantToe ? 1 : 0;
+  if (activeJoystickCurveIsToe_i8 == wantFlag_i8) {
+    return;
+  }
+  activeJoystickCurveIsToe_i8 = wantFlag_i8;
 
-    // stepsPerMotorRevolution_u32 = 3750;
+  const float *origSrc_pfl32 = wantToe ? joystickOrigToeSrc_afl32 : joystickOrigPrimarySrc_afl32;
+  const float *mapSrc_pfl32 = wantToe ? joystickMappingToeSrc_afl32 : joystickMappingPrimarySrc_afl32;
+  uint8_t rawCount_u8 = wantToe ? numOfJoystickControlToeSrc_u8 : numOfJoystickControlPrimarySrc_u8;
+
+  // A config saved by firmware built before the toe-curve fields existed
+  // has this byte range as whatever was physically in EEPROM at that
+  // offset - not zero, and not necessarily in range - since old firmware
+  // never wrote it. Must clamp BOTH bounds before using it to size the
+  // stack arrays below: an out-of-range count here previously read/wrote
+  // past the fixed 11-element joystickOrig_afl32/joystickMapping_afl32
+  // arrays, corrupting the stack (this was the actual cause of the
+  // "erratic" toe-brake output, not a curve-selection bug).
+  if (rawCount_u8 < 2 || rawCount_u8 > 11) {
+    numOfJoystickControl_u8 = 2;
+    joystickOrig_afl32[0] = 0.0f;
+    joystickOrig_afl32[1] = 100.0f;
+    joystickMapping_afl32[0] = 0.0f;
+    joystickMapping_afl32[1] = 100.0f;
+  } else {
+    numOfJoystickControl_u8 = rawCount_u8;
+    for (int i = 0; i < numOfJoystickControl_u8; i++) {
+      joystickOrig_afl32[i] = origSrc_pfl32[i];
+      joystickMapping_afl32[i] = mapSrc_pfl32[i];
+    }
+  }
+
+  float joystick_x_afl32[numOfJoystickControl_u8] = {0};
+  float joystick_y_afl32[numOfJoystickControl_u8] = {0};
+  for (int index_i32 = 0; index_i32 < numOfJoystickControl_u8; index_i32++)
+  {
+    joystick_x_afl32[index_i32] = joystickOrig_afl32[index_i32] - joystickOrig_afl32[0];
+    joystick_y_afl32[index_i32] = joystickMapping_afl32[index_i32];
+  }
+  joystickInterpolator_st.interpolate1D(joystick_x_afl32, joystick_y_afl32, numOfJoystickControl_u8, 100);
 }
 
 void IRAM_ATTR_FLAG DapCalculationVariables_t::dynamicUpdate()
@@ -358,7 +497,9 @@ void IRAM_ATTR_FLAG DapCalculationVariables_t::updateEndstops(int32_t newMinEnds
   softEndstopMinStepperPos_i32 = stepperPosEndstopRange_i32 * startPosRel_fl32;
   softEndstopMaxStepperPos_i32 = stepperPosEndstopRange_i32 * endPosRel_fl32;
   stepperPosMinDefault_i32 = softEndstopMinStepperPos_i32;
+  stepperPosMaxDefault_i32 = softEndstopMaxStepperPos_i32;
   stepperPosRange_fl32 = softEndstopMaxStepperPos_i32 - softEndstopMinStepperPos_i32;
+  stepperPosRangeDefault_fl32 = stepperPosRange_fl32;
   //currentPedalPositionRatio_fl32=((float)(currentPedalPosition_u32-stepperPosMinDefault_i32))/((float)stepperPosRangeDefault_fl32);
 
 }
@@ -467,18 +608,16 @@ void DapConfigClass::setConfig(DapConfig_t config_st)
 
 uint16_t DapConfigClass::checksumCalculator_u16(uint8_t *data_pu8, uint16_t length_u16)
 {
-  uint16_t currentCrc_u16 = 0x0000U;
-  uint8_t sum1_u8 = (uint8_t)currentCrc_u16;
-  uint8_t sum2_u8 = (uint8_t)(currentCrc_u16 >> 8U);
-  int index_i32;
+  uint32_t sum1 = 0;
+  uint32_t sum2 = 0;
 
-  for (index_i32 = 0; index_i32 < length_u16; index_i32 = index_i32 + 1)
+  for (uint16_t i = 0; i < length_u16; i++)
   {
-    sum1_u8 = (sum1_u8 + data_pu8[index_i32]) % 255U;
-    sum2_u8 = (sum2_u8 + sum1_u8) % 255U;
+    sum1 += data_pu8[i];
+    sum2 += sum1;
   }
 
-  return (uint16_t)((sum2_u8 << 8U) | sum1_u8);
+  return (uint16_t)(((sum2 % 255U) << 8U) | (sum1 % 255U));
 }
 
 void DapConfigClass::loadConfigFromEeprom()

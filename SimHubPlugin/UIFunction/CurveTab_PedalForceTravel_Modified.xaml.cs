@@ -1,4 +1,4 @@
-﻿using FMOD;
+using FMOD;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -95,7 +95,7 @@ namespace DiyFfbPedal.UIFunction
             set
             {
                 SetValue(Cauculation_Property, value);
-                //updateUI();
+                //updateUI(); 
             }
         }
 
@@ -546,6 +546,142 @@ namespace DiyFfbPedal.UIFunction
             }
         }
 
+        private void Label_max_force_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (Rangeslider_force_range != null)
+                BeginInlineEdit(Label_max_force, TextBox_edit_max_force, Rangeslider_force_range.UpperValue);
+            e.Handled = true;
+        }
+
+        private void Label_max_force_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (Rangeslider_force_range != null)
+                BeginInlineEdit(Label_max_force, TextBox_edit_max_force, Rangeslider_force_range.UpperValue);
+            e.Handled = true;
+        }
+
+        private void Label_min_force_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (Rangeslider_force_range != null)
+                BeginInlineEdit(Label_min_force, TextBox_edit_min_force, Rangeslider_force_range.LowerValue);
+            e.Handled = true;
+        }
+
+        private void Label_min_force_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (Rangeslider_force_range != null)
+                BeginInlineEdit(Label_min_force, TextBox_edit_min_force, Rangeslider_force_range.LowerValue);
+            e.Handled = true;
+        }
+
+        private void Label_min_pos_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (Rangeslider_travel_range != null)
+                BeginInlineEdit(Label_min_pos, TextBox_edit_min_pos, CurrentTravelMm(Rangeslider_travel_range.LowerValue));
+            e.Handled = true;
+        }
+
+        private void Label_min_pos_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (Rangeslider_travel_range != null)
+                BeginInlineEdit(Label_min_pos, TextBox_edit_min_pos, CurrentTravelMm(Rangeslider_travel_range.LowerValue));
+            e.Handled = true;
+        }
+
+        private void Label_max_pos_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (Rangeslider_travel_range != null)
+                BeginInlineEdit(Label_max_pos, TextBox_edit_max_pos, CurrentTravelMm(Rangeslider_travel_range.UpperValue));
+            e.Handled = true;
+        }
+
+        private void Label_max_pos_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (Rangeslider_travel_range != null)
+                BeginInlineEdit(Label_max_pos, TextBox_edit_max_pos, CurrentTravelMm(Rangeslider_travel_range.UpperValue));
+            e.Handled = true;
+        }
+
+        private void BeginInlineEdit(Label label, TextBox box, double currentValue)
+        {
+            if (label == null || box == null) return;
+            box.Text = currentValue.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+            label.Visibility = Visibility.Collapsed;
+            box.Visibility = Visibility.Visible;
+            box.Focus();
+            box.SelectAll();
+        }
+
+        private void EditBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            var box = sender as TextBox;
+            if (box == null) return;
+            if (e.Key == Key.Enter)
+            {
+                CommitInlineEdit(box);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                EndInlineEdit(box);
+                e.Handled = true;
+            }
+        }
+
+        private void EditBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            var box = sender as TextBox;
+            if (box != null && box.Visibility == Visibility.Visible)
+                CommitInlineEdit(box);
+        }
+
+        private void CommitInlineEdit(TextBox box)
+        {
+            string text = (box.Text ?? string.Empty).Trim().Replace(',', '.');
+            if (double.TryParse(text, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double value))
+            {
+                if (box == TextBox_edit_max_force) SetForceValue(true, value);
+                else if (box == TextBox_edit_min_force) SetForceValue(false, value);
+                else if (box == TextBox_edit_min_pos) SetTravelMm(false, value);
+                else if (box == TextBox_edit_max_pos) SetTravelMm(true, value);
+            }
+            EndInlineEdit(box);
+        }
+
+        private void EndInlineEdit(TextBox box)
+        {
+            box.Visibility = Visibility.Collapsed;
+            Label label = null;
+            if (box == TextBox_edit_max_force) label = Label_max_force;
+            else if (box == TextBox_edit_min_force) label = Label_min_force;
+            else if (box == TextBox_edit_min_pos) label = Label_min_pos;
+            else if (box == TextBox_edit_max_pos) label = Label_max_pos;
+            if (label != null) label.Visibility = Visibility.Visible;
+        }
+
+        private void SetForceValue(bool upper, double kg)
+        {
+            if (Rangeslider_force_range == null) return;
+            if (upper) Rangeslider_force_range.UpperValue = kg;
+            else       Rangeslider_force_range.LowerValue = kg;
+        }
+
+        private double CurrentTravelMm(double percent)
+        {
+            double travelLen = dap_config_st.payloadPedalConfig_.lengthPedal_travel;
+            return Math.Round(travelLen * percent / 100.0);
+        }
+
+        private void SetTravelMm(bool upper, double mm)
+        {
+            if (Rangeslider_travel_range == null) return;
+            double travelLen = dap_config_st.payloadPedalConfig_.lengthPedal_travel;
+            if (travelLen <= 0) return;
+            double percent = mm * 100.0 / travelLen;
+            if (upper) Rangeslider_travel_range.UpperValue = percent;
+            else       Rangeslider_travel_range.LowerValue = percent;
+        }
+
         private void btn_plus_maxforce_Click(object sender, RoutedEventArgs e)
         {
             if (Settings.advanced_b)
@@ -694,6 +830,7 @@ namespace DiyFfbPedal.UIFunction
 
         public void updatePedalState(ushort pedalPosition_u16, ushort pedalForce_u16)
         {
+            if (!this.IsVisible) return;
             text_point_pos.Visibility = Visibility.Hidden;
             double control_rect_value_max = 65535;
             double dyy = mainCanvas.Height / control_rect_value_max;
@@ -707,20 +844,26 @@ namespace DiyFfbPedal.UIFunction
                 Canvas.SetLeft(text_state, Canvas.GetLeft(rect_State) /*+ rect_State.Width*/);
                 Canvas.SetTop(text_state, Canvas.GetTop(rect_State) - rect_State.Height);
                 //update the line
+                double top = Canvas.GetTop(rect_State);
+                double left = Canvas.GetLeft(rect_State);
                 
-                StatusLineXBar.X1 = Canvas.GetLeft(rect_State) + 0.5 * rect_State.Width;
-                StatusLineXBar.Y1 = mainCanvas.Height;
-                StatusLineXBar.X2 = Canvas.GetLeft(rect_State) + 0.5 * rect_State.Width;
-                StatusLineXBar.Y2 = Canvas.GetTop(rect_State)+ rect_State.Height;
+                if (!double.IsNaN(top) && !double.IsNaN(left))
+                {
+                    StatusLineXBar.X1 = left + 0.5 * rect_State.Width;
+                    StatusLineXBar.Y1 = mainCanvas.Height;
+                    StatusLineXBar.X2 = left + 0.5 * rect_State.Width;
+                    StatusLineXBar.Y2 = top + rect_State.Height;
+                    
+                    StatusLineYBar.X1 = 0;
+                    StatusLineYBar.Y1 = top + 0.5 * rect_State.Height;
+                    StatusLineYBar.X2 = left;
+                    StatusLineYBar.Y2 = top + 0.5 * rect_State.Height;
+                }
                 
-                StatusLineYBar.X1 = 0;
-                StatusLineYBar.Y1 = Canvas.GetTop(rect_State) + 0.5 * rect_State.Height;
-                StatusLineYBar.X2 = Canvas.GetLeft(rect_State);
-                StatusLineYBar.Y2 = Canvas.GetTop(rect_State) + 0.5 * rect_State.Height;
                 text_state.Text = Math.Round(pedalForce_u16 / control_rect_value_max * 100) + "%";
                 int round_x = (int)(100 * pedalPosition_u16 / control_rect_value_max) - 1;
                 int x_showed = round_x + 1;
-                if (x_showed == 0)
+                if (x_showed == 0 || double.IsNaN(top) || double.IsNaN(left))
                 {
                     rect_State.Visibility = Visibility.Hidden;
                     StatusLineXBar.Visibility = Visibility.Hidden;
@@ -748,17 +891,24 @@ namespace DiyFfbPedal.UIFunction
                 Canvas.SetTop(text_state, Canvas.GetTop(rect_State) - rect_State.Height);
                 //update the line
 
-                StatusLineXBar.X1 = Canvas.GetLeft(rect_State) + 0.5 * rect_State.Width;
-                StatusLineXBar.Y1 = mainCanvas.Height;
-                StatusLineXBar.X2 = Canvas.GetLeft(rect_State) + 0.5 * rect_State.Width;
-                StatusLineXBar.Y2 = Canvas.GetTop(rect_State) + rect_State.Height;
+                double top = Canvas.GetTop(rect_State);
+                double left = Canvas.GetLeft(rect_State);
 
-                StatusLineYBar.X1 = 0;
-                StatusLineYBar.Y1 = Canvas.GetTop(rect_State) + 0.5 * rect_State.Height;
-                StatusLineYBar.X2 = Canvas.GetLeft(rect_State);
-                StatusLineYBar.Y2 = Canvas.GetTop(rect_State) + 0.5 * rect_State.Height;
+                if (!double.IsNaN(top) && !double.IsNaN(left))
+                {
+                    StatusLineXBar.X1 = left + 0.5 * rect_State.Width;
+                    StatusLineXBar.Y1 = mainCanvas.Height;
+                    StatusLineXBar.X2 = left + 0.5 * rect_State.Width;
+                    StatusLineXBar.Y2 = top + rect_State.Height;
+
+                    StatusLineYBar.X1 = 0;
+                    StatusLineYBar.Y1 = top + 0.5 * rect_State.Height;
+                    StatusLineYBar.X2 = left;
+                    StatusLineYBar.Y2 = top + 0.5 * rect_State.Height;
+                }
+
                 text_state.Text = x_showed + "%";
-                if (x_showed == 0)
+                if (x_showed == 0 || double.IsNaN(top) || double.IsNaN(left))
                 {
                     rect_State.Visibility = Visibility.Hidden;
                     StatusLineXBar.Visibility = Visibility.Hidden;
@@ -884,7 +1034,7 @@ namespace DiyFfbPedal.UIFunction
             double servo_max_force_output_in_kg = Servo_max_force * Math.Sin(angle_gamma) * b / od / Math.Cos(angle_beta_max - min_angle_2);
             if (dap_config_st.payloadPedalConfig_.maxForce > servo_max_force_output_in_kg)
             {
-                TextBlock_Warning.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextOverloadWarning1", "Caution, the config and pedal kinematics may cause servo overloaded!!");
+                TextBlock_Warning.Text = SLoc.GetValue("DIYFFBPedalPlugin_TextOverloadWarning1", "Caution: this config and pedal kinematics may overload the servo!");
                 //TextBlock_Warning.Text += "\nExpected max force= " + Math.Round(Force_calculated)+"kg";
                 TextBlock_Warning.Text += "\n"+SLoc.GetValue("DIYFFBPedalPlugin_TextOverloadWarning2","Max servo output force")+" =" + Math.Round(servo_max_force_output_in_kg) + "kg";
                 TextBlock_Warning.Visibility = Visibility.Visible;
@@ -905,7 +1055,7 @@ namespace DiyFfbPedal.UIFunction
         {
             for (int i = 0; i < minControlQuantity; i++)
             {
-                AddRectAt(i * 80-0.5*RectSize, mainCanvas.Height-i*40-0.5*RectSize);
+                AddRectAt(i * (mainCanvas.Width / (minControlQuantity - 1)) - 0.5 * RectSize, mainCanvas.Height - i * (mainCanvas.Height / (minControlQuantity - 1)) - 0.5 * RectSize);
             }
             UpdateRectState();
         }
@@ -937,7 +1087,8 @@ namespace DiyFfbPedal.UIFunction
                 RadiusX = 1,
                 RadiusY = 1,
                 Fill = System.Windows.Media.Brushes.Transparent,
-                Opacity = 1.0
+                Opacity = 1.0,
+                Cursor = System.Windows.Input.Cursors.Hand
             };
             rect.Tag = (int)-1;
             //rect.SetResourceReference(Shape.FillProperty, "AccentColorBrush");
@@ -1169,7 +1320,7 @@ namespace DiyFfbPedal.UIFunction
             {
                 for (int i = rectCount; i < rectNewCount; i++)
                 {
-                    AddRectAt(i * 80 - 0.5 * RectSize, mainCanvas.Height - i * 40 - 0.5 * RectSize);
+                    AddRectAt(i * (mainCanvas.Width / (minControlQuantity - 1)) - 0.5 * RectSize, mainCanvas.Height - i * (mainCanvas.Height / (minControlQuantity - 1)) - 0.5 * RectSize);
                 }
                 
             }

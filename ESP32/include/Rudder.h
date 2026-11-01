@@ -3,9 +3,9 @@
 #include "DiyActivePedal_types.h"
 #include <MovingAverageFilter.h>
 #include "SignalFilter_1st_order.h"
-MovingAverageFilter averagefilter_rudder(200);
-MovingAverageFilter averagefilter_rudder_force(50);
-class Rudder{
+MovingAverageFilter averagefilterg_rudder_st(200);
+MovingAverageFilter averagefilterg_rudder_st_force(50);
+class Rudder_t{
   public:
   int32_t centerOffset_i32;
   int32_t offsetRaw_i32;
@@ -24,20 +24,21 @@ class Rudder{
   float positionRatioSync_fl32;
   float positionRatioCurrent_fl32;
   int debugCount_i32=0;
-  KalmanFilter1stOrder* kalman_rudder = NULL;
+  KalmanFilter1stOrder* kalmang_rudder_st = NULL;
   //bool IsReady = false;
-  Rudder()
+  Rudder_t()
   {
-    kalman_rudder=new KalmanFilter1stOrder(3.0f);
+    kalmang_rudder_st=new KalmanFilter1stOrder(3.0f);
   }
   void offsetCalculate(DapCalculationVariables_t* calcVars_st)
   {
     currentPedalPosition_i32=calcVars_st->currentPedalPosition_u32;
     positionRatioSync_fl32=calcVars_st->syncPedalPositionRatio_fl32;
-    endPosTravel_fl32=(float)calcVars_st->stepperPosRange_fl32;
-    positionRatioCurrent_fl32=((float)(currentPedalPosition_i32-calcVars_st->softEndstopMinStepperPos_i32))/endPosTravel_fl32;
+    endPosTravel_fl32=(float)calcVars_st->stepperPosRangeDefault_fl32;
+    if (endPosTravel_fl32 <= 0.0f) endPosTravel_fl32 = 1.0f;
+    positionRatioCurrent_fl32=((float)(currentPedalPosition_i32-calcVars_st->stepperPosMinDefault_i32))/endPosTravel_fl32;
     deadZone_i32=20;
-    centerOffset_i32=calcVars_st->softEndstopMinStepperPos_i32+ calcVars_st->stepperPosRange_fl32/2.0f;
+    centerOffset_i32=calcVars_st->stepperPosMinDefault_i32 + (int32_t)(calcVars_st->stepperPosRangeDefault_fl32/2.0f);
     float centerDeadzone_fl32 = 0.51f;
     if(calcVars_st->rudderStatus_b)
     {
@@ -54,32 +55,33 @@ class Rudder{
       {
         offsetRaw_i32=0;
       }
-      offsetFilter_i32=(int32_t)kalman_rudder->filteredValue(offsetRaw_i32+centerOffset_i32,0.0f,1);
-      //offset_filter=averagefilter_rudder.process(offset_raw+Center_offset);
+      offsetFilter_i32=(int32_t)kalmang_rudder_st->filteredValue(offsetRaw_i32+centerOffset_i32,0.0f,1);
+      //offset_filter=averagefilterg_rudder_st.process(offset_raw+Center_offset);
       //cap offset filter to prevent over the endstop value
       offsetFilter_i32=constrain(offsetFilter_i32,calcVars_st->stepperPosMinDefault_i32,calcVars_st->stepperPosMaxDefault_i32);
     }
     else
     {
-      offsetFilter_i32=calcVars_st->softEndstopMinStepperPos_i32;
+      offsetFilter_i32=calcVars_st->stepperPosMinDefault_i32;
     }
 
   }
   void forceOffsetCalculate(DapCalculationVariables_t* calcVars_st)
   {
     deadZone_i32=20;
-    centerOffset_i32=calcVars_st->stepperPosRange_fl32/2.0f;
+    centerOffset_i32=(int32_t)(calcVars_st->stepperPosRangeDefault_fl32/2.0f);
     deadZoneUpper_i32=centerOffset_i32+deadZone_i32/2.0f;
     deadZoneLower_i32=centerOffset_i32-deadZone_i32/2.0f;
     syncPedalPosition_i32=calcVars_st->syncPedalPosition_u32;
     currentPedalPosition_i32=calcVars_st->currentPedalPosition_u32;
-    stepperRange_i32=calcVars_st->stepperPosRange_fl32;
+    stepperRange_i32=(int32_t)calcVars_st->stepperPosRangeDefault_fl32;
     forceRange_fl32 = calcVars_st->forceRange_fl32;
-    forceCenterOffset_fl32 = forceRange_fl32 / 2 + calcVars_st->forceMin_fl32;
-    endPosTravel_fl32=(float)calcVars_st->stepperPosRange_fl32;
+    forceCenterOffset_fl32 = forceRange_fl32 / 2.0f + calcVars_st->forceMin_fl32;
+    endPosTravel_fl32=(float)calcVars_st->stepperPosRangeDefault_fl32;
+    if (endPosTravel_fl32 <= 0.0f) endPosTravel_fl32 = 1.0f;
     //endpos_travel=((float)(calcVars_st->currentPedalPosition_u32-calcVars_st->softEndstopMinStepperPos_i32))/((float)calcVars_st->stepperPosRange_fl32);
     positionRatioSync_fl32=calcVars_st->syncPedalPositionRatio_fl32;
-    positionRatioCurrent_fl32=((float)(currentPedalPosition_i32-calcVars_st->softEndstopMinStepperPos_i32))/endPosTravel_fl32;
+    positionRatioCurrent_fl32=((float)(currentPedalPosition_i32-calcVars_st->stepperPosMinDefault_i32))/endPosTravel_fl32;
     
 
     float centerDeadzone_fl32 = 0.51f;
@@ -101,7 +103,7 @@ class Rudder{
           forceOffsetRaw_fl32=0.0f;
         }
      
-      forceOffsetFilter_fl32=averagefilter_rudder_force.process(forceOffsetRaw_fl32+forceCenterOffset_fl32);
+      forceOffsetFilter_fl32=averagefilterg_rudder_st_force.process(forceOffsetRaw_fl32+forceCenterOffset_fl32);
     }
     else
     {
@@ -109,9 +111,9 @@ class Rudder{
     }
   }
 };
-//Rudder impact
+//Rudder_t impact
 MovingAverageFilter Averagefilter_Rudder_G_Offset(50);
-class RudderGForce{
+class RudderGForce_t{
   public:
   int32_t offsetRaw_i32;
   long offsetFilter_l;
@@ -120,8 +122,8 @@ class RudderGForce{
   long stepperPosMax_l;
   void offsetCalculate(DapCalculationVariables_t* calcVars_st)
   {
-    stepperPosMax_l=(float)calcVars_st->softEndstopMaxStepperPos_i32;
-    stepperRange_fl32=(float)calcVars_st->stepperPosRange_fl32;
+    stepperPosMax_l=(long)calcVars_st->stepperPosMaxDefault_i32;
+    stepperRange_fl32=(float)calcVars_st->stepperPosRangeDefault_fl32;
     float ampMax_fl32=0.3f*stepperRange_fl32;
     if(calcVars_st->rudderStatus_b)
     {
@@ -131,13 +133,13 @@ class RudderGForce{
     }
     else
     {
-      offsetFilter_l=calcVars_st->softEndstopMaxStepperPos_i32;
+      offsetFilter_l=calcVars_st->stepperPosMaxDefault_i32;
     }
 
   }
 };
 MovingAverageFilter averagefilter_helirudder(200);
-class HelicoptersRudder{
+class HelicoptersRudder_t{
   public:
   int32_t centerOffset_i32;
   int32_t offsetRaw_i32;
@@ -162,22 +164,23 @@ class HelicoptersRudder{
   float deadzoneTolerance_fl32=0.01f;
   float positionRatioLast_fl32;
   unsigned long debugPrintLast=0;
-  KalmanFilter1stOrder* kalman_rudder = NULL;
+  KalmanFilter1stOrder* kalmang_rudder_st = NULL;
   //bool IsReady = false;
-  HelicoptersRudder()
+  HelicoptersRudder_t()
   {
-    kalman_rudder=new KalmanFilter1stOrder(3.0f);
+    kalmang_rudder_st=new KalmanFilter1stOrder(3.0f);
   }
   void offsetCalculate(DapCalculationVariables_t* calcVars_st)
   {
     currentPedalPosition_i32=calcVars_st->currentPedalPosition_u32;
     positionRatioSync_fl32=calcVars_st->syncPedalPositionRatio_fl32;
-    endPosTravel_fl32=(float)calcVars_st->stepperPosRange_fl32;
+    endPosTravel_fl32=(float)calcVars_st->stepperPosRangeDefault_fl32;
+    if (endPosTravel_fl32 <= 0.0f) endPosTravel_fl32 = 1.0f;
     currentForceReading_fl32=(float)calcVars_st->currentForceReading_fl32;
     pedalPreload_fl32=(float)calcVars_st->forceMin_fl32;
-    positionRatioCurrent_fl32=((float)(currentPedalPosition_i32-calcVars_st->softEndstopMinStepperPos_i32))/endPosTravel_fl32;
+    positionRatioCurrent_fl32=((float)(currentPedalPosition_i32-calcVars_st->stepperPosMinDefault_i32))/endPosTravel_fl32;
     deadZone_i32=20;
-    centerOffset_i32=calcVars_st->softEndstopMinStepperPos_i32+ calcVars_st->stepperPosRange_fl32/2.0f;
+    centerOffset_i32=calcVars_st->stepperPosMinDefault_i32 + (int32_t)(calcVars_st->stepperPosRangeDefault_fl32/2.0f);
     float centerDeadzone_fl32 = 0.51f;
     if(calcVars_st->helicopterRudderStatus_b)
     {
@@ -219,14 +222,14 @@ class HelicoptersRudder{
 
 
       }
-      //offset_filter=(int32_t)kalman_rudder->filteredValue(offset_raw+Center_offset,0.0f,1);
+      //offset_filter=(int32_t)kalmang_rudder_st->filteredValue(offset_raw+Center_offset,0.0f,1);
       offsetFilter_i32=averagefilter_helirudder.process(offsetRaw_i32+centerOffset_i32);
       //cap offset filter to prevent over the endstop value
       offsetFilter_i32=constrain(offsetFilter_i32,calcVars_st->stepperPosMinDefault_i32,calcVars_st->stepperPosMaxDefault_i32);
     }
     else
     {
-      offsetFilter_i32=calcVars_st->softEndstopMinStepperPos_i32;
+      offsetFilter_i32=calcVars_st->stepperPosMinDefault_i32;
     }
     /*
     if(debugPrintLast-millis()>200)

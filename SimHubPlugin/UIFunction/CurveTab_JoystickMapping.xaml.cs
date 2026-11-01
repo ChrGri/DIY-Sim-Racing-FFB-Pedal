@@ -41,7 +41,7 @@ namespace DiyFfbPedal.UIFunction
         private byte[] joystickValueOrig;
         private byte[] joystickValueMapping;
         private double minpos = 0;
-        private double maxpos = 400;
+        private double maxpos = 480;
         DateTime forceUpdate_currentTime = DateTime.Now;
         DateTime forceUpdate_lastTime = DateTime.Now;
         public CurveTab_JoystickMapping()
@@ -608,7 +608,8 @@ namespace DiyFfbPedal.UIFunction
                 RadiusX = 1,
                 RadiusY = 1,
                 Fill = System.Windows.Media.Brushes.Transparent,
-                Opacity = 1.0
+                Opacity = 1.0,
+                Cursor = System.Windows.Input.Cursors.Hand
             };
             rect.Tag = (int)-1;
             //rect.SetResourceReference(Shape.FillProperty, "AccentColorBrush");

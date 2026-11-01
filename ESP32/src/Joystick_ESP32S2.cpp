@@ -15,18 +15,18 @@
 #define JOYSTICK_SIMULATOR_MINIMUM 0
 #define JOYSTICK_SIMULATOR_MAXIMUM 65535
 
-#define JOYSTICK_INCLUDE_X_AXIS  B00000001
-#define JOYSTICK_INCLUDE_Y_AXIS  B00000010
-#define JOYSTICK_INCLUDE_Z_AXIS  B00000100
-#define JOYSTICK_INCLUDE_RX_AXIS B00001000
-#define JOYSTICK_INCLUDE_RY_AXIS B00010000
-#define JOYSTICK_INCLUDE_RZ_AXIS B00100000
+#define JOYSTICK_INCLUDE_X_AXIS  0b00000001
+#define JOYSTICK_INCLUDE_Y_AXIS  0b00000010
+#define JOYSTICK_INCLUDE_Z_AXIS  0b00000100
+#define JOYSTICK_INCLUDE_RX_AXIS 0b00001000
+#define JOYSTICK_INCLUDE_RY_AXIS 0b00010000
+#define JOYSTICK_INCLUDE_RZ_AXIS 0b00100000
 
-#define JOYSTICK_INCLUDE_RUDDER      B00000001
-#define JOYSTICK_INCLUDE_THROTTLE    B00000010
-#define JOYSTICK_INCLUDE_ACCELERATOR B00000100
-#define JOYSTICK_INCLUDE_BRAKE       B00001000
-#define JOYSTICK_INCLUDE_STEERING    B00010000
+#define JOYSTICK_INCLUDE_RUDDER      0b00000001
+#define JOYSTICK_INCLUDE_THROTTLE    0b00000010
+#define JOYSTICK_INCLUDE_ACCELERATOR 0b00000100
+#define JOYSTICK_INCLUDE_BRAKE       0b00001000
+#define JOYSTICK_INCLUDE_STEERING    0b00010000
 
 Joystick_::Joystick_(
     uint8_t hidReportId,
@@ -355,7 +355,7 @@ Joystick_::Joystick_(
         tempHidReportDescriptor[hidReportDescriptorSize++] = 0x00;
 
         if (includeRudder == true) {
-            // USAGE (Rudder)
+            // USAGE (Rudder_t)
             tempHidReportDescriptor[hidReportDescriptorSize++] = 0x09;
             tempHidReportDescriptor[hidReportDescriptorSize++] = 0xBA;
         }
@@ -418,7 +418,7 @@ Joystick_::Joystick_(
     _yAxisRotation = 0;
     _zAxisRotation = 0;
     _throttle = 0;
-    _rudder = 0;
+    g_rudder_st = 0;
     _accelerator = 0;
     _brake = 0;
     _steering = 0;
@@ -439,6 +439,16 @@ uint16_t Joystick_::_onGetDescriptor(uint8_t* buffer) {
 
 // Leere Implementierung für Output-Reports (wird von USBHIDDevice vorausgesetzt)
 void Joystick_::_onOutput(uint8_t report_id, const uint8_t* buffer, uint16_t len) {
+}
+
+// Host GET_REPORT Callback (Endpoint 0 Control Transfer)
+// Windows queries the initial state of the device during USB enumeration via GET_REPORT.
+// Responding here guarantees Windows DirectInput receives 0% immediately on boot without STALL.
+uint16_t Joystick_::_onGetFeature(uint8_t report_id, uint8_t* buffer, uint16_t len) {
+    if (report_id == _hidReportId || report_id == 0) {
+        return fillReport(buffer, len);
+    }
+    return 0;
 }
 
 void Joystick_::begin(bool initAutoSendState, uint32_t intervalMs_u32) {
@@ -514,7 +524,7 @@ void Joystick_::setRzAxis(int32_t value) {
 }
 
 void Joystick_::setRudder(int32_t value) {
-    _rudder = value;
+    g_rudder_st = value;
     if (_autoSendState) sendState();
 }
 
@@ -563,7 +573,14 @@ int Joystick_::buildAndSet16BitValue(bool includeValue, int32_t value, int32_t v
         value = realMaximum - value + realMinimum;
     }
 
-    convertedValue = map(value, realMinimum, realMaximum, actualMinimum, actualMaximum);
+    // Not Arduino map(): its 32-bit (delta * rise) overflows for a 0..65535
+    // range (65535 * 65535 > INT32_MAX), sending e.g. 65534 for 65535.
+    if (realMaximum == realMinimum) {
+        convertedValue = actualMinimum;
+    } else {
+        convertedValue = (int32_t)(((int64_t)(value - realMinimum) * (actualMaximum - actualMinimum)) /
+                                   (realMaximum - realMinimum) + actualMinimum);
+    }
     highByte = (uint8_t)(convertedValue >> 8);
     lowByte = (uint8_t)(convertedValue & 0x00FF);
     dataLocation[0] = lowByte;
@@ -579,8 +596,10 @@ int Joystick_::buildAndSetSimulationValue(bool includeValue, int32_t value, int3
     return buildAndSet16BitValue(includeValue, value, valueMinimum, valueMaximum, JOYSTICK_SIMULATOR_MINIMUM, JOYSTICK_SIMULATOR_MAXIMUM, dataLocation);
 }
 
-void Joystick_::sendState() {
-    uint8_t data[_hidReportSize];
+uint16_t Joystick_::fillReport(uint8_t *data, uint16_t maxLen) {
+    if (data == NULL || maxLen < _hidReportSize) {
+        return 0;
+    }
     int index = 0;
 
     // Load Button State
@@ -598,7 +617,7 @@ void Joystick_::sendState() {
                 convertedHatSwitch[hatSwitchIndex] = (_hatSwitchValues[hatSwitchIndex] % 360) / 45;
             }
         }
-        data[index++] = (convertedHatSwitch[1] << 4) | (B00001111 & convertedHatSwitch[0]);
+        data[index++] = (convertedHatSwitch[1] << 4) | (0b00001111 & convertedHatSwitch[0]);
     }
 
     // Set Axis Values
@@ -610,11 +629,18 @@ void Joystick_::sendState() {
     index += buildAndSetAxisValue(_includeAxisFlags & JOYSTICK_INCLUDE_RZ_AXIS, _zAxisRotation, _rzAxisMinimum, _rzAxisMaximum, &(data[index]));
 
     // Set Simulation Values
-    index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_RUDDER, _rudder, _rudderMinimum, _rudderMaximum, &(data[index]));
+    index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_RUDDER, g_rudder_st, g_rudder_stMinimum, g_rudder_stMaximum, &(data[index]));
     index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_THROTTLE, _throttle, _throttleMinimum, _throttleMaximum, &(data[index]));
     index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_ACCELERATOR, _accelerator, _acceleratorMinimum, _acceleratorMaximum, &(data[index]));
     index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_BRAKE, _brake, _brakeMinimum, _brakeMaximum, &(data[index]));
     index += buildAndSetSimulationValue(_includeSimulatorFlags & JOYSTICK_INCLUDE_STEERING, _steering, _steeringMinimum, _steeringMaximum, &(data[index]));
+
+    return _hidReportSize;
+}
+
+void Joystick_::sendState() {
+    uint8_t data[_hidReportSize];
+    fillReport(data, sizeof(data));
 
     if ((bool)USB) { 
         // Jetzt klappt der Aufruf über unser hid-Objekt!
@@ -622,8 +648,6 @@ void Joystick_::sendState() {
         
         if (!success)  
             _reportFailCount++;
-        if (_reportFailCount > 5)  
-            _usbDeviceStatus = false;
         else  
             _reportFailCount = 0;
     }

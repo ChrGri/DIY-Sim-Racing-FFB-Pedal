@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO.Ports;
 using System.Linq;
@@ -10,20 +10,41 @@ namespace DiyFfbPedal
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
         private uint count_timmer_count = 0;
-        private string Toast_tmp;
         private WirelessConnectStateEnum[] pedalWirelessStatusLast = new WirelessConnectStateEnum[3] { WirelessConnectStateEnum.PEDAL_DISCONNECT, WirelessConnectStateEnum.PEDAL_DISCONNECT, WirelessConnectStateEnum.PEDAL_DISCONNECT };
         private ConnectStateEnum[] pedalSerialStatusLast = new ConnectStateEnum[3] { ConnectStateEnum.PEDAL_DISCONNECT, ConnectStateEnum.PEDAL_DISCONNECT, ConnectStateEnum.PEDAL_DISCONNECT };
+        private DateTime lastBridgeWirelessSyncResend = DateTime.MinValue;
         public void connection_timmer_tick(object sender, EventArgs e)
         {
             //simhub action for debug
             Simhub_action_update();
-           
+
+            // The bridge drops all traffic from a pedal whose wireless-sync flag it
+            // holds as off, and only learns the flags on a settings change or HID
+            // connect - a lost update leaves the pedal invisible until the user
+            // toggles something. Re-assert them while any enabled pedal isn't ready.
+            bool bridgeLinkUp = Plugin.BridgeHidService.IsConnected || Plugin.ESPsync_serialPort.IsOpen;
+            bool anyEnabledPedalNotReady = false;
+            for (int i = 0; i < 3; i++)
+            {
+                if (Plugin.Settings.Pedal_ESPNow_Sync_flag[i] &&
+                    Plugin._calculations.pedalWirelessStatus[i] != WirelessConnectStateEnum.PEDAL_WIRELESS_IS_READY)
+                {
+                    anyEnabledPedalNotReady = true;
+                }
+            }
+            if (bridgeLinkUp && anyEnabledPedalNotReady &&
+                (DateTime.Now - lastBridgeWirelessSyncResend).TotalMilliseconds > 2000)
+            {
+                lastBridgeWirelessSyncResend = DateTime.Now;
+                Plugin.SendBridgeWirelessSyncConfig();
+            }
+
 
             for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
             {
                 if (Plugin._calculations.pedalWirelessStatus[pedalIdx] == WirelessConnectStateEnum.PEDAL_GET_BASIC_PACKETS_OVER_ESPNOW)
                 {
-                    Reading_config_auto(pedalIdx);
+                    Reading_config_auto_wireless(pedalIdx);
                     
                 }
                 if (Plugin._calculations.pedalSerialStatus[pedalIdx] == ConnectStateEnum.PEDAL_GET_BASIC_PACKETS && !Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalIdx])
@@ -49,12 +70,13 @@ namespace DiyFfbPedal
                         Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT;
                         for (uint i = 0; i < 3; i++)
                         {
-                            if (Plugin._calculations.pedalWirelessStatus[(uint)i] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
+                            if (Plugin.Settings.Pedal_ESPNow_Sync_flag[i] && Plugin._calculations.pedalWirelessStatus[(uint)i] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
                             {
                                 Plugin._calculations.pedalWirelessStatus[(uint)i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
                             }
 
                         }
+                        Plugin.SendBridgeWirelessSyncConfig();
                         //ToastNotification("Pedal Wireless Bridge", "Connection initialized");
                         //updateTheGuiFromConfig();
                     }
@@ -192,6 +214,7 @@ namespace DiyFfbPedal
                     Plugin._calculations.pedalSerialStatus[i] == ConnectStateEnum.PEDAL_IS_READY))
                 {
                     Plugin.SendConfigWithoutSaveToEEPROM(Plugin.ProfileServicePlugin.ConfigBuffer[i], (byte)i);
+                    dap_config_st[i] = Plugin.ProfileServicePlugin.ConfigBuffer[i];
                     Plugin._calculations.ConfigEditing[i] = Plugin.ConfigService.ConfigList.FirstOrDefault(item => item.FullPath == Plugin.ProfileServicePlugin.GameConfigPathBuffer[i]).FileName;
                     Plugin.ProfileServicePlugin.GamePofileConfigChange_b[i] = false;
                     if (!Plugin.ProfileServicePlugin.GamePofileConfigChange_b[0] && !Plugin.ProfileServicePlugin.GamePofileConfigChange_b[1] && !Plugin.ProfileServicePlugin.GamePofileConfigChange_b[2])
@@ -256,7 +279,14 @@ namespace DiyFfbPedal
                     Plugin._calculations.bridgeConnectionStatus = BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT;
                     for (int i = 0; i < 3; i++)
                     {
-                        Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
+                        if (Plugin.Settings.Pedal_ESPNow_Sync_flag[i])
+                        {
+                            Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_BRIDGE_ENTRY_CONNECT;
+                        }
+                        else
+                        {
+                            Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                        }
                     }
                 }
                 else

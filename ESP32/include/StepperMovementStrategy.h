@@ -3,6 +3,24 @@
 #include "DiyActivePedal_types.h"
 #include "Main.h"
 
+// Stick/slip friction in the pedal admittance model (holds the pedal still against foot
+// tremor). Comment out to compare against the previous behaviour.
+#define ADMITTANCE_STICTION_ENABLED
+
+// Sign of the contact damping force-derivative term (A/B test, override with a build flag):
+// +1 = adds tau * dF/dt (contact damping, since 2026-10-01), -1 = subtracts it (before),
+// 0 = off. +1 also amplifies the drivetrain force ripple (~24 per motor revolution) 1.44x at 50 Hz.
+#ifndef CONTACT_DAMPING_DERIV_SIGN
+#define CONTACT_DAMPING_DERIV_SIGN +1
+#endif
+
+// Tracking-error damping: raises the model damping up to 3.5x while the servo lags its target
+// by more than expected (see CalcActiveDamping). A/B test: set to 0 (or build with
+// -DADMITTANCE_TRACKING_ERROR_DAMPING=0) to disable it.
+#ifndef ADMITTANCE_TRACKING_ERROR_DAMPING
+#define ADMITTANCE_TRACKING_ERROR_DAMPING 0
+#endif
+
 // Task dependent structs and variables
 typedef struct {
   float travelRange_mm_fl32;
@@ -14,11 +32,21 @@ typedef struct {
   float forceOffset_Steps_fl32;
 } EffectOffsets_t;
 
+typedef enum {
+  RUDDER_MODE_DISABLED = 0,
+  RUDDER_MODE_PLANE = 1,
+  RUDDER_MODE_HELICOPTER = 2,
+  RUDDER_MODE_TOE_BRAKE = 3
+} RudderMode_e;
+
 typedef struct {
   bool isRudderMode;
-  float centerPosition_01;     // nomally 0.5 so alignment in center 
-  float trimOffset_01;         // dynamical displacement the 0-force psoition
-  float deadzone_01;           // small region without force around center
+  uint8_t rudderMode_u8;       // 0: Disabled, 1: Plane, 2: Helicopter, 3: Airplane with Toe Brake
+  uint8_t centeringProfile_u8; // 0: Linear, 1: Progressive, 2: S-Curve
+  float centerPosition_01;     // normally 0.50 for center alignment
+  float trimOffset_01;         // dynamic trim offset (-0.5 to +0.5)
+  float deadzone_01;           // deadzone around center (e.g. 0.02)
+  float centerForce_kg;        // centering spring breakout / preload force in kg
 } RudderOffsets_t;
 
 
@@ -69,9 +97,12 @@ typedef struct {
 // These variables maintain state across control cycles
 float g_vModelPos_01 = 0.0f;    // Normalized virtual position [0.0 to 1.0]
 float g_vModelVel_mps = 0.0f;   // Physical virtual velocity [meters/second]
+volatile bool g_admittanceReanchorRequest_b = false; // re-anchor the model at the actual position (e.g. after rudder mode)
 float g_tankEnergy_J = 2.0f;    // Energy tank level for passive parameter adaptation [Joules]
 float g_massAdaptationOffset_kg = 0.0f; // Dynamic mass offset from Energy Tank framework
 float g_lastActiveDamping_Ns_m = 0.0f;  // Track previous frame's damping for power calculation
+float g_lastNetForceTustin_N = 0.0f;    // Net force of the previous integration step (force memory)
+float g_servoVelEst_mps = 0.0f;         // Estimated servo (pedal) velocity: model velocity lagged by the servo
 
 
 // Oscillation Detector State (Landi et al.)
@@ -86,6 +117,13 @@ bool g_isPsiInitialized = false;
 float g_filteredPhysicalVel_mps = 0.0f;
 float g_filteredPhysicalAcc_mps2 = 0.0f;
 float g_prevFilteredPhysicalVel_mps = 0.0f;
+
+// NEW: Filter states for internal Effect Feedforward (Velocity & Acceleration)
+float g_smoothedEffectPos_m = 0.0f;
+float g_prevSmoothedEffectPos_m = 0.0f;
+float g_smoothedEffectVel_mps = 0.0f;
+float g_prevSmoothedEffectVel_mps = 0.0f;
+float g_smoothedEffectAcc_mps2 = 0.0f;
 
 // =========================================================
 // HELPER SUB-FUNCTIONS FOR ENCAPSULATION
@@ -116,7 +154,7 @@ static inline IRAM_ATTR_FLAG void CalcDynamicTravelLimits(
         float ext_steps = ext_A + ext_B;
 
         lowerTravelLimit_01 = min(0.0f, ext_steps);
-        upperTravelLimit_01 = 1.0f + max(0.0f, ext_steps);
+        upperTravelLimit_01 = max(1.0f, 1.0f + ext_steps); // Only allow dynamic boundary expansion, never contract below 1.0
     }
 }
 
@@ -129,16 +167,22 @@ static inline IRAM_ATTR_FLAG float CalcSoftEndstopForce(
 {
     float softEndstopForce_N = 0.0f;
     if (endstopBehavior_st.travelRange_mm_fl32 > 0.01f) {
+        float softEndstopTravel_m = endstopBehavior_st.travelRange_mm_fl32 * 0.001f;
+        
         if (vModelPos_01 > 1.0f) {
             float softEndstopStiffness_N_m = endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32 * 1000.0f;
             float deflection_m = (vModelPos_01 - 1.0f) * totalTravel_m;
-            softEndstopForce_N = softEndstopStiffness_N_m * deflection_m;
             
-            // Update local stiffness for damping calculation to prevent endstop bouncing
-            currentStiffness_N_m = softEndstopStiffness_N_m;
+            float penetration_01 = constrain(deflection_m / max(softEndstopTravel_m, 0.001f), 0.0f, 1.0f);
+            softEndstopForce_N = (softEndstopStiffness_N_m * deflection_m) * (0.5f + 0.5f * penetration_01);
+            
+            // NEUER FIX: Dämpfung weich und quadratisch hochfahren!
+            // Das absorbiert die Aufprallenergie bei schnellen Tritten perfekt,
+            // ohne den Tustin-Filter durch einen plötzlichen Sprung abstürzen zu lassen.
+            currentStiffness_N_m += (softEndstopStiffness_N_m * (penetration_01 * penetration_01));
         }
-        // Expand upper limit to allow the virtual model to penetrate the soft endstop
-        upperTravelLimit_01 += (endstopBehavior_st.travelRange_mm_fl32 / 1000.0f) / totalTravel_m;
+        
+        upperTravelLimit_01 += (softEndstopTravel_m / totalTravel_m);
     }
     return softEndstopForce_N;
 }
@@ -320,29 +364,143 @@ static inline IRAM_ATTR_FLAG void AdaptVirtualMass(
         return;
     }
 
-    const float M_MAX_KG = 2.5f;              // Maximum allowed virtual mass during oscillation (kg)
-    const float M_INCREASE_RATE_KG_S = 15.0f; // How fast mass increases when unstable
-    const float M_DECREASE_RATE_KG_S = 3.0f;  // How fast mass recovers when near endstop
+    const float MAX_ADAPTATION_OFFSET_KG = 0.6f; // Max +0.6kg dynamic mass adaptation (prevents sluggish lockup)
+    const float M_INCREASE_RATE_KG_S = 4.0f;     // Gradual mass increase during genuine limit cycles
+    const float M_ENDSTOP_DECREASE_RATE_KG_S = 4.0f; // Fast recovery near endstops
+    const float M_LEAKY_DECREASE_RATE_KG_S = 1.0f;   // Continuous recovery anywhere in travel
 
     // 1. Ramp up mass during oscillation
     if (isOscillating) {
         float intensity = 1.0f;
         g_massAdaptationOffset_kg += M_INCREASE_RATE_KG_S * intensity * dt_s;
     } 
-    // 2. Reduce mass ONLY when the pedal is safely near an endstop (< 5% or > 95%)
-    else if (actualPosFraction_01 < 0.05f || actualPosFraction_01 > 0.95f) {
-        g_massAdaptationOffset_kg -= M_DECREASE_RATE_KG_S * dt_s;
+    // 2. Continuous decay when stable: faster near endstops, gentle everywhere else
+    else {
+        float decayRate = (actualPosFraction_01 < 0.05f || actualPosFraction_01 > 0.95f) 
+                          ? M_ENDSTOP_DECREASE_RATE_KG_S 
+                          : M_LEAKY_DECREASE_RATE_KG_S;
+        g_massAdaptationOffset_kg -= decayRate * dt_s;
     }
 
     // Clamp values safely
-    if (g_massAdaptationOffset_kg < 0.0f) {
-        g_massAdaptationOffset_kg = 0.0f;
+    g_massAdaptationOffset_kg = constrain(g_massAdaptationOffset_kg, 0.0f, MAX_ADAPTATION_OFFSET_KG);
+    virtualMass_kg = baseMass_kg + g_massAdaptationOffset_kg;
+}
+
+// Contact oscillation detector state (see UpdateContactOscillationDamping)
+#define CONTACT_OSC_CROSSING_BUFFER_SIZE 8
+float g_contactOscHighPass_N = 0.0f;
+float g_contactOscBandPass_N = 0.0f;
+float g_contactOscPrevForce_N = 0.0f;
+float g_contactOscPeak_N = 0.0f;
+float g_contactOscLastHalfWavePeak_N = 0.0f;
+int8_t g_contactOscSign_i8 = 0;
+// integer microseconds: a float seconds clock stops advancing after a few hours (600 us steps
+// round to zero above 16384 s), which froze the crossing ages and latched the detection
+int64_t g_contactOscCrossingTimes_us[CONTACT_OSC_CROSSING_BUFFER_SIZE] = {0};
+uint8_t g_contactOscCrossingIdx_u8 = 0;
+int64_t g_contactOscTime_us = 0;
+float g_contactOscForceLowPass_N = 0.0f;
+float g_contactOscForceAtDetection_N = 0.0f;
+float g_contactOscDampingMultiplier = 1.0f;
+
+/**
+ * @brief Contact oscillation detector with adaptive damping.
+ *
+ * A stiff contact (e.g. holding the pedal with the heel, ~10 N/mm) closes a loop
+ * force -> admittance model -> position -> contact -> force that oscillates at ~13-16 Hz
+ * with the servo and force-filter delays. More damping stabilizes it (simulation: ~3x the
+ * base damping), more virtual mass does not.
+ *
+ * Detection: band-pass (5-40 Hz) of the pilot force; oscillation = at least
+ * CONTACT_OSC_MIN_CROSSINGS sign changes with a half-wave peak above the threshold
+ * (4 % of the force, at least 1 N) within CONTACT_OSC_WINDOW_S (~2.5 periods). Presses and
+ * single stabs produce only one or two such crossings and do not trigger.
+ * Reaction: damping multiplier rises to CONTACT_OSC_DAMPING_MAX within ~50 ms. It decays
+ * slowly (10 s) while the contact persists, so the oscillation does not grow back, and quickly
+ * (0.3 s) once the pedal moves or the force drops below half the detection level (released).
+ *
+ * @return damping multiplier (>= 1)
+ */
+static inline IRAM_ATTR_FLAG float UpdateContactOscillationDamping(
+    float pilotForce_N, float vModelVel_mps, float dt_s, bool hasActiveEffect,
+    bool& isOscillating, float& bandPeak_N)
+{
+    const float CONTACT_OSC_HIGH_PASS_HZ = 5.0f;
+    const float CONTACT_OSC_LOW_PASS_HZ = 40.0f;
+    // Amplitude threshold relative to the force: leg tremor scales with the force (~1 % measured
+    // while holding), a contact oscillation reached ~20 % (throttle, heel). With an absolute
+    // threshold a brake at high force would trigger on tremor alone.
+    const float CONTACT_OSC_AMPLITUDE_MIN_N = 1.0f;
+    const float CONTACT_OSC_AMPLITUDE_RELATIVE = 0.04f;
+    // a contact oscillation needs contact: no detection below this mean force (load cell noise
+    // at rest, e.g. with a high-rated brake load cell)
+    const float CONTACT_OSC_MIN_FORCE_N = 3.0f;
+    const float CONTACT_OSC_WINDOW_S = 0.3f;
+    const uint8_t CONTACT_OSC_MIN_CROSSINGS = 5;
+    const float CONTACT_OSC_DAMPING_MAX = 3.0f;
+    const float CONTACT_OSC_RISE_TIME_S = 0.03f;
+    const float CONTACT_OSC_DECAY_HOLD_S = 10.0f;
+    const float CONTACT_OSC_DECAY_RELEASED_S = 0.3f;
+    const float CONTACT_OSC_MOVING_VELOCITY_MPS = 0.005f;
+    const float CONTACT_OSC_RELEASE_FORCE_RATIO = 0.5f;
+
+    g_contactOscTime_us += (int64_t)(dt_s * 1e6f + 0.5f);
+
+    // band-pass: first order high-pass followed by first order low-pass
+    float highPassTau_s = 1.0f / (2.0f * PI * CONTACT_OSC_HIGH_PASS_HZ);
+    float highPassAlpha = highPassTau_s / (highPassTau_s + dt_s);
+    g_contactOscHighPass_N = highPassAlpha * (g_contactOscHighPass_N + pilotForce_N - g_contactOscPrevForce_N);
+    g_contactOscPrevForce_N = pilotForce_N;
+    g_contactOscBandPass_N += (1.0f - expf(-dt_s * 2.0f * PI * CONTACT_OSC_LOW_PASS_HZ)) * (g_contactOscHighPass_N - g_contactOscBandPass_N);
+
+    // mean contact force: relative amplitude threshold, and release detection below
+    g_contactOscForceLowPass_N += (1.0f - expf(-dt_s / 0.05f)) * (pilotForce_N - g_contactOscForceLowPass_N);
+    float amplitudeThreshold_N = max(CONTACT_OSC_AMPLITUDE_MIN_N,
+                                     CONTACT_OSC_AMPLITUDE_RELATIVE * g_contactOscForceLowPass_N);
+
+    // sign changes with sufficient half-wave amplitude
+    g_contactOscPeak_N = max(g_contactOscPeak_N, fabsf(g_contactOscBandPass_N));
+    int8_t sign_i8 = (g_contactOscBandPass_N > 0.0f) ? 1 : -1;
+    if (sign_i8 != g_contactOscSign_i8) {
+        if ((g_contactOscPeak_N >= amplitudeThreshold_N) &&
+            (g_contactOscForceLowPass_N >= CONTACT_OSC_MIN_FORCE_N) && !hasActiveEffect) {
+            g_contactOscCrossingTimes_us[g_contactOscCrossingIdx_u8] = g_contactOscTime_us;
+            g_contactOscCrossingIdx_u8 = (g_contactOscCrossingIdx_u8 + 1) % CONTACT_OSC_CROSSING_BUFFER_SIZE;
+        }
+        g_contactOscLastHalfWavePeak_N = g_contactOscPeak_N;
+        g_contactOscPeak_N = 0.0f;
+        g_contactOscSign_i8 = sign_i8;
     }
-    if ((baseMass_kg + g_massAdaptationOffset_kg) > M_MAX_KG) {
-        g_massAdaptationOffset_kg = M_MAX_KG - baseMass_kg;
+    uint8_t recentCrossings_u8 = 0;
+    const int64_t windowLength_us = (int64_t)(CONTACT_OSC_WINDOW_S * 1e6f);
+    for (uint8_t i = 0; i < CONTACT_OSC_CROSSING_BUFFER_SIZE; i++) {
+        int64_t age_us = g_contactOscTime_us - g_contactOscCrossingTimes_us[i];
+        if ((g_contactOscCrossingTimes_us[i] > 0) && (age_us <= windowLength_us)) {
+            recentCrossings_u8++;
+        }
+    }
+    isOscillating = (recentCrossings_u8 >= CONTACT_OSC_MIN_CROSSINGS) && !hasActiveEffect;
+    bandPeak_N = g_contactOscLastHalfWavePeak_N;
+
+    // contact force level: remember it at detection, to recognize a release
+    if (isOscillating) {
+        g_contactOscForceAtDetection_N = (g_contactOscDampingMultiplier > 1.01f)
+            ? max(g_contactOscForceAtDetection_N, g_contactOscForceLowPass_N)
+            : g_contactOscForceLowPass_N;
     }
 
-    virtualMass_kg = baseMass_kg + g_massAdaptationOffset_kg;
+    // damping multiplier: fast rise, slow decay while the contact persists
+    if (isOscillating) {
+        g_contactOscDampingMultiplier += (1.0f - expf(-dt_s / CONTACT_OSC_RISE_TIME_S))
+                                         * (CONTACT_OSC_DAMPING_MAX - g_contactOscDampingMultiplier);
+    } else {
+        bool released_b = (fabsf(vModelVel_mps) > CONTACT_OSC_MOVING_VELOCITY_MPS) ||
+                          (g_contactOscForceLowPass_N < CONTACT_OSC_RELEASE_FORCE_RATIO * g_contactOscForceAtDetection_N);
+        float decay_s = released_b ? CONTACT_OSC_DECAY_RELEASED_S : CONTACT_OSC_DECAY_HOLD_S;
+        g_contactOscDampingMultiplier += (1.0f - expf(-dt_s / decay_s)) * (1.0f - g_contactOscDampingMultiplier);
+    }
+    return g_contactOscDampingMultiplier;
 }
 
 /**
@@ -351,8 +509,9 @@ static inline IRAM_ATTR_FLAG void AdaptVirtualMass(
 static inline IRAM_ATTR_FLAG float CalcActiveDamping(
     float dampingRatio_zeta, float virtualMass_kg, float currentStiffness_N_m,
     float vModelPos_01, float actualPosFraction_01,
-    int32_t actualServoTrackingError_i32, float travelSteps_cnt, float effectForceOffset_fl32,
-    uint8_t dampingProgression_u8, float springForce_N, float vModelVel_mps, uint8_t elastomerModelSelection, float maxPedalForce_kg) 
+    int32_t actualServoTrackingError_i32, float travelSteps_cnt, bool hasActiveEffect,
+    uint8_t dampingProgression_u8, float springForce_N, float vModelVel_mps, uint8_t elastomerModelSelection, float maxPedalForce_kg,
+    float dt_s, float totalTravel_m)
 {
     // Calculate Base Damping based on mass and current stiffness: c_c = 2 * sqrt(m * k)
     float criticalDamping_Ns_m = 2.0f * sqrtf(virtualMass_kg * currentStiffness_N_m);
@@ -361,7 +520,7 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
     float dampingMultiplier = 1.0f;
 
     // Adaptive damping (AOM & Tracking Error) only when no effect is applied
-    if (effectForceOffset_fl32 == 0.0f) 
+    if (!hasActiveEffect)
     {
 
         // =========================================================
@@ -371,19 +530,49 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
         // producing large EMF. To reduce the lag, we increase the virtual damping so the servo can keep up.
         // =========================================================
         // actualPosFraction_01 is the physical position, vModelPos_01 is the target model position.
-        float trackingError_01 = fabsf(vModelPos_01 - actualPosFraction_01);
+        // Signed: pressing (v > 0) gives a negative servo tracking error.
+        float trackingError_01 = vModelPos_01 - actualPosFraction_01;
         if (travelSteps_cnt > 0.0001f) {
-            trackingError_01 = fabsf((float)actualServoTrackingError_i32 / travelSteps_cnt);
+            trackingError_01 = (float)actualServoTrackingError_i32 / travelSteps_cnt;
         }
 
-        // If tracking errors exceed 0.5%, the models damping is dynamically increased proportional
-        // so that the servo can catch up.
-        // FIXED CODE: Gated Tracking-Error Damping
-        // Only apply the tracking-error penalty if we are moving reasonably fast.
-        // During reversals (v near 0), we ignore it so the pedal doesn't feel sticky.
-        if (trackingError_01 > 0.005f && fabsf(vModelVel_mps) > 0.05f) {
-            // Tuning: the multiplier (here 20.0f) determines how much the model decelerates.
-            // dampingMultiplier += (trackingError_01 * 20.0f); // Temporär deaktiviert, da schwankender Schleppfehler zu hochfrequenten Dämpfungsschwankungen führt
+        // The servo lags its target by a speed-proportional amount even when it tracks perfectly
+        // well (following error ~ (1 - velocity feed-forward) * v / position gain; ~14 ms measured).
+        // Only the part beyond that expected lag indicates that the servo cannot keep up.
+        // Expected lag estimated online (least squares with forgetting), adapts to servo retuning.
+        static float s_sumErrorVel_fl32 = 0.0f;
+        static float s_sumVelSq_fl32 = 0.0f;
+        static float s_servoLag_s_fl32 = 0.0f;
+        // counts only while moving: 0.3 s of motion is a few presses, so the estimate follows a
+        // live servo retune quickly (2 s needed many presses, see trace 20260929_061357)
+        const float LAG_ESTIMATION_TIME_CONSTANT_S = 0.3f;
+        const float LAG_ESTIMATION_MIN_VELOCITY_MPS = 0.03f;
+        const float LAG_MAX_S = 0.04f;
+        float vModelVel_01ps = (totalTravel_m > 0.0001f) ? (vModelVel_mps / totalTravel_m) : 0.0f;
+        if (fabsf(vModelVel_mps) > LAG_ESTIMATION_MIN_VELOCITY_MPS) {
+            float forgetting_fl32 = expf(-dt_s / LAG_ESTIMATION_TIME_CONSTANT_S);
+            s_sumErrorVel_fl32 = forgetting_fl32 * s_sumErrorVel_fl32 - trackingError_01 * vModelVel_01ps;
+            s_sumVelSq_fl32 = forgetting_fl32 * s_sumVelSq_fl32 + vModelVel_01ps * vModelVel_01ps;
+            if (s_sumVelSq_fl32 > 1e-6f) {
+                s_servoLag_s_fl32 = constrain(s_sumErrorVel_fl32 / s_sumVelSq_fl32, 0.0f, LAG_MAX_S);
+            }
+        }
+        float unexpectedTrackingError_01 = fabsf(trackingError_01 + s_servoLag_s_fl32 * vModelVel_01ps);
+
+        // Low-pass filter the tracking error to eliminate 100Hz Modbus step discontinuities
+        static float s_smoothedTrackingError_01 = 0.0f;
+        const float TAU_TRACKING_ERR = 0.015f; // 15ms smoothing
+        float alpha_err = 1.0f - expf(-dt_s / TAU_TRACKING_ERR);
+        s_smoothedTrackingError_01 = (alpha_err * unexpectedTrackingError_01) + ((1.0f - alpha_err) * s_smoothedTrackingError_01);
+
+        // If the smoothed unexpected tracking error exceeds 0.5% (~0.5-1mm), the model damping is
+        // increased proportionally so that the servo can catch up without oscillating.
+        // Faded in between 20 and 40 mm/s instead of switched, so the damping does not jump.
+        float velocityWeight_01 = constrain((fabsf(vModelVel_mps) - 0.02f) / 0.02f, 0.0f, 1.0f);
+        // the lag estimate and the smoothing above keep running when disabled
+        if ((ADMITTANCE_TRACKING_ERROR_DAMPING != 0) && (s_smoothedTrackingError_01 > 0.005f)) {
+            float excessError = s_smoothedTrackingError_01 - 0.005f;
+            dampingMultiplier += velocityWeight_01 * constrain(excessError * 35.0f, 0.0f, 2.5f);
         }
     }
     
@@ -459,27 +648,161 @@ static inline IRAM_ATTR_FLAG float CalcActiveDamping(
 }
 
 /**
- * @brief Predictive EMF Reduction (Regenerative Power Clamping)
+ * @brief Regenerative Velocity and Power Governor
+ * 
+ * =========================================================================================
+ * PHYSICAL BACKGROUND & MATHEMATICAL RATIONALE:
+ * =========================================================================================
+ * 1. ENERGY CONSERVATION (Mechanical-to-Electrical Regeneration):
+ *    When a driver presses down hard on the pedal against the resisting force (spring, 
+ *    viscoelastic elastomer damping, and soft endstop), the pedal moves forward (v > 0)
+ *    while the actuator applies an opposing braking force (F_oppose > 0).
+ *    In this quadrant, the servo acts as a generator:
+ *        P_mech = F_oppose * v_pedal = tau_motor * omega_motor
+ *    Neglecting winding copper losses (I^2 * R), this mechanical work is converted directly 
+ *    into electrical current fed back through the inverter bridge diodes into the DC power bus:
+ *        P_elec ≈ P_mech
+ * 
+ * 2. POWER BUDGET (DC BUS CAPACITANCE & INTERNAL BLEEDER CIRCUIT):
+ *    - Capacitive Absorption Limit:
+ *      The internal DC bus capacitor bank inside the Leadshine iSV57 is C ≈ 470 - 1000 uF (63V rating).
+ *      The energy absorbed during a voltage rise from nominal supply (e.g. 36V) to the 
+ *      internal bleeder trigger threshold (Pr7.32 = 40V) is:
+ *          ΔE_C = 0.5 * C * (V_trip^2 - V_nom^2) = 0.5 * 1000uF * (40^2 - 36^2) ≈ 0.15 Joules.
+ *      At a sudden foot stomp delivering 150 W (e.g. 300 N at 0.5 m/s), this capacitor buffer 
+ *      fills and saturates in less than 1 millisecond!
+ * 
+ *    - Internal Bleeder (Braking Resistor) Dissipation:
+ *      The iSV57 integrated servo features an internal dynamic braking switch (Pr7.31 = 1) 
+ *      that dumps excess voltage into an internal resistor when V_bus >= 40V (or 52V in 48V mode).
+ *      Due to the compact 57mm frame size and lack of active cooling, the internal bleeder 
+ *      can continuously dissipate ~10-15W, with a safe transient pulse capacity of ~35W - 40W.
+ *      Exceeding ~35-40W during high-speed stomps causes the bus voltage to climb uncontrollably, 
+ *      tripping the overvoltage protection alarm (Er.020 / Er.021 at ~60V) or shutting down 
+ *      external SMPS (Switch-Mode Power Supplies) lacking reverse-current sinks.
+ * 
+ *    - Velocity Governor:
+ *      With the power budget P_max_regen (maxRegenPower_W) we dynamically enforce:
+ *          v_max_power = P_max_regen / F_oppose
+ *      The admittance strategy uses F_oppose = max(model force, measured pedal force) and
+ *      P_max_regen = ADMITTANCE_REGEN_POWER_SERVO_W (60 W), plus up to
+ *      ADMITTANCE_REGEN_POWER_BRAKE_RESISTOR_W when the external brake resistor is enabled;
+ *      the excess above the servo's share is then dissipated in the resistor by PWM.
+ *      - At heavy braking (e.g. 250 N): v_max = 60 / 250 = 0.24 m/s.
+ *      - At extreme endstop hit (e.g. 500 N): v_max = 60 / 500 = 0.12 m/s.
+ * 
+ * 3. BACK-EMF & MOTOR RPM LIMIT (Pr7.08 = 56):
+ *    - Pr7.08 is the Back-EMF constant: 5.6 V_rms / 1000 rpm (line-to-line).
+ *    - Peak AC voltage is 5.6 * sqrt(2) ≈ 7.9 V / 1000 rpm.
+ *    - Rectified DC voltage through the body diodes is V_rectified ≈ 1.35 * 5.6 V ≈ 7.56 V / 1000 rpm.
+ *    - The safe RPM ceiling is derived from the actual configured max step rate
+ *      (MAXIMUM_STEPPER_SPEED_U32 / stepsPerMotorRevolution_u32) rather than a fixed
+ *      number, so it always matches what the stepper can actually be commanded to do.
+ *      E.g. at 3200 steps/rev and a 250000 Hz step-rate ceiling, that works out to
+ *      ~4687 rpm, whose rectified BEMF (~35.4V) still stays below the 36V/48V bus rails.
+ * =========================================================================================
  */
-static inline IRAM_ATTR_FLAG void ApplyRegenPowerClamping(
-    float virtualMass_kg, float vModelVel_mps, float& acceleration_mps2)
-{
-    // If acceleration and velocity have opposite signs, the system is braking (Generator Mode).
-    if ((acceleration_mps2 > 0.0f && vModelVel_mps < 0.0f) || 
-        (acceleration_mps2 < 0.0f && vModelVel_mps > 0.0f)) {
-        
-        // Mechanical braking power P = |m * a * v| (in Watts)
-        float predictedRegenPower_W = fabsf((virtualMass_kg * acceleration_mps2) * vModelVel_mps);
-        
-        // Max. allowed regenerative power (Tuning-Parameter! Default 1.0W)
-        const float MAX_REGEN_POWER_W = 1.0f; 
+// Regen power the servo absorbs by itself (internal bleeder + bus capacitors), based
+// on the MEASURED pedal force. Measured 2026-10-02 (brake, 36 V supply): up to ~68 W
+// of foot power the bleeder held the bus at ~42 V; at ~110 W it climbed to 62 V.
+// (The former 40 W were applied to the model force, which is 1.3-1.7x lower than the
+// measured force during a press, i.e. ~50-68 W real.)
+#define ADMITTANCE_REGEN_POWER_SERVO_W 40.0f
+// Additional regen power routed into the external brake resistor when it is
+// enabled (enableBrakeResistor_u8 = mode 1), capped at 80 % of the full-on power V^2/R
+// (5 Ohm at 38 V: 289 W full on, 200 W = duty ~0.69; 10 Ohm: capped at ~115 W).
+#define ADMITTANCE_REGEN_POWER_BRAKE_RESISTOR_W 200.0f
+// Mode 2 (hardware brake resistor circuit): the circuit clamps the bus voltage on its
+// own and fast enough, so the regen power no longer limits the pedal speed (practically
+// unlimited; the back-EMF / step-rate limit in CalcRegenVelocityLimit still applies).
+#define ADMITTANCE_REGEN_POWER_HARDWARE_CIRCUIT_W 100000.0f
+// fallback when the config holds no resistance (brakeResistorResistance_Ohm_u8 = 0)
+#define BRAKE_RESISTOR_OHMS 5.0f
+// Share of the mechanical foot power F*v that reaches the DC bus as electrical regen
+// power (spindle/sled friction, motor copper losses, inverter). The servo and resistor
+// shares are electrical powers; two separate factors convert between them and F*v:
+// - Budget: the velocity limit converts the electrical budget to mechanical foot power
+//   (/ efficiency). A smaller value allows a faster pedal under load.
+// - Duty: the brake resistor duty converts the mechanical power to electrical
+//   (* efficiency). Overestimating it only costs some extra resistor power (the thermal
+//   model counts the power actually dissipated), underestimating it lets the bus rise.
+// Measurements: throttle 2026-10-02: at F*v = 240 W the resistor took ~180 W with the bus
+// near its rest voltage, i.e. ~0.75. Brake 2026-10-04 (5 mm spindle, 33 Ohm resistor):
+// with 0.75 for both the bus reached ~58 V and the servo tripped its overvoltage alarm;
+// with 1.0 for both, no alarm. At brake forces more of F*v reaches the bus, so the duty
+// is conservative (1.0). The budget stays at 1.0 (tested state) until a test with the
+// duty at 1.0 and the budget at 0.75 shows whether the faster pedal is safe as well.
+#define REGEN_BUDGET_EFFICIENCY_01 1.0f
+#define REGEN_DUTY_EFFICIENCY_01 1.0f
 
-        if (predictedRegenPower_W > MAX_REGEN_POWER_W) {
-            // Clamp acceleration to softly cut off the power peak
-            float powerScale = MAX_REGEN_POWER_W / predictedRegenPower_W;
-            acceleration_mps2 *= powerScale;
-        }
+// Kinetic energy of the motor. When the servo decelerates, the rotor's kinetic energy
+// returns to the bus on top of the foot power: J_total = J_rotor * (1 + inertia ratio)
+// = 0.40 kg*cm^2 (Pr7.13) * (1 + 1.10) (Pr0.04), i.e. ~133 kg at the sled with a 5 mm
+// spindle, ~10 J at 0.39 m/s. A hard stop at the end of travel returned it within
+// ~20-30 ms and drove the bus to 79 V (2026-10-03).
+#define SERVO_ROTOR_INERTIA_KGM2 4.0e-5f
+#define SERVO_INERTIA_RATIO_01 1.10f
+// share of the kinetic energy that reaches the bus (copper losses at high braking current)
+#define REGEN_KINETIC_EFFICIENCY_01 0.8f
+// The servo follows the commanded velocity with a lag of ~(1 - VFF) / Kp
+// (Pr1.10 = 30 %, Pr1.00 = 60 1/s: ~12 ms; latency check: ~10-14 ms).
+#define SERVO_FOLLOW_TIME_CONSTANT_S 0.012f
+// Energy a stop may return without overvoltage: bus capacitors 36 -> ~55 V (~0.9 J) plus
+// the servo bleeder 40 W over ~30 ms (~1.2 J); plus the brake resistor's power over the
+// stop duration when it is available.
+#define STOP_ENERGY_SERVO_J 2.0f
+#define STOP_DURATION_S 0.03f
+// deceleration the approach cap assumes (= the model's acceleration clamp)
+#define STOP_APPROACH_DECELERATION_MPS2 30.0f
+// Legacy limit on the model force (rudder strategy)
+#define REGEN_POWER_MODEL_FORCE_W 40.0f
+
+static inline IRAM_ATTR_FLAG float CalcRegenVelocityLimit(
+    float totalOpposingForce_N,
+    float totalTravel_m,
+    float maxSledPos_m,
+    float spindlePitch_mm,
+    float vModelPos_01,
+    float softEndstopTravel_m,
+    uint32_t stepsPerMotorRevolution_u32,
+    float maxRegenPower_W = REGEN_POWER_MODEL_FORCE_W)
+{
+    // 1. SAFE REGENERATIVE POWER LIMIT
+    // P_regen = F_oppose * v_pedal. Safe dissipation limit before DC bus overvoltage
+    // (servo bleeder, plus the external brake resistor when the caller budgets for it).
+    float safeOpposingForce_N = max(totalOpposingForce_N, 1.0f);
+    float vMaxPower_mps = maxRegenPower_W / safeOpposingForce_N;
+
+    // 2. BACK-EMF VOLTAGE / MOTOR RPM LIMIT
+    // Pr7.08 = 56 (5.6 V_rms/krpm). Derive the safe RPM ceiling from the same
+    // step-rate limit the rest of the motion pipeline actually uses
+    // (MAXIMUM_STEPPER_SPEED_U32, see maxPhysicalSledVel_mps above), instead of a
+    // separate hardcoded number that can silently drift out of sync with it.
+    const float MAX_SAFE_MOTOR_RPM =
+        (stepsPerMotorRevolution_u32 > 0)
+            ? (float)MAXIMUM_STEPPER_SPEED_U32 * 60.0f /
+                  (float)stepsPerMotorRevolution_u32
+            : 3600.0f; // conservative fallback if steps/rev isn't configured yet
+    float safePitch_mm = (spindlePitch_mm > 0.0f) ? spindlePitch_mm : 5.0f;
+    float vSledMaxBemf_mps = (MAX_SAFE_MOTOR_RPM * safePitch_mm) / 60000.0f; // mm/min to m/s
+    float vPedalMaxBemf_mps = vSledMaxBemf_mps * (totalTravel_m / max(maxSledPos_m, 0.0001f));
+
+    // Combine power limit and BEMF limit
+    float maxRegenVel_mps = min(vMaxPower_mps, vPedalMaxBemf_mps);
+
+    // 3. SOFT ENDSTOP CUSHIONING / TAPER
+    // When pressing into the soft endstop (> 1.0), progressively taper down allowable forward speed
+    // proportionally to penetration depth, smoothly arresting motion without abrupt power dumping.
+    if (vModelPos_01 > 1.0f) {
+        float penetration_m = (vModelPos_01 - 1.0f) * totalTravel_m;
+        float safeEndstopTravel_m = max(softEndstopTravel_m, 0.001f);
+        float penetration_01 = constrain(penetration_m / safeEndstopTravel_m, 0.0f, 1.0f);
+        // Taper down to 15% of max velocity at full endstop penetration
+        float taper = 1.0f - (0.85f * penetration_01);
+        maxRegenVel_mps *= taper;
     }
+
+    return maxRegenVel_mps;
 }
 
 // =========================================================
@@ -534,44 +857,33 @@ static inline IRAM_ATTR_FLAG void ApplyRegenPowerClamping(
  * @param config_st Pointer to the pedal's configuration structure.
  * @param effectOffsets_st High-frequency offsets (ABS vibrations, etc.).
  * @param endstopBehavior_st Configuration for the soft endstop feel.
- * @param rudderOffsets_st Rudder specific offset parameters.
  * @param debugState_st Optional pointer to a struct to output internal variables for debugging. Default is nullptr.
- * @return int32_t The next absolute target position in steps for the stepper motor driver.
+ * @param admittanceStates_pst Optional pointer to state tracking struct.
+ * @return float The next absolute target position in steps for the stepper motor driver.
  */
 float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float loadCellReadingKg_fl32, 
   StepperWithLimits* stepper, 
   ForceCurveInterpolated* forceCurve, 
-  const DapCalculationVariables_t* calc_st, 
+  DapCalculationVariables_t* calc_st, 
   DapConfig_t* config_st, 
   EffectOffsets_t effectOffsets_st, 
   EndstopBehavior_t endstopBehavior_st, 
-  RudderOffsets_t rudderOffsets_st,
   AdmittanceDebugState_t* debugState_st = nullptr,
-  AdmittanceStates_t *admittanceStates_pst = nullptr)
+  AdmittanceStates_t *admittanceStates_pst = nullptr,
+  float holdProbability_01 = 0.0f,
+  float cycleTime_s = 0.0f,
+  float brakeResistorAvailable_01 = 0.0f,
+  float busVoltage_V = 38.0f,
+  float* brakeResistorDutyRequest_01 = nullptr)
 {
-
-  
-
-  // Time step for integration (seconds), but use actual loop time for better performance and stability.
-  // But make sure to protect against wrapsound of the timer by using uint64_t and checking for large dt values.
-  /*uint64_t currentTimeUs = esp_timer_get_time();
-  static uint64_t lastTimeUs = 0;
-  if (lastTimeUs == 0) {
-    lastTimeUs = currentTimeUs;
-  }
-  float dt_s = ((float)currentTimeUs - (float)lastTimeUs) * 1e-6f;
-  if (dt_s > 1.0f || dt_s <= 0.0f) {
-    // If the time step is too large (e.g., due to timer wraparound or long loop delay), reset it to a default value to prevent instability.
-    dt_s = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
-  }
-  lastTimeUs = currentTimeUs;
-  */
-
-
   // --- 1. PHYSICAL PARAMETERS & CONFIGURATION ---
-  // Time step for integration (seconds). We use a constant interval for improved numerical stability.
-  float dt_s = ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
+  // Time step for integration (seconds): the measured cycle time when given (already clamped by
+  // the caller), so the model advances in real time. With a fixed step, every late cycle slowed the
+  // setpoint in real time and the servo moved start-stop ("grain"). The mass-damper integrator is stable
+  // for any step length; otherwise fall back to the nominal interval.
+  float dt_s = (cycleTime_s > 0.0f) ? cycleTime_s
+                                    : ((float)REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64) * 1e-6f;
   const float GRAVITY_N_KG = 9.81f; // Conversion constant for Kg to Newtons
 
   // Convert virtual mass and damping from user configuration percentages
@@ -581,22 +893,10 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Constrain parameters to safe operational ranges
   virtualMass_kg = constrain(virtualMass_kg, 0.2f, 5.0f);
   dampingRatio_zeta = constrain(dampingRatio_zeta, 0.5f, 5.0f); 
-
-
-
-  // --- 2. RUDDER CONFIG ---
-  float rudderForce_N = 0.0f;
-  if (rudderOffsets_st.isRudderMode) 
-  { 
-    float rudderCenter = rudderOffsets_st.centerPosition_01 + rudderOffsets_st.trimOffset_01;
-
-    float rudderForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, constrain(rudderCenter, 0.0f, 1.0f));
-    rudderForce_N = rudderForceRaw_kg * GRAVITY_N_KG;
-
-  }
+  const float baseMass_kg = virtualMass_kg; 
 
   // =========================================================
-  // --- 4. PHYSICAL GEOMETRY (FORWARD KINEMATICS & TASK SPACE) ---
+  // --- 2. PHYSICAL GEOMETRY (FORWARD KINEMATICS & TASK SPACE) ---
   // =========================================================
   // We transform the Actuator Space (Linear Sled Position) into Task Space 
   // (Rotational Pedal Arc Length). This allows the entire Admittance Model 
@@ -618,8 +918,12 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float actualSledPos_mm = actualSledPosFraction_01 * maxSledPos_mm;
 
   // 2. Forward Kinematics: Angles at the boundaries and current physical state
-  float angleAtMinSled_deg = pedalInclineAngleDeg(minSledPos_mm, config_st);
-  float angleAtMaxSled_deg = pedalInclineAngleDeg(maxSledPos_mm, config_st);
+  // travel-end angles only change with the configuration: cached, recomputed exactly whenever
+  // the sled travel or a pedal length changes (identical values to a direct call)
+  static PedalAngleCache_t s_angleAtMinSledCache_st;
+  static PedalAngleCache_t s_angleAtMaxSledCache_st;
+  float angleAtMinSled_deg = pedalInclineAngleDegCached(minSledPos_mm, config_st, s_angleAtMinSledCache_st);
+  float angleAtMaxSled_deg = pedalInclineAngleDegCached(maxSledPos_mm, config_st, s_angleAtMaxSledCache_st);
   float currentAngle_deg = pedalInclineAngleDeg(actualSledPos_mm, config_st);
 
   // 3. Convert Angles to Arc Length (Task Space in meters)
@@ -634,66 +938,129 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   if (fabsf(angleAtMaxSled_deg - angleAtMinSled_deg) > 0.001f) {
       actualPosFraction_01 = (currentAngle_deg - angleAtMinSled_deg) / (angleAtMaxSled_deg - angleAtMinSled_deg);
   }
+  // unclamped copy for the leash: in the soft endstop and with effect offsets the sled is
+  // legitimately outside [0, 1]
+  const float actualPosFractionRaw_01 = actualPosFraction_01;
   actualPosFraction_01 = constrain(actualPosFraction_01, 0.0f, 1.0f);
 
-
-  // --- 5. ELASTOMER PHYSICS & SPRING REACTION (Hunt-Crossley Model) ---
-  float displacement_01 = constrain(g_vModelPos_01, 0.0f, 1.0f);
-
-  // 1. Static force from the Cubic Spline (Non-linear stiffness)
-  float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, displacement_01);
-  float staticSpringForce_N = springForceRaw_kg * GRAVITY_N_KG;
-
-  // Subtract rudder spring force (if active)
-  if (rudderOffsets_st.isRudderMode) {
-      staticSpringForce_N -= rudderForce_N;
+  // Re-anchor the model when the travel changes (pedal start/end position, endstops): the model
+  // position is a fraction of the travel, so the old fraction would map to a different sled
+  // position and the first command would jump by up to the hard leash.
+  static int32_t s_lastSoftEndstopMin_i32 = 0;
+  static int32_t s_lastSoftEndstopMax_i32 = 0;
+  if ((calc_st->softEndstopMinStepperPos_i32 != s_lastSoftEndstopMin_i32) ||
+      (calc_st->softEndstopMaxStepperPos_i32 != s_lastSoftEndstopMax_i32) ||
+      g_admittanceReanchorRequest_b) {
+    g_admittanceReanchorRequest_b = false;
+    s_lastSoftEndstopMin_i32 = calc_st->softEndstopMinStepperPos_i32;
+    s_lastSoftEndstopMax_i32 = calc_st->softEndstopMaxStepperPos_i32;
+    g_vModelPos_01 = actualPosFraction_01;
+    g_vModelVel_mps = 0.0f;
+    g_lastNetForceTustin_N = 0.0f;
+    g_servoVelEst_mps = 0.0f;
   }
 
-  // The spring force is purely static from the spline now (hysteresis is handled via damping)
-  float springForce_N = staticSpringForce_N;
+  // --- 3. ELASTOMER PHYSICS & SPRING REACTION (Hunt-Crossley Model) ---
+  // Coupled Spring Displacement: We blend the virtual target position with the actual
+  // physical mechanism position. This prevents the virtual model from prematurely hitting
+  // a steep force wall (e.g. 40kg) and bouncing back violently while the physical servo is
+  // still traveling forward to catch up.
+  float effectiveDisplacement_01 = constrain(0.65f * g_vModelPos_01 + 0.35f * actualPosFraction_01, 0.0f, 1.0f);
+  float avgStiffness_N_m = (calc_st->forceRange_fl32 * GRAVITY_N_KG) / max(totalTravel_m, 0.0001f);
 
-  // Ensure springForce_N is not negative just in case rudder offsets push it below 0
-  if (springForce_N < 0.0f) {
-      springForce_N = 0.0f;
-  }
-  // =========================================================
+  // Standard Sim Racing Pedal (Throttle / Brake / Clutch)
+  float springForceRaw_kg = forceCurve->EvalForceCubicSpline(config_st, calc_st, effectiveDisplacement_01);
+  float springForce_N = max(springForceRaw_kg * GRAVITY_N_KG, 0.0f);
 
-  // Calculate local physical spring stiffness (N/m) for dynamic damping tuning (AOM and Tustin).
-  // We strictly use the gradient of the static spline here to ensure controller stability.
-  float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, displacement_01, false);
-  float localStiffness_N_m = max(localStiffness_kg_step * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG, 1.0f);
+  float localStiffness_kg_step = forceCurve->EvalForceGradientCubicSpline(config_st, calc_st, effectiveDisplacement_01, false);
+  float gradStiffness_N_m = fabsf(localStiffness_kg_step) * (travelSteps_cnt / max(totalTravel_m, 0.0001f)) * GRAVITY_N_KG;
+  float localStiffness_N_m = max(gradStiffness_N_m, max(0.3f * avgStiffness_N_m, 1.0f));
 
   // =========================================================
-  // 3. VISCOELASTIC ELASTOMER HYSTERESIS (Hunt-Crossley model)
+  // --- 4. VISCOELASTIC ELASTOMER HYSTERESIS (Hunt-Crossley model) ---
   // =========================================================
-  // Normalize the GUI parameter from [0, 100] to [0.0, 1.0].
-  // We square it (ratio * ratio) so the slider provides much finer control 
-  // at the lower end, where small damping changes are felt the most.
   float progressionRatio = (float)constrain( config_st->payloadPedalConfig_st.dampingProgression_u8, 0, 100) ;
   float progression_01 = progressionRatio * progressionRatio; 
-
-  // Calculate the critical damping of the system at this exact position: C_c = 2 * sqrt(m * k)
-  // This brilliantly scales the rubber friction to the user's chosen mass and local spline stiffness!
   float localCriticalDamping_Ns_m = 2.0f * sqrtf(virtualMass_kg * localStiffness_N_m);
-
-  // Tuning parameter: How many times the critical damping can the elastomer add 
-  // at 100% slider value and full pedal compression?
-  // 4.0x is a great sweet spot for simulating extremely heavy, dense elastomers.
   const float MAX_ELASTOMER_MULTIPLIER = 4.0f; 
-
-  // Final elastomer viscosity coefficient
   float ELASTOMER_VISCOSITY_COEFFICIENT = progression_01 * (MAX_ELASTOMER_MULTIPLIER * localCriticalDamping_Ns_m);
+  float elastomerDamping_Ns_m = ELASTOMER_VISCOSITY_COEFFICIENT * effectiveDisplacement_01;
 
-  // Calculate equivalent damping: C_eq = C_elastomer * x
-  // This will be perfectly integrated by the Tustin solver later.
-  float elastomerDamping_Ns_m = ELASTOMER_VISCOSITY_COEFFICIENT * displacement_01;
-  // =========================================================
+  // --- 5. EFFECT OFFSETS & TOTAL FORCE ---
+  // Feedforward Control (Inverse Dynamics)
+  // We derive velocity and acceleration internally from the effect step offset
+  // using cascaded EMA filters to avoid numerical explosions.
+  
+  // 1. Convert effect steps to task-space meters
+  float metersPerStep = 0.0f;
+  if (travelSteps_cnt > 0.0001f) {
+      metersPerStep = totalTravel_m / travelSteps_cnt;
+  }
+  float rawEffectPos_m = effectOffsets_st.forceOffset_Steps_fl32 * metersPerStep;
 
-  // --- 6. EFFECT OFFSETS & TOTAL FORCE ---
-  // convert position offset to force offset using the local stiffness at the current position on the force curve
-  float effectPositionToForceConversion_kg = effectOffsets_st.forceOffset_Steps_fl32 * localStiffness_kg_step;
-  float effectForceOffset_fl32 = effectOffsets_st.forceOffset_kg_fl32;// + effectPositionToForceConversion_kg;
-  float externalForce_N = (loadCellReadingKg_fl32 + effectForceOffset_fl32) * GRAVITY_N_KG;
+  // 2. Smooth the position to avoid 60Hz staircase Dirac delta spikes
+  const float EFFECT_TAU_POS = 0.005f; // 5ms smoothing
+  float alpha_pos = 1.0f - expf(-dt_s / EFFECT_TAU_POS);
+  g_smoothedEffectPos_m = (alpha_pos * rawEffectPos_m) + ((1.0f - alpha_pos) * g_smoothedEffectPos_m);
+
+  // 3. Derive and smooth Velocity
+  float rawEffectVel_mps = (g_smoothedEffectPos_m - g_prevSmoothedEffectPos_m) / dt_s;
+  g_prevSmoothedEffectPos_m = g_smoothedEffectPos_m;
+  
+  const float EFFECT_TAU_VEL = 0.005f; // 5ms smoothing
+  float alpha_vel = 1.0f - expf(-dt_s / EFFECT_TAU_VEL);
+  g_smoothedEffectVel_mps = (alpha_vel * rawEffectVel_mps) + ((1.0f - alpha_vel) * g_smoothedEffectVel_mps);
+
+  // 4. Derive and smooth Acceleration
+  float rawEffectAcc_mps2 = (g_smoothedEffectVel_mps - g_prevSmoothedEffectVel_mps) / dt_s;
+  g_prevSmoothedEffectVel_mps = g_smoothedEffectVel_mps;
+
+  const float EFFECT_TAU_ACC = 0.010f; // 10ms smoothing
+  float alpha_acc = 1.0f - expf(-dt_s / EFFECT_TAU_ACC);
+  g_smoothedEffectAcc_mps2 = (alpha_acc * rawEffectAcc_mps2) + ((1.0f - alpha_acc) * g_smoothedEffectAcc_mps2);
+
+  // 5. Calculate Inverse Dynamics Feedforward Force (Newton)
+  // F_effekt = K*x + C*v + M*a
+  float idealBaseDamping_Ns_m_ff = dampingRatio_zeta * 2.0f * sqrtf(virtualMass_kg * localStiffness_N_m);
+  
+  float effectInjectedForce_N = (g_smoothedEffectPos_m * localStiffness_N_m) 
+                              + (g_smoothedEffectVel_mps * idealBaseDamping_Ns_m_ff)
+                              + (g_smoothedEffectAcc_mps2 * virtualMass_kg);
+
+  // 6. Final total force (Loadcell + Static Effect Weight + Dynamic Effect Force)
+  float rawPilotForce_N = (loadCellReadingKg_fl32 * GRAVITY_N_KG);
+  // no deadzone here: the loadcell calibration already removes mean + 3 sigma of the idle reading
+  float cleanPilotForce_N = max(rawPilotForce_N, 0.0f);
+  static float s_filteredPilotForce_N = 0.0f;
+  const float PILOT_FORCE_TAU = 0.025f; // 25ms smoothing
+  float pilot_alpha = 1.0f - expf(-dt_s / PILOT_FORCE_TAU);
+  s_filteredPilotForce_N = (pilot_alpha * cleanPilotForce_N) + ((1.0f - pilot_alpha) * s_filteredPilotForce_N);
+
+  calc_st->currentPedalForce_N_fl32 = s_filteredPilotForce_N;
+
+  // Contact Impedance Damping (Force Derivative Feedback):
+  // When the servo accelerates into the user's stiff foot/shoe, high-frequency force spikes
+  // occur (dF/dt > 5000 N/s). A virtual damper at the foot-pedal contact adds tau * dF/dt:
+  // against a held foot F = k_c * (x_foot - x), so dF/dt = -k_c * v and the term acts as
+  // damping tau * k_c. (Subtracting it, F - tau * dF/dt ~ F(t - tau), was a 4 ms delay and
+  // gave negative damping of tau * k_c, ~40 Ns/m at a 10 N/mm heel contact.)
+  static float s_prevPilotForce_N = 0.0f;
+  static float s_filteredForceRate_Nps = 0.0f;
+  float rawForceRate_Nps = (cleanPilotForce_N - s_prevPilotForce_N) / dt_s;
+  s_prevPilotForce_N = cleanPilotForce_N;
+
+  const float FORCE_RATE_TAU = 0.008f; // 8ms smoothing for derivative
+  float alpha_rate = 1.0f - expf(-dt_s / FORCE_RATE_TAU);
+  s_filteredForceRate_Nps = (alpha_rate * rawForceRate_Nps) + ((1.0f - alpha_rate) * s_filteredForceRate_Nps);
+
+  const float K_FORCE_DERIV_S = 0.004f; // 4ms contact damping time
+  float contactDampedPilotForce_N = cleanPilotForce_N
+                                  + ((float)CONTACT_DAMPING_DERIV_SIGN * K_FORCE_DERIV_S * s_filteredForceRate_Nps);
+  if (contactDampedPilotForce_N < 0.0f) {
+    contactDampedPilotForce_N = 0.0f;
+  }
+
+  float externalForce_N = contactDampedPilotForce_N + (effectOffsets_st.forceOffset_kg_fl32 * GRAVITY_N_KG) + effectInjectedForce_N;
 
   // --- 7. DYNAMIC TRAVEL LIMITS ---
   float lowerTravelLimit_01 = 0.0f;
@@ -706,30 +1073,47 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
   // --- 9. ADMITTANCE OSCILLATION DETECTOR (Landi et al.) ---
   // We calculate base damping with un-adapted mass for the physics ideal-model reference
-  float idealBaseDamping_Ns_m = dampingRatio_zeta * 2.0f * sqrtf(virtualMass_kg * currentStiffness_N_m);
+  float idealBaseDamping_Ns_m = dampingRatio_zeta * 2.0f * sqrtf(baseMass_kg * currentStiffness_N_m);
   
   // Use the exact restoring force (spline + endstop) instead of linear stiffness assumption
   float totalSpringReaction_N = springForce_N + softEndstopForce_N;
   
-  bool hasActiveEffect = (effectOffsets_st.forceOffset_kg_fl32 != 0.0f) && (effectOffsets_st.forceOffset_Steps_fl32 != 0);
+  // Effect active: held for EFFECT_ACTIVE_HOLD_S after the last non-zero offset. The vibration
+  // effects pass through exactly zero twice per period (the RPM offset is truncated to int), so
+  // the instantaneous test dropped out for ~1 ms each time and let stiction, the contact
+  // oscillation detector and the tracking-error damping switch on mid-vibration.
+  const float EFFECT_ACTIVE_HOLD_S = 0.1f;
+  static float s_effectActiveHoldRemaining_s = 0.0f;
+  if ((effectOffsets_st.forceOffset_kg_fl32 != 0.0f) || (effectOffsets_st.forceOffset_Steps_fl32 != 0.0f)) {
+    s_effectActiveHoldRemaining_s = EFFECT_ACTIVE_HOLD_S;
+  } else {
+    s_effectActiveHoldRemaining_s = max(0.0f, s_effectActiveHoldRemaining_s - dt_s);
+  }
+  bool hasActiveEffect = (s_effectActiveHoldRemaining_s > 0.0f);
 
-  // Call the detector with max force from config to calculate dynamic threshold
-  bool isOscillating = DetectAdmittanceOscillation(
-      externalForce_N, actualPosFraction_01, totalTravel_m, 
-      totalSpringReaction_N, idealBaseDamping_Ns_m, virtualMass_kg, 
-      dt_s, config_st->payloadPedalConfig_st.maxForce_fl32, debugState_st, hasActiveEffect
-  );
+  // Landi detector: only for telemetry (physical kinematics, expected force). Its threshold (25 N)
+  // and power gating missed the heel-contact oscillation (~3.4 N at 16 Hz), and the mass
+  // adaptation it drove does not stabilize a stiff contact (simulation).
+  // Only evaluated when telemetry is requested (debugState_st given), to save CPU time.
+  if (debugState_st != nullptr) {
+    DetectAdmittanceOscillation(
+        externalForce_N, actualPosFraction_01, totalTravel_m,
+        totalSpringReaction_N, idealBaseDamping_Ns_m, baseMass_kg,
+        dt_s, config_st->payloadPedalConfig_st.maxForce_fl32, debugState_st, hasActiveEffect
+    );
+  }
 
-    // --- 10. PASSIVE PARAMETER ADAPTATION (Position Gated) ---
-  AdaptVirtualMass(isOscillating
-    , dt_s
-    , virtualMass_kg
-    , virtualMass_kg
-    , hasActiveEffect
-    , actualPosFraction_01);
+  // --- 10. CONTACT OSCILLATION DAMPING (replaces the virtual mass adaptation) ---
+  bool isOscillating = false;
+  float contactOscBandPeak_N = 0.0f;
+  float contactOscDampingMultiplier = UpdateContactOscillationDamping(
+      cleanPilotForce_N, g_vModelVel_mps, dt_s, hasActiveEffect, isOscillating, contactOscBandPeak_N);
+  if (debugState_st != nullptr) {
+      debugState_st->admittancePsi_N = contactOscBandPeak_N; // telemetry: band-pass half-wave peak
+  }
 
   // --- 11. DYNAMIC ADAPTIVE DAMPING ---
-  // (Re-calculate active damping with the new adapted mass)
+  // (base damping, tracking-error and elastomer damping; the virtual mass is not adapted)
   float activeDamping_Ns_m = CalcActiveDamping(dampingRatio_zeta
     , virtualMass_kg
     , currentStiffness_N_m
@@ -737,12 +1121,62 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
     , actualPosFraction_01
     , stepper->getServosPosError()
     , travelSteps_cnt
-    , effectForceOffset_fl32
+    , hasActiveEffect
     , config_st->payloadPedalConfig_st.dampingProgression_u8
     , springForce_N
     , g_vModelVel_mps
-    , ELASTOMER_MODEL_HUNT_CROSSLEY//ELASTOMER_MODEL_STRESS_PROPORTIONAL // Defaulting to the new advanced model
-    , config_st->payloadPedalConfig_st.maxForce_fl32); 
+    , ELASTOMER_MODEL_HUNT_CROSSLEY
+    , config_st->payloadPedalConfig_st.maxForce_fl32
+    , dt_s
+    , totalTravel_m);
+
+  // raise the damping while a contact oscillation is present (heel held against the pedal)
+  activeDamping_Ns_m *= contactOscDampingMultiplier;
+
+  // =========================================================
+  // NEUER FIX: Bump-Stop Hysteresis (Kinetische Energie absorbieren)
+  // =========================================================
+  // Wenn das Pedal tief im Soft-Endstop ist, müssen wir die massive gespeicherte 
+  // Federenergie dämpfen, um den "Trampolin-Kickback" zu verhindern.
+  if (g_vModelPos_01 > 1.0f && endstopBehavior_st.travelRange_mm_fl32 > 0.01f) {
+      
+      // Wie tief sind wir im Endanschlag? (0.0 = Start, 1.0 = absolutes Limit)
+      float softEndstopTravel_m = endstopBehavior_st.travelRange_mm_fl32 * 0.001f;
+      float deflection_m = (g_vModelPos_01 - 1.0f) * totalTravel_m;
+      float endstopDepth_01 = constrain(deflection_m / max(softEndstopTravel_m, 0.001f), 0.0f, 1.0f);
+      
+      // Berechne die kritische Dämpfung exakt für die harte Endanschlag-Feder
+      float endstopStiffness_N_m = endstopBehavior_st.stiffnessAtMaxTravel_Npermm_fl32 * 1000.0f;
+      float endstopCriticalDamping_Ns_m = 2.0f * sqrtf(virtualMass_kg * endstopStiffness_N_m);
+      
+      // ASYMMETRISCHE DÄMPFUNG (Das Geheimnis gegen Kickback):
+      // Beim Hineintreten (v > 0) dämpfen wir leicht (Zeta 0.3), damit der Aufprall nicht wie eine Mauer wirkt.
+      // Beim Zurückfedern (v < 0) dämpfen wir extrem stark (Zeta 1.5 -> überdämpft).
+      // Dadurch kriecht das Pedal sanft aus dem Endanschlag heraus, anstatt zurückzufeuern.
+      float targetZeta = (g_vModelVel_mps < 0.0f) ? 1.5f : 0.3f; 
+      
+      float requiredBumpDamping_Ns_m = targetZeta * endstopCriticalDamping_Ns_m * endstopDepth_01;
+      
+      // Überschreibe die globale Dämpfung, wenn der Bump-Stop mehr Dämpfung erfordert
+      if (activeDamping_Ns_m < requiredBumpDamping_Ns_m) {
+          activeDamping_Ns_m = requiredBumpDamping_Ns_m;
+      }
+  }
+
+  // =========================================================
+  // STATISTICAL STICTION (HOLD probability from the IMM force filter)
+  // =========================================================
+  // While the force filter is confident the foot is holding still, extra damping near
+  // zero velocity keeps residual noise from moving the pedal. It fades out with speed,
+  // so presses are unaffected, and enters the Tustin integrator like all other damping.
+  if (holdProbability_01 > 0.0f) {
+    // EXPERIMENTAL, off by default: mixed results in simulation (more jitter after a press)
+    const float HOLD_DAMPING_RATIO = 0.0f;
+    const float HOLD_DAMPING_VELOCITY_BAND_MPS = 0.02f;
+    float velocityWeight_01 = max(0.0f, 1.0f - fabsf(g_vModelVel_mps) / HOLD_DAMPING_VELOCITY_BAND_MPS);
+    float holdCriticalDamping_Ns_m = 2.0f * sqrtf(virtualMass_kg * currentStiffness_N_m);
+    activeDamping_Ns_m += holdProbability_01 * HOLD_DAMPING_RATIO * holdCriticalDamping_Ns_m * velocityWeight_01;
+  }
 
   g_lastActiveDamping_Ns_m = activeDamping_Ns_m;
 
@@ -754,11 +1188,43 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // Minimal Coulomb Friction to prevent micro-hunting (jitter) around the rest position
   const float FRICTION_N = config_st->payloadPedalConfig_st.coulombFrictionIn0p1N_u8 * 0.1f;
   // FIXED CODE: Smooth Coulomb Friction
-  // Create a narrow "fade" band around 0 velocity (+/- 15 mm/s)
+  // Create a narrow "fade" band around 0 velocity (+/- VELOCITY_BAND_MPS), shared by all
+  // integration methods below
   // This smoothly ramps the friction from -1 to +1 across the zero point
   const float VELOCITY_BAND_MPS = 0.030f; // Verbreitert für weicheren Nulldurchgang (verhindert Ruckeln/Schläge bei Richtungswechsel)
   float frictionBlend = constrain(g_vModelVel_mps / VELOCITY_BAND_MPS, -1.0f, 1.0f);
   netForce_N -= (FRICTION_N * frictionBlend);
+
+  // =========================================================
+  // STICTION (stick/slip, Karnopp model)
+  // =========================================================
+  // While holding, the foot's natural tremor (~0.2-0.3 N, 1-15 Hz) moved the pedal back and
+  // forth ~15 times per second; that motion is felt as vibration (a pedal held still is calm).
+  // Damping and the Coulomb term above only scale this motion, since both vanish at v = 0.
+  // Stiction holds the pedal still until the force imbalance exceeds the static friction,
+  // then it slides with the slightly lower kinetic friction. Replay of logged holds: reversals
+  // 17/s -> 0.2-0.5/s, press onset +1.6 ms, hold offset <= F_static / k (~0.3 mm). A kinetic
+  // ratio close to 1 keeps the stick-slip steps of very slow creeping (< 1 N/s) small.
+  // Static friction scales with the foot force (tremor grows with force), but never exceeds
+  // half of it, so the pedal always returns to its rest position when released.
+  // Disabled while effects are active, so small effect forces are never swallowed.
+  const float STICTION_MIN_N = 0.5f;               // static friction at low force
+  const float STICTION_RELATIVE_01 = 0.02f;        // ... growing to 2 % of the foot force
+  const float STICTION_KINETIC_RATIO_01 = 0.85f;   // kinetic / static friction
+  const float STICTION_VELOCITY_MPS = 0.0005f;     // below this the pedal may stick
+  static bool s_isStuck_b = false;
+  float staticFriction_N = 0.0f;
+#ifdef ADMITTANCE_STICTION_ENABLED
+  if (!hasActiveEffect) {
+    staticFriction_N = min(max(STICTION_MIN_N, STICTION_RELATIVE_01 * s_filteredPilotForce_N),
+                           0.5f * s_filteredPilotForce_N);
+  }
+#endif
+  // force that would move the pedal if it were free (without damping and friction)
+  float stictionDriveForce_N = externalForce_N - springForce_N - softEndstopForce_N;
+  if ((staticFriction_N <= 0.0f) || (fabsf(stictionDriveForce_N) > staticFriction_N)) {
+    s_isStuck_b = false; // break away
+  }
 
   // =========================================================
   // Integration approaches (Start)
@@ -768,7 +1234,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   
   // 0 = Explicit Euler (Legacy)
   // 1 = Implicit Backward Euler
-  // 2 = Tustin (Bilinear Transform)
+  // 2 = Exact mass-damper step (exponential integrator, formerly Tustin)
   int integration_method = 2; 
   
   switch(integration_method)
@@ -781,7 +1247,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
       // Minimal Coulomb Friction to prevent micro-hunting (jitter) around the rest position
       // FIXED CODE: Smooth Coulomb Friction
-      float frictionBlendImplicit = constrain(g_vModelVel_mps / 0.015f, -1.0f, 1.0f);
+      float frictionBlendImplicit = constrain(g_vModelVel_mps / VELOCITY_BAND_MPS, -1.0f, 1.0f);
       netForce_without_damping_N -= (FRICTION_N * frictionBlendImplicit);
 
       // =========================================================
@@ -838,7 +1304,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       break;
     }
 
-    case 2: // TUSTIN (BILINEAR TRANSFORM)
+    case 2: // EXACT MASS-DAMPER STEP (formerly TUSTIN)
     {
       // We calculate the net force WITHOUT damping. 
       // Damping will be mathematically modeled perfectly within the IIR filter.
@@ -846,66 +1312,56 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
       // Minimal Coulomb Friction to prevent micro-hunting (jitter) around the rest position
       // FIXED CODE: Smooth Coulomb Friction
-      float frictionBlendTustin = constrain(g_vModelVel_mps / 0.015f, -1.0f, 1.0f);
+      float frictionBlendTustin = constrain(g_vModelVel_mps / VELOCITY_BAND_MPS, -1.0f, 1.0f);
       netForce_without_damping_N -= (FRICTION_N * frictionBlendTustin);
 
-      // =========================================================
-      // TUSTIN (BILINEAR TRANSFORM) MATHEMATICS
-      // =========================================================
-      // Derivation of the discrete IIR Filter for a Mass-Damper system:
-      // We treat the spring as an external force to keep the non-linear
-      // splines intact. Our continuous system is: M*a + C*v = F_netto
-      //
-      // 1. Laplace Transform (S-Domain) to find the transfer function:
-      //    M * s * V(s) + C * V(s) = F(s)
-      //    H(s) = V(s) / F(s) = 1 / (M * s + C)
-      //
-      // 2. Tustin Substitution (Mapping S-Domain to Z-Domain):
-      //    s ≈ (2 / dt) * (1 - z^-1) / (1 + z^-1)
-      //    Let c = 2 / dt.
-      //
-      // 3. Substitute 's' into H(s):
-      //    H(z) = 1 / ( M * c * [(1 - z^-1)/(1 + z^-1)] + C )
-      //    Multiply numerator and denominator by (1 + z^-1):
-      //    H(z) = (1 + z^-1) / ( M * c * (1 - z^-1) + C * (1 + z^-1) )
-      //
-      // 4. Group by z^-1 to form the difference equation denominator:
-      //    H(z) = (1 + z^-1) / ( (M*c + C) + (C - M*c)*z^-1 )
-      //
-      // 5. Define IIR Filter Coefficients (a1, b0, b1):
-      //    A0 = M*c + C
-      //    A1 = C - M*c
-      //    b0 = 1 / A0,  b1 = 1 / A0,  a1 = A1 / A0
-      //
-      // 6. Final Time-Domain Difference Equation:
-      //    v_new = b0 * F_netto_new + b1 * F_netto_old - a1 * v_old
-      // =========================================================
+      // kinetic friction while sliding (direction of motion, or of the drive force at breakaway)
+      if ((staticFriction_N > 0.0f) && !s_isStuck_b) {
+        float slipDirection = (fabsf(g_vModelVel_mps) > STICTION_VELOCITY_MPS)
+                                  ? copysignf(1.0f, g_vModelVel_mps)
+                                  : copysignf(1.0f, stictionDriveForce_N);
+        netForce_without_damping_N -= STICTION_KINETIC_RATIO_01 * staticFriction_N * slipDirection;
+      }
 
-      // Static variable to store the previous force for the IIR filter (z^-1 delay)
-      // Note: If you instantiate this class multiple times (e.g. clutch + brake), 
-      // you should move this variable into the class header or calculation struct!
-      static float g_lastNetForceTustin_N = 0.0f;
-
-      // Calculate the Tustin constant 'c'
-      float c_tustin = 2.0f / dt_s;
-  
-      // Calculate denominator terms A0 and A1
-      float A0 = (virtualMass_kg * c_tustin) + activeDamping_Ns_m;
-      float A1 = activeDamping_Ns_m - (virtualMass_kg * c_tustin);
-  
-      // Calculate final IIR filter coefficients
-      // Safeguard against division by zero just in case
+      // =========================================================
+      // EXACT MASS-DAMPER STEP (exponential integrator)
+      // =========================================================
+      // The spring is treated as an external force to keep the non-linear splines intact.
+      // Continuous system: M*a + C*v = F_netto, with F_netto averaged over the step
+      // (F_avg = (F_new + F_old) / 2, the same force memory as the former Tustin filter).
+      // Exact solution over one step for a constant F_avg:
+      //    v_new = e * v_old + (1 - e) * F_avg / C,   e = exp(-C * dt / M)
+      // The pole e is always in (0, 1). Tustin's pole (1 - r) / (1 + r), r = C * dt / (2M),
+      // turns negative for r > 1 (high damping, low mass, long cycle): the velocity then
+      // flipped sign every cycle (Nyquist buzz). For small r both agree to second order.
+      // For C * dt / M -> 0 the limit is v_old + F_avg * dt / M.
+      // =========================================================
       float new_vModelVel_mps = g_vModelVel_mps;
-      if (fabsf(A0) > 1e-5) 
+      float averageNetForce_N = 0.5f * (netForce_without_damping_N + g_lastNetForceTustin_N);
+      if (virtualMass_kg > 1e-5f)
       {
-          float b0 = 1.0f / A0;
-          float b1 = 1.0f / A0;
-          float a1 = A1 / A0;
+          float dampingRate_1 = activeDamping_Ns_m * dt_s / virtualMass_kg;
+          if (dampingRate_1 > 1e-4f) {
+              float decay_01 = expf(-dampingRate_1);
+              new_vModelVel_mps = decay_01 * g_vModelVel_mps
+                                + (1.0f - decay_01) * averageNetForce_N / activeDamping_Ns_m;
+          } else {
+              new_vModelVel_mps = g_vModelVel_mps + averageNetForce_N * dt_s / virtualMass_kg;
+          }
+      }
 
-          // Compute the new ideal velocity using the difference equation
-          new_vModelVel_mps = (b0 * netForce_without_damping_N) + 
-                              (b1 * g_lastNetForceTustin_N) - 
-                              (a1 * g_vModelVel_mps);
+      // Stick: stay stuck, or stick when the motion stops or reverses while the drive force
+      // is below the static friction. Friction then balances the drive force exactly, so the
+      // pedal holds still and the integrator memory sees a net force of zero.
+      if (staticFriction_N > 0.0f) {
+        bool isStoppingOrReversing = ((new_vModelVel_mps * g_vModelVel_mps) <= 0.0f) ||
+                                     (fabsf(new_vModelVel_mps) < STICTION_VELOCITY_MPS);
+        if (s_isStuck_b ||
+            (isStoppingOrReversing && (fabsf(stictionDriveForce_N) <= staticFriction_N))) {
+          s_isStuck_b = true;
+          new_vModelVel_mps = 0.0f;
+          netForce_without_damping_N = 0.0f;
+        }
       }
 
       // Store the current net force for the next integration cycle (z^-1)
@@ -913,7 +1369,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
 
       // Reconstruct the effective acceleration for this time step.
       // This is necessary so the existing limits (Regen clamping, hard max accel) 
-      // can operate unmodified on the Tustin output.
+      // can operate unmodified on the integrator output.
       acceleration_mps2 = (new_vModelVel_mps - g_vModelVel_mps) / dt_s;
 
       break;
@@ -933,20 +1389,15 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // =========================================================
 
   // Hard Clamping of acceleration to prevent limit cycles (Hunting)
-  const float MAX_ACCEL_MPS2 = 50.0f; 
+  const float MAX_ACCEL_MPS2 = 30.0f; 
   acceleration_mps2 = constrain(acceleration_mps2, -MAX_ACCEL_MPS2, MAX_ACCEL_MPS2);
-
-  // Predictive EMF Reduction (Regenerative Power Clamping)
-  ApplyRegenPowerClamping(virtualMass_kg
-    , g_vModelVel_mps
-    , acceleration_mps2);
 
   // Velocity Integration
   g_vModelVel_mps += acceleration_mps2 * dt_s;
 
-  // --- 13. VELOCITY CHOKING (STABILITY PROTECTION) ---
-  // Limit the movement speed if the system becomes unstable.
-  float velocityLimit_01 = 1.0f; // Up to 70% speed reduction
+  // --- 13. VELOCITY CHOKING & REGENERATIVE EMF GOVERNOR ---
+  // Limit the movement speed if the system becomes unstable or generates excessive regen power.
+  float velocityLimit_01 = 1.0f; // speed scale (currently no reduction)
   
   float maxPhysicalSledVel_mps = 0.8f; 
   if (calc_st->stepsPerMotorRevolution_u32 > 0) {
@@ -959,26 +1410,128 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float maxPedalArcVel_mps = maxPhysicalSledVel_mps * (totalTravel_m / maxSledPos_m);
   float dynamicSpeedLimit = maxPedalArcVel_mps * velocityLimit_01;
   
-  g_vModelVel_mps = constrain(g_vModelVel_mps, -dynamicSpeedLimit, dynamicSpeedLimit);
+  // Regenerative Power & Back-EMF Clamping:
+  // Moving forward (v > 0) the motor brakes the foot and converts its mechanical power into
+  // electrical energy, P = F * v. The motor holds the MEASURED pedal force, which exceeds the
+  // model force (spring + endstop + damping) while the pedal accelerates, so the larger of the
+  // two is used. Budget: what the servo absorbs by itself, plus the external brake resistor's
+  // share while it is enabled and thermally available (see CalcRegenVelocityLimit).
+  float modelOpposingForce_N = springForce_N + softEndstopForce_N + fabsf(dampingForce_N);
+  float totalOpposingForce_N = max(modelOpposingForce_N, cleanPilotForce_N);
+  float softEndstopTravel_m = endstopBehavior_st.travelRange_mm_fl32 * 0.001f;
+  float spindlePitch_mm = (float)config_st->payloadPedalConfig_st.spindlePitch_mmPerRev_u8;
+  brakeResistorAvailable_01 = constrain(brakeResistorAvailable_01, 0.0f, 1.0f);
+  // brake resistor from the config (Ohm; 0 = BRAKE_RESISTOR_OHMS)
+  const float brakeResistor_Ohm =
+      (config_st->payloadPedalConfig_st.brakeResistorResistance_Ohm_u8 > 0)
+          ? (float)config_st->payloadPedalConfig_st.brakeResistorResistance_Ohm_u8
+          : BRAKE_RESISTOR_OHMS;
+  const float brakeResistorFullOnPower_W =
+      (max(busVoltage_V, 16.0f) * max(busVoltage_V, 16.0f)) / brakeResistor_Ohm;
+  // the resistor's share is capped at 80 % of its full-on power, so the duty keeps
+  // headroom (a larger resistance takes less power)
+  const float brakeResistorRegenPower_W =
+      min(ADMITTANCE_REGEN_POWER_BRAKE_RESISTOR_W, 0.8f * brakeResistorFullOnPower_W);
+  // electrical budget (servo + resistor share) as mechanical foot power F*v
+  float regenPowerBudget_W = (ADMITTANCE_REGEN_POWER_SERVO_W
+                              + brakeResistorAvailable_01 * brakeResistorRegenPower_W)
+                           / REGEN_BUDGET_EFFICIENCY_01;
+  if (config_st->payloadPedalConfig_st.enableBrakeResistor_u8 ==
+      BRAKE_RESISTOR_MODE_HARDWARE_CIRCUIT_U8) {
+    // the hardware circuit absorbs the regen power, no software budget needed
+    regenPowerBudget_W = ADMITTANCE_REGEN_POWER_HARDWARE_CIRCUIT_W;
+  }
+
+  float maxRegenVel_mps = CalcRegenVelocityLimit(
+      totalOpposingForce_N,
+      totalTravel_m,
+      maxSledPos_m,
+      spindlePitch_mm,
+      g_vModelPos_01,
+      softEndstopTravel_m,
+      calc_st->stepsPerMotorRevolution_u32,
+      regenPowerBudget_W
+  );
+
+  float forwardSpeedLimit = min(dynamicSpeedLimit, maxRegenVel_mps);
+
+  // Kinetic-energy limit on the approach to the end of travel: the model stops at the
+  // travel limit within a few cycles, and the servo then returns the kinetic energy of
+  // the motor (~10 J at full speed) within ~20-30 ms. Limit the speed by the distance to
+  // the limit so the stop returns at most what the servo (and the brake resistor, when
+  // available) can absorb: v_max = sqrt(v_stop^2 + 2 * a * d).
+  const float sledPerArc_01 = maxSledPos_m / max(totalTravel_m, 0.0001f);
+  const float sledMetersPerRad = max(spindlePitch_mm, 1.0f) * 0.001f / (2.0f * PI);
+  const float servoEquivalentMass_kg =
+      SERVO_ROTOR_INERTIA_KGM2 * (1.0f + SERVO_INERTIA_RATIO_01)
+      / (sledMetersPerRad * sledMetersPerRad) * sledPerArc_01 * sledPerArc_01;
+  const float stopEnergy_J = STOP_ENERGY_SERVO_J
+                           + brakeResistorAvailable_01 * brakeResistorRegenPower_W * STOP_DURATION_S;
+  const float stopVelocitySq = 2.0f * stopEnergy_J / max(servoEquivalentMass_kg, 0.001f);
+  const float distanceToEnd_m = max(0.0f, (upperTravelLimit_01 - g_vModelPos_01) * totalTravel_m);
+  const float approachSpeedLimit_mps =
+      sqrtf(stopVelocitySq + 2.0f * STOP_APPROACH_DECELERATION_MPS2 * distanceToEnd_m);
+  forwardSpeedLimit = min(forwardSpeedLimit, approachSpeedLimit_mps);
+
+  // Same on the return stroke towards the rest position: after a release the pedal runs
+  // back without foot force (no F*v regen, so no power limit), up to the full step rate
+  // (5 mm spindle: ~0.39 m/s at the sled, ~10 J in the motor). The model stopped at the
+  // lower limit at once, the servo braked the rotor within a few ms and the returned
+  // energy drove the bus to ~57 V (brake pedal, 2026-10-04). Decelerate into the rest
+  // position so the stop returns at most the stop energy.
+  const float distanceToStart_m = max(0.0f, (g_vModelPos_01 - lowerTravelLimit_01) * totalTravel_m);
+  const float returnApproachSpeedLimit_mps =
+      sqrtf(stopVelocitySq + 2.0f * STOP_APPROACH_DECELERATION_MPS2 * distanceToStart_m);
+  const float backwardSpeedLimit = min(dynamicSpeedLimit, returnApproachSpeedLimit_mps);
+
+  g_vModelVel_mps = constrain(g_vModelVel_mps, -backwardSpeedLimit, forwardSpeedLimit);
+
+  // Brake resistor feedforward: dissipate the electrical regen power above the servo's
+  // own share. Duty = excess power / full-on power V^2/R (at the nominal bus voltage).
+  // With the full mechanical power the resistor took everything (incl. the servo's share,
+  // whose bleeder only acts above ~40 V) and pulled the bus below its rest voltage.
+  // The servo follows the model with a lag: at a stop it keeps moving and decelerating
+  // after the model velocity has collapsed, so the duty uses an estimate of the servo
+  // velocity (first-order lag) and adds the kinetic power of its deceleration.
+  const float servoVelEstPrev_mps = g_servoVelEst_mps;
+  g_servoVelEst_mps += (g_vModelVel_mps - g_servoVelEst_mps)
+                     * (1.0f - expf(-dt_s / SERVO_FOLLOW_TIME_CONSTANT_S));
+  // deceleration in either direction (speed magnitude decreasing): the rotor's kinetic
+  // energy returns to the bus also when the return stroke stops at the rest position
+  const float servoSpeedEst_mps = fabsf(g_servoVelEst_mps);
+  const float servoDecel_mps2 = max(0.0f, (fabsf(servoVelEstPrev_mps) - servoSpeedEst_mps) / dt_s);
+  if (brakeResistorDutyRequest_01 != nullptr) {
+    // the foot only feeds power in while the pedal moves forward against it
+    const float servoVelForward_mps = max(g_servoVelEst_mps, 0.0f);
+    float regenPower_W = REGEN_DUTY_EFFICIENCY_01 * totalOpposingForce_N * servoVelForward_mps
+                       + REGEN_KINETIC_EFFICIENCY_01 * servoEquivalentMass_kg * servoSpeedEst_mps * servoDecel_mps2;
+    float excessPower_W = regenPower_W - ADMITTANCE_REGEN_POWER_SERVO_W;
+    *brakeResistorDutyRequest_01 = (brakeResistorAvailable_01 > 0.0f)
+        ? constrain(excessPower_W / brakeResistorFullOnPower_W, 0.0f, 1.0f)
+        : 0.0f;
+  }
 
   // --- 14. POSITION INTEGRATION, BOUNDARY CONSTRAINTS & DRIFT CORRECTION ---
   // Update virtual position based on velocity
   float currentPos_m = (g_vModelPos_01 * totalTravel_m) + (g_vModelVel_mps * dt_s);
   g_vModelPos_01 = (totalTravel_m > 0.0001f) ? (currentPos_m / totalTravel_m) : 0.0f;
 
-  // Apply boundary constraints (including dynamic expansion for effects and endstops)
-  // Hard constraint at mechanical boundaries (inelastic collision)
-  if (g_vModelPos_01 <= lowerTravelLimit_01) {
+  // Apply boundary constraints (with soft wall instead of hard velocity zeroing)
+  if (g_vModelPos_01 < lowerTravelLimit_01) {
       g_vModelPos_01 = lowerTravelLimit_01;
       if (g_vModelVel_mps < 0.0f) g_vModelVel_mps = 0.0f;
-  } else if (g_vModelPos_01 >= upperTravelLimit_01) {
+  } else if (g_vModelPos_01 > upperTravelLimit_01) {
       g_vModelPos_01 = upperTravelLimit_01;
-      if (g_vModelVel_mps > 0.0f) g_vModelVel_mps = 0.0f;
+      // FIX: Dampen velocity rather than hard zeroing to prevent step excitation in the integrator
+      if (g_vModelVel_mps > 0.0f) g_vModelVel_mps *= 0.5f; 
   }
   
   // SOFT LEASH: Synchronize the virtual model with the actual stepper command position
   // to prevent divergence due to numerical drift without corrupting second-order dynamics.
-  float divergence_01 = actualPosFraction_01 - g_vModelPos_01;
+  // Uses the unclamped sled position (limited to the dynamic travel limits): with the clamped
+  // value the leash pulled the model out of the soft endstop and the hard leash cut its last mm.
+  float actualPosLeash_01 = constrain(actualPosFractionRaw_01, lowerTravelLimit_01, upperTravelLimit_01);
+  float divergence_01 = actualPosLeash_01 - g_vModelPos_01;
   
   // SOFT LEASH DEADBAND: Verhindert, dass Sensorrauschen Schläge ins Physikmodell überträgt
   if (fabsf(divergence_01) < 0.005f) { // Auf 0.5% Toleranz erhöht (ca. 0.5 mm Pufferzone)
@@ -988,6 +1541,22 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   }
   const float LEASH_RATE = 0.5f; // Noch sanfterer Rückzug (0.5 statt 1.0)
   g_vModelPos_01 += divergence_01 * (LEASH_RATE * dt_s);
+
+  // HARD LEASH CLAMP (Anti-Runaway):
+  // The virtual model is strictly constrained so it cannot outrun the physical sled by more than
+  // 8 % of the travel (~8 mm at ~100 mm pedal travel).
+  const float MAX_LEAD_01 = 0.08f;
+  if ((g_vModelPos_01 - actualPosLeash_01) > MAX_LEAD_01) {
+      g_vModelPos_01 = actualPosLeash_01 + MAX_LEAD_01;
+      if (g_vModelVel_mps > 0.0f) {
+          g_vModelVel_mps *= 0.5f; // Damp forward velocity when actuator speed is saturated
+      }
+  } else if ((actualPosLeash_01 - g_vModelPos_01) > MAX_LEAD_01) {
+      g_vModelPos_01 = actualPosLeash_01 - MAX_LEAD_01;
+      if (g_vModelVel_mps < 0.0f) {
+          g_vModelVel_mps *= 0.5f;
+      }
+  }
 
   // =========================================================
   // POPULATE REMAINDER OF DEBUG TELEMETRY STRUCT
@@ -1044,18 +1613,31 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
       targetSledPos_mm = c_hor_mm - c_hor_0_mm;
   }
 
-  // Clamp the solved sled position to safe physical bounds
-  targetSledPos_mm = constrain(targetSledPos_mm, 0.0f, maxSledPos_mm);
+  // Limit dynamic expansion to a maximum of +/- 5% of total travel for safety
+  float limitExt = travelSteps_cnt * 0.05f;
+  float maxExt = constrain(max(0.0f, effectOffsets_st.forceOffset_Steps_fl32), 0.0f, limitExt);
+  float minExt = constrain(min(0.0f, effectOffsets_st.forceOffset_Steps_fl32), -limitExt, 0.0f);
+
+  // Calculate equivalent expansion in millimeters for the sled position clamp
+  float maxExt_mm = maxExt * (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm);
+  float minExt_mm = minExt * (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm);
+
+  // Add the soft endstop travel allowance to the physical bounds. The soft endstop travel is
+  // pedal arc length (task space, see CalcSoftEndstopForce): convert it to sled mm with the
+  // mean sled-per-arc ratio of the travel.
+  float endstopTravelArc_mm = (endstopBehavior_st.travelRange_mm_fl32 > 0.01f) ? endstopBehavior_st.travelRange_mm_fl32 : 0.0f;
+  float endstopTravel_mm = endstopTravelArc_mm * sledPerArc_01;
+  float endstopTravel_steps = endstopTravel_mm / (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm);
+
+  // Clamp the solved sled position to safe physical bounds (with dynamic expansion AND soft endstop)
+  targetSledPos_mm = constrain(targetSledPos_mm, 0.0f + minExt_mm, maxSledPos_mm + maxExt_mm + endstopTravel_mm);
   
   // 3. Convert target sled position (mm) back to absolute stepper steps
   float targetPosSteps_fl32 = (targetSledPos_mm / (motorRevolutionsPerSteps_lcl_fl32 * pitch_mm)) + (float)calc_st->softEndstopMinStepperPos_i32;
 
-  // Bypass effect position offset (Inject ABS/vibrations purely into the actuator space)
-  targetPosSteps_fl32 += effectOffsets_st.forceOffset_Steps_fl32;
-
-  // Final safety clamp to hard hardware limits
+  // Clamp to software limits (with dynamic expansion for high-frequency effects AND soft endstops)
   float finalTargetPos_fl32 = targetPosSteps_fl32;
-  finalTargetPos_fl32 = constrain(finalTargetPos_fl32, stepper->getHardEndstopMinPosition(), stepper->getHardEndstopMaxPosition());
+  finalTargetPos_fl32 = constrain(finalTargetPos_fl32, calc_st->softEndstopMinStepperPos_i32 + minExt, calc_st->softEndstopMaxStepperPos_i32 + maxExt + endstopTravel_steps);
 
   if (admittanceStates_pst != nullptr) {
     admittanceStates_pst->physicalPos_m = g_vModelPos_01 * totalTravel_m; // Logged natively in Task Space

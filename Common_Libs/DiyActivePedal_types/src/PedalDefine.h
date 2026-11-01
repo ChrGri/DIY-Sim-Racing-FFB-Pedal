@@ -1,5 +1,5 @@
 #pragma once
-#define DAP_VERSION_CONFIG_U8 172U
+#define DAP_VERSION_CONFIG_U8 174U
 
 // define the payload types
 #define DAP_PAYLOAD_TYPE_CONFIG_U8 100U
@@ -10,6 +10,25 @@
 #define DAP_PAYLOAD_TYPE_ESPNOW_RUDDER_U8 150U
 #define DAP_PAYLOAD_TYPE_ESPNOW_JOYSTICK_U8 160U
 #define DAP_PAYLOAD_TYPE_SERVO_CONFIG_U8 170U
+#define DAP_PAYLOAD_TYPE_WIFI_CHANNEL_U8 180U
+#define DAP_PAYLOAD_TYPE_MAC_ADDRESSES_U8 190U
+#define DAP_VERSION_MAC_ADDRESSES_U8 1U
+// EEPROM layout (2048 byte emulated EEPROM, stored in the NVS partition):
+//   0..127    MAC table (incl. Wi-Fi channel), reserved region
+//   128..     pedal config - placed last so a growing config can never
+//             overwrite the MAC table / channel
+#define DAP_EEPROM_SIZE_U32 2048U
+#define DAP_MAC_ADDRESSES_EEPROM_OFFSET_U32 0U
+#define DAP_MAC_ADDRESSES_EEPROM_RESERVED_U32 128U
+#define DAP_CONFIG_EEPROM_OFFSET_U32 128U
+// Config location in older firmware - migrated once at boot.
+#define DAP_CONFIG_EEPROM_LEGACY_OFFSET_U32 64U
+
+#define WIFI_CH_CMD_SCAN_REQ 1U
+#define WIFI_CH_CMD_SCAN_RES 2U
+#define WIFI_CH_CMD_SET_REQ  3U
+#define WIFI_CH_CMD_SET_ACK  4U
+#define WIFI_CH_CMD_BEACON   5U
 #define DAP_PAYLOAD_TYPE_BRIDGE_STATE_U8 210U
 #define DAP_PAYLOAD_TYPE_ACTION_OTA_U8 220U
 #define DAP_PAYLOAD_TYPE_ESPNOW_LOG_U8 225U

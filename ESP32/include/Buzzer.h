@@ -1,5 +1,10 @@
 #include <Arduino.h>
 #include "Pitches.h"
+
+#ifndef BUZZER_PIN_U8
+#define BUZZER_PIN_U8 1
+#endif
+
 #ifdef USING_BUZZER
 
     #include <math.h>

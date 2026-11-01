@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -20,5 +20,6 @@ namespace DiyFfbPedal
         public byte servoStatus;
         public byte pedalStatus;
         public byte pedalContrlBoardType;
+        public byte rudderSyncDelay_ms;
     };
 }

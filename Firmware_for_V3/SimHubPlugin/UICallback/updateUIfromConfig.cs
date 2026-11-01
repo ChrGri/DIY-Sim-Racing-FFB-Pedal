@@ -27,6 +27,7 @@ namespace User.PluginSdkDemo
                 {
                     Plugin._calculations.BridgeSerialConnectionStatus = false;
                     Plugin._calculations.BridgeSerialAvailability = false;
+                    SystemSetting_Section.FanatecVibrationPanel.Visibility = Visibility.Collapsed;
                     Plugin._calculations.RSSI_Value = 0;
                     for (int i = 0; i < 3; i++)
                     {

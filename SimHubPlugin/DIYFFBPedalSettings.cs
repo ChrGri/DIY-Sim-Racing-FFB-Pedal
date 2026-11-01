@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Windows.Media.Converters;
 
 namespace DiyFfbPedal
@@ -58,12 +58,15 @@ namespace DiyFfbPedal
         public byte[] Pedal_action_fps = new byte[3] { 20, 20, 20 };
         public bool Rudder_RPM_effect_b = false;
         public bool Rudder_ACC_effect_b = false;
+        public byte ActiveWifiChannel = 11;
+        public string[] AssignedPedalMac = new string[4] { "", "", "", "" };
+        public int[] PedalDetectedChannel = new int[4] { 0, 0, 0, 0 };
         public bool Rudder_ACC_WindForce = false;
         public bool advanced_b = false;
         public string SSID_string = "";
         public string PASS_string = "";
         public float rudderMaxForce = 10;
-        public float rudderMinForce = 1;
+        public float rudderMinForce = 0;
         public byte rudderMaxTravel = 95;
         public byte rudderMinTravel = 5;
         public byte[] rudderForce=new byte[11] { 0, 20, 40, 60, 80, 100, 0, 0, 0, 0, 0 };
@@ -73,12 +76,49 @@ namespace DiyFfbPedal
         public byte rudderRPMAmp = 1;
         public byte rudderRPMMaxFrequency = 40;
         public byte rudderRPMMinFrequency = 15;
+        // Rudder Mode: 0 = Airplane, 1 = Helicopter, 2 = Airplane with Toe Brake (Differential Braking)
         public uint rudderMode { get; set; } = 0;
-        public int updateChannel = 0;
         public string[] DefaultConfig = new string[3] { string.Empty, string.Empty, string.Empty };
         public bool profileAutoChange = false;
         public string[] ProfileShortcut { get; set; } = new string[6] { string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty };
         public string[] ProfileShortcutName { get; set; } = new string[6] { string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty };
+        
+        // Rudder Dynamics & Flight Parameters
+        public byte rudderVirtualPedalMass = 100;
+        public byte rudderCoulombFriction = 30;
+        public byte rudderVirtualDamping = 100;
+        public byte rudderDampingProgression = 0;
+        public byte rudderEndstopTravelRange = 0;
+        public byte rudderEndstopStiffness = 10;
+        
+        // Mode 1: Airplane Centering Dynamics
+        public float rudderCenteringForce = 10.0f;
+        public uint rudderCenteringProfile = 0; // 0 = Linear, 1 = Progressive, 2 = S-Curve
+        public float rudderDeadzone = 0.0f;      // 0.0% to 5.0%
+        public float rudderTrimOffset = 0.0f;   // -50.0% to +50.0%
+        public bool rudderAeroQScaling = false; // Dynamic Q-Feel based on Airspeed
+        public byte rudderAeroQGain = 50;        // Q-Feel gain (0-100%)
+
+        // Mode 2: Helicopter Anti-Torque Dynamics
+        public float rudderHeliFriction = 3.0f; // Coulomb friction in N (0-10 N)
+        public byte rudderHeliDamping = 45;     // Viscous damping (0-100%)
+
+        // Shared Bilateral Push-Pull Kinematics
+        public float rudderBilateralSyncForce = 80.0f; // Push-pull sync stiffness in N (20-150 N)
+
+        // Rudder Dedicated Joystick Mapping
+        public byte[] rudderJoystickMapOrig = new byte[11] { 0, 20, 40, 60, 80, 100, 0, 0, 0, 0, 0 };
+        public byte[] rudderJoystickMapMapped = new byte[11] { 0, 20, 40, 60, 80, 100, 0, 0, 0, 0, 0 };
+        public byte rudderNumOfJoystickMapControl = 6;
+
+        // Rudder Dedicated Dual Mapping: Yaw (50% - 100% Symmetrical) & Toe Brake (0% - 100% Unipolar)
+        public byte[] rudderYawJoystickMapOrig = new byte[11] { 50, 60, 70, 80, 90, 100, 0, 0, 0, 0, 0 };
+        public byte[] rudderYawJoystickMapMapped = new byte[11] { 50, 60, 70, 80, 90, 100, 0, 0, 0, 0, 0 };
+        public byte rudderYawNumOfJoystickMapControl = 6;
+
+        public byte[] rudderToeJoystickMapOrig = new byte[11] { 0, 20, 40, 60, 80, 100, 0, 0, 0, 0, 0 };
+        public byte[] rudderToeJoystickMapMapped = new byte[11] { 0, 20, 40, 60, 80, 100, 0, 0, 0, 0, 0 };
+        public byte rudderToeNumOfJoystickMapControl = 6;
 
     }
         

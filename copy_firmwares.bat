@@ -48,4 +48,4 @@ for %%S in (%SOURCE_DIRS%) do (
 
 echo.
 echo Firmware extraction complete! Manifest updated.
-pause
+if not defined CI pause

@@ -34,7 +34,6 @@ namespace DiyFfbPedal
         public int rectCount = 0;
         public List<double> rectPositionX = new List<double>();
         public List<double> rectPositionY = new List<double>();
-        bool compatibleMode = false;
         public OnlineProfile()
         {
             InitializeComponent();
@@ -138,6 +137,15 @@ namespace DiyFfbPedal
                             break;
                     }
                     Textbox_Online_Profile_Description.Text += "KF :" + tmp_config.payloadPedalConfig_.kf_modelNoise + "\n";
+                    if (tmp_config.payloadHeader_.version > 161)
+                    {
+                        Textbox_Online_Profile_Description.Text += "Virtual Mass :" + tmp_config.payloadPedalConfig_.virtualPedalMass_u8 + "\n";
+                        Textbox_Online_Profile_Description.Text += "Virtual Damping :" + tmp_config.payloadPedalConfig_.virtualPedalDamping_u8 + "\n";
+                        Textbox_Online_Profile_Description.Text += "Endstop Stiffness :" + tmp_config.payloadPedalConfig_.endstopStiffness_kg_mm_u8 + "\n";
+                        Textbox_Online_Profile_Description.Text += "Endstop Travel :" + tmp_config.payloadPedalConfig_.endstopTravelRange_mm_u8 + "\n";
+                        Textbox_Online_Profile_Description.Text += "Damping Progression :" + tmp_config.payloadPedalConfig_.dampingProgression_u8 + "\n";
+                        Textbox_Online_Profile_Description.Text += "Coulmb Friction :" + tmp_config.payloadPedalConfig_.coulombFrictionIn0p1N_u8 + "\n";
+                    }
 
 
                 }
@@ -172,7 +180,6 @@ namespace DiyFfbPedal
                     if (version < 150)
                     {
                         //MessageBox.Show($"This config is created in DAP{version}, Compatible Mode on");
-                        compatibleMode = true;
                         compatibleForce[0] = (byte)data["payloadPedalConfig_"]["relativeForce_p000"];
                         compatibleForce[1] = (byte)data["payloadPedalConfig_"]["relativeForce_p020"];
                         compatibleForce[2] = (byte)data["payloadPedalConfig_"]["relativeForce_p040"];
@@ -181,7 +188,7 @@ namespace DiyFfbPedal
                         compatibleForce[5] = (byte)data["payloadPedalConfig_"]["relativeForce_p100"];
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
 
                 }

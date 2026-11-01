@@ -1,27 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace DiyFfbPedal.UIElement
 {
-
     public partial class SliderWithLabel : UserControl
     {
+        private bool _isCommittingEdit = false;
+
         public SliderWithLabel()
         {
             InitializeComponent();
         }
+
         // Dependency Property for slider_name
         public static readonly DependencyProperty SliderNameProperty =
             DependencyProperty.Register(nameof(SliderName), typeof(string), typeof(SliderWithLabel),
@@ -47,7 +39,7 @@ namespace DiyFfbPedal.UIElement
         // Dependency Property for Value
         public static readonly DependencyProperty ValueProperty =
             DependencyProperty.Register(nameof(SliderValue), typeof(double), typeof(SliderWithLabel),
-                /*new PropertyMetadata(0.0, OnPropertyChanged),*/ new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPropertyChanged));
+                new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnPropertyChanged));
 
         public double SliderValue
         {
@@ -121,8 +113,7 @@ namespace DiyFfbPedal.UIElement
 
         private void UpdateLabelContent()
         {
-            //LabelContent = $"{SliderName}: {SliderValue} {Unit}";
-            LabelContent = SliderName+": "+ Math.Round(SliderValue,4)+" "+Unit;
+            LabelContent = SliderName + ": " + Math.Round(SliderValue, 4) + " " + Unit;
         }
 
         // Event to notify the main window of slider value changes
@@ -130,8 +121,92 @@ namespace DiyFfbPedal.UIElement
 
         private void SliderElement_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
+            // 忽略初始化期間因 MinValue 設定造成的自動校正雜訊
+            if (!this.IsLoaded) return;
+            if (_isCommittingEdit) return;
+
             SliderValue = e.NewValue;
             SliderValueChanged?.Invoke(this, e);
+        }
+
+        private void LabelDisplay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (!this.IsEnabled) return;
+            BeginInlineEdit();
+            e.Handled = true;
+        }
+
+        public void BeginInlineEdit()
+        {
+            if (PanelEdit == null || LabelDisplay == null || BoxEditValue == null) return;
+            TxtEditPrefix.Text = (SliderName ?? "") + ": ";
+            TxtEditUnit.Text = string.IsNullOrEmpty(Unit) ? "" : " " + Unit;
+            BoxEditValue.Text = Math.Round(SliderValue, 4).ToString("0.####", System.Globalization.CultureInfo.InvariantCulture);
+            LabelDisplay.Visibility = Visibility.Collapsed;
+            PanelEdit.Visibility = Visibility.Visible;
+            BoxEditValue.Focus();
+            BoxEditValue.SelectAll();
+        }
+
+        private void CommitInlineEdit()
+        {
+            if (PanelEdit == null || PanelEdit.Visibility != Visibility.Visible) return;
+
+            string text = (BoxEditValue.Text ?? string.Empty).Trim().Replace(',', '.');
+            if (double.TryParse(text, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double value))
+            {
+                value = Math.Max(MinValue, Math.Min(MaxValue, value));
+                if (TickFrequency > 0)
+                {
+                    double ticks = Math.Round((value - MinValue) / TickFrequency);
+                    value = MinValue + ticks * TickFrequency;
+                    value = Math.Max(MinValue, Math.Min(MaxValue, value));
+                    value = Math.Round(value, 4);
+                }
+
+                _isCommittingEdit = true;
+                try
+                {
+                    double oldVal = SliderValue;
+                    SliderValue = value;
+                    if (SliderElement != null)
+                    {
+                        SliderElement.Value = value;
+                    }
+                    UpdateLabelContent();
+                    SliderValueChanged?.Invoke(this, new RoutedPropertyChangedEventArgs<double>(oldVal, value));
+                }
+                finally
+                {
+                    _isCommittingEdit = false;
+                }
+            }
+            EndInlineEdit();
+        }
+
+        private void EndInlineEdit()
+        {
+            if (PanelEdit != null) PanelEdit.Visibility = Visibility.Collapsed;
+            if (LabelDisplay != null) LabelDisplay.Visibility = Visibility.Visible;
+        }
+
+        private void BoxEditValue_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                CommitInlineEdit();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Escape)
+            {
+                EndInlineEdit();
+                e.Handled = true;
+            }
+        }
+
+        private void BoxEditValue_LostFocus(object sender, RoutedEventArgs e)
+        {
+            CommitInlineEdit();
         }
     }
 }

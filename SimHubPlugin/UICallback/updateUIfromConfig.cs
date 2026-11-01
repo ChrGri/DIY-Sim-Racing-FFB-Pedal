@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -27,6 +27,7 @@ namespace DiyFfbPedal
                 {
                     Plugin._calculations.BridgeSerialConnectionStatus = false;
                     Plugin._calculations.BridgeSerialAvailability = false;
+                    if (!Plugin.BridgeHidService.IsConnected) UpdateFanatecVibrationStatus(0);
                     Plugin._calculations.RSSI_Value = 0;
                     for (int i = 0; i < 3; i++)
                     {
@@ -43,7 +44,9 @@ namespace DiyFfbPedal
                 {
                     if (!Plugin.Settings.Pedal_ESPNow_Sync_flag[i])
                     {
-                        if (!Plugin._serialPort[indexOfSelectedPedal_u].IsOpen)
+                        Plugin._calculations.rssi[i] = 0;
+                        Plugin._calculations.pedalWirelessStatus[i] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                        if (!Plugin._serialPort[i].IsOpen)
                         {
                             Plugin._calculations.ServoStatus[i] = 0;
                             Plugin._calculations.PedalFirmwareVersion[i, 2] = 0;
@@ -84,7 +87,8 @@ namespace DiyFfbPedal
                 PedalSettingsSection.dap_config_st = tmp_struct;
                 var tmp_rudder = dap_config_st_rudder;
                 CurveRudderForce_Tab.dap_config_st = tmp_rudder;
-                RudderSetting_Tab.dap_config_st = tmp_rudder;
+                RudderJoystick_Tab.dap_config_st = tmp_rudder;
+                RudderDynamics_Tab.dap_config_st = tmp_rudder;
                 EffectsRPMRudder_Tab.dap_config_st = tmp_rudder;
 
 
@@ -102,10 +106,14 @@ namespace DiyFfbPedal
                 PedalSettingsSection.Settings = Plugin.Settings;
                 EffectsRPMRudder_Tab.Settings = Plugin.Settings;
                 CurveRudderForce_Tab.Settings = Plugin.Settings;
+                RudderJoystick_Tab.Settings = Plugin.Settings;
+                RudderJoystick_Tab.updateUI();
                 EffectRudderACC_Tab.Settings = Plugin.Settings;
-                RudderSetting_Tab.Settings = Plugin.Settings;
+                RudderDynamics_Tab.Settings = Plugin.Settings;
+                CurveRudderForce_Tab.updateUI();
+                RudderDynamics_Tab.updateUI();
                 //SettingOTA_Tab.Settings = Plugin.Settings;
-                SystemLicense_Tab.Settings = Plugin.Settings;
+                if (SystemWireless_Tab != null) { SystemWireless_Tab.Plugin = Plugin; SystemWireless_Tab.ParentUI = this; SystemWireless_Tab.UpdateLiveTable(); }
                 SystemSetting_Section.Settings = Plugin.Settings;
                 SystemInfo.Settings = Plugin.Settings;
                 PedalInfo.Settings = Plugin.Settings;
@@ -119,9 +127,13 @@ namespace DiyFfbPedal
                 PedalForceTravel_Tab.calculation = Plugin._calculations;
                 PedalSettingsSection.calculation = Plugin._calculations;
                 CurveRudderForce_Tab.calculation = Plugin._calculations;
+                RudderJoystick_Tab.calculation = Plugin._calculations;
 
                 //SettingOTA_Tab.calculation = Plugin._calculations;
                 SystemInfo.calculation = Plugin._calculations;
+                ConsoleTelemetryStatus.Text = Plugin.ConsoleEffectStatus;
+                ConsoleTelemetryStatus.Visibility = String.IsNullOrEmpty(ConsoleTelemetryStatus.Text)
+                    ? Visibility.Collapsed : Visibility.Visible;
                 PedalInfo.calculation = Plugin._calculations;
                 RudderInfo.calculation = Plugin._calculations;
                 if (firstAssignPlugin)
@@ -148,14 +160,7 @@ namespace DiyFfbPedal
             if (Plugin != null)
             {
 
-                if (Plugin.Settings.Pedal_ESPNow_Sync_flag[indexOfSelectedPedal_u])
-                {
-                    btn_Assignment.IsEnabled = true;
-                }
-                else
-                {
-                    btn_Assignment.IsEnabled = false;
-                }
+
 
                 if (Plugin.ESPsync_serialPort.IsOpen)
                 {
@@ -165,6 +170,14 @@ namespace DiyFfbPedal
                 {
                     btn_connect_espnow_port.Content = "Connect";
                 }
+                btn_connect_espnow_port.IsEnabled = Plugin.Settings.IsFanatecAndPicoSupport;
+            }
+
+            if (indexOfSelectedPedal_u < 3 && !Plugin.Settings.Pedal_ESPNow_Sync_flag[indexOfSelectedPedal_u] && !Plugin._serialPort[indexOfSelectedPedal_u].IsOpen)
+            {
+                PedalForceTravel_Tab?.updatePedalState(0, 0);
+                PedalKinematics_Tab?.updatePedalState(0);
+                PedalJoystick_Tab?.JoystickStateUpdate(0);
             }
 
             //// Select serial port accordingly
@@ -176,7 +189,7 @@ namespace DiyFfbPedal
                 //TextBox_debugOutput.Text = "Serial port selected: " + SerialPortSelection.SelectedValue;
 
             }
-            catch (Exception caughtEx)
+            catch (Exception)
             {
             }
 
@@ -207,6 +220,40 @@ namespace DiyFfbPedal
                     btn_rudder_initialize.Content = "Enable";
                     //text_rudder_log.Visibility = Visibility.Hidden;
                 }
+
+                if (btn_rudder_brake != null)
+                {
+                    if (Plugin.Settings.rudderMode == 2)
+                    {
+                        btn_rudder_brake.Visibility = Visibility.Visible;
+                        if (Plugin.Rudder_brake_status)
+                        {
+                            btn_rudder_brake.Content = "Toe Brake: ACTIVE";
+                            btn_rudder_brake.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xEE, 0x00, 0xAA, 0x66));
+                            btn_rudder_brake.Foreground = System.Windows.Media.Brushes.White;
+                            btn_rudder_brake.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x00, 0xFF, 0xAA));
+                        }
+                        else
+                        {
+                            btn_rudder_brake.Content = "Toe Brake: OFF (Yaw)";
+                            btn_rudder_brake.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0xFF, 0x99, 0x00));
+                            btn_rudder_brake.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0xFF, 0xAA, 0x33));
+                            btn_rudder_brake.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x66, 0xFF, 0x99, 0x00));
+                        }
+                    }
+                    else if (Plugin.Settings.rudderMode == 3)
+                    {
+                        btn_rudder_brake.Visibility = Visibility.Visible;
+                        btn_rudder_brake.Content = "Toe Brake: PERMANENT";
+                        btn_rudder_brake.Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x33, 0x00, 0xCC, 0xFF));
+                        btn_rudder_brake.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0xFF, 0x00, 0xCC, 0xFF));
+                        btn_rudder_brake.BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x66, 0x00, 0xCC, 0xFF));
+                    }
+                    else
+                    {
+                        btn_rudder_brake.Visibility = Visibility.Collapsed;
+                    }
+                }
             }
 
             //system UI
@@ -231,22 +278,14 @@ namespace DiyFfbPedal
             {
                 if (Plugin._calculations.verisonCreate_b == false)
                 {
-                    if (Plugin.Settings.updateChannel == 0)
-                    {
-                        Plugin._calculations.updateVerison = new Version(Plugin._calculations.pluginVersionReading[0]);
-                    }
-                    else
-                    {
-                        Plugin._calculations.updateVerison = new Version(Plugin._calculations.pluginVersionReading[1]);
-                    }
-
+                    Plugin._calculations.updateVerison = new Version(Plugin._calculations.pluginVersionReading[0]);
                     Plugin._calculations.pluginVersion = new Version(Constants.pluginVersion);
                     Plugin._calculations.verisonCreate_b = true;
                 }
 
                 if (Plugin._calculations.updateVerison > Plugin._calculations.pluginVersion)
                 {
-                    string tmpUpdateChannel = Plugin.Settings.updateChannel == 0 ? "Stable release" : "Nightly build";
+                    string tmpUpdateChannel =  "Stable release" ;
 
                     textBox_VersionUpdate.Text = "New "+tmpUpdateChannel+" available:" + Plugin._calculations.updateVerison;
                     textBox_VersionUpdate.Foreground=System.Windows.Media.Brushes.Red;

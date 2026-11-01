@@ -60,7 +60,13 @@ private:
 
     uint16_t posCommandSmoothingFactor_u16 = 0;    // Smoothing parameter for the iSV57 internal trajectory generator
 
-    bool logAllServoParams = false;                // Trigger flag to dump all servo registers to serial
+    volatile bool servoVelocityReadoutRequested_b = false; // Debug: stream servo velocity instead of current
+    // Internal bleeder: off (with a raised threshold) while a hardware brake resistor
+    // circuit clamps the bus. Requested by the pedal task, applied on the servo task;
+    // invalidated whenever the connection setup rewrites Pr7.31 / Pr7.32.
+    volatile bool internalBleederOffRequested_b = false;
+    bool internalBleederOffApplied_b = false;
+    volatile bool internalBleederConfigValid_b = false;
     bool clearAllServoAlarms_b = false;            // Trigger flag to clear servo fault states
     bool resetServoRegistersToFactoryValues_b = false; // Trigger flag to perform a factory reset
     bool updateServoParams_b = false;              // Trigger flag to push new parameters to the servo
@@ -91,11 +97,20 @@ private:
     uint32_t servoLastTimeStampInMs_u32 = 0;
     int32_t lastTrackingError_i32 = 0;
     float trackingErrorChangeInStepsPerS_fl32 = 0;
+    bool servoPosInitialized_b = false;            // True once unwrapper has synchronized with servo
+    uint32_t servoLastUnwrapCycleCounter_u32 = 0;  // Tracks servo cycle count to guard against stale frames
+    uint32_t servoLastSafetyCycleCounter_u32 = 0;  // Tracks cycle count for safety checks
+    uint32_t servoLastCycleCounterWhenPositionWasCorrected_u32 = 0; // Tracks cycle of last crash correction
+    uint32_t overcurrentSinceMs_u32 = 0;            // millis() timestamp since current first crossed the trip threshold; 0 = currently below it
+    volatile bool overcurrentTripped_b = false;     // One-shot: set when the overcurrent protection just latched the axis off
+    int16_t servoLastRawPos_i16 = 0;               // Previous raw 16-bit servo position reading
+    int32_t servoLastEspPos_i32 = 0;               // Previous 32-bit ESP pulse generator position
     int16_t servoPos_last_i16 = 0;
     int64_t timeSinceLastServoPosChange_l = 0;
     int64_t timeDiff = 0;
 
     // --- Private Helper Methods ---
+    void configureServoRegistersAfterPowerOn();
     void setLifelineSignal();
     void processPendingCommands();
     void updateLifeline();
@@ -122,8 +137,9 @@ public:
     void findMinMaxSensorless(DapConfig_t dap_config_st);
     void forceStop();
     int8_t moveTo(int32_t position, bool blocking = false);
-    void moveSlowlyToPos(int32_t targetPos_ui32);
+    void moveSlowlyToPos(int32_t targetPos_ui32, uint8_t spindlePitch_mmPerRev_u8);
     void moveToPosWithSpeed(int32_t targetPos_ui32, uint32_t speedInHz_u32);
+    void moveToPosWithSpeedBlocking(int32_t targetPos_ui32, uint32_t speedInHz_u32);
     void moveToWithSpeed(int32_t targetPos_i32, uint32_t speed_u32);
     void setSpeedLive(uint32_t speedInHz_u32);
     void setSpeed(uint32_t speedInStepsPerSecond);
@@ -158,12 +174,19 @@ public:
     void correctPos();
     void setMinPosition();
     int32_t getPositionDeviation();
+
+    // One-shot: true exactly once when the sustained-overcurrent protection
+    // (see performSafetyChecks()) just latched the axis off. Clears itself
+    // on read, so the caller (Main.cpp) can drive a beep/LED/log exactly once
+    // per trip instead of every loop iteration.
+    bool consumeOvercurrentTripFlag();
     
     // --- Servo Telemetry Data ---
     int32_t getServosInternalPosition();
     uint32_t getServoCycleCounter();
     int32_t getServosVoltage();
     int32_t getServosCurrent();
+    int32_t getServosVelocityRpm();
     int32_t getServosPos();
     int32_t getServosPosError();
     uint32_t getServoCycleTimestamp();
@@ -171,7 +194,14 @@ public:
     
     // --- Configuration Triggers ---
     void configSteplossRecovAndCrashDetection(uint8_t flags_u8);
-    void printAllServoParameters();
+    // Debug: the servo's cyclic current reading is replaced by its feedback
+    // velocity. While active, everything that needs the current (overcurrent
+    // trip, crash relief, homing endstop detection) is disabled.
+    void requestServoVelocityReadout(bool request_b);
+    bool isServoVelocityReadoutActive() const;
+    // Regen mode "hardware brake resistor circuit only": switch the servo's internal
+    // bleeder off and raise its threshold; false restores the tuned bleeder settings.
+    void requestInternalBleederOff(bool off_b);
     void clearAllServoAlarms();
     void resetServoParametersToFactoryValues();
     void configSetProfilingFlag(bool proFlag_b);
@@ -196,6 +226,7 @@ public:
     static void servoCommunicationTask(void * pvParameters);
     void pauseTask();
     bool servoIdleAction();
+    bool servoWakeAction();
 };
 
 void setDirection(bool forwardDir_b);

@@ -428,9 +428,15 @@
                 <TabControl.Background>
                     <SolidColorBrush Color="#FF252525" Opacity="0"/>
                 </TabControl.Background>
-                <TabItem x:Name="Tab_Pedals" Width="200" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <TabItem x:Name="Tab_Home" Width="192" Height="40" Padding="0" HorizontalAlignment="Left" VerticalAlignment="Top">
                     <TabItem.Header>
-                        <Border  Width="200" Height="40" Margin="0,0,0,0" >
+                        <Border Width="192" Height="40"><TextBlock Text="HOME" FontFamily="Arial Black" FontSize="24" VerticalAlignment="Center" HorizontalAlignment="Center"/></Border>
+                    </TabItem.Header>
+                    <localFunction:HomeDashboard x:Name="HomeDashboardSection"/>
+                </TabItem>
+                <TabItem x:Name="Tab_Pedals" Width="192" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <TabItem.Header>
+                        <Border  Width="192" Height="40" Margin="0,0,0,0" >
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Width="26" Height="26" Source="{StaticResource Pedals}" />
                                 <Label Content="PEDALS"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
@@ -855,9 +861,9 @@
 
                     </Border>
                 </TabItem>
-                <TabItem x:Name="Tab_Rudder" Width="200" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <TabItem x:Name="Tab_Rudder" Width="192" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
                     <TabItem.Header>
-                        <Border  Width="200" Height="40" Margin="0,0,0,0" >
+                        <Border  Width="192" Height="40" Margin="0,0,0,0" >
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Width="26" Height="26" Source="{StaticResource plane}" />
                                 <Label Content="RUDDER"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
@@ -958,9 +964,9 @@
                         </StackPanel>
                     </Border>
                 </TabItem>
-                <TabItem x:Name="Tab_System" Width="200" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <TabItem x:Name="Tab_System" Width="192" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
                     <TabItem.Header>
-                        <Border  Width="200" Height="40" Margin="0,0,0,0" >
+                        <Border  Width="192" Height="40" Margin="0,0,0,0" >
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Width="26" Height="26" Source="{StaticResource Settings}" />
                                 <Label Content="SYSTEM"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
@@ -975,12 +981,12 @@
                             </Canvas>
                             <StackPanel Height="900" Width="1180" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal" Grid.ColumnSpan="4">
                                 <Canvas  Height="900" Width="6" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Grid.Row="0" Grid.ColumnSpan="3" Margin="43,0,0,0" VerticalAlignment="Top" >
-                                    <Line  X1="3" Y1="2" X2="3" Y2="498" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="1" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
+                                    <Line  X1="3" Y1="2" X2="3" Y2="530" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="1" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
                                 </Canvas>
                                 <StackPanel HorizontalAlignment="Center" Height="900" Grid.Row="3" VerticalAlignment="Top" Width="168" Grid.RowSpan="3" Margin="2,0,0,0">
 
-                                    <Border Background="#7F4E4E4E" Height="498" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="168" HorizontalAlignment="Center" >
-                                        <StackPanel HorizontalAlignment="Center" Height="498" VerticalAlignment="Top" Width="160" Margin="0,5,0,0">
+                                    <Border Background="#7F4E4E4E" Height="530" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="168" HorizontalAlignment="Center" >
+                                        <StackPanel HorizontalAlignment="Center" Height="530" VerticalAlignment="Top" Width="160" Margin="0,5,0,0">
                                             <localFunction:InfoSection_System x:Name="SystemInfo" />
                                             <StackPanel HorizontalAlignment="Left" Height="22" Grid.Row="4" VerticalAlignment="Top" Width="168" Grid.RowSpan="3" Orientation="Horizontal" Margin="0,2,0,0">
                                                 <ComboBox x:Name="SerialPortSelection_ESPNow" SelectionChanged="ESPNow_SerialPortSelectionChanged" Width="100" ItemsSource="{Binding}" DisplayMemberPath="Display" SelectedValuePath="Value" FontSize="8" Height="20" HorizontalAlignment="Left" MinHeight="20"/>

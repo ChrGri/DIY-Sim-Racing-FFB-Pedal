@@ -153,6 +153,27 @@
             </DrawingGroup>
         </DrawingImage.Drawing>
     </DrawingImage>
+    <DrawingImage x:Key="Localization">
+        <DrawingImage.Drawing>
+            <DrawingGroup ClipGeometry="M0,0 V24 H24 V0 H0 Z">
+                <GeometryDrawing Brush="White" Geometry="F1 M24,24z M0,0z M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z" />
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+    <DrawingImage x:Key="FirmwareDownload">
+        <DrawingImage.Drawing>
+            <DrawingGroup ClipGeometry="M0,0 V24 H24 V0 H0 Z">
+                <GeometryDrawing Brush="White" Geometry="F1 M24,24z M0,0z M19,9H15V3H9V9H5L12,16L19,9Z M5,18V20H19V18H5Z" />
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+    <DrawingImage x:Key="Home">
+        <DrawingImage.Drawing>
+            <DrawingGroup ClipGeometry="M0,0 V24 H24 V0 H0 Z">
+                <GeometryDrawing Brush="White" Geometry="F1 M24,24z M0,0z M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" />
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
     <Style x:Key="IconGridButtonStyle" TargetType="Button">
         <Setter Property="Width" Value="50"/>
         <Setter Property="Height" Value="50"/>
@@ -191,6 +212,29 @@
         </Setter>
     </Style>
     <SolidColorBrush x:Key="TestBrush" Color="White"/>
+
+    <!-- Tailwind Palette (Set 3) -->
+    <Color x:Key="TailwindRedColor">#FFEF4444</Color>
+    <Color x:Key="TailwindGreenColor">#FF10B981</Color>
+    <Color x:Key="TailwindBlueColor">#FF3B82F6</Color>
+    <Color x:Key="TailwindYellowColor">#FFF59E0B</Color>
+
+    <SolidColorBrush x:Key="TailwindRedBrush" Color="{StaticResource TailwindRedColor}"/>
+    <SolidColorBrush x:Key="TailwindGreenBrush" Color="{StaticResource TailwindGreenColor}"/>
+    <SolidColorBrush x:Key="TailwindBlueBrush" Color="{StaticResource TailwindBlueColor}"/>
+    <SolidColorBrush x:Key="TailwindYellowBrush" Color="{StaticResource TailwindYellowColor}"/>
+
+    <!-- Soft Palette (Set 4) -->
+    <Color x:Key="SoftRedColor">#FFF87171</Color>
+    <Color x:Key="SoftGreenColor">#FF34D399</Color>
+    <Color x:Key="SoftBlueColor">#FF60A5FA</Color>
+    <Color x:Key="SoftYellowColor">#FFFBBF24</Color>
+
+    <SolidColorBrush x:Key="SoftRedBrush" Color="{StaticResource SoftRedColor}"/>
+    <SolidColorBrush x:Key="SoftGreenBrush" Color="{StaticResource SoftGreenColor}"/>
+    <SolidColorBrush x:Key="SoftBlueBrush" Color="{StaticResource SoftBlueColor}"/>
+    <SolidColorBrush x:Key="SoftYellowBrush" Color="{StaticResource SoftYellowColor}"/>
+
     <DropShadowEffect x:Key="mousedragging" Color="White" BlurRadius="15" Opacity="1" ShadowDepth="0"/>
     <DropShadowEffect x:Key="mouseoutdragging" Color="White" BlurRadius="15" Opacity="0" ShadowDepth="0"/>
     <Style x:Key="HorizontalSliderThumb" TargetType="{x:Type Thumb}">
@@ -476,6 +520,59 @@
         <Style.Triggers>
             <Trigger Property="Orientation" Value="Vertical">
                 <Setter Property="Template" Value="{StaticResource RangeSliderVertical}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    <Style x:Key="Card" TargetType="Border">
+        <Setter Property="Background" Value="#1E1E1E"/>
+        <Setter Property="BorderBrush" Value="#333333"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="5"/>
+        <Setter Property="Padding" Value="14"/>
+        <Setter Property="Margin" Value="5"/>
+    </Style>
+    <Style x:Key="ModernPillButton" TargetType="Button">
+        <Setter Property="Background" Value="#2A2A2A"/>
+        <Setter Property="Foreground" Value="#D0D0D0"/>
+        <Setter Property="BorderBrush" Value="#444444"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="FontFamily" Value="Segoe UI, Arial"/>
+        <Setter Property="Padding" Value="6,2"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="border" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="3">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="#383838"/>
+                            <Setter TargetName="border" Property="BorderBrush" Value="#666666"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="border" Property="Background" Value="#1E1E1E"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Connect/Disconnect toggle: highlighted like a selected tab while connected -->
+    <Style x:Key="ConnectPillButton" TargetType="Button" BasedOn="{StaticResource ModernPillButton}">
+        <Style.Triggers>
+            <Trigger Property="Content" Value="Disconnect">
+                <Setter Property="Background" Value="#4E4E4E"/>
+                <Setter Property="BorderBrush" Value="#666666"/>
+                <Setter Property="Foreground" Value="#FFFFFF"/>
             </Trigger>
         </Style.Triggers>
     </Style>

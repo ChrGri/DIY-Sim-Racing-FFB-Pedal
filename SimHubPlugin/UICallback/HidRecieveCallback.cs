@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿﻿﻿﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,17 +6,105 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Threading;
 
 namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
         private readonly byte[] _rxBuffer = new byte[4096];
-        private int _rxIndex = 0;          
-        private int _expectedTotalLen = 0; 
+        private int _rxIndex = 0;
+        private int _expectedTotalLen = 0;
         private bool _isReceiving = false;
         private byte PKT_TYPE_START = 0x01;
-        private byte PKT_TYPE_CONT = 0x02;
+
+        // Curve/graph redraw throttling: incoming telemetry packets can arrive far faster than the
+        // screen can usefully redraw. These UI-only visual markers (no vJoy/force-feedback output)
+        // are coalesced to the latest value and applied on a 60Hz timer instead of on every packet.
+        private DispatcherTimer _curveRedrawTimer;
+        private bool _pendingRudderDeflection, _pendingRudderJoystick, _pendingPedalForceTravel, _pendingPedalKinematics, _pendingPedalJoystick;
+        private float _rudderDeflectionRatio, _rudderDeflectionLeftRatio;
+        private double _rudderYaw, _rudderToeBrake;
+        private ushort _pedalForceTravelPosition, _pedalForceTravelForce;
+        private ushort _pedalKinematicsPosition;
+        private ushort _pedalJoystickValue;
+
+        private void EnsureCurveRedrawTimer()
+        {
+            if (_curveRedrawTimer != null) return;
+            // Must be bound to the UI dispatcher: this is called from the HID ReadLoop thread, and a
+            // DispatcherTimer created without one attaches to that thread's dispatcher, which never runs.
+            _curveRedrawTimer = new DispatcherTimer(System.Windows.Threading.DispatcherPriority.Render, Dispatcher)
+            {
+                Interval = TimeSpan.FromMilliseconds(1000.0 / 60.0)
+            };
+            _curveRedrawTimer.Tick += CurveRedrawTimer_Tick;
+            _curveRedrawTimer.Start();
+        }
+
+        private void CurveRedrawTimer_Tick(object sender, EventArgs e)
+        {
+            if (_pendingRudderDeflection)
+            {
+                _pendingRudderDeflection = false;
+                CurveRudderForce_Tab?.UpdateLiveDeflection(_rudderDeflectionRatio, _rudderDeflectionLeftRatio);
+            }
+            if (_pendingRudderJoystick)
+            {
+                _pendingRudderJoystick = false;
+                RudderJoystick_Tab?.UpdateYawState(_rudderYaw);
+                RudderJoystick_Tab?.UpdateToeBrakeState(_rudderToeBrake);
+            }
+            if (_pendingPedalForceTravel)
+            {
+                _pendingPedalForceTravel = false;
+                PedalForceTravel_Tab?.updatePedalState(_pedalForceTravelPosition, _pedalForceTravelForce);
+            }
+            if (_pendingPedalKinematics)
+            {
+                _pendingPedalKinematics = false;
+                PedalKinematics_Tab?.updatePedalState(_pedalKinematicsPosition);
+            }
+            if (_pendingPedalJoystick)
+            {
+                _pendingPedalJoystick = false;
+                PedalJoystick_Tab?.JoystickStateUpdate(_pedalJoystickValue);
+            }
+        }
+
+        private void QueueRudderDeflection(float ratio, float leftRatio)
+        {
+            _rudderDeflectionRatio = ratio;
+            _rudderDeflectionLeftRatio = leftRatio;
+            _pendingRudderDeflection = true;
+        }
+
+        private void QueueRudderJoystick(double yaw, double toeBrake)
+        {
+            _rudderYaw = yaw;
+            _rudderToeBrake = toeBrake;
+            _pendingRudderJoystick = true;
+        }
+
+        private void QueuePedalForceTravel(ushort position, ushort force)
+        {
+            _pedalForceTravelPosition = position;
+            _pedalForceTravelForce = force;
+            _pendingPedalForceTravel = true;
+        }
+
+        private void QueuePedalKinematics(ushort position)
+        {
+            _pedalKinematicsPosition = position;
+            _pendingPedalKinematics = true;
+        }
+
+        private void QueuePedalJoystick(ushort value)
+        {
+            _pedalJoystickValue = value;
+            _pendingPedalJoystick = true;
+        }
+
         public void HidRecieveCallback(byte[] buffer)
         {
             if (buffer == null || buffer.Length < 4) return;
@@ -65,13 +153,14 @@ namespace DiyFfbPedal
         }
 
         void ProcessFullDataFromESP(byte[] data)
-        { 
+        {
             int length = data.Length;
             string hexString=string.Empty;
             bool pedalStateHasAlreadyBeenUpdated_b = false;
             if (length > 0)
             {
-                Dispatcher.Invoke(() =>
+                EnsureCurveRedrawTimer();
+                Dispatcher.InvokeAsync(() =>
                 {
                     unsafe 
                     {
@@ -86,6 +175,30 @@ namespace DiyFfbPedal
                             DAP_state_basic_st* v_state = &pedalState_read_st;
                             byte* p_state = (byte*)v_state;
                             UInt16 pedalSelected = pedalState_read_st.payloadHeader_.PedalTag;
+
+                            // Ignore wireless data if wireless communication is disabled for this pedal
+                            if (pedalSelected < 3 && !Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalSelected])
+                            {
+                                Plugin._calculations.pedalWirelessStatus[pedalSelected] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                                Plugin._calculations.rssi[pedalSelected] = 0;
+                                if (Plugin.Settings.vjoy_output_flag == 1 && Plugin._calculations._joystick != null)
+                                {
+                                    switch (pedalSelected)
+                                    {
+                                        case 0:
+                                            Plugin._calculations._joystick.SetAxis(0, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RX);
+                                            break;
+                                        case 1:
+                                            Plugin._calculations._joystick.SetAxis(0, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RY);
+                                            break;
+                                        case 2:
+                                            Plugin._calculations._joystick.SetAxis(0, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RZ);
+                                            break;
+                                    }
+                                }
+                                return;
+                            }
+
                             // payload type check
                             bool check_payload_state_b = false;
                             if (pedalState_read_st.payloadHeader_.payloadType == Constants.pedalStateBasicPayload_type)
@@ -109,6 +222,7 @@ namespace DiyFfbPedal
                                     || Plugin._calculations.pedalWirelessStatus[pedalSelected] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
                                 {
                                     Plugin._calculations.pedalWirelessStatus[pedalSelected] = WirelessConnectStateEnum.PEDAL_GET_BASIC_PACKETS_OVER_ESPNOW;
+                                    Reading_config_auto_wireless((uint)pedalSelected);
                                 }
                                 Plugin._calculations.pedalWirelessConnetionlastTime[pedalSelected] = DateTime.Now;
                                 //if (Plugin.Rudder_enable_flag == false)
@@ -196,11 +310,90 @@ namespace DiyFfbPedal
                                 Plugin.PedalStatusInstance.PedalMaxForce[pedalSelected] = (int)dap_config_st[pedalSelected].payloadPedalConfig_.maxForce;
                                 Plugin.PedalStatusInstance.PedalMinForce[pedalSelected] = (int)dap_config_st[pedalSelected].payloadPedalConfig_.preloadForce;
                                 Plugin.PedalStatusInstance.UpdatePedalStatus();
+                                Plugin.rawPedalPos[pedalSelected] = pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16;
+                                if (Tab_Rudder != null && Tab_Rudder.IsSelected)
+                                        {
+                                            bool isRudderActive = Plugin != null && (Plugin.Rudder_status || Plugin._calculations.Rudder_status);
+                                            if (isRudderActive)
+                                            {
+                                                uint leftIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 0) ? (uint)Plugin.Rudder_Pedal_idx[0] : 1;
+                                                uint rightIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 1) ? (uint)Plugin.Rudder_Pedal_idx[1] : 2;
+                                                double leftNorm = (double)Plugin.rawPedalPos[leftIdx] / 65535.0;
+                                                double rightNorm = (double)Plugin.rawPedalPos[rightIdx] / 65535.0;
+                                                double leftRel = Math.Max(0.0, Math.Min(1.0, leftNorm));
+                                                double rightRel = Math.Max(0.0, Math.Min(1.0, rightNorm));
+
+                                                if (CurveRudderForce_Tab != null)
+                                                {
+                                                    if (Plugin.Settings.rudderMode == 3 || (Plugin.Settings.rudderMode == 2 && (Plugin.Rudder_brake_status || (leftRel > 0.52 && rightRel > 0.52))))
+                                                    {
+                                                        float rightRatio = (float)rightRel;
+                                                        float leftRatio = (float)(1.0 - leftRel);
+                                                        QueueRudderDeflection(rightRatio, leftRatio);
+                                                    }
+                                                    else
+                                                    {
+                                                        float rudderRatio = (float)Math.Max(0.0, Math.Min(1.0, 0.5 + 0.5 * (rightRel - leftRel)));
+                                                        QueueRudderDeflection(rudderRatio, -1f);
+                                                    }
+                                                }
+
+                                                if (RudderJoystick_Tab != null)
+                                                {
+                                                    bool isToeBrakeMode = (Plugin.Settings.rudderMode == 3 || (Plugin.Settings.rudderMode == 2 && (Plugin.Rudder_brake_status || (leftRel > 0.52 && rightRel > 0.52))));
+                                                    if (isToeBrakeMode)
+                                                    {
+                                                        // Both modes read leftRel/rightRel centered at ~0.5 at rest
+                                                        // (matching the yaw-axis convention these two pedals also
+                                                        // serve under), so both need the same rescale to show 0%
+                                                        // at rest - mode 3 previously skipped it and showed ~50%
+                                                        // idle in the curve preview even though the actual applied
+                                                        // output was correct.
+                                                        double toeRatio = Math.Max(0.0, Math.Min(1.0, (Math.Max(leftRel, rightRel) - 0.5) * 2.0));
+                                                        QueueRudderJoystick(0.5, toeRatio);
+                                                    }
+                                                    else
+                                                    {
+                                                        double rudderRatio = Math.Max(0.0, Math.Min(1.0, 0.5 + 0.5 * (rightRel - leftRel)));
+                                                        QueueRudderJoystick(rudderRatio, 0.0);
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if (RudderJoystick_Tab != null)
+                                                {
+                                                    QueueRudderJoystick(0.5, 0.0);
+                                                }
+                                                if (CurveRudderForce_Tab != null)
+                                                {
+                                                    QueueRudderDeflection(0.5f, -1f);
+                                                }
+                                            }
+
+                                            if (Plugin.Rudder_status)
+                                    {
+                                        uint leftIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 0) ? (uint)Plugin.Rudder_Pedal_idx[0] : 1;
+                                        uint rightIdx = (Plugin.Rudder_Pedal_idx != null && Plugin.Rudder_Pedal_idx.Length > 1) ? (uint)Plugin.Rudder_Pedal_idx[1] : 2;
+                                        if (pedalSelected == leftIdx || pedalSelected == rightIdx)
+                                        {
+                                            byte syncDelay = pedalState_read_st.payloadPedalBasicState_.rudderSyncDelay_ms;
+                                            if (syncDelay > 0)
+                                            {
+                                                UpdateRudderLatency(syncDelay);
+                                            }
+                                        }
+                                    }
+                                }
                                 if ((pedalStateHasAlreadyBeenUpdated_b == false) && (indexOfSelectedPedal_u == pedalSelected))
                                 {
                                     double control_rect_value_max = 65535;
                                     pedalStateHasAlreadyBeenUpdated_b = true;
-                                    PedalForceTravel_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16, pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
+                                    QueuePedalForceTravel(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16, pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
+                                            if (pedalKinematicTab != null && pedalKinematicTab.IsSelected)
+                                            {
+                                                QueuePedalKinematics(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16);
+                                            }
                                     if (Plugin.Settings.advanced_b)
                                     {
                                         int round_x = (int)(100 * pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16 / control_rect_value_max) - 1;
@@ -219,12 +412,12 @@ namespace DiyFfbPedal
                                     }
                                     if (dap_config_st[indexOfSelectedPedal_u].payloadPedalConfig_.travelAsJoystickOutput_u8 == 1)
                                     {
-                                        PedalJoystick_Tab.JoystickStateUpdate(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16);
+                                        QueuePedalJoystick(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16);
                                     }
                                     else
-                                    {
-                                        PedalJoystick_Tab.JoystickStateUpdate(pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
-                                    }
+                                            {
+                                                QueuePedalJoystick(pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
+                                            }
 
                                 }
                                 for (int i = 0; i < 3; i++)
@@ -246,6 +439,13 @@ namespace DiyFfbPedal
                             DAP_state_extended_st* v_state = &pedalState_ext_read_st;
                             byte* p_state = (byte*)v_state;
                             UInt16 pedalSelected = pedalState_ext_read_st.payloadHeader_.PedalTag;
+
+                            // Ignore wireless data if wireless communication is disabled for this pedal
+                            if (pedalSelected < 3 && !Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalSelected])
+                            {
+                                return;
+                            }
+
                             // payload type check
                             bool check_payload_state_b = false;
                             if (pedalState_ext_read_st.payloadHeader_.payloadType == Constants.pedalStateExtendedPayload_type)
@@ -262,6 +462,13 @@ namespace DiyFfbPedal
 
                             if ((check_payload_state_b) && check_crc_state_b)
                             {
+                                if (pedalSelected >= 0 && pedalSelected < 3 && Plugin != null && Plugin._calculations != null)
+                                {
+                                    Plugin._calculations.pedalState_extended[pedalSelected] = pedalState_ext_read_st;
+                                    Plugin._calculations.pedalState_extended_counter[pedalSelected]++;
+                                    Plugin._calculations.OnExtendedStateReceived?.Invoke((int)pedalSelected, pedalState_ext_read_st);
+                                }
+
                                 //if (indexOfSelectedPedal_u == pedalSelected)
                                 {
                                     if (Plugin._calculations.dumpPedalToResponseFile[indexOfSelectedPedal_u])
@@ -281,38 +488,11 @@ namespace DiyFfbPedal
                                         // write header
                                         if (!File.Exists(filePath))
                                         {
+                                            WritePedalConfigForTrace(filePath, pedalSelected);
+
                                             using (StreamWriter writer = new StreamWriter(filePath, true))
                                             {
-                                                // Write the content to the file
-                                                writer.Write("WriterIdx");
-                                                writer.Write(", servoStateCycleCount_u32");
-                                                writer.Write(", servoPositionTarget_i32");
-                                                writer.Write(", servoPositionFeedback_i32");
-                                                writer.Write(", servoPositionError_i16");
-                                                writer.Write(", servoVoltage_fl32");
-                                                writer.Write(", servoCurrentPercent_i16");
-
-                                                writer.Write(", timeInUs_u32");
-                                                writer.Write(", cycleCount_u32");
-                                                writer.Write(", pedalForceRaw_fl32");
-                                                writer.Write(", pedalForceFiltered_fl32");
-                                                writer.Write(", forceVelEst_fl32");
-                                                writer.Write(", targetPosition_i32");
-                                                writer.Write(", currentSpeedInHz_i32");
-                                                writer.Write(", brakeResistorState_b");
-                                                writer.Write(", oscillationMonitorValue_u8");
-
-                                                writer.Write(", admittance_expectedForce_N");
-                                                writer.Write(", admittance_isOscillating");
-                                                writer.Write(", admittance_admittancePsi_N");
-                                                writer.Write(", admittance_virtualMass_kg");
-                                                writer.Write(", admittance_virtualDamping_Ns_m");
-
-                                                writer.Write(", admittance_virtualPosition_m");
-                                                writer.Write(", admittance_virtualVelocity_mps");
-                                                writer.Write(", admittance_virtualAcceleration_mps2");
-
-                                                writer.Write("\n");
+                                                writer.Write(PedalTraceHeader + "\n");
                                             }
 
                                         }
@@ -322,35 +502,7 @@ namespace DiyFfbPedal
                                             var state = pedalState_ext_read_st.payloadPedalExtendedState_;
                                             writeCntr++;
 
-                                            // Build the entire string in one line using interpolation
-                                            writer.WriteLine(
-                                                $"{writeCntr}" +
-
-                                                $",{state.servoStateCycleCount_u32}" +
-                                                $",{state.servoPositionTarget_i32}" +
-                                                $",{state.servoPositionFeedback_i32}" +
-                                                $",{state.servoPositionError_i16}" +
-                                                $",{state.servoVoltage0p1V_i16 / 10.0f}" +
-                                                $",{state.servoCurrentPercent_i16}" +
-
-                                                $",{state.timeInUs_u32}" +
-                                                $",{state.cycleCount_u32}" +
-                                                $",{state.pedalForceRaw_fl32}" +
-                                                $",{state.pedalForceFiltered_fl32}" +
-                                                $",{state.forceVelEst_fl32}" +
-                                                $",{state.targetPosition_i32}" +
-                                                $",{state.currentSpeedInHz_i32}" +
-                                                $",{state.brakeResistorState_b}" +
-                                                $",{state.oscillationMonitorValue_u8}" +
-                                                $",{state.admittance_expectedForce_N}" +
-                                                $",{state.admittance_isOscillating}" +
-                                                $",{state.admittance_admittancePsi_N}" +
-                                                $",{state.admittance_virtualMass_kg}" +
-                                                $",{state.admittance_virtualDamping_Ns_m}" +
-                                                $",{state.admittance_virtualPosition_m}" +
-                                                $",{state.admittance_virtualVelocity_mps}" +
-                                                $",{state.admittance_virtualAcceleration_mps2}"
-                                                );
+                                            writer.WriteLine(FormatPedalTraceRow(writeCntr, state, Pedal_position_reading[pedalSelected], HostTimeUnixMsForTrace()));
                                         }
 
 
@@ -404,6 +556,7 @@ namespace DiyFfbPedal
 
                             if ((check_payload_state_b) && check_crc_state_b)
                             {
+                                UpdateFanatecVibrationStatus(bridge_state.payloadBridgeState_.Bridge_action);
                                 //Bridge_RSSI = bridge_state.payloadBridgeState_.Pedal_RSSI;
                                 if (Plugin._calculations.bridgeConnectionStatus == BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT)
                                 {
@@ -413,15 +566,26 @@ namespace DiyFfbPedal
 
                                 if (bridge_state.payloadBridgeState_.unassignedPedalCount > 0 && Plugin._calculations.unassignedPedalCount != bridge_state.payloadBridgeState_.unassignedPedalCount)
                                 {
-
-                                    string tmp = bridge_state.payloadBridgeState_.unassignedPedalCount + " unassigned pedals founded!";
-                                    ToastNotification("New Pedal Detected", tmp);
+                                    int count = bridge_state.payloadBridgeState_.unassignedPedalCount;
+                                    string tmp = count == 1 ? "1 unassigned pedal detected." : $"{count} unassigned pedals detected.";
+                                    ToastNotification("New Pedal Detected", tmp, "Wireless Settings", () =>
+                                    {
+                                        NavigateToSystemWirelessTab();
+                                    });
                                 }
                                 Plugin._calculations.unassignedPedalCount = bridge_state.payloadBridgeState_.unassignedPedalCount;
 
                                 for (int pedalIDX = 0; pedalIDX < 3; pedalIDX++)
                                 {
-                                    Plugin._calculations.rssi[pedalIDX] = bridge_state.payloadBridgeState_.Pedal_RSSI_realtime[pedalIDX];
+                                    if (Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalIDX])
+                                    {
+                                        Plugin._calculations.rssi[pedalIDX] = bridge_state.payloadBridgeState_.Pedal_RSSI_realtime[pedalIDX];
+                                    }
+                                    else
+                                    {
+                                        Plugin._calculations.rssi[pedalIDX] = 0;
+                                        Plugin._calculations.pedalWirelessStatus[pedalIDX] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                                    }
                                     int macInitialAddress = pedalIDX * 6;
                                     for (int macIndex = 0; macIndex < 6; macIndex++)
                                     {
@@ -437,71 +601,60 @@ namespace DiyFfbPedal
                                 //check wireless pedal connection, if status change make toast notification
                                 if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_0 != bridge_state.payloadBridgeState_.Pedal_availability_0)
                                 {
-
-                                    if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_0 == 0)
+                                    if (Plugin.Settings.Pedal_ESPNow_Sync_flag[0])
                                     {
-                                        //ToastNotification("Wireless Clutch", "Connected");
-                                        connection_tmp += "Clutch Connected";
-                                        wireless_connection_update = true;
-                                        Pedal_wireless_connection_update_b[0] = true;
-
-                                    }
-                                    else
-                                    {
-                                        ///ToastNotification("Wireless Clutch", "Disconnected");
-                                        connection_tmp += "Clutch Disconnected";
-                                        wireless_connection_update = true;
-                                        //Plugin._calculations.PedalAvailability[0] = false;
+                                        if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_0 == 0)
+                                        {
+                                            connection_tmp += "Clutch Connected";
+                                            wireless_connection_update = true;
+                                            Pedal_wireless_connection_update_b[0] = true;
+                                        }
+                                        else
+                                        {
+                                            connection_tmp += "Clutch Disconnected";
+                                            wireless_connection_update = true;
+                                        }
                                     }
                                     dap_bridge_state_st.payloadBridgeState_.Pedal_availability_0 = bridge_state.payloadBridgeState_.Pedal_availability_0;
-                                    //updateTheGuiFromConfig();
                                 }
 
 
                                 if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_1 != bridge_state.payloadBridgeState_.Pedal_availability_1)
                                 {
-
-                                    if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_1 == 0)
+                                    if (Plugin.Settings.Pedal_ESPNow_Sync_flag[1])
                                     {
-                                        //ToastNotification("Wireless Brake", "Connected");
-                                        connection_tmp += " Brake Connected";
-                                        wireless_connection_update = true;
-                                        Pedal_wireless_connection_update_b[1] = true;
-
-
-                                    }
-                                    else
-                                    {
-                                        //ToastNotification("Wireless Brake", "Disconnected");
-                                        connection_tmp += " Brake Disconnected";
-                                        wireless_connection_update = true;
-                                        //Plugin._calculations.PedalAvailability[1] = false;
+                                        if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_1 == 0)
+                                        {
+                                            connection_tmp += " Brake Connected";
+                                            wireless_connection_update = true;
+                                            Pedal_wireless_connection_update_b[1] = true;
+                                        }
+                                        else
+                                        {
+                                            connection_tmp += " Brake Disconnected";
+                                            wireless_connection_update = true;
+                                        }
                                     }
                                     dap_bridge_state_st.payloadBridgeState_.Pedal_availability_1 = bridge_state.payloadBridgeState_.Pedal_availability_1;
-
-                                    //updateTheGuiFromConfig();
                                 }
 
                                 if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_2 != bridge_state.payloadBridgeState_.Pedal_availability_2)
                                 {
-
-                                    if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_2 == 0)
+                                    if (Plugin.Settings.Pedal_ESPNow_Sync_flag[2])
                                     {
-                                        //ToastNotification("Wireless Throttle", "Connected");
-                                        connection_tmp += " Throttle Connected";
-                                        wireless_connection_update = true;
-                                        Pedal_wireless_connection_update_b[2] = true;
-
-                                    }
-                                    else
-                                    {
-                                        //ToastNotification("Wireless Throttle", "Disconnected");
-                                        connection_tmp += " Throttle Disconnected";
-                                        wireless_connection_update = true;
-
+                                        if (dap_bridge_state_st.payloadBridgeState_.Pedal_availability_2 == 0)
+                                        {
+                                            connection_tmp += " Throttle Connected";
+                                            wireless_connection_update = true;
+                                            Pedal_wireless_connection_update_b[2] = true;
+                                        }
+                                        else
+                                        {
+                                            connection_tmp += " Throttle Disconnected";
+                                            wireless_connection_update = true;
+                                        }
                                     }
                                     dap_bridge_state_st.payloadBridgeState_.Pedal_availability_2 = bridge_state.payloadBridgeState_.Pedal_availability_2;
-
                                 }
 
                                 //Pedal availability status update
@@ -570,6 +723,13 @@ namespace DiyFfbPedal
                             DAP_config_st* v_config = &pedalConfig_read_st;
                             byte* p_config = (byte*)v_config;
                             UInt16 pedalSelected = pedalConfig_read_st.payloadHeader_.PedalTag;
+
+                            // Ignore wireless config if wireless communication is disabled for this pedal
+                            if (pedalSelected < 3 && !Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalSelected])
+                            {
+                                return;
+                            }
+
                             // payload type check
                             bool check_payload_config_b = false;
                             if (pedalConfig_read_st.payloadHeader_.payloadType == Constants.pedalConfigPayload_type)
@@ -633,6 +793,54 @@ namespace DiyFfbPedal
                         }
                         //
 
+                        if (length == sizeof(DAP_mac_addresses_st))
+                        {
+                            DAP_mac_addresses_st macs = getMacAddressesFromBytes(data);
+                            DAP_mac_addresses_st* pMacs = &macs;
+                            byte* pBytes = (byte*)pMacs;
+                            if (macs.payloadHeader_.payloadType == Constants.macAddressesPayload_type &&
+                                Plugin.checksumCalc(pBytes, sizeof(payloadHeader) + sizeof(payloadMacAddresses)) == macs.payloadFooter_.checkSum)
+                            {
+                                string ownMac = macs.payloadMacAddresses_.GetOwnMacAddressString();
+                                byte ownNode = macs.payloadMacAddresses_.ownNodeType_u8;
+                                if (ownNode < 4 && !string.IsNullOrWhiteSpace(ownMac))
+                                {
+                                    if (Plugin.Settings.AssignedPedalMac == null || Plugin.Settings.AssignedPedalMac.Length < 4)
+                                    {
+                                        Array.Resize(ref Plugin.Settings.AssignedPedalMac, 4);
+                                    }
+                                    Plugin.Settings.AssignedPedalMac[ownNode] = ownMac;
+                                }
+
+                                for (int i = 0; i < 4; i++)
+                                {
+                                    string m = macs.payloadMacAddresses_.GetMacAddressString(i);
+                                    if (!string.IsNullOrWhiteSpace(m) && m != "00:00:00:00:00:00" && m != "--")
+                                    {
+                                        if (Plugin.Settings.AssignedPedalMac == null || Plugin.Settings.AssignedPedalMac.Length < 4)
+                                        {
+                                            Array.Resize(ref Plugin.Settings.AssignedPedalMac, 4);
+                                        }
+                                        Plugin.Settings.AssignedPedalMac[i] = m;
+                                    }
+                                }
+
+                                if (macs.payloadMacAddresses_.wifiChannel_u8 >= 1 && macs.payloadMacAddresses_.wifiChannel_u8 <= 14)
+                                {
+                                    Plugin.Settings.ActiveWifiChannel = macs.payloadMacAddresses_.wifiChannel_u8;
+                                    if (SystemWireless_Tab != null)
+                                    {
+                                        SystemWireless_Tab.SetSelectedWifiChannel(macs.payloadMacAddresses_.wifiChannel_u8);
+                                    }
+                                }
+
+                                if (SystemWireless_Tab != null)
+                                {
+                                    SystemWireless_Tab.UpdateLiveStatus();
+                                }
+                            }
+                        }
+
                         if (length == sizeof(Dap_hidmessage_st))
                         {
                             //PrintHidData(data);
@@ -643,18 +851,54 @@ namespace DiyFfbPedal
                             if (pedalMessage_read_st.magicKey2 != Constants.ESPNOW_LOG_MAGIC_KEY_2) structChecker = false;
                             if (structChecker)
                             {
-                                string textContent_orig = System.Text.Encoding.UTF8.GetString(pedalMessage_read_st.text, pedalMessage_read_st.length);
-                                string timestamp = DateTime.Now.ToString("HH:mm:ss");
-                                string textContent = $"[{timestamp}] {textContent_orig}";
-                                TextBox_serialMonitor_bridge.Text += textContent + "\n";
-                                if (_serial_monitor_window != null)
+                                int safeLen = Math.Min((int)pedalMessage_read_st.length, 235);
+                                if (safeLen > 0)
                                 {
-                                    _serial_monitor_window.TextBox_SerialMonitor.Text += textContent + "\n";
+                                    string textContent_orig = System.Text.Encoding.UTF8.GetString(pedalMessage_read_st.text, safeLen);
+                                    string timestamp = DateTime.Now.ToString("HH:mm:ss");
+                                    string textContent = $"[{timestamp}] {textContent_orig}";
+                                    TextBox_serialMonitor_bridge.Text += textContent + "\n";
+                                    if (_serial_monitor_window != null && _serial_monitor_window.IsLoaded)
+                                    {
+                                        try
+                                        {
+                                            _serial_monitor_window.TextBox_SerialMonitor.Text += textContent + "\n";
+                                        }
+                                        catch { }
+                                    }
                                 }
                             }
                         }
                         //
 
+                        if (length == System.Runtime.InteropServices.Marshal.SizeOf(typeof(DAP_wifi_channel_st)))
+                        {
+                            System.Runtime.InteropServices.GCHandle handle =
+                                System.Runtime.InteropServices.GCHandle.Alloc(data,
+                                    System.Runtime.InteropServices.GCHandleType.Pinned);
+                            try
+                            {
+                                DAP_wifi_channel_st wc = (DAP_wifi_channel_st)
+                                    System.Runtime.InteropServices.Marshal.PtrToStructure(
+                                        handle.AddrOfPinnedObject(), typeof(DAP_wifi_channel_st));
+
+                                bool validType = wc.payloadHeader_.payloadType == Constants.wifiChannelPayloadType;
+                                ushort calcCrc = Plugin.checksumCalcArray(data,
+                                    System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadHeader)) +
+                                    System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadWifiChannel)));
+                                bool validCrc = (calcCrc == wc.payloadFooter_.checkSum);
+
+                                if (validType && validCrc)
+                                {
+                                    HandleWifiChannelResponse(wc);
+                                }
+                            }
+                            finally
+                            {
+                                handle.Free();
+                            }
+                        }
+                        //
                         if (length == System.Runtime.InteropServices.Marshal.SizeOf(typeof(DAP_servo_config_st)))
                         {
                             System.Runtime.InteropServices.GCHandle handle =
@@ -709,7 +953,7 @@ namespace DiyFfbPedal
                 }
 
                 hexString = sb.ToString().Trim();
-                Dispatcher.Invoke(() =>
+                Dispatcher.InvokeAsync(() =>
                 {
 
                     if (TextBox_serialMonitor_bridge.Text.Length > 2000)

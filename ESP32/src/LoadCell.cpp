@@ -120,7 +120,14 @@ LoadCellAds1256::LoadCellAds1256(uint8_t channel0, uint8_t channel1)
             ActiveSerial->println("DRDY Semaphore created successfully.");
             ActiveSerial->println("starting attach.....");
             // Attach the interrupt ONCE, after the semaphore is created.
-            attachInterrupt(digitalPinToInterrupt(PIN_DRDY_U8), drdyInterrupt, FALLING);
+            // Workaround for ESP32 IPC1 stack overflow when attaching interrupt from Core 0
+            xTaskCreatePinnedToCore(
+                [](void* pvParameters) {
+                    attachInterrupt(digitalPinToInterrupt(PIN_DRDY_U8), drdyInterrupt, FALLING);
+                    vTaskDelete(NULL);
+                },
+                "attachInt", 2048, NULL, configMAX_PRIORITIES - 1, NULL, 1);
+            delay(50); // give the task time to execute
             ActiveSerial->println("DRDY interrupt attached.");
         } else {
             ActiveSerial->println("Error: Failed to create DRDY semaphore!");

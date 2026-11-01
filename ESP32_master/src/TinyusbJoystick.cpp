@@ -7,11 +7,16 @@
 
 extern DAP_servo_config_st_t dap_servo_config_st[3];
 extern bool update_servo_config[3];
+// Declared (and defined) in Main.h/Main.cpp - not pulling in the whole
+// header here to avoid its dependency graph, just this one extern needed
+// for the TEMP DIAGNOSTIC prints below.
+extern Stream *ActiveSerial;
 
 TinyusbJoystick* TinyusbJoystick::instance = nullptr;
 TinyusbJoystick::TinyusbJoystick() 
 {    
     isBridgeActionGet=false;
+    isMacAddressesGet=false;
 }
 
 bool TinyusbJoystick::IsReady()
@@ -21,7 +26,7 @@ bool TinyusbJoystick::IsReady()
     {
         returnValue_b = false;
     }
-    if (!usb_hid.ready())
+    if (!usb_hid.ready() || !usb_hid_vendor.ready())
     {
         returnValue_b = false;
     }
@@ -37,6 +42,11 @@ void TinyusbJoystick::begin(int VID, int PID)
     TinyUSBDevice.setProductDescriptor("DIY_FFB_PEDAL_JOYSTICK");
     TinyUSBDevice.setManufacturerDescriptor("OPENSOURCE");
     
+    static char serialStr[32];
+    uint64_t chipid = ESP.getEfuseMac();
+    snprintf(serialStr, sizeof(serialStr), "DIY_PEDAL_%04X%08X", (uint16_t)(chipid >> 32), (uint32_t)chipid);
+    TinyUSBDevice.setSerialDescriptor(serialStr);
+    
     //ActiveSerial->
     // Manual begin() is required on core without built-in support e.g. mbed rp2040
     if (!TinyUSBDevice.isInitialized())
@@ -44,12 +54,17 @@ void TinyusbJoystick::begin(int VID, int PID)
         TinyUSBDevice.begin(0);
     }
 
-    // Setup HID
-    usb_hid.enableOutEndpoint(true); 
+    // Setup HID Gamepad
     usb_hid.setPollInterval(1); // time in ms
-    usb_hid.setReportDescriptor(desc_hid_report, sizeof(desc_hid_report));
+    usb_hid.setReportDescriptor(desc_hid_gamepad, sizeof(desc_hid_gamepad));
     usb_hid.begin();
-    usb_hid.setReportCallback(NULL, TinyusbJoystick::context_callback);
+
+    // Setup HID Vendor
+    usb_hid_vendor.enableOutEndpoint(true); 
+    usb_hid_vendor.setPollInterval(1); // time in ms
+    usb_hid_vendor.setReportDescriptor(desc_hid_vendor, sizeof(desc_hid_vendor));
+    usb_hid_vendor.begin();
+    usb_hid_vendor.setReportCallback(NULL, TinyusbJoystick::context_callback);
 
     // If already enumerated, additional class driverr begin() e.g msc, hid, midi won't take effect until re-enumeration
     if (TinyUSBDevice.mounted())
@@ -63,35 +78,29 @@ void TinyusbJoystick::begin(int VID, int PID)
 
 void TinyusbJoystick::setRxAxis(int32_t value)
 {
-    int32_t tmp = value;
-    hid_report.rx = tmp;
+    hid_report.rx = (uint16_t)value;
 }
 
 void TinyusbJoystick::setRyAxis(int32_t value)
 {
-    int32_t tmp = value;
-    hid_report.ry = tmp;
+    hid_report.ry = (uint16_t)value;
 }
 void TinyusbJoystick::setRzAxis(int32_t value)
 {
-    int32_t tmp = value;
-    hid_report.rz = tmp;
+    hid_report.rz = (uint16_t)value;
 }
 
 void TinyusbJoystick::setXAxis(int32_t value)
 {
-    int32_t tmp = value;
-    hid_report.x = tmp;
+    hid_report.x = (uint16_t)value;
 }
 void TinyusbJoystick::setYAxis(int32_t value)
 {
-    int32_t tmp = value;
-    hid_report.y = tmp;
+    hid_report.y = (uint16_t)value;
 }
 void TinyusbJoystick::setZAxis(int32_t value)
 {
-    int32_t tmp = value;
-    hid_report.z = tmp;
+    hid_report.z = (uint16_t)value;
 }
 
 void TinyusbJoystick::sendState()
@@ -117,7 +126,7 @@ void TinyusbJoystick::sendData(uint8_t* data, size_t totalLen)
         memcpy(&report[3], &data[offset], chunkLen);
         uint32_t start_time = millis();
         uint32_t timeout_ms = 10;
-        while (!usb_hid.ready()) 
+        while (!usb_hid_vendor.ready()) 
         {
             if (millis() - start_time > timeout_ms) 
             {
@@ -125,7 +134,7 @@ void TinyusbJoystick::sendData(uint8_t* data, size_t totalLen)
             }
             delay(1);
         }
-        usb_hid.sendReport(HID_PAYLOAD_INPUT, report, PACKET_SIZE); 
+        usb_hid_vendor.sendReport(HID_PAYLOAD_INPUT, report, PACKET_SIZE); 
         offset += chunkLen;
     }
 }
@@ -220,9 +229,24 @@ void TinyusbJoystick::ProcessFullData(uint8_t *rxBuffer, uint8_t totalLen)
         if(structChecker)
         {
             memcpy(&tmpBridgeAction, &tmp, totalLen);
-            isBridgeActionGet= true;
+            isBridgeActionGet = true;
         }
         
+    }
+        if(totalLen == sizeof(DapMacAddresses_t))
+    {
+        DapMacAddresses_t tmp;
+        memcpy(&tmp, rxBuffer, totalLen);
+        bool structChecker = true;
+        if(tmp.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_MAC_ADDRESSES_U8) structChecker = false;
+        if(tmp.payloadHeader_st.version_u8 != DAP_VERSION_MAC_ADDRESSES_U8) structChecker = false;
+        uint16_t crc = checksumCal((uint8_t*)(&(tmp.payloadHeader_st)), sizeof(tmp.payloadHeader_st) + sizeof(tmp.payloadMacAddresses_st));
+        if(crc != tmp.payloadFooter_st.checkSum_u16) structChecker = false;
+        if(structChecker)
+        {
+            memcpy(&tmpMacAddresses, &tmp, totalLen);
+            isMacAddressesGet = true;
+        }
     }
     if(totalLen == sizeof(DapActionOta_t))
     {
@@ -234,6 +258,21 @@ void TinyusbJoystick::ProcessFullData(uint8_t *rxBuffer, uint8_t totalLen)
         {
             memcpy(&tmpOtaAction, &tmp, totalLen);
             isOtaActionGet = true;
+        }
+    }
+        if(totalLen == sizeof(DapWifiChannel_t))
+    {
+        DapWifiChannel_t tmp;
+        memcpy(&tmp, rxBuffer, totalLen);
+        bool structChecker = true;
+        if(tmp.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_WIFI_CHANNEL_U8) structChecker = false;
+        if(tmp.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8) structChecker = false;
+        uint16_t crc = checksumCal((uint8_t*)(&(tmp.payloadHeader_st)), sizeof(tmp.payloadHeader_st) + sizeof(tmp.payloadWifiChannel_st));
+        if(crc != tmp.payloadFooter_st.checkSum_u16) structChecker = false;
+        if(structChecker)
+        {
+            memcpy(&tmpWifiChannel, &tmp, totalLen);
+            isWifiChannelGet = true;
         }
     }
     if(totalLen == sizeof(DAP_servo_config_st_t))
@@ -248,12 +287,20 @@ void TinyusbJoystick::ProcessFullData(uint8_t *rxBuffer, uint8_t totalLen)
         if(structChecker)
         {
             uint8_t pedalTag = tmp.payloadHeader_st.pedalTag_u8;
-            if(pedalTag >= 0 && pedalTag < 3) 
+            if(pedalTag >= 0 && pedalTag < 3)
             {
                 // Setze globale Variablen (wie update_servo_config), die in hidCommunicaitonRxTask abgefragt werden
                 memcpy(&dap_servo_config_st[pedalTag], &tmp, totalLen);
-                update_servo_config[pedalTag] = true; 
+                update_servo_config[pedalTag] = true;
+                // TEMP DIAGNOSTIC (unconditional - "Load From Servo" is rare/
+                // user-triggered from the host, not continuous). Remove once
+                // wireless servo register exchange is confirmed fixed.
+                ActiveSerial->printf("[L][DIAG] ServoConfig RX from host for Pedal #%d\n", pedalTag);
             }
+        }
+        else
+        {
+            ActiveSerial->println("[L][DIAG] ServoConfig RX from host: structChecker FAILED");
         }
     }
 }

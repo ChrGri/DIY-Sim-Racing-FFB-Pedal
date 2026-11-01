@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.Ports;
@@ -13,6 +13,8 @@ namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
+        private readonly byte[] bridge_bufferByteAssignedToStruct_class = new byte[bufferSize];
+        private readonly bool[] bridge_bufferByteAssignedToStruct = new bool[bufferSize];
         
         unsafe public void timerCallback_serial_esphost(object sender, EventArgs e)
         {
@@ -61,7 +63,7 @@ namespace DiyFfbPedal
                         //receivedLength = sp.BytesToRead;
                         receivedLength = Math.Min(sp.BytesToRead, bufferSize);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         //TextBox_debugOutput.Text = ex.Message;
                         //ConnectToPedal.IsChecked = false;
@@ -97,24 +99,34 @@ namespace DiyFfbPedal
 
                         if (appendedBufferOffset[bridgeBufferIndex] > 0)
                         {
-                            int tmp = 5;
                         }
 
-                        bool inBufferDicarded = false;
                         int currentBufferLength = 0;
                         if (bufferSize > currentBufferLength)
                         {
-                            sp.Read(buffer_appended[bridgeBufferIndex], appendedBufferOffset[bridgeBufferIndex], receivedLength);
+                            try
+                            {
+                                // Safe non-blocking read: catch timeout and I/O errors immediately to avoid UI hang
 
-                            // calculate current buffer length
-                            appendedBufferOffset[bridgeBufferIndex] += receivedLength;
-                            currentBufferLength = appendedBufferOffset[bridgeBufferIndex];
+                                int bytesActuallyRead = sp.Read(buffer_appended[bridgeBufferIndex], appendedBufferOffset[bridgeBufferIndex], receivedLength);
+                                if (bytesActuallyRead <= 0) return;
+                                receivedLength = bytesActuallyRead;
+                                appendedBufferOffset[bridgeBufferIndex] += receivedLength;
+                                currentBufferLength = appendedBufferOffset[bridgeBufferIndex];
 
-                            Array.Clear(buffer_appended[bridgeBufferIndex], currentBufferLength, bufferSize - currentBufferLength);
+                                Array.Clear(buffer_appended[bridgeBufferIndex], currentBufferLength, bufferSize - currentBufferLength);
+                            }
+                            catch (TimeoutException)
+                            {
+                                return;
+                            }
+                            catch (IOException)
+                            {
+                                return;
+                            }
                         }
                         else
                         {
-                            inBufferDicarded = true;
                             sp.DiscardInBuffer();
                             appendedBufferOffset[bridgeBufferIndex] = 0;
                             return;
@@ -123,7 +135,6 @@ namespace DiyFfbPedal
 
                         if (!((buffer_appended[bridgeBufferIndex][0] == 170) && (buffer_appended[3][1] == 85)))
                         {
-                            int tmp = 5;
                         }
 
 
@@ -146,6 +157,7 @@ namespace DiyFfbPedal
                         List<int> indices_sof_bridge_basic_struct = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAME_BRIDGE_BASIC_STRUCT, currentBufferLength);
                         List<int> indices_sof_config = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAME_CONFIG, currentBufferLength);
                         List<int> indices_sof_servo_config = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAME_SERVO_CONFIG, currentBufferLength);
+                        List<int> indices_sof_wifi_channel = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAME_WIFI_CHANNEL, currentBufferLength);
                         List<int> indices_eof = FindAllOccurrences(buffer_appended[bridgeBufferIndex], ENDOFFRAMCHAR, currentBufferLength);
 
                         var validPairsExtendedStruct = new List<Tuple<int, int>>();
@@ -153,10 +165,13 @@ namespace DiyFfbPedal
                         var validPairsConfig = new List<Tuple<int, int>>();
                         var validPairsBridgeState = new List<Tuple<int, int>>();
                         var validPairsServoConfig = new List<Tuple<int, int>>();
+                        var validPairsWifiChannel = new List<Tuple<int, int>>();
 
                         bool sofHasBeenReceivedEofNotYet = false;
-                        byte[] bufferByteAssignedToStruct_class = new byte[bufferSize];
-                        bool[] bufferByteAssignedToStruct = new bool[bufferSize];
+                        byte[] bufferByteAssignedToStruct_class = bridge_bufferByteAssignedToStruct_class;
+                        bool[] bufferByteAssignedToStruct = bridge_bufferByteAssignedToStruct;
+                        Array.Clear(bufferByteAssignedToStruct_class, 0, bufferSize);
+                        Array.Clear(bufferByteAssignedToStruct, 0, bufferSize);
 
                         // Search for the basic struct
                         FindValidMessagePairs(
@@ -205,6 +220,15 @@ namespace DiyFfbPedal
                             ref sofHasBeenReceivedEofNotYet,
                             bufferByteAssignedToStruct_class,
                             5);
+                        // Search for the wifi channel struct
+                        FindValidMessagePairs(
+                            indices_sof_wifi_channel,
+                            indices_eof,
+                            System.Runtime.InteropServices.Marshal.SizeOf(typeof(DAP_wifi_channel_st)),
+                            validPairsWifiChannel,
+                            ref sofHasBeenReceivedEofNotYet,
+                            bufferByteAssignedToStruct_class,
+                            6);
                         // check if at least SOF1 byte was received, but EOF was not for last packet
                         List<int> indices_sof1 = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAMCHAR_SOF_byte0, currentBufferLength);
                         List<int> indices_sof1_and_sof2 = FindAllOccurrences(buffer_appended[bridgeBufferIndex], STARTOFFRAMCHAR, currentBufferLength);
@@ -309,9 +333,22 @@ namespace DiyFfbPedal
                                     {
 
                                         bufferByteAssignedToStruct.AsSpan(srcBufferOffset_0, sizeof(DAP_state_extended_st)).Fill(true);
+                                        bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, sizeof(DAP_state_extended_st)).Fill(2);
                                         lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + sizeof(DAP_state_extended_st));
 
 										UInt16 pedalSelectedFromPacket_u16 = pedalState_ext_read_st.payloadHeader_.PedalTag;
+
+                                        if (pedalSelectedFromPacket_u16 < 3 && !Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalSelectedFromPacket_u16])
+                                        {
+                                            continue;
+                                        }
+
+                                        if (pedalSelectedFromPacket_u16 >= 0 && pedalSelectedFromPacket_u16 < 3 && Plugin != null && Plugin._calculations != null)
+                                        {
+                                            Plugin._calculations.pedalState_extended[pedalSelectedFromPacket_u16] = pedalState_ext_read_st;
+                                            Plugin._calculations.pedalState_extended_counter[pedalSelectedFromPacket_u16]++;
+                                            Plugin._calculations.OnExtendedStateReceived?.Invoke((int)pedalSelectedFromPacket_u16, pedalState_ext_read_st);
+                                        }
 										
                                         if (indexOfSelectedPedal_u == pedalSelectedFromPacket_u16)
                                         {
@@ -333,6 +370,8 @@ namespace DiyFfbPedal
                                                     // write header
                                                     if (!File.Exists(filePath))
                                                     {
+                                                        WritePedalConfigForTrace(filePath, pedalSelectedFromPacket_u16);
+
                                                         using (StreamWriter writer = new StreamWriter(filePath, true))
                                                         {
                                                             // Write the content to the file
@@ -343,6 +382,7 @@ namespace DiyFfbPedal
                                                             writer.Write(", servoPositionError_i16");
                                                             writer.Write(", servoVoltage_fl32");
                                                             writer.Write(", servoCurrentPercent_i16");
+                                                            writer.Write(", servoVelocityRpm_i16");
 
                                                             writer.Write(", timeInUs_u32");
                                                             writer.Write(", cycleCount_u32");
@@ -390,6 +430,7 @@ namespace DiyFfbPedal
                                                         $",{state.servoPositionError_i16}" +
                                                         $",{state.servoVoltage0p1V_i16 / 10.0f}" +
                                                         $",{state.servoCurrentPercent_i16}" +
+                                                        $",{state.servoVelocityRpm_i16}" +
 
                                                         $",{state.timeInUs_u32}" +
                                                         $",{state.cycleCount_u32}" +
@@ -471,6 +512,29 @@ namespace DiyFfbPedal
                                         lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + sizeof(DAP_state_basic_st));
 										
 										UInt16 pedalSelectedFromPacket_u16 = pedalState_read_st.payloadHeader_.PedalTag;
+
+                                        // Ignore wireless data if wireless communication is disabled for this pedal
+                                        if (pedalSelectedFromPacket_u16 < 3 && !Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalSelectedFromPacket_u16])
+                                        {
+                                            Plugin._calculations.pedalWirelessStatus[pedalSelectedFromPacket_u16] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                                            Plugin._calculations.rssi[pedalSelectedFromPacket_u16] = 0;
+                                            if (Plugin.Settings.vjoy_output_flag == 1 && Plugin._calculations._joystick != null)
+                                            {
+                                                switch (pedalSelectedFromPacket_u16)
+                                                {
+                                                    case 0:
+                                                        Plugin._calculations._joystick.SetAxis(0, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RX);
+                                                        break;
+                                                    case 1:
+                                                        Plugin._calculations._joystick.SetAxis(0, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RY);
+                                                        break;
+                                                    case 2:
+                                                        Plugin._calculations._joystick.SetAxis(0, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RZ);
+                                                        break;
+                                                }
+                                            }
+                                            continue;
+                                        }
 										
                                         // write vJoy data
                                         Pedal_position_reading[pedalSelectedFromPacket_u16] = pedalState_read_st.payloadPedalBasicState_.joystickOutput_u16;
@@ -527,6 +591,10 @@ namespace DiyFfbPedal
                                             //TextBox_debugOutput.Text += ",  Servo pos: " + pedalState_read_st.payloadPedalState_.servoPosition_i32;
 
                                             PedalForceTravel_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16, pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
+                                            if (pedalKinematicTab != null && pedalKinematicTab.IsSelected)
+                                            {
+                                                PedalKinematics_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16);
+                                            }
 
                                             pedalStateHasAlreadyBeenUpdated_b = true;
 
@@ -706,6 +774,57 @@ namespace DiyFfbPedal
 
                      
 
+                            // wifi channel response
+                            for (int pairId = 0; pairId < validPairsWifiChannel.Count; pairId++)
+                            {
+                                int srcBufferOffset_0 = validPairsWifiChannel[pairId].Item1;
+                                int srcBufferOffset_1 = validPairsWifiChannel[pairId].Item2;
+
+                                int destBuffLength = srcBufferOffset_1 - srcBufferOffset_0;
+                                int wifiChannelMarshalSize = System.Runtime.InteropServices.Marshal.SizeOf(typeof(DAP_wifi_channel_st));
+                                unsafe
+                                {
+                                    if (destBuffLength == wifiChannelMarshalSize)
+                                    {
+                                        byte[] destArr = new byte[destBuffLength];
+                                        Buffer.BlockCopy(buffer_appended[bridgeBufferIndex], srcBufferOffset_0, destArr, 0, destBuffLength);
+
+                                        System.Runtime.InteropServices.GCHandle handle =
+                                            System.Runtime.InteropServices.GCHandle.Alloc(destArr,
+                                                System.Runtime.InteropServices.GCHandleType.Pinned);
+                                        try
+                                        {
+                                            DAP_wifi_channel_st wc = (DAP_wifi_channel_st)
+                                                System.Runtime.InteropServices.Marshal.PtrToStructure(
+                                                    handle.AddrOfPinnedObject(), typeof(DAP_wifi_channel_st));
+
+                                            bool validType = wc.payloadHeader_.payloadType == Constants.wifiChannelPayloadType;
+                                            ushort calcCrc = Plugin.checksumCalcArray(destArr,
+                                                System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadHeader)) +
+                                                System.Runtime.InteropServices.Marshal.SizeOf(typeof(payloadWifiChannel)));
+                                            bool validCrc = (calcCrc == wc.payloadFooter_.checkSum);
+
+                                            if (validType && validCrc)
+                                            {
+                                                bufferByteAssignedToStruct.AsSpan(srcBufferOffset_0, destBuffLength).Fill(true);
+                                                bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, destBuffLength).Fill(6);
+                                                lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + destBuffLength);
+
+                                                HandleWifiChannelResponse(wc);
+                                            }
+                                            else
+                                            {
+                                                bufferByteAssignedToStruct_class.AsSpan(srcBufferOffset_0, destBuffLength).Fill(0);
+                                            }
+                                        }
+                                        finally
+                                        {
+                                            handle.Free();
+                                        }
+                                    }
+                                }
+                            }
+
                             //bridge states here
                             for (int pairId = 0; pairId < validPairsBridgeState.Count; pairId++)
                             {
@@ -760,13 +879,22 @@ namespace DiyFfbPedal
 
                                     if ((check_payload_state_b) && check_crc_state_b)
                                     {
+                                        UpdateFanatecVibrationStatus(bridge_state.payloadBridgeState_.Bridge_action);
                                         bufferByteAssignedToStruct.AsSpan(srcBufferOffset_0, sizeof(DAP_bridge_state_st)).Fill(true);
                                         lastTrueElementIndex = Math.Max(lastTrueElementIndex, srcBufferOffset_0 + sizeof(DAP_bridge_state_st));
 
                                         //Bridge_RSSI = bridge_state.payloadBridgeState_.Pedal_RSSI;
                                         for (int pedalIDX = 0; pedalIDX < 3; pedalIDX++)
                                         {
-                                            Plugin._calculations.rssi[pedalIDX] = bridge_state.payloadBridgeState_.Pedal_RSSI_realtime[pedalIDX];
+                                            if (Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalIDX])
+                                            {
+                                                Plugin._calculations.rssi[pedalIDX] = bridge_state.payloadBridgeState_.Pedal_RSSI_realtime[pedalIDX];
+                                            }
+                                            else
+                                            {
+                                                Plugin._calculations.rssi[pedalIDX] = 0;
+                                                Plugin._calculations.pedalWirelessStatus[pedalIDX] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                                            }
                                         }
 
                                         string connection_tmp = "";
@@ -1015,7 +1143,6 @@ namespace DiyFfbPedal
 
                                     if (!((buffer_appended[bridgeBufferIndex][0] == 170) && (buffer_appended[bridgeBufferIndex][1] == 85)))
                                     {
-                                        int tmp = 5;
                                     }
                                 }
                                 else

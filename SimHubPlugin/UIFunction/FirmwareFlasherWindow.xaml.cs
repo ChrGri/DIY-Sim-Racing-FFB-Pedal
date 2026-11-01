@@ -81,29 +81,29 @@ namespace DiyFfbPedal.UIFunction
             else if (CboFirmware.Items.Count > 0) CboFirmware.SelectedIndex = 0;
         }
 
-        private void BtnRefreshCom_Click(object sender, RoutedEventArgs e) => RefreshPorts();
+        // Re-enumerate every time the list is opened (replaces the former Refresh button).
+        private void CboComPorts_DropDownOpened(object sender, EventArgs e) => RefreshPorts();
 
         private void RefreshPorts()
         {
+            string previousPort = SelectedPort;
             CboComPorts.Items.Clear();
 
-            string[] comPorts = SerialPort.GetPortNames().Distinct().ToArray();
-            var sortedPorts = comPorts
-                .Select(port => new
-                {
-                    Name = port,
-                    Number = int.TryParse(System.Text.RegularExpressions.Regex.Match(port, @"\d+").Value, out int num) ? num : int.MaxValue
-                })
-                .OrderBy(p => p.Number)
-                .Select(p => p.Name)
-                .ToArray();
-
-            foreach (string port in sortedPorts)
+            // Only ports of devices that are actually connected - GetPortNames() also
+            // returns stale registry entries of unplugged devices.
+            foreach (var port in ComPortHelper.GetPresentPorts(forceRefresh: true))
             {
-                CboComPorts.Items.Add(port);
+                var item = new System.Windows.Controls.ComboBoxItem { Content = ComPortHelper.DisplayName(port), Tag = port.ComPortName };
+                CboComPorts.Items.Add(item);
+                if (string.Equals(port.ComPortName, previousPort, StringComparison.OrdinalIgnoreCase))
+                {
+                    CboComPorts.SelectedItem = item;
+                }
             }
-            if (CboComPorts.Items.Count > 0) CboComPorts.SelectedIndex = 0;
+            if (CboComPorts.SelectedItem == null && CboComPorts.Items.Count > 0) CboComPorts.SelectedIndex = 0;
         }
+
+        private string SelectedPort => (CboComPorts.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag as string;
 
         /// <summary>
         /// Extracts an embedded binary from the DLL to the Windows Temp folder
@@ -173,7 +173,7 @@ namespace DiyFfbPedal.UIFunction
                 return;
             }
 
-            string port = CboComPorts.SelectedItem.ToString();
+            string port = SelectedPort;
             string selectedBoardFolder = CboFirmware.SelectedValue.ToString();
 
             // Validation for custom file mode
@@ -186,6 +186,7 @@ namespace DiyFfbPedal.UIFunction
             ForceDisconnectSerial(port);
 
             BtnFlash.IsEnabled = false;
+            BtnEraseEeprom.IsEnabled = false;
             TxtLog.Clear();
             TxtLog.AppendText(selectedBoardFolder == "CUSTOM_LOCAL" ? "Preparing to flash local files...\n" : $"Preparing to flash {selectedBoardFolder}...\n");
 
@@ -240,6 +241,7 @@ namespace DiyFfbPedal.UIFunction
             finally
             {
                 BtnFlash.IsEnabled = true;
+                BtnEraseEeprom.IsEnabled = true;
             }
         }
 
@@ -257,6 +259,46 @@ namespace DiyFfbPedal.UIFunction
             if (_plugin.ESPsync_serialPort.IsOpen && _plugin.ESPsync_serialPort.PortName.Equals(targetPort, StringComparison.OrdinalIgnoreCase))
             {
                 try { _plugin.ESPsync_serialPort.Close(); } catch { }
+            }
+        }
+
+        private async void BtnEraseEeprom_Click(object sender, RoutedEventArgs e)
+        {
+            if (CboComPorts.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a COM port.");
+                return;
+            }
+
+            string port = SelectedPort;
+            ForceDisconnectSerial(port);
+
+            BtnFlash.IsEnabled = false;
+            BtnEraseEeprom.IsEnabled = false;
+            TxtLog.Clear();
+            TxtLog.AppendText($"Starting EEPROM / NVS reset on {port}...\n");
+
+            try
+            {
+                bool success = await _flasher.EraseEepromAsync(port);
+                if (success)
+                {
+                    MessageBox.Show("EEPROM / NVS reset successfully! The device has been restored to factory settings.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show("EEPROM Reset Failed. Check the log for details.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error during EEPROM reset: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                TxtLog.AppendText($"\nERROR: {ex.Message}\n");
+            }
+            finally
+            {
+                BtnFlash.IsEnabled = true;
+                BtnEraseEeprom.IsEnabled = true;
             }
         }
     }

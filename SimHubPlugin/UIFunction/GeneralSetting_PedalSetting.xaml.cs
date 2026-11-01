@@ -124,7 +124,7 @@ namespace DiyFfbPedal.UIFunction
                         if (control.Slider_LC_rate != null) control.Slider_LC_rate.SliderValue = newData.payloadPedalConfig_.loadcell_rating * 2;
                         if (control.Slider_maxgame_output != null) control.Slider_maxgame_output.SliderValue = newData.payloadPedalConfig_.maxGameOutput;
                     }
-                    catch (Exception caughtEx)
+                    catch (Exception)
                     {
                     }
                     
@@ -144,13 +144,28 @@ namespace DiyFfbPedal.UIFunction
                         }
 
                     }
-                    catch (Exception caughtEx)
+                    catch (Exception)
                     {
                     }
                     try
                     {
                         //checkbox
                         if(control.CheckBox_JoystickOutput!=null) control.CheckBox_JoystickOutput.IsChecked = newData.payloadPedalConfig_.travelAsJoystickOutput_u8 == 1;
+                        if (control.CheckBox_WakeOnPluginOnly != null) control.CheckBox_WakeOnPluginOnly.IsChecked = newData.payloadPedalConfig_.wakeOnPluginOnly_u8 == 1;
+                        if (control.ComboBox_BrakeResistorMode != null)
+                        {
+                            int mode = Math.Min((int)newData.payloadPedalConfig_.enableBrakeResistor_u8, BRAKE_RESISTOR_MODE_HARDWARE_CIRCUIT);
+                            if (control.ComboBox_BrakeResistorMode.SelectedIndex != mode) control.ComboBox_BrakeResistorMode.SelectedIndex = mode;
+                        }
+                        if (control.TextBox_BrakeResistorResistance != null)
+                        {
+                            // the resistance only matters for the firmware-switched resistor
+                            control.TextBox_BrakeResistorResistance.IsEnabled = newData.payloadPedalConfig_.enableBrakeResistor_u8 == BRAKE_RESISTOR_MODE_SERVO_BLEEDER_AND_EXTERNAL;
+                        }
+                        if (control.TextBox_BrakeResistorResistance != null && !control.TextBox_BrakeResistorResistance.IsKeyboardFocusWithin)
+                        {
+                            control.TextBox_BrakeResistorResistance.Text = FormatBrakeResistorResistance(newData.payloadPedalConfig_.brakeResistorResistance_Ohm_u8);
+                        }
                         if (control.CheckBox_InvertLoadcellReading != null) control.CheckBox_InvertLoadcellReading.IsChecked = newData.payloadPedalConfig_.invertLoadcellReading_u8 == 1;
                         if (control.CheckBox_InvertMotorDir != null) control.CheckBox_InvertMotorDir.IsChecked = newData.payloadPedalConfig_.invertMotorDirection_u8 == 1;
                         if (control.CheckBox_StepLossRecov != null)
@@ -178,7 +193,7 @@ namespace DiyFfbPedal.UIFunction
 
 
                     }
-                    catch (Exception caughtEx)
+                    catch (Exception)
                     {                         
                     }
 
@@ -336,6 +351,92 @@ namespace DiyFfbPedal.UIFunction
             tmp.payloadPedalConfig_.invertMotorDirection_u8 = (byte)0;
             dap_config_st = tmp;
             ConfigChangedEvent(dap_config_st);
+        }
+
+        private void CheckBox_WakeOnPluginOnly_Checked(object sender, RoutedEventArgs e)
+        {
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.wakeOnPluginOnly_u8 = (byte)1;
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
+
+        private void CheckBox_WakeOnPluginOnly_Unchecked(object sender, RoutedEventArgs e)
+        {
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.wakeOnPluginOnly_u8 = (byte)0;
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
+
+        // values of enableBrakeResistor_u8 (= BRAKE_RESISTOR_MODE_* in the firmware)
+        private const int BRAKE_RESISTOR_MODE_SERVO_BLEEDER = 0;
+        private const int BRAKE_RESISTOR_MODE_SERVO_BLEEDER_AND_EXTERNAL = 1;
+        private const int BRAKE_RESISTOR_MODE_HARDWARE_CIRCUIT = 2;
+
+        private void ComboBox_BrakeResistorMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // the XAML default selection fires during InitializeComponent: not a user change
+            if (ComboBox_BrakeResistorMode == null || !ComboBox_BrakeResistorMode.IsLoaded)
+            {
+                return;
+            }
+            int mode = ComboBox_BrakeResistorMode.SelectedIndex;
+            if (mode < BRAKE_RESISTOR_MODE_SERVO_BLEEDER || mode > BRAKE_RESISTOR_MODE_HARDWARE_CIRCUIT)
+            {
+                return;
+            }
+            if (TextBox_BrakeResistorResistance != null)
+            {
+                TextBox_BrakeResistorResistance.IsEnabled = mode == BRAKE_RESISTOR_MODE_SERVO_BLEEDER_AND_EXTERNAL;
+            }
+            if (dap_config_st.payloadPedalConfig_.enableBrakeResistor_u8 != (byte)mode)
+            {
+                var tmp = dap_config_st;
+                tmp.payloadPedalConfig_.enableBrakeResistor_u8 = (byte)mode;
+                dap_config_st = tmp;
+                ConfigChangedEvent(dap_config_st);
+            }
+        }
+
+        // Brake resistor resistance in whole Ohm (0 = firmware default 10 Ohm)
+        private static string FormatBrakeResistorResistance(byte resistance_Ohm_u8)
+        {
+            byte value_u8 = (resistance_Ohm_u8 == 0) ? (byte)10 : resistance_Ohm_u8;
+            return value_u8.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        private void CommitBrakeResistorResistance()
+        {
+            string text = TextBox_BrakeResistorResistance.Text.Trim();
+            if (int.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int resistance_Ohm)
+                && resistance_Ohm >= 1 && resistance_Ohm <= 255)
+            {
+                byte value_u8 = (byte)resistance_Ohm;
+                if (value_u8 != dap_config_st.payloadPedalConfig_.brakeResistorResistance_Ohm_u8)
+                {
+                    var tmp = dap_config_st;
+                    tmp.payloadPedalConfig_.brakeResistorResistance_Ohm_u8 = value_u8;
+                    dap_config_st = tmp;
+                    ConfigChangedEvent(dap_config_st);
+                }
+            }
+            // invalid input reverts; valid input is shown normalized
+            TextBox_BrakeResistorResistance.Text = FormatBrakeResistorResistance(dap_config_st.payloadPedalConfig_.brakeResistorResistance_Ohm_u8);
+        }
+
+        private void TextBox_BrakeResistorResistance_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter)
+            {
+                CommitBrakeResistorResistance();
+                e.Handled = true;
+            }
+        }
+
+        private void TextBox_BrakeResistorResistance_LostFocus(object sender, RoutedEventArgs e)
+        {
+            CommitBrakeResistorResistance();
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="DiyFfbPedal.DIYFFBPedalControlUI"
+<UserControl x:Class="DiyFfbPedal.DIYFFBPedalControlUI"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -21,33 +21,38 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Width="810">
-        <Grid RenderTransformOrigin="0,0" Width="810" Height="900">
-            <TabControl  x:Name="Function_Tab_seleciton"  SelectionChanged="Function_Tab_seleciton_SelectionChanged" Width="770" Grid.ColumnSpan="2" HorizontalContentAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Height="910" RenderTransformOrigin="0,0" Grid.RowSpan="1">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <Grid x:Name="Grid_RootScaleHost" RenderTransformOrigin="0,0" Width="972" Height="900">
+            <Grid.LayoutTransform>
+                <ScaleTransform x:Name="ScaleTransform_RootScale" ScaleX="1" ScaleY="1"/>
+            </Grid.LayoutTransform>
+            <TabControl  x:Name="Function_Tab_seleciton"  SelectionChanged="Function_Tab_seleciton_SelectionChanged" Width="924" Grid.ColumnSpan="2" HorizontalContentAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Height="910" RenderTransformOrigin="0,0" Grid.RowSpan="1">
                 <TabControl.Resources>
                     <Style TargetType="TabItem">
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="TabItem">
                                     <!--The four values of CornerRadius represent the four corners of the TabItem.-->
-                                    <Border Name="Border" BorderThickness="0,0,0,0" BorderBrush="Gainsboro" CornerRadius="5,5,5,5" Margin="0,0,2,0">
+                                    <Border Name="Border" BorderThickness="1" BorderBrush="#444444" CornerRadius="3" Margin="0,0,2,0">
                                         <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Left" ContentSource="Header" Margin="0,0"/>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="Border" Property="Background" Value="#9F4E4E4E" />
+                                            <Setter TargetName="Border" Property="Background" Value="#4E4E4E" />
+                                            <Setter TargetName="Border" Property="BorderBrush" Value="#666666" />
                                             <Setter Property="TextElement.Foreground" Value="#FFFFFFFF" />
                                         </Trigger>
                                         <Trigger Property="IsSelected" Value="False">
-                                            <Setter TargetName="Border" Property="Background" Value="#004E4E4E" />
-                                            <Setter Property="TextElement.Foreground" Value="#7FFFFFFF" />
+                                            <Setter TargetName="Border" Property="Background" Value="#2A2A2A" />
+                                            <Setter Property="TextElement.Foreground" Value="#D0D0D0" />
                                         </Trigger>
                                         <MultiTrigger>
                                             <MultiTrigger.Conditions>
                                                 <Condition Property="IsMouseOver" SourceName="Border" Value="True"/>
                                                 <Condition Property="IsSelected" Value="False"/>
                                             </MultiTrigger.Conditions>
-                                            <Setter TargetName="Border" Property="Background" Value="#3C4E4E4E" />
+                                            <Setter TargetName="Border" Property="Background" Value="#383838" />
+                                            <Setter TargetName="Border" Property="BorderBrush" Value="#666666" />
                                         </MultiTrigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -61,9 +66,28 @@
                 <TabControl.Background>
                     <SolidColorBrush Color="#FF252525" Opacity="0"/>
                 </TabControl.Background>
-                <TabItem x:Name="Tab_Pedals" Width="200" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <TabItem x:Name="Tab_Home" Width="184.8" Height="40" Padding="0" HorizontalAlignment="Left" VerticalAlignment="Top">
                     <TabItem.Header>
-                        <Border  Width="200" Height="40" Margin="0,0,0,0" >
+                        
+                        <Border Width="184.8" Height="40">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Image Width="26" Height="26" Source="{StaticResource Home}" />
+                                <Label Content="{SLoc DIYFFBPedalPlugin_TextHome, 'HOME'}" FontFamily="Arial Black" FontSize="26" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </TabItem.Header>
+                    <Border HorizontalAlignment="Left" Height="860" VerticalAlignment="Top" Width="924" CornerRadius="5,5,5,5" Margin="0,3,0,0">
+                        <StackPanel Height="905" Width="924" HorizontalAlignment="Left" VerticalAlignment="Top">
+                            <Canvas Height="6" Width="917" Background="#00333333" HorizontalAlignment="Left" Margin="0,1,0,1">
+                                <Line X1="2" Y1="3" X2="917" Y2="3" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="2" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
+                            </Canvas>
+                            <localFunction:HomeDashboard x:Name="HomeDashboardSection" HorizontalAlignment="Left" Width="917"/>
+                        </StackPanel>
+                    </Border>
+                </TabItem>
+                <TabItem x:Name="Tab_Pedals" Width="184.8" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <TabItem.Header>
+                        <Border  Width="184.8" Height="40" Margin="0,0,0,0" >
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Width="26" Height="26" Source="{StaticResource Pedals}" />
                                 <Label Content="{SLoc DIYFFBPedalPlugin_TextPedals, 'PEDALS'}"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
@@ -72,7 +96,7 @@
                     </TabItem.Header>
                     <Border  HorizontalAlignment="Left" Height="860" VerticalAlignment="Top" Width="1200" CornerRadius="5,5,5,5" Margin="0,3,0,0">
                         <StackPanel Height="905" Width="1180" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.ColumnSpan="4">
-                            <Canvas x:Name="canvas_Header_Tab" Height="6" Width="725" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Grid.Row="2" Grid.ColumnSpan="3" Margin="0,1,0,1" >
+                            <Canvas x:Name="canvas_Header_Tab" Height="6" Width="870" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Grid.Row="2" Grid.ColumnSpan="3" Margin="0,1,0,1" >
                                 <Canvas.RenderTransform>
                                     <TransformGroup>
                                         <ScaleTransform ScaleX="1" ScaleY="1"/>
@@ -82,34 +106,36 @@
                                     </TransformGroup>
 
                                 </Canvas.RenderTransform>
-                                <Line x:Name="Line_H_HeaderTab" X1="2" Y1="3" X2="763" Y2="3" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="2" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
+                                <Line x:Name="Line_H_HeaderTab" X1="2" Y1="3" X2="916" Y2="3" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="2" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
                             </Canvas>
                             <StackPanel Height="900" Width="1180" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal" Grid.ColumnSpan="4">
-                                <TabControl  x:Name="MyTab" SelectionChanged="TabControl_SelectionChanged" Width="500" Grid.ColumnSpan="2" HorizontalContentAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="1" Height="40" Margin="3,0,0,0" RenderTransformOrigin="0,0" FlowDirection="RightToLeft">
+                                <TabControl  x:Name="MyTab" SelectionChanged="TabControl_SelectionChanged" Width="500" Grid.ColumnSpan="2" HorizontalContentAlignment="Left" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Row="1" Height="48" Margin="3,0,0,0" RenderTransformOrigin="0,0" FlowDirection="RightToLeft">
                                     <TabControl.Resources>
                                         <Style TargetType="TabItem">
                                             <Setter Property="Template">
                                                 <Setter.Value>
                                                     <ControlTemplate TargetType="TabItem">
                                                         <!--The four values of CornerRadius represent the four corners of the TabItem.-->
-                                                        <Border Name="Border" BorderThickness="0,0,0,0" BorderBrush="Gainsboro" CornerRadius="5,5,5,5" Margin="0,0,2,0">
+                                                        <Border Name="Border" BorderThickness="1" BorderBrush="#444444" CornerRadius="3" Margin="0,0,2,0">
                                                             <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Left" ContentSource="Header" Margin="0,0"/>
                                                         </Border>
                                                         <ControlTemplate.Triggers>
                                                             <Trigger Property="IsSelected" Value="True">
-                                                                <Setter TargetName="Border" Property="Background" Value="#9F4E4E4E" />
+                                                                <Setter TargetName="Border" Property="Background" Value="#4E4E4E" />
+                                                                <Setter TargetName="Border" Property="BorderBrush" Value="#666666" />
                                                                 <Setter Property="TextElement.Foreground" Value="#FFFFFFFF" />
                                                             </Trigger>
                                                             <Trigger Property="IsSelected" Value="False">
-                                                                <Setter TargetName="Border" Property="Background" Value="#004E4E4E" />
-                                                                <Setter Property="TextElement.Foreground" Value="#7FFFFFFF" />
+                                                                <Setter TargetName="Border" Property="Background" Value="#2A2A2A" />
+                                                                <Setter Property="TextElement.Foreground" Value="#D0D0D0" />
                                                             </Trigger>
                                                             <MultiTrigger>
                                                                 <MultiTrigger.Conditions>
                                                                     <Condition Property="IsMouseOver" SourceName="Border" Value="True"/>
                                                                     <Condition Property="IsSelected" Value="False"/>
                                                                 </MultiTrigger.Conditions>
-                                                                <Setter TargetName="Border" Property="Background" Value="#3C4E4E4E" />
+                                                                <Setter TargetName="Border" Property="Background" Value="#383838" />
+                                                                <Setter TargetName="Border" Property="BorderBrush" Value="#666666" />
                                                             </MultiTrigger>
                                                         </ControlTemplate.Triggers>
                                                     </ControlTemplate>
@@ -125,27 +151,10 @@
                                             <TranslateTransform X="0" Y="500"/>
                                         </TransformGroup>
                                     </TabControl.RenderTransform>
-                                    <TabItem x:Name="tabPedalSelection_clutch" Width="150" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                    <TabItem x:Name="tabPedalSelection_accelerator" Tag="2" Width="166" Height="48" Padding="0,0,0,0">
                                         <TabItem.Header>
-                                            <Border  Width="150" Height="40" Margin="0,0,0,0" >
-                                                <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdClutch, 'Clutch'}"  FontFamily="Arial Black" FontSize="26" Height="40" Width="150" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
-
-                                            </Border>
-                                        </TabItem.Header>
-                                    </TabItem>
-                                    <TabItem x:Name="tabPedalSelection_brake" Width="150" Height="40" Padding="0,0,0,0">
-                                        <TabItem.Header>
-                                            <Border  Width="150" Height="40" Margin="0,0,0,0" >
-                                                <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdBrake, 'Brake'}"  FontFamily="Arial Black" FontSize="26" Height="40" Width="150" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
-                                            </Border>
-                                        </TabItem.Header>
-                                        <Border Height="850" Width="1120">
-                                        </Border>
-                                    </TabItem>
-                                    <TabItem x:Name="tabPedalSelection_accelerator" Width="190" Height="40" Padding="0,0,0,0">
-                                        <TabItem.Header>
-                                            <Border  Width="190" Height="40" Margin="0,0,0,0" >
-                                                <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdThrottle, 'Throttle'}"  FontFamily="Arial Black" FontSize="26" Height="40" Width="190" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" RenderTransformOrigin="0.5,0.5"  >
+                                            <Border  Width="166" Height="48" Margin="0,0,0,0" >
+                                                <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdThrottle, 'Throttle'}"  FontFamily="Arial Black" FontSize="26" Height="48" Width="166" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" RenderTransformOrigin="0.5,0.5"  >
                                                     <Label.RenderTransform>
                                                         <TransformGroup>
                                                             <ScaleTransform/>
@@ -158,108 +167,140 @@
                                             </Border>
                                         </TabItem.Header>
                                     </TabItem>
+                                    <TabItem x:Name="tabPedalSelection_brake" Tag="1" Width="166" Height="48" Padding="0,0,0,0">
+                                        <TabItem.Header>
+                                            <Border  Width="166" Height="48" Margin="0,0,0,0" >
+                                                <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdBrake, 'Brake'}"  FontFamily="Arial Black" FontSize="26" Height="48" Width="166" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
+                                            </Border>
+                                        </TabItem.Header>
+                                        <Border Height="850" Width="1120">
+                                        </Border>
+                                    </TabItem>
+                                    <TabItem x:Name="tabPedalSelection_clutch" Tag="0" Width="166" Height="48" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                        <TabItem.Header>
+                                            <Border  Width="166" Height="48" Margin="0,0,0,0" >
+                                                <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalIdClutch, 'Clutch'}"  FontFamily="Arial Black" FontSize="26" Height="48" Width="166" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
+
+                                            </Border>
+                                        </TabItem.Header>
+                                    </TabItem>
 
                                 </TabControl>
-                                <Canvas x:Name="canvas_Header_Tab_sub" Height="900" Width="6" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Grid.Row="0" Grid.ColumnSpan="3" Margin="-460,0,0,0" VerticalAlignment="Top" >
-                                    <Line  X1="3" Y1="2" X2="3" Y2="810" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="1" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
+                                <Canvas x:Name="canvas_Header_Tab_sub" Height="900" Width="6" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Grid.Row="0" Grid.ColumnSpan="3" Margin="-452,0,0,0" VerticalAlignment="Top" >
+                                    <Line  X1="3" Y1="2" X2="3" Y2="827" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="1" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
                                 </Canvas>
-                                <StackPanel Width="175" Height="900" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-455,0,0,0">
-                                    <StackPanel HorizontalAlignment="Center" Height="808" Grid.Row="3" VerticalAlignment="Top" Width="168" Grid.RowSpan="3">
+                                <StackPanel Width="210" Height="900" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-447.5,0,0,0">
+                                    <StackPanel HorizontalAlignment="Center" Height="827" Grid.Row="3" VerticalAlignment="Top" Width="202" Grid.RowSpan="3">
 
-                                        <Border Background="#7F4E4E4E" Height="808" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="168" HorizontalAlignment="Center" >
-                                            <StackPanel HorizontalAlignment="Center" Height="807" VerticalAlignment="Top" Width="160" Margin="0,5,0,0">
+                                        <!-- Connection -->
+                                        <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
+                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Width="192">
                                                 <localFunction:InfoSection_Pedal x:Name="PedalInfo" />
-                                                <TextBox x:Name="textBox_VersionUpdate" HorizontalAlignment="Left" Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="160" Height="25" AutomationProperties.Name="TextBox2" BorderBrush="#00CCCCCC" Background="#00252525" FontSize="8" FontFamily="Arial" />
-                                                <StackPanel Height="30" Width="250" Orientation="Horizontal">
-                                                    <ComboBox x:Name="SerialPortSelection" DropDownOpened="SerialPortSelection_DropDownOpened" SelectionChanged="SerialPortSelectionChanged" Width="76" ItemsSource="{Binding}" DisplayMemberPath="Display" SelectedValuePath="Value" FontSize="8" Height="20" MinHeight="20"/>
-                                                    
-                                                    <CheckBox x:Name="ConnectToPedal" Width="23" Height="30" IsChecked="False" IsEnabled="False" Content="" FontSize="8" Padding="0,0,0,0" Margin="5,0,0,0"/>
-                                                    <styles:SHButtonPrimary x:Name="btn_pedal_connect" Click="ConnectToPedal_click" Width="55"  Height="20" Content="Connect" HorizontalAlignment="Center" Margin="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0" MinHeight="20"  FontFamily="Arial" FontSize="10"/>
+                                                <TextBox x:Name="textBox_VersionUpdate" HorizontalAlignment="Left" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="192" Height="25" AutomationProperties.Name="TextBox2" BorderBrush="#00CCCCCC" Background="#00252525" FontSize="8" FontFamily="Arial" />
+                                                <StackPanel Height="30" Orientation="Horizontal" Margin="0,4,0,0">
+                                                    <ComboBox x:Name="SerialPortSelection" DropDownOpened="SerialPortSelection_DropDownOpened" SelectionChanged="SerialPortSelectionChanged" Width="124" ItemsSource="{Binding}" DisplayMemberPath="Display" SelectedValuePath="Value" FontSize="8" Height="20" MinHeight="20" Padding="0,0,0,0"/>
+                                                    <!-- Hidden connect/disconnect state flag read/written by ConnectToPedal_click and updateUIfromConfig.cs - not a visible control -->
+                                                    <CheckBox x:Name="ConnectToPedal" IsChecked="False" Visibility="Collapsed"/>
+                                                    <Button x:Name="btn_pedal_connect" Style="{StaticResource ConnectPillButton}" Click="ConnectToPedal_click" Width="55"  Height="20" Content="Connect" HorizontalAlignment="Center" Margin="8,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0" MinHeight="20"  FontFamily="Arial" FontSize="10"/>
                                                 </StackPanel>
-                                                <localFunction:Listbox_PedalConfig x:Name="Listbox_PedalConfig"/>
-                                                <localFunction:SettingSection_Pedal x:Name="PedalSettingsSection" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged" Margin="0,5,0,0"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Config Profiles -->
+                                        <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
+                                            <localFunction:Listbox_PedalConfig x:Name="Listbox_PedalConfig" Margin="0,0,0,5" Width="192"/>
+                                        </Border>
+
+                                        <!-- Pedal Settings -->
+                                        <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
+                                            <localFunction:SettingSection_Pedal x:Name="PedalSettingsSection" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
+                                        </Border>
+
+                                        <!-- Actions -->
+                                        <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0" Width="202" HorizontalAlignment="Center">
+                                            <StackPanel HorizontalAlignment="Center" Margin="0,5,0,5">
                                                 <StackPanel Orientation="Horizontal">
-                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="RestartPedal_click" ToolTip="Restart Pedal" Margin="0,5,0,0">
+                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="RestartPedal_click" ToolTip="Restart Pedal">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource Restart}" />
-                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextPedalRestart, 'Retsart'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextPedalRestart, 'Restart'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
-                                                    <Button x:Name="btn_Assignment" Style="{StaticResource IconGridButtonStyle}" Click="btn_Assignment_Click" ToolTip="Wireless Assignment" Margin="5,5,5,0">
-                                                        <StackPanel>
-                                                            <Image Width="30" Height="30" Source="{StaticResource WifiAssignment}" />
-                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextWirelessAssignment, 'Pedal Roles'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
-                                                        </StackPanel>
-                                                    </Button>
-                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_OnlineProfile_Click" ToolTip="Community Config" Margin="0,5,0,0">
+                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_OnlineProfile_Click" ToolTip="Community Config" Margin="5,0,0,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource CommunityConfig}" />
-                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextGetOnlineConfig, 'Cloud Config'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextGetOnlineConfig, 'Online Configs'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_PedalBootMode_Click" ToolTip="Restart the pedal into USB download mode for flashing" Margin="5,0,0,0">
+                                                        <StackPanel>
+                                                            <Image Width="30" Height="30" Source="{StaticResource FirmwareDownload}" />
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextFWFlash, 'Bootloader'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
                                                 </StackPanel>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Printlog_Click" ToolTip="Get Pedal Sensor Info" Margin="0,5,0,0">
+                                                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Printlog_Click" ToolTip="Get Pedal Sensor Info">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource PedalInfo}" />
                                                             <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextGetPedalInfo, 'Pedal Info'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
 
-                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_OTA_enable_Click" ToolTip="OTA update" Margin="5,5,5,0">
+                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_OTA_enable_Click" MouseRightButtonUp="btn_OtaHidden_Click" ToolTip="OTA update" Margin="5,0,0,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource OTA}" />
-                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextPedalOta, 'OTA'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                            <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextPedalOta, 'Wi-Fi Update'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
-                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_SerialMonitorWindow_Click" ToolTip="Serial Monitor" Margin="0,5,0,0">
+                                                    <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_SerialMonitorWindow_Click" ToolTip="Serial Monitor" Margin="5,0,0,0">
                                                         <StackPanel>
                                                             <Image Width="30" Height="30" Source="{StaticResource Monitor}" />
                                                             <Label Content="{SLoc DIYFFBPedalPlugin_ButtonTextSerialMonitor, 'Serial Logs'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                         </StackPanel>
                                                     </Button>
                                                 </StackPanel>
-                                                <Border Background="#FF4E4E4E" Height="50" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="160" HorizontalAlignment="Center" Margin="0,5,0,0" >
-                                                    <TextBox x:Name="TextBox2" TextWrapping="Wrap" Width="160" AutomationProperties.Name="TextBox2" Height="50" FontSize="9" Background="#004E4E4E" BorderBrush="#00CCCCCC" IsHitTestVisible="False" AllowDrop="True" HorizontalAlignment="Center"/>
-                                                </Border>
-                                                
                                             </StackPanel>
                                         </Border>
 
+                                        <!-- Status -->
+                                        <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0,5,0,0" Width="202" HorizontalAlignment="Center">
+                                            <StackPanel Width="192">
+                                                <Label Content="Status" Height="16" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" FontSize="9" Foreground="#FFABB4BE"/>
+                                                <TextBox x:Name="TextBox2" TextWrapping="Wrap" Width="192" AutomationProperties.Name="TextBox2" Height="60" FontSize="9" Background="#141414" Foreground="White" BorderBrush="#00CCCCCC" IsHitTestVisible="False" AllowDrop="True" HorizontalAlignment="Center" VerticalScrollBarVisibility="Auto"/>
+                                            </StackPanel>
+                                        </Border>
 
                                     </StackPanel>
                                 </StackPanel>
 
-                                <StackPanel Height="900" Width="545" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-280,3,0,0">
-                                    <TabControl x:Name="Tab_main_1" Grid.Column="0" SelectionChanged="Tab_main_1_SelectionChanged" HorizontalAlignment="Left" Height="305" Grid.Row="0" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Grid.RowSpan="2">
+                                <StackPanel Height="900" Width="654" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-238,0,0,0">
+                                    <TabControl x:Name="Tab_main_1" Grid.Column="0" SelectionChanged="Tab_main_1_SelectionChanged" HorizontalAlignment="Left" Height="310" Grid.Row="0" VerticalAlignment="Top" Width="648" Padding="0,6,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Grid.RowSpan="2">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
                                                 <Setter Property="Template">
                                                     <Setter.Value>
                                                         <ControlTemplate TargetType="TabItem">
-                                                            <!--The four values of CornerRadius represent the four corners of the TabItem.-->
-                                                            <Border Name="Border" BorderThickness="0,0,0,0" BorderBrush="Gainsboro" CornerRadius="5,5,5,5" Margin="0,0,2,0">
-                                                                <ContentPresenter x:Name="ContentSite"  
-                                VerticalAlignment="Center"  
-                                HorizontalAlignment="Left"  
-                                ContentSource="Header"  
-                                Margin="0,0"/>
+                                                            <Border Name="Border" BorderThickness="1" BorderBrush="#444444" CornerRadius="3" Margin="0,0,2,0">
+                                                                <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Left" ContentSource="Header" Margin="0,0"/>
                                                             </Border>
                                                             <ControlTemplate.Triggers>
                                                                 <Trigger Property="IsSelected" Value="True">
-                                                                    <Setter TargetName="Border" Property="Background" Value="#7F4E4E4E" />
+                                                                    <Setter TargetName="Border" Property="Background" Value="#4E4E4E" />
+                                                                    <Setter TargetName="Border" Property="BorderBrush" Value="#666666" />
                                                                     <Setter Property="TextElement.Foreground" Value="#FFFFFFFF" />
                                                                 </Trigger>
                                                                 <Trigger Property="IsSelected" Value="False">
-                                                                    <Setter TargetName="Border" Property="Background" Value="#334E4E4E" />
-                                                                    <Setter Property="TextElement.Foreground" Value="#33FFFFFF" />
+                                                                    <Setter TargetName="Border" Property="Background" Value="#2A2A2A" />
+                                                                    <Setter Property="TextElement.Foreground" Value="#D0D0D0" />
                                                                 </Trigger>
                                                                 <MultiTrigger>
                                                                     <MultiTrigger.Conditions>
                                                                         <Condition Property="IsMouseOver" SourceName="Border" Value="True"/>
                                                                         <Condition Property="IsSelected" Value="False"/>
                                                                     </MultiTrigger.Conditions>
-                                                                    <Setter TargetName="Border" Property="Background" Value="#4C4E4E4E" />
+                                                                    <Setter TargetName="Border" Property="Background" Value="#383838" />
+                                                                    <Setter TargetName="Border" Property="BorderBrush" Value="#666666" />
                                                                 </MultiTrigger>
                                                             </ControlTemplate.Triggers>
                                                         </ControlTemplate>
@@ -267,61 +308,58 @@
                                                 </Setter>
                                             </Style>
                                         </TabControl.Resources>
-                                        <TabItem Width="180" Height="30" Padding="0,0,0,0">
+                                        <TabItem Width="216" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
-                                                <Border  Width="180" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TextForceTravelCurve, 'FORCE-TRAVEL CURVE'}"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="180"  />
+                                                <Border  Width="216" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TextForceTravelCurve, 'FORCE-TRAVEL CURVE'}"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="216"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:CurveTab_PedalForceTravel_Modified x:Name="PedalForceTravel_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
                                         </TabItem>
-                                        <TabItem x:Name="pedalKinematicTab" Width="180" Height="30" Padding="0,0,0,0">
+                                        <TabItem x:Name="pedalKinematicTab" Width="216" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
-                                                <Border  Width="180" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalKinematics, 'PEDAL KINEMATICS'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="270" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                <Border  Width="216" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalKinematics, 'PEDAL KINEMATICS'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="216" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:KinematicsTab_Pedal x:Name="PedalKinematics_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
                                         </TabItem>
-                                        <TabItem x:Name="pedalJoystickTab" Width="180" Height="30" Padding="0,0,0,0">
+                                        <TabItem x:Name="pedalJoystickTab" Width="216" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
-                                                <Border  Width="180" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TextJoystickMapping, 'JOYSTICK MAPPING'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="180" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                <Border  Width="216" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TextJoystickMapping, 'JOYSTICK MAPPING'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="216" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:CurveTab_JoystickMapping x:Name="PedalJoystick_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
                                         </TabItem>
 
                                     </TabControl>
-                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="222" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,4,0,0">
+                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="235" Grid.Row="4" VerticalAlignment="Top" Width="648" Padding="0,6,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,5,0,0">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
                                                 <Setter Property="Template">
                                                     <Setter.Value>
                                                         <ControlTemplate TargetType="TabItem">
-                                                            <!--The four values of CornerRadius represent the four corners of the TabItem.-->
-                                                            <Border Name="Border" BorderThickness="0,0,0,0" BorderBrush="Gainsboro" CornerRadius="5,5,5,5" Margin="0,0,2,0">
-                                                                <ContentPresenter x:Name="ContentSite"  
-                                                VerticalAlignment="Center"  
-                                                HorizontalAlignment="Left"  
-                                                ContentSource="Header"  
-                                                Margin="0,0"/>
+                                                            <Border Name="Border" BorderThickness="1" BorderBrush="#444444" CornerRadius="3" Margin="0,0,2,0">
+                                                                <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Left" ContentSource="Header" Margin="0,0"/>
                                                             </Border>
                                                             <ControlTemplate.Triggers>
                                                                 <Trigger Property="IsSelected" Value="True">
-                                                                    <Setter TargetName="Border" Property="Background" Value="#7F4E4E4E" />
+                                                                    <Setter TargetName="Border" Property="Background" Value="#4E4E4E" />
+                                                                    <Setter TargetName="Border" Property="BorderBrush" Value="#666666" />
                                                                     <Setter Property="TextElement.Foreground" Value="#FFFFFFFF" />
                                                                 </Trigger>
                                                                 <Trigger Property="IsSelected" Value="False">
-                                                                    <Setter TargetName="Border" Property="Background" Value="#334E4E4E" />
-                                                                    <Setter Property="TextElement.Foreground" Value="#33FFFFFF" />
+                                                                    <Setter TargetName="Border" Property="Background" Value="#2A2A2A" />
+                                                                    <Setter Property="TextElement.Foreground" Value="#D0D0D0" />
                                                                 </Trigger>
                                                                 <MultiTrigger>
                                                                     <MultiTrigger.Conditions>
                                                                         <Condition Property="IsMouseOver" SourceName="Border" Value="True"/>
                                                                         <Condition Property="IsSelected" Value="False"/>
                                                                     </MultiTrigger.Conditions>
-                                                                    <Setter TargetName="Border" Property="Background" Value="#4C4E4E4E" />
+                                                                    <Setter TargetName="Border" Property="Background" Value="#383838" />
+                                                                    <Setter TargetName="Border" Property="BorderBrush" Value="#666666" />
                                                                 </MultiTrigger>
                                                             </ControlTemplate.Triggers>
                                                         </ControlTemplate>
@@ -329,11 +367,10 @@
                                                 </Setter>
                                             </Style>
                                         </TabControl.Resources>
-                                        <TabItem Width="108" Height="30" Padding="0,0,0,0">
+                                        <TabItem Width="129.6" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
-                                                <Border  Width="108
-                                                         " Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TabTextGeneral, 'General'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                <Border  Width="129.6" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TabTextGeneral, 'General'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="129.6" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:GeneralSetting_PedalSetting x:Name="Misc_Tab" ConfigChanged="Tab_ConfigChanged"/>
@@ -341,35 +378,35 @@
 
 
 
-                                        <TabItem Width="108" Height="30" Padding="0,0,0,0">
+                                        <TabItem Width="129.6" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
-                                                <Border  Width="108" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TabTextFilter, 'Filter'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
+                                                <Border  Width="129.6" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TabTextFilter, 'Filter'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="129.6" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:GeneralSetting_KF x:Name="KF_Tab" KF_value="8" KF_selection="2" ConfigChanged="Tab_ConfigChanged"/>
                                         </TabItem>
-                                        <TabItem Width="108" Height="30" Padding="0,0,0,0">
+                                        <TabItem Width="129.6" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
-                                                <Border  Width="108" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TabTextGlobalEffects, 'Global Effects'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
+                                                <Border  Width="129.6" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TabTextGlobalEffects, 'Global Effects'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="129.6" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:GeneralSetting_GlobalEffects x:Name="GlobalEffects_Tab" ConfigChanged="Tab_ConfigChanged"/>
                                         </TabItem>
-                                        <TabItem Width="108" Height="30" Padding="0,0,0,0">
+                                        <TabItem Width="129.6" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
-                                                <Border  Width="108" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TabTextServo, 'Servo'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
+                                                <Border  Width="129.6" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TabTextServo, 'Servo'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="129.6" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:GeneralSetting_Servo x:Name="Servo_Tab" ConfigChanged="Tab_ConfigChanged" ServoRegisterValueChanged="Servo_Tab_ServoRegisterValueChanged" ServoModbusReadRequested="Servo_Tab_ServoModbusReadRequested" ServoModbusBatchReadRequested="Servo_Tab_ServoModbusBatchReadRequested" FlashToServoRequested="Servo_Tab_FlashToServoRequested" ResetToFactoryRequested="Servo_Tab_ResetToFactoryRequested"/>
                                         </TabItem>
 
-										<TabItem Width="108" Height="30" Padding="0,0,0,0">
+										<TabItem Width="129.6" Height="30" Padding="0,0,0,0">
 											<TabItem.Header>
-												<Border  Width="108" Height="30" Margin="0,0,0,0" >
-													<Label Content="{SLoc DIYFFBPedalPlugin_TabTextDynamics, 'Dynamics'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
+												<Border  Width="129.6" Height="30" Margin="0,0,0,0" >
+													<Label Content="{SLoc DIYFFBPedalPlugin_TabTextDynamics, 'Dynamics'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="129.6" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Filter used in pedal"  />
 												</Border>
 											</TabItem.Header>
 											<localFunction:GeneralSetting_Dynamics x:Name="Dynamics_Tab" ConfigChanged="Tab_ConfigChanged"/>
@@ -378,35 +415,32 @@
 
 
                                     </TabControl>
-                                    <TabControl Grid.Column="0" SelectionChanged="TabControl_SelectionChanged_1" HorizontalAlignment="Left" Height="272" Grid.Row="5" VerticalAlignment="Center" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,3,0,0">
+                                    <TabControl Grid.Column="0" SelectionChanged="TabControl_SelectionChanged_1" HorizontalAlignment="Left" Height="275" Grid.Row="5" VerticalAlignment="Center" Width="648" Padding="0,6,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,5,0,0">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
                                                 <Setter Property="Template">
                                                     <Setter.Value>
                                                         <ControlTemplate TargetType="TabItem">
-
-                                                            <Border Name="Border" BorderThickness="0,0,0,0" BorderBrush="Gainsboro" CornerRadius="5,5,5,5" Margin="0,0,2,0">
-                                                                <ContentPresenter x:Name="ContentSite"  
-                                                                    VerticalAlignment="Center"  
-                                                                    HorizontalAlignment="Left"  
-                                                                    ContentSource="Header"  
-                                                                    Margin="0,0"/>
+                                                            <Border Name="Border" BorderThickness="1" BorderBrush="#444444" CornerRadius="3" Margin="0,0,2,0">
+                                                                <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Left" ContentSource="Header" Margin="0,0"/>
                                                             </Border>
                                                             <ControlTemplate.Triggers>
                                                                 <Trigger Property="IsSelected" Value="True">
-                                                                    <Setter TargetName="Border" Property="Background" Value="#7F4E4E4E" />
+                                                                    <Setter TargetName="Border" Property="Background" Value="#4E4E4E" />
+                                                                    <Setter TargetName="Border" Property="BorderBrush" Value="#666666" />
                                                                     <Setter Property="TextElement.Foreground" Value="#FFFFFFFF" />
                                                                 </Trigger>
                                                                 <Trigger Property="IsSelected" Value="False">
-                                                                    <Setter TargetName="Border" Property="Background" Value="#334E4E4E" />
-                                                                    <Setter Property="TextElement.Foreground" Value="#7FFFFFFF" />
+                                                                    <Setter TargetName="Border" Property="Background" Value="#2A2A2A" />
+                                                                    <Setter Property="TextElement.Foreground" Value="#D0D0D0" />
                                                                 </Trigger>
                                                                 <MultiTrigger>
                                                                     <MultiTrigger.Conditions>
                                                                         <Condition Property="IsMouseOver" SourceName="Border" Value="True"/>
                                                                         <Condition Property="IsSelected" Value="False"/>
                                                                     </MultiTrigger.Conditions>
-                                                                    <Setter TargetName="Border" Property="Background" Value="#4C4E4E4E" />
+                                                                    <Setter TargetName="Border" Property="Background" Value="#383838" />
+                                                                    <Setter TargetName="Border" Property="BorderBrush" Value="#666666" />
                                                                 </MultiTrigger>
                                                             </ControlTemplate.Triggers>
                                                         </ControlTemplate>
@@ -416,60 +450,60 @@
                                         </TabControl.Resources>
 
 
-                                        <TabItem Width="67.5" Height="30" Padding="0,0,0,0">
+                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
-                                                <Border  Width="67.5" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="ABS/TC"  FontFamily="Arial Black" FontSize="10" Height="30" Width="67.5" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip="Parameter of the ABS/TC effect "  />
+                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="ABS/TC"  FontFamily="Arial Black" FontSize="10" Height="30" Width="81" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip="Parameter of the ABS/TC effect "  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:EffectsTab_ABS x:Name="EffectsABS_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged" />
                                         </TabItem>
-                                        <TabItem Width="67.5" Height="30" Padding="0,0,0,0">
+                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
-                                                <Border  Width="67.5" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="ENG/SPD"  FontFamily="Arial Black" FontSize="10" Height="30" Width="67.5" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip="Parameter of Engine or Speed rumble"  />
+                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="ENG/SPD"  FontFamily="Arial Black" FontSize="10" Height="30" Width="81" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip="Parameter of Engine or Speed rumble"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:EffectsTab_RPM x:Name="EffectsRPM_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged"/>
                                         </TabItem>
 
-                                        <TabItem Width="67.5" Height="30" Padding="0,0,0,0">
+                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
-                                                <Border  Width="67.5" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Bite Point"  FontFamily="Arial Black" FontSize="10" Height="30" Width="67.5" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip="Parameter of Bite point vibration"  />
+                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="Bite Point"  FontFamily="Arial Black" FontSize="10" Height="30" Width="81" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip="Parameter of Bite point vibration"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:EffectsTab_BitePoint x:Name="EffectsBitePoint_Tab" ConfigChanged="Tab_ConfigChanged" CalculationChanged="Tab_CalculationChanged"/>
                                         </TabItem>
 
-                                        <TabItem Width="67.5" Height="30" Padding="0,0,0,0">
+                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
-                                                <Border  Width="67.5" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="G-Force"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Parameter of G force effect" Width="67.5"  />
+                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="G-Force"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Parameter of G force effect" Width="81"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:EffectsTab_GForce x:Name="EffectsGFroce_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged"/>
                                         </TabItem>
-                                        <TabItem Width="67.5" Height="30" Padding="0,0,0,0">
+                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
-                                                <Border  Width="67.5" Height="30" Margin="0,0,0,0" HorizontalAlignment="Center" >
-                                                    <Label Content="Wheel Slip"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="67.5"  />
+                                                <Border  Width="81" Height="30" Margin="0,0,0,0" HorizontalAlignment="Center" >
+                                                    <Label Content="Wheel Slip"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="81"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:EffectsTab_WheelSlip x:Name="EffectsWheelSlip_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged"/>
                                         </TabItem>
-                                        <TabItem Width="67.5" Height="30" Padding="0,0,0,0">
+                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
-                                                <Border  Width="67.5" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Impact"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="67.5" HorizontalAlignment="Center"  />
+                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="Impact"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="81" HorizontalAlignment="Center"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:EffectsTab_RoadImpact x:Name="EffectsRoadImpact_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged"/>
                                         </TabItem>
-                                        <TabItem Width="67.5" Height="30" Padding="0,0,0,0">
+                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
-                                                <Border  Width="67.5" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Custom"  FontFamily="Arial Black" FontSize="10" Height="30" Width="67.5" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip=" "  />
+                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="Custom"  FontFamily="Arial Black" FontSize="10" Height="30" Width="81" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip=" "  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:EffectsTab_Custom x:Name="EffectsCustom_tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
@@ -482,9 +516,9 @@
 
                     </Border>
                 </TabItem>
-                <TabItem x:Name="Tab_Rudder" Width="200" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <TabItem x:Name="Tab_Rudder" Width="184.8" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
                     <TabItem.Header>
-                        <Border  Width="200" Height="40" Margin="0,0,0,0" >
+                        <Border  Width="184.8" Height="40" Margin="0,0,0,0" >
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Width="26" Height="26" Source="{StaticResource plane}" />
                                 <Label Content="{SLoc DIYFFBPedalPlugin_TextRudder, 'RUDDER'}"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
@@ -493,22 +527,22 @@
                     </TabItem.Header>
                     <Border  HorizontalAlignment="Left" Height="860" VerticalAlignment="Top" Width="1200" CornerRadius="5,5,5,5" Margin="0,3,0,0">
                         <StackPanel Height="905" Width="1180" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.ColumnSpan="4">
-                            <Canvas  Height="6" Width="725" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Grid.Row="2" Grid.ColumnSpan="3" Margin="0,1,0,1" >
-                                <Line  X1="2" Y1="3" X2="763" Y2="3" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="2" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
+                            <Canvas  Height="6" Width="870" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Grid.Row="2" Grid.ColumnSpan="3" Margin="0,1,0,1" >
+                                <Line  X1="2" Y1="3" X2="916" Y2="3" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="2" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
                             </Canvas>
                             <StackPanel Height="900" Width="1180" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal" Grid.ColumnSpan="4">
-                                <Canvas  Height="900" Width="6" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Grid.Row="0" Grid.ColumnSpan="3" Margin="43,0,0,0" VerticalAlignment="Top" >
-                                    <Line  X1="3" Y1="2" X2="3" Y2="498" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="1" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
+                                <Canvas  Height="900" Width="6" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Grid.Row="0" Grid.ColumnSpan="3" Margin="52,0,0,0" VerticalAlignment="Top" >
+                                    <Line  X1="3" Y1="2" X2="3" Y2="846" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="1" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
                                 </Canvas>
-                                <StackPanel HorizontalAlignment="Center" Height="498" Grid.Row="3" VerticalAlignment="Top" Width="168" Grid.RowSpan="3" Margin="2,0,0,0">
+                                <StackPanel HorizontalAlignment="Center" Height="498" Grid.Row="3" VerticalAlignment="Top" Width="202" Grid.RowSpan="3" Margin="2,0,0,0">
 
-                                    <Border Background="#7F4E4E4E" Height="498" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="168" HorizontalAlignment="Center" >
-                                        <StackPanel HorizontalAlignment="Center" Height="498" VerticalAlignment="Top" Width="160" Margin="0,5,0,0">
-                                            <localFunction:InfoSection_Rudder x:Name="RudderInfo" />
-                                            <TextBox x:Name="TextBox_rudder_debug" HorizontalAlignment="Left" Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="160" Height="25" AutomationProperties.Name="TextBox2" BorderBrush="#00CCCCCC" Background="#00252525" FontSize="8" FontFamily="Arial" />
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                                                <ComboBox SelectedValuePath="Tag" Width="100" SelectedValue="{Binding Plugin.Settings.rudderMode, Mode=TwoWay}" Height="20" Padding="0,0,0,0" BorderThickness="0,0,0,0" MinHeight="20">
-                                                    <ComboBoxItem Content="Flight">
+                                    <Border Style="{StaticResource Card}" Margin="0" Padding="0,0,0,0" Height="498" Width="202" HorizontalAlignment="Center" >
+                                        <StackPanel HorizontalAlignment="Center" Height="498" VerticalAlignment="Top" Width="192">
+                                            <localFunction:InfoSection_Rudder x:Name="RudderInfo" Margin="0,5,0,0" />
+                                            <Button x:Name="btn_SidebarRudderDocs" Click="btn_RudderDocs_Click" Content="📖 Flight Docs ↗" Width="158" Height="18" Margin="0,2,0,4" Background="#2600AAFF" Foreground="#00CCFF" BorderBrush="#3300CCFF" BorderThickness="1" FontSize="9" FontFamily="Arial" Cursor="Hand" ToolTip="Open Rudder Flight Dynamics Documentation on GitHub" HorizontalAlignment="Center"/>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,0">
+                                                <ComboBox x:Name="combo_rudderMode" SelectedValuePath="Tag" Width="106" SelectedValue="{Binding Plugin.Settings.rudderMode, Mode=TwoWay}" SelectionChanged="RudderMode_SelectionChanged" Height="22" Padding="2,0,0,0" BorderThickness="0,0,0,0" MinHeight="20" ToolTip="Rudder Mode: Airplane, Helicopter, or Airplane with Toe Brake">
+                                                    <ComboBoxItem Content="Airplane">
                                                         <ComboBoxItem.Tag>
                                                             <sys:UInt32>0</sys:UInt32>
                                                         </ComboBoxItem.Tag>
@@ -518,45 +552,59 @@
                                                             <sys:UInt32>1</sys:UInt32>
                                                         </ComboBoxItem.Tag>
                                                     </ComboBoxItem>
+                                                    <ComboBoxItem Content="Airplane with Toe Brake">
+                                                        <ComboBoxItem.Tag>
+                                                            <sys:UInt32>2</sys:UInt32>
+                                                        </ComboBoxItem.Tag>
+                                                    </ComboBoxItem>
+                                                    <ComboBoxItem Content="Toe Brake">
+                                                        <ComboBoxItem.Tag>
+                                                            <sys:UInt32>3</sys:UInt32>
+                                                        </ComboBoxItem.Tag>
+                                                    </ComboBoxItem>
                                                 </ComboBox>
-                                                <styles:SHButtonPrimary x:Name="btn_rudder_initialize" Click="btn_rudder_initialize_Click" Width="55" Height="20" Content="Rudder" Margin="5,0,0,0" HorizontalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" HorizontalContentAlignment="Center" MinHeight="20" />
+                                                <Button x:Name="btn_rudder_initialize" Style="{StaticResource ModernPillButton}" Click="btn_rudder_initialize_Click" Width="48" Height="22" Content="Rudder" Margin="4,0,0,0" HorizontalAlignment="Center" VerticalContentAlignment="Center" Padding="0,0,0,0" FontFamily="Arial" FontSize="10" HorizontalContentAlignment="Center" MinHeight="20" />
                                             </StackPanel>
+                                            
+                                            <!-- Mode 2/3 Brake Switch / Status Button -->
+                                            <Button x:Name="btn_rudder_brake" Click="btn_rudder_brake_Click" Content="Toe Brake: OFF (Yaw)" Width="158" Height="22" Margin="0,4,0,0" Background="#33FF9900" Foreground="#FFAA33" BorderBrush="#66FF9900" BorderThickness="1" FontSize="9.5" FontWeight="SemiBold" FontFamily="Arial" Cursor="Hand" ToolTip="Toggle between Yaw Steering and Toe Braking (SimHub Action: 'Toe Brake')" HorizontalAlignment="Center"/>
+                                            
+                                            <!-- Rudder Status & Operation Monitor Box -->
+                                            <TextBox x:Name="text_rudder_log" HorizontalAlignment="Center" VerticalAlignment="Top" Text="Rudder Monitor Ready..." Width="158" Foreground="#00FFCC" Height="314" Margin="0,6,0,0" FontSize="9" FontFamily="Consolas" Background="#EE141720" BorderBrush="#3300FFCC" BorderThickness="1" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="4"/>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
-                                <StackPanel Width="540" Height="900" Margin="3,0,0,0">
-                                    <StackPanel Width="540" Height="272" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="1,0,0,0">
-                                        <localFunction:CurveTab_Rudder x:Name="CurveRudderForce_Tab" ConfigChanged="Rudder_ConfigChanged" CalculationChanged="Tab_CalculationChanged"/>
-                                    </StackPanel>
-                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="222" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,4,0,0">
+                                <StackPanel Width="648" Height="900" Margin="3,0,0,0">
+                                    <TabControl HorizontalAlignment="Left" Height="310" VerticalAlignment="Top" Width="648" Padding="0,6,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
                                                 <Setter Property="Template">
                                                     <Setter.Value>
                                                         <ControlTemplate TargetType="TabItem">
-                                                            <!--The four values of CornerRadius represent the four corners of the TabItem.-->
-                                                            <Border Name="Border" BorderThickness="0,0,0,0" BorderBrush="Gainsboro" CornerRadius="5,5,5,5" Margin="0,0,2,0">
-                                                                <ContentPresenter x:Name="ContentSite"  
-                                                                VerticalAlignment="Center"  
-                                                                HorizontalAlignment="Left"  
-                                                                ContentSource="Header"  
-                                                                Margin="0,0"/>
+                                                            <Border Name="Border" BorderThickness="1" BorderBrush="#444444" CornerRadius="3" Margin="0,0,2,0">
+                                                                <ContentPresenter x:Name="ContentSite"
+                                                                    VerticalAlignment="Center"
+                                                                    HorizontalAlignment="Left"
+                                                                    ContentSource="Header"
+                                                                    Margin="0,0"/>
                                                             </Border>
                                                             <ControlTemplate.Triggers>
                                                                 <Trigger Property="IsSelected" Value="True">
-                                                                    <Setter TargetName="Border" Property="Background" Value="#7F4E4E4E" />
+                                                                    <Setter TargetName="Border" Property="Background" Value="#4E4E4E" />
+                                                                    <Setter TargetName="Border" Property="BorderBrush" Value="#666666" />
                                                                     <Setter Property="TextElement.Foreground" Value="#FFFFFFFF" />
                                                                 </Trigger>
                                                                 <Trigger Property="IsSelected" Value="False">
-                                                                    <Setter TargetName="Border" Property="Background" Value="#334E4E4E" />
-                                                                    <Setter Property="TextElement.Foreground" Value="#33FFFFFF" />
+                                                                    <Setter TargetName="Border" Property="Background" Value="#2A2A2A" />
+                                                                    <Setter Property="TextElement.Foreground" Value="#D0D0D0" />
                                                                 </Trigger>
                                                                 <MultiTrigger>
                                                                     <MultiTrigger.Conditions>
                                                                         <Condition Property="IsMouseOver" SourceName="Border" Value="True"/>
                                                                         <Condition Property="IsSelected" Value="False"/>
                                                                     </MultiTrigger.Conditions>
-                                                                    <Setter TargetName="Border" Property="Background" Value="#4C4E4E4E" />
+                                                                    <Setter TargetName="Border" Property="Background" Value="#383838" />
+                                                                    <Setter TargetName="Border" Property="BorderBrush" Value="#666666" />
                                                                 </MultiTrigger>
                                                             </ControlTemplate.Triggers>
                                                         </ControlTemplate>
@@ -564,31 +612,275 @@
                                                 </Setter>
                                             </Style>
                                         </TabControl.Resources>
-                                        <TabItem Width="90" Height="30" Padding="0,0,0,0" >
+                                        <TabItem Width="324" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
-                                                <Border  Width="90" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="General"  FontFamily="Arial Black" FontSize="10" Height="30" Width="90" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                <Border Width="324" Height="30" Margin="0,0,0,0">
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TextForceCurveAdjustment, 'RUDDER FORCE CURVE'}" FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="324" />
                                                 </Border>
                                             </TabItem.Header>
-                                            <localFunction:GeneralSetting_RudderSetting x:Name="RudderSetting_Tab" ConfigChanged="Rudder_ConfigChanged"/>
+                                            <localFunction:CurveTab_Rudder x:Name="CurveRudderForce_Tab" SettingsChanged="Tab_SettingsChanged" ConfigChanged="Rudder_ConfigChanged" CalculationChanged="Tab_CalculationChanged"/>
                                         </TabItem>
-                                        <TabItem Width="90" Height="30" Padding="0,0,0,0" >
+                                        <TabItem x:Name="rudderJoystickTab" Width="324" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
-                                                <Border  Width="90" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="RPM"  FontFamily="Arial Black" FontSize="10" Height="30" Width="90" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                <Border Width="324" Height="30" Margin="0,0,0,0">
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TextJoystickMapping, 'JOYSTICK MAPPING'}" FontFamily="Arial Black" FontSize="10" Height="30" Width="324" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" />
+                                                </Border>
+                                            </TabItem.Header>
+                                            <localFunction:CurveTab_RudderJoystickMapping x:Name="RudderJoystick_Tab" ConfigChanged="Rudder_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
+                                        </TabItem>
+                                    </TabControl>
+                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="228" Grid.Row="4" VerticalAlignment="Top" Width="648" Padding="0,6,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent" Margin="0,5,0,0">
+                                        <TabControl.Resources>
+                                            <Style TargetType="TabItem">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="TabItem">
+                                                            <!--The four values of CornerRadius represent the four corners of the TabItem.-->
+                                                            <Border Name="Border" BorderThickness="1" BorderBrush="#444444" CornerRadius="3" Margin="0,0,2,0">
+                                                                <ContentPresenter x:Name="ContentSite"
+                                                                VerticalAlignment="Center"
+                                                                HorizontalAlignment="Left"
+                                                                ContentSource="Header"
+                                                                Margin="0,0"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsSelected" Value="True">
+                                                                    <Setter TargetName="Border" Property="Background" Value="#4E4E4E" />
+                                                                    <Setter TargetName="Border" Property="BorderBrush" Value="#666666" />
+                                                                    <Setter Property="TextElement.Foreground" Value="#FFFFFFFF" />
+                                                                </Trigger>
+                                                                <Trigger Property="IsSelected" Value="False">
+                                                                    <Setter TargetName="Border" Property="Background" Value="#2A2A2A" />
+                                                                    <Setter Property="TextElement.Foreground" Value="#D0D0D0" />
+                                                                </Trigger>
+                                                                <MultiTrigger>
+                                                                    <MultiTrigger.Conditions>
+                                                                        <Condition Property="IsMouseOver" SourceName="Border" Value="True"/>
+                                                                        <Condition Property="IsSelected" Value="False"/>
+                                                                    </MultiTrigger.Conditions>
+                                                                    <Setter TargetName="Border" Property="Background" Value="#383838" />
+                                                                    <Setter TargetName="Border" Property="BorderBrush" Value="#666666" />
+                                                                </MultiTrigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </TabControl.Resources>
+                                        <TabItem Width="108" Height="30" Padding="0,0,0,0" >
+                                            <TabItem.Header>
+                                                <Border  Width="108" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="Dynamic"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                </Border>
+                                            </TabItem.Header>
+                                            <localFunction:GeneralSetting_RudderDynamics x:Name="RudderDynamics_Tab" SettingsChanged="Tab_SettingsChanged" ConfigChanged="Rudder_ConfigChanged"/>
+                                        </TabItem>
+                                        <TabItem Width="108" Height="30" Padding="0,0,0,0" >
+                                            <TabItem.Header>
+                                                <Border  Width="108" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="RPM"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:EffectsTab_RPMRudder x:Name="EffectsRPMRudder_Tab" SettingsChanged="Tab_SettingsChanged" ConfigChanged="Rudder_ConfigChanged"/>
                                         </TabItem>
-                                        <TabItem Width="90" Height="30" Padding="0,0,0,0" >
+                                        <TabItem Width="108" Height="30" Padding="0,0,0,0" >
                                             <TabItem.Header>
-                                                <Border  Width="90" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Acceleration"  FontFamily="Arial Black" FontSize="10" Height="30" Width="90" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                <Border  Width="108" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="Acceleration"  FontFamily="Arial Black" FontSize="10" Height="30" Width="108" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:EffectsTab_RudderACC x:Name="EffectRudderACC_Tab" SettingsChanged="Tab_SettingsChanged"/>
                                         </TabItem>
                                     </TabControl>
+
+                                    <!-- Wireless Sync Latency & Stability Monitor with RSSI Subplot -->
+                                    <Border Style="{StaticResource Card}" Padding="0" Height="175" Width="648" Margin="0,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                        <Grid Margin="8,4,8,4">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Header & Live Badges -->
+                                            <DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,3">
+                                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                                                    <!-- Clean Vector WiFi / Broadcast Icon (no emoji corruption) -->
+                                                    <Canvas Width="14" Height="12" Margin="0,0,6,0" VerticalAlignment="Center">
+                                                        <Path Data="M1,2.5 A9,9 0 0,1 13,2.5 M3,5.5 A6,6 0 0,1 11,5.5 M5.5,8.5 A3,3 0 0,1 8.5,8.5" Stroke="#00E5FF" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                                                        <Ellipse Width="2" Height="2" Fill="#00E5FF" Canvas.Left="6" Canvas.Top="9"/>
+                                                    </Canvas>
+                                                    <TextBlock Text="ESP-NOW WIRELESS TELEMETRY &amp; SYNC" FontFamily="Arial Black" FontSize="10" Foreground="#00E5FF" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                
+                                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                                                    <Border Background="#3300FFCC" BorderBrush="#6600FFCC" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="2,0">
+                                                        <TextBlock x:Name="tb_rudder_sync_delay" Text="Delay: -- ms" FontFamily="Consolas" FontSize="9" Foreground="#00FFCC" FontWeight="Bold"/>
+                                                    </Border>
+                                                    <Border Background="#22FFFFFF" BorderBrush="#44FFFFFF" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="2,0">
+                                                        <TextBlock x:Name="tb_rudder_sync_rate" Text="Rate: -- Hz" FontFamily="Consolas" FontSize="9" Foreground="#E0E0E0"/>
+                                                    </Border>
+                                                    <Border Background="#22FFFFFF" BorderBrush="#44FFFFFF" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="2,0">
+                                                        <TextBlock x:Name="tb_rudder_sync_jitter" Text="Jitter: Â±-- ms" FontFamily="Consolas" FontSize="9" Foreground="#AAAAAA"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </DockPanel>
+
+                                            <!-- Dual Subplot Frame -->
+                                            <Border Grid.Row="1" Background="#EE141720" BorderBrush="#3300E5FF" BorderThickness="1" CornerRadius="4" ClipToBounds="True">
+                                                <StackPanel Orientation="Vertical">
+                                                    <!-- Subplot 1: Latency -->
+                                                    <Canvas x:Name="canvas_rudder_latency_graph" Height="58" Width="624" Margin="0" ClipToBounds="True">
+                                                        <!-- Subplot Title Tag -->
+                                                        <TextBlock Text="LATENCY" Foreground="#5500E5FF" FontSize="8" FontFamily="Arial" FontWeight="Bold" Canvas.Left="5" Canvas.Top="2"/>
+
+                                                        <!-- Horizontal Reference Grid Lines (0 - 30ms scale) -->
+                                                        <Line X1="0" Y1="18" X2="624" Y2="18" Stroke="#18FFFFFF" StrokeDashArray="2 2"/>
+                                                        <TextBlock Text="20ms" Foreground="#44FFFFFF" FontSize="7" FontFamily="Consolas" Canvas.Left="4" Canvas.Top="12"/>
+
+                                                        <Line X1="0" Y1="38" X2="624" Y2="38" Stroke="#18FFFFFF" StrokeDashArray="2 2"/>
+                                                        <TextBlock Text="10ms" Foreground="#44FFFFFF" FontSize="7" FontFamily="Consolas" Canvas.Left="4" Canvas.Top="32"/>
+
+                                                        <Line X1="0" Y1="51" X2="624" Y2="51" Stroke="#18FFFFFF" StrokeDashArray="2 2"/>
+                                                        <TextBlock Text="5ms" Foreground="#44FFFFFF" FontSize="7" FontFamily="Consolas" Canvas.Left="4" Canvas.Top="45"/>
+
+                                                        <!-- Vertical Time Grid Lines (1s intervals across 5s window) -->
+                                                        <Line X1="125" Y1="0" X2="125" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
+                                                        <Line X1="250" Y1="0" X2="250" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
+                                                        <Line X1="374" Y1="0" X2="374" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
+                                                        <Line X1="499" Y1="0" X2="499" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
+
+                                                        <!-- Live Polyline Graph -->
+                                                        <Polygon x:Name="poly_rudder_latency_fill" Fill="#1200FFCC"/>
+                                                        <Polyline x:Name="poly_rudder_latency_trace" Stroke="#00FFCC" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                                    </Canvas>
+
+                                                    <!-- Divider between subplots -->
+                                                    <Line X1="0" Y1="0" X2="624" Y2="0" Stroke="#2600E5FF" StrokeThickness="1"/>
+
+                                                    <!-- Subplot 2: Pedals RSSI -->
+                                                    <Canvas x:Name="canvas_rudder_rssi_graph" Height="58" Width="624" Margin="0" ClipToBounds="True">
+                                                        <!-- Legend & Subplot Title Tag -->
+                                                        <StackPanel Orientation="Horizontal" Canvas.Left="5" Canvas.Top="2">
+                                                            <TextBlock Text="PEDAL RSSI" Foreground="#55FFFFFF" FontSize="8" FontFamily="Arial" FontWeight="Bold" Margin="0,0,8,0"/>
+                                                            <TextBlock Text="&#x25A0; Clutch: " Foreground="#33D1CC" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
+                                                            <TextBlock x:Name="tb_rssi_clutch_val" Text="--" Foreground="#33D1CC" FontSize="8" FontFamily="Consolas" Margin="0,0,8,0"/>
+                                                            <TextBlock Text="&#x25A0; Brake: " Foreground="#E02424" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
+                                                            <TextBlock x:Name="tb_rssi_brake_val" Text="--" Foreground="#E02424" FontSize="8" FontFamily="Consolas" Margin="0,0,8,0"/>
+                                                            <TextBlock Text="&#x25A0; Throttle: " Foreground="#4CD137" FontSize="8" FontFamily="Arial" FontWeight="Bold"/>
+                                                            <TextBlock x:Name="tb_rssi_throttle_val" Text="--" Foreground="#4CD137" FontSize="8" FontFamily="Consolas"/>
+                                                        </StackPanel>
+
+                                                        <!-- Horizontal Reference Grid Lines (-30 to -100 dBm scale) -->
+                                                        <Line X1="0" Y1="17" X2="624" Y2="17" Stroke="#18FFFFFF" StrokeDashArray="2 2"/>
+                                                        <TextBlock Text="-40dBm" Foreground="#44FFFFFF" FontSize="7" FontFamily="Consolas" Canvas.Left="4" Canvas.Top="11"/>
+
+                                                        <Line X1="0" Y1="37" X2="624" Y2="37" Stroke="#18FFFFFF" StrokeDashArray="2 2"/>
+                                                        <TextBlock Text="-65dBm" Foreground="#44FFFFFF" FontSize="7" FontFamily="Consolas" Canvas.Left="4" Canvas.Top="31"/>
+
+                                                        <Line X1="0" Y1="53" X2="624" Y2="53" Stroke="#18FFFFFF" StrokeDashArray="2 2"/>
+                                                        <TextBlock Text="-85dBm" Foreground="#44FFFFFF" FontSize="7" FontFamily="Consolas" Canvas.Left="4" Canvas.Top="47"/>
+
+                                                        <!-- Vertical Time Grid Lines -->
+                                                        <Line X1="125" Y1="0" X2="125" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
+                                                        <Line X1="250" Y1="0" X2="250" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
+                                                        <Line X1="374" Y1="0" X2="374" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
+                                                        <Line X1="499" Y1="0" X2="499" Y2="70" Stroke="#0DFFFFFF" StrokeDashArray="2 2"/>
+
+                                                        <!-- Live RSSI Traces: Red=Clutch, Green=Brake, Blue=Throttle -->
+                                                        <Polyline x:Name="poly_rssi_clutch" Stroke="#33D1CC" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                                        <Polyline x:Name="poly_rssi_brake" Stroke="#E02424" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                                        <Polyline x:Name="poly_rssi_throttle" Stroke="#4CD137" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                                    </Canvas>
+
+                                                    <!-- Divider before X-Axis -->
+                                                    <Line X1="0" Y1="0" X2="624" Y2="0" Stroke="#22FFFFFF" StrokeThickness="1"/>
+
+                                                    <!-- Subplot 3 / Bottom X-Axis (Ticks & Label "plot age cycle") -->
+                                                    <Canvas x:Name="canvas_rudder_xaxis" Height="20" Width="624" Margin="0" ClipToBounds="True">
+                                                        <!-- Tick Marks (3px tick height) -->
+                                                        <Line X1="0" Y1="0" X2="0" Y2="3" Stroke="#55FFFFFF"/>
+                                                        <Line X1="125" Y1="0" X2="125" Y2="3" Stroke="#55FFFFFF"/>
+                                                        <Line X1="250" Y1="0" X2="250" Y2="3" Stroke="#55FFFFFF"/>
+                                                        <Line X1="374" Y1="0" X2="374" Y2="3" Stroke="#55FFFFFF"/>
+                                                        <Line X1="499" Y1="0" X2="499" Y2="3" Stroke="#55FFFFFF"/>
+                                                        <Line X1="623" Y1="0" X2="623" Y2="3" Stroke="#55FFFFFF"/>
+
+                                                        <!-- Tick Labels -->
+                                                        <TextBlock Text="-5s" Foreground="#77FFFFFF" FontSize="7" FontFamily="Consolas" Canvas.Left="2" Canvas.Top="2"/>
+                                                        <TextBlock Text="-4s" Foreground="#77FFFFFF" FontSize="7.5" FontFamily="Consolas" Canvas.Left="115" Canvas.Top="2"/>
+                                                        <TextBlock Text="-3s" Foreground="#77FFFFFF" FontSize="7.5" FontFamily="Consolas" Canvas.Left="240" Canvas.Top="2"/>
+                                                        <TextBlock Text="-2s" Foreground="#77FFFFFF" FontSize="7.5" FontFamily="Consolas" Canvas.Left="365" Canvas.Top="2"/>
+                                                        <TextBlock Text="-1s" Foreground="#77FFFFFF" FontSize="7.5" FontFamily="Consolas" Canvas.Left="490" Canvas.Top="2"/>
+                                                        <TextBlock Text="0s (now)" Foreground="#77FFFFFF" FontSize="7.5" FontFamily="Consolas" Canvas.Left="571" Canvas.Top="2"/>
+
+                                                        <!-- Axis Title -->
+                                                        <TextBlock Text="plot age cycle" Foreground="#55FFFFFF" FontSize="7" FontFamily="Arial" FontStyle="Italic" Canvas.Left="269" Canvas.Top="9"/>
+                                                    </Canvas>
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- 2.4 GHz Wi-Fi Frequency & Channel Optimizer Card -->
+                                    <Border Style="{StaticResource Card}" Padding="0" Height="102" Width="648" Margin="0,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                        <Grid Margin="8,5,8,5">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Row 0: Header & Current Channel Status Badges -->
+                                            <DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,3">
+                                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                                                    <Canvas Width="14" Height="12" Margin="0,0,6,0" VerticalAlignment="Center">
+                                                        <Path Data="M1,2.5 A9,9 0 0,1 13,2.5 M3,5.5 A6,6 0 0,1 11,5.5 M5.5,8.5 A3,3 0 0,1 8.5,8.5" Stroke="#00E5FF" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                                                        <Ellipse Width="2" Height="2" Fill="#00E5FF" Canvas.Left="6" Canvas.Top="9.5"/>
+                                                    </Canvas>
+                                                    <TextBlock Text="WI-FI SPECTRUM &amp; CHANNEL OPTIMIZER" FontFamily="Arial Black" FontSize="9.5" Foreground="#00E5FF" VerticalAlignment="Center"/>
+                                                </StackPanel>
+
+                                                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                                                    <Button x:Name="btn_scan_wifi_channels" Click="btn_scan_wifi_channels_Click" Content="🔍 Scan Spectrum" Width="108" Height="18" Margin="0,0,4,0" Background="#2600AAFF" Foreground="#00CCFF" BorderBrush="#3300CCFF" BorderThickness="1" FontSize="8.5" FontFamily="Arial" FontWeight="SemiBold" Cursor="Hand" VerticalAlignment="Center" ToolTip="Scan all 2.4 GHz channels (1-13) for RF interference"/>
+                                                    <Border Background="#22FFFFFF" BorderBrush="#44FFFFFF" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="2,0" VerticalAlignment="Center">
+                                                        <TextBlock x:Name="tb_wifi_ch_active" Text="Active: Ch 11" FontFamily="Consolas" FontSize="8.5" Foreground="#00FFCC" FontWeight="Bold"/>
+                                                    </Border>
+                                                    <Border Background="#22FFFFFF" BorderBrush="#44FFFFFF" BorderThickness="1" CornerRadius="3" Padding="5,1" Margin="2,0" VerticalAlignment="Center">
+                                                        <TextBlock x:Name="tb_wifi_ch_rec" Text="Rec: --" FontFamily="Consolas" FontSize="8.5" Foreground="#E0E0E0"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </DockPanel>
+
+                                            <!-- Row 1: 13-Channel Spectrum Heatmap (channels 1-13) -->
+                                            <Border Grid.Row="1" Background="#EE141720" BorderBrush="#22FFFFFF" BorderThickness="1" CornerRadius="4" Padding="4,3" Margin="0,1,0,3" Height="47">
+                                                <ItemsControl x:Name="ic_wifi_channel_bars">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <UniformGrid Rows="1" Columns="13"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Grid Margin="1,0" ToolTip="{Binding Tooltip}" Cursor="Hand" MouseLeftButtonUp="WifiChannelBar_Click" Tag="{Binding}">
+                                                                <Grid.RowDefinitions>
+                                                                    <RowDefinition Height="*"/>
+                                                                    <RowDefinition Height="11"/>
+                                                                </Grid.RowDefinitions>
+                                                                <Border Grid.Row="0" VerticalAlignment="Bottom" Height="{Binding BarHeight}" Background="{Binding BarColor}" BorderBrush="#00E5FF" BorderThickness="{Binding HighlightThickness}" CornerRadius="1,1,0,0"/>
+                                                                <TextBlock Grid.Row="1" Text="{Binding ChannelLabel}" FontFamily="Consolas" FontSize="6.5" FontWeight="{Binding LabelWeight}" Foreground="{Binding LabelColor}" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                                                            </Grid>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Border>
+
+                                            <!-- Row 3: Status & Recommendation Banner -->
+                                            <Border Grid.Row="3" Background="#1100E5FF" BorderBrush="#2200E5FF" BorderThickness="1" CornerRadius="3" Padding="6,2">
+                                                <TextBlock x:Name="tb_wifi_scan_status" Text="Ready. Click 'Scan Spectrum' to detect local Wi-Fi congestion and find the cleanest frequency." FontFamily="Consolas" FontSize="7.5" Foreground="#AAAAAA" TextTrimming="CharacterEllipsis"/>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
                                     
                                 </StackPanel>
                                 
@@ -596,9 +888,9 @@
                         </StackPanel>
                     </Border>
                 </TabItem>
-                <TabItem x:Name="Tab_System" Width="200" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <TabItem x:Name="Tab_System" Width="184.8" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
                     <TabItem.Header>
-                        <Border  Width="200" Height="40" Margin="0,0,0,0" >
+                        <Border  Width="184.8" Height="40" Margin="0,0,0,0" >
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Width="26" Height="26" Source="{StaticResource Settings}" />
                                 <Label Content="{SLoc DIYFFBPedalPlugin_TextSystem, 'SYSTEM'}"  FontFamily="Arial Black" FontSize="26" Height="40" Width="126" Padding="0,0,0,0" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"  />
@@ -607,94 +899,106 @@
                     </TabItem.Header>
 
                     <Border  HorizontalAlignment="Left" Height="860" VerticalAlignment="Top" Width="1200" CornerRadius="5,5,5,5" Margin="0,3,0,0">
-                        <StackPanel Height="905" Width="1180" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.ColumnSpan="4">
-                            <Canvas  Height="6" Width="725" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Grid.Row="2" Grid.ColumnSpan="3" Margin="0,1,0,1" >
-                                <Line  X1="2" Y1="3" X2="763" Y2="3" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="2" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
+                        <StackPanel Height="905" Width="1180" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.ColumnSpan="4" Margin="0,0,0,5">
+                            <Canvas  Height="6" Width="870" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Grid.Row="2" Grid.ColumnSpan="3" Margin="0,1,0,1" >
+                                <Line  X1="2" Y1="3" X2="916" Y2="3" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="2" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
                             </Canvas>
                             <StackPanel Height="900" Width="1180" Grid.RowSpan="3" HorizontalAlignment="Left" VerticalAlignment="Top" Orientation="Horizontal" Grid.ColumnSpan="4">
-                                <Canvas  Height="900" Width="6" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Grid.Row="0" Grid.ColumnSpan="3" Margin="43,0,0,0" VerticalAlignment="Top" >
-                                    <Line  X1="3" Y1="2" X2="3" Y2="498" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="1" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
+                                <Canvas  Height="900" Width="6" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Grid.Row="0" Grid.ColumnSpan="3" Margin="52,0,0,0" VerticalAlignment="Top" >
+                                    <Line  X1="3" Y1="2" X2="3" Y2="611" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="1" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
                                 </Canvas>
-                                <StackPanel HorizontalAlignment="Center" Height="900" Grid.Row="3" VerticalAlignment="Top" Width="168" Grid.RowSpan="3" Margin="2,0,0,0">
+                                <StackPanel HorizontalAlignment="Center" Height="900" Grid.Row="3" VerticalAlignment="Top" Width="202" Grid.RowSpan="3" Margin="2,0,0,0">
 
-                                    <Border Background="#7F4E4E4E" Height="498" CornerRadius="5,5,5,5" BorderThickness="0,0,0,0" Width="168" HorizontalAlignment="Center" >
-                                        <StackPanel HorizontalAlignment="Center" Height="498" VerticalAlignment="Top" Width="160" Margin="0,5,0,0">
-                                            <localFunction:InfoSection_System x:Name="SystemInfo" />
-                                            <StackPanel HorizontalAlignment="Left" Height="22" Grid.Row="4" VerticalAlignment="Top" Width="168" Grid.RowSpan="3" Orientation="Horizontal" Margin="0,2,0,0">
-                                                <ComboBox x:Name="SerialPortSelection_ESPNow" DropDownOpened="ESPNow_SerialPortSelection_DropDownOpened" SelectionChanged="ESPNow_SerialPortSelectionChanged" Width="100" ItemsSource="{Binding}" DisplayMemberPath="Display" SelectedValuePath="Value" FontSize="8" Height="20" HorizontalAlignment="Left" MinHeight="20"/>
-                                                <styles:SHButtonPrimary x:Name="btn_connect_espnow_port" Click="btn_connect_espnow_port_Click" Width="55" Content="Connect" Height="20" Margin="3,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                                    <!-- Connection -->
+                                    <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Width="192" Margin="0,0,0,5">
+                                            <localFunction:InfoSection_System x:Name="SystemInfo" Margin="0,5,0,0" />
+                                            <TextBlock x:Name="ConsoleTelemetryStatus" Visibility="Collapsed" TextWrapping="Wrap" FontSize="10" Margin="0,4,0,4" />
+                                            <StackPanel HorizontalAlignment="Left" Height="22" VerticalAlignment="Top" Width="192" Orientation="Horizontal" Margin="0,2,0,0">
+                                                <ComboBox x:Name="SerialPortSelection_ESPNow" DropDownOpened="ESPNow_SerialPortSelection_DropDownOpened" SelectionChanged="ESPNow_SerialPortSelectionChanged" Width="130" ItemsSource="{Binding}" DisplayMemberPath="Display" SelectedValuePath="Value" FontSize="8" Height="20" HorizontalAlignment="Left" MinHeight="20"/>
+                                                <Button x:Name="btn_connect_espnow_port" Style="{StaticResource ConnectPillButton}" Click="btn_connect_espnow_port_Click" Width="55" Content="Connect" Height="20" Margin="3,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                                             </StackPanel>
-                                            <localFunction:SettingSection_System x:Name="SystemSetting_Section" SettingsChanged="Tab_SettingsChanged" Margin="0,5,0,0"/>
+                                        </StackPanel>
+                                    </Border>
 
-                                            <StackPanel Margin="0,5,0,0" HorizontalAlignment="Center" Orientation="Horizontal">
+                                    <!-- System Setting -->
+                                    <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
+                                        <localFunction:SettingSection_System x:Name="SystemSetting_Section" SettingsChanged="Tab_SettingsChanged"/>
+                                    </Border>
+
+                                    <!-- Actions -->
+                                    <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0" Width="202" HorizontalAlignment="Center">
+                                        <StackPanel HorizontalAlignment="Center" Margin="0,5,0,0">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Width="160">
                                                 <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Bridge_restart_Click" ToolTip="Restart Bridge">
                                                     <StackPanel>
                                                         <Image Width="30" Height="30" Source="{StaticResource Restart}" />
                                                         <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnBridgeRestart, 'Retsart'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
-                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Bridge_OTA_Click" ToolTip="Bridge OTA update" Margin="5,0,5,0">
+                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_USB_Flash_Click" ToolTip="USB Flash" Margin="5,0,5,0">
                                                     <StackPanel>
-                                                        <Image Width="30" Height="30" Source="{StaticResource OTA}" />
-                                                        <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnBridgeOTA, 'Bridge OTA'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                                                        <Image Width="30" Height="30" Source="{StaticResource Monitor}" />
+                                                        <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnUsbFlash, 'USB Flash'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
-                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Plugin_OTA_Click" ToolTip="Plugin Update">
+                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Plugin_OTA_Click" MouseRightButtonUp="btn_PluginUpdate_Click" ToolTip="Left-click: update to latest. Right-click: open rollback window">
                                                     <StackPanel>
                                                         <Image Width="30" Height="30" Source="{StaticResource PluginUpdate}" />
                                                         <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnPluginUpdate, 'Plugin Update'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
                                             </StackPanel>
-                                            <StackPanel Margin="0,5,0,0" HorizontalAlignment="Center" Orientation="Horizontal" Width="160">
-                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Bridge_print_debug_Click" ToolTip="Bridge Debug Tool">
+                                            <StackPanel Margin="0,5,0,5" HorizontalAlignment="Center" Orientation="Horizontal" Width="160">
+                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_Bridge_print_debug_Click" ToolTip="Bridge Debug Tool" HorizontalAlignment="Center">
                                                     <StackPanel>
                                                         <Image Width="30" Height="30" Source="{StaticResource BridgeDebug}" />
                                                         <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnBridgeDebug, 'Bridge Debug'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
-                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="btn_USB_Flash_Click" ToolTip="USB Flash" Margin="5,0,5,0">
-                                                    <StackPanel>
-                                                        <Image Width="30" Height="30" Source="{StaticResource Monitor}" />
-                                                        <Label Content="USB Flash" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
+
+                                                <Button Style="{StaticResource IconGridButtonStyle}" Click="Btn_OpenLanguageDownload_Click" ToolTip="Localization" Margin="5,0,5,0" HorizontalAlignment="Center">
+                                                    <StackPanel HorizontalAlignment="Center">
+                                                        <Image Width="30" Height="30" Source="{StaticResource Localization}" />
+                                                        <Label Content="{SLoc DIYFFBPedalPlugin_TextBtnLocalization, 'Localization'}" Height="15" FontSize="8" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                                                     </StackPanel>
                                                 </Button>
                                             </StackPanel>
-                                            
-
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
-                                <StackPanel Width="540" Height="900" Margin="3,0,0,0">
-                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="213" Grid.Row="4" VerticalAlignment="Top" Width="540" Padding="0,0,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent">
+                                <StackPanel Width="648" Height="900" Margin="3,0,0,0">
+                                    <TabControl Grid.Column="0" HorizontalAlignment="Left" Height="325" Grid.Row="4" VerticalAlignment="Top" Width="648" Padding="0,6,0,0" BorderThickness="0,0,0,0" Background="#00252525" Foreground="Transparent">
                                         <TabControl.Resources>
                                             <Style TargetType="TabItem">
                                                 <Setter Property="Template">
                                                     <Setter.Value>
                                                         <ControlTemplate TargetType="TabItem">
                                                             <!--The four values of CornerRadius represent the four corners of the TabItem.-->
-                                                            <Border Name="Border" BorderThickness="0,0,0,0" BorderBrush="Gainsboro" CornerRadius="5,5,5,5" Margin="0,0,2,0">
-                                                                <ContentPresenter x:Name="ContentSite"  
-                                                VerticalAlignment="Center"  
-                                                HorizontalAlignment="Left"  
-                                                ContentSource="Header"  
+                                                            <Border Name="Border" BorderThickness="1" BorderBrush="#444444" CornerRadius="3" Margin="0,0,2,0">
+                                                                <ContentPresenter x:Name="ContentSite"
+                                                VerticalAlignment="Center"
+                                                HorizontalAlignment="Left"
+                                                ContentSource="Header"
                                                 Margin="0,0"/>
                                                             </Border>
                                                             <ControlTemplate.Triggers>
                                                                 <Trigger Property="IsSelected" Value="True">
-                                                                    <Setter TargetName="Border" Property="Background" Value="#7F4E4E4E" />
+                                                                    <Setter TargetName="Border" Property="Background" Value="#4E4E4E" />
+                                                                    <Setter TargetName="Border" Property="BorderBrush" Value="#666666" />
                                                                     <Setter Property="TextElement.Foreground" Value="#FFFFFFFF" />
                                                                 </Trigger>
                                                                 <Trigger Property="IsSelected" Value="False">
-                                                                    <Setter TargetName="Border" Property="Background" Value="#334E4E4E" />
-                                                                    <Setter Property="TextElement.Foreground" Value="#33FFFFFF" />
+                                                                    <Setter TargetName="Border" Property="Background" Value="#2A2A2A" />
+                                                                    <Setter Property="TextElement.Foreground" Value="#D0D0D0" />
                                                                 </Trigger>
                                                                 <MultiTrigger>
                                                                     <MultiTrigger.Conditions>
                                                                         <Condition Property="IsMouseOver" SourceName="Border" Value="True"/>
                                                                         <Condition Property="IsSelected" Value="False"/>
                                                                     </MultiTrigger.Conditions>
-                                                                    <Setter TargetName="Border" Property="Background" Value="#4C4E4E4E" />
+                                                                    <Setter TargetName="Border" Property="Background" Value="#383838" />
+                                                                    <Setter TargetName="Border" Property="BorderBrush" Value="#666666" />
                                                                 </MultiTrigger>
                                                             </ControlTemplate.Triggers>
                                                         </ControlTemplate>
@@ -702,51 +1006,78 @@
                                                 </Setter>
                                             </Style>
                                         </TabControl.Resources>
-                                        <TabItem Width="120" Height="30" Padding="0,0,0,0" >
+                                        <TabItem Width="162" Height="30" Padding="0,0,0,0" >
                                             <TabItem.Header>
-                                                <Border  Width="120" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Profiles"  FontFamily="Arial Black" FontSize="10" Height="30" Width="120" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                <Border  Width="162" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="Profiles"  FontFamily="Arial Black" FontSize="10" Height="30" Width="162" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:SystemSetting_ProfilesNew x:Name="SystemProfile_TabNew" />
                                         </TabItem>
-                                        <TabItem Width="120" Height="30" Padding="0,0,0,0" >
+                                        <TabItem Width="162" Height="30" Padding="0,0,0,0" >
                                             <TabItem.Header>
-                                                <Border  Width="120" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Shortcut"  FontFamily="Arial Black" FontSize="10" Height="30" Width="120" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                <Border  Width="162" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="Shortcut"  FontFamily="Arial Black" FontSize="10" Height="30" Width="162" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:SystemSetting_Shortcut x:Name="SystemShortcut_Tab" />
                                         </TabItem>
-                                        <TabItem Width="120" Height="30" Padding="0,0,0,0" >
+                                        <TabItem Width="162" Height="30" Padding="0,0,0,0" >
                                             <TabItem.Header>
-                                                <Border  Width="120" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="License"  FontFamily="Arial Black" FontSize="10" Height="30" Width="120" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                <Border  Width="162" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="License"  FontFamily="Arial Black" FontSize="10" Height="30" Width="162" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <localFunction:SystemSetting_License x:Name="SystemLicense_Tab" btn_test_Click_event="SystemLicense_Tab_btn_test_Click_event"/>
+                                            <localFunction:SystemSetting_License x:Name="SystemLicense_Tab"/>
+                                        </TabItem>
+                                        <TabItem x:Name="TabItem_Wireless" Width="162" Height="30" Padding="0,0,0,0" >
+                                            <TabItem.Header>
+                                                <Border  Width="162" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="Wireless"  FontFamily="Arial Black" FontSize="10" Height="30" Width="162" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True"  />
+                                                </Border>
+                                            </TabItem.Header>
+                                            <localFunction:SystemSetting_Wireless x:Name="SystemWireless_Tab"/>
                                         </TabItem>
 
                                     </TabControl>
 
 
-                                    <StackPanel Width="540" Height="281" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="1,3,0,0">
-                                        <Border  HorizontalAlignment="Left" Height="281" VerticalAlignment="Top" Width="540" Background="#7F4E4E4E" CornerRadius="5,5,5,5">
-                                            <StackPanel HorizontalAlignment="Left" Height="281" VerticalAlignment="Top" Width="540" Grid.RowSpan="2" Grid.ColumnSpan="3" Grid.Row="6" Grid.Column="1">
-                                                <StackPanel HorizontalAlignment="Center" Height="25" VerticalAlignment="Top" Width="540" Orientation="Horizontal">
+                                    <StackPanel Width="648" Height="281" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,5,0,0">
+                                        <Border  HorizontalAlignment="Left" Height="281" VerticalAlignment="Top" Width="648" Style="{StaticResource Card}" Margin="0" Padding="0">
+                                            <StackPanel HorizontalAlignment="Left" Height="281" VerticalAlignment="Top" Width="648" Grid.RowSpan="2" Grid.ColumnSpan="3" Grid.Row="6" Grid.Column="1">
+                                                <StackPanel HorizontalAlignment="Center" Height="25" VerticalAlignment="Top" Width="648" Orientation="Horizontal">
                                                     <Label x:Name="text_serial_bridge" Content="Bridge Log Monitor"  FontFamily="Arial Black" FontSize="12" Height="25" Width="130" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="5,0,0,0"  />
-                                                    <styles:SHButtonPrimary x:Name="btn_serial_clear_bridge" Click="btn_serial_clear_bridge_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
+                                                    <Button x:Name="btn_serial_clear_bridge" Style="{StaticResource ModernPillButton}" Click="btn_serial_clear_bridge_Click" Width="30" Content="{SLoc DIYFFBPedalPlugin_TextBtnClear, 'Clear'}" Height="20" Margin="0,0,0,0" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />
                                                     <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0">
                                                         <styles:SHToggleButton x:Name="Checkbox_auto_remove_serial_line_bridge" Content="" Checked="Checkbox_auto_remove_serial_line_bridge_Checked" Unchecked="Checkbox_auto_remove_serial_line_bridge_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Dump pedal realtime status to file" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
                                                         <Label Content="{SLoc DIYFFBPedalPlugin_TextAutoClear, 'Auto Clear'}" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                                                     </StackPanel>
                                                 </StackPanel>
-                                                <TextBox x:Name="TextBox_serialMonitor_bridge" FontFamily="Consolas" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Visible" HorizontalAlignment="Left" Grid.Column="2" Grid.Row="2" Grid.RowSpan="4" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="540" Height="256" AutomationProperties.Name="TextBox3" Background="#00252525" BorderBrush="#00CCCCCC" BorderThickness="0,0,0,0" />
+                                                <TextBox x:Name="TextBox_serialMonitor_bridge" FontFamily="Consolas" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Visible" HorizontalAlignment="Left" Grid.Column="2" Grid.Row="2" Grid.RowSpan="4" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="648" Height="256" AutomationProperties.Name="TextBox3" Background="#00252525" BorderBrush="#00CCCCCC" BorderThickness="0,0,0,0" />
                                             </StackPanel>
                                         </Border>
                                     </StackPanel>
                                 </StackPanel>
                             </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </TabItem>
+                <TabItem x:Name="Tab_LivePlot" Width="184.8" Height="40" Padding="0,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <TabItem.Header>
+                        <Border Width="184.8" Height="40" Margin="0,0,0,0">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="📈" FontSize="20" VerticalAlignment="Center" Margin="0,0,0,0" />
+                                <Label Content="LIVE PLOT" FontFamily="Arial Black" FontSize="26" Height="40" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Center" RenderTransformOrigin="0,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                    </TabItem.Header>
+
+                    <Border HorizontalAlignment="Left" Height="860" VerticalAlignment="Top" Width="924" CornerRadius="5,5,5,5" Margin="0,3,0,0">
+                        <StackPanel Height="905" Width="924" HorizontalAlignment="Left" VerticalAlignment="Top">
+                            <Canvas Height="6" Width="917" Background="#00333333" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Margin="0,1,0,1">
+                                <Line X1="2" Y1="3" X2="917" Y2="3" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="2" StrokeEndLineCap="Round" StrokeStartLineCap="Round" />
+                            </Canvas>
+                            <localFunction:LivePlot_ExtendedState x:Name="LivePlotSection" HorizontalAlignment="Left" Width="917"/>
                         </StackPanel>
                     </Border>
                 </TabItem>

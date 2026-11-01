@@ -41,6 +41,10 @@
                     <Label x:Name="Label_vjoy_order" Content="1" Height="15" Width="30" FontFamily="Yu Gothic UI" FontSize="10" VerticalContentAlignment="Center" Padding="0,0,0,0" HorizontalContentAlignment="Center"/>
                     <Button x:Name="btn_vjoy_minus"  Click="btn_vjoy_minus_Click" Content="-" Height="15" Width="15" BorderThickness="0,0,0,0" MinHeight="10" Padding="0,-3,0,0" VerticalContentAlignment="Center" FontWeight="Bold" FontFamily="Yu Gothic UI" HorizontalContentAlignment="Center" FontSize="10"/>
                 </StackPanel>
+                <StackPanel x:Name="FanatecVibrationPanel" Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,2,0,0" Visibility="Collapsed">
+                    <styles:SHToggleButton x:Name="FanatecVibrationToggle" Content="" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Wheelbase brake rumble triggers the configured ABS effect; throttle rumble triggers the configured RPM effect. Stored on the bridge." RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" />
+                    <Label Content="Fanatec Vibration" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
+                </StackPanel>
             </StackPanel>
         </Border>
     </Grid>

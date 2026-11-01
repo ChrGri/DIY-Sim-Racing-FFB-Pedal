@@ -53,7 +53,7 @@ namespace DiyFfbPedal
                     {
                         receivedLength = sp.BytesToRead;
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         //TextBox_debugOutput.Text = ex.Message;
                         //ConnectToPedal.IsChecked = false;
@@ -82,7 +82,23 @@ namespace DiyFfbPedal
                         // check if buffer is large enough otherwise discard in buffer and set offset to 0
                         if ((bufferSize > currentBufferLength) && (appendedBufferOffset[3] >= 0))
                         {
-                            sp.Read(buffer_appended[3], appendedBufferOffset[3], receivedLength);
+                            try
+                            {
+                                // Safe non-blocking read: catch timeout and I/O errors immediately to avoid UI hang
+
+                                int bytesActuallyRead = sp.Read(buffer_appended[3], appendedBufferOffset[3], receivedLength);
+                                if (bytesActuallyRead <= 0) return;
+                                receivedLength = bytesActuallyRead;
+                                currentBufferLength = appendedBufferOffset[3] + receivedLength;
+                            }
+                            catch (TimeoutException)
+                            {
+                                return;
+                            }
+                            catch (IOException)
+                            {
+                                return;
+                            }
                         }
                         else
                         {
@@ -137,6 +153,29 @@ namespace DiyFfbPedal
                                 DAP_state_basic_st* v_state = &pedalState_read_st;
                                 byte* p_state = (byte*)v_state;
                                 UInt16 pedalSelected = pedalState_read_st.payloadHeader_.PedalTag;
+                                // Ignore wireless data if wireless communication is disabled for this pedal
+                                if (pedalSelected < 3 && !Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalSelected])
+                                {
+                                    Plugin._calculations.pedalWirelessStatus[pedalSelected] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                                    Plugin._calculations.rssi[pedalSelected] = 0;
+                                    if (Plugin.Settings.vjoy_output_flag == 1 && Plugin._calculations._joystick != null)
+                                    {
+                                        switch (pedalSelected)
+                                        {
+                                            case 0:
+                                                Plugin._calculations._joystick.SetAxis(0, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RX);
+                                                break;
+                                            case 1:
+                                                Plugin._calculations._joystick.SetAxis(0, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RY);
+                                                break;
+                                            case 2:
+                                                Plugin._calculations._joystick.SetAxis(0, Plugin.Settings.vjoy_order, HID_USAGES.HID_USAGE_RZ);
+                                                break;
+                                        }
+                                    }
+                                    return;
+                                }
+
                                 // payload type check
                                 bool check_payload_state_b = false;
                                 if (pedalState_read_st.payloadHeader_.payloadType == Constants.pedalStateBasicPayload_type)
@@ -160,6 +199,7 @@ namespace DiyFfbPedal
                                         || Plugin._calculations.pedalWirelessStatus[pedalSelected] == WirelessConnectStateEnum.PEDAL_DISCONNECT)
                                     {
                                         Plugin._calculations.pedalWirelessStatus[pedalSelected] = WirelessConnectStateEnum.PEDAL_GET_BASIC_PACKETS_OVER_ESPNOW;
+                                        Reading_config_auto_wireless((uint)pedalSelected);
                                     }
                                     Plugin._calculations.pedalWirelessConnetionlastTime[pedalSelected] = DateTime.Now;
                                     //if (Plugin.Rudder_enable_flag == false)
@@ -252,6 +292,10 @@ namespace DiyFfbPedal
                                     {
                                         pedalStateHasAlreadyBeenUpdated_b = true;
                                         PedalForceTravel_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16, pedalState_read_st.payloadPedalBasicState_.pedalForce_u16);
+                                            if (pedalKinematicTab != null && pedalKinematicTab.IsSelected)
+                                            {
+                                                PedalKinematics_Tab.updatePedalState(pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16);
+                                            }
 
 
                                         double control_rect_value_max = 65535;
@@ -303,6 +347,11 @@ namespace DiyFfbPedal
                                 DAP_state_extended_st* v_state = &pedalState_ext_read_st;
                                 byte* p_state = (byte*)v_state;
                                 UInt16 pedalSelected = pedalState_ext_read_st.payloadHeader_.PedalTag;
+
+                                if (pedalSelected < 3 && !Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalSelected])
+                                {
+                                    return;
+                                }
                                 // payload type check
                                 bool check_payload_state_b = false;
                                 if (pedalState_ext_read_st.payloadHeader_.payloadType == Constants.pedalStateExtendedPayload_type)
@@ -348,6 +397,7 @@ namespace DiyFfbPedal
                                                     writer.Write(", servoPositionError_i16");
                                                     writer.Write(", servoVoltage_fl32");
                                                     writer.Write(", servoCurrentPercent_i16");
+                                                    writer.Write(", servoVelocityRpm_i16");
 
                                                     writer.Write(", timeInUs_u32");
                                                     writer.Write(", cycleCount_u32");
@@ -389,6 +439,7 @@ namespace DiyFfbPedal
                                                     $",{state.servoPositionError_i16}" +
                                                     $",{state.servoVoltage0p1V_i16 / 10.0f}" +
                                                     $",{state.servoCurrentPercent_i16}" +
+                                                    $",{state.servoVelocityRpm_i16}" +
 
                                                     $",{state.timeInUs_u32}" +
                                                     $",{state.cycleCount_u32}" +
@@ -463,6 +514,7 @@ namespace DiyFfbPedal
 
                                 if ((check_payload_state_b) && check_crc_state_b)
                                 {
+                                    UpdateFanatecVibrationStatus(bridge_state.payloadBridgeState_.Bridge_action);
                                     //Bridge_RSSI = bridge_state.payloadBridgeState_.Pedal_RSSI;
                                     if (Plugin._calculations.bridgeConnectionStatus == BridgeConnectStateEnum.BRIDGE_ENTRY_CONNECT)
                                     {
@@ -472,15 +524,26 @@ namespace DiyFfbPedal
                                     
                                     if (bridge_state.payloadBridgeState_.unassignedPedalCount > 0 && Plugin._calculations.unassignedPedalCount != bridge_state.payloadBridgeState_.unassignedPedalCount)
                                     {
-                                        
-                                        string tmp = bridge_state.payloadBridgeState_.unassignedPedalCount + " unassigned pedals founded!";
-                                        ToastNotification("New Pedal Detected", tmp);
+                                        int count = bridge_state.payloadBridgeState_.unassignedPedalCount;
+                                        string tmp = count == 1 ? "1 unassigned pedal detected." : $"{count} unassigned pedals detected.";
+                                        ToastNotification("New Pedal Detected", tmp, "Wireless Settings", () =>
+                                        {
+                                            NavigateToSystemWirelessTab();
+                                        });
                                     }
                                     Plugin._calculations.unassignedPedalCount = bridge_state.payloadBridgeState_.unassignedPedalCount;
 
                                     for (int pedalIDX = 0; pedalIDX < 3; pedalIDX++)
                                     {
-                                        Plugin._calculations.rssi[pedalIDX] = bridge_state.payloadBridgeState_.Pedal_RSSI_realtime[pedalIDX];
+                                        if (Plugin.Settings.Pedal_ESPNow_Sync_flag[pedalIDX])
+                                        {
+                                            Plugin._calculations.rssi[pedalIDX] = bridge_state.payloadBridgeState_.Pedal_RSSI_realtime[pedalIDX];
+                                        }
+                                        else
+                                        {
+                                            Plugin._calculations.rssi[pedalIDX] = 0;
+                                            Plugin._calculations.pedalWirelessStatus[pedalIDX] = WirelessConnectStateEnum.PEDAL_DISCONNECT;
+                                        }
                                         int macInitialAddress = pedalIDX * 6;
                                         for (int macIndex = 0; macIndex < 6; macIndex++)
                                         {

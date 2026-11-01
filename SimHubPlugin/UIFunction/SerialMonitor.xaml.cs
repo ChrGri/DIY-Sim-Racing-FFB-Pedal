@@ -30,6 +30,13 @@ namespace DiyFfbPedal
                 Checkbox_Serial_Window_Auto_Remove_Serial_Text.IsChecked = false;
             }
 
+            Closed += (sender, args) =>
+            {
+                if (_main_UI != null && _main_UI._serial_monitor_window == this)
+                {
+                    _main_UI._serial_monitor_window = null;
+                }
+            };
         }
 
         private void btn_Serial_Window_clear_Click(object sender, RoutedEventArgs e)

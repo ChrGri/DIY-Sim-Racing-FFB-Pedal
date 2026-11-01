@@ -298,6 +298,7 @@ void ESPNow_initialize()
 {
 
     WiFi.mode(WIFI_MODE_STA);
+    WiFi.setSleep(false);
     Serial.println("[L]Initializing ESPNow, please wait"); 
     WiFi.macAddress(esp_Mac); 
     Serial.printf("[L]Device Mac: %02X:%02X:%02X:%02X:%02X:%02X\n", esp_Mac[0], esp_Mac[1], esp_Mac[2], esp_Mac[3], esp_Mac[4], esp_Mac[5]);

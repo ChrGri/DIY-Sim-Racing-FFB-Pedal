@@ -159,4 +159,55 @@ typedef struct __attribute__((packed)) PayloadPedalConfig
   // friction parameters
   uint8_t coulombFrictionIn0p1N_u8;
 
+  // wake on plugin trigger only (0 = auto-start on boot, 1 = standby on boot, wait for plugin)
+  uint8_t wakeOnPluginOnly_u8;
+
+  // Rudder toe-brake joystick curve - kept separate from
+  // joystickMapOrig/Mapped above (which is used for yaw, or for the
+  // regular pedal output on non-rudder units) so both can be configured
+  // independently. Only one of the two is ever active on a given pedal at
+  // a time (yaw XOR toe-brake), but both need to be stored so switching
+  // between them (e.g. the Toe Brake toggle in "Airplane with Toe Brake"
+  // mode) doesn't require re-sending config.
+  uint8_t numOfJoystickMapControlToe_u8;
+  uint8_t joystickMapOrigToe00_u8;
+  uint8_t joystickMapOrigToe01_u8;
+  uint8_t joystickMapOrigToe02_u8;
+  uint8_t joystickMapOrigToe03_u8;
+  uint8_t joystickMapOrigToe04_u8;
+  uint8_t joystickMapOrigToe05_u8;
+  uint8_t joystickMapOrigToe06_u8;
+  uint8_t joystickMapOrigToe07_u8;
+  uint8_t joystickMapOrigToe08_u8;
+  uint8_t joystickMapOrigToe09_u8;
+  uint8_t joystickMapOrigToe10_u8;
+  uint8_t joystickMapMappedToe00_u8;
+  uint8_t joystickMapMappedToe01_u8;
+  uint8_t joystickMapMappedToe02_u8;
+  uint8_t joystickMapMappedToe03_u8;
+  uint8_t joystickMapMappedToe04_u8;
+  uint8_t joystickMapMappedToe05_u8;
+  uint8_t joystickMapMappedToe06_u8;
+  uint8_t joystickMapMappedToe07_u8;
+  uint8_t joystickMapMappedToe08_u8;
+  uint8_t joystickMapMappedToe09_u8;
+  uint8_t joystickMapMappedToe10_u8;
+
+  // Regen energy handling (BRAKE_RESISTOR_MODE_*). The name is kept for config/profile
+  // compatibility: the former 0 (off) / 1 (on) map to modes 0 and 1.
+  //  0 = servo internal bleeder only (software brake resistor off)
+  //  1 = servo internal bleeder + external brake resistor switched by the firmware (PWM)
+  //  2 = hardware brake resistor circuit only (autonomous voltage clamp): the firmware
+  //      keeps its brake resistor pin LOW and lifts the regen power limit of the pedal
+  uint8_t enableBrakeResistor_u8;
+
+  // brake resistor resistance in Ohm (1-255; 0 = default 10 Ohm). Sets the
+  // PWM duty for the regen power and the resistor's thermal model.
+  uint8_t brakeResistorResistance_Ohm_u8;
+
 } PayloadPedalConfig_t;
+
+// values of PayloadPedalConfig_t::enableBrakeResistor_u8
+#define BRAKE_RESISTOR_MODE_SERVO_BLEEDER_U8 0U
+#define BRAKE_RESISTOR_MODE_SERVO_BLEEDER_AND_EXTERNAL_U8 1U
+#define BRAKE_RESISTOR_MODE_HARDWARE_CIRCUIT_U8 2U
