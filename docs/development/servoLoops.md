@@ -204,10 +204,12 @@ and a fast set while the pedal moves (Pr1.15 = 10, iSV2 manual chapter 5.4.2).
 
 | Set | File | Standstill (Pr1.00-1.04) | Moving (Pr1.05-1.09) | Ripple 4-7 / 7-12 kHz |
 |---|---|---|---|---|
-| Silent (default) | `isv57_tunedParameters.h` | 600 / 400 / 200 / 27 / 20 | not used | 8.1 / 10.4 g |
+| Silent (default) | `isv57_tunedParameters.h` | 600 / 300 / 200 / 27 / 50 | 600 / 400 / 200 / 27 / 20 | 8.1 / 10.4 g * |
 | Smooth | `isv57_tunedParameters_smooth.h` | 600 / 200 / 200 / 27 / 20 | 600 / 800 / 200 / 5 / 10 | 5.3 / 6.0 g |
 
-The smooth set is louder while the pedal moves. The plugin's Servo tab asks for the set on
+Both sets switch gains (since 2026-11-03 also the silent set: its moving set is the former fixed set,
+its standstill set is quieter). * Ripple measured with the former fixed silent set, which equals today's
+moving set. The smooth set is louder while the pedal moves. The plugin's Servo tab asks for the set on
 "Reset to recommended". The firmware writes only a few registers at boot, always from the silent file;
 the gain registers stay in the servo's NVM. The smooth file therefore does not change Pr0.00 (MFC
 bandwidth), which the firmware writes at boot.

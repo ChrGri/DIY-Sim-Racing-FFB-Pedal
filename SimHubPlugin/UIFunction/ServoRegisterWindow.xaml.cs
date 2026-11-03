@@ -708,14 +708,25 @@ namespace DiyFfbPedal.UIFunction
                 ServoRegisterGrid.Columns[3].Header = smooth ? "Recommended (smooth)" : "Recommended (silent)";
         }
 
+        /// <summary>
+        /// After "Load from servo": compares the registers in which the two sets differ with the
+        /// live values, so the Recommended column shows the set the servo actually runs.
+        /// </summary>
         private void ShowParameterSetOfServo()
         {
-            var mode = ServoRegisters.FirstOrDefault(r => r.Address == "Pr1.15");
-            if (mode == null || !mode.LiveValue.HasValue) return;
-            Isv57TunedParameters.TryGetValue("Pr1.15", true, out int smoothMode);
-            Isv57TunedParameters.TryGetValue("Pr1.15", false, out int silentMode);
-            if (smoothMode == silentMode) return;
-            ShowRecommendedSet(mode.LiveValue.Value == smoothMode);
+            int smoothMatches = 0, silentMatches = 0;
+            foreach (string address in Isv57TunedParameters.SmoothOverrides.Keys)
+            {
+                var entry = ServoRegisters.FirstOrDefault(r => r.Address == address);
+                if (entry == null || !entry.LiveValue.HasValue) continue;
+                Isv57TunedParameters.TryGetValue(address, true, out int smoothValue);
+                Isv57TunedParameters.TryGetValue(address, false, out int silentValue);
+                if (smoothValue == silentValue) continue;
+                if (entry.LiveValue.Value == smoothValue) smoothMatches++;
+                if (entry.LiveValue.Value == silentValue) silentMatches++;
+            }
+            if (smoothMatches != silentMatches)
+                ShowRecommendedSet(smoothMatches > silentMatches);
         }
 
         private bool? AskParameterSet()
@@ -740,10 +751,12 @@ namespace DiyFfbPedal.UIFunction
                 FontSize = 13,
                 Margin = new Thickness(0, 0, 0, 12),
                 Text = "Which servo parameter set should be written to the servo and stored in its NVM?\n\n" +
-                       "Silent: one fixed gain set. Quiet, slightly rougher pedal feel (motor cogging).\n\n" +
-                       "Smooth: gain switching. A fast gain set while the pedal moves rejects the motor " +
-                       "cogging better (smoother feel), but the servo is louder while moving. At " +
-                       "standstill a quiet gain set is used.\n\n" +
+                       "Both sets switch gains: one gain set while the pedal moves, a quieter one at " +
+                       "standstill.\n\n" +
+                       "Silent: moderate gains while moving. Quiet, slightly rougher pedal feel " +
+                       "(motor cogging).\n\n" +
+                       "Smooth: fast gains while moving. Rejects the motor cogging better (smoother " +
+                       "feel), but the servo is louder while moving.\n\n" +
                        "The servo needs a power-cycle afterwards."
             });
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
