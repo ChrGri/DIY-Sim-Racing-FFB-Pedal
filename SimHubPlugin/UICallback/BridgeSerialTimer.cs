@@ -757,6 +757,7 @@ namespace DiyFfbPedal
                                                     ushort addr = sc.payloadServoConfig_st.registerAddresses[i];
                                                     short val = (short)sc.payloadServoConfig_st.registerValues[i];
                                                     Servo_Tab?.HandleServoModbusAck(addr, val);
+                                                    _servoRegisterWindow?.HandleServoModbusAck(addr, val);
                                                 }
                                             }
                                             else

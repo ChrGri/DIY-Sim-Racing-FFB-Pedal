@@ -107,8 +107,6 @@ int32_t Modbus::readDiscreteInputFromDevice(int32_t slaveId_i32, int32_t registe
 
 void Modbus::readDeviceParameter(uint16_t slaveId_u16, uint16_t parameterAddress_u16)
 {
-  uint8_t rawBuffer_au8[2];
-  uint8_t length_u8;
   int16_t registerArray_ai16[4];
   registerArray_ai16[0] = -1;
   registerArray_ai16[1] = -1;
@@ -117,7 +115,6 @@ void Modbus::readDeviceParameter(uint16_t slaveId_u16, uint16_t parameterAddress
 
   if(sendRequestAndReceiveResponse(slaveId_u16, 0x03, parameterAddress_u16,  2) > 0)
   {
-    getRawRxBuffer(rawBuffer_au8, length_u8);
     registerArray_ai16[0] = convertRxBufferToInt16(0);
   }
   
@@ -148,17 +145,14 @@ bool Modbus::writeAndVerifyDeviceParameter(uint16_t slaveId_u16, int16_t paramet
 
     delay(10);
 
-    uint8_t rawBuffer_au8[2];
-    uint8_t length_u8;
     int16_t registerArray_ai16[4];
     registerArray_ai16[0] = -1;
     registerArray_ai16[1] = -1;
     registerArray_ai16[2] = -1;
     registerArray_ai16[3] = -1;
-    
+
     if(sendRequestAndReceiveResponse(slaveId_u16, 0x03, parameterAddress_i16,  2) > 0)
     {
-      getRawRxBuffer(rawBuffer_au8, length_u8);
       registerArray_ai16[0] = convertRxBufferToInt16(0);
     }
     
@@ -394,24 +388,6 @@ int16_t Modbus::convertRxBufferToInt16(int32_t index_i32)
 {
     int32_t address_i32 = (index_i32 * 2) + 3;
     return (int16_t)((uint16_t)rawRxBuffer_au8[address_i32] << 8 | rawRxBuffer_au8[address_i32+1]);
-}
-
-void Modbus::getRawRxBuffer(uint8_t *rawBuffer_pu8, uint8_t &rawBufferLength_u8)
-{
-   for(int32_t i_i32 = 0; i_i32 < rawRxBufferLength_i32; i_i32++)
-    {
-      rawBuffer_pu8[i_i32] = rawRxBuffer_au8[i_i32];
-    }
-     rawBufferLength_u8 = this->rawRxBufferLength_i32;
-}
-
-void Modbus::getRawTxBuffer(uint8_t *rawBuffer_pu8, uint8_t &rawBufferLength_u8)
-{
-   for(int32_t i_i32 = 0; i_i32 < 8; i_i32++)
-    {
-      rawBuffer_pu8[i_i32] = txBuffer_au8[i_i32];
-    }
-     rawBufferLength_u8 = 8;
 }
 
 int32_t Modbus::computeCrc(const uint8_t *buffer_pu8, int32_t bufferLength_i32)

@@ -58,26 +58,26 @@ namespace DiyFfbPedal.UIFunction
             { "Pr0.22", -729 },  // Reserved parameter
             { "Pr0.23", 0 },  // Reserved parameter
             { "Pr0.24", 0 },  // Reserved parameter
-            { "Pr1.00", 600 },  // 1st position loop gain
-            { "Pr1.01", 400 },  // 1st velocity loop gain
-            { "Pr1.02", 200 },  // 1st time constant of velocity loop integration (20 ms,
-            { "Pr1.03", 27 },  // 1st filter of velocity detection
-            { "Pr1.04", 20 },  // 1st torque filter, unit 0.01 ms (0.2 ms). 180 (1.8 m?
-            { "Pr1.05", 175 },  // 2nd position loop gain
-            { "Pr1.06", 110 },  // 2nd velocity loop gain
-            { "Pr1.07", 10000 },  // 2nd time constant of velocity loop
-            { "Pr1.08", 8 },  // 2nd filter of velocity detection
-            { "Pr1.09", 200 },  // 2nd torque filter
+            { "Pr1.00", 600 },  // 1st position loop gain (60 1/s)
+            { "Pr1.01", 300 },  // 1st velocity loop gain (30 Hz, standstill)
+            { "Pr1.02", 200 },  // 1st time constant of velocity loop integration (20 ms.
+            { "Pr1.03", 27 },  // 1st filter of velocity detection (27 = 200 Hz low-pass)
+            { "Pr1.04", 50 },  // 1st torque filter, unit 0.01 ms (0.5 ms, standstill:?
+            { "Pr1.05", 600 },  // 2nd position loop gain (60 1/s, moving)
+            { "Pr1.06", 400 },  // 2nd velocity loop gain (40 Hz, moving)
+            { "Pr1.07", 200 },  // 2nd time constant of velocity loop integration (20 ms)
+            { "Pr1.08", 27 },  // 2nd filter of velocity detection (27 = 200 Hz low-pass)
+            { "Pr1.09", 20 },  // 2nd torque filter, unit 0.01 ms (0.2 ms). 1.8 ms (until
             { "Pr1.10", 35 },  // Velocity feed forward gain (unit 0.1 %: 35 = 3.5 %,
             { "Pr1.11", 0 },  // Velocity feed forward filter. Had better velocity er?
             { "Pr1.12", 0 },  // Torque feed forward gain (unit 0.1 %)
             { "Pr1.13", 1000 },  // Torque feed forward filter (10 ms; inactive while
             { "Pr1.14", 1 },  // 2nd gain setup (enables the 2nd set)
-            { "Pr1.15", 0 },  // Gain switching mode (0 = 1st set fixed; the smooth s?
-            { "Pr1.16", 50 },  // Position control switching delay time
-            { "Pr1.17", 50 },  // Control switching level
-            { "Pr1.18", 33 },  // Control switch hysteresis
-            { "Pr1.19", 33 },  // Gain switching time
+            { "Pr1.15", 10 },  // Gain switching mode: 10 = 2nd set while position com?
+            { "Pr1.16", 1000 },  // Gain switching delay time (keeps the 2nd set through
+            { "Pr1.17", 20 },  // Gain switching level [rpm] (must be >= Pr1.18)
+            { "Pr1.18", 10 },  // Gain switching hysteresis [rpm]: back below 20 - 10 ?
+            { "Pr1.19", 100 },  // Gain switching time (10 ms blend between the sets)
             { "Pr1.20", 100 },  // Reserved parameter
             { "Pr1.21", 100 },  // Reserved parameter
             { "Pr1.22", 0 },  // Reserved parameter
@@ -345,19 +345,13 @@ namespace DiyFfbPedal.UIFunction
         /// from <c>ESP32/include/isv57_tunedParameters_smooth.h</c>.
         /// </summary>
         public static readonly Dictionary<string, int> SmoothOverrides =
-            new Dictionary<string, int>(13)
+            new Dictionary<string, int>(7)
         {
-            { "Pr1.01", 200 },  // 1st velocity loop gain (20 Hz, quiet at standstill)
-            { "Pr1.05", 600 },  // 2nd position loop gain (as the 1st set)
+            { "Pr1.01", 200 },  // 1st velocity loop gain (20 Hz, standstill)
+            { "Pr1.04", 20 },  // 1st torque filter (0.2 ms, standstill)
             { "Pr1.06", 800 },  // 2nd velocity loop gain (80 Hz while moving)
-            { "Pr1.07", 200 },  // 2nd time constant of velocity loop integration (20 ms)
             { "Pr1.08", 5 },  // 2nd filter of velocity detection (5 = 1600 Hz low-pass)
             { "Pr1.09", 10 },  // 2nd torque filter (0.1 ms)
-            { "Pr1.15", 10 },  // Gain switching mode: 10 = 2nd set while position com...
-            { "Pr1.16", 1000 },  // Gain switching delay time (keeps the 2nd set through...
-            { "Pr1.17", 20 },  // Gain switching level [rpm] (must be >= Pr1.18)
-            { "Pr1.18", 10 },  // Gain switching hysteresis [rpm]: back to the 1st set...
-            { "Pr1.19", 100 },  // Gain switching time (10 ms blend between the sets)
             { "Pr6.23", 0 },  // Disturbance torque compensating gain (off, no measur...
             { "Pr6.24", 0 }   // Disturbance observer filter
         };

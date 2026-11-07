@@ -30,12 +30,12 @@
                     </StackPanel>
 
                     <!-- Helicopter Free-Floating Badge (Visible in Heli Mode) -->
-                    <Border x:Name="border_HeliBadge" Background="#CC1E7A3E" CornerRadius="3" Padding="6,2" Margin="5,0,0,0" VerticalAlignment="Center" Visibility="Collapsed">
+                    <Border x:Name="border_HeliBadge" Background="{DynamicResource SoftGreenBrushTrans}" CornerRadius="3" Padding="6,2" Margin="5,0,0,0" VerticalAlignment="Center" Visibility="Collapsed">
                         <TextBlock Text="FREE-FLOATING / 0 N SPRING" Foreground="White" FontSize="10" FontWeight="Bold" FontFamily="Arial"/>
                     </Border>
 
                     <!-- Toe Brake Badge (Visible in Toe Brake Mode) -->
-                    <Border x:Name="border_ToeBrakeBadge" Background="#CCB8860B" CornerRadius="3" Padding="6,2" Margin="5,0,0,0" VerticalAlignment="Center" Visibility="Collapsed">
+                    <Border x:Name="border_ToeBrakeBadge" Background="{DynamicResource SoftYellowBrushTrans}" CornerRadius="3" Padding="6,2" Margin="5,0,0,0" VerticalAlignment="Center" Visibility="Collapsed">
                         <TextBlock x:Name="txt_ToeBrakeBadge" Text="AIRPLANE WITH TOE BRAKE" Foreground="White" FontSize="10" FontWeight="Bold" FontFamily="Arial"/>
                     </Border>
 
@@ -71,16 +71,16 @@
                             <Polyline x:Name="Polyline_RudderForceCurve" Stroke="{DynamicResource AccentColorBrush}" Height="200" Width="540" Opacity="0.85" StrokeThickness="2" Canvas.Top="0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
                             <!-- Center Trim Line Indicator -->
-                            <Line x:Name="line_CenterTrim" X1="225" Y1="0" X2="225" Y2="200" Stroke="#5500FFCC" StrokeThickness="1" StrokeDashArray="2,2"/>
+                            <Line x:Name="line_CenterTrim" X1="225" Y1="0" X2="225" Y2="200" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="1" StrokeDashArray="2,2"/>
 
                             <!-- Live Pedal Deflection Marker -->
-                            <Line x:Name="line_LiveDeflection" X1="225" Y1="0" X2="225" Y2="200" Stroke="#FFFFCC00" StrokeThickness="2" Visibility="Visible" ToolTip="Rudder / Right Brake Deflection"/>
-                            <Line x:Name="line_LiveDeflection_Left" X1="225" Y1="0" X2="225" Y2="200" Stroke="#FF00CCFF" StrokeThickness="2" Visibility="Collapsed" ToolTip="Left Brake Deflection"/>
+                            <Line x:Name="line_LiveDeflection" X1="225" Y1="0" X2="225" Y2="200" Stroke="{DynamicResource SoftYellowBrush}" StrokeThickness="2" Visibility="Visible" ToolTip="Rudder / Right Brake Deflection"/>
+                            <Line x:Name="line_LiveDeflection_Left" X1="225" Y1="0" X2="225" Y2="200" Stroke="{DynamicResource AccentColorBrush}" StrokeThickness="2" Visibility="Collapsed" ToolTip="Left Brake Deflection"/>
 
                             <!-- Helicopter Mode Visual Overlay Card -->
-                            <Border x:Name="border_HeliOverlay" Width="432" Height="140" Background="#CC151922" BorderBrush="#00FFCC" BorderThickness="1" CornerRadius="8" Canvas.Left="54" Canvas.Top="30" Visibility="Collapsed">
+                            <Border x:Name="border_HeliOverlay" Width="432" Height="140" Background="#CC151922" BorderBrush="{DynamicResource SoftGreenBrush}" BorderThickness="1" CornerRadius="8" Canvas.Left="54" Canvas.Top="30" Visibility="Collapsed">
                                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                    <TextBlock Text="🚁 HELICOPTER ANTI-TORQUE MODE" Foreground="#00FFCC" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+                                    <TextBlock Text="🚁 HELICOPTER ANTI-TORQUE MODE" Foreground="{DynamicResource SoftGreenBrush}" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" Margin="0,0,0,6"/>
                                     <TextBlock Text="Continuous Position-Hold (0 N Return Spring)" Foreground="White" FontSize="11" HorizontalAlignment="Center" Margin="0,0,0,8"/>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
                                         <Border Background="#33FFFFFF" CornerRadius="4" Padding="8,4" Margin="5,0" Cursor="Hand" ToolTip="Click to edit Heli Damping %" MouseLeftButtonDown="txt_HeliDampingDisplay_MouseLeftButtonDown">

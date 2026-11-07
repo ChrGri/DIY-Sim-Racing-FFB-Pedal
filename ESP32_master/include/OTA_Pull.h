@@ -29,10 +29,10 @@ char* PASS;
 
 void wifi_initialized(char* Wifi_SSID, char* Wifi_PASS)
 {
-    ActiveSerial->print("[L]SSID: ");
-    ActiveSerial->print(Wifi_SSID);
-    ActiveSerial->print(" PASS: ");
-    ActiveSerial->println(Wifi_PASS);
+    Serial.print("[L]SSID: ");
+    Serial.print(Wifi_SSID);
+    Serial.print(" PASS: ");
+    Serial.println(Wifi_PASS);
     WiFi.mode(WIFI_STA);
     WiFi.disconnect();
     delay(100);
@@ -40,19 +40,19 @@ void wifi_initialized(char* Wifi_SSID, char* Wifi_PASS)
     WiFi.begin(Wifi_SSID, Wifi_PASS);
 
     // Display connection progress
-    ActiveSerial->print("[L]Connecting to WiFi:");
-    ActiveSerial->print(WiFi.SSID());
-	ActiveSerial->print(" ");
+    Serial.print("[L]Connecting to WiFi:");
+    Serial.print(WiFi.SSID());
+	Serial.print(" ");
     // Wait until WiFi is connected
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
-        ActiveSerial->print(".");
+        Serial.print(".");
   }
   
   // Print confirmation message when WiFi is connected
-  ActiveSerial->println("WiFi connected");
-  ActiveSerial->print("[L]WiFi RSSI: ");
-  ActiveSerial->println(WiFi.RSSI());
+  Serial.println("WiFi connected");
+  Serial.print("[L]WiFi RSSI: ");
+  Serial.println(WiFi.RSSI());
 
 }
 void OTAcallback(int offset, int totallength);
@@ -90,34 +90,34 @@ void DisplayInfo()
 	char exampleImageURL[256];
 	snprintf(exampleImageURL, sizeof(exampleImageURL), "https://example.com/Basic-OTA-Example-%s-%s.bin", ARDUINO_BOARD, VERSION);
 
-	ActiveSerial->printf("Basic-OTA-Example v%s\n", VERSION);
-	ActiveSerial->printf("You need to post a JSON (text) file similar to this:\n");
-	ActiveSerial->printf("{\n");
-	ActiveSerial->printf("  \"Configurations\": [\n");
-	ActiveSerial->printf("    {\n");
-	ActiveSerial->printf("      \"Board\": \"%s\",\n", ARDUINO_BOARD);
-	ActiveSerial->printf("      \"Device\": \"%s\",\n", WiFi.macAddress().c_str());
-	ActiveSerial->printf("      \"Version\": \"%s\",\n", VERSION);
-	ActiveSerial->printf("      \"URL\": \"%s\"\n", exampleImageURL);
-	ActiveSerial->printf("    }\n");
-	ActiveSerial->printf("  ]\n");
-	ActiveSerial->printf("}\n");
-	ActiveSerial->printf("\n");
-	ActiveSerial->printf("(Board, Device, Config, and Version are all *optional*.)\n");
-	ActiveSerial->printf("\n");
-	ActiveSerial->printf("Post the JSON at, e.g., %s\n", JSON_URL_main);
-	ActiveSerial->printf("Post the compiled bin at, e.g., %s\n\n", exampleImageURL);
+	Serial.printf("Basic-OTA-Example v%s\n", VERSION);
+	Serial.printf("You need to post a JSON (text) file similar to this:\n");
+	Serial.printf("{\n");
+	Serial.printf("  \"Configurations\": [\n");
+	Serial.printf("    {\n");
+	Serial.printf("      \"Board\": \"%s\",\n", ARDUINO_BOARD);
+	Serial.printf("      \"Device\": \"%s\",\n", WiFi.macAddress().c_str());
+	Serial.printf("      \"Version\": \"%s\",\n", VERSION);
+	Serial.printf("      \"URL\": \"%s\"\n", exampleImageURL);
+	Serial.printf("    }\n");
+	Serial.printf("  ]\n");
+	Serial.printf("}\n");
+	Serial.printf("\n");
+	Serial.printf("(Board, Device, Config, and Version are all *optional*.)\n");
+	Serial.printf("\n");
+	Serial.printf("Post the JSON at, e.g., %s\n", JSON_URL_main);
+	Serial.printf("Post the compiled bin at, e.g., %s\n\n", exampleImageURL);
 }
 */
 
 void OTAcallback(int offset, int totallength)
 {
-	ActiveSerial->print("[L]Updating: ");
-    ActiveSerial->print(offset);
-    ActiveSerial->print(" of ");
-    ActiveSerial->print(totallength);
-    ActiveSerial->print("(");
-    ActiveSerial->print(100 * offset / totallength);
-    ActiveSerial->println("%)");
+	Serial.print("[L]Updating: ");
+    Serial.print(offset);
+    Serial.print(" of ");
+    Serial.print(totallength);
+    Serial.print("(");
+    Serial.print(100 * offset / totallength);
+    Serial.println("%)");
     
 }

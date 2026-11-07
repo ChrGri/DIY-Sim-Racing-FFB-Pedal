@@ -115,6 +115,19 @@ The DIY FFB ecosystem consists of modular repositories covering mechanical desig
 
 ---
 
+## 🔧 Why DIY?
+
+This is a **DIY project**, and that is the point. Building the pedal yourself, printing the parts, wiring it up, and tuning it is half the fun and the best way to understand how it works. Buying a finished aluminium kit and bolting it together isn't really DIY anymore, it's LEGO.
+
+> [!TIP]
+> **Don't be fooled by claims that only aluminium can handle the forces.**
+> With a design that accounts for the weaknesses of FDM prints (load cell joint at faceplate height, wide pedal arm, reinforced weak points), the 3D-printed pedal (PETG-CF) has easily held up to **200 kg of brake force** so far, and the printed design has been in daily use since 07/2024 without signs of wear.
+
+📐 **Static stress analysis** of the pedal arm (support forces, bending moment, FEA stress plots and safety factors, adjustable to your own peak load):  
+**[Pedal Arm Strength Analysis](https://chrgri.github.io/DIY-Sim-Racing-FFB-Pedal-Mechanical-Design/pedal-arm-analysis.html)**
+
+---
+
 ## 🚀 How to Get Started
 
 1. **Read the Wiki:**  

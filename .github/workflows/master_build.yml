@@ -20,6 +20,8 @@ jobs:
           - project: ESP32
             env: ControlBoard_V4
           - project: ESP32
+            env: ControlBoard_V4_without_espnow
+          - project: ESP32
             env: ControlBoard_V5
           - project: ESP32
             env: ControlBoard_V5_without_espnow

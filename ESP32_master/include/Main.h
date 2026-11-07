@@ -361,4 +361,3 @@
 #define STACK_SIZE_MISC_TASK (int64_t)5000
 
 
-extern Stream *ActiveSerial;

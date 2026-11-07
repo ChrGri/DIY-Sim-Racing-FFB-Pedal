@@ -55,21 +55,26 @@ constexpr Isv57Parameter_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
     { 0, 22,   -729 },  // Pr0.22: Reserved parameter
     { 0, 23,      0 },  // Pr0.23: Reserved parameter
     { 0, 24,      0 },  // Pr0.24: Reserved parameter
-    { 1,  0,    600 },  // Pr1.00: 1st position loop gain
-    { 1,  1,    400 },  // Pr1.01: 1st velocity loop gain
-    { 1,  2,    200 },  // Pr1.02: 1st time constant of velocity loop integration (20 ms,
-                        // the usual value for a 40 Hz velocity loop. Note: a shorter Ti
-                        // adds phase lag and ringing, it does not reduce it)
-    { 1,  3,     27 },  // Pr1.03: 1st filter of velocity detection
-    { 1,  4,     20 },  // Pr1.04: 1st torque filter, unit 0.01 ms (0.2 ms). 180 (1.8 ms, against
-                        // braking voltage spikes) added ~30 deg lag at 50 Hz to the velocity loop,
-                        // which then no longer rejected the motor torque ripple (6 x 4 pole pairs
-                        // = 24 per revolution): the pedal felt rough (2026-10-07)
-    { 1,  5,    175 },  // Pr1.05: 2nd position loop gain
-    { 1,  6,    110 },  // Pr1.06: 2nd velocity loop gain
-    { 1,  7,  10000 },  // Pr1.07: 2nd time constant of velocity loop
-    { 1,  8,      8 },  // Pr1.08: 2nd filter of velocity detection
-    { 1,  9,    200 },  // Pr1.09: 2nd torque filter
+    // Gain switching: the 1st set (Pr1.00-1.04) at standstill and while holding, the 2nd set
+    // (Pr1.05-1.09) while the pedal moves (Pr1.15 = 10). The pedal's roughness is the
+    // iSV57's cogging (24 detents per revolution); a fast velocity loop rejects it but turns
+    // the encoder quantization noise into an audible whine. Silent set: the moving set is the
+    // former fixed set (velocity loop 40 Hz), the standstill set is quieter (30 Hz, more torque
+    // filter). The smooth set (isv57_tunedParameters_smooth.h) uses a faster moving set.
+    { 1,  0,    600 },  // Pr1.00: 1st position loop gain (60 1/s)
+    { 1,  1,    300 },  // Pr1.01: 1st velocity loop gain (30 Hz, standstill)
+    { 1,  2,    200 },  // Pr1.02: 1st time constant of velocity loop integration (20 ms.
+                        // Note: a shorter Ti adds phase lag and ringing, it does not reduce it)
+    { 1,  3,     27 },  // Pr1.03: 1st filter of velocity detection (27 = 200 Hz low-pass)
+    { 1,  4,     50 },  // Pr1.04: 1st torque filter, unit 0.01 ms (0.5 ms, standstill: less noise)
+    { 1,  5,    600 },  // Pr1.05: 2nd position loop gain (60 1/s, moving)
+    { 1,  6,    400 },  // Pr1.06: 2nd velocity loop gain (40 Hz, moving)
+    { 1,  7,    200 },  // Pr1.07: 2nd time constant of velocity loop integration (20 ms)
+    { 1,  8,     27 },  // Pr1.08: 2nd filter of velocity detection (27 = 200 Hz low-pass)
+    { 1,  9,     20 },  // Pr1.09: 2nd torque filter, unit 0.01 ms (0.2 ms). 1.8 ms (until
+                        // 2026-10-07, against braking voltage spikes) added ~30 deg lag at 50 Hz
+                        // to the velocity loop, which then no longer rejected the cogging: the
+                        // pedal felt rough
     { 1, 10,     35 },  // Pr1.10: Velocity feed forward gain (unit 0.1 %: 35 = 3.5 %,
                         // practically off. Following error e = (1 - VFF) * v / Kp)
     { 1, 11,      0 },  // Pr1.11: Velocity feed forward filter. Had better velocity error decay
@@ -82,11 +87,14 @@ constexpr Isv57Parameter_t tuned_parameters[ISV57_NMB_OF_REGISTERS] = {
                         // Pr1.12 = 0. When enabling torque FF set 0-50, otherwise the FF
                         // lags the feedback path, see docs/development/servoLoops.md)
     { 1, 14,      1 },  // Pr1.14: 2nd gain setup (enables the 2nd set)
-    { 1, 15,      0 },  // Pr1.15: Gain switching mode (0 = 1st set fixed; the smooth set uses 10)
-    { 1, 16,     50 },  // Pr1.16: Position control switching delay time
-    { 1, 17,     50 },  // Pr1.17: Control switching level
-    { 1, 18,     33 },  // Pr1.18: Control switch hysteresis
-    { 1, 19,     33 },  // Pr1.19: Gain switching time
+    { 1, 15,     10 },  // Pr1.15: Gain switching mode: 10 = 2nd set while position commands
+                        // arrive, back to the 1st set after Pr1.16 without commands and below
+                        // Pr1.17 - Pr1.18 rpm (needs Pr0.02 != 1)
+    { 1, 16,   1000 },  // Pr1.16: Gain switching delay time (keeps the 2nd set through
+                        // stick-slip pauses while creeping)
+    { 1, 17,     20 },  // Pr1.17: Gain switching level [rpm] (must be >= Pr1.18)
+    { 1, 18,     10 },  // Pr1.18: Gain switching hysteresis [rpm]: back below 20 - 10 = 10 rpm
+    { 1, 19,    100 },  // Pr1.19: Gain switching time (10 ms blend between the sets)
     { 1, 20,    100 },  // Pr1.20: Reserved parameter
     { 1, 21,    100 },  // Pr1.21: Reserved parameter
     { 1, 22,      0 },  // Pr1.22: Reserved parameter
