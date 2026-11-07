@@ -54,6 +54,7 @@ typedef struct {
   float physicalPos_m;   
   float virtualVel_mps;
   float virtualAcc_mps2;
+  float softEndstopMaxTargetPos_fl32; // deepest setpoint of the soft endstop, in steps (= soft max at zero travel)
 } AdmittanceStates_t;
 
 /**
@@ -1066,6 +1067,8 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float lowerTravelLimit_01 = 0.0f;
   float upperTravelLimit_01 = 1.0f;
   CalcDynamicTravelLimits(travelSteps_cnt, localStiffness_kg_step, effectOffsets_st, lowerTravelLimit_01, upperTravelLimit_01);
+  // end of the regular travel, before the soft endstop widens the limit (approach speed limit)
+  const float endOfTravelLimit_01 = upperTravelLimit_01;
 
   // --- 8. SOFT ENDSTOP CALCULATION ---
   float currentStiffness_N_m = localStiffness_N_m;
@@ -1460,6 +1463,9 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   // the motor (~10 J at full speed) within ~20-30 ms. Limit the speed by the distance to
   // the limit so the stop returns at most what the servo (and the brake resistor, when
   // available) can absorb: v_max = sqrt(v_stop^2 + 2 * a * d).
+  // The distance ends where the soft endstop begins, not at its far end: the endstop is much
+  // stiffer than the force curve, so with the widened limit a stomp entered it at ~0.8 m/s
+  // (10 mm travel) instead of ~0.1 m/s and was thrown back.
   const float sledPerArc_01 = maxSledPos_m / max(totalTravel_m, 0.0001f);
   const float sledMetersPerRad = max(spindlePitch_mm, 1.0f) * 0.001f / (2.0f * PI);
   const float servoEquivalentMass_kg =
@@ -1468,7 +1474,7 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   const float stopEnergy_J = STOP_ENERGY_SERVO_J
                            + brakeResistorAvailable_01 * brakeResistorRegenPower_W * STOP_DURATION_S;
   const float stopVelocitySq = 2.0f * stopEnergy_J / max(servoEquivalentMass_kg, 0.001f);
-  const float distanceToEnd_m = max(0.0f, (upperTravelLimit_01 - g_vModelPos_01) * totalTravel_m);
+  const float distanceToEnd_m = max(0.0f, (endOfTravelLimit_01 - g_vModelPos_01) * totalTravel_m);
   const float approachSpeedLimit_mps =
       sqrtf(stopVelocitySq + 2.0f * STOP_APPROACH_DECELERATION_MPS2 * distanceToEnd_m);
   forwardSpeedLimit = min(forwardSpeedLimit, approachSpeedLimit_mps);
@@ -1643,7 +1649,8 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
     admittanceStates_pst->physicalPos_m = g_vModelPos_01 * totalTravel_m; // Logged natively in Task Space
     admittanceStates_pst->virtualVel_mps = g_vModelVel_mps;
     admittanceStates_pst->virtualAcc_mps2 = acceleration_mps2;
+    admittanceStates_pst->softEndstopMaxTargetPos_fl32 = (float)calc_st->softEndstopMaxStepperPos_i32 + endstopTravel_steps;
   }
-  
+
   return finalTargetPos_fl32;
 }

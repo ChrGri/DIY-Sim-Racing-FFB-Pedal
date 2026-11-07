@@ -3018,10 +3018,16 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           // when the model runs into full travel it stops within ~1 ms, and the
           // pulses already sent ahead overshot by 2-3 steps and then reversed
           // (a small knock at every full press). A setpoint that is itself
-          // beyond the range (soft endstop, effects) is still followed.
-          float leadUpperLimit_fl32 =
-              max(Position_Next_fl32,
-                  (float)dap_calculationVariables_st.softEndstopMaxStepperPos_i32);
+          // beyond the range (effects) is still followed. The soft endstop is
+          // part of the range: without a lead inside it the pulses stopped at
+          // every setpoint (start-stop while pressing into the endstop).
+          float endOfRange_fl32 =
+              (float)dap_calculationVariables_st.softEndstopMaxStepperPos_i32;
+          if (!isRudderModeActive) { // the rudder strategy does not provide it
+            endOfRange_fl32 = max(endOfRange_fl32,
+                                  admittanceStates_st.softEndstopMaxTargetPos_fl32);
+          }
+          float leadUpperLimit_fl32 = max(Position_Next_fl32, endOfRange_fl32);
           float leadLowerLimit_fl32 =
               min(Position_Next_fl32,
                   (float)dap_calculationVariables_st.softEndstopMinStepperPos_i32);
