@@ -93,6 +93,10 @@ namespace DiyFfbPedal.UIFunction
         private readonly List<TelemetryPoint> _points = new List<TelemetryPoint>(15000);
         private const int MAX_BUFFER_POINTS = 12000; // 60s at 200 Hz
 
+        private static readonly TimeSpan FRAME_INTERVAL = TimeSpan.FromTicks(TimeSpan.TicksPerSecond / 60);
+        private static readonly TimeSpan FRAME_TOLERANCE = TimeSpan.FromMilliseconds(2);
+        private static readonly TimeSpan TEXT_UPDATE_INTERVAL = TimeSpan.FromMilliseconds(200);
+
         private static readonly Dictionary<string, SignalDef> SignalMap = AllSignals.ToDictionary(s => s.Id);
 
         private static readonly SolidColorBrush BrushStreaming = CreateFrozenBrush(0x00, 0xE6, 0x76);
@@ -231,7 +235,8 @@ namespace DiyFfbPedal.UIFunction
                 _bitmap.Unlock();
             }
         }
-        private int _textThrottleCounter = 0;
+        private TimeSpan _frameTime;
+        private TimeSpan _nextTextUpdate;
         private double _lastGridWidth = -1;
         private double _lastGridHeight = -1;
         private double _lastGridOffsetSec = -1;
@@ -260,7 +265,8 @@ namespace DiyFfbPedal.UIFunction
         private double _pauseTimeSec = 0.0;
 
         // Render timer & reference state
-        private DispatcherTimer _renderTimer;
+        private bool _renderLoopActive = false;
+        private TimeSpan _nextFrame;
         private double _windowSeconds = 5.0;
         private bool _isPaused = false;
         private bool _autoScale = true;
@@ -337,7 +343,6 @@ namespace DiyFfbPedal.UIFunction
             InitializeComponent();
             InitControls();
             InitContextMenu();
-            InitRenderTimer();
 
             // Default active signals: Filtered Force & Feedback Position
             _activeSignalIds.Add("force_filtered");
@@ -366,10 +371,7 @@ namespace DiyFfbPedal.UIFunction
             _isPoppedOut = isPoppedOut;
             if (isPoppedOut)
             {
-                if (_renderTimer != null && _renderTimer.IsEnabled)
-                {
-                    _renderTimer.Stop();
-                }
+                StopRenderLoop();
                 if (panel_popped_out_overlay != null)
                 {
                     panel_popped_out_overlay.Visibility = Visibility.Visible;
@@ -391,10 +393,7 @@ namespace DiyFfbPedal.UIFunction
                 }
                 if (ParentUI != null && ParentUI.Tab_LivePlot != null && ParentUI.Tab_LivePlot.IsSelected)
                 {
-                    if (_renderTimer != null && !_renderTimer.IsEnabled)
-                    {
-                        _renderTimer.Start();
-                    }
+                    StartRenderLoop();
                 }
             }
         }
@@ -404,9 +403,9 @@ namespace DiyFfbPedal.UIFunction
             if (isSelected)
             {
                 EnsureStreaming(_selectedPedal, true);
-                if (!_isPoppedOut && _renderTimer != null && !_renderTimer.IsEnabled)
+                if (!_isPoppedOut)
                 {
-                    _renderTimer.Start();
+                    StartRenderLoop();
                 }
             }
             else
@@ -416,10 +415,7 @@ namespace DiyFfbPedal.UIFunction
                 {
                     EnsureStreaming(_selectedPedal, false);
                 }
-                if (_renderTimer != null && _renderTimer.IsEnabled)
-                {
-                    _renderTimer.Stop();
-                }
+                StopRenderLoop();
             }
         }
 
@@ -793,11 +789,38 @@ namespace DiyFfbPedal.UIFunction
             }
         }
 
-        private void InitRenderTimer()
+        private void StartRenderLoop()
         {
-            _renderTimer = new DispatcherTimer(DispatcherPriority.Background);
-            _renderTimer.Interval = TimeSpan.FromMilliseconds(40); // 25 Hz refresh
-            _renderTimer.Tick += RenderTimer_Tick;
+            if (_renderLoopActive) return;
+            _renderLoopActive = true;
+            _nextFrame = TimeSpan.Zero;
+            CompositionTarget.Rendering += CompositionTarget_Rendering;
+        }
+
+        private void StopRenderLoop()
+        {
+            if (!_renderLoopActive) return;
+            _renderLoopActive = false;
+            CompositionTarget.Rendering -= CompositionTarget_Rendering;
+        }
+
+        // Runs once per display frame (a DispatcherTimer cannot hold 60 Hz: its resolution
+        // is the ~15.6 ms Windows timer). Capped so high refresh monitors stay at 60 Hz.
+        private void CompositionTarget_Rendering(object sender, EventArgs e)
+        {
+            var args = e as RenderingEventArgs;
+            if (args == null) return;
+
+            // Fires more than once per frame; the tolerance keeps a 60 Hz display from
+            // skipping every other frame when a frame lands just before the due time.
+            TimeSpan now = args.RenderingTime;
+            if (now + FRAME_TOLERANCE < _nextFrame) return;
+
+            _nextFrame += FRAME_INTERVAL;
+            if (_nextFrame < now) _nextFrame = now + FRAME_INTERVAL;
+
+            _frameTime = now;
+            RenderFrame();
         }
 
         public void OnPacketReceived(int pedalIdx, DAP_state_extended_st packet)
@@ -1155,7 +1178,7 @@ namespace DiyFfbPedal.UIFunction
 
         private static string FormatMs(double sec) => double.IsNaN(sec) ? "n/a" : $"{sec * 1000.0:F1} ms";
 
-        private void RenderTimer_Tick(object sender, EventArgs e)
+        private void RenderFrame()
         {
             // Update Stream Status & Rate
             TimeSpan rateDiff = DateTime.UtcNow - _lastRateCheck;
@@ -1219,8 +1242,8 @@ namespace DiyFfbPedal.UIFunction
                 return;
             }
 
-            _textThrottleCounter++;
-            bool updateText = (_textThrottleCounter % 5 == 0); // 5 Hz throttled text update (~200ms)
+            bool updateText = _frameTime >= _nextTextUpdate; // 5 Hz throttled text update (~200ms)
+            if (updateText) _nextTextUpdate = _frameTime + TEXT_UPDATE_INTERVAL;
 
             double refTime;
             double viewEndTime;
