@@ -34,6 +34,7 @@ namespace DiyFfbPedal.UIFunction
         }
 
         private const double SERVO_STEPS_PER_REV = 3200.0; // fixed microstep setting (Pr0.08)
+        private const double NEWTON_PER_KG = 9.81;
         private static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         // All supported signals from payloadPedalState_Extended
@@ -73,8 +74,18 @@ namespace DiyFfbPedal.UIFunction
             new SignalDef { Id = "adm_damping", Name = "Virtual Damping", Subsystem = "Admittance Model", Unit = "Ns/m", DefaultColor = Color.FromRgb(0x1D, 0xE9, 0xB6), Getter = s => s.admittance_virtualDamping_Ns_m, Format = "F2" },
             new SignalDef { Id = "adm_pos", Name = "Virtual Position", Subsystem = "Admittance Model", Unit = "m", DefaultColor = Color.FromRgb(0xAE, 0xEA, 0x00), Getter = s => s.admittance_virtualPosition_m, Format = "F4" },
             new SignalDef { Id = "adm_vel", Name = "Virtual Velocity", Subsystem = "Admittance Model", Unit = "m/s", DefaultColor = Color.FromRgb(0x00, 0xE6, 0x76), Getter = s => s.admittance_virtualVelocity_mps, Format = "F3" },
-            new SignalDef { Id = "adm_acc", Name = "Virtual Accel", Subsystem = "Admittance Model", Unit = "m/s\u00B2", DefaultColor = Color.FromRgb(0x7C, 0x4D, 0xFF), Getter = s => s.admittance_virtualAcceleration_mps2, Format = "F2" }
+            new SignalDef { Id = "adm_acc", Name = "Virtual Accel", Subsystem = "Admittance Model", Unit = "m/s\u00B2", DefaultColor = Color.FromRgb(0x7C, 0x4D, 0xFF), Getter = s => s.admittance_virtualAcceleration_mps2, Format = "F2" },
+
+            // Derived: positive = foot drives the motor (regen into the bus), negative = motoring
+            new SignalDef { Id = "power_mech", Name = "Mechanical Power", Subsystem = "Power", Unit = "W", DefaultColor = Color.FromRgb(0xFF, 0x91, 0x00), Getter = MechanicalPower_W, Format = "F1" }
         };
+
+        // P = F * v at the pedal plate. Both values live in the admittance model's task space
+        // (pedal force and pedal arc velocity, not sled force/velocity), so the lever ratio
+        // cancels out. The kinetic energy of the rotor is not part of it: a stop after a fast
+        // return also feeds the bus, without any foot force (see Servo Voltage).
+        private static double MechanicalPower_W(payloadPedalState_Extended s)
+            => s.pedalForceFiltered_fl32 * NEWTON_PER_KG * s.admittance_virtualVelocity_mps;
 
         // Active signals list & hardware-accelerated Path shapes
         private readonly HashSet<string> _activeSignalIds = new HashSet<string>();
@@ -334,6 +345,12 @@ namespace DiyFfbPedal.UIFunction
         private readonly Line[] _markerLines = new Line[MARKER_COUNT];
         private readonly TextBlock[] _markerLabels = new TextBlock[MARKER_COUNT];
 
+        // Preset "Power": peak/mean regen power of the displayed time range
+        private static readonly string[] PowerSignals = { "force_filtered", "adm_vel", "power_mech", "servo_voltage" };
+        private const double POWER_MAX_SAMPLE_GAP_SEC = 0.02; // longer packet gaps are skipped, not interpolated
+        private bool _powerMode = false;
+        private TimeSpan _nextPowerUpdate;
+
         // References to SimHub plugin & parent UI
         public DIY_FFB_Pedal Plugin { get; set; }
         public DIYFFBPedalControlUI ParentUI { get; set; }
@@ -503,6 +520,7 @@ namespace DiyFfbPedal.UIFunction
         {
             cb_preset.Items.Add("None");
             cb_preset.Items.Add("Latency check");
+            cb_preset.Items.Add("Power");
             cb_preset.SelectedIndex = 0;
 
             cb_time_window.Items.Add("3s");
@@ -1068,7 +1086,8 @@ namespace DiyFfbPedal.UIFunction
         private void CbPreset_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             bool latency = cb_preset.SelectedIndex == 1;
-            if (latency == _triggerMode) return;
+            bool power = cb_preset.SelectedIndex == 2;
+            if (latency == _triggerMode && power == _powerMode) return;
 
             if (latency)
             {
@@ -1076,9 +1095,15 @@ namespace DiyFfbPedal.UIFunction
                 RebuildPolylinesAndLegends();
                 UpdateTriggerThresholds();
             }
+            else if (power)
+            {
+                foreach (var id in PowerSignals) _activeSignalIds.Add(id);
+                RebuildPolylinesAndLegends();
+            }
 
             ResetTriggerState();
             _triggerMode = latency;
+            _powerMode = power;
             cb_time_window.IsEnabled = !latency;
             if (_isPaused) BtnLivePause_Click(null, null);
             ResetZoom();
@@ -1088,6 +1113,69 @@ namespace DiyFfbPedal.UIFunction
 
             card_trigger_info.Visibility = latency ? Visibility.Visible : Visibility.Collapsed;
             canvas_markers.Visibility = latency ? Visibility.Visible : Visibility.Collapsed;
+            card_power_info.Visibility = power ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        // ==================== POWER PRESET ====================
+
+        // Statistics of the displayed time range (window length, zoom and pan as last
+        // rendered), so a single press can be selected with the box zoom. Runs on the full
+        // rate buffer: the plot's 200 Hz subsampling would cut the peaks.
+        private void UpdatePowerStats()
+        {
+            if (_frameTime < _nextPowerUpdate) return;
+            _nextPowerUpdate = _frameTime + TEXT_UPDATE_INTERVAL;
+
+            double regenPeak = 0.0, motorPeak = 0.0, forceMax = 0.0, velMax = 0.0;
+            double busMin = double.MaxValue, busMax = double.MinValue;
+            double regenEnergy = 0.0, validSec = 0.0;
+
+            lock (_dataLock)
+            {
+                int start = FindFirstExportIndex(_rawPoints, _lastRenderViewStart);
+                int end = FindFirstExportIndex(_rawPoints, _lastRenderViewEnd + 1e-9); // exclusive
+
+                double prevTime = double.NaN, prevRegen = 0.0;
+                for (int i = start; i < end; i++)
+                {
+                    var pt = _rawPoints[i];
+                    double power = MechanicalPower_W(pt.State);
+                    double regen = Math.Max(power, 0.0);
+                    double bus = pt.State.servoVoltage0p1V_i16 / 10.0;
+
+                    regenPeak = Math.Max(regenPeak, power);
+                    motorPeak = Math.Max(motorPeak, -power);
+                    forceMax = Math.Max(forceMax, pt.State.pedalForceFiltered_fl32 * NEWTON_PER_KG);
+                    velMax = Math.Max(velMax, Math.Abs(pt.State.admittance_virtualVelocity_mps));
+                    busMin = Math.Min(busMin, bus);
+                    busMax = Math.Max(busMax, bus);
+
+                    double dt = pt.TimeSec - prevTime; // NaN for the first sample
+                    if (dt > 0.0 && dt <= POWER_MAX_SAMPLE_GAP_SEC)
+                    {
+                        regenEnergy += 0.5 * (regen + prevRegen) * dt;
+                        validSec += dt;
+                    }
+                    prevTime = pt.TimeSec;
+                    prevRegen = regen;
+                }
+            }
+
+            if (validSec <= 0.0)
+            {
+                SetTextIfChanged(tb_power_status, "POWER ● waiting for data");
+                SetTextIfChanged(tb_power_regen, "Regen: --");
+                SetTextIfChanged(tb_power_motor, "Motoring: --");
+                SetTextIfChanged(tb_power_kinematics, "F max: --");
+                SetTextIfChanged(tb_power_bus, "Bus voltage: --");
+                return;
+            }
+
+            SetTextIfChanged(tb_power_status, $"POWER ● P = F · v — {validSec:F2} s of the displayed range");
+            SetTextIfChanged(tb_power_regen, $"Regen peak: {regenPeak:F1} W   ·   mean: {regenEnergy / validSec:F1} W");
+            SetTextIfChanged(tb_power_motor, $"Motoring peak: {motorPeak:F1} W");
+            SetTextIfChanged(tb_power_kinematics, $"F max: {forceMax:F1} N   ·   v max: {velMax:F2} m/s");
+            SetTextIfChanged(tb_power_bus, $"Bus voltage: {busMin:F1} … {busMax:F1} V");
         }
 
         private void InitMarkers()
@@ -1234,6 +1322,10 @@ namespace DiyFfbPedal.UIFunction
                 UpdateTriggerThresholds();
                 double end = TRIGGER_POST_SEC - _xViewOffsetSec;
                 UpdateTriggerOverlay(width, height, end - _windowSeconds, end);
+            }
+            else if (_powerMode)
+            {
+                UpdatePowerStats();
             }
 
             if (_activeSignalIds.Count == 0)
