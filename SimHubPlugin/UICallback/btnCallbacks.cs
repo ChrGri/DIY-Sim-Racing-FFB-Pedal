@@ -844,6 +844,7 @@ namespace DiyFfbPedal
                         try
                         {
                             Plugin.ESPsync_serialPort.Open();
+                            ComPortHelper.DisableReceiveEvents(Plugin.ESPsync_serialPort);
                             Plugin.ESPsync_serialPort.RtsEnable = false;
                             Plugin.ESPsync_serialPort.DtrEnable = false;
 
