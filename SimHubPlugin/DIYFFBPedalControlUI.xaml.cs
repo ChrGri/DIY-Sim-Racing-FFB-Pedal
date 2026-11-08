@@ -196,6 +196,14 @@ namespace DiyFfbPedal
             if (LivePlotSection != null && Plugin != null)
             {
                 LivePlotSection.SetReferences(Plugin, this);
+                if (Tab_LivePlot != null && Tab_LivePlot.IsSelected)
+                {
+                    bool isPoppedOut = _livePlotWindow != null && _livePlotWindow.IsLoaded;
+                    if (!isPoppedOut)
+                    {
+                        LivePlotSection.OnTabSelected(true);
+                    }
+                }
             }
         }
 
@@ -285,13 +293,6 @@ namespace DiyFfbPedal
             {
                 HomeDashboardSection.Initialize(plugin, this);
             }
-            if (LivePlotSection != null)
-            {
-                LivePlotSection.SetReferences(plugin, this);
-            }
-            {
-                HomeDashboardSection.Initialize(plugin, this);
-            }
             for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
             {
                 DAP_config_set_default(pedalIdx);
@@ -340,6 +341,10 @@ namespace DiyFfbPedal
             System.Threading.Thread.Sleep(50);
             Plugin.BridgeHidService.OnDataReceived += HidRecieveCallback;
             updateTheGuiFromConfig();
+            if (plugin?.Settings != null)
+            {
+                SelectMainTab(plugin.Settings.main_tab_selected);
+            }
         }
 
         public bool IsHomePedalConnected(int pedal)
