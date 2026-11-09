@@ -4,9 +4,28 @@
 #include <ESPmDNS.h>
 #include <ArduinoOTA.h>
 #include "Main.h"
-const char* ota_hostname="pedal_ota";
-void ota_arduinoota_initialize()
+#include "DiyActivePedal_types.h"
+
+static char ota_hostname[32] = "pedal";
+
+void ota_arduinoota_initialize(uint8_t pedalRole = PEDAL_ID_UNKNOWN)
 {
+    switch (pedalRole)
+    {
+        case PEDAL_ID_CLUTCH:
+            snprintf(ota_hostname, sizeof(ota_hostname), "pedal_clutch");
+            break;
+        case PEDAL_ID_BRAKE:
+            snprintf(ota_hostname, sizeof(ota_hostname), "pedal_brake");
+            break;
+        case PEDAL_ID_THROTTLE:
+            snprintf(ota_hostname, sizeof(ota_hostname), "pedal_throttle");
+            break;
+        default:
+            snprintf(ota_hostname, sizeof(ota_hostname), "pedal");
+            break;
+    }
+
     // Zwingt den WLAN-Chip, dauerhaft wach zu bleiben, um Paketverluste beim OTA zu verhindern!
     WiFi.setSleep(false);
     ArduinoOTA.setHostname(ota_hostname); 

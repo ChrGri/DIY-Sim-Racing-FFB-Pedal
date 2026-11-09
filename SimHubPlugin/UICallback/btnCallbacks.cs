@@ -929,8 +929,9 @@ namespace DiyFfbPedal
             Plugin._calculations.ForceUpdate_b = false;
             Plugin._calculations.IsOtaUploadFromPlatformIO = false;
 
-            // Öffnet das neue OTA-Flasher Fenster und übergibt die Plugin-Referenz
-            var otaWindow = new DiyFfbPedal.UIFunction.OtaFlasherWindow(Plugin);
+            // Öffnet das neue OTA-Flasher Fenster und übergibt die Plugin-Referenz und Pedal-Index
+            uint selectedPedal = GetSelectedPedalIndex();
+            var otaWindow = new DiyFfbPedal.UIFunction.OtaFlasherWindow(Plugin, (byte)selectedPedal);
             otaWindow.ShowDialog();
         }
 

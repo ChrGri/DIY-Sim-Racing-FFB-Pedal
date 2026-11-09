@@ -14,11 +14,37 @@ namespace DiyFfbPedal.UIFunction
     public partial class OtaFlasherWindow : Window
     {
         private readonly DIY_FFB_Pedal _plugin;
+        private readonly byte _pedalId;
 
-        public OtaFlasherWindow(DIY_FFB_Pedal plugin)
+        public OtaFlasherWindow(DIY_FFB_Pedal plugin, byte? targetPedalId = null)
         {
             InitializeComponent();
             _plugin = plugin;
+            _pedalId = targetPedalId ?? (byte)(_plugin.Settings?.table_selected ?? 0);
+
+            string roleName;
+            switch (_pedalId)
+            {
+                case (byte)PedalIdEnum.PEDAL_ID_CLUTCH:
+                    roleName = "clutch";
+                    break;
+                case (byte)PedalIdEnum.PEDAL_ID_BRAKE:
+                    roleName = "brake";
+                    break;
+                case (byte)PedalIdEnum.PEDAL_ID_THROTTLE:
+                    roleName = "throttle";
+                    break;
+                default:
+                    roleName = "";
+                    break;
+            }
+
+            string defaultHostname = string.IsNullOrEmpty(roleName) ? "pedal.local" : $"pedal_{roleName}.local";
+            TxtHostname.Text = defaultHostname;
+            if (TxtHostnameHint != null)
+            {
+                TxtHostnameHint.Text = $"Default: {defaultHostname} (Alternatively enter the IP, e.g. 192.168.178.50)";
+            }
 
             // Load the saved WiFi data from the plugin settings into the new text boxes
             if (_plugin.Settings != null)
@@ -162,7 +188,7 @@ namespace DiyFfbPedal.UIFunction
             {
                 TxtLog.AppendText("Sending OTA Wake-Up command incl. WiFi data to the pedal...\n");
 
-                byte pedalId = (byte)(_plugin.Settings?.table_selected ?? 0);
+                byte pedalId = _pedalId;
 
                 // We encapsulate the memory-critical part in an unsafe block
                 unsafe

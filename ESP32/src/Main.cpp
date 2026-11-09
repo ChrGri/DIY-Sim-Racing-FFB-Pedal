@@ -4528,7 +4528,11 @@ void otaUpdateTask(void *pvParameters) {
             } else {
               // initialize ota for platformIO upload
               ActiveSerial->println("OTA from platformIO");
-              ota_arduinoota_initialize();
+              uint8_t targetRole = ota_dap_config_st.payloadPedalConfig_st.pedalType_u8;
+              if (targetRole > PEDAL_ID_THROTTLE && dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 <= PEDAL_ID_THROTTLE) {
+                targetRole = dap_action_ota_st.payloadOtaInfo_st.deviceId_u8;
+              }
+              ota_arduinoota_initialize(targetRole);
             }
 #endif
             delay(3000);

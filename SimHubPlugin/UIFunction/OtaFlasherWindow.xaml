@@ -29,8 +29,8 @@
         <!-- 1. Hostname / IP Address -->
         <StackPanel Grid.Row="0" Margin="0,0,0,15">
             <TextBlock Text="ESP32 Hostname or IP Address:" FontWeight="Bold" Margin="0,0,0,5" Foreground="#FFCCCCCC"/>
-            <TextBox x:Name="TxtHostname" Text="pedal_ota.local" Height="28" VerticalContentAlignment="Center" Padding="5,0" Background="#FF333333" Foreground="White" BorderBrush="#FF555555"/>
-            <TextBlock Text="Default: pedal_ota.local (Alternatively enter the IP, e.g. 192.168.178.50)" FontSize="10" Foreground="#FF888888" Margin="0,4,0,0"/>
+            <TextBox x:Name="TxtHostname" Text="pedal.local" Height="28" VerticalContentAlignment="Center" Padding="5,0" Background="#FF333333" Foreground="White" BorderBrush="#FF555555"/>
+            <TextBlock x:Name="TxtHostnameHint" Text="Default: pedal.local (Alternatively enter the IP, e.g. 192.168.178.50)" FontSize="10" Foreground="#FF888888" Margin="0,4,0,0"/>
         </StackPanel>
 
         <!-- 2. WiFi SSID -->
