@@ -33,7 +33,7 @@ namespace DiyFfbPedal
         public const byte WIFI_CH_CMD_SET_REQ = 3;
         public const byte WIFI_CH_CMD_SET_ACK = 4;
         public const byte WIFI_CH_CMD_BEACON = 5;
-        public const string pluginVersion = "26.45.06";
+        public const string pluginVersion = "26.46.01";
         public const string version_control_url = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/version_control.json";
         public const int DEFAULTBAUD = 921600;
         public const int BAUD3M = 3000000;
@@ -70,7 +70,9 @@ namespace DiyFfbPedal
         OTA_ACTION_NORMAL,
         OTA_ACTION_FORCE_UPDATE,
         OTA_ACTION_UPLOAD_FROM_PLATFORMIO,
-        OTA_ACTION_ESP_BOOT_INTO_DOWNLOAD_MODE
+        OTA_ACTION_ESP_BOOT_INTO_DOWNLOAD_MODE,
+        OTA_ACTION_FLASH_FROM_PIO,
+        OTA_ACTION_FLASH_FROM_PLUGIN_OTA
     };
 
     public enum PedalSystemAction

@@ -1,5 +1,5 @@
 
-const char *DAP_FIRMWARE_VERSION = "26.45.06";
+const char *DAP_FIRMWARE_VERSION = "26.46.01";
 
 #if PCB_VERSION==3
 	#define CONTROL_BOARD "V3_ESP32"

@@ -15,6 +15,7 @@ namespace DiyFfbPedal.UIFunction
     {
         private readonly DIY_FFB_Pedal _plugin;
         private readonly byte _pedalId;
+        private readonly string _roleName;
 
         public OtaFlasherWindow(DIY_FFB_Pedal plugin, byte? targetPedalId = null)
         {
@@ -38,8 +39,9 @@ namespace DiyFfbPedal.UIFunction
                     roleName = "";
                     break;
             }
+            _roleName = roleName;
 
-            string defaultHostname = string.IsNullOrEmpty(roleName) ? "pedal.local" : $"pedal_{roleName}.local";
+            string defaultHostname = string.IsNullOrEmpty(_roleName) ? "pedal.local" : $"pedal_{_roleName}.local";
             TxtHostname.Text = defaultHostname;
             if (TxtHostnameHint != null)
             {
@@ -59,6 +61,7 @@ namespace DiyFfbPedal.UIFunction
         private void PopulateFirmwareDropdown()
         {
             var firmwareOptions = new Dictionary<string, string>();
+            firmwareOptions.Add("Flash from PlatformIO (pedal_ota.local)", "PLATFORMIO_OTA");
             firmwareOptions.Add("Custom Local Firmware...", "CUSTOM_LOCAL");
 
             string manifestResourceName = "DiyFfbPedal.Resources.Firmware.manifest.txt";
@@ -92,15 +95,38 @@ namespace DiyFfbPedal.UIFunction
             }
 
             CboFirmware.ItemsSource = firmwareOptions;
-            if (CboFirmware.Items.Count > 1) CboFirmware.SelectedIndex = 1;
+            if (CboFirmware.Items.Count > 2) CboFirmware.SelectedIndex = 2;
+            else if (CboFirmware.Items.Count > 1) CboFirmware.SelectedIndex = 1;
             else if (CboFirmware.Items.Count > 0) CboFirmware.SelectedIndex = 0;
         }
 
         private void CboFirmware_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            if (PnlCustomFile == null) return;
-            PnlCustomFile.Visibility = (CboFirmware.SelectedValue != null && CboFirmware.SelectedValue.ToString() == "CUSTOM_LOCAL")
-                                       ? Visibility.Visible : Visibility.Collapsed; 
+            string selectedVal = CboFirmware.SelectedValue?.ToString();
+            if (PnlCustomFile != null)
+            {
+                PnlCustomFile.Visibility = (selectedVal == "CUSTOM_LOCAL") ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            if (selectedVal == "PLATFORMIO_OTA")
+            {
+                TxtHostname.Text = "pedal_ota.local";
+                if (TxtHostnameHint != null)
+                {
+                    TxtHostnameHint.Text = "Default: pedal_ota.local (PlatformIO listening mode)";
+                }
+                BtnFlash.Content = "📡 Wake Up Pedal for PlatformIO OTA";
+            }
+            else
+            {
+                string defaultHostname = string.IsNullOrEmpty(_roleName) ? "pedal.local" : $"pedal_{_roleName}.local";
+                TxtHostname.Text = defaultHostname;
+                if (TxtHostnameHint != null)
+                {
+                    TxtHostnameHint.Text = $"Default: {defaultHostname} (Alternatively enter the IP, e.g. 192.168.178.50)";
+                }
+                BtnFlash.Content = "🚀 Start WiFi OTA Update";
+            }
         }
 
         private void BtnBrowse_Click(object sender, RoutedEventArgs e)
@@ -158,6 +184,7 @@ namespace DiyFfbPedal.UIFunction
             if (CboFirmware.SelectedItem == null) return;
 
             string selectedBoardFolder = CboFirmware.SelectedValue.ToString();
+            bool isPioMode = (selectedBoardFolder == "PLATFORMIO_OTA");
             string targetHostname = TxtHostname.Text;
             string SSID = TxtSSID.Text;
             string PASS = TxtPASS.Text;
@@ -195,14 +222,16 @@ namespace DiyFfbPedal.UIFunction
                 {
                     DAP_action_ota_st tmp_2 = default;
 
-                    tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_UPLOAD_FROM_PLATFORMIO;
+                    tmp_2.payloadOtaInfo_.ota_action = isPioMode
+                        ? (byte)otaAction.OTA_ACTION_FLASH_FROM_PIO
+                        : (byte)otaAction.OTA_ACTION_FLASH_FROM_PLUGIN_OTA;
 
                     if (_plugin._calculations != null)
                     {
                         if (_plugin._calculations.ForceUpdate_b)
-                            tmp_2.payloadOtaInfo_.ota_action = (byte)2; // OTA_ACTION_FORCE_UPDATE
+                            tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_FORCE_UPDATE;
                         if (_plugin._calculations.IsOtaUploadFromPlatformIO)
-                            tmp_2.payloadOtaInfo_.ota_action = (byte)3; // OTA_ACTION_UPLOAD_FROM_PLATFORMIO
+                            tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_FLASH_FROM_PIO;
                     }
 
                     tmp_2.payloadOtaInfo_.mode_select = 1;
@@ -230,6 +259,15 @@ namespace DiyFfbPedal.UIFunction
                     }
 
                     _plugin.SendOTAActionPedal(tmp_2, pedalId);
+                }
+
+                if (isPioMode)
+                {
+                    TxtLog.AppendText("Pedal instructed to enter PlatformIO OTA mode.\n");
+                    TxtLog.AppendText("mDNS Hostname: pedal_ota.local\n");
+                    TxtLog.AppendText("You can now run 'pio run -t upload' in PlatformIO / VSCode!\n");
+                    BtnFlash.IsEnabled = true;
+                    return;
                 }
 
                 // 2. Give the ESP time to stop the motor, connect to WiFi and start ArduinoOTA

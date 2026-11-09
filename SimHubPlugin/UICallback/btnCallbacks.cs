@@ -959,7 +959,7 @@ namespace DiyFfbPedal
                 }
                 if (Plugin._calculations.IsOtaUploadFromPlatformIO)
                 {
-                  tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_UPLOAD_FROM_PLATFORMIO;
+                  tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_FLASH_FROM_PIO;
                 }
                 tmp_2.payloadOtaInfo_.mode_select = 1;
                 if (SSID.Length > 64 || PASS.Length > 64)

@@ -4380,7 +4380,11 @@ void otaUpdateTask(void *pvParameters) {
             ESP.restart();
           } else {
             if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
-                OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD) {
+                    OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD ||
+                dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
+                    OTA_ACTION_FLASH_FROM_PIO ||
+                dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
+                    OTA_ACTION_FLASH_FROM_PLUGIN_OTA) {
               ActiveSerial->println(
                   "Entering dedicated OTA mode... stopping hardware tasks.");
               // (Optional, aber empfohlen: Hier den Motor einmalig disablen,
@@ -4436,6 +4440,26 @@ void otaUpdateTask(void *pvParameters) {
             ESP.restart();
 #endif
           }
+#ifdef OTA_update
+          const char *otaHost = "pedal_ota";
+          if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
+              OTA_ACTION_FLASH_FROM_PLUGIN_OTA) {
+            uint8_t targetRole = ota_dap_config_st.payloadPedalConfig_st.pedalType_u8;
+            if (targetRole > PEDAL_ID_THROTTLE && dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 <= PEDAL_ID_THROTTLE) {
+              targetRole = dap_action_ota_st.payloadOtaInfo_st.deviceId_u8;
+            }
+            otaHost = get_ota_hostname(targetRole);
+          } else {
+            otaHost = get_ota_hostname_pio();
+          }
+#else
+          const char *otaHost = (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 == OTA_ACTION_FLASH_FROM_PLUGIN_OTA) ? "pedal" : "pedal_ota";
+#endif
+          ActiveSerial->printf("OTA mDNS address: %s.local (http://%s.local)\n", otaHost, otaHost);
+#ifdef ESPNOW_Enable
+          wirelessComm.sendLogToBridge("OTA mDNS address: %s.local (http://%s.local)", otaHost, otaHost);
+          delay(100);
+#endif
           esp_err_t result;
           ActiveSerial->println("de-initialize espnow");
           ActiveSerial->println("wait...");
@@ -4466,7 +4490,11 @@ void otaUpdateTask(void *pvParameters) {
             delay(2000);
             // sendESPNOWLog("Wifi Connected");
             if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 !=
-                OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD) {
+                    OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD &&
+                dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 !=
+                    OTA_ACTION_FLASH_FROM_PIO &&
+                dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 !=
+                    OTA_ACTION_FLASH_FROM_PLUGIN_OTA) {
               ESP32OTAPull ota;
               int ret;
               ota.SetCallback(OTAcallback);
@@ -4526,13 +4554,19 @@ void otaUpdateTask(void *pvParameters) {
                 delete[] versionTag_pc;
               }
             } else {
-              // initialize ota for platformIO upload
-              ActiveSerial->println("OTA from platformIO");
-              uint8_t targetRole = ota_dap_config_st.payloadPedalConfig_st.pedalType_u8;
-              if (targetRole > PEDAL_ID_THROTTLE && dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 <= PEDAL_ID_THROTTLE) {
-                targetRole = dap_action_ota_st.payloadOtaInfo_st.deviceId_u8;
+              // initialize ota for platformIO or plugin upload
+              if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
+                  OTA_ACTION_FLASH_FROM_PLUGIN_OTA) {
+                ActiveSerial->println("OTA from plugin OTA");
+                uint8_t targetRole = ota_dap_config_st.payloadPedalConfig_st.pedalType_u8;
+                if (targetRole > PEDAL_ID_THROTTLE && dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 <= PEDAL_ID_THROTTLE) {
+                  targetRole = dap_action_ota_st.payloadOtaInfo_st.deviceId_u8;
+                }
+                ota_arduinoota_initialize(targetRole);
+              } else {
+                ActiveSerial->println("OTA from platformIO");
+                ota_arduinoota_initialize_pio();
               }
-              ota_arduinoota_initialize(targetRole);
             }
 #endif
             delay(3000);

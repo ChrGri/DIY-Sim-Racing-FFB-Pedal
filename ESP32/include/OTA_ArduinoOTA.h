@@ -6,9 +6,15 @@
 #include "Main.h"
 #include "DiyActivePedal_types.h"
 
-static char ota_hostname[32] = "pedal";
+static char ota_hostname[32] = "pedal_ota";
 
-void ota_arduinoota_initialize(uint8_t pedalRole = PEDAL_ID_UNKNOWN)
+inline const char* get_ota_hostname_pio()
+{
+    snprintf(ota_hostname, sizeof(ota_hostname), "pedal_ota");
+    return ota_hostname;
+}
+
+inline const char* get_ota_hostname(uint8_t pedalRole = PEDAL_ID_UNKNOWN)
 {
     switch (pedalRole)
     {
@@ -25,10 +31,14 @@ void ota_arduinoota_initialize(uint8_t pedalRole = PEDAL_ID_UNKNOWN)
             snprintf(ota_hostname, sizeof(ota_hostname), "pedal");
             break;
     }
+    return ota_hostname;
+}
 
+inline void ota_arduinoota_initialize_with_hostname(const char* hostname)
+{
     // Zwingt den WLAN-Chip, dauerhaft wach zu bleiben, um Paketverluste beim OTA zu verhindern!
     WiFi.setSleep(false);
-    ArduinoOTA.setHostname(ota_hostname); 
+    ArduinoOTA.setHostname(hostname); 
     ArduinoOTA
         .onStart([]() {
         String type;
@@ -57,7 +67,19 @@ void ota_arduinoota_initialize(uint8_t pedalRole = PEDAL_ID_UNKNOWN)
     ArduinoOTA.begin();
 
     ActiveSerial->println("OTA Initialized.");
-    ActiveSerial->printf("Access via http://%s.local\n", ota_hostname);
+    ActiveSerial->printf("Access via http://%s.local\n", hostname);
     ActiveSerial->print("IP address: ");
     ActiveSerial->println(WiFi.localIP());
+}
+
+inline void ota_arduinoota_initialize(uint8_t pedalRole = PEDAL_ID_UNKNOWN)
+{
+    get_ota_hostname(pedalRole);
+    ota_arduinoota_initialize_with_hostname(ota_hostname);
+}
+
+inline void ota_arduinoota_initialize_pio()
+{
+    get_ota_hostname_pio();
+    ota_arduinoota_initialize_with_hostname(ota_hostname);
 }

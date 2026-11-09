@@ -98,7 +98,7 @@ namespace DiyFfbPedal.UIFunction
             { "Pr1.37", 28 },  // Special function register (0x04 | 0x08 | 0x10 = 28; ?
             { "Pr1.38", 0 },  // Reserved parameter
             { "Pr1.39", 0 },  // Reserved parameter
-            { "Pr2.00", 0 },  // Adaptive filter mode setup (Ausgeschaltet für konstante
+            { "Pr2.00", 0 },  // Adaptive filter mode setup (Ausgeschaltet fur konstante
             { "Pr2.01", 50 },  // 1st notch frequency
             { "Pr2.02", 20 },  // 1st notch width
             { "Pr2.03", 99 },  // 1st notch depth
