@@ -226,12 +226,9 @@ namespace DiyFfbPedal.UIFunction
                         ? (byte)otaAction.OTA_ACTION_FLASH_FROM_PIO
                         : (byte)otaAction.OTA_ACTION_FLASH_FROM_PLUGIN_OTA;
 
-                    if (_plugin._calculations != null)
+                    if (_plugin._calculations != null && _plugin._calculations.IsOtaUploadFromPlatformIO)
                     {
-                        if (_plugin._calculations.ForceUpdate_b)
-                            tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_FORCE_UPDATE;
-                        if (_plugin._calculations.IsOtaUploadFromPlatformIO)
-                            tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_FLASH_FROM_PIO;
+                        tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_FLASH_FROM_PIO;
                     }
 
                     tmp_2.payloadOtaInfo_.mode_select = 1;

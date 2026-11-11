@@ -3995,26 +3995,23 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
 #ifdef OTA_update
           if (dap_action_ota_st.payloadHeader_st.payloadType_u8 ==
               DAP_PAYLOAD_TYPE_ACTION_OTA_U8) {
-            if (dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 ==
-                sct_dap_config_st.payloadPedalConfig_st.pedalType_u8) {
-              g_SSID =
-                  new char[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8 +
-                           1];
-              g_PASS =
-                  new char[dap_action_ota_st.payloadOtaInfo_st.passLength_u8 +
-                           1];
-              memcpy(g_SSID, dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8,
-                     dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8);
-              memcpy(g_PASS, dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8,
-                     dap_action_ota_st.payloadOtaInfo_st.passLength_u8);
-              g_SSID[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8] = 0;
-              g_PASS[dap_action_ota_st.payloadOtaInfo_st.passLength_u8] = 0;
-              g_OTA_enable_b = true;
-              g_OTA_enable_start = true;
+            g_SSID =
+                new char[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8 +
+                         1];
+            g_PASS =
+                new char[dap_action_ota_st.payloadOtaInfo_st.passLength_u8 +
+                         1];
+            memcpy(g_SSID, dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8,
+                   dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8);
+            memcpy(g_PASS, dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8,
+                   dap_action_ota_st.payloadOtaInfo_st.passLength_u8);
+            g_SSID[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8] = 0;
+            g_PASS[dap_action_ota_st.payloadOtaInfo_st.passLength_u8] = 0;
+            g_OTA_enable_b = true;
+            g_OTA_enable_start = true;
 #ifdef ESPNOW_Enable
-              g_espNowOtaEnable_b = false;
+            g_espNowOtaEnable_b = false;
 #endif
-            }
           }
 #else
           ActiveSerial->println("The command is not supported");
@@ -4444,10 +4441,9 @@ void otaUpdateTask(void *pvParameters) {
           const char *otaHost = "pedal_ota";
           if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
               OTA_ACTION_FLASH_FROM_PLUGIN_OTA) {
-            uint8_t targetRole = ota_dap_config_st.payloadPedalConfig_st.pedalType_u8;
-            if (targetRole > PEDAL_ID_THROTTLE && dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 <= PEDAL_ID_THROTTLE) {
-              targetRole = dap_action_ota_st.payloadOtaInfo_st.deviceId_u8;
-            }
+            uint8_t targetRole = (dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 <= PEDAL_ID_THROTTLE)
+                                     ? dap_action_ota_st.payloadOtaInfo_st.deviceId_u8
+                                     : ota_dap_config_st.payloadPedalConfig_st.pedalType_u8;
             otaHost = get_ota_hostname(targetRole);
           } else {
             otaHost = get_ota_hostname_pio();
@@ -4558,10 +4554,9 @@ void otaUpdateTask(void *pvParameters) {
               if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
                   OTA_ACTION_FLASH_FROM_PLUGIN_OTA) {
                 ActiveSerial->println("OTA from plugin OTA");
-                uint8_t targetRole = ota_dap_config_st.payloadPedalConfig_st.pedalType_u8;
-                if (targetRole > PEDAL_ID_THROTTLE && dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 <= PEDAL_ID_THROTTLE) {
-                  targetRole = dap_action_ota_st.payloadOtaInfo_st.deviceId_u8;
-                }
+                uint8_t targetRole = (dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 <= PEDAL_ID_THROTTLE)
+                                         ? dap_action_ota_st.payloadOtaInfo_st.deviceId_u8
+                                         : ota_dap_config_st.payloadPedalConfig_st.pedalType_u8;
                 ota_arduinoota_initialize(targetRole);
               } else {
                 ActiveSerial->println("OTA from platformIO");
@@ -4940,8 +4935,6 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
         if (g_otaUpdateAction_b) {
           ActiveSerial->println("Starting Pedal OTA");
           buzzerBeepAction_b = true;
-          g_OTA_enable_b = true;
-          g_OTA_enable_start = true;
           g_espNowOtaEnable_b = false;
           g_otaUpdateAction_b = false;
 // ActiveSerial->println("get basic wifi info");
@@ -4949,23 +4942,24 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
 #ifdef OTA_update
           if (dap_action_ota_st.payloadHeader_st.payloadType_u8 ==
               DAP_PAYLOAD_TYPE_ACTION_OTA_U8) {
-            if (dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 ==
-                espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8) {
-              g_SSID =
-                  new char[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8 +
-                           1];
-              g_PASS =
-                  new char[dap_action_ota_st.payloadOtaInfo_st.passLength_u8 +
-                           1];
-              memcpy(g_SSID, dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8,
-                     dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8);
-              memcpy(g_PASS, dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8,
-                     dap_action_ota_st.payloadOtaInfo_st.passLength_u8);
-              g_SSID[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8] = 0;
-              g_PASS[dap_action_ota_st.payloadOtaInfo_st.passLength_u8] = 0;
-              g_OTA_enable_b = true;
-            }
+            g_SSID =
+                new char[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8 +
+                         1];
+            g_PASS =
+                new char[dap_action_ota_st.payloadOtaInfo_st.passLength_u8 +
+                         1];
+            memcpy(g_SSID, dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8,
+                   dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8);
+            memcpy(g_PASS, dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8,
+                   dap_action_ota_st.payloadOtaInfo_st.passLength_u8);
+            g_SSID[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8] = 0;
+            g_PASS[dap_action_ota_st.payloadOtaInfo_st.passLength_u8] = 0;
+            g_OTA_enable_b = true;
+            g_OTA_enable_start = true;
           }
+#else
+          g_OTA_enable_b = true;
+          g_OTA_enable_start = true;
 #endif
         }
 
