@@ -40,7 +40,6 @@ namespace DiyFfbPedal
         public bool[] dumpPedalToResponseFile_clearFile;
         public bool[] dumpPedalToResponseFile;
         public string current_profile = "NA";
-        public bool ForceUpdate_b;
 
         public DAP_state_extended_st[] pedalState_extended = new DAP_state_extended_st[3];
         public long[] pedalState_extended_counter = new long[3] { 0, 0, 0 };
@@ -145,7 +144,6 @@ namespace DiyFfbPedal
             btn_SendConfig_tooltip = "Send Config to Pedal and save in storage";
             dumpPedalToResponseFile_clearFile = new bool[3] { false, false, false };
             dumpPedalToResponseFile = new bool[3] { false, false, false };
-            ForceUpdate_b = false;
             //UpdateChannel = 0;
             _rssi_value = 0;
             _systemStatusString = "";

@@ -69,7 +69,6 @@ namespace DiyFfbPedal
         unsafe private void btn_Bridge_OTA_Click(object sender, RoutedEventArgs e)
         {
             // Status-Flags für das Update zurücksetzen
-            Plugin._calculations.ForceUpdate_b = false;
             Plugin._calculations.IsOtaUploadFromPlatformIO = false;
 
             // Öffnet das neue OTA-Flasher Fenster und übergibt die Plugin-Referenz
@@ -926,7 +925,6 @@ namespace DiyFfbPedal
         private void btn_OTA_enable_Click(object sender, RoutedEventArgs e)
         {
             // Status-Flags für das Update zurücksetzen
-            Plugin._calculations.ForceUpdate_b = false;
             Plugin._calculations.IsOtaUploadFromPlatformIO = false;
 
             // Öffnet das neue OTA-Flasher Fenster und übergibt die Plugin-Referenz und Pedal-Index
@@ -938,8 +936,7 @@ namespace DiyFfbPedal
         unsafe private void btn_OtaHidden_Click(object sender, RoutedEventArgs e)
         //unsafe private void btn_OtaTest_Click(object sender, EventArgs e)
         {
-            Plugin._calculations.ForceUpdate_b = false;
-            Plugin._calculations.IsOtaUploadFromPlatformIO = false;
+            Plugin._calculations.IsOtaUploadFromPlatformIO = true;
             UpdateSettingWindow sideWindow = new UpdateSettingWindow(Plugin.Settings, Plugin._calculations);
             double screenWidth = SystemParameters.PrimaryScreenWidth;
             double screenHeight = SystemParameters.PrimaryScreenHeight;
@@ -952,15 +949,9 @@ namespace DiyFfbPedal
                 string PASS = Plugin.Settings.PASS_string;
                 string MSG_tmp = "";
                 bool SSID_PASS_check = true;
-                tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_NORMAL;
-                if (Plugin._calculations.ForceUpdate_b == true)
-                {
-                    tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_FORCE_UPDATE;
-                }
-                if (Plugin._calculations.IsOtaUploadFromPlatformIO)
-                {
-                  tmp_2.payloadOtaInfo_.ota_action = (byte)otaAction.OTA_ACTION_FLASH_FROM_PIO;
-                }
+                tmp_2.payloadOtaInfo_.ota_action = Plugin._calculations.IsOtaUploadFromPlatformIO
+                    ? (byte)otaAction.OTA_ACTION_FLASH_FROM_PIO
+                    : (byte)otaAction.OTA_ACTION_FLASH_FROM_PLUGIN_OTA;
                 tmp_2.payloadOtaInfo_.mode_select = 1;
                 if (SSID.Length > 64 || PASS.Length > 64)
                 {

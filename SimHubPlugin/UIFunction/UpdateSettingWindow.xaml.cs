@@ -33,8 +33,7 @@ namespace DiyFfbPedal.UIFunction
             _calculations = calculations;
             if (_calculations != null)
             {
-                if (_calculations.ForceUpdate_b == true && Checkbox_Force_flash != null) Checkbox_Force_flash.IsChecked = true;
-                if (_calculations.ForceUpdate_b == false && Checkbox_Force_flash != null) Checkbox_Force_flash.IsChecked = false;
+                if (Checkbox_PlatformIO_upload != null) Checkbox_PlatformIO_upload.IsChecked = _calculations.IsOtaUploadFromPlatformIO;
             }
             if (_settings != null)
             {
@@ -71,16 +70,6 @@ namespace DiyFfbPedal.UIFunction
             }
         }
 
-
-        private void Checkbox_Force_flash_Checked(object sender, RoutedEventArgs e)
-        {
-            _calculations.ForceUpdate_b = true;
-        }
-
-        private void Checkbox_Force_flash_Unchecked(object sender, RoutedEventArgs e)
-        {
-            _calculations.ForceUpdate_b = false;
-        }
 
         private void Btn_Apply_Click(object sender, RoutedEventArgs e)
         {

@@ -7,6 +7,35 @@
 #include "DiyActivePedal_types.h"
 
 static char ota_hostname[32] = "pedal_ota";
+volatile bool g_OTA_enable_b = false;
+volatile bool g_OTA_status = false;
+volatile bool g_OTA_enable_start = false;
+char* g_SSID = nullptr;
+char* g_PASS = nullptr;
+
+inline void wifi_initialized(char* Wifi_SSID, char* Wifi_PASS)
+{
+    ActiveSerial->print("SSID: ");
+    ActiveSerial->print(Wifi_SSID);
+    ActiveSerial->print(" PASS: ");
+    ActiveSerial->println(Wifi_PASS);
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+    delay(100);
+    WiFi.begin(Wifi_SSID, Wifi_PASS);
+
+    ActiveSerial->print("Connecting to WiFi:");
+    ActiveSerial->print(WiFi.SSID());
+    ActiveSerial->print(" ");
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        ActiveSerial->print(".");
+    }
+
+    ActiveSerial->println("WiFi connected");
+    ActiveSerial->print("WiFi RSSI: ");
+    ActiveSerial->println(WiFi.RSSI());
+}
 
 inline const char* get_ota_hostname_pio()
 {
