@@ -1841,14 +1841,9 @@ void joystickUpdateTask( void * pvParameters )
             SetControllerOutputValueAccelerator(clutchVal);
             SetControllerOutputValueBrake(brakeVal);
             SetControllerOutputValueThrottle(throttleVal);
-            SetControllerOutputValueRudder(JOYSTICK_CENTER);
-            SetControllerOutputValueRudder_brake(JOYSTICK_CENTER, JOYSTICK_CENTER);
           }
           if (g_pedalStatus_u8 == 1)
           {
-            SetControllerOutputValueAccelerator(JOYSTICK_MIN_VALUE);
-            SetControllerOutputValueBrake(JOYSTICK_MIN_VALUE);
-            SetControllerOutputValueThrottle(JOYSTICK_MIN_VALUE);
             // No deadzone here by design: rudderValue already comes from the
             // pedal's own joystick-mapping curve (Main.cpp on the pedal,
             // mirrored symmetrically for left/right), which has its own
@@ -1862,20 +1857,16 @@ void joystickUpdateTask( void * pvParameters )
           }
           if (g_pedalStatus_u8 == 2)
           {
-            SetControllerOutputValueAccelerator(JOYSTICK_MIN_VALUE);
-            SetControllerOutputValueBrake(JOYSTICK_MIN_VALUE);
-            SetControllerOutputValueThrottle(JOYSTICK_MIN_VALUE);
-
             uint16_t leftBrakeVal = (dap_bridge_state_st.payloadBridgeState_st.pedalAvailability_au8[0] == 1 && wirelessComm.isPedalWirelessSyncEnabled(0))
                                       ? g_pedalClutchValue_u16
                                       : (wirelessComm.isPedalWirelessSyncEnabled(1) ? g_pedalBrakeValue_u16 : JOYSTICK_MIN_VALUE);
             uint16_t rightBrakeVal = wirelessComm.isPedalWirelessSyncEnabled(2) ? g_pedalThrottleValue_u16 : JOYSTICK_MIN_VALUE;
 
             // In Toe Brake mode, the pedals act purely as independent wheel brakes:
-            // Rudder yaw (X-axis) remains neutral (centered) with zero connection between pedals
+            // Rudder yaw (Rz-axis) remains neutral (centered) with zero connection between pedals
             SetControllerOutputValueRudder(JOYSTICK_CENTER);
 
-            // Output independent left and right wheel brakes on Y and Z axes
+            // Output independent left and right wheel brakes on Rx and Ry axes
             SetControllerOutputValueRudder_brake(leftBrakeVal, rightBrakeVal);
           }
           joystickSendState();

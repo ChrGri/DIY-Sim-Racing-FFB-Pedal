@@ -100,19 +100,6 @@ void TinyusbJoystick::setRzAxis(int32_t value)
     hid_report.rz = (uint16_t)value;
 }
 
-void TinyusbJoystick::setXAxis(int32_t value)
-{
-    hid_report.x = (uint16_t)value;
-}
-void TinyusbJoystick::setYAxis(int32_t value)
-{
-    hid_report.y = (uint16_t)value;
-}
-void TinyusbJoystick::setZAxis(int32_t value)
-{
-    hid_report.z = (uint16_t)value;
-}
-
 void TinyusbJoystick::sendState()
 {
     usb_hid.sendReport(JOYSTICK_STRUCT, &hid_report, sizeof(hid_report));

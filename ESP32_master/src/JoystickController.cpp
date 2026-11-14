@@ -76,13 +76,12 @@ void SetControllerOutputValueThrottle(uint16_t value)
 
 void SetControllerOutputValueRudder(uint16_t value)
 {
-    tinyusbJoystick_.setXAxis(value);
+    tinyusbJoystick_.setRzAxis(value);
 }
 void SetControllerOutputValueRudder_brake(uint16_t value, uint16_t value2)
 {
-
-    tinyusbJoystick_.setYAxis(value);
-    tinyusbJoystick_.setZAxis(value2);
+    tinyusbJoystick_.setRxAxis(value);
+    tinyusbJoystick_.setRyAxis(value2);
 }
 
 void joystickSendState()
