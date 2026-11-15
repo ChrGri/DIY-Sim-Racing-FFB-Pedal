@@ -7,7 +7,7 @@
              xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="240" d:DesignWidth="648">
+             d:DesignHeight="282" d:DesignWidth="648">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -16,8 +16,8 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border Style="{StaticResource Card}" Margin="0" Height="240" Padding="0,0,0,8">
-            <StackPanel HorizontalAlignment="Left" Height="232" VerticalAlignment="Top" Width="648">
+        <Border Style="{StaticResource Card}" Margin="0" Height="282" Padding="0,0,0,8">
+            <StackPanel HorizontalAlignment="Left" Height="274" VerticalAlignment="Top" Width="648">
                 <StackPanel Height="20" Width="648" Orientation="Horizontal" Margin="0,2,0,0">
                     <styles:SHToggleButton x:Name="checkbox_enable_ABS" Content="" Checked="checkbox_enable_ABS_Checked" Unchecked="checkbox_enable_ABS_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" Margin="15,0,0,0" ToolTip="Trigger is evaluated in the plugin; no need to send the config to the pedal."/>
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSTittle, 'ABS/TC Effect'}" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="6,0,0,0"/>
