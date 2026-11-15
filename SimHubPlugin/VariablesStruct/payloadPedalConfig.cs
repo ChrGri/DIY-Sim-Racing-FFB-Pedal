@@ -74,7 +74,7 @@ namespace DiyFfbPedal
 
         // configure ABS effect 
         public byte absFrequency; // In Hz
-        public byte absAmplitude; // In kg/20
+        public byte absAmplitude; // 0.15 % of the force / travel range per step (200 = 30 %)
         public byte absPattern; // 0: sinewave, 1: sawtooth
         public byte absForceOrTarvelBit;
 

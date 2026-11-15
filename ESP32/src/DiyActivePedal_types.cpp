@@ -396,7 +396,9 @@ void DapCalculationVariables_t::updateFromConfig(DapConfig_t& config_st)
   }
 
   absFrequency_fl32 = ((float)config_st.payloadPedalConfig_st.absFrequency_u8);
-  absAmplitude_fl32 = ((float)config_st.payloadPedalConfig_st.absAmplitude_u8)  *0.001f;//in percent, max 20% of force range
+  // 0.15 % of the force / travel range per step: 200 = 30 % (255 = 38 %).
+  // Was 0.1 % per step (max 25.5 %); the byte layout is unchanged.
+  absAmplitude_fl32 = ((float)config_st.payloadPedalConfig_st.absAmplitude_u8) * 0.0015f;
 
   rpmMaxFreq_fl32 = ((float)config_st.payloadPedalConfig_st.rpmMaxFreq_u8);
   rpmMinFreq_fl32 = ((float)config_st.payloadPedalConfig_st.rpmMinFreq_u8);

@@ -62,9 +62,9 @@ typedef struct __attribute__((packed)) PayloadPedalConfig
 
   // configure ABS effect 
   uint8_t absFrequency_u8; // In Hz
-  uint8_t absAmplitude_u8; // In kg/20
+  uint8_t absAmplitude_u8; // 0.15 % of the force / travel range per step (200 = 30 %)
   uint8_t absPattern_u8; // 0: sinewave, 1: sawtooth, 2: pulse
-  uint8_t absForceOrTarvelBit_u8; // bit 0: 0 = force, 1 = travel; bit 1: scale amplitude with pedal force
+  uint8_t absForceOrTarvelBit_u8; // bit 0: 0 = force, 1 = travel; bit 1: scale amplitude with pedal force; bits 2-7: min amplitude at zero force, in 2 % steps of the max amplitude (0..50)
 
 
   // geometric properties of the pedal

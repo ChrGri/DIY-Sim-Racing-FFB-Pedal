@@ -157,7 +157,9 @@ namespace DiyFfbPedal.UIFunction
                 try
                 {
                     control.Slider_ABS_freq.SliderValue = newData.payloadPedalConfig_.absFrequency;
-                    control.Slider_ABS_AMP.SliderValue = ((double)newData.payloadPedalConfig_.absAmplitude) /1000.0d *100.0d;
+                    control.Slider_ABS_AMP.SliderValue = newData.payloadPedalConfig_.absAmplitude * AbsAmplitudePercentPerStep;
+                    control.Slider_ABS_AMP_min.SliderValue = Math.Min(GetAbsMinAmplitudeSteps(newData.payloadPedalConfig_.absForceOrTarvelBit), AbsMinAmplitudeMaxSteps) * AbsMinAmplitudePercentPerStep;
+                    control.Slider_ABS_AMP_min.IsEnabled = (newData.payloadPedalConfig_.absForceOrTarvelBit & AbsScaleWithForceBit) != 0;
                     switch (newData.payloadPedalConfig_.absForceOrTarvelBit)
                     {
                         case 0:
@@ -235,7 +237,7 @@ namespace DiyFfbPedal.UIFunction
         private void Slider_ABS_AMP_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.absAmplitude = (Byte)(e.NewValue * 1000.0d / 100.0d);
+            tmp.payloadPedalConfig_.absAmplitude = (Byte)Math.Min(255.0, Math.Round(e.NewValue / AbsAmplitudePercentPerStep));
             dap_config_st = tmp;
             
             switch (dap_config_st.payloadPedalConfig_.absForceOrTarvelBit)
@@ -321,11 +323,37 @@ namespace DiyFfbPedal.UIFunction
         // absForceOrTarvelBit bits, same as ABS_MODULATE_TRAVEL_BIT_U8 / ABS_SCALE_WITH_FORCE_BIT_U8 in the firmware
         private const int AbsModulateTravelBit = 0x01;
         private const int AbsScaleWithForceBit = 0x02;
+        // bits 2-7: min amplitude at zero force, in 2 % steps of the max amplitude (0..50)
+        private const int AbsMinAmplitudeShift = 2;
+        private const int AbsMinAmplitudeMask = 0x3F;
+        private const int AbsMinAmplitudeMaxSteps = 50;
+        private const double AbsMinAmplitudePercentPerStep = 2.0;
+        // absAmplitude: 0.15 % of the force / travel range per step (200 = 30 %), same as the firmware
+        private const double AbsAmplitudePercentPerStep = 0.15;
+
+        private static int GetAbsMinAmplitudeSteps(byte absForceOrTarvelBit)
+        {
+            return (absForceOrTarvelBit >> AbsMinAmplitudeShift) & AbsMinAmplitudeMask;
+        }
+
+        private void Slider_ABS_AMP_min_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            int steps = (int)Math.Round(e.NewValue / AbsMinAmplitudePercentPerStep);
+            steps = Math.Max(0, Math.Min(AbsMinAmplitudeMaxSteps, steps));
+            byte current = dap_config_st.payloadPedalConfig_.absForceOrTarvelBit;
+            byte updated = (byte)((current & ~(AbsMinAmplitudeMask << AbsMinAmplitudeShift)) | (steps << AbsMinAmplitudeShift));
+            if (updated == current) return;
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.absForceOrTarvelBit = updated;
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
 
         private void SetAbsScaleWithForce(bool enabled)
         {
             byte current = dap_config_st.payloadPedalConfig_.absForceOrTarvelBit;
             byte updated = enabled ? (byte)(current | AbsScaleWithForceBit) : (byte)(current & ~AbsScaleWithForceBit);
+            Slider_ABS_AMP_min.IsEnabled = enabled;
             if (updated == current) return;
             var tmp = dap_config_st;
             tmp.payloadPedalConfig_.absForceOrTarvelBit = updated;
