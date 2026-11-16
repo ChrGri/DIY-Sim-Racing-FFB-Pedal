@@ -113,12 +113,17 @@ namespace DiyFfbPedal
         DateTime[] Action_currentTime = new DateTime[3];
         DateTime[] Action_lastTime = new DateTime[3];
         
-
+		//ABS/TC Effect
+        bool sendAbsSignal_local_b = false;
+        bool sendTcSignal_local_b = false;
+		
         // ABS trigger timer
-        DateTime absTrigger_currentTime = DateTime.UtcNow;
         DateTime absTrigger_lastTime = DateTime.UtcNow;
         // ABS speed scaling (filtered speed + hysteresis)
         private readonly AbsSpeedScaling absSpeedScaling = new AbsSpeedScaling();
+
+		// TC trigger timer
+        DateTime tcTrigger_lastTime = DateTime.UtcNow;
 
         //G force timer
         DateTime GTrigger_currentTime = DateTime.UtcNow;
@@ -321,8 +326,6 @@ namespace DiyFfbPedal
         unsafe public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
 			
-			bool sendAbsSignal_local_b = false;
-            bool sendTcSignal_local_b = false;
             double absSpeedScale = 1.0;
             double RPM_value =0;
             double RPM_MAX = 0;
@@ -498,11 +501,34 @@ namespace DiyFfbPedal
                     if (data.NewData.ABSActive > 0)
                     {
                         sendAbsSignal_local_b = true;
+						absTrigger_lastTime = DateTime.UtcNow;
                     }
 
                     if (data.NewData.TCActive > 0)
                     {
                         sendTcSignal_local_b = true;
+						tcTrigger_lastTime = DateTime.UtcNow;
+                    }
+
+					TimeSpan diff;
+                    //To prevent the ABS signal from oscillating, the signal is maintained (100ms)
+                    if (!isConsole && sendAbsSignal_local_b)
+                    {
+                        diff = DateTime.UtcNow - absTrigger_lastTime;
+                        if (diff.TotalMilliseconds >= 100)
+                        {
+                            sendAbsSignal_local_b = false;
+                        } 
+                    }
+
+                    //To prevent the TC signal from oscillating, the signal is maintained (100ms)
+                    if (!isConsole && sendTcSignal_local_b)
+                    {
+                        diff = DateTime.UtcNow - tcTrigger_lastTime;
+                        if (diff.TotalMilliseconds >= 100)
+                        {
+                            sendTcSignal_local_b = false;
+                        } 
                     }
 
                     if (isConsole)
@@ -571,27 +597,6 @@ namespace DiyFfbPedal
                 
             }
 			
-
-
-
-
-            absTrigger_currentTime = DateTime.UtcNow;
-            TimeSpan diff = absTrigger_currentTime - absTrigger_lastTime;
-            int millisceonds = (int)diff.TotalMilliseconds;
-            if (!isConsole && millisceonds <= 10)
-            {
-                sendAbsSignal_local_b = false;
-                sendTcSignal_local_b = false;
-                
-
-            }
-            else
-            {
-                absTrigger_lastTime = DateTime.UtcNow;
-            }
-
-
-
 
             bool update_flag = false;
 
@@ -662,7 +667,7 @@ namespace DiyFfbPedal
                         GTrigger_currentTime = DateTime.UtcNow;
                         TimeSpan diff_G = GTrigger_currentTime - GTrigger_lastTime;
                         int millisceonds_G = (int)diff_G.TotalMilliseconds;
-                        if (millisceonds <= 10)
+                        if (millisceonds_G <= 10)
                         {
                             _G_force = g_force_last_value;
                         }
@@ -713,7 +718,7 @@ namespace DiyFfbPedal
                             RoadTrigger_currentTime = DateTime.UtcNow;
                             TimeSpan diff_Road = RoadTrigger_currentTime - RoadTrigger_lastTime;
                             int millisceonds_G = (int)diff_Road.TotalMilliseconds;
-                            if (millisceonds <= 10)
+                            if (millisceonds_G <= 10)
                             {
                                 Road_impact_value = Road_impact_last;
                             }
