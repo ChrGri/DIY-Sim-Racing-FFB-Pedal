@@ -314,7 +314,7 @@ namespace DiyFfbPedal
         {
             System.Windows.MessageBox.Show("Pedal will restart into download mode, only support V4/V5/V6/pcba V2.x board. After restart, an Esp32S3 port will popup, you can flash from this port.");
             /*
-            DAP_action_st tmp;
+            DAP_action_st tmp = default;
             tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
             tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
             tmp.payloadPedalAction_.system_action_u8 = (byte)PedalSystemAction.ESP_BOOT_INTO_DOWNLOAD_MODE;

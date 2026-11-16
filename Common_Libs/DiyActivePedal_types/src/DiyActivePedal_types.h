@@ -161,6 +161,7 @@ typedef struct DapCalculationVariables
   float stepperPosRangeDefault_fl32;
   uint32_t stepsPerMotorRevolution_u32;
   volatile uint8_t trackCondition_u8;
+  volatile float absSpeedScale_fl32 = 1.0f; // [0, 1], ABS amplitude scaling from vehicle speed (sent by the plugin)
   float currentForceReading_fl32;
   float force_afl32[11];
   float travel_afl32[11]; 

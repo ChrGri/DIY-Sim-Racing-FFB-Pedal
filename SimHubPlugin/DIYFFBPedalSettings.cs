@@ -22,6 +22,10 @@ namespace DiyFfbPedal
         public int[] auto_connect_flag = new int[3] { 0, 0, 0 };
         public int[] selectedComPortNamesInt = new int[3] { -1, -1, -1 };
         public int[] ABS_enable_flag = new int[3] { 0, 0, 0 };
+        // ABS amplitude scaled by vehicle speed (brake pedal): 0 below start speed, smoothstep up to full speed
+        public bool ABS_speed_scaling_enable = false;
+        public double ABS_speed_start_kmh = 8.0;
+        public double ABS_speed_full_kmh = 80.0;
         public int[] RPM_enable_flag = new int[3] { 0, 0, 0 };
         public int[] WS_enable_flag = new int[3] { 0, 0, 0 };
         public int[] G_force_enable_flag = new int[3] { 0, 0, 0 };

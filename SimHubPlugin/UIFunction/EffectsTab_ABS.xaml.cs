@@ -122,6 +122,18 @@ namespace DiyFfbPedal.UIFunction
                     {
                         checkbox_enable_ABS.IsChecked = (Settings.ABS_enable_flag[Settings.table_selected] == 1);
                     }
+                    if (checkbox_ABS_speed_scaling != null)
+                    {
+                        checkbox_ABS_speed_scaling.IsChecked = Settings.ABS_speed_scaling_enable;
+                    }
+                    if (Slider_ABS_speed_start != null)
+                    {
+                        Slider_ABS_speed_start.SliderValue = Settings.ABS_speed_start_kmh;
+                    }
+                    if (Slider_ABS_speed_full != null)
+                    {
+                        Slider_ABS_speed_full.SliderValue = Settings.ABS_speed_full_kmh;
+                    }
                 }
             }
             catch(Exception caughtEx)
@@ -405,6 +417,34 @@ namespace DiyFfbPedal.UIFunction
         private void checkbox_enable_ABS_Unchecked(object sender, RoutedEventArgs e)
         {
             Settings.ABS_enable_flag[Settings.table_selected] = 0;
+            SettingsChangedEvent(Settings);
+        }
+
+        private void checkbox_ABS_speed_scaling_Checked(object sender, RoutedEventArgs e)
+        {
+            if (Settings == null || Settings.ABS_speed_scaling_enable) return;
+            Settings.ABS_speed_scaling_enable = true;
+            SettingsChangedEvent(Settings);
+        }
+
+        private void checkbox_ABS_speed_scaling_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (Settings == null || !Settings.ABS_speed_scaling_enable) return;
+            Settings.ABS_speed_scaling_enable = false;
+            SettingsChangedEvent(Settings);
+        }
+
+        private void Slider_ABS_speed_start_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (Settings == null || Settings.ABS_speed_start_kmh == Math.Round(e.NewValue)) return;
+            Settings.ABS_speed_start_kmh = Math.Round(e.NewValue);
+            SettingsChangedEvent(Settings);
+        }
+
+        private void Slider_ABS_speed_full_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (Settings == null || Settings.ABS_speed_full_kmh == Math.Round(e.NewValue)) return;
+            Settings.ABS_speed_full_kmh = Math.Round(e.NewValue);
             SettingsChangedEvent(Settings);
         }
 

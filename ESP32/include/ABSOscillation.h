@@ -53,6 +53,8 @@ private:
   float envelope_01_fl32 = 0.0f;
   // low-pass filtered force scale [min amplitude ratio, 1]
   float forceScale_01_fl32 = 1.0f;
+  // low-pass filtered vehicle speed scale [0, 1], sent by the plugin (smooths the action packet steps)
+  float speedScale_01_fl32 = 1.0f;
 
 public:
   float absOscillationForceOffset_fl32 = 0.0f;
@@ -130,6 +132,14 @@ public:
       float alpha_fl32 = dt_s_fl32 / (s_absForceScaleTau_s_fl32 + dt_s_fl32);
       forceScale_01_fl32 += alpha_fl32 * (forceScaleTarget_01_fl32 - forceScale_01_fl32);
       absAmp_fl32 *= forceScale_01_fl32;
+    }
+
+    // vehicle speed scaling computed in the plugin (smoothstep between start and full speed)
+    {
+      float speedScaleTarget_01_fl32 = constrain(calcVars_st->absSpeedScale_fl32, 0.0f, 1.0f);
+      float alpha_fl32 = dt_s_fl32 / (s_absForceScaleTau_s_fl32 + dt_s_fl32);
+      speedScale_01_fl32 += alpha_fl32 * (speedScaleTarget_01_fl32 - speedScale_01_fl32);
+      absAmp_fl32 *= speedScale_01_fl32;
     }
     float absAmplForce_fl32 = absAmp_fl32 * calcVars_st->forceRange_fl32;
     float absAmplPosition_fl32 = absAmp_fl32 * calcVars_st->stepperPosRange_fl32;

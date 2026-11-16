@@ -1825,6 +1825,9 @@ void IRAM_ATTR_FLAG handleIncomingActions(const DapActions_t &action,
             ? (action.payloadPedalAction_st.triggerAbs_u8 - 1)
             : 0;
   }
+  // ABS speed scaling: 0 = full amplitude, 255 = muted
+  dap_calculationVariables_st.absSpeedScale_fl32 =
+      1.0f - ((float)action.payloadPedalAction_st.absSpeedAttenuation_u8) / 255.0f;
   g_rpmOscillation_st.rpmValue_fl32 = action.payloadPedalAction_st.rpm_u8;
   g_gForceEffect_st.gValue_fl32 = action.payloadPedalAction_st.gValue_u8 - 128;
   if (action.payloadPedalAction_st.wheelSlip_u8)
