@@ -5,6 +5,10 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Management;
+using System.IO.Ports;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 
 
 namespace DiyFfbPedal
@@ -177,6 +181,45 @@ namespace DiyFfbPedal
             }
 
             return result;
+        }
+
+        private const uint EV_ERR = 0x0080;
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetCommMask(SafeFileHandle hFile, uint dwEvtMask);
+
+        // The ports are polled via BytesToRead/Read, but SerialPort still queues a thread pool
+        // item for every receive event, even without a DataReceived handler. With the extended
+        // state stream (debug flag 64) the woken pool threads cost about 4% of the machine.
+        // Reporting only line errors stops that; polling does not depend on the event mask.
+        // Do not use on a port that needs DataReceived or PinChanged.
+        public static void DisableReceiveEvents(SerialPort port)
+        {
+            try
+            {
+                // SerialStream does not expose its handle; if the field is ever missing the
+                // port keeps working, only with the receive events still enabled
+                var field = port.BaseStream.GetType().GetField("_handle", BindingFlags.Instance | BindingFlags.NonPublic);
+                var handle = field?.GetValue(port.BaseStream) as SafeFileHandle;
+                if (handle == null || handle.IsInvalid || handle.IsClosed)
+                {
+                    SimHub.Logging.Current.Warn("DisableReceiveEvents: no handle for " + port.PortName);
+                    return;
+                }
+
+                if (SetCommMask(handle, EV_ERR))
+                {
+                    SimHub.Logging.Current.Info("DisableReceiveEvents: receive events off for " + port.PortName);
+                }
+                else
+                {
+                    SimHub.Logging.Current.Warn("DisableReceiveEvents: SetCommMask failed for " + port.PortName + ", error " + Marshal.GetLastWin32Error());
+                }
+            }
+            catch (Exception ex)
+            {
+                SimHub.Logging.Current.Warn("DisableReceiveEvents: " + ex.Message);
+            }
         }
     
     }

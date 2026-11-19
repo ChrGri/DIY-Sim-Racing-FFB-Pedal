@@ -53,16 +53,14 @@ uint8_t const desc_hid_gamepad[] =
         HID_REPORT_ID(JOYSTICK_STRUCT)
         
         HID_USAGE_PAGE ( HID_USAGE_PAGE_DESKTOP ),
-        HID_USAGE ( HID_USAGE_DESKTOP_X  ),
-        HID_USAGE ( HID_USAGE_DESKTOP_Y  ),
-        HID_USAGE ( HID_USAGE_DESKTOP_Z  ),
-        HID_USAGE ( HID_USAGE_DESKTOP_RX ),
-        HID_USAGE ( HID_USAGE_DESKTOP_RY ),
-        HID_USAGE ( HID_USAGE_DESKTOP_RZ ),
         HID_LOGICAL_MIN( 0 ),
         HID_LOGICAL_MAX_N( 65535, 3 ), 
         HID_REPORT_SIZE( 16 ),
-        HID_REPORT_COUNT( 6 ),
+        HID_REPORT_COUNT( 3 ),
+        
+        HID_USAGE ( HID_USAGE_DESKTOP_RX ),
+        HID_USAGE ( HID_USAGE_DESKTOP_RY ),
+        HID_USAGE ( HID_USAGE_DESKTOP_RZ ),
         HID_INPUT ( HID_DATA | HID_VARIABLE | HID_ABSOLUTE ),
         
     HID_COLLECTION_END
@@ -95,11 +93,8 @@ private:
 
     // USB HID object
     // Report payload for the axes
-    typedef struct
+    typedef struct __attribute__((packed))
     {
-        uint16_t x;
-        uint16_t y;
-        uint16_t z;
         uint16_t rx;
         uint16_t ry;
         uint16_t rz;
@@ -139,9 +134,6 @@ public:
   TinyusbJoystick();
   bool IsReady();
   void begin(int VID, int PID);
-  void setXAxis(int32_t value);
-  void setYAxis(int32_t value);
-  void setZAxis(int32_t value);
   void setRxAxis(int32_t value);
   void setRyAxis(int32_t value);
   void setRzAxis(int32_t value);

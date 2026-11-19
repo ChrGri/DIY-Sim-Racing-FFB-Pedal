@@ -23,10 +23,6 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                        <styles:SHToggleButton x:Name="Checkbox_Force_flash" Content="" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Force update to the selected version" RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" Checked="Checkbox_Force_flash_Checked" Unchecked="Checkbox_Force_flash_Unchecked"/>
-                        <Label Content="{SLoc DIYFFBPedalPlugin_TextUpdateForceFlash, 'Force Flash Firmware'}" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
-                    </StackPanel>
-                    <StackPanel Height="20" Width="160" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                         <styles:SHToggleButton x:Name="Checkbox_PlatformIO_upload" Content="" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Do not use. Pedal only, not supported on the bridge." RenderTransformOrigin="0.5,0.5" Margin="-10,0,0,0" Checked="Checkbox_platformIo_upload_Checked" Unchecked="Checkbox_platformIo_upload_Unchecked"/>
                         <Label Content="{SLoc DIYFFBPedalPlugin_TextUpdateFromPlatformio, 'Upload from PlatformIO'}" Height="20" Width="130" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="4,0,0,0"/>
                     </StackPanel>

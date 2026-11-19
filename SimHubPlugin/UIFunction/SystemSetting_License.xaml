@@ -7,7 +7,7 @@
              xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d"
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="330" d:DesignWidth="648">
+             d:DesignHeight="270" d:DesignWidth="648">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -25,7 +25,7 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border Style="{StaticResource Card}" Margin="0" VerticalAlignment="Top">
+        <Border Style="{StaticResource Card}" Margin="0" VerticalAlignment="Top" Height="270">
             <StackPanel Width="648" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,0,0,10">
                 <StackPanel HorizontalAlignment="Left" Height="25" VerticalAlignment="Top" Width="648" Orientation="Horizontal">
 

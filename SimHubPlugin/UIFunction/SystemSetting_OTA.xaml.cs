@@ -76,11 +76,6 @@ namespace DiyFfbPedal.UIFunction
                     }
 
                 }
-                if (calculation != null)
-                {
-                    if (calculation.ForceUpdate_b == true && Checkbox_Force_flash != null) Checkbox_Force_flash.IsChecked = true;
-                    if (calculation.ForceUpdate_b == false && Checkbox_Force_flash != null) Checkbox_Force_flash.IsChecked = false;
-                }
             }
             catch
             {
@@ -141,19 +136,6 @@ namespace DiyFfbPedal.UIFunction
                 if (Label_PASS != null) Label_PASS.Content = "";
                 SettingsChangedEvent(Settings);
             }
-        }
-
-
-        private void Checkbox_Force_flash_Checked(object sender, RoutedEventArgs e)
-        {
-            calculation.ForceUpdate_b = true;
-            CalculationChangedEvent(calculation);
-        }
-
-        private void Checkbox_Force_flash_Unchecked(object sender, RoutedEventArgs e)
-        {
-            calculation.ForceUpdate_b = false;
-            CalculationChangedEvent(calculation);
         }
     }
 }

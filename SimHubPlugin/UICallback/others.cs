@@ -859,6 +859,7 @@ namespace DiyFfbPedal
                         }
 
                         Plugin._serialPort[pedalIdx].Open();
+                        ComPortHelper.DisableReceiveEvents(Plugin._serialPort[pedalIdx]);
                         System.Threading.Thread.Sleep(200);
                         Plugin.Settings.connect_status[pedalIdx] = 1;
                         // read callback
@@ -1393,6 +1394,7 @@ namespace DiyFfbPedal
                     Plugin.ESPsync_serialPort.NewLine = "\r\n";
                     Plugin.ESPsync_serialPort.ReadBufferSize = 40960;
                     Plugin.ESPsync_serialPort.Open();
+                    ComPortHelper.DisableReceiveEvents(Plugin.ESPsync_serialPort);
                     // add timer
                     ESP_host_serial_timer = new System.Windows.Forms.Timer();
                     ESP_host_serial_timer.Tick += new EventHandler(timerCallback_serial_esphost_orig);

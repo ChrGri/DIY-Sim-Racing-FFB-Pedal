@@ -50,7 +50,7 @@
                                 </TransformGroup>
                             </TextBlock.RenderTransform>
                         </TextBlock>
-                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="TRAVEL" Width="60" Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="206" Canvas.Top="186" FontFamily="Arial Black" TextAlignment="Center" Height="14" />
+                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="TRAVEL" Width="60" Foreground="#7F7D7D7D" RenderTransformOrigin="0.5,0.5" Canvas.Left="255" Canvas.Top="186" FontFamily="Arial Black" TextAlignment="Center" Height="14" />
                         <TextBlock x:Name="text_point_pos" HorizontalAlignment="Left" VerticalAlignment="Top" Text="pos" Width="60" Foreground="White" RenderTransformOrigin="0.5,0.5" Canvas.Left="5" Canvas.Top="15" Height="40" FontSize="10" FontFamily="Arial"/>
                         <Polygon x:Name="polygonCurveBackground"  Height="200" Width="570" Opacity="0.15" Points="0,200 80,160 160,120 240,80 320,40 400,0 400,200 0,200" StrokeThickness="4" RenderTransformOrigin="1,0.5"  HorizontalAlignment="Left" VerticalAlignment="Center" ToolTip="Right-click on the canvas to add a control point, right-click a point to remove it" >
                             <Polygon.Fill>

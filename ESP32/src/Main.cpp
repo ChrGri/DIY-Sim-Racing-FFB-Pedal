@@ -445,7 +445,6 @@ uint8_t g_newAssignedRole_u8 = PEDAL_ID_UNKNOWN;
 #ifdef OTA_update
 // #include "ota.h"
 #include "OTA_ArduinoOTA.h"
-#include "OTA_Pull.h"
 
 char *g_apHost_pc;
 #endif
@@ -3021,10 +3020,16 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           // when the model runs into full travel it stops within ~1 ms, and the
           // pulses already sent ahead overshot by 2-3 steps and then reversed
           // (a small knock at every full press). A setpoint that is itself
-          // beyond the range (soft endstop, effects) is still followed.
-          float leadUpperLimit_fl32 =
-              max(Position_Next_fl32,
-                  (float)dap_calculationVariables_st.softEndstopMaxStepperPos_i32);
+          // beyond the range (effects) is still followed. The soft endstop is
+          // part of the range: without a lead inside it the pulses stopped at
+          // every setpoint (start-stop while pressing into the endstop).
+          float endOfRange_fl32 =
+              (float)dap_calculationVariables_st.softEndstopMaxStepperPos_i32;
+          if (!isRudderModeActive) { // the rudder strategy does not provide it
+            endOfRange_fl32 = max(endOfRange_fl32,
+                                  admittanceStates_st.softEndstopMaxTargetPos_fl32);
+          }
+          float leadUpperLimit_fl32 = max(Position_Next_fl32, endOfRange_fl32);
           float leadLowerLimit_fl32 =
               min(Position_Next_fl32,
                   (float)dap_calculationVariables_st.softEndstopMinStepperPos_i32);
@@ -3992,26 +3997,23 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
 #ifdef OTA_update
           if (dap_action_ota_st.payloadHeader_st.payloadType_u8 ==
               DAP_PAYLOAD_TYPE_ACTION_OTA_U8) {
-            if (dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 ==
-                sct_dap_config_st.payloadPedalConfig_st.pedalType_u8) {
-              g_SSID =
-                  new char[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8 +
-                           1];
-              g_PASS =
-                  new char[dap_action_ota_st.payloadOtaInfo_st.passLength_u8 +
-                           1];
-              memcpy(g_SSID, dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8,
-                     dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8);
-              memcpy(g_PASS, dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8,
-                     dap_action_ota_st.payloadOtaInfo_st.passLength_u8);
-              g_SSID[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8] = 0;
-              g_PASS[dap_action_ota_st.payloadOtaInfo_st.passLength_u8] = 0;
-              g_OTA_enable_b = true;
-              g_OTA_enable_start = true;
+            g_SSID =
+                new char[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8 +
+                         1];
+            g_PASS =
+                new char[dap_action_ota_st.payloadOtaInfo_st.passLength_u8 +
+                         1];
+            memcpy(g_SSID, dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8,
+                   dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8);
+            memcpy(g_PASS, dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8,
+                   dap_action_ota_st.payloadOtaInfo_st.passLength_u8);
+            g_SSID[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8] = 0;
+            g_PASS[dap_action_ota_st.payloadOtaInfo_st.passLength_u8] = 0;
+            g_OTA_enable_b = true;
+            g_OTA_enable_start = true;
 #ifdef ESPNOW_Enable
-              g_espNowOtaEnable_b = false;
+            g_espNowOtaEnable_b = false;
 #endif
-            }
           }
 #else
           ActiveSerial->println("The command is not supported");
@@ -4344,7 +4346,6 @@ void otaUpdateTask(void *pvParameters) {
   uint16_t OTA_count = 0;
   unsigned long ota_debug_messaage_last = 0;
   bool message_out_b = false;
-  int OTA_update_status = 99;
 
   for (;;) {
     if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) {
@@ -4369,46 +4370,42 @@ void otaUpdateTask(void *pvParameters) {
           server.handleClient();
 #endif
 #ifdef OTA_update
-          if (OTA_update_status == 0) {
-            Buzzer.play_melody_tone(melody_victory_theme,
-                                    sizeof(melody_victory_theme) /
-                                        sizeof(melody_victory_theme[0]),
-                                    melody_durations_Victory_theme);
-            ESP.restart();
-          } else {
-            if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
-                OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD) {
-              ActiveSerial->println(
-                  "Entering dedicated OTA mode... stopping hardware tasks.");
-              // (Optional, aber empfohlen: Hier den Motor einmalig disablen,
-              // damit das Pedal nicht unerwartet zuckt, während der Chip
-              // blockiert ist)
+          if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
+                  OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD ||
+              dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
+                  OTA_ACTION_FLASH_FROM_PIO ||
+              dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
+                  OTA_ACTION_FLASH_FROM_PLUGIN_OTA) {
+            ActiveSerial->println(
+                "Entering dedicated OTA mode... stopping hardware tasks.");
+            // (Optional, aber empfohlen: Hier den Motor einmalig disablen,
+            // damit das Pedal nicht unerwartet zuckt, während der Chip
+            // blockiert ist)
 
-              // Wir fangen das Programm in einer Endlosschleife.
-              // KEINE Sensor- oder FFB-Logik wird ab hier mehr ausgeführt!
-              while (true) {
-                ArduinoOTA.handle();
+            // Wir fangen das Programm in einer Endlosschleife.
+            // KEINE Sensor- oder FFB-Logik wird ab hier mehr ausgeführt!
+            while (true) {
+              ArduinoOTA.handle();
 
-                if (millis() - ota_debug_messaage_last > 1000) {
-                  ActiveSerial->println("Wait for ota update...");
-                  ota_debug_messaage_last = millis();
-                }
-
-                // LEBENSWICHTIG: Gibt dem FreeRTOS-Betriebssystem 10
-                // Millisekunden Zeit, um die WLAN-Pakete vom PC fehlerfrei in
-                // den Flash-Speicher zu schreiben.
-                delay(10);
+              if (millis() - ota_debug_messaage_last > 1000) {
+                ActiveSerial->println("Wait for ota update...");
+                ota_debug_messaage_last = millis();
               }
-            } else {
-              // show ota error
-              Buzzer.single_beep_tone(770, 100);
-              pedalLED.setPixelColor(0, 0xff, 0x00, 0x00);
-              pedalLED.show();
-              delay(500);
-              pedalLED.setPixelColor(0, 0x00, 0x00, 0x00);
-              pedalLED.show();
-              delay(500);
+
+              // LEBENSWICHTIG: Gibt dem FreeRTOS-Betriebssystem 10
+              // Millisekunden Zeit, um die WLAN-Pakete vom PC fehlerfrei in
+              // den Flash-Speicher zu schreiben.
+              delay(10);
             }
+          } else {
+            // show ota error
+            Buzzer.single_beep_tone(770, 100);
+            pedalLED.setPixelColor(0, 0xff, 0x00, 0x00);
+            pedalLED.show();
+            delay(500);
+            pedalLED.setPixelColor(0, 0x00, 0x00, 0x00);
+            pedalLED.show();
+            delay(500);
           }
 
 #endif
@@ -4433,6 +4430,25 @@ void otaUpdateTask(void *pvParameters) {
             ESP.restart();
 #endif
           }
+#ifdef OTA_update
+          const char *otaHost = "pedal_ota";
+          if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
+              OTA_ACTION_FLASH_FROM_PLUGIN_OTA) {
+            uint8_t targetRole = (dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 <= PEDAL_ID_THROTTLE)
+                                     ? dap_action_ota_st.payloadOtaInfo_st.deviceId_u8
+                                     : ota_dap_config_st.payloadPedalConfig_st.pedalType_u8;
+            otaHost = get_ota_hostname(targetRole);
+          } else {
+            otaHost = get_ota_hostname_pio();
+          }
+#else
+          const char *otaHost = (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 == OTA_ACTION_FLASH_FROM_PLUGIN_OTA) ? "pedal" : "pedal_ota";
+#endif
+          ActiveSerial->printf("OTA mDNS address: %s.local (http://%s.local)\n", otaHost, otaHost);
+#ifdef ESPNOW_Enable
+          wirelessComm.sendLogToBridge("OTA mDNS address: %s.local (http://%s.local)", otaHost, otaHost);
+          delay(100);
+#endif
           esp_err_t result;
           ActiveSerial->println("de-initialize espnow");
           ActiveSerial->println("wait...");
@@ -4461,71 +4477,17 @@ void otaUpdateTask(void *pvParameters) {
 #ifdef OTA_update
             wifi_initialized(g_SSID, g_PASS);
             delay(2000);
-            // sendESPNOWLog("Wifi Connected");
-            if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 !=
-                OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD) {
-              ESP32OTAPull ota;
-              int ret;
-              ota.SetCallback(OTAcallback);
-              ota.OverrideBoard(CONTROL_BOARD);
-              char *versionTag_pc;
-              if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
-                  OTA_ACTION_FORCE_UPDATE) {
-                const char *versionTagSource_pc;
-                if (PCB_VERSION == 3 || PCB_VERSION == 5 || PCB_VERSION == 9)
-                  versionTagSource_pc = "0.90.16"; // for those board which
-                                                   // change the partition table
-                else
-                  versionTagSource_pc = "0.0.0";
-                versionTag_pc = new char[strlen(versionTagSource_pc) + 1];
-                strcpy(versionTag_pc, versionTagSource_pc);
-                ActiveSerial->println("Force update");
-              }
-              if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
-                  OTA_ACTION_NORMAL) {
-                versionTag_pc = new char[strlen(DAP_FIRMWARE_VERSION) + 1];
-                strcpy(versionTag_pc, DAP_FIRMWARE_VERSION);
-                // version_tag=DAP_FIRMWARE_VERSION;
-              }
-              switch (dap_action_ota_st.payloadOtaInfo_st.modeSelect_u8) {
-              case 1:
-                ActiveSerial->printf("Flashing to latest release, checking %s "
-                                     "to see if an update is available...\n",
-                                     OTA_JSON_URL_MAIN);
-                ret = ota.CheckForOTAUpdate(OTA_JSON_URL_MAIN, versionTag_pc,
-                                            ESP32OTAPull::UPDATE_BUT_NO_BOOT);
-                ActiveSerial->printf("CheckForOTAUpdate returned %d (%s)\n\n",
-                                     ret, errtext(ret));
-                OTA_update_status = ret;
-                break;
-              case 2:
-                ActiveSerial->printf("Flashing to latest dev build, checking "
-                                     "%s to see if an update is available...\n",
-                                     OTA_JSON_URL_DEV);
-                ret = ota.CheckForOTAUpdate(OTA_JSON_URL_DEV, versionTag_pc,
-                                            ESP32OTAPull::UPDATE_BUT_NO_BOOT);
-                ActiveSerial->printf("CheckForOTAUpdate returned %d (%s)\n\n",
-                                     ret, errtext(ret));
-                OTA_update_status = ret;
-                break;
-              case 3:
-                ActiveSerial->printf("Flashing to test build, checking %s to "
-                                     "see if an update is available...\n",
-                                     OTA_JSON_URL_TEST);
-                ret = ota.CheckForOTAUpdate(OTA_JSON_URL_TEST, versionTag_pc,
-                                            ESP32OTAPull::UPDATE_BUT_NO_BOOT);
-                ActiveSerial->printf("CheckForOTAUpdate returned %d (%s)\n\n",
-                                     ret, errtext(ret));
-                OTA_update_status = ret;
-                break;
-              default:
-                break;
-                delete[] versionTag_pc;
-              }
+            // initialize ota for platformIO or plugin upload
+            if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
+                OTA_ACTION_FLASH_FROM_PLUGIN_OTA) {
+              ActiveSerial->println("OTA from plugin OTA");
+              uint8_t targetRole = (dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 <= PEDAL_ID_THROTTLE)
+                                       ? dap_action_ota_st.payloadOtaInfo_st.deviceId_u8
+                                       : ota_dap_config_st.payloadPedalConfig_st.pedalType_u8;
+              ota_arduinoota_initialize(targetRole);
             } else {
-              // initialize ota for platformIO upload
               ActiveSerial->println("OTA from platformIO");
-              ota_arduinoota_initialize();
+              ota_arduinoota_initialize_pio();
             }
 #endif
             delay(3000);
@@ -4899,8 +4861,6 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
         if (g_otaUpdateAction_b) {
           ActiveSerial->println("Starting Pedal OTA");
           buzzerBeepAction_b = true;
-          g_OTA_enable_b = true;
-          g_OTA_enable_start = true;
           g_espNowOtaEnable_b = false;
           g_otaUpdateAction_b = false;
 // ActiveSerial->println("get basic wifi info");
@@ -4908,23 +4868,24 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
 #ifdef OTA_update
           if (dap_action_ota_st.payloadHeader_st.payloadType_u8 ==
               DAP_PAYLOAD_TYPE_ACTION_OTA_U8) {
-            if (dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 ==
-                espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8) {
-              g_SSID =
-                  new char[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8 +
-                           1];
-              g_PASS =
-                  new char[dap_action_ota_st.payloadOtaInfo_st.passLength_u8 +
-                           1];
-              memcpy(g_SSID, dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8,
-                     dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8);
-              memcpy(g_PASS, dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8,
-                     dap_action_ota_st.payloadOtaInfo_st.passLength_u8);
-              g_SSID[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8] = 0;
-              g_PASS[dap_action_ota_st.payloadOtaInfo_st.passLength_u8] = 0;
-              g_OTA_enable_b = true;
-            }
+            g_SSID =
+                new char[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8 +
+                         1];
+            g_PASS =
+                new char[dap_action_ota_st.payloadOtaInfo_st.passLength_u8 +
+                         1];
+            memcpy(g_SSID, dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8,
+                   dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8);
+            memcpy(g_PASS, dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8,
+                   dap_action_ota_st.payloadOtaInfo_st.passLength_u8);
+            g_SSID[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8] = 0;
+            g_PASS[dap_action_ota_st.payloadOtaInfo_st.passLength_u8] = 0;
+            g_OTA_enable_b = true;
+            g_OTA_enable_start = true;
           }
+#else
+          g_OTA_enable_b = true;
+          g_OTA_enable_start = true;
 #endif
         }
 
@@ -5229,12 +5190,6 @@ void miscTask(void *pvParameters) {
     if (buzzerBeepAction_b) {
       Buzzer.single_beep_tone(700, 50);
       buzzerBeepAction_b = false;
-    }
-#endif
-#if defined(OTA_update)
-    if (g_beepForOtaProgress) {
-      Buzzer.single_beep_tone(700, 50);
-      g_beepForOtaProgress = false;
     }
 #endif
     delay(50);

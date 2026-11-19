@@ -7,7 +7,7 @@
              xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
              xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
-             d:DesignHeight="183" d:DesignWidth="648">
+             d:DesignHeight="270" d:DesignWidth="648">
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -64,11 +64,11 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <Grid>
-        <Border Style="{StaticResource Card}" Margin="0" VerticalAlignment="Top">
-            <StackPanel Orientation="Horizontal">
+        <Border Style="{StaticResource Card}" Margin="0" VerticalAlignment="Top" Height="270" Padding="0,0,0,0">
+            <StackPanel Orientation="Horizontal" Height="270" HorizontalAlignment="Center" Width="575">
                 <StackPanel>
                     <Label Content="{SLoc DIYFFBPedalPlugin_TextProfileListTittle, 'Profile List'}" Height="20" Width="90" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="15,0,0,0"/>
-                    <ListBox Name="ProfileListBox" Height="150" VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="10" FontFamily="Arial" Width="150" ItemsSource="{Binding ItemList}" Margin="15,0,5,0" BorderBrush="{DynamicResource DisabledMenuItemGlyphPanel}">
+                    <ListBox Name="ProfileListBox" Height="180" VerticalAlignment="Center" HorizontalAlignment="Left" FontSize="10" FontFamily="Arial" Width="150" ItemsSource="{Binding ItemList}" Margin="15,0,5,0" BorderBrush="{DynamicResource DisabledMenuItemGlyphPanel}">
                         <ListBox.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="{SLoc DIYFFBPedalPlugin_TextProfileListAddNewProfile, 'Add new Profile'}" Command="{Binding AddNewProfileCommand}" FontFamily="Arial" FontSize="10"/>

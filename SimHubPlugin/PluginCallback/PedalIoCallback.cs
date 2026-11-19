@@ -388,8 +388,16 @@ namespace DiyFfbPedal
             {
                 if ((BridgeHidService.IsConnected || ESPsync_serialPort.IsOpen) && Settings.Pedal_ESPNow_Sync_flag[deviceID])
                 {
-                    Task.Delay(10);
-                    Task.Run(() => BridgeHidService.SendLargeDataAsync(newBuffer_2));
+                    if (BridgeHidService.IsConnected)
+                    {
+                        Task.Delay(10);
+                        Task.Run(() => BridgeHidService.SendLargeDataAsync(newBuffer_2));
+                    }
+                    else if (ESPsync_serialPort.IsOpen)
+                    {
+                        ESPsync_serialPort.DiscardInBuffer();
+                        ESPsync_serialPort.Write(newBuffer_2, 0, newBuffer_2.Length);
+                    }
                 }
                 else
                 {

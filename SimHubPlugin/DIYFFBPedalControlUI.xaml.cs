@@ -115,6 +115,7 @@ namespace DiyFfbPedal
         public bool Version_warning_first_show_b_bridge = false;
         public byte[] Pedal_version = new byte[3];
         public SerialMonitor_Window _serial_monitor_window;
+        public ServoRegisterWindow _servoRegisterWindow;
         public bool Pedal_Log_warning_1st_show_b = true;
         private string[] Rudder_Pedal_idx_Name= new string[3] {"Clutch", "Brake","Throttle"};
         public byte Pedal_connect_status = 0;
@@ -195,6 +196,14 @@ namespace DiyFfbPedal
             if (LivePlotSection != null && Plugin != null)
             {
                 LivePlotSection.SetReferences(Plugin, this);
+                if (Tab_LivePlot != null && Tab_LivePlot.IsSelected)
+                {
+                    bool isPoppedOut = _livePlotWindow != null && _livePlotWindow.IsLoaded;
+                    if (!isPoppedOut)
+                    {
+                        LivePlotSection.OnTabSelected(true);
+                    }
+                }
             }
         }
 
@@ -230,6 +239,37 @@ namespace DiyFfbPedal
 
 
 
+        public DiyFfbPedal.UIFunction.LivePlotWindow _livePlotWindow;
+
+        public void OpenLivePlotWindow()
+        {
+            if (_livePlotWindow == null || !_livePlotWindow.IsLoaded)
+            {
+                _livePlotWindow = new DiyFfbPedal.UIFunction.LivePlotWindow(Plugin, this);
+                _livePlotWindow.Closed += (s, e) =>
+                {
+                    _livePlotWindow = null;
+                    LivePlotSection?.SetPoppedOut(false);
+                };
+                _livePlotWindow.Show();
+                LivePlotSection?.SetPoppedOut(true);
+            }
+            else
+            {
+                if (_livePlotWindow.WindowState == WindowState.Minimized)
+                {
+                    _livePlotWindow.WindowState = WindowState.Normal;
+                }
+                _livePlotWindow.Activate();
+                LivePlotSection?.SetPoppedOut(true);
+            }
+        }
+
+        private void BtnOpenLivePlotWindow_Click(object sender, RoutedEventArgs e)
+        {
+            OpenLivePlotWindow();
+        }
+
         public DIYFFBPedalControlUI(DIY_FFB_Pedal plugin) : this()
         {
             this.Plugin = plugin;
@@ -252,10 +292,6 @@ namespace DiyFfbPedal
             if (HomeDashboardSection != null)
             {
                 HomeDashboardSection.Initialize(plugin, this);
-            }
-            if (LivePlotSection != null)
-            {
-                LivePlotSection.SetReferences(plugin, this);
             }
             for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
             {
@@ -287,6 +323,8 @@ namespace DiyFfbPedal
                 Servo_Tab.FlashToServoRequested += Servo_Tab_FlashToServoRequested;
                 Servo_Tab.ResetToFactoryRequested -= Servo_Tab_ResetToFactoryRequested;
                 Servo_Tab.ResetToFactoryRequested += Servo_Tab_ResetToFactoryRequested;
+                Servo_Tab.OpenServoRegisterWindowRequested -= Servo_Tab_OpenServoRegisterWindowRequested;
+                Servo_Tab.OpenServoRegisterWindowRequested += Servo_Tab_OpenServoRegisterWindowRequested;
             }
 
             //auto connection with timmer
@@ -303,6 +341,10 @@ namespace DiyFfbPedal
             System.Threading.Thread.Sleep(50);
             Plugin.BridgeHidService.OnDataReceived += HidRecieveCallback;
             updateTheGuiFromConfig();
+            if (plugin?.Settings != null)
+            {
+                SelectMainTab(plugin.Settings.main_tab_selected);
+            }
         }
 
         public bool IsHomePedalConnected(int pedal)
@@ -865,5 +907,27 @@ namespace DiyFfbPedal
             return "--";
         }
         #endregion
+    
+        public void OpenServoRegisterWindow()
+        {
+            if (_servoRegisterWindow == null || !_servoRegisterWindow.IsLoaded)
+            {
+                _servoRegisterWindow = new ServoRegisterWindow(this);
+                _servoRegisterWindow.Closed += (s, e) => { _servoRegisterWindow = null; };
+                _servoRegisterWindow.Show();
+            }
+            else
+            {
+                _servoRegisterWindow.Activate();
+                if (_servoRegisterWindow.WindowState == WindowState.Minimized)
+                    _servoRegisterWindow.WindowState = WindowState.Normal;
+            }
+        }
+
+        private void Servo_Tab_OpenServoRegisterWindowRequested(object sender, EventArgs e)
+        {
+            OpenServoRegisterWindow();
+        }
+
     }
 }
