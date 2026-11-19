@@ -169,11 +169,13 @@ namespace DiyFfbPedal
             "FM8",
             "FH4",
             "FH5",
+            "FH6",
             "BeamNgDrive",
             "GranTurismo7",
             "RBR",
             "Automobilista2",
-            "Automobilista"
+            "Automobilista",
+            "RRRE"
 
         };
     }
