@@ -1089,7 +1089,8 @@ float IRAM_ATTR_FLAG MoveByAdmittanceStrategy(
   float lowerTravelLimit_01 = 0.0f;
   float upperTravelLimit_01 = 1.0f;
   CalcDynamicTravelLimits(travelSteps_cnt, localStiffness_kg_step, modelEffectOffsets_st, lowerTravelLimit_01, upperTravelLimit_01);
-
+  // end of the regular travel, before the soft endstop widens the limit (approach speed limit)
+  const float endOfTravelLimit_01 = upperTravelLimit_01;
   // --- 8. SOFT ENDSTOP CALCULATION ---
   float currentStiffness_N_m = localStiffness_N_m;
   float softEndstopForce_N = CalcSoftEndstopForce(g_vModelPos_01, totalTravel_m, endstopBehavior_st, currentStiffness_N_m, upperTravelLimit_01);
