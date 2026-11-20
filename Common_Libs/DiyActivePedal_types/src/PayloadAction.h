@@ -17,4 +17,5 @@ typedef struct __attribute__((packed)) PayloadPedalAction
   uint8_t triggerCv4_u8;
   uint8_t rudderAction_u8;
   uint8_t rudderBrakeAction_u8;
+  uint8_t absSpeedAttenuation_u8; // ABS amplitude attenuation from vehicle speed: 0 = full amplitude, 255 = muted
 } PayloadPedalAction_t;

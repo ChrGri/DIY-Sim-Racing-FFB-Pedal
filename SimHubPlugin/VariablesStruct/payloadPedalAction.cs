@@ -27,5 +27,6 @@ namespace DiyFfbPedal
         public byte Trigger_CV_4;
         public byte Rudder_action;
         public byte Rudder_brake_action;
+        public byte absSpeedAttenuation_u8; // 0 = full ABS amplitude, 255 = muted (vehicle speed scaling)
     };
 }

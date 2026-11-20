@@ -32,9 +32,14 @@
                     <ComboBox x:Name="AbsPattern" SelectionChanged="AbsPattern_SelectionChanged" Width="90" Height="20" FontSize="10" SelectedIndex="0" Margin="8,0,0,0" BorderThickness="0,0,0,0">
                         <ComboBoxItem Content="Sine"/>
                         <ComboBoxItem Content="Sawtooth"/>
+                        <ComboBoxItem Content="Pulse"/>
                     </ComboBox>
                     <Button Style="{StaticResource ModernPillButton}" x:Name="btn_testABS" Content="{SLoc DIYFFBPedalPlugin_TextEffectABSTestABS, 'Test ABS/TC'}" Click="btn_testABS_Click" Height="20" FontWeight="Bold" FontSize="9" Width="85" HorizontalAlignment="Left" Margin="15,0,0,0" ToolTip="Click for testing ABS/TC, click again to cancel" MinHeight="20" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
                     <CheckBox Width="30" x:Name="TestAbs_check" IsEnabled="False" Height="20" FontSize="8" Foreground="White" Content="" HorizontalAlignment="Left" Margin="4,0,0,0"/>
+                    <StackPanel Height="20" Width="230" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0">
+                        <styles:SHToggleButton x:Name="AbsScaleWithForce_check" Content="" Checked="AbsScaleWithForce_check_Checked" Unchecked="AbsScaleWithForce_check_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Scales the ABS amplitude with the pedal force, like the brake pressure: linear from the min amplitude at zero force to the max amplitude at max force. Requires the matching pedal firmware." Margin="0,0,0,0" />
+                        <Label Content="Amplitude follows pedal force" Height="20" Width="180" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="6,0,0,0"/>
+                    </StackPanel>
                 </StackPanel>
 
                 <StackPanel Height="36" Width="510" Orientation="Horizontal" Margin="0,2,0,0">
@@ -47,10 +52,23 @@
                         <styles:SHToggleButton x:Name="Simulate_ABS_check" Content="" Checked="Simulate_ABS_check_Checked" Unchecked="Simulate_ABS_check_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Triggers the ABS effect in the pedal whenever the pedal force exceeds the ABS threshold set on the force curve." RenderTransformOrigin="0.5,0.5" Margin="0,0,0,0" />
                         <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSSimulateABS, 'ABS above force threshold'}" Height="20" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="6,0,0,0"/>
                     </StackPanel>
+                    <StackPanel Height="20" Width="200" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,0">
+                        <styles:SHToggleButton x:Name="checkbox_ABS_speed_scaling" Content="" Checked="checkbox_ABS_speed_scaling_Checked" Unchecked="checkbox_ABS_speed_scaling_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Brake pedal: scales the ABS amplitude with vehicle speed.&#x0a;No ABS below the start speed, full ABS from the full speed, smooth (smoothstep) transition in between.&#x0a;Evaluated in the plugin." Margin="0,0,0,0" />
+                        <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSSpeedScaling, 'ABS speed scaling'}" Height="20" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="6,0,0,0"/>
+                    </StackPanel>
                 </StackPanel>
 
-                <localUI:SliderWithLabel x:Name="Slider_ABS_AMP" Width="510" Height="40" SliderLength="510" MaxValue="20" TickFrequency="0.1" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectABSSliderAmp, 'ABS/TC Amplitude'}" Unit="%" SliderValueChanged="Slider_ABS_AMP_SliderValueChanged" Margin="0,2,0,0"/>
-                <localUI:SliderWithLabel x:Name="Slider_ABS_freq" Width="510" Height="40" SliderLength="510" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectABSSliderFreq, 'ABS/TC Frequency'}" MaxValue="50" Unit="Hz" SliderValueChanged="Slider_ABS_freq_SliderValueChanged" Margin="0,2,0,0"/>
+                <!-- min and max amplitude side by side: the card height is limited by the page -->
+                <StackPanel Height="40" Width="648" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,2,0,0">
+                    <localUI:SliderWithLabel x:Name="Slider_ABS_AMP_min" Width="247" Height="40" SliderLength="247" MaxValue="100" TickFrequency="2" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectABSSliderAmpMin, 'Amplitude min'}" Unit="% of max" IsEnabled="False" ToolTip="Amplitude at zero pedal force, in % of the max amplitude. Only used when 'Amplitude follows pedal force' is on." SliderValueChanged="Slider_ABS_AMP_min_SliderValueChanged" Margin="15,0,0,0"/>
+                    <localUI:SliderWithLabel x:Name="Slider_ABS_AMP" Width="247" Height="40" SliderLength="247" MaxValue="30" TickFrequency="0.15" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectABSSliderAmp, 'ABS/TC Amplitude'}" Unit="%" SliderValueChanged="Slider_ABS_AMP_SliderValueChanged" Margin="16,0,0,0"/>
+                </StackPanel>
+                <!-- frequency and speed scaling side by side: the card height is limited by the page -->
+                <StackPanel Height="40" Width="648" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,2,0,0">
+                    <localUI:SliderWithLabel x:Name="Slider_ABS_freq" Width="160" Height="40" SliderLength="160" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectABSSliderFreq, 'ABS/TC Frequency'}" MaxValue="50" Unit="Hz" SliderValueChanged="Slider_ABS_freq_SliderValueChanged" Margin="15,0,0,0"/>
+                    <localUI:SliderWithLabel x:Name="Slider_ABS_speed_start" Width="160" Height="40" SliderLength="160" MinValue="0" MaxValue="50" TickFrequency="1" SliderValue="8" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectABSSpeedStart, 'ABS start speed'}" Unit="km/h" SliderValueChanged="Slider_ABS_speed_start_SliderValueChanged" Margin="15,0,0,0" ToolTip="Below this speed the ABS effect is off (small hysteresis on re-activation). Only used when 'ABS speed scaling' is on."/>
+                    <localUI:SliderWithLabel x:Name="Slider_ABS_speed_full" Width="160" Height="40" SliderLength="160" MinValue="10" MaxValue="250" TickFrequency="1" SliderValue="80" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectABSSpeedFull, 'ABS full speed'}" Unit="km/h" SliderValueChanged="Slider_ABS_speed_full_SliderValueChanged" Margin="15,0,0,0" ToolTip="From this speed on the ABS effect has its full amplitude. Only used when 'ABS speed scaling' is on."/>
+                </StackPanel>
 
             </StackPanel>
         </Border>
