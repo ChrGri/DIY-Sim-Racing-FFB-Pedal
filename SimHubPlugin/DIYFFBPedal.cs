@@ -856,7 +856,7 @@ namespace DiyFfbPedal
                         }
                     }
                     //ABS/TC function
-                    if (pedalIdx == 1)
+                    if (pedalIdx == 0 || pedalIdx == 1)
                     {
                         if (sendAbsSignal_local_b && Settings.ABS_enable_flag[pedalIdx] == 1)
                         {
