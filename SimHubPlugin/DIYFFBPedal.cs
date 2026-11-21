@@ -88,6 +88,7 @@ namespace DiyFfbPedal
         public bool Version_Check_Simhub_MSFS = false;
         public byte[] Rudder_Pedal_idx = new byte[2] { 1, 2 };
         public string Current_Game = "";
+        public string Current_Car = "";
         private DateTime lastRunningGameSeenUtc = DateTime.MinValue;
         private bool autoProfileStateCleared = true;
         public byte TrackSurfaceCondition = 0;
@@ -388,9 +389,15 @@ namespace DiyFfbPedal
                 DateTime.UtcNow - lastRunningGameSeenUtc > TimeSpan.FromSeconds(2))
             {
                 Current_Game = "";
+                Current_Car = "";
                 currentGame = null;
                 ProfileServicePlugin.ClearAutoSwitchStatus();
                 autoProfileStateCleared = true;
+            }
+
+            if (data.NewData != null && !String.IsNullOrWhiteSpace(data.NewData.CarId))
+            {
+                Current_Car = data.NewData.CarId.Trim();
             }
 
             if (Settings.profileAutoChange && (gameProcessDetected || effectTelemetryActive))

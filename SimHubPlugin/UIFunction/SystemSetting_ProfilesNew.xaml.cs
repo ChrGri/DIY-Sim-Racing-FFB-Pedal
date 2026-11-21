@@ -432,6 +432,12 @@ namespace DiyFfbPedal.UIFunction
             OnPropertyChanged(nameof(tmpProfile));
         }
 
+        private void SetProfileBinding(string bindingValue)
+        {
+            tmpProfile.BindGameOrCar = bindingValue;
+            OnPropertyChanged(nameof(tmpProfile));
+        }
+
         private void Btn_BindCurrentGame_Click(object sender, RoutedEventArgs e)
         {
             if (_plugin == null || String.IsNullOrWhiteSpace(_plugin.Current_Game))
@@ -441,20 +447,19 @@ namespace DiyFfbPedal.UIFunction
                 return;
             }
 
-            string currentGame = _plugin.Current_Game.Trim();
-            string existing = (tmpProfile.BindGameOrCar ?? String.Empty).Trim();
-            var bindings = existing
-                .Split(',')
-                .Select(value => value.Trim())
-                .Where(value => value.Length > 0)
-                .ToList();
-            if (!bindings.Contains(currentGame, StringComparer.OrdinalIgnoreCase))
+            SetProfileBinding(_plugin.Current_Game.Trim());
+        }
+
+        private void Btn_BindCurrentCar_Click(object sender, RoutedEventArgs e)
+        {
+            if (_plugin == null || String.IsNullOrWhiteSpace(_plugin.Current_Car))
             {
-                tmpProfile.BindGameOrCar = string.IsNullOrEmpty(existing)
-                    ? currentGame
-                    : $"{existing}, {currentGame}";
+                System.Windows.MessageBox.Show("SimHub is not currently detecting a car ID.",
+                    "No car detected", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
             }
-            OnPropertyChanged(nameof(tmpProfile));
+
+            SetProfileBinding(_plugin.Current_Car.Trim());
         }
     }
 }

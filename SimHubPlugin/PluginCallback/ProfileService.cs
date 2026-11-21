@@ -19,7 +19,6 @@ namespace DiyFfbPedal
             public ObservableCollection<ProfileListItem> ProfileList { get; set; } = new ObservableCollection<ProfileListItem>();
 
             private Dictionary<string, ProfileDictionaryStruct> _bindLookup;
-            private List<KeyValuePair<string, ProfileDictionaryStruct>> _rawBindEntries;
             private DIY_FFB_Pedal _plugin;
             private string _lastMatchedKey = string.Empty;
             public bool[] GamePofileConfigChange_b = new bool[3] { false, false, false };
@@ -45,7 +44,6 @@ namespace DiyFfbPedal
             private void RebuildLookupDictionary()
             {
                 _bindLookup = new Dictionary<string, ProfileDictionaryStruct>(StringComparer.OrdinalIgnoreCase);
-                _rawBindEntries = new List<KeyValuePair<string, ProfileDictionaryStruct>>();
                 foreach (var item in ProfileList)
                 {
                     try
@@ -56,21 +54,11 @@ namespace DiyFfbPedal
                             FullPath = item.FullPath,
                             ProfileListItem = item
                         };
-                        string rawKeys = tempProfile.BindGameOrCar;
+                        string keyName = (tempProfile.BindGameOrCar ?? string.Empty).Trim();
 
-                        if (!string.IsNullOrEmpty(rawKeys))
+                        if (!string.IsNullOrEmpty(keyName) && !_bindLookup.ContainsKey(keyName))
                         {
-                            _rawBindEntries.Add(new KeyValuePair<string, ProfileDictionaryStruct>(rawKeys, tempStruct));
-                            string[] keyParts = rawKeys.Split(',');
-
-                            foreach (var part in keyParts)
-                            {
-                                string keyName = part.Trim();
-                                if (!string.IsNullOrEmpty(keyName) && !_bindLookup.ContainsKey(keyName))
-                                {
-                                    _bindLookup.Add(keyName, tempStruct);
-                                }
-                            }
+                            _bindLookup.Add(keyName, tempStruct);
                         }
                     }
                     catch (Exception ex)
@@ -81,86 +69,11 @@ namespace DiyFfbPedal
                 }
             }
 
-            private static bool ContainsRawBindToken(string rawKeys, string token)
-            {
-                int startIndex = 0;
-                while (startIndex <= rawKeys.Length - token.Length)
-                {
-                    int idx = rawKeys.IndexOf(token, startIndex, StringComparison.OrdinalIgnoreCase);
-                    if (idx < 0)
-                    {
-                        return false;
-                    }
-
-                    bool leftValid = true;
-                    for (int i = idx - 1; i >= 0; i--)
-                    {
-                        char c = rawKeys[i];
-                        if (c == ',' || c == ';')
-                        {
-                            break;
-                        }
-                        if (!char.IsWhiteSpace(c))
-                        {
-                            leftValid = false;
-                            break;
-                        }
-                    }
-
-                    bool rightValid = true;
-                    for (int i = idx + token.Length; i < rawKeys.Length; i++)
-                    {
-                        char c = rawKeys[i];
-                        if (c == ',' || c == ';')
-                        {
-                            break;
-                        }
-                        if (!char.IsWhiteSpace(c))
-                        {
-                            rightValid = false;
-                            break;
-                        }
-                    }
-
-                    if (leftValid && rightValid)
-                    {
-                        return true;
-                    }
-
-                    startIndex = idx + 1;
-                }
-                return false;
-            }
-
-            private ProfileDictionaryStruct FindExactRawBindingMatch(string key)
-            {
-                if (_rawBindEntries != null)
-                {
-                    foreach (var entry in _rawBindEntries)
-                    {
-                        if (ContainsRawBindToken(entry.Key, key))
-                        {
-                            return entry.Value;
-                        }
-                    }
-                }
-                return new ProfileDictionaryStruct { FullPath = string.Empty, ProfileListItem = new ProfileListItem() };
-            }
-
             public ProfileDictionaryStruct GetProfileByKeyFast(string key)
             {
                 if (string.IsNullOrWhiteSpace(key))
                 {
                     return new ProfileDictionaryStruct { FullPath = string.Empty, ProfileListItem = new ProfileListItem() };
-                }
-
-                if (key.Contains(","))
-                {
-                    ProfileDictionaryStruct rawMatch = FindExactRawBindingMatch(key);
-                    if (!string.IsNullOrEmpty(rawMatch.FullPath))
-                    {
-                        return rawMatch;
-                    }
                 }
 
                 if (_bindLookup.TryGetValue(key.Trim(), out ProfileDictionaryStruct profileItem))

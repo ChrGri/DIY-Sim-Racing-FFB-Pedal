@@ -12,6 +12,27 @@ namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
+        private string _lastConsoleTelemetryKey = "";
+
+        private void UpdateConsoleTelemetryLog(string status)
+        {
+            if (String.IsNullOrEmpty(status))
+            {
+                _lastConsoleTelemetryKey = "";
+                return;
+            }
+
+            // Ignore high-frequency RPM and TX queued counters so the log only records state/route changes.
+            string key = System.Text.RegularExpressions.Regex.Replace(status, @"(RPM |TX queued )\d+", "$1*");
+            if (key == _lastConsoleTelemetryKey) return;
+
+            _lastConsoleTelemetryKey = key;
+            string timestamp = DateTime.Now.ToString("HH:mm:ss");
+            string singleLine = status.Replace("\r\n", " | ").Replace("\n", " | ");
+            TextBox_serialMonitor_bridge.AppendText($"[{timestamp}] CONSOLE: {singleLine}\n");
+            TextBox_serialMonitor_bridge.ScrollToEnd();
+        }
+
         //manually fresh the UI element
         public void CheckSerialAvailability()
         {
@@ -131,9 +152,7 @@ namespace DiyFfbPedal
 
                 //SettingOTA_Tab.calculation = Plugin._calculations;
                 SystemInfo.calculation = Plugin._calculations;
-                ConsoleTelemetryStatus.Text = Plugin.ConsoleEffectStatus;
-                ConsoleTelemetryStatus.Visibility = String.IsNullOrEmpty(ConsoleTelemetryStatus.Text)
-                    ? Visibility.Collapsed : Visibility.Visible;
+                UpdateConsoleTelemetryLog(Plugin.ConsoleEffectStatus);
                 PedalInfo.calculation = Plugin._calculations;
                 RudderInfo.calculation = Plugin._calculations;
                 if (firstAssignPlugin)
