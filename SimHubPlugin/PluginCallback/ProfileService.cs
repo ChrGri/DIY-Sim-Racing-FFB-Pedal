@@ -150,6 +150,10 @@ namespace DiyFfbPedal
                     }
                     UpdateProfileUi(item);
                     UpdateProfileLabelDefaultAndEditing();
+                    if (item != null && _plugin.wpfHandle != null)
+                    {
+                        _plugin.wpfHandle.ToastNotification("Profile Applied", $"Profile:{item.ListNameOrig} for Game:{matchedKey} applied.");
+                    }
                 }
             }
 
@@ -175,16 +179,23 @@ namespace DiyFfbPedal
             }
             public void ApplyProfile(string profilePath)
             {
-                DAP_system_profile_cls tmpProfile = new DAP_system_profile_cls();
-                tmpProfile = LoadProfileFromJsonFile(profilePath);
+                DAP_system_profile_cls tmpProfile = LoadProfileFromJsonFile(profilePath);
                 for (int i = 0; i < 3; i++)
                 {
-                    if (tmpProfile.ConfigPath[i] != "" && File.Exists(tmpProfile.ConfigPath[i]))
+                    if (!string.IsNullOrEmpty(tmpProfile.ConfigPath[i]) && File.Exists(tmpProfile.ConfigPath[i]))
                     {
                         DAP_config_st tmpConfig = _plugin.ConfigService.ReadConfig(tmpProfile.ConfigPath[i]);
-                        _plugin.wpfHandle.dap_config_st[i] = tmpConfig;
+                        if (_plugin.wpfHandle != null)
+                        {
+                            _plugin.wpfHandle.dap_config_st[i] = tmpConfig;
+                        }
                         _plugin.SendConfigWithoutSaveToEEPROM(tmpConfig, (byte)i);
-                        _plugin._calculations.ConfigEditing[i] = _plugin.ConfigService.ConfigList.FirstOrDefault(item => item.FullPath == tmpProfile.ConfigPath[i]).FileName;
+                        var matchedConfig = _plugin.ConfigService.ConfigList.FirstOrDefault(item =>
+                            string.Equals(item.FullPath, tmpProfile.ConfigPath[i], StringComparison.OrdinalIgnoreCase));
+                        if (matchedConfig != null)
+                        {
+                            _plugin._calculations.ConfigEditing[i] = matchedConfig.FileName;
+                        }
                         _plugin._calculations.IsModifiedConfigNotSave[i] = false;
                         _plugin._calculations.IsApplyingConfig = true;
                         _plugin._calculations.configApplyLockLast = DateTime.Now;
@@ -226,16 +237,20 @@ namespace DiyFfbPedal
 
             private void ApplyProfileEffects(DAP_system_profile_cls profile, int pedal)
             {
+                if (profile?.Effects == null || pedal < 0 || pedal >= profile.Effects.Length || profile.Effects[pedal] == null)
+                {
+                    return;
+                }
                 bool[] effects = profile.Effects[pedal];
-                _plugin.Settings.ABS_enable_flag[pedal] = _plugin.BoolToInt(effects[0]);
-                _plugin.Settings.RPM_enable_flag[pedal] = _plugin.BoolToInt(effects[1]);
-                if (pedal == 1) _plugin.Settings.G_force_enable_flag[pedal] = _plugin.BoolToInt(effects[3]);
-                _plugin.Settings.WS_enable_flag[pedal] = _plugin.BoolToInt(effects[4]);
-                _plugin.Settings.Road_impact_enable_flag[pedal] = _plugin.BoolToInt(effects[5]);
-                _plugin.Settings.CV1_enable_flag[pedal] = effects[6];
-                _plugin.Settings.CV2_enable_flag[pedal] = effects[7];
-                _plugin.Settings.CV3_enable_flag[pedal] = effects[8];
-                _plugin.Settings.CV4_enable_flag[pedal] = effects[9];
+                if (effects.Length > 0) _plugin.Settings.ABS_enable_flag[pedal] = _plugin.BoolToInt(effects[0]);
+                if (effects.Length > 1) _plugin.Settings.RPM_enable_flag[pedal] = _plugin.BoolToInt(effects[1]);
+                if (pedal == 1 && effects.Length > 3) _plugin.Settings.G_force_enable_flag[pedal] = _plugin.BoolToInt(effects[3]);
+                if (effects.Length > 4) _plugin.Settings.WS_enable_flag[pedal] = _plugin.BoolToInt(effects[4]);
+                if (effects.Length > 5) _plugin.Settings.Road_impact_enable_flag[pedal] = _plugin.BoolToInt(effects[5]);
+                if (effects.Length > 6) _plugin.Settings.CV1_enable_flag[pedal] = effects[6];
+                if (effects.Length > 7) _plugin.Settings.CV2_enable_flag[pedal] = effects[7];
+                if (effects.Length > 8) _plugin.Settings.CV3_enable_flag[pedal] = effects[8];
+                if (effects.Length > 9) _plugin.Settings.CV4_enable_flag[pedal] = effects[9];
             }
 
             private void UpdateProfileUi(ProfileListItem item)

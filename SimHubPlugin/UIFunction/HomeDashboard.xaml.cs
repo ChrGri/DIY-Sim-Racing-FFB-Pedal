@@ -193,7 +193,9 @@ namespace DiyFfbPedal.UIFunction
                 plugin._calculations.ProfileSelected = item.FileName;
                 parent.SystemProfile_TabNew.ApplyProfileOnUiWithPath(item.FullPath);
                 parent.updateTheGuiFromConfig();
-                ApplyFeedback.Text = String.Format("{0} applied · settings and effects updated", String.IsNullOrWhiteSpace(item.ListNameOrig) ? item.FileName : item.ListNameOrig);
+                string profileName = String.IsNullOrWhiteSpace(item.ListNameOrig) ? item.FileName : item.ListNameOrig;
+                ApplyFeedback.Text = String.Format("{0} applied · settings and effects updated", profileName);
+                parent.ToastNotification("Profile Applied", $"Profile:{profileName} applied.");
                 UpdateDashboard(true);
             }
             catch (Exception ex)

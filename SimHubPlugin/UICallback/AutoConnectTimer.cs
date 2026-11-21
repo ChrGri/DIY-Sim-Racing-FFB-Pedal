@@ -206,7 +206,6 @@ namespace DiyFfbPedal
                 count_timmer_count = 2;
             }
             // game config auto switch
-            bool gameProfileChanged = false;
             for (int i = 0; i < 3; i++)
             {
                 if (Plugin.ProfileServicePlugin.GamePofileConfigChange_b[i]
@@ -215,17 +214,13 @@ namespace DiyFfbPedal
                 {
                     Plugin.SendConfigWithoutSaveToEEPROM(Plugin.ProfileServicePlugin.ConfigBuffer[i], (byte)i);
                     dap_config_st[i] = Plugin.ProfileServicePlugin.ConfigBuffer[i];
-                    Plugin._calculations.ConfigEditing[i] = Plugin.ConfigService.ConfigList.FirstOrDefault(item => item.FullPath == Plugin.ProfileServicePlugin.GameConfigPathBuffer[i]).FileName;
-                    Plugin.ProfileServicePlugin.GamePofileConfigChange_b[i] = false;
-                    if (!Plugin.ProfileServicePlugin.GamePofileConfigChange_b[0] && !Plugin.ProfileServicePlugin.GamePofileConfigChange_b[1] && !Plugin.ProfileServicePlugin.GamePofileConfigChange_b[2])
+                    var matchedConfig = Plugin.ConfigService.ConfigList.FirstOrDefault(item => item.FullPath == Plugin.ProfileServicePlugin.GameConfigPathBuffer[i]);
+                    if (matchedConfig != null)
                     {
-                        gameProfileChanged = true;
+                        Plugin._calculations.ConfigEditing[i] = matchedConfig.FileName;
                     }
+                    Plugin.ProfileServicePlugin.GamePofileConfigChange_b[i] = false;
                 }
-            }
-            if(gameProfileChanged)
-            {
-                ToastNotification("Pedal Profile Switch", $"Profile switched to: {Plugin.ProfileServicePlugin.CurrentGameProfile} according to the game: {Plugin.currentGame}");
             }
 
 

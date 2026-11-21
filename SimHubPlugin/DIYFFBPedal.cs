@@ -345,10 +345,12 @@ namespace DiyFfbPedal
             // SimHub receives console telemetry without a local game process.
             // GT7 remains identifiable even while waiting for its first packet.
             bool isConsole = ConsoleEffectPolicy.IsConsoleSession(selectedGame, data.GameRunning,
-                data.RunningGameProcessDetected, data.NewData != null);
+                data.RunningGameProcessDetected, data.NewData != null, data.GameReplay);
             bool consoleActive = ConsoleEffectPolicy.IsActive(data.GameRunning, data.NewData != null,
                 data.GamePaused, data.GameInMenu, data.GameReplay);
-            bool effectTelemetryActive = isConsole ? consoleActive : data.GameRunning;
+            bool localReplayActive = !ConsoleEffectPolicy.IsGt7(selectedGame) &&
+                data.GameReplay && data.NewData != null && !data.GamePaused && !data.GameInMenu;
+            bool effectTelemetryActive = (isConsole ? consoleActive : data.GameRunning) || localReplayActive;
             consoleLastUpdateAt = DateTime.UtcNow;
             if (isConsole && consoleActive)
             {
@@ -370,7 +372,7 @@ namespace DiyFfbPedal
             else consoleStatus = "";
 
             string runningGame = null;
-            bool gameProcessDetected = data.GameRunning || data.RunningGameProcessDetected;
+            bool gameProcessDetected = data.GameRunning || data.RunningGameProcessDetected || localReplayActive;
             if (gameProcessDetected)
             {
                 runningGame = Convert.ToString(pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame"));

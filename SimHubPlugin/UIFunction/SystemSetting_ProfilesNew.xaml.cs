@@ -281,6 +281,7 @@ namespace DiyFfbPedal.UIFunction
                 }
                 //write to system
                 _plugin.ProfileServicePlugin.ApplyProfile(item.FullPath);
+                _plugin.wpfHandle?.ToastNotification("Profile Applied", $"Profile:{item.ListNameOrig} applied.");
             }
         }
 
