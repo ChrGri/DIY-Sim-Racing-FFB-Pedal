@@ -368,10 +368,11 @@ namespace DiyFfbPedal
             }
             else consoleStatus = "";
 
+            string runningGame = null;
             bool gameProcessDetected = data.GameRunning || data.RunningGameProcessDetected;
             if (gameProcessDetected)
             {
-                string runningGame = Convert.ToString(pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame"));
+                runningGame = Convert.ToString(pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame"));
                 if (String.IsNullOrWhiteSpace(runningGame) && pluginManager.GameDescription != null)
                     runningGame = pluginManager.GameDescription.Code;
                 if (String.IsNullOrWhiteSpace(runningGame)) runningGame = data.GameName;
@@ -381,8 +382,6 @@ namespace DiyFfbPedal
                     currentGame = runningGame;
                     lastRunningGameSeenUtc = DateTime.UtcNow;
                     autoProfileStateCleared = false;
-                    if (Settings.profileAutoChange)
-                        ProfileServicePlugin.ApplyProfileAutoForGame(runningGame);
                 }
             }
             else if (!autoProfileStateCleared &&
@@ -392,6 +391,12 @@ namespace DiyFfbPedal
                 currentGame = null;
                 ProfileServicePlugin.ClearAutoSwitchStatus();
                 autoProfileStateCleared = true;
+            }
+
+            if (Settings.profileAutoChange && (gameProcessDetected || effectTelemetryActive))
+            {
+                string carId = effectTelemetryActive && data.NewData != null ? data.NewData.CarId : null;
+                ProfileServicePlugin.ApplyProfileAuto(runningGame ?? Current_Game, carId);
             }
 
             if (data.GamePaused || !effectTelemetryActive)
@@ -416,13 +421,6 @@ namespace DiyFfbPedal
             // Send ABS signal when triggered by the game
             if (effectTelemetryActive)
             {
-                if (Settings.profileAutoChange)
-                {
-                    // A car-specific profile takes precedence once telemetry is available.
-                    ProfileServicePlugin.ApplyProfileAutoForCar(data.NewData.CarId);
-
-                }
-                
                 //load surface condition
                 TrackSurfaceCondition = 0;
                 if (Current_Game == "IRacing")

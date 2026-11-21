@@ -65,7 +65,6 @@ namespace DiyFfbPedal.UIFunction
             get { return _configList; }
             set { _configList = value; OnPropertyChanged(); }
         }
-        public ObservableCollection<string> GameCodes { get; } = new ObservableCollection<string>();
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
@@ -103,23 +102,6 @@ namespace DiyFfbPedal.UIFunction
                 //this.DataContext = data;
                 ItemList = data.ProfileServicePlugin.ProfileList;
                 ConfigList = data.ConfigService.ConfigList;
-                RefreshGameCodes();
-            }
-        }
-
-        private void RefreshGameCodes()
-        {
-            GameCodes.Clear();
-            foreach (string code in PedalConstStrings.AutoProfileSwitchGameList
-                .Where(code => !String.IsNullOrWhiteSpace(code))
-                .OrderBy(code => code, StringComparer.OrdinalIgnoreCase))
-            {
-                GameCodes.Add(code);
-            }
-            if (_plugin != null && !String.IsNullOrWhiteSpace(_plugin.Current_Game) &&
-                !GameCodes.Contains(_plugin.Current_Game, StringComparer.OrdinalIgnoreCase))
-            {
-                GameCodes.Add(_plugin.Current_Game);
             }
         }
         public SystemSetting_ProfilesNew()
@@ -472,8 +454,6 @@ namespace DiyFfbPedal.UIFunction
                     ? currentGame
                     : $"{existing}, {currentGame}";
             }
-            if (!GameCodes.Contains(currentGame, StringComparer.OrdinalIgnoreCase))
-                GameCodes.Add(currentGame);
             OnPropertyChanged(nameof(tmpProfile));
         }
     }

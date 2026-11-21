@@ -18,12 +18,10 @@ namespace DiyFfbPedal
         {
             public ObservableCollection<ProfileListItem> ProfileList { get; set; } = new ObservableCollection<ProfileListItem>();
 
-            private Dictionary<string, ProfileDictionaryStruct> _bindNameLookup;
-            private Dictionary<string, ProfileDictionaryStruct> _bindGameLookup;
+            private Dictionary<string, ProfileDictionaryStruct> _bindLookup;
             private List<KeyValuePair<string, ProfileDictionaryStruct>> _rawBindEntries;
             private DIY_FFB_Pedal _plugin;
-            private string lastCarName = string.Empty;
-            private string lastGameName = string.Empty;
+            private string _lastMatchedKey = string.Empty;
             public bool[] GamePofileConfigChange_b = new bool[3] { false, false, false };
             public string[] GameConfigPathBuffer = new string[3] { string.Empty, string.Empty , string.Empty };
             public DAP_config_st[] ConfigBuffer = new DAP_config_st[3];
@@ -46,8 +44,7 @@ namespace DiyFfbPedal
 
             private void RebuildLookupDictionary()
             {
-                _bindNameLookup = new Dictionary<string, ProfileDictionaryStruct>(StringComparer.OrdinalIgnoreCase);
-                _bindGameLookup = new Dictionary<string, ProfileDictionaryStruct>(StringComparer.OrdinalIgnoreCase);
+                _bindLookup = new Dictionary<string, ProfileDictionaryStruct>(StringComparer.OrdinalIgnoreCase);
                 _rawBindEntries = new List<KeyValuePair<string, ProfileDictionaryStruct>>();
                 foreach (var item in ProfileList)
                 {
@@ -69,23 +66,9 @@ namespace DiyFfbPedal
                             foreach (var part in keyParts)
                             {
                                 string keyName = part.Trim();
-                                if (!string.IsNullOrEmpty(keyName))
+                                if (!string.IsNullOrEmpty(keyName) && !_bindLookup.ContainsKey(keyName))
                                 {
-                                    if (PedalConstStrings.AutoProfileSwitchGameList.Contains(keyName))
-                                    {
-                                        if (!_bindGameLookup.ContainsKey(keyName))
-                                        {
-                                            _bindGameLookup.Add(keyName, tempStruct);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (!_bindNameLookup.ContainsKey(keyName))
-                                        {
-                                            _bindNameLookup.Add(keyName, tempStruct);
-                                        }
-                                    }
-
+                                    _bindLookup.Add(keyName, tempStruct);
                                 }
                             }
                         }
@@ -164,9 +147,9 @@ namespace DiyFfbPedal
                 return new ProfileDictionaryStruct { FullPath = string.Empty, ProfileListItem = new ProfileListItem() };
             }
 
-            public ProfileDictionaryStruct GetProfileByNameFast(string key)
+            public ProfileDictionaryStruct GetProfileByKeyFast(string key)
             {
-                if (string.IsNullOrEmpty(key))
+                if (string.IsNullOrWhiteSpace(key))
                 {
                     return new ProfileDictionaryStruct { FullPath = string.Empty, ProfileListItem = new ProfileListItem() };
                 }
@@ -180,85 +163,81 @@ namespace DiyFfbPedal
                     }
                 }
 
-                if (_bindNameLookup.TryGetValue(key, out ProfileDictionaryStruct profileItem))
+                if (_bindLookup.TryGetValue(key.Trim(), out ProfileDictionaryStruct profileItem))
                 {
                     return profileItem;
                 }
                 return new ProfileDictionaryStruct { FullPath = string.Empty, ProfileListItem = new ProfileListItem() };
             }
 
-            public ProfileDictionaryStruct GetProfileByGameFast(string key)
+            public void ApplyProfileAuto(string gameName, string carId)
             {
-                if (_bindGameLookup.TryGetValue(key, out ProfileDictionaryStruct profileItem))
+                string matchedKey = null;
+                ProfileDictionaryStruct profileItem = default;
+                bool isCarMatch = false;
+
+                // Match CarID first; only fall back to Game if CarID does not match.
+                if (!string.IsNullOrWhiteSpace(carId))
                 {
-                    return profileItem;
-                }
-                return new ProfileDictionaryStruct { FullPath = string.Empty, ProfileListItem = new ProfileListItem() };
-            }
-            public void ApplyProfileAutoForCar(string carName)
-            {
-                bool excuteChecker = true;
-                if (string.IsNullOrEmpty(carName)) excuteChecker = false;
-                if (carName == lastCarName) excuteChecker = false;
-
-
-
-                if (excuteChecker)
-                {
-                    lastCarName = carName;
-                    ProfileDictionaryStruct profileItem = GetProfileByNameFast(carName);
-                    string ProfilePath = profileItem.FullPath;
-                    if (ProfilePath != string.Empty) //if carmodel matched
+                    profileItem = GetProfileByKeyFast(carId);
+                    if (!string.IsNullOrEmpty(profileItem.FullPath))
                     {
-                        if (File.Exists(ProfilePath))
-                        {
-                            var item = ProfileList.FirstOrDefault(founditem => founditem.FullPath == ProfilePath);
-                            if (item != null)
-                            {
-                                _plugin._calculations.ProfileEditing = item.FileName;
-                            }
-                            ApplyProfile(ProfilePath);
-                            UpdateProfileUi(item);
-                            UpdateProfileLabelDefaultAndEditing();
-                            _plugin.wpfHandle.ToastNotification("Profile Applied", $"Profile:{item.ListNameOrig} for Car:{carName} applied.");
-                        }
+                        matchedKey = carId;
+                        isCarMatch = true;
                     }
-
                 }
 
-            }
-            public void ApplyProfileAutoForGame(string gameName)
-            {
-                bool excuteChecker = true;
-                if (gameName == "") excuteChecker = false;
-                if (gameName == lastGameName) excuteChecker = false;
-
-
-
-                if (excuteChecker)
+                if (!isCarMatch && !string.IsNullOrWhiteSpace(gameName))
                 {
-                    lastGameName = gameName;
-                    ProfileDictionaryStruct profileItem = GetProfileByGameFast(gameName);
-                    string ProfilePath = profileItem.FullPath;
-                    if (ProfilePath != string.Empty) //if carmodel matched
+                    profileItem = GetProfileByKeyFast(gameName);
+                    if (!string.IsNullOrEmpty(profileItem.FullPath))
                     {
-                        if (File.Exists(ProfilePath))
-                        {
-                            var item = ProfileList.FirstOrDefault(founditem => founditem.FullPath == ProfilePath);
-                            if (item != null)
-                            {
-                                _plugin._calculations.ProfileEditing = item.FileName;
-                            }
-                            ApplyProfileForGame(ProfilePath);
-                            CurrentGameProfile= item.FileName;
-                            UpdateProfileUi(item);
-                            UpdateProfileLabelDefaultAndEditing();
-                            //_plugin.wpfHandle.ToastNotification("Profile Applied", $"Profile:{item.ListNameOrig} for Game:{gameName} applied.");
-                        }
+                        matchedKey = gameName;
                     }
-
                 }
 
+                if (string.IsNullOrEmpty(matchedKey) || matchedKey == _lastMatchedKey)
+                {
+                    return;
+                }
+
+                _lastMatchedKey = matchedKey;
+                string profilePath = profileItem.FullPath;
+                if (!File.Exists(profilePath))
+                {
+                    return;
+                }
+
+                var item = ProfileList.FirstOrDefault(founditem => founditem.FullPath == profilePath);
+                if (item != null)
+                {
+                    _plugin._calculations.ProfileEditing = item.FileName;
+                }
+
+                if (isCarMatch)
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        GamePofileConfigChange_b[i] = false;
+                    }
+                    ApplyProfile(profilePath);
+                    UpdateProfileUi(item);
+                    UpdateProfileLabelDefaultAndEditing();
+                    if (item != null && _plugin.wpfHandle != null)
+                    {
+                        _plugin.wpfHandle.ToastNotification("Profile Applied", $"Profile:{item.ListNameOrig} for Car:{matchedKey} applied.");
+                    }
+                }
+                else
+                {
+                    ApplyProfileForGame(profilePath);
+                    if (item != null)
+                    {
+                        CurrentGameProfile = item.FileName;
+                    }
+                    UpdateProfileUi(item);
+                    UpdateProfileLabelDefaultAndEditing();
+                }
             }
 
             public DAP_system_profile_cls LoadProfileFromJsonFile(string filePath)
@@ -450,8 +429,7 @@ namespace DiyFfbPedal
 
             public void ClearAutoSwitchStatus()
             {
-                lastCarName = string.Empty;
-                lastGameName = string.Empty;
+                _lastMatchedKey = string.Empty;
                 CurrentGameProfile = string.Empty;
             }
         }
