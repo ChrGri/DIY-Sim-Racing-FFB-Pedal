@@ -460,14 +460,18 @@ namespace DiyFfbPedal.UIFunction
             }
 
             string currentGame = _plugin.Current_Game.Trim();
-            var bindings = (tmpProfile.BindGameOrCar ?? String.Empty)
+            string existing = (tmpProfile.BindGameOrCar ?? String.Empty).Trim();
+            var bindings = existing
                 .Split(',')
                 .Select(value => value.Trim())
                 .Where(value => value.Length > 0)
                 .ToList();
             if (!bindings.Contains(currentGame, StringComparer.OrdinalIgnoreCase))
-                bindings.Add(currentGame);
-            tmpProfile.BindGameOrCar = String.Join(", ", bindings);
+            {
+                tmpProfile.BindGameOrCar = string.IsNullOrEmpty(existing)
+                    ? currentGame
+                    : $"{existing}, {currentGame}";
+            }
             if (!GameCodes.Contains(currentGame, StringComparer.OrdinalIgnoreCase))
                 GameCodes.Add(currentGame);
             OnPropertyChanged(nameof(tmpProfile));
