@@ -171,14 +171,12 @@ namespace DiyFfbPedal
                     return new ProfileDictionaryStruct { FullPath = string.Empty, ProfileListItem = new ProfileListItem() };
                 }
 
-                if (_plugin != null &&
-                    string.Equals(_plugin.Current_Game, "BeamNgDrive", StringComparison.OrdinalIgnoreCase) &&
-                    key.Contains(","))
+                if (key.Contains(","))
                 {
-                    ProfileDictionaryStruct beamNgMatch = FindExactRawBindingMatch(key);
-                    if (!string.IsNullOrEmpty(beamNgMatch.FullPath))
+                    ProfileDictionaryStruct rawMatch = FindExactRawBindingMatch(key);
+                    if (!string.IsNullOrEmpty(rawMatch.FullPath))
                     {
-                        return beamNgMatch;
+                        return rawMatch;
                     }
                 }
 
