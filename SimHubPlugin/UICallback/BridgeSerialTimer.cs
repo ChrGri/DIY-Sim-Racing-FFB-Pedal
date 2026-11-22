@@ -579,6 +579,7 @@ namespace DiyFfbPedal
                                         //fill servo status
 
                                         Plugin._calculations.ServoStatus[pedalSelectedFromPacket_u16] = pedalState_read_st.payloadPedalBasicState_.servoStatus;
+                                        Plugin._calculations.UpdateServoErrorState((int)pedalSelectedFromPacket_u16, pedalState_read_st.payloadPedalBasicState_.error_code_u8);
 
 
 
