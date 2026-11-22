@@ -91,6 +91,18 @@ void Isv57Communication::begin() {
   modbus.initialize(true);
 }
 
+// Stop the UART and leave its pins high-Z, so a still unpowered servo is not
+// back-fed through TX.
+void Isv57Communication::end() {
+  Serial2.end();
+#if defined(ISV57_TXPIN) && (ISV57_TXPIN >= 0)
+  pinMode(ISV57_TXPIN, INPUT);
+#endif
+#if defined(ISV57_RXPIN) && (ISV57_RXPIN >= 0)
+  pinMode(ISV57_RXPIN, INPUT);
+#endif
+}
+
 // send tuned servo parameters
 void Isv57Communication::setupServoStateReading() {
 
@@ -347,21 +359,27 @@ void Isv57Communication::sendTunedServoParameters(
   }
 }
 
-bool Isv57Communication::findServosSlaveId() {
-  bool slaveIdFound = false;
-
-  // typically the servo address is 63, so start with that
+bool Isv57Communication::findServoAtDefaultSlaveId() {
+  // typically the servo address is 63
   int slaveIdTest = 63;
   if (modbus.sendRequestAndReceiveResponse(slaveIdTest, 0x03, 0x0000, 2) > 0) {
     slaveId = slaveIdTest;
-    slaveIdFound = true;
     ActiveSerial->print("Found servo slave ID:");
     ActiveSerial->print(slaveId);
     ActiveSerial->print("\r\n");
+    return true;
   }
+  return false;
+}
+
+bool Isv57Communication::findServosSlaveId() {
+  bool slaveIdFound = findServoAtDefaultSlaveId();
 
   if (false == slaveIdFound) {
-    for (slaveIdTest = 0; slaveIdTest < 256; slaveIdTest++) {
+    // With the regular 100 ms reply timeout the sweep would take 27 s without a
+    // servo. The cyclic state read gets its reply within 12 ms.
+    modbus.setSerialTimeout(20);
+    for (int slaveIdTest = 0; slaveIdTest < 256; slaveIdTest++) {
       if (modbus.sendRequestAndReceiveResponse(slaveIdTest, 0x03, 0x0000, 2) >
           0) {
         slaveId = slaveIdTest;
@@ -374,6 +392,7 @@ bool Isv57Communication::findServosSlaveId() {
 
       delay(5);
     }
+    modbus.setSerialTimeout(100);
   }
 
   return slaveIdFound;

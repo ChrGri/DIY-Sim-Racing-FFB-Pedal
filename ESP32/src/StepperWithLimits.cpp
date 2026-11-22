@@ -123,6 +123,9 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
         "Waiting for servo DSP power-on self-test to stabilize (2.0s)...");
   delay(2000);
 
+  // Without a ready signal to go by, the slow slave ID sweep has to run
+  bool allowSlaveIdSweep_b = true;
+
 #ifdef ALM_PORT_GPIO
   // ==============================================================================
   // Wait for Servo Ready (SRDY) Signal on GPIO ALM_PORT_GPIO
@@ -169,6 +172,8 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
           "Stable servo ready signal not detected. Proceeding anyway, since "
           "servo parameters might not have been flashed yet.");
   }
+  // No ready signal: the servo is probably unpowered, keep TX released
+  allowSlaveIdSweep_b = isStableReady;
   // ==============================================================================
 #endif
 
@@ -182,11 +187,9 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
   _stepper->setExpectedCycleTimeUs(
       REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64);
 
-  // Start the servo UART after the boot wait
-  isv57.begin();
-
   // 3. Attempt to discover the Modbus Slave ID of the connected iSV57 servo
-  // with retry window
+  // with retry window. The UART only runs for each attempt: its idle HIGH on TX
+  // back-feeds a servo that is still unpowered and blocks its power-on reset.
   if (ActiveSerial)
     ActiveSerial->println("Connecting to iSV57 servo...");
   bool isv57slaveIdFound_b = false;
@@ -194,11 +197,19 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
   // Allow up to 3.5 seconds for the servo power supply and internal DSP to
   // stabilize
   while ((millis() - startDiscoveryTime < 3500) && !isv57slaveIdFound_b) {
-    if (isv57.findServosSlaveId()) {
+    isv57.begin();
+    if (isv57.findServoAtDefaultSlaveId()) {
       isv57slaveIdFound_b = true;
       break;
     }
-    delay(100);
+    isv57.end();
+    delay(400);
+  }
+
+  // Servo with a non-default slave ID
+  if (!isv57slaveIdFound_b && allowSlaveIdSweep_b) {
+    isv57.begin();
+    isv57slaveIdFound_b = isv57.findServosSlaveId();
   }
 
   ActiveSerial->print("iSV57 slaveId found:  ");
