@@ -49,10 +49,70 @@ namespace DiyFfbPedal.UIFunction
                     return "Servo OK";
                 case State.Error:
                     if (status == (byte)enumServoStatus.ForceStop) return "Servo force stopped";
-                    if (calc.HasRecentServoAlarm(pedal, ErrorHoldTime)) return "Servo alarm";
+                    if (calc.HasRecentServoAlarm(pedal, ErrorHoldTime))
+                    {
+                        ushort code = calc.ServoAlarmCode != null ? calc.ServoAlarmCode[pedal] : (ushort)0;
+                        // older firmware only sends error code 13 without the alarm code
+                        return code != 0 ? "Servo alarm " + FormatAlarmCode(code) + " " + DecodeAlarm(code) : "Servo alarm";
+                    }
                     return "Servo not responding";
                 default:
                     return connected && status == (byte)enumServoStatus.Idle ? "Servo idle" : "Servo: no connection";
+            }
+        }
+
+        // Short text for small spaces, e.g. "Alarm Er.0D0".
+        public static string GetShortText(CalculationVariables calc, int pedal, bool connected, State state)
+        {
+            if (state == State.Error && calc != null && pedal >= 0 && pedal < 3 &&
+                calc.ServoStatus[pedal] != (byte)enumServoStatus.ForceStop &&
+                calc.HasRecentServoAlarm(pedal, ErrorHoldTime))
+            {
+                ushort code = calc.ServoAlarmCode != null ? calc.ServoAlarmCode[pedal] : (ushort)0;
+                return code != 0 ? "Alarm " + FormatAlarmCode(code) : "Alarm";
+            }
+            if (state == State.Error)
+            {
+                return calc != null && pedal >= 0 && pedal < 3 && calc.ServoStatus[pedal] == (byte)enumServoStatus.ForceStop
+                    ? "Force stop" : "Not responding";
+            }
+            return null;
+        }
+
+        public static string FormatAlarmCode(ushort code)
+        {
+            return "Er." + (code & 0x0FFF).ToString("X3");
+        }
+
+        // Same table as decodeServoAlarmString() in the firmware (isv57communication.cpp).
+        public static string DecodeAlarm(ushort code)
+        {
+            switch (code & 0x0FFF)
+            {
+                case 0x000: return "Normal";
+                case 0x0E0:
+                case 0x0E1: return "Overcurrent";
+                case 0x100: return "Overload";
+                case 0x180: return "Excessive position deviation";
+                case 0x1A0: return "Overspeed";
+                case 0x1A1: return "Motor out of control";
+                case 0x0D0: return "Undervoltage";
+                case 0x0C0: return "Overvoltage";
+                case 0x171:
+                case 0x172: return "Encoder parameter error";
+                case 0x190: return "Excessive motor vibration";
+                case 0x150: return "Encoder disconnected";
+                case 0x151:
+                case 0x170: return "Encoder data error";
+                case 0x152: return "Encoder HALL signal error";
+                case 0x240: return "Parameter saving error";
+                case 0x570: return "Emergency stop";
+                case 0x120: return "Regenerative energy overload";
+                case 0x153: return "Encoder battery error";
+                case 0x210:
+                case 0x211:
+                case 0x212: return "Input configuration error";
+                default: return "Unknown alarm";
             }
         }
 

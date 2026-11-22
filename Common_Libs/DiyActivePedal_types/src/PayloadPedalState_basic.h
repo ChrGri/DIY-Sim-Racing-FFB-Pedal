@@ -11,4 +11,5 @@ typedef struct __attribute__((packed)) PayloadPedalStateBasic
   uint8_t pedalStatus_u8;
   uint8_t pedalControlBoardType_u8;
   uint8_t rudderSyncDelay_ms;
+  uint16_t servoAlarmCode_u16; // active iSV57 alarm (lower 12 bits, 0 = none)
 } PayloadPedalStateBasic_t;

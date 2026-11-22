@@ -24,10 +24,20 @@ namespace DiyFfbPedal.UIFunction
         private readonly System.Windows.Threading.DispatcherTimer servoLedTimer =
             new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
 
+        private uint servoLedTickCount_u32 = 0;
+
         public InfoSection_Pedal()
         {
             InitializeComponent();
-            servoLedTimer.Tick += (sender, args) => UpdateServoLeds();
+            servoLedTimer.Tick += (sender, args) =>
+            {
+                UpdateServoLeds();
+                // the info text is otherwise only refreshed on config changes; keep the servo state line current
+                if (++servoLedTickCount_u32 % 5 == 0)
+                {
+                    try { updateUI(); } catch { }
+                }
+            };
             Loaded += (sender, args) => servoLedTimer.Start();
             Unloaded += (sender, args) => servoLedTimer.Stop();
         }
@@ -116,7 +126,11 @@ namespace DiyFfbPedal.UIFunction
                 {
                     calculation.PedalStatusString = PedalConstStrings.ConnectState[(int)calculation.pedalSerialStatus[Settings.table_selected]];
                 }
-                calculation.PedalStatusString += "\n" + PedalConstStrings.ServoStatus[(int)calculation.ServoStatus[Settings.table_selected]];
+                int selectedPedal = (int)Settings.table_selected;
+                bool servoConnected = ServoLedIndicator.IsPedalConnected(calculation, selectedPedal);
+                string servoError = ServoLedIndicator.GetShortText(calculation, selectedPedal, servoConnected,
+                    ServoLedIndicator.GetState(calculation, selectedPedal, servoConnected));
+                calculation.PedalStatusString += "\n" + (servoError ?? PedalConstStrings.ServoStatus[(int)calculation.ServoStatus[Settings.table_selected]]);
                 calculation.PedalStatusString += "\n" + Constants.pedalConfigPayload_version + "\n" + Constants.pluginVersion;
                 if (calculation.PedalFirmwareVersion[Settings.table_selected, 2] != 0)
                 {

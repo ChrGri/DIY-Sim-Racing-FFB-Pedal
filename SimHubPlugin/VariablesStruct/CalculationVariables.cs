@@ -59,6 +59,8 @@ namespace DiyFfbPedal
         public long[] ServoErrorLastTicks;
         // UTC ticks of the last pedal state packet reporting an active servo alarm (error code 13), per pedal.
         public long[] ServoAlarmLastTicks;
+        // Last active servo alarm code reported by each pedal (lower 12 bits, 0 = none).
+        public ushort[] ServoAlarmCode;
         public string[] pluginVersionReading;
         public string[] updateChannelString = new[] { "main", "dev-build", "daily-build" };
         public bool versionCheck_b;
@@ -166,6 +168,7 @@ namespace DiyFfbPedal
             ServoStatus = new byte[3] { 0, 0, 0 };
             ServoErrorLastTicks = new long[3] { 0, 0, 0 };
             ServoAlarmLastTicks = new long[3] { 0, 0, 0 };
+            ServoAlarmCode = new ushort[3] { 0, 0, 0 };
             pluginVersionReading = new string[3] { "", "", ""};
             versionCheck_b = false;
             verisonCreate_b = false;
@@ -194,9 +197,10 @@ namespace DiyFfbPedal
         // Pedal error code sent while the servo drive reports an active alarm (red ALM LED on the drive).
         public const byte ServoAlarmErrorCode = 13;
 
-        public void UpdateServoErrorState(int pedal, byte errorCode)
+        public void UpdateServoErrorState(int pedal, byte errorCode, ushort servoAlarmCode)
         {
             if (ServoErrorLastTicks == null || ServoAlarmLastTicks == null || pedal < 0 || pedal >= ServoErrorLastTicks.Length) return;
+            if (ServoAlarmCode != null) ServoAlarmCode[pedal] = (ushort)(servoAlarmCode & 0x0FFF);
             if (errorCode == ServoLostConnectionErrorCode)
             {
                 System.Threading.Interlocked.Exchange(ref ServoErrorLastTicks[pedal], DateTime.UtcNow.Ticks);

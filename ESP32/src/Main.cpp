@@ -3386,6 +3386,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         // servo status update
         dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st
             .servoStatus_u8 = stepper->servoStatus;
+        dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st
+            .servoAlarmCode_u16 = stepper->servoAlarmCode_u16;
 
 #ifdef ESPNOW_Enable
         dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st
