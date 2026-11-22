@@ -77,6 +77,8 @@ DapEspPairing_t dap_esppairing_st;  // saving
 DapEspPairing_t dap_esppairing_lcl; // sending
 DapActionOta_t dap_action_ota_st;   // OTA command(do not check version)
 volatile uint8_t g_pedalOperationalState_u8 = (uint8_t)PEDAL_STATE_ACTIVE_E;
+// Set at boot when the servo was not found: home as soon as it shows up
+volatile bool g_homingAfterServoFound_b = false;
 
 /**********************************************************************************************/
 /*                                                                                            */
@@ -1348,8 +1350,20 @@ void setup() {
   kalman_2nd_order = new KalmanFilter2ndOrder(loadcell->getVarianceEstimate());
   kalman_imm = new KalmanFilterIMM(loadcell->getVarianceEstimate());
 
+  // Servo not found (e.g. ESP32 on USB, servo powered later): wait in standby
+  // instead of restarting the ESP. The servo task keeps looking for the servo,
+  // the pedal task starts homing once it is found.
+  if (!stepper->servoFound_b) {
+    g_pedalOperationalState_u8 =
+        (uint8_t)PEDAL_STATE_STANDBY_WAITING_FOR_WAKEUP_E;
+    g_homingAfterServoFound_b =
+        (dap_config_st_local.payloadPedalConfig_st.wakeOnPluginOnly_u8 != 1);
+    pedalLED.setPixelColor(0, 0x80, 0x20, 0x00); // orange (waiting for servo)
+    pedalLED.show();
+    ActiveSerial->println("Pedal waiting for the servo...");
+  }
   // Check if wakeup only by plugin trigger is requested
-  if (dap_config_st_local.payloadPedalConfig_st.wakeOnPluginOnly_u8 == 1) {
+  else if (dap_config_st_local.payloadPedalConfig_st.wakeOnPluginOnly_u8 == 1) {
     stepper->servoIdleAction();
     stepper->servoStatus = SERVO_IDLE_NOT_CONNECTED;
     g_pedalOperationalState_u8 =
@@ -1666,7 +1680,9 @@ void setup() {
       dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
 #endif
   ActiveSerial->println("Setup end");
-  if (g_pedalOperationalState_u8 ==
+  if (!stepper->servoFound_b) {
+    pedalLED.setPixelColor(0, 0x80, 0x20, 0x00); // orange (waiting for servo)
+  } else if (g_pedalOperationalState_u8 ==
       (uint8_t)PEDAL_STATE_STANDBY_WAITING_FOR_WAKEUP_E) {
     pedalLED.setPixelColor(0, 0x00, 0x20, 0x80); // Soft Blue (standby)
   } else {
@@ -2453,8 +2469,17 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
 #else
       bool wirelessReadyForHoming_b = true;
 #endif
+      // servo showed up after boot -> start the homing that was skipped
+      if (g_homingAfterServoFound_b && stepper->servoFound_b) {
+        g_homingAfterServoFound_b = false;
+        if (g_pedalOperationalState_u8 ==
+            (uint8_t)PEDAL_STATE_STANDBY_WAITING_FOR_WAKEUP_E) {
+          g_pedalOperationalState_u8 = (uint8_t)PEDAL_STATE_HOMING_E;
+        }
+      }
+      // homing needs the servo; a wakeup request without servo waits for it
       if (g_pedalOperationalState_u8 == (uint8_t)PEDAL_STATE_HOMING_E &&
-          wirelessReadyForHoming_b) {
+          wirelessReadyForHoming_b && stepper->servoFound_b) {
         Buzzer.single_beep_tone(770, 100);
         delay(300);
         Buzzer.single_beep_tone(770, 100);
