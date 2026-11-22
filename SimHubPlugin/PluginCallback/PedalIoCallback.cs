@@ -232,9 +232,9 @@ namespace DiyFfbPedal
                 {
                     if (BridgeHidService.IsConnected)
                     {
-                        Task.Delay(100);
-                        Task.Run(()=> BridgeHidService.SendLargeDataAsync(newBuffer));
-                        
+                        // Configs are sent once (e.g. rudder enable). A lost config leaves the pedal running
+                        // with the wrong parameters, so use the reliable (retrying) transfer.
+                        Task.Run(() => BridgeHidService.SendLargeDataAsync(newBuffer, reliable: true));
                     }
                     else
                     {
