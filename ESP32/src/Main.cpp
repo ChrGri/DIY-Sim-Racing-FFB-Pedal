@@ -3400,6 +3400,17 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
             .rudderSyncDelay_ms = 0;
 #endif
 
+        // servo reports an active alarm (red ALM LED on the drive); one-shot
+        // communication error codes take precedence, the alarm is repeated in
+        // every packet anyway
+        if ((stepper->servoAlarmCode_u16 != 0) &&
+            (stepper->servoStatus != SERVO_IDLE_NOT_CONNECTED) &&
+            (dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st
+                 .errorCode_u8 == 0)) {
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st
+              .errorCode_u8 = 13;
+        }
+
         if ((stepper->getLifelineSignal() == false) &&
             (stepper->servoStatus != SERVO_IDLE_NOT_CONNECTED)) {
           dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st
@@ -4917,6 +4928,24 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
         if (g_getHeliRudderAction_b) {
           g_getHeliRudderAction_b = false;
           Buzzer.single_beep_tone(700, 100);
+        }
+        // report servo alarm changes in the bridge log
+        if (stepper != NULL) {
+          static uint16_t s_lastReportedServoAlarm_u16 = 0;
+          uint16_t servoAlarm_u16 = stepper->servoAlarmCode_u16;
+          if (servoAlarm_u16 != s_lastReportedServoAlarm_u16) {
+            s_lastReportedServoAlarm_u16 = servoAlarm_u16;
+            if (servoAlarm_u16 != 0) {
+              wirelessComm.sendLogToBridge(
+                  "Pedal:%d Servo alarm Er.%03X - %s",
+                  espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8,
+                  servoAlarm_u16, decodeServoAlarmString(servoAlarm_u16));
+            } else {
+              wirelessComm.sendLogToBridge(
+                  "Pedal:%d Servo alarm cleared",
+                  espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8);
+            }
+          }
         }
         if (g_espNowBootIntoDownloadMode_b) {
 #ifdef ESPNow_S3

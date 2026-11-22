@@ -852,6 +852,11 @@ void IRAM_ATTR StepperWithLimits::handleConnectionLoss() {
     ActiveSerial->println("Servo communication lost!");
   }
 
+  // alarm state is unknown without communication, read it again right after
+  // the servo is back
+  servoAlarmCode_u16 = 0;
+  lastServoAlarmPollMs_u32 = millis() - SERVO_ALARM_POLL_INTERVAL_MS;
+
   previousIsv57LifeSignal_b = false;
   servoPosInitialized_b = false; // Require re-sync on next valid packet
   servoLastUnwrapCycleCounter_u32 = 0;
@@ -1137,12 +1142,36 @@ bool IRAM_ATTR StepperWithLimits::consumeOvercurrentTripFlag() {
   return tripped_b;
 }
 
+// Reads the currently active servo alarm (what the red ALM LED shows) and
+// keeps it in servoAlarmCode_u16 for the pedal state packet.
+void StepperWithLimits::pollServoAlarm() {
+  uint32_t now_u32 = millis();
+  if ((now_u32 - lastServoAlarmPollMs_u32) < SERVO_ALARM_POLL_INTERVAL_MS) {
+    return;
+  }
+  lastServoAlarmPollMs_u32 = now_u32;
+
+  int32_t alarmCode_i32 = isv57.readCurrentAlarmCode();
+  if (alarmCode_i32 < 0) {
+    return; // no answer, the lifeline handling covers a lost servo
+  }
+
+  uint16_t alarmCode_u16 = (uint16_t)alarmCode_i32;
+  if (alarmCode_u16 != servoAlarmCode_u16) {
+    ActiveSerial->printf("Servo alarm changed: Er.%03X (%s)\n", alarmCode_u16,
+                         decodeServoAlarmString(alarmCode_u16));
+  }
+  servoAlarmCode_u16 = alarmCode_u16;
+}
+
 // Wraps all data gathering, decoding, and analytical functions for the servo
 void IRAM_ATTR
 StepperWithLimits::processActiveServo(FunctionProfiler *profiler) {
   if (servoStatus != SERVO_IDLE_NOT_CONNECTED) {
     servoStatus = SERVO_CONNECTED;
   }
+
+  pollServoAlarm();
 
   // Perform requested axis restarts
   if (restartServo) {

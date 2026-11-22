@@ -256,6 +256,9 @@ namespace DiyFfbPedal
                                             case 12:
                                                 errorcodetext = "Servo Lost connection";
                                                 break;
+                                            case 13:
+                                                errorcodetext = "Servo alarm";
+                                                break;
                                             case 101:
                                                 errorcodetext = "Config payload type error";
                                                 break;

@@ -99,6 +99,9 @@ struct isv57dynamicStates {
     bool servo_receivedPacketIsValid_b = false;
 };
 
+// Human readable text for an iSV57 alarm code (lower 12 bits).
+const char *decodeServoAlarmString(uint16_t alarm_code);
+
 class Isv57Communication {
 	
 	public:
@@ -118,6 +121,7 @@ class Isv57Communication {
     bool clearServoAlarms();
     bool readAlarmHistory();
     bool readCurrentAlarm();
+    int32_t readCurrentAlarmCode();
     void resetToFactoryParams();
     bool setServoVoltage(uint16_t voltageInVolt_u16);
     // Pr7.31 (tuned mode or 0 = off) and Pr7.32 threshold; true when both are confirmed

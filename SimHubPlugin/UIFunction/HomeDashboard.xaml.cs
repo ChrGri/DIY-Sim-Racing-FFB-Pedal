@@ -159,7 +159,9 @@ namespace DiyFfbPedal.UIFunction
             byte status = calc.ServoStatus[pedal];
             // servo was powered down on purpose (idle timeout), nothing is talking to it
             if (status == (byte)enumServoStatus.Idle) return ServoLedState.Off;
-            if (status == (byte)enumServoStatus.ForceStop || calc.HasRecentServoError(pedal, ServoErrorHoldTime)) return ServoLedState.Error;
+            if (status == (byte)enumServoStatus.ForceStop ||
+                calc.HasRecentServoError(pedal, ServoErrorHoldTime) ||
+                calc.HasRecentServoAlarm(pedal, ServoErrorHoldTime)) return ServoLedState.Error;
             if (status == (byte)enumServoStatus.On) return ServoLedState.Ok;
             // not connected yet and no error reported (e.g. still starting up)
             return ServoLedState.Off;
@@ -187,7 +189,9 @@ namespace DiyFfbPedal.UIFunction
                     textBrush = Brushes.LightGreen;
                     break;
                 case ServoLedState.Error:
-                    text = status == (byte)enumServoStatus.ForceStop ? "Servo force stopped" : "Servo error";
+                    if (status == (byte)enumServoStatus.ForceStop) text = "Servo force stopped";
+                    else if (plugin._calculations.HasRecentServoAlarm(pedal, ServoErrorHoldTime)) text = "Servo alarm";
+                    else text = "Servo not responding";
                     textBrush = ServoErrorTextBrush;
                     break;
                 default:

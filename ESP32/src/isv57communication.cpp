@@ -6,72 +6,58 @@ Modbus modbus(Serial2);
 
 Stream *ActiveSerialForServoCommunication = nullptr;
 
-void printDecodedAlarmString(uint16_t alarm_code) {
+const char *decodeServoAlarmString(uint16_t alarm_code) {
 
   switch (alarm_code & 0x0FFF) { // Mask to get lower 12 bits
   case 0x000:
-    ActiveSerial->println("Normal\n");
-    break;
+    return "Normal";
   case 0x0E1:
   case 0x0E0:
-    ActiveSerial->println("Overcurrent\n");
-    break;
+    return "Overcurrent";
   case 0x100:
-    ActiveSerial->println("Overload\n");
-    break;
+    return "Overload";
   case 0x180:
-    ActiveSerial->println("Excessive position deviation\n");
-    break;
+    return "Excessive position deviation";
   case 0x1A0:
-    ActiveSerial->println("Overspeed\n");
-    break;
+    return "Overspeed";
   case 0x1A1:
-    ActiveSerial->println("Motor out of control\n");
-    break;
+    return "Motor out of control";
   case 0x0D0:
-    ActiveSerial->println("Undervoltage\n");
-    break;
+    return "Undervoltage";
   case 0x0C0:
-    ActiveSerial->println("Overvoltage\n");
-    break;
+    return "Overvoltage";
   case 0x171:
   case 0x172:
-    ActiveSerial->println("Encoder parameter error\n");
-    break;
+    return "Encoder parameter error";
   case 0x190:
-    ActiveSerial->println("Excessive motor vibration\n");
-    break;
+    return "Excessive motor vibration";
   case 0x150:
-    ActiveSerial->println("Encoder disconnected\n");
-    break;
+    return "Encoder disconnected";
   case 0x151:
   case 0x170:
-    ActiveSerial->println("Encoder data error\n");
-    break;
+    return "Encoder data error";
   case 0x152:
-    ActiveSerial->println("Encoder HALL signal error\n");
-    break;
+    return "Encoder HALL signal error";
   case 0x240:
-    ActiveSerial->println("Parameter saving error\n");
-    break;
+    return "Parameter saving error";
   case 0x570:
-    ActiveSerial->println("Emergency stop\n");
-    break;
+    return "Emergency stop";
   case 0x120:
-    ActiveSerial->println("Regenerative energy overload\n");
-    break;
+    return "Regenerative energy overload";
   case 0x153:
-    ActiveSerial->println("Encoder battery error\n");
-    break;
+    return "Encoder battery error";
   case 0x210:
   case 0x211:
   case 0x212:
-    ActiveSerial->println("Input configuration error (Repeated/wrong input)\n");
-    break;
+    return "Input configuration error (Repeated/wrong input)";
   default:
-    ActiveSerial->println("Unknown or refer to Chapter 9\n");
-    break;
+    return "Unknown or refer to Chapter 9";
   }
+}
+
+void printDecodedAlarmString(uint16_t alarm_code) {
+  ActiveSerial->println(decodeServoAlarmString(alarm_code));
+  ActiveSerial->println();
 }
 
 Isv57Communication::Isv57Communication() {}
@@ -538,17 +524,23 @@ bool Isv57Communication::clearServoAlarms() {
   return (modbus.writeHoldingRegisterToDevice(slaveId, 0x019A, 0x1111) > 0);
 }
 
-bool Isv57Communication::readCurrentAlarm() {
+// Reads the currently active alarm (0 = no alarm, the same state the red ALM
+// LED on the drive shows). Returns -1 if the servo did not answer.
+int32_t Isv57Communication::readCurrentAlarmCode() {
   int bytesReceived_i =
       modbus.sendRequestAndReceiveResponse(slaveId, 0x03, 0x01F2, 1);
-  if (bytesReceived_i == (2)) {
-    for (uint8_t regIdx = 0; regIdx < 1; regIdx++) {
-      uint16_t tmp =
-          modbus.convertRxBufferToInt16(regIdx) &
-          0x0FFF; // mask the first half byte as it does not contain info
-      ActiveSerial->print("Current iSV57 alarm: ");
-      ActiveSerial->println(tmp, HEX);
-    }
+  if (bytesReceived_i != 2) {
+    return -1;
+  }
+  // mask the first half byte as it does not contain info
+  return (int32_t)(modbus.convertRxBufferToInt16(0) & 0x0FFF);
+}
+
+bool Isv57Communication::readCurrentAlarm() {
+  int32_t alarmCode_i32 = readCurrentAlarmCode();
+  if (alarmCode_i32 >= 0) {
+    ActiveSerial->print("Current iSV57 alarm: ");
+    ActiveSerial->println((uint16_t)alarmCode_i32, HEX);
   }
 
   return 1;
