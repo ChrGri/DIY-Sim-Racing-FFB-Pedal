@@ -20,9 +20,27 @@ namespace DiyFfbPedal.UIFunction
     /// </summary>
     public partial class InfoSection_Pedal : UserControl
     {
+        // refreshes the servo LEDs independently of updateUI() so the red LED can blink
+        private readonly System.Windows.Threading.DispatcherTimer servoLedTimer =
+            new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+
         public InfoSection_Pedal()
         {
             InitializeComponent();
+            servoLedTimer.Tick += (sender, args) => UpdateServoLeds();
+            Loaded += (sender, args) => servoLedTimer.Start();
+            Unloaded += (sender, args) => servoLedTimer.Stop();
+        }
+
+        private void UpdateServoLeds()
+        {
+            if (calculation == null || Settings == null || ServoPwrLed == null) return;
+            int pedal = Settings.table_selected;
+            bool connected = ServoLedIndicator.IsPedalConnected(calculation, pedal);
+            ServoLedIndicator.State state = ServoLedIndicator.GetState(calculation, pedal, connected);
+            ServoLedIndicator.Apply(ServoPwrLed, ServoAlmLed, state);
+            string text = "PWR / ALM: " + ServoLedIndicator.GetText(calculation, pedal, connected, state);
+            if ((ServoLedPanel.ToolTip as string) != text) ServoLedPanel.ToolTip = text;
         }
         public static readonly DependencyProperty Cauculation_Property = DependencyProperty.Register(
             nameof(calculation),

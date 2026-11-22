@@ -12,14 +12,7 @@ namespace DiyFfbPedal.UIFunction
     {
         private static readonly Brush DisconnectedBrush = CreateFrozenBrush(171, 180, 190);
 
-        // Mirror of the two LEDs on the servo drive (green PWR, red ALM).
-        private enum ServoLedState { Off, Ok, Error }
-        private static readonly Brush LedOffBrush = CreateFrozenBrush(42, 48, 56);
-        private static readonly Brush LedGreenBrush = CreateFrozenBrush(46, 204, 64);
-        private static readonly Brush LedRedBrush = CreateFrozenBrush(231, 46, 46);
         private static readonly Brush ServoErrorTextBrush = CreateFrozenBrush(255, 120, 120);
-        private static readonly TimeSpan ServoErrorHoldTime = TimeSpan.FromMilliseconds(1500);
-        private const long ServoLedBlinkHalfPeriodMs = 400;
 
         private readonly Queue<KeyValuePair<DateTime, double>>[] history =
         {
@@ -152,57 +145,23 @@ namespace DiyFfbPedal.UIFunction
             effectsText.Text = "Effects: " + GetEffects(pedal);
         }
 
-        private ServoLedState GetServoLedState(int pedal, bool connected)
-        {
-            if (!connected) return ServoLedState.Off;
-            CalculationVariables calc = plugin._calculations;
-            byte status = calc.ServoStatus[pedal];
-            // servo was powered down on purpose (idle timeout), nothing is talking to it
-            if (status == (byte)enumServoStatus.Idle) return ServoLedState.Off;
-            if (status == (byte)enumServoStatus.ForceStop ||
-                calc.HasRecentServoError(pedal, ServoErrorHoldTime) ||
-                calc.HasRecentServoAlarm(pedal, ServoErrorHoldTime)) return ServoLedState.Error;
-            if (status == (byte)enumServoStatus.On) return ServoLedState.Ok;
-            // not connected yet and no error reported (e.g. still starting up)
-            return ServoLedState.Off;
-        }
-
         private void UpdateServoLeds(int pedal, bool connected)
         {
             Ellipse pwrLed = pedal == 0 ? ServoPwrLed0 : pedal == 1 ? ServoPwrLed1 : ServoPwrLed2;
             Ellipse almLed = pedal == 0 ? ServoAlmLed0 : pedal == 1 ? ServoAlmLed1 : ServoAlmLed2;
             TextBlock servoText = pedal == 0 ? ServoText0 : pedal == 1 ? ServoText1 : ServoText2;
 
-            ServoLedState state = GetServoLedState(pedal, connected);
-            bool blinkOn = (DateTime.UtcNow.Ticks / TimeSpan.TicksPerMillisecond / ServoLedBlinkHalfPeriodMs) % 2 == 0;
+            CalculationVariables calc = plugin._calculations;
+            ServoLedIndicator.State state = ServoLedIndicator.GetState(calc, pedal, connected);
+            ServoLedIndicator.Apply(pwrLed, almLed, state);
 
-            pwrLed.Fill = state == ServoLedState.Ok ? LedGreenBrush : LedOffBrush;
-            almLed.Fill = state == ServoLedState.Error && blinkOn ? LedRedBrush : LedOffBrush;
-
-            byte status = plugin._calculations.ServoStatus[pedal];
-            string text;
-            Brush textBrush;
-            switch (state)
-            {
-                case ServoLedState.Ok:
-                    text = "Servo OK";
-                    textBrush = Brushes.LightGreen;
-                    break;
-                case ServoLedState.Error:
-                    if (status == (byte)enumServoStatus.ForceStop) text = "Servo force stopped";
-                    else if (plugin._calculations.HasRecentServoAlarm(pedal, ServoErrorHoldTime)) text = "Servo alarm";
-                    else text = "Servo not responding";
-                    textBrush = ServoErrorTextBrush;
-                    break;
-                default:
-                    text = connected && status == (byte)enumServoStatus.Idle ? "Servo idle" : "Servo: no connection";
-                    textBrush = DisconnectedBrush;
-                    break;
-            }
+            string text = ServoLedIndicator.GetText(calc, pedal, connected, state);
             if (servoText.Text != text)
             {
                 servoText.Text = text;
-                servoText.Foreground = textBrush;
+                servoText.Foreground = state == ServoLedIndicator.State.Ok ? Brushes.LightGreen
+                    : state == ServoLedIndicator.State.Error ? ServoErrorTextBrush
+                    : DisconnectedBrush;
             }
         }
 

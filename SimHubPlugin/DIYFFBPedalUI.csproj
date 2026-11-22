@@ -234,6 +234,7 @@
     <Compile Include="UIElement\SliderWithLabel.xaml.cs">
       <DependentUpon>SliderWithLabel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\ServoLedIndicator.cs" />
     <Compile Include="UIFunction\HomeDashboard.xaml.cs">
       <DependentUpon>HomeDashboard.xaml</DependentUpon>
     </Compile>
