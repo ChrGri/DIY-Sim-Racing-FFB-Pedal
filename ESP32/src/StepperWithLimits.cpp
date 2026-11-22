@@ -109,12 +109,12 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
       constrain(endstopDetectionThreshold_u8, 10, 50);
   Serial.printf("InvertStepperDir: %d\n", invertMotorDir_b);
 
-// 2. Power on the servo if a hardware power pin is configured
+// 2. Power on the servo. Boards with a servo power switch power it up from a
+// defined state (see powerCycleServo()), which includes the 2 s boot wait.
 #ifdef SERVO_POWER_PIN
   gpio_set_direction((gpio_num_t)SERVO_POWER_PIN, GPIO_MODE_OUTPUT);
-  gpio_set_level((gpio_num_t)SERVO_POWER_PIN, 1);
-#endif
-
+  powerCycleServo();
+#else
   // Power-on stabilization delay: Give the iSV57 internal DSP, power rails, and
   // encoder ample time (2.0s) to complete internal self-checks without
   // premature bus traffic.
@@ -122,6 +122,7 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
     ActiveSerial->println(
         "Waiting for servo DSP power-on self-test to stabilize (2.0s)...");
   delay(2000);
+#endif
 
   // Without a ready signal to go by, the slow slave ID sweep has to run
   bool allowSlaveIdSweep_b = true;
@@ -263,6 +264,28 @@ bool StepperWithLimits::finishServoConnection() {
   return true;
 }
 
+// Boards with a servo power switch (MOSFET): switch the servo off with the
+// UART released (no back-feed while off), set the UART idle level (TX HIGH,
+// RX pull-up), power the servo a few ms later and give it 2 s to boot. The
+// servo then always starts from a clean power-on reset with a defined UART
+// line, no matter whether the ESP32 or the 24 V supply came first.
+void StepperWithLimits::powerCycleServo() {
+#ifdef SERVO_POWER_PIN
+  isv57.end();
+  gpio_set_level((gpio_num_t)SERVO_POWER_PIN, 0);
+  delay(SERVO_POWER_OFF_TIME_MS);
+
+  isv57.begin(); // TX idle HIGH, RX pull-up, UART running
+  delay(SERVO_POWER_ON_DELAY_AFTER_TX_MS);
+  gpio_set_level((gpio_num_t)SERVO_POWER_PIN, 1);
+
+  if (ActiveSerial)
+    ActiveSerial->println(
+        "Servo powered, waiting for its power-on self-test (2.0s)...");
+  delay(SERVO_BOOT_TIME_MS);
+#endif
+}
+
 // Called by the servo task while no servo has been found. Each attempt runs
 // the UART only briefly at the default slave ID and releases the pins again,
 // so a servo that gets powered later still sees a clean power-on reset. The
@@ -277,7 +300,13 @@ void StepperWithLimits::retryServoDiscovery() {
   lastServoDiscoveryAttemptMs_u32 = now_u32;
   servoDiscoveryAttempts_u32++;
 
+#ifdef SERVO_POWER_PIN
+  // power the servo up again from a defined state (the 24 V may have come
+  // only now); leaves the UART running
+  powerCycleServo();
+#else
   isv57.begin();
+#endif
   bool found_b = isv57.findServoAtDefaultSlaveId();
 
   bool sweepAllowed_b = true;

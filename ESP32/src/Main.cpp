@@ -930,6 +930,12 @@ void setup() {
 #if defined(ISV57_TXPIN) && (ISV57_TXPIN >= 0)
   pinMode(ISV57_TXPIN, INPUT);
 #endif
+#ifdef SERVO_POWER_PIN
+  // Keep the servo off until StepperWithLimits powers it up from a defined
+  // state (UART idle level first, then power, see powerCycleServo())
+  pinMode(SERVO_POWER_PIN, OUTPUT);
+  digitalWrite(SERVO_POWER_PIN, LOW);
+#endif
 #if defined(ISV57_RXPIN) && (ISV57_RXPIN >= 0)
   pinMode(ISV57_RXPIN, INPUT);
 #endif

@@ -24,6 +24,11 @@ static const float STEPPER_WAKEUP_FORCE = 1.0f;                     // Force in 
 #define SERVO_REDISCOVERY_INTERVAL_MS 2000u
 #define SERVO_REDISCOVERY_SWEEP_EVERY_N 30u
 
+// Boards with a servo power switch (SERVO_POWER_PIN): power-up sequence
+#define SERVO_POWER_OFF_TIME_MS 500u          // servo off before powering up (logic must drop out)
+#define SERVO_POWER_ON_DELAY_AFTER_TX_MS 5u   // UART idle level set before power-on
+#define SERVO_BOOT_TIME_MS 2000u              // servo DSP power-on self-test before communication
+
 enum ServoStatus
 {
     SERVO_NOT_CONNECTED,
@@ -127,6 +132,7 @@ private:
     void handleConnectionLoss();
     void pollServoAlarm();
     bool finishServoConnection();
+    void powerCycleServo();
     void retryServoDiscovery();
     uint32_t lastServoDiscoveryAttemptMs_u32 = 0;  // millis() of the last discovery attempt while no servo is found
     uint32_t servoDiscoveryAttempts_u32 = 0;       // discovery attempts since the servo went missing
