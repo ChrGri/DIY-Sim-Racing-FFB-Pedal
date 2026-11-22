@@ -122,6 +122,18 @@ namespace DiyFfbPedal.UIFunction
                     {
                         checkbox_enable_ABS.IsChecked = (Settings.ABS_enable_flag[Settings.table_selected] == 1);
                     }
+                    if (checkbox_ABS_speed_scaling != null)
+                    {
+                        checkbox_ABS_speed_scaling.IsChecked = Settings.ABS_speed_scaling_enable;
+                    }
+                    if (Slider_ABS_speed_start != null)
+                    {
+                        Slider_ABS_speed_start.SliderValue = Settings.ABS_speed_start_kmh;
+                    }
+                    if (Slider_ABS_speed_full != null)
+                    {
+                        Slider_ABS_speed_full.SliderValue = Settings.ABS_speed_full_kmh;
+                    }
                 }
             }
             catch(Exception caughtEx)
@@ -157,7 +169,9 @@ namespace DiyFfbPedal.UIFunction
                 try
                 {
                     control.Slider_ABS_freq.SliderValue = newData.payloadPedalConfig_.absFrequency;
-                    control.Slider_ABS_AMP.SliderValue = ((double)newData.payloadPedalConfig_.absAmplitude) /1000.0d *100.0d;
+                    control.Slider_ABS_AMP.SliderValue = newData.payloadPedalConfig_.absAmplitude * AbsAmplitudePercentPerStep;
+                    control.Slider_ABS_AMP_min.SliderValue = Math.Min(GetAbsMinAmplitudeSteps(newData.payloadPedalConfig_.absForceOrTarvelBit), AbsMinAmplitudeMaxSteps) * AbsMinAmplitudePercentPerStep;
+                    control.Slider_ABS_AMP_min.IsEnabled = (newData.payloadPedalConfig_.absForceOrTarvelBit & AbsScaleWithForceBit) != 0;
                     switch (newData.payloadPedalConfig_.absForceOrTarvelBit)
                     {
                         case 0:
@@ -179,7 +193,8 @@ namespace DiyFfbPedal.UIFunction
                     }
 
                     control.AbsPattern.SelectedIndex = newData.payloadPedalConfig_.absPattern;
-                    control.EffectAppliedOnForceOrTravel_combobox.SelectedIndex = newData.payloadPedalConfig_.absForceOrTarvelBit;
+                    control.EffectAppliedOnForceOrTravel_combobox.SelectedIndex = newData.payloadPedalConfig_.absForceOrTarvelBit & AbsModulateTravelBit;
+                    control.AbsScaleWithForce_check.IsChecked = (newData.payloadPedalConfig_.absForceOrTarvelBit & AbsScaleWithForceBit) != 0;
                     control.update_plot_ABS();
                 }
                 catch
@@ -234,7 +249,7 @@ namespace DiyFfbPedal.UIFunction
         private void Slider_ABS_AMP_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             var tmp = dap_config_st;
-            tmp.payloadPedalConfig_.absAmplitude = (Byte)(e.NewValue * 1000.0d / 100.0d);
+            tmp.payloadPedalConfig_.absAmplitude = (Byte)Math.Min(255.0, Math.Round(e.NewValue / AbsAmplitudePercentPerStep));
             dap_config_st = tmp;
             
             switch (dap_config_st.payloadPedalConfig_.absForceOrTarvelBit)
@@ -290,7 +305,9 @@ namespace DiyFfbPedal.UIFunction
             try
             {
                 var tmp = dap_config_st;
-                tmp.payloadPedalConfig_.absForceOrTarvelBit = (byte)EffectAppliedOnForceOrTravel_combobox.SelectedIndex;
+                // keep the other bits (e.g. the force scaling), only bit 0 is force / travel
+                tmp.payloadPedalConfig_.absForceOrTarvelBit = (byte)((tmp.payloadPedalConfig_.absForceOrTarvelBit & ~AbsModulateTravelBit)
+                    | (EffectAppliedOnForceOrTravel_combobox.SelectedIndex & AbsModulateTravelBit));
                 dap_config_st = tmp;
                 ConfigChangedEvent(dap_config_st);
                 if (Slider_ABS_AMP != null)
@@ -314,6 +331,57 @@ namespace DiyFfbPedal.UIFunction
             }
         }
 
+
+        // absForceOrTarvelBit bits, same as ABS_MODULATE_TRAVEL_BIT_U8 / ABS_SCALE_WITH_FORCE_BIT_U8 in the firmware
+        private const int AbsModulateTravelBit = 0x01;
+        private const int AbsScaleWithForceBit = 0x02;
+        // bits 2-7: min amplitude at zero force, in 2 % steps of the max amplitude (0..50)
+        private const int AbsMinAmplitudeShift = 2;
+        private const int AbsMinAmplitudeMask = 0x3F;
+        private const int AbsMinAmplitudeMaxSteps = 50;
+        private const double AbsMinAmplitudePercentPerStep = 2.0;
+        // absAmplitude: 0.15 % of the force / travel range per step (200 = 30 %), same as the firmware
+        private const double AbsAmplitudePercentPerStep = 0.15;
+
+        private static int GetAbsMinAmplitudeSteps(byte absForceOrTarvelBit)
+        {
+            return (absForceOrTarvelBit >> AbsMinAmplitudeShift) & AbsMinAmplitudeMask;
+        }
+
+        private void Slider_ABS_AMP_min_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            int steps = (int)Math.Round(e.NewValue / AbsMinAmplitudePercentPerStep);
+            steps = Math.Max(0, Math.Min(AbsMinAmplitudeMaxSteps, steps));
+            byte current = dap_config_st.payloadPedalConfig_.absForceOrTarvelBit;
+            byte updated = (byte)((current & ~(AbsMinAmplitudeMask << AbsMinAmplitudeShift)) | (steps << AbsMinAmplitudeShift));
+            if (updated == current) return;
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.absForceOrTarvelBit = updated;
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
+
+        private void SetAbsScaleWithForce(bool enabled)
+        {
+            byte current = dap_config_st.payloadPedalConfig_.absForceOrTarvelBit;
+            byte updated = enabled ? (byte)(current | AbsScaleWithForceBit) : (byte)(current & ~AbsScaleWithForceBit);
+            Slider_ABS_AMP_min.IsEnabled = enabled;
+            if (updated == current) return;
+            var tmp = dap_config_st;
+            tmp.payloadPedalConfig_.absForceOrTarvelBit = updated;
+            dap_config_st = tmp;
+            ConfigChangedEvent(dap_config_st);
+        }
+
+        private void AbsScaleWithForce_check_Checked(object sender, RoutedEventArgs e)
+        {
+            SetAbsScaleWithForce(true);
+        }
+
+        private void AbsScaleWithForce_check_Unchecked(object sender, RoutedEventArgs e)
+        {
+            SetAbsScaleWithForce(false);
+        }
 
         private void btn_testABS_Click(object sender, RoutedEventArgs e)
         {
@@ -352,6 +420,34 @@ namespace DiyFfbPedal.UIFunction
             SettingsChangedEvent(Settings);
         }
 
+        private void checkbox_ABS_speed_scaling_Checked(object sender, RoutedEventArgs e)
+        {
+            if (Settings == null || Settings.ABS_speed_scaling_enable) return;
+            Settings.ABS_speed_scaling_enable = true;
+            SettingsChangedEvent(Settings);
+        }
+
+        private void checkbox_ABS_speed_scaling_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (Settings == null || !Settings.ABS_speed_scaling_enable) return;
+            Settings.ABS_speed_scaling_enable = false;
+            SettingsChangedEvent(Settings);
+        }
+
+        private void Slider_ABS_speed_start_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (Settings == null || Settings.ABS_speed_start_kmh == Math.Round(e.NewValue)) return;
+            Settings.ABS_speed_start_kmh = Math.Round(e.NewValue);
+            SettingsChangedEvent(Settings);
+        }
+
+        private void Slider_ABS_speed_full_SliderValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (Settings == null || Settings.ABS_speed_full_kmh == Math.Round(e.NewValue)) return;
+            Settings.ABS_speed_full_kmh = Math.Round(e.NewValue);
+            SettingsChangedEvent(Settings);
+        }
+
         private void update_plot_ABS()
         {
             int x_quantity = 200;
@@ -383,6 +479,31 @@ namespace DiyFfbPedal.UIFunction
                 {
                     x[idx] = idx;
                     y[idx] = -1 * amp / max_force * y_max * (x[idx] % peroid) / peroid + 0.5 * amp / max_force * y_max;
+                    System.Windows.Point Pointlcl = new System.Windows.Point(dx * x[idx], dy * y[idx] + 25);
+                    myPointCollection2.Add(Pointlcl);
+                }
+            }
+
+            if (dap_config_st.payloadPedalConfig_.absPattern == 2)
+            {
+                // pulse: fast kick back (12 % of the period), then a smooth return (same as the firmware)
+                const double riseShare = 0.12;
+                for (int idx = 0; idx < x_quantity; idx++)
+                {
+                    x[idx] = idx;
+                    double phase = (x[idx] % peroid) / peroid;
+                    double wave;
+                    if (phase < riseShare)
+                    {
+                        wave = -Math.Sin(phase / riseShare * Math.PI / 2);
+                    }
+                    else
+                    {
+                        double decay = 1 - (phase - riseShare) / (1 - riseShare);
+                        wave = -decay * decay;
+                    }
+                    // the kick pushes back against the foot: drawn upwards
+                    y[idx] = wave * amp / max_force * y_max / 2;
                     System.Windows.Point Pointlcl = new System.Windows.Point(dx * x[idx], dy * y[idx] + 25);
                     myPointCollection2.Add(Pointlcl);
                 }

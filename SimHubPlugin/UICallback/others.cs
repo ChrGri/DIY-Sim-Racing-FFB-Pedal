@@ -355,7 +355,7 @@ namespace DiyFfbPedal
             dap_config_st_rudder.payloadPedalConfig_.joystickMapOrigToe10 = 0;
 
             dap_config_st_rudder.payloadPedalConfig_.absFrequency = 5;
-            dap_config_st_rudder.payloadPedalConfig_.absAmplitude = 20;
+            dap_config_st_rudder.payloadPedalConfig_.absAmplitude = 13; // 0.15 % per step: about 2 %
             dap_config_st_rudder.payloadPedalConfig_.absPattern = 0;
             dap_config_st_rudder.payloadPedalConfig_.absForceOrTarvelBit = 0;
 

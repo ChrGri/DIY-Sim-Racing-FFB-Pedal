@@ -95,7 +95,7 @@ namespace DiyFfbPedal
             DefaultConfig.payloadPedalConfig_.joystickMapOrigToe09 = 0;
             DefaultConfig.payloadPedalConfig_.joystickMapOrigToe10 = 0;
             DefaultConfig.payloadPedalConfig_.absFrequency = 5;
-            DefaultConfig.payloadPedalConfig_.absAmplitude = 20;
+            DefaultConfig.payloadPedalConfig_.absAmplitude = 13; // 0.15 % per step: about 2 %
             DefaultConfig.payloadPedalConfig_.absPattern = 0;
             DefaultConfig.payloadPedalConfig_.absForceOrTarvelBit = 0;
 

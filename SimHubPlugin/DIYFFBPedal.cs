@@ -114,10 +114,17 @@ namespace DiyFfbPedal
         DateTime[] Action_currentTime = new DateTime[3];
         DateTime[] Action_lastTime = new DateTime[3];
         
-
+		//ABS/TC Effect
+        bool sendAbsSignal_local_b = false;
+        bool sendTcSignal_local_b = false;
+		
         // ABS trigger timer
-        DateTime absTrigger_currentTime = DateTime.UtcNow;
         DateTime absTrigger_lastTime = DateTime.UtcNow;
+        // ABS speed scaling (filtered speed + hysteresis)
+        private readonly AbsSpeedScaling absSpeedScaling = new AbsSpeedScaling();
+
+		// TC trigger timer
+        DateTime tcTrigger_lastTime = DateTime.UtcNow;
 
         //G force timer
         DateTime GTrigger_currentTime = DateTime.UtcNow;
@@ -320,8 +327,7 @@ namespace DiyFfbPedal
         unsafe public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
 			
-			bool sendAbsSignal_local_b = false;
-            bool sendTcSignal_local_b = false;
+            double absSpeedScale = 1.0;
             double RPM_value =0;
             double RPM_MAX = 0;
             double _G_force = 128;
@@ -502,11 +508,34 @@ namespace DiyFfbPedal
                     if (data.NewData.ABSActive > 0)
                     {
                         sendAbsSignal_local_b = true;
+						absTrigger_lastTime = DateTime.UtcNow;
                     }
 
                     if (data.NewData.TCActive > 0)
                     {
                         sendTcSignal_local_b = true;
+						tcTrigger_lastTime = DateTime.UtcNow;
+                    }
+
+					TimeSpan diff;
+                    //To prevent the ABS signal from oscillating, the signal is maintained (100ms)
+                    if (!isConsole && sendAbsSignal_local_b)
+                    {
+                        diff = DateTime.UtcNow - absTrigger_lastTime;
+                        if (diff.TotalMilliseconds >= 100)
+                        {
+                            sendAbsSignal_local_b = false;
+                        } 
+                    }
+
+                    //To prevent the TC signal from oscillating, the signal is maintained (100ms)
+                    if (!isConsole && sendTcSignal_local_b)
+                    {
+                        diff = DateTime.UtcNow - tcTrigger_lastTime;
+                        if (diff.TotalMilliseconds >= 100)
+                        {
+                            sendTcSignal_local_b = false;
+                        } 
                     }
 
                     if (isConsole)
@@ -517,11 +546,19 @@ namespace DiyFfbPedal
                     }
 
 
+                    // ABS amplitude scaled by vehicle speed
+                    if (Settings.ABS_speed_scaling_enable)
+                    {
+                        absSpeedScale = absSpeedScaling.Update(data.NewData.SpeedKmh,
+                            Settings.ABS_speed_start_kmh, Settings.ABS_speed_full_kmh, DateTime.UtcNow);
+                    }
+
                     // when test signal is activated, overwrite trigger signal
                     if (sendAbsSignal)
                     {
                         sendAbsSignal_local_b = true;
                         sendTcSignal_local_b = true;
+                        absSpeedScale = 1.0; // the test always runs at full amplitude
                     }
 
 
@@ -568,27 +605,6 @@ namespace DiyFfbPedal
             }
 			
 
-
-
-
-            absTrigger_currentTime = DateTime.UtcNow;
-            TimeSpan diff = absTrigger_currentTime - absTrigger_lastTime;
-            int millisceonds = (int)diff.TotalMilliseconds;
-            if (!isConsole && millisceonds <= 10)
-            {
-                sendAbsSignal_local_b = false;
-                sendTcSignal_local_b = false;
-                
-
-            }
-            else
-            {
-                absTrigger_lastTime = DateTime.UtcNow;
-            }
-
-
-
-
             bool update_flag = false;
 
             if (ConsoleEffectPolicy.ShouldProcess(isConsole, effectTelemetryActive, data.NewData != data.OldData))
@@ -597,7 +613,7 @@ namespace DiyFfbPedal
                 for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
                 {
                     if (isConsole) update_flag = false;
-                    DAP_action_st tmp;
+                    DAP_action_st tmp = default;
                     tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
                     tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
                     tmp.payloadHeader_.PedalTag = (byte)pedalIdx;
@@ -658,7 +674,7 @@ namespace DiyFfbPedal
                         GTrigger_currentTime = DateTime.UtcNow;
                         TimeSpan diff_G = GTrigger_currentTime - GTrigger_lastTime;
                         int millisceonds_G = (int)diff_G.TotalMilliseconds;
-                        if (millisceonds <= 10)
+                        if (millisceonds_G <= 10)
                         {
                             _G_force = g_force_last_value;
                         }
@@ -709,7 +725,7 @@ namespace DiyFfbPedal
                             RoadTrigger_currentTime = DateTime.UtcNow;
                             TimeSpan diff_Road = RoadTrigger_currentTime - RoadTrigger_lastTime;
                             int millisceonds_G = (int)diff_Road.TotalMilliseconds;
-                            if (millisceonds <= 10)
+                            if (millisceonds_G <= 10)
                             {
                                 Road_impact_value = Road_impact_last;
                             }
@@ -871,6 +887,7 @@ namespace DiyFfbPedal
 
                             // compute checksum
                             tmp.payloadPedalAction_.triggerAbs_u8 = (byte)(TrackSurfaceCondition +1);
+                            tmp.payloadPedalAction_.absSpeedAttenuation_u8 = AbsSpeedScaling.ToAttenuation(absSpeedScale);
                             update_flag = true;
 
                         }
@@ -988,7 +1005,7 @@ namespace DiyFfbPedal
                 sendAbsSignal_local_b = true;
                 sendTcSignal_local_b = true;
                 
-                DAP_action_st tmp;
+                DAP_action_st tmp = default;
                 tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
                 tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
                 tmp.payloadPedalAction_.RPM_u8 = 0;
@@ -1051,7 +1068,7 @@ namespace DiyFfbPedal
                 {
                     _calculations.Rudder_status = false;
                 }
-                DAP_action_st tmp;
+                DAP_action_st tmp = default;
                 tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
                 tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;                    
                 tmp.payloadPedalAction_.triggerAbs_u8 = 0;
@@ -1166,7 +1183,7 @@ namespace DiyFfbPedal
                         if (millisceonds_action > 40)
                         {
                             bool Rudder_Effect_update_b = false;
-                            DAP_action_st tmp;
+                            DAP_action_st tmp = default;
                             tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
                             tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
                             tmp.payloadPedalAction_.triggerAbs_u8 = 0;
@@ -1326,7 +1343,7 @@ namespace DiyFfbPedal
                     Rudder_brake_status = false;
                 }
                 SystemSounds.Beep.Play();
-                DAP_action_st tmp;
+                DAP_action_st tmp = default;
                 tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
                 tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
                 tmp.payloadPedalAction_.triggerAbs_u8 = 0;
@@ -1362,7 +1379,7 @@ namespace DiyFfbPedal
             if (clear_action)
             {
                 
-                DAP_action_st tmp;
+                DAP_action_st tmp = default;
                 tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
                 tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
                 tmp.payloadPedalAction_.triggerAbs_u8 = 0;

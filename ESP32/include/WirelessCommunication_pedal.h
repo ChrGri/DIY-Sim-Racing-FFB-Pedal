@@ -937,6 +937,9 @@ private:
             dap_actions_st.payloadPedalAction_st.triggerAbs_u8 = 0;
       }
     }
+    // ABS speed scaling: 0 = full amplitude, 255 = muted
+    dap_calculationVariables_st.absSpeedScale_fl32 =
+        1.0f - ((float)dap_actions_st.payloadPedalAction_st.absSpeedAttenuation_u8) / 255.0f;
     g_rpmOscillation_st.rpmValue_fl32 =
         dap_actions_st.payloadPedalAction_st.rpm_u8;
     g_gForceEffect_st.gValue_fl32 =
