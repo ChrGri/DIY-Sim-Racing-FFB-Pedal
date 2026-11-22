@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -30,8 +31,10 @@ namespace DiyFfbPedal.UIFunction
             "Variables: t (time in s), dt (0.002 s), prev (last value), phase (radians, from the frequency field), pi, and every SimHub property, " +
             "e.g. [DataCorePlugin.GameData.Rpms]. Functions: Sin, Cos, Abs, Min, Max, Pow, Sqrt, if(cond, a, b).\n" +
             "Example (engine, position): frequency [DataCorePlugin.GameData.Rpms] / 60, script 0.02 * [DataCorePlugin.GameData.Throttle] / 100 * Sin(phase)\n" +
-            "Example (ABS, position): if([DataCorePlugin.GameData.ABSActive] > 0, 0.3 * Sin(2 * pi * 25 * t), 0)\n" +
-            "More examples: docs/script_effects_examples.md";
+            "Example (ABS, position): if([DataCorePlugin.GameData.ABSActive] > 0, 0.3 * Sin(2 * pi * 25 * t), 0)";
+
+        private const string ExamplesUrl =
+            "https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/blob/develop/docs/script_effects_examples.md";
 
         public PipelineScriptPanel()
         {
@@ -104,6 +107,15 @@ namespace DiyFfbPedal.UIFunction
                 Opacity = 0.7,
                 Margin = new Thickness(0, 4, 0, 0),
             });
+
+            var link = new Hyperlink(new Run("More examples (GitHub)")) { NavigateUri = new Uri(ExamplesUrl) };
+            link.RequestNavigate += (s, e) =>
+            {
+                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true }); }
+                catch { }
+                e.Handled = true;
+            };
+            root.Children.Add(new TextBlock(link) { FontSize = 10, Margin = new Thickness(0, 2, 0, 0) });
 
             Content = new ScrollViewer { Content = root, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
 
