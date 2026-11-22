@@ -928,7 +928,14 @@ void setup() {
 // servo back-feeds its logic, so it misses its power-on reset (solid red LED, no
 // alarm code). Isv57Communication::begin() sets the idle levels.
 #if defined(ISV57_TXPIN) && (ISV57_TXPIN >= 0)
+#ifdef ISV57_UART_KEEP_TX_IDLE
+  // TX at its idle level as early as possible, e.g. a floating TX is a break
+  // behind an inverting RS232 transceiver (see Main.h)
+  pinMode(ISV57_TXPIN, OUTPUT);
+  digitalWrite(ISV57_TXPIN, ISV57_TX_IDLE_LEVEL);
+#else
   pinMode(ISV57_TXPIN, INPUT);
+#endif
 #endif
 #ifdef SERVO_POWER_PIN
   // Keep the servo off until StepperWithLimits powers it up from a defined

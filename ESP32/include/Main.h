@@ -81,6 +81,16 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 /********************************************************************/
 /*                      PIN defines                                 */
 /********************************************************************/
+// Servo UART options per board:
+// ISV57_UART_INVERTED      the servo RX is wired directly to the ESP32 TX, the
+//                          UART runs inverted (TX idles LOW). Without it the
+//                          board has an inverting RS232 transceiver (TX idles
+//                          HIGH).
+// ISV57_UART_KEEP_TX_IDLE  keep TX driven at its idle level at all times. Without
+//                          it TX is released (high-Z) at boot and between servo
+//                          discovery attempts, so it cannot back-feed a servo that
+//                          is still unpowered.
+
 // initial version of dev PCB for regular ESP32
 #if PCB_VERSION == 1
 // ADC defines
@@ -138,6 +148,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 
 #define ISV57_TXPIN 27 // 17
 #define ISV57_RXPIN 26 // 16
+#define ISV57_UART_INVERTED // servo RX wired directly: UART inverted, TX idles LOW
 // pedal assignment
 //  #define PEDAL_ASSIGNMENT
 //  #define CFG1 15
@@ -173,6 +184,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 
 #define ISV57_TXPIN 27 // 17
 #define ISV57_RXPIN 26 // 16
+#define ISV57_UART_INVERTED // servo RX wired directly: UART inverted, TX idles LOW
 
 // #define USB_JOYSTICK
 
@@ -198,6 +210,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 
 #define ISV57_TXPIN 26 // 17
 #define ISV57_RXPIN 27 // 16
+#define ISV57_UART_INVERTED // servo RX wired directly: UART inverted, TX idles LOW
 #define ESPNOW_Enable
 // #define USB_JOYSTICK
 #define PAIRING_GPIO_U8 0
@@ -232,6 +245,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 
 #define ISV57_TXPIN 10 // 27 //17
 #define ISV57_RXPIN 9  // 26 // 16
+#define ISV57_UART_INVERTED // servo RX wired directly: UART inverted, TX idles LOW
 
 // #define Using_analog_output_ESP32_S3
 
@@ -279,6 +293,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 
 #define ISV57_TXPIN 10 // 27 //17
 #define ISV57_RXPIN 9  // 26 // 16
+#define ISV57_UART_INVERTED // servo RX wired directly: UART inverted, TX idles LOW
 
 #define USB_JOYSTICK
 
@@ -374,6 +389,7 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 
 #define ISV57_TXPIN 10 // 27 //17
 #define ISV57_RXPIN 9  // 26 // 16
+#define ISV57_UART_INVERTED // servo RX wired directly: UART inverted, TX idles LOW
 
 // #define Using_analog_output_ESP32_S3
 #define ESPNOW_Enable
@@ -532,6 +548,11 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 // servo UART (via TTL-RS232 SP3232)
 #define ISV57_TXPIN 5
 #define ISV57_RXPIN 6
+// The SP3232 inverts TX: an undriven or LOW TX pin puts about +5 V (permanent
+// break) on the servo RX, and a servo powered up in that state stays in alarm
+// (both LEDs on). The transceiver also decouples the servo from the ESP32, so
+// there is no back-feed: keep TX driven at its idle level at all times.
+#define ISV57_UART_KEEP_TX_IDLE
 
 // no brake resistor on V8
 
@@ -647,6 +668,15 @@ static const uint32_t s_secondsPerMinute_u32 = 60;
 extern Stream *ActiveSerial;
 
 #define BAUDRATE_U32 3000000U
+
+// Servo UART idle level and inversion, derived from the board options above
+#ifdef ISV57_UART_INVERTED
+#define ISV57_TX_IDLE_LEVEL LOW
+#define ISV57_UART_INVERT_FLAG true
+#else
+#define ISV57_TX_IDLE_LEVEL HIGH
+#define ISV57_UART_INVERT_FLAG false
+#endif
 
 enum PedalOperationalState_e {
   PEDAL_STATE_STANDBY_WAITING_FOR_WAKEUP_E = 0,

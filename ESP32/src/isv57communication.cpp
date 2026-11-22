@@ -67,7 +67,7 @@ void Isv57Communication::begin() {
 #if defined(ISV57_TXPIN) && (ISV57_TXPIN >= 0)
   pinMode(ISV57_TXPIN, OUTPUT);
   digitalWrite(ISV57_TXPIN,
-               HIGH); // Assert idle UART state before serial controller init
+               ISV57_TX_IDLE_LEVEL); // Assert idle UART state before serial controller init
 #endif
 #if defined(ISV57_RXPIN) && (ISV57_RXPIN >= 0)
   // Serial2.begin() only enables RX as input and keeps the pull state set
@@ -75,14 +75,9 @@ void Isv57Communication::begin() {
   pinMode(ISV57_RXPIN, INPUT_PULLUP);
 #endif
 
-#if PCB_VERSION == 10 || PCB_VERSION == 9 || PCB_VERSION == 12 ||              \
-    PCB_VERSION == 13 || PCB_VERSION == 14 || PCB_VERSION == 15
+  // Modbus serial, inverted on boards with the servo wired directly (Main.h)
   Serial2.begin(38400, SERIAL_8N1, ISV57_RXPIN, ISV57_TXPIN,
-                false); // Modbus serial
-#else
-  Serial2.begin(38400, SERIAL_8N1, ISV57_RXPIN, ISV57_TXPIN,
-                true); // Modbus serial
-#endif
+                ISV57_UART_INVERT_FLAG);
 
   Serial2.setTimeout(12); // 12 ms timeout for ISR-driven non-blocking reception
 
@@ -96,7 +91,14 @@ void Isv57Communication::begin() {
 void Isv57Communication::end() {
   Serial2.end();
 #if defined(ISV57_TXPIN) && (ISV57_TXPIN >= 0)
+#ifdef ISV57_UART_KEEP_TX_IDLE
+  // keep the idle level, e.g. a released TX is a break behind an inverting
+  // RS232 transceiver (Main.h)
+  pinMode(ISV57_TXPIN, OUTPUT);
+  digitalWrite(ISV57_TXPIN, ISV57_TX_IDLE_LEVEL);
+#else
   pinMode(ISV57_TXPIN, INPUT);
+#endif
 #endif
 #if defined(ISV57_RXPIN) && (ISV57_RXPIN >= 0)
   pinMode(ISV57_RXPIN, INPUT);
