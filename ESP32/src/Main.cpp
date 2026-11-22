@@ -856,6 +856,60 @@ static void uart_event_task(void *pvParameters) {
 
 #endif
 
+// The pedal task (which sends the pedal state) is blocked while homing runs in
+// it, so the plugin got no servo status for several seconds (its servo LEDs
+// went off). This heartbeat keeps sending the last basic state with the
+// current servo fields while homing.
+static DapStateBasic_t s_lastBasicState_st = {};
+static uint8_t s_homingHeartbeatPedalTag_u8 = 0;
+#define HOMING_STATUS_HEARTBEAT_INTERVAL_US 100000
+
+static void homingStatusHeartbeatCallback(void *arg) {
+  (void)arg;
+  if (stepper == nullptr) {
+    return;
+  }
+  DapStateBasic_t st = s_lastBasicState_st;
+  st.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+  st.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+  st.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+  st.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
+  st.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_STATE_BASIC_U8;
+  st.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
+  st.payloadHeader_st.pedalTag_u8 = s_homingHeartbeatPedalTag_u8;
+  st.payloadPedalStateBasic_st.pedalFirmwareVersion_au8[0] = g_versionMajor;
+  st.payloadPedalStateBasic_st.pedalFirmwareVersion_au8[1] = g_versionMinor;
+  st.payloadPedalStateBasic_st.pedalFirmwareVersion_au8[2] = g_versionPatch;
+
+  // same servo fields as in the pedal task
+  st.payloadPedalStateBasic_st.servoStatus_u8 = stepper->servoStatus;
+  st.payloadPedalStateBasic_st.servoAlarmCode_u16 = stepper->servoAlarmCode_u16;
+  st.payloadPedalStateBasic_st.errorCode_u8 = 0;
+  if ((stepper->servoAlarmCode_u16 != 0) &&
+      (stepper->servoStatus != SERVO_IDLE_NOT_CONNECTED)) {
+    st.payloadPedalStateBasic_st.errorCode_u8 = 13;
+  }
+  if ((stepper->getLifelineSignal() == false) &&
+      (stepper->servoStatus != SERVO_IDLE_NOT_CONNECTED)) {
+    st.payloadPedalStateBasic_st.errorCode_u8 = 12;
+  }
+
+  TxMessage_t txMsg;
+  memset(&txMsg, 0, sizeof(txMsg));
+  txMsg.type = TX_MSG_PEDAL_STATE;
+  txMsg.payload.pedalState.basic_st = st;
+  txMsg.payload.pedalState.sendBasicFlag_b = true;
+  txMsg.payload.pedalState.sendExtendedFlag_b = false;
+  if (s_unifiedTxQueue != NULL) {
+    xQueueSend(s_unifiedTxQueue, &txMsg, (TickType_t)0);
+  }
+#ifdef ESPNOW_Enable
+  if (s_espnowStateQueue != NULL) {
+    xQueueOverwrite(s_espnowStateQueue, &txMsg.payload.pedalState);
+  }
+#endif
+}
+
 static void homingTimeoutCallback(void *arg) {
   if (ActiveSerial) {
     ActiveSerial->println("homing timeout");
@@ -874,6 +928,19 @@ void performPedalHomingSequence(DapConfig_t dap_config_st_homing) {
     }
   }
 #endif
+
+  // keep reporting the servo status to the plugin while homing blocks the
+  // pedal task
+  s_homingHeartbeatPedalTag_u8 =
+      dap_config_st_homing.payloadPedalConfig_st.pedalType_u8;
+  esp_timer_create_args_t heartbeatTimerArgs_st = {};
+  heartbeatTimerArgs_st.callback = &homingStatusHeartbeatCallback;
+  heartbeatTimerArgs_st.name = "homing_status";
+  esp_timer_handle_t heartbeatTimer_st = NULL;
+  if (esp_timer_create(&heartbeatTimerArgs_st, &heartbeatTimer_st) == ESP_OK) {
+    esp_timer_start_periodic(heartbeatTimer_st,
+                             HOMING_STATUS_HEARTBEAT_INTERVAL_US);
+  }
 
   if (stepper != nullptr) {
     stepper->servoWakeAction();
@@ -916,6 +983,11 @@ void performPedalHomingSequence(DapConfig_t dap_config_st_homing) {
     }
   }
 #endif
+
+  if (heartbeatTimer_st != NULL) {
+    esp_timer_stop(heartbeatTimer_st);
+    esp_timer_delete(heartbeatTimer_st);
+  }
 
   pedalLED.setPixelColor(0, 0x00, 0xFF, 0x00); // Green (ready)
   pedalLED.show();
@@ -3586,6 +3658,10 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           dap_state_extended_st_lcl_pedalUpdateTask;
       txMsg.payload.pedalState.sendBasicFlag_b = sendBasicFlag_b;
       txMsg.payload.pedalState.sendExtendedFlag_b = sendExtendedFlag_b;
+      if (sendBasicFlag_b) {
+        // template for the status heartbeat while homing blocks this task
+        s_lastBasicState_st = dap_state_basic_st_lcl_pedalUpdateTask;
+      }
 
       if (sendBasicFlag_b || sendExtendedFlag_b) {
         if (s_unifiedTxQueue != NULL) {
