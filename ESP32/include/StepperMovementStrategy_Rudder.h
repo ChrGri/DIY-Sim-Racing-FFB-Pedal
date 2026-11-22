@@ -480,7 +480,11 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
 
   // Local pilot force. Helicopter mode has no centering spring that could hold
   // against a loadcell offset or drift, so a symmetric deadband keeps such a
-  // residual force from pushing the pedal away.
+  // residual force from pushing the pedal away. The deadband is subtracted
+  // (continuous), so the force rises smoothly once it is exceeded. A static
+  // friction (stick/slip) model was tried here before and made slow
+  // corrections jerky: the breakaway force is higher than the smooth tanh
+  // friction at low speed, so the pedal stuck, lurched and stuck again.
   float localPilotForce_N = loadCellReadingKg_fl32 * GRAVITY_N_KG;
   if (isHeliMode_b) {
     const float HELI_PILOT_FORCE_DEADBAND_N = 1.5f;
@@ -500,22 +504,6 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
 
   float netForce_N = totalExternalForce_N - springForce_N - dampingForce_N -
                      frictionForce_N - softEndstopForce_N;
-
-  // Helicopter mode: static friction (Karnopp model). The smooth tanh friction
-  // above is zero at standstill, so without a centering spring any small
-  // remaining force made the pedals creep away. While the pedal is at rest and
-  // the resulting force stays below the breakaway force (friction slider), it
-  // is held in place; above that it slides with the regular kinetic friction.
-  if (isHeliMode_b && !s_rudderSettling_b) {
-    const float HELI_STICK_VELOCITY_MPS = 0.002f;
-    float forceWithoutFriction_N =
-        totalExternalForce_N - springForce_N - softEndstopForce_N;
-    if ((fabsf(g_vRudderModelVel_mps) < HELI_STICK_VELOCITY_MPS) &&
-        (fabsf(forceWithoutFriction_N) <= coulombFriction_N)) {
-      netForce_N = 0.0f;
-      g_vRudderModelVel_mps = 0.0f;
-    }
-  }
 
   // Inelastic boundary condition: normal reaction force prevents bouncing at hard endstops
   if (g_vRudderModelPos_01 >= upperTravelLimit_01 && netForce_N > 0.0f) {

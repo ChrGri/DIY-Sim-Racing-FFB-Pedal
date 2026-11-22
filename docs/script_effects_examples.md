@@ -19,7 +19,7 @@ pedal selected at the top). The **Live plot** button opens a window with the las
 | Frequency (Hz) for phase | optional script; drives the `phase` variable (see below) |
 | Script | NCalc formula, evaluated 500 times per second |
 
-Output conventions (same idea as the Simucube API):
+Output conventions:
 
 - **Pedal angle (deg)**: + rotates the pedal towards the driver. Limit ±2°, and the resulting sled
   travel is limited to ±5 mm on the pedal. With the default geometry 1° is about 5 mm sled travel,
