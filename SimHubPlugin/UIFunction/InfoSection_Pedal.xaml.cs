@@ -35,7 +35,7 @@ namespace DiyFfbPedal.UIFunction
         private void UpdateServoLeds()
         {
             if (calculation == null || Settings == null || ServoPwrLed == null) return;
-            int pedal = Settings.table_selected;
+            int pedal = (int)Settings.table_selected;
             bool connected = ServoLedIndicator.IsPedalConnected(calculation, pedal);
             ServoLedIndicator.State state = ServoLedIndicator.GetState(calculation, pedal, connected);
             ServoLedIndicator.Apply(ServoPwrLed, ServoAlmLed, state);
