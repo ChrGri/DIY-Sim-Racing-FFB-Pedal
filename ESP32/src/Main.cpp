@@ -282,6 +282,7 @@ bool splineDebug_b = false;
 #define EEPROM_OFFSET_U32 15U
 
 #include "ABSOscillation.h"
+#include "EffectPipeline.h"
 #include "Rudder.h"
 ABSOscillation absOscillation;
 RpmOscillation_t g_rpmOscillation_st;
@@ -293,6 +294,8 @@ CustomVibration_t g_customVibration1_st;
 CustomVibration_t g_customVibration2_st;
 CustomVibration_t g_customVibration3_st;
 CustomVibration_t g_customVibration4_st;
+// offset samples from the plugin effect scripts
+EffectPipeline_t g_effectPipeline_st;
 Rudder_t g_rudder_st;
 HelicoptersRudder_t g_helicopterRudder_st;
 RudderGForce_t g_rudderGForce_st;
@@ -2680,6 +2683,29 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         effect_pos_fl32 += g_customVibration3_st.customVibrationOffset_fl32;
         effect_pos_fl32 += g_customVibration4_st.customVibrationOffset_fl32;
         effect_pos_fl32 += g_rpmOscillation_st.rpmPositionOffset_i32;
+
+        // offsets computed by the plugin effect scripts
+        float stepsPerMm_fl32 = 0.0f;
+        if (dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                .spindlePitch_mmPerRev_u8 > 0) {
+          stepsPerMm_fl32 =
+              (float)dap_calculationVariables_st.stepsPerMotorRevolution_u32 /
+              (float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                  .spindlePitch_mmPerRev_u8;
+        }
+        // local sled travel per degree pedal angle (central difference, +-0.5 mm)
+        float sledMmPerDeg_fl32 = 0.0f;
+        if (g_effectPipeline_st.hasAngleChannel()) {
+          float degPerMm_fl32 = fabsf(
+              pedalInclineAngleDeg(sledPosition + 0.5f,
+                                   &dap_config_pedalUpdateTask_st) -
+              pedalInclineAngleDeg(sledPosition - 0.5f,
+                                   &dap_config_pedalUpdateTask_st));
+          if (degPerMm_fl32 > 0.01f) sledMmPerDeg_fl32 = 1.0f / degPerMm_fl32;
+        }
+        g_effectPipeline_st.addOffsets(filteredReading, stepsPerMm_fl32,
+                                       sledMmPerDeg_fl32, effect_force_fl32,
+                                       effect_pos_fl32);
       }
       // effect_pos_fl32 *= EFFECT_POSITION_SCALING_FACTOR_FL32;
       // write the effect offsets into a struct for debug output and potential
@@ -3792,6 +3818,8 @@ static inline size_t getExpectedPacketSize(uint8_t payloadType) {
     return sizeof(DapWifiChannel_t);
   case DAP_PAYLOAD_TYPE_MAC_ADDRESSES_U8:
     return sizeof(DapMacAddresses_t);
+  case DAP_PAYLOAD_TYPE_EFFECT_PIPELINE_U8:
+    return sizeof(DapEffectPipeline_t);
   // Add other packet types here in the future
   default:
     return 0;
@@ -4165,6 +4193,24 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
               xQueueSend(s_servoConfigRxQueue, &received_servo_config,
                          (TickType_t)0);
             }
+          }
+          break;
+        }
+        case DAP_PAYLOAD_TYPE_EFFECT_PIPELINE_U8: {
+          DapEffectPipeline_t received_pipeline;
+          memcpy(&received_pipeline, packet_start, sizeof(DapEffectPipeline_t));
+          calculated_crc = checksumCalculator_u16(
+              (uint8_t *)(&(received_pipeline.payloadHeader_st)),
+              sizeof(received_pipeline.payloadHeader_st) +
+                  sizeof(received_pipeline.payloadEffectPipeline_st));
+          received_crc = received_pipeline.payloadFooter_st.checkSum_u16;
+          if (calculated_crc != received_crc ||
+              received_pipeline.payloadHeader_st.version_u8 !=
+                  DAP_VERSION_CONFIG_U8) {
+            structIsValid = false;
+          } else {
+            g_effectPipeline_st.receive(
+                received_pipeline.payloadEffectPipeline_st);
           }
           break;
         }

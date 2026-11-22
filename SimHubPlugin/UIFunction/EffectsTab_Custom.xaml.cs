@@ -105,6 +105,11 @@ namespace DiyFfbPedal.UIFunction
                         calculation.Update_CV3_textbox = false;
                         textBox_CV3_string.Text = Settings.CV3_bindings[Settings.table_selected];
                     }
+                    if (Plugin != null)
+                    {
+                        PipelineScript1.Bind(Plugin);
+                        PipelineScript2.Bind(Plugin);
+                    }
                     checkbox_enable_CV4.IsChecked = (Settings.CV4_enable_flag[Settings.table_selected] == true);
                     Slider_CV4_trigger.SliderValue = Settings.CV4_trigger[Settings.table_selected];
                     if (calculation.Update_CV4_textbox)

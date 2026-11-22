@@ -10,6 +10,7 @@
 
 extern DAP_servo_config_st_t dap_servo_config_st[3];
 extern bool update_servo_config[3];
+extern void storeEffectPipelineFromHost(const DapEffectPipeline_t &pkt);
 
 TinyusbJoystick* TinyusbJoystick::instance = nullptr;
 TinyusbJoystick::TinyusbJoystick() 
@@ -270,6 +271,20 @@ void TinyusbJoystick::ProcessFullData(uint8_t *rxBuffer, uint8_t totalLen)
         {
             memcpy(&tmpWifiChannel, &tmp, totalLen);
             isWifiChannelGet = true;
+        }
+    }
+    if(totalLen == sizeof(DapEffectPipeline_t))
+    {
+        DapEffectPipeline_t tmp;
+        memcpy(&tmp, rxBuffer, totalLen);
+        bool structChecker = true;
+        if(tmp.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_EFFECT_PIPELINE_U8) structChecker = false;
+        if(tmp.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8) structChecker = false;
+        uint16_t crc = checksumCal((uint8_t*)(&(tmp.payloadHeader_st)), sizeof(tmp.payloadHeader_st) + sizeof(tmp.payloadEffectPipeline_st));
+        if(crc != tmp.payloadFooter_st.checkSum_u16) structChecker = false;
+        if(structChecker)
+        {
+            storeEffectPipelineFromHost(tmp);
         }
     }
     if(totalLen == sizeof(DAP_servo_config_st_t))

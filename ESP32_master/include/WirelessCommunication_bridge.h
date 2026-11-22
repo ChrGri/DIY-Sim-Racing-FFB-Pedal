@@ -353,6 +353,12 @@ public:
     return sendTo(_pedalMac[pedalIdx], (const uint8_t *)&pkt, sizeof(pkt));
   }
 
+  // Streamed like the regular actions: the next set supersedes a skipped one
+  esp_err_t sendEffectPipelineToPedal(uint8_t pedalIdx, const DapEffectPipeline_t &pkt) {
+    if (pedalIdx >= 3 || isAllZeroMac(_pedalMac[pedalIdx])) return ESP_ERR_INVALID_ARG;
+    return sendTo(_pedalMac[pedalIdx], (const uint8_t *)&pkt, sizeof(pkt));
+  }
+
   esp_err_t sendServoConfigToPedal(uint8_t pedalIdx, const DAP_servo_config_st_t &pkt) {
     if (pedalIdx >= 3 || isAllZeroMac(_pedalMac[pedalIdx])) return ESP_ERR_INVALID_ARG;
     logDebug("TX ServoConfig to pedal #%u", pedalIdx);
