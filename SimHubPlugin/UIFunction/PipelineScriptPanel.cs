@@ -18,6 +18,7 @@ namespace DiyFfbPedal.UIFunction
         private readonly ComboBox _type;
         private readonly TextBox _gain;
         private readonly TextBox _script;
+        private readonly TextBox _frequency;
         private readonly TextBlock _result;
         private readonly TextBlock _live;
         private readonly DispatcherTimer _liveTimer;
@@ -26,10 +27,11 @@ namespace DiyFfbPedal.UIFunction
         private DIYFFBPedalSettings _shownSettings;
 
         private static readonly string HelpText =
-            "Variables: t (time in s), dt (0.002 s), prev (last value), pi, and every SimHub property, " +
+            "Variables: t (time in s), dt (0.002 s), prev (last value), phase (radians, from the frequency field), pi, and every SimHub property, " +
             "e.g. [DataCorePlugin.GameData.Rpms]. Functions: Sin, Cos, Abs, Min, Max, Pow, Sqrt, if(cond, a, b).\n" +
-            "Example (engine, position): 0.02 * [DataCorePlugin.GameData.Throttle] / 100 * Sin(2 * pi * [DataCorePlugin.GameData.Rpms] / 60 * t)\n" +
-            "Example (ABS, position): if([DataCorePlugin.GameData.ABSActive] > 0, 0.3 * Sin(2 * pi * 25 * t), 0)";
+            "Example (engine, position): frequency [DataCorePlugin.GameData.Rpms] / 60, script 0.02 * [DataCorePlugin.GameData.Throttle] / 100 * Sin(phase)\n" +
+            "Example (ABS, position): if([DataCorePlugin.GameData.ABSActive] > 0, 0.3 * Sin(2 * pi * 25 * t), 0)\n" +
+            "More examples: docs/script_effects_examples.md";
 
         public PipelineScriptPanel()
         {
@@ -61,7 +63,22 @@ namespace DiyFfbPedal.UIFunction
             _gain = new TextBox { Width = 50, Height = 22, VerticalContentAlignment = VerticalAlignment.Center };
             _gain.LostFocus += (s, e) => Store();
             options.Children.Add(_gain);
+            var plotButton = new Button { Content = "Live plot", Height = 22, Padding = new Thickness(8, 0, 8, 0), Margin = new Thickness(12, 0, 0, 0) };
+            plotButton.Click += (s, e) =>
+            {
+                if (_plugin != null) EffectPipelinePlotWindow.ShowFor(_plugin, Window.GetWindow(this));
+            };
+            options.Children.Add(plotButton);
             root.Children.Add(options);
+
+            var freqRow = new DockPanel { Margin = new Thickness(0, 0, 0, 4) };
+            var freqLabel = new TextBlock { Text = "Frequency (Hz) for phase:", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) };
+            DockPanel.SetDock(freqLabel, Dock.Left);
+            freqRow.Children.Add(freqLabel);
+            _frequency = new TextBox { Height = 22, VerticalContentAlignment = VerticalAlignment.Center, FontFamily = new FontFamily("Consolas"), FontSize = 11 };
+            _frequency.TextChanged += (s, e) => Store();
+            freqRow.Children.Add(_frequency);
+            root.Children.Add(freqRow);
 
             _script = new TextBox
             {
@@ -126,6 +143,8 @@ namespace DiyFfbPedal.UIFunction
             }
             _gain.Text = settings.Pipeline_gain[idx].ToString("0.###", CultureInfo.InvariantCulture);
             _script.Text = settings.Pipeline_scripts[idx] ?? string.Empty;
+            _frequency.Text = (settings.Pipeline_freq_scripts != null && idx < settings.Pipeline_freq_scripts.Length)
+                ? (settings.Pipeline_freq_scripts[idx] ?? string.Empty) : string.Empty;
             _updating = false;
             TestScript();
         }
@@ -144,6 +163,8 @@ namespace DiyFfbPedal.UIFunction
                 settings.Pipeline_gain[idx] = Math.Max(0.0, Math.Min(10.0, gain));
             _gain.Text = settings.Pipeline_gain[idx].ToString("0.###", CultureInfo.InvariantCulture);
             settings.Pipeline_scripts[idx] = _script.Text;
+            if (settings.Pipeline_freq_scripts != null && idx < settings.Pipeline_freq_scripts.Length)
+                settings.Pipeline_freq_scripts[idx] = _frequency.Text;
         }
 
         private void TestScript()

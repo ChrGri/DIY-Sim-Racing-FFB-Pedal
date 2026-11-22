@@ -21,6 +21,8 @@ namespace DiyFfbPedal
     //   t     time of the sample in seconds (continuous)
     //   dt    sample period in seconds (0.002)
     //   prev  previous output of this channel (before gain), for filters
+    //   phase oscillator phase in radians, integrated from the optional frequency
+    //         script, so Sin(phase) stays continuous when the frequency changes
     //   pi    3.14159...
     // Output unit depends on the offset type: N, mm or relative (0.1 = 10 %).
     public class EffectPipelineEngine
@@ -29,6 +31,8 @@ namespace DiyFfbPedal
         public const double MaxForce_N = 60.0;
         public const double MaxPosition_mm = 5.0;
         public const double MaxForceRelative = 0.8;
+        // highest oscillator frequency; the pedal plays 500 Hz samples, more makes no sense
+        public const double MaxFrequency_Hz = 150.0;
 
         private const int Channels = Constants.effectPipelineChannels;
         private const int SamplesPerPacket = Constants.effectPipelineSamplesPerPacket;
@@ -43,6 +47,10 @@ namespace DiyFfbPedal
         {
             public string Script = null;
             public Expression Expression;
+            public string FreqScript = null;
+            public Expression FreqExpression;
+            public double Phase;
+            public double[] LastPhases = new double[0];
             public double Prev;
             public double T;
             public double LastOutput;
@@ -53,6 +61,18 @@ namespace DiyFfbPedal
         }
 
         private readonly ChannelState[] _channels = new ChannelState[3 * Channels];
+
+        // History of the computed samples (after gain and limit) for the live plot, 5 s at 500 Hz.
+        // The packets overlap; a later packet overwrites its predicted samples with newer values.
+        public const int HistoryLength = 2500;
+        private class History
+        {
+            public readonly double[] Values = new double[HistoryLength];
+            public readonly uint[] Indices = new uint[HistoryLength];
+            public readonly bool[] Valid = new bool[HistoryLength];
+            public EffectPipelineOffsetType Type = EffectPipelineOffsetType.Off;
+        }
+        private readonly History[] _history = new History[3 * Channels];
         // SimHub property values, read once per telemetry update
         private readonly Dictionary<string, object> _propertyCache = new Dictionary<string, object>();
         private PluginManager _pluginManager;
@@ -63,6 +83,7 @@ namespace DiyFfbPedal
         {
             _plugin = plugin;
             for (int i = 0; i < _channels.Length; i++) _channels[i] = new ChannelState();
+            for (int i = 0; i < _history.Length; i++) _history[i] = new History();
         }
 
         // last output (after gain) per pedal/channel, for the UI
@@ -77,6 +98,32 @@ namespace DiyFfbPedal
         {
             int idx = pedal * Channels + channel;
             return (idx >= 0 && idx < _channels.Length) ? _channels[idx].Error : null;
+        }
+
+        // Current index of the plugin sample clock (500 Hz).
+        public uint CurrentSampleIndex
+        {
+            get { return (uint)(_clock.Elapsed.TotalSeconds / SamplePeriod_s); }
+        }
+
+        // Copies the plotted history of one pedal channel for the sample indices
+        // [endIndex - dest.Length + 1, endIndex] into dest (0 where nothing was sent).
+        public EffectPipelineOffsetType CopyHistory(int pedal, int channel, uint endIndex, double[] dest)
+        {
+            int idx = pedal * Channels + channel;
+            if (idx < 0 || idx >= _history.Length) return EffectPipelineOffsetType.Off;
+            lock (_sync)
+            {
+                History h = _history[idx];
+                uint first = endIndex - (uint)dest.Length + 1;
+                for (int i = 0; i < dest.Length; i++)
+                {
+                    uint sampleIndex = first + (uint)i;
+                    int slot = (int)(sampleIndex % HistoryLength);
+                    dest[i] = (h.Valid[slot] && h.Indices[slot] == sampleIndex) ? h.Values[slot] : 0.0;
+                }
+                return h.Type;
+            }
         }
 
         // Called from DataUpdate.
@@ -122,8 +169,11 @@ namespace DiyFfbPedal
                     var type = (EffectPipelineOffsetType)settings.Pipeline_offset_type[idx];
                     double gain = settings.Pipeline_gain[idx];
                     short[] samples = new short[SamplesPerPacket];
-                    if (!ComputeSamples(state, settings.Pipeline_scripts[idx], type, gain, startIndex, samples))
+                    string freqScript = (settings.Pipeline_freq_scripts != null && idx < settings.Pipeline_freq_scripts.Length)
+                        ? settings.Pipeline_freq_scripts[idx] : null;
+                    if (!ComputeSamples(state, settings.Pipeline_scripts[idx], freqScript, type, gain, startIndex, samples))
                         continue;
+                    RecordHistory(idx, type, startIndex, samples);
                     SendPacket((byte)pedal, (byte)channel, type, startIndex, samples);
                 }
             }
@@ -176,6 +226,27 @@ namespace DiyFfbPedal
             return true;
         }
 
+        // Frequency script (Hz) for the phase variable; empty = no oscillator.
+        private bool PrepareFrequency(ChannelState state, string script)
+        {
+            if (state.FreqScript == script && (state.FreqExpression != null || string.IsNullOrWhiteSpace(script))) return true;
+            state.FreqScript = script;
+            state.FreqExpression = null;
+            if (string.IsNullOrWhiteSpace(script)) return true;
+            var exp = new Expression(script);
+            if (exp.HasErrors())
+            {
+                state.Error = "frequency: " + (exp.Error != null ? exp.Error.ToString() : "syntax error");
+                return false;
+            }
+            exp.ResolveParameter += delegate (string name, ParameterResolveArgs rarg)
+            {
+                rarg.Result = () => ResolveVariable(state, name);
+            };
+            state.FreqExpression = exp;
+            return true;
+        }
+
         private object ResolveVariable(ChannelState state, string name)
         {
             switch (name)
@@ -183,6 +254,7 @@ namespace DiyFfbPedal
                 case "t": return state.T;
                 case "dt": return SamplePeriod_s;
                 case "prev": return state.Prev;
+                case "phase": return state.Phase;
                 case "pi": return Math.PI;
             }
             object value;
@@ -197,10 +269,27 @@ namespace DiyFfbPedal
             return value;
         }
 
-        private bool ComputeSamples(ChannelState state, string script, EffectPipelineOffsetType type,
+        private void RecordHistory(int idx, EffectPipelineOffsetType type, uint startIndex, short[] samples)
+        {
+            double lsb = type == EffectPipelineOffsetType.Force_N ? 0.01
+                : type == EffectPipelineOffsetType.Position_mm ? 0.001 : 0.0001;
+            History h = _history[idx];
+            h.Type = type;
+            for (int i = 0; i < samples.Length; i++)
+            {
+                uint sampleIndex = startIndex + (uint)i;
+                int slot = (int)(sampleIndex % HistoryLength);
+                h.Values[slot] = samples[i] * lsb;
+                h.Indices[slot] = sampleIndex;
+                h.Valid[slot] = true;
+            }
+        }
+
+        private bool ComputeSamples(ChannelState state, string script, string freqScript, EffectPipelineOffsetType type,
                                     double gain, uint startIndex, short[] samples)
         {
             if (!Prepare(state, script)) return false;
+            if (!PrepareFrequency(state, freqScript)) return false;
 
             double limit, lsb;
             switch (type)
@@ -218,11 +307,30 @@ namespace DiyFfbPedal
                 state.Prev = state.LastValues[before - state.LastStartIndex];
 
             double[] values = new double[samples.Length];
+            double[] phases = new double[samples.Length];
             try
             {
+                // oscillator: frequency evaluated once per packet, phase integrated per sample
+                // and continued from the previous packet, so frequency changes don't jump
+                double phaseStep = 0.0;
+                if (state.FreqExpression != null)
+                {
+                    state.T = startIndex * SamplePeriod_s;
+                    double freq = Convert.ToDouble(state.FreqExpression.Evaluate());
+                    if (double.IsNaN(freq) || double.IsInfinity(freq)) freq = 0.0;
+                    freq = Math.Max(0.0, Math.Min(MaxFrequency_Hz, freq));
+                    phaseStep = 2.0 * Math.PI * freq * SamplePeriod_s;
+                    if (state.LastPhases.Length > 0 && before >= state.LastStartIndex &&
+                        before - state.LastStartIndex < (uint)state.LastPhases.Length)
+                        state.Phase = state.LastPhases[before - state.LastStartIndex] + phaseStep;
+                }
+
                 for (int i = 0; i < samples.Length; i++)
                 {
                     state.T = (startIndex + (uint)i) * SamplePeriod_s;
+                    if (i > 0) state.Phase += phaseStep;
+                    state.Phase %= 2.0 * Math.PI;
+                    phases[i] = state.Phase;
                     double value = Convert.ToDouble(state.Expression.Evaluate());
                     if (double.IsNaN(value) || double.IsInfinity(value)) value = 0.0;
                     state.Prev = value;
@@ -233,6 +341,7 @@ namespace DiyFfbPedal
                 }
                 state.LastStartIndex = startIndex;
                 state.LastValues = values;
+                state.LastPhases = phases;
                 state.Error = null;
                 return true;
             }

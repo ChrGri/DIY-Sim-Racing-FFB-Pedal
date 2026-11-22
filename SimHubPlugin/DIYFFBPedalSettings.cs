@@ -55,6 +55,7 @@ namespace DiyFfbPedal
         public byte[] Pipeline_offset_type = new byte[6] { 2, 2, 2, 2, 2, 2 }; // EffectPipelineOffsetType, default position (mm)
         public double[] Pipeline_gain = new double[6] { 1, 1, 1, 1, 1, 1 };
         public string[] Pipeline_scripts = new string[6] { "", "", "", "", "", "" };
+        public string[] Pipeline_freq_scripts = new string[6] { "", "", "", "", "", "" }; // Hz, drives the phase variable
         public string ESPNow_port = "";
         public bool[] Pedal_ESPNow_Sync_flag = new bool[3] { false, false, false };
         public bool IsBridgeAutoConnect = false;
