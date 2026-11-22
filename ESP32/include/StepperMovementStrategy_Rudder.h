@@ -475,15 +475,47 @@ float IRAM_ATTR_FLAG MoveByRudderStrategy(
   float frictionForce_N =
       coulombFriction_N * tanhf(g_vRudderModelVel_mps / VELOCITY_EPSILON_MPS);
 
+  const bool isHeliMode_b =
+      (rudderOffsets_st.rudderMode_u8 == RUDDER_MODE_HELICOPTER);
+
+  // Local pilot force. Helicopter mode has no centering spring that could hold
+  // against a loadcell offset or drift, so a symmetric deadband keeps such a
+  // residual force from pushing the pedal away.
+  float localPilotForce_N = loadCellReadingKg_fl32 * GRAVITY_N_KG;
+  if (isHeliMode_b) {
+    const float HELI_PILOT_FORCE_DEADBAND_N = 1.5f;
+    if (fabsf(localPilotForce_N) <= HELI_PILOT_FORCE_DEADBAND_N) {
+      localPilotForce_N = 0.0f;
+    } else {
+      localPilotForce_N -= copysignf(HELI_PILOT_FORCE_DEADBAND_N, localPilotForce_N);
+    }
+  }
+
   // 10. Net Acceleration & Semi-Implicit Euler Integration
   float totalExternalForce_N =
-      (loadCellReadingKg_fl32 * GRAVITY_N_KG) +
+      localPilotForce_N +
       (effectOffsets_st.forceOffset_kg_fl32 * GRAVITY_N_KG) +
       effectInjectedForce_N + rudderPedalOpposingForce_N + syncTrackingForce_N +
       commonModeForce_N;
 
   float netForce_N = totalExternalForce_N - springForce_N - dampingForce_N -
                      frictionForce_N - softEndstopForce_N;
+
+  // Helicopter mode: static friction (Karnopp model). The smooth tanh friction
+  // above is zero at standstill, so without a centering spring any small
+  // remaining force made the pedals creep away. While the pedal is at rest and
+  // the resulting force stays below the breakaway force (friction slider), it
+  // is held in place; above that it slides with the regular kinetic friction.
+  if (isHeliMode_b && !s_rudderSettling_b) {
+    const float HELI_STICK_VELOCITY_MPS = 0.002f;
+    float forceWithoutFriction_N =
+        totalExternalForce_N - springForce_N - softEndstopForce_N;
+    if ((fabsf(g_vRudderModelVel_mps) < HELI_STICK_VELOCITY_MPS) &&
+        (fabsf(forceWithoutFriction_N) <= coulombFriction_N)) {
+      netForce_N = 0.0f;
+      g_vRudderModelVel_mps = 0.0f;
+    }
+  }
 
   // Inelastic boundary condition: normal reaction force prevents bouncing at hard endstops
   if (g_vRudderModelPos_01 >= upperTravelLimit_01 && netForce_N > 0.0f) {
