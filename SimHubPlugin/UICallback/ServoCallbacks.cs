@@ -225,6 +225,19 @@ namespace DiyFfbPedal
             SendServoConfigSerial(pedalIdx, packet);
         }
 
+        // Asks the pedal to clear the active servo alarm (Modbus 0x019A = 0x1111) and to print
+        // the alarm history to its serial console. Uses DEBUG_INFO_0_RESET_ALL_SERVO_ALARMS_U8 (16)
+        // on a temporary config copy, so the flag does not stick in the plugin's config; the
+        // firmware clears the bit in its own config after handling it.
+        public void SendServoClearAlarms(byte pedalIdx)
+        {
+            if (Plugin == null || pedalIdx >= 3) return;
+
+            DAP_config_st cfg = dap_config_st[pedalIdx];
+            cfg.payloadPedalConfig_.debug_flags_0 = (byte)(cfg.payloadPedalConfig_.debug_flags_0 | 16);
+            Plugin.SendConfigWithoutSaveToEEPROM(cfg, pedalIdx);
+        }
+
         unsafe public void SendServoResetToFactory(byte pedalIdx)
         {
             if (Plugin == null) return;

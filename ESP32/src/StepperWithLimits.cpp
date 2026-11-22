@@ -685,6 +685,9 @@ void IRAM_ATTR StepperWithLimits::processPendingCommands() {
     isv57.clearServoAlarms();
     isv57.readAlarmHistory();
     clearAllServoAlarms_b = false;
+    // read the active alarm right away so the plugin shows the result
+    // without waiting for the next regular poll
+    lastServoAlarmPollMs_u32 = millis() - SERVO_ALARM_POLL_INTERVAL_MS;
   }
 
   if (resetServoRegistersToFactoryValues_b) {

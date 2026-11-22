@@ -675,6 +675,12 @@ namespace DiyFfbPedal.UIFunction
             WriteAllRegistersToServo();
         }
 
+        private void Btn_ClearServoAlarms_Click(object sender, RoutedEventArgs e)
+        {
+            _mainUI?.SendServoClearAlarms(SelectedPedalIndex);
+            TxtStatus.Text = $"Clear alarm command sent to Pedal {SelectedPedalIndex}. If the alarm comes back, check its cause (e.g. power supply) or power-cycle the servo.";
+        }
+
         private void Btn_FlashToServo_Click(object sender, RoutedEventArgs e)
         {
             var res = MessageBox.Show("Save all current live parameters to servo non-volatile memory (NVM)?\nA power-cycle of the servo is required afterwards.",
