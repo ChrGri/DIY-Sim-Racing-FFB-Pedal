@@ -24,12 +24,12 @@ namespace DiyFfbPedal
     //   phase oscillator phase in radians, integrated from the optional frequency
     //         script, so Sin(phase) stays continuous when the frequency changes
     //   pi    3.14159...
-    // Output unit depends on the offset type: N, mm or relative (0.1 = 10 %).
+    // Output unit depends on the offset type: N, degrees pedal angle or relative (0.1 = 10 %).
     public class EffectPipelineEngine
     {
         // limits of a single channel (the pedal limits the sum as well)
         public const double MaxForce_N = 60.0;
-        public const double MaxPosition_mm = 5.0;
+        public const double MaxAngle_deg = 2.0;
         public const double MaxForceRelative = 0.8;
         // highest oscillator frequency; the pedal plays 500 Hz samples, more makes no sense
         public const double MaxFrequency_Hz = 150.0;
@@ -272,7 +272,7 @@ namespace DiyFfbPedal
         private void RecordHistory(int idx, EffectPipelineOffsetType type, uint startIndex, short[] samples)
         {
             double lsb = type == EffectPipelineOffsetType.Force_N ? 0.01
-                : type == EffectPipelineOffsetType.Position_mm ? 0.001 : 0.0001;
+                : type == EffectPipelineOffsetType.Angle_deg ? 0.001 : 0.0001;
             History h = _history[idx];
             h.Type = type;
             for (int i = 0; i < samples.Length; i++)
@@ -295,7 +295,7 @@ namespace DiyFfbPedal
             switch (type)
             {
                 case EffectPipelineOffsetType.Force_N: limit = MaxForce_N; lsb = 0.01; break;
-                case EffectPipelineOffsetType.Position_mm: limit = MaxPosition_mm; lsb = 0.001; break;
+                case EffectPipelineOffsetType.Angle_deg: limit = MaxAngle_deg; lsb = 0.001; break;
                 case EffectPipelineOffsetType.ForceRelative: limit = MaxForceRelative; lsb = 0.0001; break;
                 default: return false;
             }

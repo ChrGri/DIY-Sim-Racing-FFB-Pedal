@@ -28,11 +28,21 @@
 
 // Safety limits of the summed pipeline offsets (the plugin limits as well)
 #define EFFECT_PIPELINE_MAX_FORCE_N_F32 60.0f
-#define EFFECT_PIPELINE_MAX_POSITION_MM_F32 5.0f
+#define EFFECT_PIPELINE_MAX_ANGLE_DEG_F32 2.0f
+// the angle offset is converted to sled travel; this is the hard limit of the result
+#define EFFECT_PIPELINE_MAX_SLED_MM_F32 5.0f
 #define EFFECT_PIPELINE_MAX_FORCE_RELATIVE_F32 0.8f
 
 class EffectPipeline_t {
 public:
+  // true if a channel carries angle offsets (the geometry is only computed then)
+  bool hasAngleChannel() const {
+    for (uint8_t c = 0; c < EFFECT_PIPELINE_CHANNELS_U8; c++) {
+      if (channels_[c].offsetType_u8 == EFFECT_PIPELINE_OFFSET_ANGLE_U8) return true;
+    }
+    return false;
+  }
+
   // Called from the communication tasks (serial / ESP-NOW RX).
   void receive(const PayloadEffectPipeline_t &pkt) {
     if (pkt.channel_u8 >= EFFECT_PIPELINE_CHANNELS_U8) return;
@@ -69,7 +79,9 @@ public:
   // Called from the pedal task. Adds the pipeline offsets to the effect sums:
   // effectForce_kg (same sign as the foot force: + makes the pedal lighter) and
   // effectPos_steps (+ = deeper into the travel, like the built-in effects).
-  void addOffsets(float measuredForce_kg, float stepsPerMm,
+  // sledMmPerDeg: local sled travel per degree pedal angle at the current position
+  // (from the pedal geometry), converts the angle offsets into sled travel.
+  void addOffsets(float measuredForce_kg, float stepsPerMm, float sledMmPerDeg,
                   float &effectForce_kg, float &effectPos_steps) {
     int64_t nowUs = esp_timer_get_time();
     float dt_s = (lastUpdateUs_ > 0) ? (float)(nowUs - lastUpdateUs_) * 1e-6f : 0.0f;
@@ -77,7 +89,7 @@ public:
     if (dt_s > 0.1f) dt_s = 0.1f;
 
     float force_N = 0.0f;
-    float position_mm = 0.0f;
+    float angle_deg = 0.0f;
     float forceRelative = 0.0f;
 
     portENTER_CRITICAL(&mux_);
@@ -125,8 +137,8 @@ public:
       case EFFECT_PIPELINE_OFFSET_FORCE_U8:
         force_N += ch.output_f32 * 0.01f;
         break;
-      case EFFECT_PIPELINE_OFFSET_POSITION_U8:
-        position_mm += ch.output_f32 * 0.001f;
+      case EFFECT_PIPELINE_OFFSET_ANGLE_U8:
+        angle_deg += ch.output_f32 * 0.001f;
         break;
       case EFFECT_PIPELINE_OFFSET_FORCE_RELATIVE_U8:
         forceRelative += ch.output_f32 * 0.0001f;
@@ -139,24 +151,28 @@ public:
     portEXIT_CRITICAL(&mux_);
 
     force_N = constrain(force_N, -EFFECT_PIPELINE_MAX_FORCE_N_F32, EFFECT_PIPELINE_MAX_FORCE_N_F32);
-    position_mm = constrain(position_mm, -EFFECT_PIPELINE_MAX_POSITION_MM_F32,
-                            EFFECT_PIPELINE_MAX_POSITION_MM_F32);
+    angle_deg = constrain(angle_deg, -EFFECT_PIPELINE_MAX_ANGLE_DEG_F32,
+                          EFFECT_PIPELINE_MAX_ANGLE_DEG_F32);
+    float sled_mm = (sledMmPerDeg > 0.0f && isfinite(sledMmPerDeg)) ? angle_deg * sledMmPerDeg : 0.0f;
+    sled_mm = constrain(sled_mm, -EFFECT_PIPELINE_MAX_SLED_MM_F32, EFFECT_PIPELINE_MAX_SLED_MM_F32);
     forceRelative = constrain(forceRelative, -EFFECT_PIPELINE_MAX_FORCE_RELATIVE_F32,
                               EFFECT_PIPELINE_MAX_FORCE_RELATIVE_F32);
 
     // API sign convention -> internal convention (see the header comment)
     effectForce_kg -= force_N / 9.80665f;
     effectForce_kg -= forceRelative * measuredForce_kg;
-    effectPos_steps -= position_mm * stepsPerMm;
+    effectPos_steps -= sled_mm * stepsPerMm;
 
     lastForce_N_f32 = force_N;
-    lastPosition_mm_f32 = position_mm;
+    lastAngle_deg_f32 = angle_deg;
+    lastSled_mm_f32 = sled_mm;
     lastForceRelative_f32 = forceRelative;
   }
 
   // for debug output
   float lastForce_N_f32 = 0.0f;
-  float lastPosition_mm_f32 = 0.0f;
+  float lastAngle_deg_f32 = 0.0f;
+  float lastSled_mm_f32 = 0.0f;
   float lastForceRelative_f32 = 0.0f;
 
 private:

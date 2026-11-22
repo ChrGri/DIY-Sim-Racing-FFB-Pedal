@@ -12,7 +12,7 @@
 // offsetType_u8
 #define EFFECT_PIPELINE_OFFSET_OFF_U8 0U
 #define EFFECT_PIPELINE_OFFSET_FORCE_U8 1U          // 0.01 N per LSB, + = pedal pushes back harder
-#define EFFECT_PIPELINE_OFFSET_POSITION_U8 2U       // 0.001 mm (sled travel) per LSB, + = towards the driver
+#define EFFECT_PIPELINE_OFFSET_ANGLE_U8 2U          // 0.001 deg pedal angle per LSB, + = towards the driver
 #define EFFECT_PIPELINE_OFFSET_FORCE_RELATIVE_U8 3U // 0.0001 per LSB of the measured pedal force, + = heavier
 
 typedef struct __attribute__((packed)) PayloadEffectPipeline

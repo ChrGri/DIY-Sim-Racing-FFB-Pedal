@@ -26,7 +26,7 @@ namespace DiyFfbPedal
     {
         Off = 0,
         Force_N = 1,          // 0.01 N per LSB, + = pedal pushes back harder
-        Position_mm = 2,      // 0.001 mm sled travel per LSB, + = towards the driver
+        Angle_deg = 2,        // 0.001 deg pedal angle per LSB, + = towards the driver
         ForceRelative = 3,    // 0.0001 per LSB of the measured pedal force, + = heavier
     }
 }

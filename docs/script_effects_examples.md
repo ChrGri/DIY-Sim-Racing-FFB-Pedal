@@ -14,14 +14,16 @@ pedal selected at the top). The **Live plot** button opens a window with the las
 | Field | Meaning |
 |---|---|
 | Enable | channel on/off |
-| Output | what the result means: **Position offset (mm)**, **Force offset (N)** or **Relative force** |
+| Output | what the result means: **Pedal angle offset (deg)**, **Force offset (N)** or **Relative force** |
 | Gain | multiplies the result (0 … 10) |
 | Frequency (Hz) for phase | optional script; drives the `phase` variable (see below) |
 | Script | NCalc formula, evaluated 500 times per second |
 
 Output conventions (same idea as the Simucube API):
 
-- **Position (mm)**: + moves the pedal towards the driver, measured as sled travel. Limit ±5 mm.
+- **Pedal angle (deg)**: + rotates the pedal towards the driver. Limit ±2°, and the resulting sled
+  travel is limited to ±5 mm on the pedal. With the default geometry 1° is about 5 mm sled travel,
+  0.1° about 0.5 mm.
 - **Force (N)**: + makes the pedal push back harder. Limit ±60 N.
 - **Relative force**: share of the force the foot applies right now, `0.1` = 10 % heavier. Limit ±0.8.
 
@@ -52,34 +54,34 @@ Notes:
 - Property names are case sensitive. Check them in SimHub under
   **Available properties** (enable "Show game specific properties" for
   `GameRawData`). Example: it is `ShakeITMotorsV3Plugin`, not `ShakeItMotorsV3Plugin`.
-- Start small (Gain 1, amplitudes below 0.5 mm / 10 N) and raise slowly.
+- Start small (Gain 1, amplitudes below 0.1° / 10 N) and raise slowly.
 
 ## 1. Tests
 
-**Direction check** (Output: Position, game or replay running):
+**Direction check** (Output: Pedal angle, game or replay running):
 
 ```
-1
+0.2
 ```
 
-The pedal should move 1 mm towards you.
+The pedal should rotate 0.2° (about 1 mm sled travel) towards you.
 
 **Fixed 20 Hz vibration**:
 
 ```
-0.3 * Sin(2 * pi * 20 * t)
+0.06 * Sin(2 * pi * 20 * t)
 ```
 
 **Slow sweep 0.5 Hz** (to see it in the live plot):
 
 ```
-2 * Sin(2 * pi * 0.5 * t)
+0.4 * Sin(0.4 * pi * 0.5 * t)
 ```
 
 ## 2. Engine
 
 **Physics-based engine vibration**: crank frequency (RPM / 60), stronger with throttle.
-Output: Position.
+Output: Pedal angle.
 
 Frequency:
 ```
@@ -87,7 +89,7 @@ Frequency:
 ```
 Script:
 ```
-0.02 * (0.3 + 0.7 * [DataCorePlugin.GameData.Throttle] / 100) * Sin(phase)
+0.004 * (0.3 + 0.7 * [DataCorePlugin.GameData.Throttle] / 100) * Sin(phase)
 ```
 
 **Engine with firing frequency** of a 4-cylinder 4-stroke (2 ignitions per
@@ -99,7 +101,7 @@ Min([DataCorePlugin.GameData.Rpms] / 60 * 2, 120)
 ```
 Script:
 ```
-0.015 * Sin(phase)
+0.003 * Sin(phase)
 ```
 
 **Engine only near the shift point** (last 15 % before max RPM):
@@ -110,33 +112,33 @@ Frequency:
 ```
 Script:
 ```
-0.04 * Max(0, ([DataCorePlugin.GameData.Rpms] / [DataCorePlugin.GameData.MaxRpm] - 0.85) / 0.15) * Sin(phase)
+0.008 * Max(0, ([DataCorePlugin.GameData.Rpms] / [DataCorePlugin.GameData.MaxRpm] - 0.85) / 0.15) * Sin(phase)
 ```
 
 **Rev limiter / redline pulse** (rough 8 Hz knock while the redline is reached):
 
 ```
-if([DataCorePlugin.GameData.CarSettings_RPMRedLineReached] > 0, 0.25 * Sign(Sin(2 * pi * 8 * t)), 0)
+if([DataCorePlugin.GameData.CarSettings_RPMRedLineReached] > 0, 0.05 * Sign(Sin(2 * pi * 8 * t)), 0)
 ```
 
 **iRacing: shift light** (raw telemetry, `ShiftIndicatorPct` 0 … 1):
 
 ```
-if([DataCorePlugin.GameRawData.Telemetry.ShiftIndicatorPct] > 0.9, 0.2 * Sin(2 * pi * 30 * t), 0)
+if([DataCorePlugin.GameRawData.Telemetry.ShiftIndicatorPct] > 0.9, 0.04 * Sin(2 * pi * 30 * t), 0)
 ```
 
 ## 3. Brake
 
-**ABS, strength follows the brake pressure** (Output: Position):
+**ABS, strength follows the brake pressure** (Output: Pedal angle):
 
 ```
-if([DataCorePlugin.GameData.ABSActive] > 0, 0.4 * [DataCorePlugin.GameData.Brake] / 100 * Sin(2 * pi * 25 * t), 0)
+if([DataCorePlugin.GameData.ABSActive] > 0, 0.08 * [DataCorePlugin.GameData.Brake] / 100 * Sin(2 * pi * 25 * t), 0)
 ```
 
 **ABS as a square-wave knock** (more like a real ABS valve):
 
 ```
-if([DataCorePlugin.GameData.ABSActive] > 0, 0.3 * Sign(Sin(2 * pi * 12 * t)), 0)
+if([DataCorePlugin.GameData.ABSActive] > 0, 0.06 * Sign(Sin(2 * pi * 12 * t)), 0)
 ```
 
 **Weight transfer: brake gets heavier with deceleration** (Output: Relative force).
@@ -162,7 +164,7 @@ prev + 0.02 * (Max(0, -[DataCorePlugin.GameData.AccelerationSurge]) * 0.05 - pre
 **iRacing: ABS from raw telemetry**:
 
 ```
-if([DataCorePlugin.GameRawData.Telemetry.BrakeABSactive] > 0, 0.4 * Sin(2 * pi * 25 * t), 0)
+if([DataCorePlugin.GameRawData.Telemetry.BrakeABSactive] > 0, 0.08 * Sin(2 * pi * 25 * t), 0)
 ```
 
 ## 4. Wheel slip and lock
@@ -171,19 +173,19 @@ if([DataCorePlugin.GameRawData.Telemetry.BrakeABSactive] > 0, 0.4 * Sin(2 * pi *
 in ShakeIt Motors; the export is 0 … 100):
 
 ```
-[ShakeITMotorsV3Plugin.Export.wheelsliplock.All] / 100 * 0.3 * Sin(2 * pi * 30 * t)
+[ShakeITMotorsV3Plugin.Export.wheelsliplock.All] / 100 * 0.06 * Sin(2 * pi * 30 * t)
 ```
 
 **Wheel slip from this plugin's own wheel slip detection**:
 
 ```
-[DIY_FFB_Pedal.WheelSlipEffectReading] / 100 * 0.3 * Sin(2 * pi * 35 * t)
+[DIY_FFB_Pedal.WheelSlipEffectReading] / 100 * 0.06 * Sin(2 * pi * 35 * t)
 ```
 
 **Traction control on the throttle**:
 
 ```
-if([DataCorePlugin.GameData.TCActive] > 0, 0.25 * Sin(2 * pi * 20 * t), 0)
+if([DataCorePlugin.GameData.TCActive] > 0, 0.05 * Sin(2 * pi * 20 * t), 0)
 ```
 
 ## 5. Road and kerbs
@@ -197,19 +199,19 @@ Min(Max([DataCorePlugin.GameRawData.Telemetry.TireLF_RumblePitch], [DataCorePlug
 ```
 Script:
 ```
-if(Max([DataCorePlugin.GameRawData.Telemetry.TireLF_RumblePitch], [DataCorePlugin.GameRawData.Telemetry.TireRF_RumblePitch]) > 0, 0.3 * Sin(phase), 0)
+if(Max([DataCorePlugin.GameRawData.Telemetry.TireLF_RumblePitch], [DataCorePlugin.GameRawData.Telemetry.TireRF_RumblePitch]) > 0, 0.06 * Sin(phase), 0)
 ```
 
 **iRacing: bumps from the suspension speed** (front left shock velocity in m/s):
 
 ```
-Max(-1, Min(1, [DataCorePlugin.GameRawData.Telemetry.LFshockVel] * 2))
+Max(-0.2, Min(0.2, [DataCorePlugin.GameRawData.Telemetry.LFshockVel] * 0.4))
 ```
 
 **Vertical hits** (any game, heave acceleration, check the unit in your game):
 
 ```
-Max(-1.5, Min(1.5, [DataCorePlugin.GameData.AccelerationHeave] * 0.1))
+Max(-0.3, Min(0.3, [DataCorePlugin.GameData.AccelerationHeave] * 0.02))
 ```
 
 ## 6. Chassis and wheel
@@ -231,14 +233,14 @@ Abs([DataCorePlugin.GameData.AccelerationSway]) * 0.02
 **Pit lane: soft reminder pulse every second**:
 
 ```
-if([DataCorePlugin.GameData.IsInPitLane] > 0, if((t % 1) < 0.05, 0.5, 0), 0)
+if([DataCorePlugin.GameData.IsInPitLane] > 0, if((t % 1) < 0.05, 0.1, 0), 0)
 ```
 
 ## 7. Combining
 
 Two channels per pedal are summed. A typical brake setup:
 
-- SCRIPT1 (Position): ABS from section 3
+- SCRIPT1 (Pedal angle): ABS from section 3
 - SCRIPT2 (Relative force): weight transfer from section 3
 
 Everything is summed with the built-in effects (ABS/TC, RPM, G-force, …). If you

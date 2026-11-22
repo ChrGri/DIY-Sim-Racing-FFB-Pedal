@@ -10,7 +10,7 @@ using System.Windows.Threading;
 namespace DiyFfbPedal.UIFunction
 {
     // Live plot of the effect pipeline offsets of the last 5 s, one subplot per
-    // output type (position, force, relative force), one line per pedal channel.
+    // output type (pedal angle, force, relative force), one line per pedal channel.
     public class EffectPipelinePlotWindow : Window
     {
         private static EffectPipelinePlotWindow _instance;
@@ -64,7 +64,7 @@ namespace DiyFfbPedal.UIFunction
             Background = new SolidColorBrush(Color.FromRgb(0x25, 0x25, 0x25));
 
             var grid = new Grid { Margin = new Thickness(8) };
-            AddSubplot(grid, EffectPipelineOffsetType.Position_mm, "Position offset", "mm", 0.1);
+            AddSubplot(grid, EffectPipelineOffsetType.Angle_deg, "Pedal angle offset", "deg", 0.05);
             AddSubplot(grid, EffectPipelineOffsetType.Force_N, "Force offset", "N", 1.0);
             AddSubplot(grid, EffectPipelineOffsetType.ForceRelative, "Relative force", "", 0.05);
 

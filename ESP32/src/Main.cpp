@@ -2693,8 +2693,19 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
               (float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st
                   .spindlePitch_mmPerRev_u8;
         }
+        // local sled travel per degree pedal angle (central difference, +-0.5 mm)
+        float sledMmPerDeg_fl32 = 0.0f;
+        if (g_effectPipeline_st.hasAngleChannel()) {
+          float degPerMm_fl32 = fabsf(
+              pedalInclineAngleDeg(sledPosition + 0.5f,
+                                   &dap_config_pedalUpdateTask_st) -
+              pedalInclineAngleDeg(sledPosition - 0.5f,
+                                   &dap_config_pedalUpdateTask_st));
+          if (degPerMm_fl32 > 0.01f) sledMmPerDeg_fl32 = 1.0f / degPerMm_fl32;
+        }
         g_effectPipeline_st.addOffsets(filteredReading, stepsPerMm_fl32,
-                                       effect_force_fl32, effect_pos_fl32);
+                                       sledMmPerDeg_fl32, effect_force_fl32,
+                                       effect_pos_fl32);
       }
       // effect_pos_fl32 *= EFFECT_POSITION_SCALING_FACTOR_FL32;
       // write the effect offsets into a struct for debug output and potential

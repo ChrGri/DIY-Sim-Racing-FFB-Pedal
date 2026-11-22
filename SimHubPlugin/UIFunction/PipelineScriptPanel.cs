@@ -30,8 +30,8 @@ namespace DiyFfbPedal.UIFunction
         private static readonly string HelpText =
             "Variables: t (time in s), dt (0.002 s), prev (last value), phase (radians, from the frequency field), pi, and every SimHub property, " +
             "e.g. [DataCorePlugin.GameData.Rpms]. Functions: Sin, Cos, Abs, Min, Max, Pow, Sqrt, if(cond, a, b).\n" +
-            "Example (engine, position): frequency [DataCorePlugin.GameData.Rpms] / 60, script 0.02 * [DataCorePlugin.GameData.Throttle] / 100 * Sin(phase)\n" +
-            "Example (ABS, position): if([DataCorePlugin.GameData.ABSActive] > 0, 0.3 * Sin(2 * pi * 25 * t), 0)";
+            "Example (engine, angle): frequency [DataCorePlugin.GameData.Rpms] / 60, script 0.004 * [DataCorePlugin.GameData.Throttle] / 100 * Sin(phase)\n" +
+            "Example (ABS, angle): if([DataCorePlugin.GameData.ABSActive] > 0, 0.06 * Sin(2 * pi * 25 * t), 0)";
 
         private const string ExamplesUrl =
             "https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/blob/develop/docs/script_effects_examples.md";
@@ -57,7 +57,7 @@ namespace DiyFfbPedal.UIFunction
             var options = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
             options.Children.Add(new TextBlock { Text = "Output:", VerticalAlignment = VerticalAlignment.Center, Width = 50 });
             _type = new ComboBox { Width = 170, Height = 22 };
-            _type.Items.Add(new ComboBoxItem { Content = "Position offset (mm)", Tag = EffectPipelineOffsetType.Position_mm });
+            _type.Items.Add(new ComboBoxItem { Content = "Pedal angle offset (deg)", Tag = EffectPipelineOffsetType.Angle_deg });
             _type.Items.Add(new ComboBoxItem { Content = "Force offset (N)", Tag = EffectPipelineOffsetType.Force_N });
             _type.Items.Add(new ComboBoxItem { Content = "Relative force (0.1 = +10 %)", Tag = EffectPipelineOffsetType.ForceRelative });
             _type.SelectionChanged += (s, e) => Store();
