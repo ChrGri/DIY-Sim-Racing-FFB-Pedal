@@ -157,6 +157,26 @@
                     </StackPanel>
                 </Border>
             </TabItem>
+            <TabItem Width="120" Height="30" Padding="0,0,0,0" Margin="0,0,0,0" VerticalContentAlignment="Center">
+                <TabItem.Header >
+                    <Border  Width="120" Height="30" Margin="0,0,0,0" >
+                        <Label Content="SCRIPT1"  FontFamily="Arial Black" FontSize="12" Height="30" Width="120" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
+                    </Border>
+                </TabItem.Header>
+                <Border Style="{StaticResource Card}" Margin="0" Padding="0,0,0,6" Height="240" Width="525">
+                    <local:PipelineScriptPanel x:Name="PipelineScript1" Channel="0" Width="510"/>
+                </Border>
+            </TabItem>
+            <TabItem Width="120" Height="30" Padding="0,0,0,0" Margin="0,0,0,0" VerticalContentAlignment="Center">
+                <TabItem.Header >
+                    <Border  Width="120" Height="30" Margin="0,0,0,0" >
+                        <Label Content="SCRIPT2"  FontFamily="Arial Black" FontSize="12" Height="30" Width="120" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"  />
+                    </Border>
+                </TabItem.Header>
+                <Border Style="{StaticResource Card}" Margin="0" Padding="0,0,0,6" Height="240" Width="525">
+                    <local:PipelineScriptPanel x:Name="PipelineScript2" Channel="1" Width="510"/>
+                </Border>
+            </TabItem>
         </TabControl>
         
     </Grid>

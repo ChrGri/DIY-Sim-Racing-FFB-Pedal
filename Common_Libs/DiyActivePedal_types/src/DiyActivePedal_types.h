@@ -20,6 +20,7 @@
 #include "PayloadServoConfig.h"
 #include "PayloadWifiChannel.h"
 #include "PayloadMacAddresses.h"
+#include "PayloadEffectPipeline.h"
 
 // define the payload revision
 typedef struct __attribute__((packed)) DapActions
@@ -89,6 +90,13 @@ typedef struct __attribute__((packed)) DapAssignmentBroadcast
   PayloadAssignmentRequest_t payloadAssignmentRequest_st;
   PayloadFooter_t payloadFooter_st;
 } DapAssignmentBroadcast_t;
+
+typedef struct __attribute__((packed)) DapEffectPipeline
+{
+  PayloadHeader_t payloadHeader_st;
+  PayloadEffectPipeline_t payloadEffectPipeline_st;
+  PayloadFooter_t payloadFooter_st;
+} DapEffectPipeline_t;
 
 typedef struct __attribute__((packed)) DapRudder
 {

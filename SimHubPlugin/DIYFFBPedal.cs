@@ -102,6 +102,8 @@ namespace DiyFfbPedal
         public ProfileService ProfileServicePlugin;
         public ConfigListService ConfigService;
         public HidDeviceController BridgeHidService;
+        // user effect scripts streamed as offset samples to the pedals
+        public EffectPipelineEngine EffectPipelines;
         public string currentGame= null;
         public bool[] IsGetConfigSendRequest = new bool[3] { false, false, false };
         public DAP_config_st[] BufferConfig_st = new DAP_config_st[3] { new DAP_config_st(), new DAP_config_st(), new DAP_config_st() };
@@ -939,6 +941,10 @@ namespace DiyFfbPedal
                     
                 }
 
+                // offset samples from the user effect scripts (effect pipelines)
+                EffectPipelines?.Update(pluginManager,
+                    effectTelemetryActive && !data.GamePaused && !data.GameInMenu);
+
                 if (((string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame")) == "FlightSimulator2020" || ((string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame")) == "FlightSimulator2024"|| ((string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame")) == "DCS")
                 {
                     if (((string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame")) == "FlightSimulator2020" || ((string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame")) == "FlightSimulator2024")
@@ -1529,6 +1535,7 @@ namespace DiyFfbPedal
 
             pluginHandle = pluginManager;
             _calculations = new CalculationVariables();
+            EffectPipelines = new EffectPipelineEngine(this);
             SimHub.Logging.Current.Info("Starting DIY FFB pedal plugin");
 
             // Load settings

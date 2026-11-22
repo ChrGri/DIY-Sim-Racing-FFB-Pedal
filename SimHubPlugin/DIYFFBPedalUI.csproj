@@ -235,6 +235,9 @@
       <DependentUpon>SliderWithLabel.xaml</DependentUpon>
     </Compile>
     <Compile Include="UIFunction\ServoLedIndicator.cs" />
+    <Compile Include="PluginCallback\EffectPipelineEngine.cs" />
+    <Compile Include="UIFunction\PipelineScriptPanel.cs" />
+    <Compile Include="VariablesStruct\DAP_effect_pipeline_st.cs" />
     <Compile Include="UIFunction\HomeDashboard.xaml.cs">
       <DependentUpon>HomeDashboard.xaml</DependentUpon>
     </Compile>

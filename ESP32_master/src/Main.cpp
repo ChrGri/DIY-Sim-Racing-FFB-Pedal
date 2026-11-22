@@ -75,6 +75,22 @@ DAP_servo_config_st_t dap_servo_config_st[3];          // packets from host to s
 DAP_servo_config_st_t dap_servo_config_response_st[3]; // packets from servo to host (responses)
 bool update_servo_config[3] = {false, false, false};
 bool send_servo_config_to_host[3] = {false, false, false}; // Muss in ESPNOW_lib.cpp bei RX gesetzt werden
+
+// Effect pipeline samples from the host: only the newest set per pedal and
+// channel is kept, the sets overlap, so an older unsent one is not needed.
+DapEffectPipeline_t dap_effect_pipeline_st[3][EFFECT_PIPELINE_CHANNELS_U8];
+volatile bool update_effect_pipeline[3][EFFECT_PIPELINE_CHANNELS_U8] = {};
+
+void storeEffectPipelineFromHost(const DapEffectPipeline_t &pkt)
+{
+  uint8_t pedalIdx = pkt.payloadHeader_st.pedalTag_u8;
+  uint8_t channel = pkt.payloadEffectPipeline_st.channel_u8;
+  if (pedalIdx < 3 && channel < EFFECT_PIPELINE_CHANNELS_U8)
+  {
+    memcpy(&dap_effect_pipeline_st[pedalIdx][channel], &pkt, sizeof(DapEffectPipeline_t));
+    update_effect_pipeline[pedalIdx][channel] = true;
+  }
+}
 bool firstDebugMessage_b = false;
 
 
@@ -649,6 +665,24 @@ void espNowCommunicationTxTask( void * pvParameters )
           }
         }
 
+        // --- Forward effect pipeline samples (streamed, no retry) ---
+        for(int s=0; s<3 && !sentThisCycle; s++)
+        {
+          for(int c=0; c<EFFECT_PIPELINE_CHANNELS_U8 && !sentThisCycle; c++)
+          {
+            if(update_effect_pipeline[s][c])
+            {
+              update_effect_pipeline[s][c] = false;
+              if(dap_bridge_state_st.payloadBridgeState_st.pedalAvailability_au8[s]==1)
+              {
+                DapEffectPipeline_t pkt = dap_effect_pipeline_st[s][c];
+                wirelessComm.sendEffectPipelineToPedal(s, pkt);
+                sentThisCycle = true;
+              }
+            }
+          }
+        }
+
         // --- ADDED: Forward Servo Config to Pedals ---
         for(int s=0; s<3 && !sentThisCycle; s++)
         {
@@ -882,6 +916,8 @@ static inline size_t getExpectedPacketSize(uint8_t payloadType) {
             return sizeof(DapWifiChannel_t);
         case DAP_PAYLOAD_TYPE_MAC_ADDRESSES_U8:
             return sizeof(DapMacAddresses_t);
+        case DAP_PAYLOAD_TYPE_EFFECT_PIPELINE_U8:
+            return sizeof(DapEffectPipeline_t);
         // Add other packet types here in the future
         default:
             return 0;
@@ -1475,6 +1511,25 @@ void serialCommunicationRxTask( void * pvParameters)
               reply.payloadFooter_st.checkSum_u16 = checksumCalculator((uint8_t*)&reply.payloadHeader_st, sizeof(reply.payloadHeader_st) + sizeof(reply.payloadMacAddresses_st));
               Serial.write((char*)&reply, sizeof(DapMacAddresses_t));
             }
+            break;
+          }
+          // effect pipeline samples for one pedal channel
+          case DAP_PAYLOAD_TYPE_EFFECT_PIPELINE_U8:
+          {
+            #ifndef USB_JOYSTICK
+              DapEffectPipeline_t pipeline_local;
+              memcpy(&pipeline_local, packet_start, sizeof(DapEffectPipeline_t));
+              uint16_t crc = checksumCalculator((uint8_t *)(&(pipeline_local.payloadHeader_st)), sizeof(pipeline_local.payloadHeader_st) + sizeof(pipeline_local.payloadEffectPipeline_st));
+              if (pipeline_local.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8 ||
+                  crc != pipeline_local.payloadFooter_st.checkSum_u16)
+              {
+                structIsValid = false;
+              }
+              else
+              {
+                storeEffectPipelineFromHost(pipeline_local);
+              }
+            #endif
             break;
           }
           //case action for servo config

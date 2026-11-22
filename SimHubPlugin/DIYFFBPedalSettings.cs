@@ -50,6 +50,11 @@ namespace DiyFfbPedal
         public bool[] CV4_enable_flag = new bool[3] { false, false, false };
         public int[] CV4_trigger = new int[3] { 0, 0, 0 };
         public string[] CV4_bindings = new string[3] { "", "", "" };
+        // Effect pipeline scripts, index = pedal * 2 + channel (Constants.effectPipelineChannels)
+        public bool[] Pipeline_enable_flag = new bool[6];
+        public byte[] Pipeline_offset_type = new byte[6] { 2, 2, 2, 2, 2, 2 }; // EffectPipelineOffsetType, default position (mm)
+        public double[] Pipeline_gain = new double[6] { 1, 1, 1, 1, 1, 1 };
+        public string[] Pipeline_scripts = new string[6] { "", "", "", "", "", "" };
         public string ESPNow_port = "";
         public bool[] Pedal_ESPNow_Sync_flag = new bool[3] { false, false, false };
         public bool IsBridgeAutoConnect = false;
