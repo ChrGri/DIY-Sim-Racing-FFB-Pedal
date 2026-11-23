@@ -318,3 +318,67 @@ if (car.indexOf('Porsche 911 GT3') >= 0) threshold = 15;   // RWD
 if (car.indexOf('Audi R8') >= 0) threshold = 12;
 return lock > threshold ? 0.06 * Math.sin(2 * pi * 30 * t) : 0;
 ```
+
+## 9. ABS deluxe (JavaScript)
+
+A complete ABS effect for the brake pedal, built only from a script. Switch the
+built-in ABS off when you use it. Output: Pedal angle, Gain 1.
+
+- **Pulse waveform**: a quick kick towards the foot (12 % of the period) and a
+  smooth return, like an ABS pump.
+- **Hold**: the ABS flag is held for 100 ms, so a flickering ABS signal
+  (some games toggle it every frame) still gives a continuous vibration.
+- **Envelope**: 5 ms fade in, 15 ms fade out, no hard start or stop.
+- **Brake pressure**: light braking gives `minShare` of the amplitude, full
+  braking the full amplitude.
+- **Speed**: no ABS below `vStart`, full amplitude from `vFull`, smooth
+  (smoothstep) in between. Speed is filtered (100 ms) and the start has a 3 km/h
+  hysteresis, so it does not flicker near standstill.
+
+```js
+var f = 15;              // ABS frequency in Hz
+var amp = 0.08;          // degrees at full brake and full speed
+var minShare = 0.2;      // share of amp when braking lightly
+var vStart = 8;          // km/h, below: no ABS
+var vFull = 80;          // km/h, above: full amplitude
+
+// hold the ABS flag for 100 ms
+if ($prop('DataCorePlugin.GameData.ABSActive')) root.absUntil = t + 0.1;
+var active = t < root.absUntil;
+
+// envelope: 5 ms fade in, 15 ms fade out
+var env = root.env || 0;
+var target = active ? 1 : 0;
+env += (target - env) * Math.min(1, dt / (target > env ? 0.005 : 0.015));
+root.env = env;
+if (!active && env < 0.001) return 0;
+
+// speed: filtered, hysteresis at the start, smoothstep up to vFull
+var v = $prop('DataCorePlugin.GameData.SpeedKmh') || 0;
+root.v = (root.v === undefined) ? v : root.v + (v - root.v) * dt / 0.1;
+if (root.v > vStart + 3) root.moving = true;
+if (root.v < vStart) root.moving = false;
+var x = root.moving ? Math.min(1, Math.max(0, (root.v - vStart) / (vFull - vStart))) : 0;
+var speedFactor = x * x * (3 - 2 * x);
+
+// brake pressure: linear from minShare to 1
+var brake = ($prop('DataCorePlugin.GameData.Brake') || 0) / 100;
+var pressureFactor = minShare + (1 - minShare) * Math.min(1, Math.max(0, brake));
+
+// pulse: fast rise in the first 12 % of the period, smooth return
+var p = (t * f) % 1;
+var pulse = p < 0.12
+  ? Math.sin(0.5 * pi * p / 0.12)
+  : 0.5 * (1 + Math.cos(pi * (p - 0.12) / 0.88));
+
+return amp * env * speedFactor * pressureFactor * pulse;
+```
+
+The same pulse in NCalc (without hold, envelope and speed scaling):
+
+```
+if([DataCorePlugin.GameData.ABSActive] > 0, 0.08 * (0.2 + 0.8 * [DataCorePlugin.GameData.Brake] / 100) * if((t * 15) % 1 < 0.12, Sin(0.5 * pi * ((t * 15) % 1) / 0.12), 0.5 * (1 + Cos(pi * ((t * 15) % 1 - 0.12) / 0.88))), 0)
+```
+
+Note: at the very end of the travel (pedal pressed into the endstop) effects
+currently lose most of their effect, built-in and scripted alike.
