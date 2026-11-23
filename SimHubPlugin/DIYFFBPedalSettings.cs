@@ -50,7 +50,10 @@ namespace DiyFfbPedal
         public bool[] CV4_enable_flag = new bool[3] { false, false, false };
         public int[] CV4_trigger = new int[3] { 0, 0, 0 };
         public string[] CV4_bindings = new string[3] { "", "", "" };
-        // Effect pipeline scripts, index = pedal * 2 + channel (Constants.effectPipelineChannels)
+        // Effect pipeline script slots (any number per pedal, see PipelineScriptSlot)
+        public System.Collections.Generic.List<PipelineScriptSlot> Pipeline_slots = new System.Collections.Generic.List<PipelineScriptSlot>();
+        public bool Pipeline_slots_migrated = false;
+        // Legacy: two fixed script channels per pedal (index = pedal * 2 + channel), only read once to migrate them into Pipeline_slots
         public bool[] Pipeline_enable_flag = new bool[6];
         public byte[] Pipeline_offset_type = new byte[6] { 2, 2, 2, 2, 2, 2 }; // EffectPipelineOffsetType, default position (mm)
         public double[] Pipeline_gain = new double[6] { 1, 1, 1, 1, 1, 1 };

@@ -20,7 +20,7 @@ namespace DiyFfbPedal
         public const uint servoConfigPayload_type = 170;
         public const uint effectPipelinePayload_type = 240;
         // effect pipelines (PayloadEffectPipeline.h)
-        public const int effectPipelineChannels = 2;
+        public const int effectPipelineChannels = 3; // one channel per offset type (channel = type - 1)
         public const int effectPipelineSamplesPerPacket = 21;
         public const double effectPipelineSamplePeriod_s = 0.002; // 500 Hz
         public const uint bridgeStatePayloadType = 210;

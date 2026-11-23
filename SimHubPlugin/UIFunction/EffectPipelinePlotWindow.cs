@@ -34,9 +34,9 @@ namespace DiyFfbPedal.UIFunction
         private static readonly string[] PedalNames = { "Clutch", "Brake", "Throttle" };
         private static readonly Color[] SeriesColors =
         {
-            Color.FromRgb(0x4F, 0xC3, 0xF7), Color.FromRgb(0x01, 0x57, 0x9B), // clutch ch1/ch2
-            Color.FromRgb(0xEF, 0x53, 0x50), Color.FromRgb(0xFF, 0xA7, 0x26), // brake
-            Color.FromRgb(0x66, 0xBB, 0x6A), Color.FromRgb(0xD4, 0xE1, 0x57), // throttle
+            Color.FromRgb(0x4F, 0xC3, 0xF7), // clutch
+            Color.FromRgb(0xEF, 0x53, 0x50), // brake
+            Color.FromRgb(0x66, 0xBB, 0x6A), // throttle
         };
 
         private class Subplot
@@ -71,13 +71,10 @@ namespace DiyFfbPedal.UIFunction
             var legend = new WrapPanel { Margin = new Thickness(0, 4, 0, 0) };
             for (int pedal = 0; pedal < 3; pedal++)
             {
-                for (int ch = 0; ch < Constants.effectPipelineChannels; ch++)
-                {
-                    var item = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 14, 0) };
-                    item.Children.Add(new Rectangle { Width = 14, Height = 3, Fill = new SolidColorBrush(SeriesColors[pedal * 2 + ch]), VerticalAlignment = VerticalAlignment.Center });
-                    item.Children.Add(new TextBlock { Text = " " + PedalNames[pedal] + " SCRIPT" + (ch + 1), Foreground = Brushes.LightGray, FontSize = 11 });
-                    legend.Children.Add(item);
-                }
+                var item = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 14, 0) };
+                item.Children.Add(new Rectangle { Width = 14, Height = 3, Fill = new SolidColorBrush(SeriesColors[pedal]), VerticalAlignment = VerticalAlignment.Center });
+                item.Children.Add(new TextBlock { Text = " " + PedalNames[pedal] + " (sum of its scripts)", Foreground = Brushes.LightGray, FontSize = 11 });
+                legend.Children.Add(item);
             }
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             Grid.SetRow(legend, 3);
@@ -121,19 +118,18 @@ namespace DiyFfbPedal.UIFunction
 
             for (int pedal = 0; pedal < 3; pedal++)
             {
-                for (int ch = 0; ch < Constants.effectPipelineChannels; ch++)
+                foreach (Subplot sp in _subplots)
                 {
+                    EffectPipelineOffsetType type = sp.Type;
                     var values = new double[_buffer.Length];
-                    EffectPipelineOffsetType type = engine.CopyHistory(pedal, ch, endIndex, values);
-                    Subplot sp = _subplots.Find(x => x.Type == type);
-                    if (sp == null) continue;
+                    engine.CopyHistory(pedal, type, endIndex, values);
                     double m = 0.0;
                     foreach (double v in values) m = Math.Max(m, Math.Abs(v));
                     if (m <= 0.0) continue; // nothing to show for this channel
                     double prev;
                     maxAbs.TryGetValue(type, out prev);
                     maxAbs[type] = Math.Max(prev, m);
-                    series.Add(Tuple.Create(sp, pedal * 2 + ch, values));
+                    series.Add(Tuple.Create(sp, pedal, values));
                 }
             }
 

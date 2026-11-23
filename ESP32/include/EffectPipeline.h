@@ -65,7 +65,12 @@ public:
     lastPacketUs_ = nowUs;
 
     Channel_t &ch = channels_[pkt.channel_u8];
-    ch.offsetType_u8 = pkt.offsetType_u8;
+    if (ch.offsetType_u8 != pkt.offsetType_u8) {
+      // the samples in the buffer have another unit: never play them with the new one
+      for (uint32_t s = 0; s < EFFECT_PIPELINE_RING_SIZE_U32; s++) ch.slotValid_ab[s] = false;
+      ch.output_f32 = 0.0f;
+      ch.offsetType_u8 = pkt.offsetType_u8;
+    }
     for (uint8_t i = 0; i < count; i++) {
       uint32_t idx = pkt.startSampleIndex_u32 + i;
       uint32_t slot = idx & (EFFECT_PIPELINE_RING_SIZE_U32 - 1UL);

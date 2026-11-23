@@ -107,8 +107,7 @@ namespace DiyFfbPedal.UIFunction
                     }
                     if (Plugin != null)
                     {
-                        PipelineScript1.Bind(Plugin);
-                        PipelineScript2.Bind(Plugin);
+                        PipelineScripts.Bind(Plugin);
                     }
                     checkbox_enable_CV4.IsChecked = (Settings.CV4_enable_flag[Settings.table_selected] == true);
                     Slider_CV4_trigger.SliderValue = Settings.CV4_trigger[Settings.table_selected];

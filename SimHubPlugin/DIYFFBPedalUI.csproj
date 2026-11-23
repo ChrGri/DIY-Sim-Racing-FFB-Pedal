@@ -238,6 +238,8 @@
     <Compile Include="PluginCallback\EffectPipelineEngine.cs" />
     <Compile Include="UIFunction\PipelineScriptPanel.cs" />
     <Compile Include="UIFunction\EffectPipelinePlotWindow.cs" />
+    <Compile Include="PluginCallback\PipelineScriptSlot.cs" />
+    <Compile Include="PluginCallback\JintScriptHost.cs" />
     <Compile Include="VariablesStruct\DAP_effect_pipeline_st.cs" />
     <Compile Include="UIFunction\HomeDashboard.xaml.cs">
       <DependentUpon>HomeDashboard.xaml</DependentUpon>

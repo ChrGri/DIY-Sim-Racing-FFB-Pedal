@@ -5,21 +5,29 @@ without a firmware change. The plugin evaluates your script for every sample on 
 500 Hz clock, streams the samples to the pedal and the pedal plays them back on top
 of its force curve and the built-in effects.
 
-Where: **Effects → Custom → SCRIPT1 / SCRIPT2** (two channels per pedal, for the
-pedal selected at the top). The **Live plot** button opens a window with the last
-5 s of every channel.
+Where: **Effects → Custom → SCRIPTS**, for the pedal selected at the top. Each pedal
+can have any number of scripts (**+ New**, **Duplicate**, **Remove**); all enabled
+scripts of a pedal are added up per output type. The **Live plot** button opens a
+window with the last 5 s that were sent to each pedal.
+
+Scripts can be written in **NCalc** (short formulas, sections 1–6) or
+**JavaScript** (variables, steps, state over time, section 8).
 
 ## How a script works
 
 | Field | Meaning |
 |---|---|
-| Enable | channel on/off |
+| Enabled | script on/off |
+| Name | shown in the script list |
+| Language | NCalc or JavaScript |
 | Output | what the result means: **Pedal angle offset (deg)**, **Force offset (N)** or **Relative force** |
 | Gain | multiplies the result (0 … 10) |
 | Frequency (Hz) for phase | optional script; drives the `phase` variable (see below) |
-| Script | NCalc formula, evaluated 500 times per second |
+| Script | NCalc formula or JavaScript function body, evaluated 500 times per second |
 
 Output conventions:
+
+The limits apply to the sum of all scripts of a pedal per output type.
 
 - **Pedal angle (deg)**: + rotates the pedal towards the driver. Limit ±2°, and the resulting sled
   travel is limited to ±5 mm on the pedal. With the default geometry 1° is about 5 mm sled travel,
@@ -238,10 +246,75 @@ if([DataCorePlugin.GameData.IsInPitLane] > 0, if((t % 1) < 0.05, 0.1, 0), 0)
 
 ## 7. Combining
 
-Two channels per pedal are summed. A typical brake setup:
+All enabled scripts of a pedal are summed per output type. A typical brake setup:
 
-- SCRIPT1 (Pedal angle): ABS from section 3
-- SCRIPT2 (Relative force): weight transfer from section 3
+- "ABS" (Pedal angle): ABS from section 3
+- "Lockup" (Pedal angle): wheel lock from section 4
+- "Weight transfer" (Relative force): from section 3
 
 Everything is summed with the built-in effects (ABS/TC, RPM, G-force, …). If you
 rebuild an effect as a script, switch the built-in one off.
+
+## 8. JavaScript
+
+Choose **Language: JavaScript** for logic that NCalc can't do: variables, steps,
+`switch`, strings, arrays and values kept between calls. It runs on the JavaScript
+engine of SimHub (Jint, ECMAScript 5.1), so it works like SimHub's own JavaScript
+formulas:
+
+- The script is the body of a function `function (t, dt, prev, phase)`: end with
+  `return value;`. A single expression without `return` works as well.
+- Properties: `$prop('DataCorePlugin.GameData.Brake')`. Missing properties are
+  `null`, booleans stay `true`/`false`.
+- `root` is an object that keeps its contents between calls, e.g. `root.timer`.
+- `Math.sin`, `Math.abs`, `Math.min`, … and `pi`.
+- The frequency field is JavaScript as well (returns Hz).
+
+JavaScript is slower than NCalc and runs 500 times per second per script. The
+editor shows the cost as **CPU** in ms per second (10 ms/s = 1 % of one CPU core).
+Avoid loops over large data. A call that takes longer than 20 ms is stopped.
+
+**Lockup in steps** (10 % lockup → 30 %, 20 % lockup → 80 % intensity). Output: Pedal angle:
+
+```js
+var lock = $prop('ShakeITMotorsV3Plugin.Export.wheelsliplock.All') || 0;
+var intensity;
+if (lock >= 20) intensity = 0.8;
+else if (lock >= 10) intensity = 0.3;
+else intensity = 0;
+return 0.08 * intensity * Math.sin(2 * pi * 30 * t);
+```
+
+**Hysteresis** (on above 20 %, off only below 10 %, no flicker around the threshold):
+
+```js
+var lock = $prop('ShakeITMotorsV3Plugin.Export.wheelsliplock.All') || 0;
+if (lock > 20) root.on = true;
+if (lock < 10) root.on = false;
+return root.on ? 0.06 * Math.sin(2 * pi * 30 * t) : 0;
+```
+
+**ABS kick that decays** (strong at the start of an ABS phase, weaker after 0.5 s):
+
+```js
+var abs = $prop('DataCorePlugin.GameData.ABSActive');
+if (abs && root.absStart === undefined) root.absStart = t;
+if (!abs) root.absStart = undefined;
+if (root.absStart === undefined) return 0;
+var age = t - root.absStart;
+var strength = 0.04 + 0.08 * Math.exp(-age / 0.5);
+return strength * (Math.sin(2 * pi * 20 * t) > 0 ? 1 : -1);
+```
+
+**One script for different cars** (strings only work in JavaScript): pick the lockup
+threshold by car model. Put the names as SimHub shows them in
+`DataCorePlugin.GameData.CarModel`:
+
+```js
+var car = $prop('DataCorePlugin.GameData.CarModel') || '';
+var lock = $prop('ShakeITMotorsV3Plugin.Export.wheelsliplock.All') || 0;
+var threshold = 10;
+if (car.indexOf('Porsche 911 GT3') >= 0) threshold = 15;   // RWD
+if (car.indexOf('Audi R8') >= 0) threshold = 12;
+return lock > threshold ? 0.06 * Math.sin(2 * pi * 30 * t) : 0;
+```

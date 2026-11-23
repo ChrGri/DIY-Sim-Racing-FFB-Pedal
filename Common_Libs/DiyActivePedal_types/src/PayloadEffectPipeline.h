@@ -5,7 +5,7 @@
 // back by the pedal on its own clock. One packet carries one channel. The plugin
 // sends overlapping sample sets; a newer set overwrites the samples of an older
 // one with the same index. The whole packet fits into a single 64 byte HID report.
-#define EFFECT_PIPELINE_CHANNELS_U8 2U
+#define EFFECT_PIPELINE_CHANNELS_U8 3U // the plugin uses one channel per offset type
 #define EFFECT_PIPELINE_SAMPLES_PER_PACKET_U8 21U
 #define EFFECT_PIPELINE_SAMPLE_PERIOD_US_U32 2000UL // 500 Hz plugin sample clock
 
