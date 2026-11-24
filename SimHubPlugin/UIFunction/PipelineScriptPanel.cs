@@ -31,6 +31,8 @@ namespace DiyFfbPedal.UIFunction
         private readonly TextBlock _live;
         private readonly TextBlock _help;
         private readonly DispatcherTimer _liveTimer;
+        private readonly CheckBox _ack;
+        private readonly StackPanel _slotRow;
         private bool _updating;
         private int _shownPedal = -1;
         private DIYFFBPedalSettings _shownSettings;
@@ -54,6 +56,41 @@ namespace DiyFfbPedal.UIFunction
         public PipelineScriptPanel()
         {
             var root = new StackPanel { Margin = new Thickness(4) };
+
+            // warning: scripts turn the pedal into an active device
+            var warning = new Border
+            {
+                BorderBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0xC1, 0x07)),
+                BorderThickness = new Thickness(1),
+                Padding = new Thickness(4),
+                Margin = new Thickness(0, 0, 0, 6),
+            };
+            var warningRow = new DockPanel();
+            var robot = new PixelDangerRobot { Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Top };
+            DockPanel.SetDock(robot, Dock.Left);
+            warningRow.Children.Add(robot);
+            var warningText = new StackPanel();
+            warningText.Children.Add(new TextBlock
+            {
+                Text = "DANGER: robot mode",
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xC1, 0x07)),
+            });
+            warningText.Children.Add(new TextBlock
+            {
+                Text = "Scripts make the pedal move on its own. It can push your foot and put energy into it instead " +
+                       "of only reacting to it. A wrong sign, unit or typo can mean full force or a hard kick. " +
+                       "Start with small values, test with your foot on the pedal and gain 1, and disable the script at the first surprise.",
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 10,
+            });
+            _ack = new CheckBox { Content = "I understand, let me script", Margin = new Thickness(0, 4, 0, 0), FontSize = 11 };
+            _ack.Checked += (s, e) => StoreAck();
+            _ack.Unchecked += (s, e) => StoreAck();
+            warningText.Children.Add(_ack);
+            warningRow.Children.Add(warningText);
+            warning.Child = warningRow;
+            root.Children.Add(warning);
 
             // slot list
             var slotRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
@@ -81,6 +118,7 @@ namespace DiyFfbPedal.UIFunction
             };
             slotRow.Children.Add(plotButton);
             root.Children.Add(slotRow);
+            _slotRow = slotRow;
 
             _empty = new TextBlock
             {
@@ -178,6 +216,7 @@ namespace DiyFfbPedal.UIFunction
             Unloaded += (s, e) => _liveTimer.Stop();
 
             ShowSlot(null);
+            UpdateAckState();
         }
 
         private static Button SmallButton(string text)
@@ -198,7 +237,26 @@ namespace DiyFfbPedal.UIFunction
             if (Pedal == _shownPedal && ReferenceEquals(_shownSettings, _plugin.Settings)) return;
             _shownPedal = Pedal;
             _shownSettings = _plugin.Settings;
+            _updating = true;
+            _ack.IsChecked = _plugin.Settings.Pipeline_warning_ack;
+            _updating = false;
+            UpdateAckState();
             RefreshList(null);
+        }
+
+        private void StoreAck()
+        {
+            if (_updating || _plugin == null || _plugin.Settings == null) return;
+            _plugin.Settings.Pipeline_warning_ack = _ack.IsChecked == true;
+            UpdateAckState();
+        }
+
+        // without the accepted warning the scripts can't be edited and don't run
+        private void UpdateAckState()
+        {
+            bool ack = _plugin != null && _plugin.Settings != null && _plugin.Settings.Pipeline_warning_ack;
+            _slotRow.IsEnabled = ack;
+            _editor.IsEnabled = ack;
         }
 
         private void RefreshList(PipelineScriptSlot select)

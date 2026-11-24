@@ -53,6 +53,8 @@ namespace DiyFfbPedal
         // Effect pipeline script slots (any number per pedal, see PipelineScriptSlot)
         public System.Collections.Generic.List<PipelineScriptSlot> Pipeline_slots = new System.Collections.Generic.List<PipelineScriptSlot>();
         public bool Pipeline_slots_migrated = false;
+        // the user accepted the warning that scripts move the pedal actively; scripts only run after that
+        public bool Pipeline_warning_ack = false;
         // Legacy: two fixed script channels per pedal (index = pedal * 2 + channel), only read once to migrate them into Pipeline_slots
         public bool[] Pipeline_enable_flag = new bool[6];
         public byte[] Pipeline_offset_type = new byte[6] { 2, 2, 2, 2, 2, 2 }; // EffectPipelineOffsetType, default position (mm)

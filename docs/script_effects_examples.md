@@ -10,6 +10,13 @@ can have any number of scripts (**+ New**, **Duplicate**, **Remove**); all enabl
 scripts of a pedal are added up per output type. The **Live plot** button opens a
 window with the last 5 s that were sent to each pedal.
 
+> **Warning:** with scripts the pedal becomes an active device. Without them it only
+> reacts to your foot; with a script it can move on its own, push your foot and put
+> energy into it. A wrong sign, unit or typo can mean full force or a hard kick. Start
+> with small values and gain 1, test with your foot on the pedal and disable the script
+> at the first surprise. Scripts only run after you ticked *"I understand, let me
+> script"* in the SCRIPTS tab.
+
 Scripts can be written in **NCalc** (short formulas, sections 1–6) or
 **JavaScript** (variables, steps, state over time, section 8).
 

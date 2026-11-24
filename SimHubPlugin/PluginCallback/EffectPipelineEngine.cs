@@ -230,6 +230,8 @@ namespace DiyFfbPedal
         {
             DIYFFBPedalSettings settings = _plugin.Settings;
             if (settings == null || settings.Pipeline_slots == null) return;
+            // scripts move the pedal actively: nothing runs before the user accepted the warning
+            if (!settings.Pipeline_warning_ack) return;
 
             double now_s = _clock.Elapsed.TotalSeconds;
             if (_lastSend_s >= 0.0 && (now_s - _lastSend_s) < MinSendInterval_s) return;
