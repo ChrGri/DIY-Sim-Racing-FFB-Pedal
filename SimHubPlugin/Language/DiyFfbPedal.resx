@@ -909,4 +909,52 @@ Example (lockup steps): var l = $prop('ShakeITMotorsV3Plugin.Export.wheelsliploc
   <data name="DIYFFBPedalPlugin_TabTextScripts" xml:space="preserve">
     <value>Scripts</value>
   </data>
+  <data name="DIYFFBPedalPlugin_TextScriptTest" xml:space="preserve">
+    <value>Test</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptTestTooltip" xml:space="preserve">
+    <value>Try the effects without a game: simulated values and scenarios</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextTestTitle" xml:space="preserve">
+    <value>Script effects - test values</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextTestNote" xml:space="preserve">
+    <value>The scripts run without a game and see these values instead of the real ones (only the scripts, SimHub itself is not changed). Pedal force and travel stay real. The test mode switches off after 60 s without input, when this window is closed, and as soon as a game sends data.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextTestScenarios" xml:space="preserve">
+    <value>Scenarios (played in a loop):</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextTestStopScenario" xml:space="preserve">
+    <value>Stop scenario</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextTestValues" xml:space="preserve">
+    <value>Values read by the scripts of the selected pedal:</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextTestNoValues" xml:space="preserve">
+    <value>The enabled scripts of this pedal and the selected script read no SimHub property.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextTestStop" xml:space="preserve">
+    <value>Stop test</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextTestStart" xml:space="preserve">
+    <value>Start test</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextTestOff" xml:space="preserve">
+    <value>Test mode off</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextTestOn" xml:space="preserve">
+    <value>Test mode on - switches off in {0} s</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextTestScenarioBraking" xml:space="preserve">
+    <value>Full braking with ABS</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextTestScenarioRevUp" xml:space="preserve">
+    <value>Rev up through the gears</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextTestScenarioKerbs" xml:space="preserve">
+    <value>Kerbs and bumps</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextTestScenarioWheelSpin" xml:space="preserve">
+    <value>Wheel spin and TC</value>
+  </data>
 </root>

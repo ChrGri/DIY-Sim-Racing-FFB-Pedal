@@ -78,6 +78,23 @@ Notes:
   search `diy_ffb_pedal` (see section 10). Example: it is `ShakeITMotorsV3Plugin`, not `ShakeItMotorsV3Plugin`.
 - Start small (Gain 1, amplitudes below 0.1° / 10 N) and raise slowly.
 
+## Testing without a game
+
+The **Test** button opens the test values window:
+
+- **Start test** runs the scripts without a game. Instead of the real SimHub
+  properties they see the values set in this window (only the scripts; SimHub
+  itself and other plugins are not changed). Pedal force and travel stay real.
+- For every property that the enabled scripts of the selected pedal (and the
+  script in the editor) read there is a slider or a checkbox.
+- **Scenarios** play a short loop of values: full braking with ABS, rev up through
+  the gears, kerbs and bumps, wheel spin and TC.
+- **Live plot** shows what is sent to the pedal.
+- The test mode switches off after 60 s without input, when the window is closed,
+  and as soon as a game sends data.
+
+A SimHub replay of a recorded session works as well (Replay mode in SimHub).
+
 ## 1. Tests
 
 **Direction check** (Output: Pedal angle, game or replay running):

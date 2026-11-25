@@ -242,6 +242,8 @@
     <Compile Include="UIFunction\EffectLibraryWindow.cs" />
     <Compile Include="PluginCallback\EffectLibrary.cs" />
     <Compile Include="PluginCallback\Loc.cs" />
+    <Compile Include="PluginCallback\EffectTestScenarios.cs" />
+    <Compile Include="UIFunction\EffectTestWindow.cs" />
     <Compile Include="PluginCallback\PipelineScriptSlot.cs" />
     <Compile Include="PluginCallback\JintScriptHost.cs" />
     <Compile Include="VariablesStruct\DAP_effect_pipeline_st.cs" />

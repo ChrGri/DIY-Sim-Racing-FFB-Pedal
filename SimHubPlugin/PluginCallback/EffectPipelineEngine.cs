@@ -113,6 +113,141 @@ namespace DiyFfbPedal
                  : EffectPipelineOffsetType.ForceRelative;
         }
 
+        // ---- test mode: simulated property values instead of a game ----
+        // Scripts run without a game and see the override values instead of the real
+        // properties (only the scripts, SimHub itself is not changed). The pedal values
+        // (force, travel) stay real. Ends by itself after TestTimeout_s without input,
+        // and as soon as a game sends telemetry.
+
+        public const double TestTimeout_s = 60.0;
+        private bool _testActive;
+        private double _testLastTouch_s;
+        private readonly Dictionary<string, object> _overrides = new Dictionary<string, object>();
+        private EffectTestScenario _scenario;
+        private double _scenarioStart_s;
+        private System.Threading.Timer _testTimer;
+
+        public bool TestActive { get { lock (_sync) return _testActive; } }
+
+        public string ScenarioName { get { lock (_sync) return _scenario != null ? _scenario.LocalName : null; } }
+
+        // seconds until the test mode switches itself off
+        public double TestRemaining_s
+        {
+            get { lock (_sync) return _testActive ? Math.Max(0.0, TestTimeout_s - (_clock.Elapsed.TotalSeconds - _testLastTouch_s)) : 0.0; }
+        }
+
+        // SimHub properties a script reads: [Name] (NCalc), $prop('Name') and quoted
+        // property names (JavaScript). Pedal values of this plugin are left out, they stay real.
+        public static List<string> FindProperties(PipelineScriptSlot slot)
+        {
+            var found = new List<string>();
+            if (slot == null) return found;
+            string text = (slot.Script ?? "") + "\n" + (slot.FreqScript ?? "");
+            var patterns = slot.Language == PipelineScriptLanguage.JavaScript
+                ? new[] { @"\$prop\(\s*['""]([^'""]+)['""]\s*\)", @"['""]([A-Za-z]\w*Plugin\.[\w\.\-]+)['""]" }
+                : new[] { @"\[([A-Za-z_][\w\.\-]*)\]" };
+            foreach (string pattern in patterns)
+            {
+                foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(text, pattern))
+                {
+                    string name = m.Groups[1].Value;
+                    if (name.StartsWith("DIY_FFB_Pedal.PedalStatus.")) continue;
+                    if (!found.Contains(name)) found.Add(name);
+                }
+            }
+            return found;
+        }
+
+        public void StartTest()
+        {
+            lock (_sync)
+            {
+                _testLastTouch_s = _clock.Elapsed.TotalSeconds;
+                if (_testActive) return;
+                _testActive = true;
+                // without a game DataUpdate does not drive the engine: own ~60 Hz clock
+                _testTimer = new System.Threading.Timer(_ => TestTick(), null, 0, 16);
+            }
+        }
+
+        public void StopTest()
+        {
+            lock (_sync)
+            {
+                _testActive = false;
+                _scenario = null;
+                if (_testTimer != null)
+                {
+                    _testTimer.Dispose();
+                    _testTimer = null;
+                }
+                foreach (SlotState st in _states.Values)
+                {
+                    st.LastOutput = 0.0;
+                    st.Prev = 0.0;
+                }
+            }
+        }
+
+        // user input in the test window, restarts the timeout
+        public void TouchTest()
+        {
+            lock (_sync) _testLastTouch_s = _clock.Elapsed.TotalSeconds;
+        }
+
+        public void SetOverride(string name, object value)
+        {
+            lock (_sync)
+            {
+                _overrides[name] = value;
+                _testLastTouch_s = _clock.Elapsed.TotalSeconds;
+            }
+        }
+
+        public object GetOverride(string name)
+        {
+            lock (_sync)
+            {
+                object value;
+                return _overrides.TryGetValue(name, out value) ? value : null;
+            }
+        }
+
+        public void ClearOverrides()
+        {
+            lock (_sync) _overrides.Clear();
+        }
+
+        public void StartScenario(EffectTestScenario scenario)
+        {
+            lock (_sync)
+            {
+                _scenario = scenario;
+                _scenarioStart_s = _clock.Elapsed.TotalSeconds;
+                _testLastTouch_s = _scenarioStart_s;
+            }
+            StartTest();
+        }
+
+        public void StopScenario()
+        {
+            lock (_sync) _scenario = null;
+        }
+
+        private void TestTick()
+        {
+            try
+            {
+                PluginManager pm = _plugin.PluginManager;
+                if (pm != null) Update(pm, false, true);
+            }
+            catch (Exception ex)
+            {
+                SimHub.Logging.Current.Error("Script effects test mode: " + ex.Message);
+            }
+        }
+
         // ---- slot list, changed from the UI ----
 
         // template null: empty script; keepName: from the effect library (else: "... copy")
@@ -218,13 +353,36 @@ namespace DiyFfbPedal
 
         // ---- streaming ----
 
-        // Called from DataUpdate.
+        // Called from DataUpdate (and from the test mode clock).
         public void Update(PluginManager pluginManager, bool gameRunning)
         {
+            Update(pluginManager, gameRunning, false);
+        }
+
+        private void Update(PluginManager pluginManager, bool gameRunning, bool fromTestClock)
+        {
+            bool stopTest = false;
             lock (_sync)
             {
-                UpdateLocked(pluginManager, gameRunning);
+                if (_testActive)
+                {
+                    double now_s = _clock.Elapsed.TotalSeconds;
+                    // a running game has priority; no input for a while: switch off
+                    if (gameRunning || now_s - _testLastTouch_s > TestTimeout_s) stopTest = true;
+                    else if (_scenario != null)
+                    {
+                        double t = (now_s - _scenarioStart_s) % _scenario.Duration_s;
+                        _scenario.Values(t, _overrides);
+                    }
+                }
+                if (!stopTest)
+                {
+                    if (_testActive) gameRunning = true;
+                    else if (fromTestClock) return;
+                    UpdateLocked(pluginManager, gameRunning);
+                }
             }
+            if (stopTest) StopTest();
         }
 
         private void UpdateLocked(PluginManager pluginManager, bool gameRunning)
@@ -432,6 +590,7 @@ namespace DiyFfbPedal
         {
             if (name == null) return null;
             object value;
+            if (_testActive && _overrides.TryGetValue(name, out value)) return value;
             if (!_propertyCache.TryGetValue(name, out value))
             {
                 value = _pluginManager != null ? _pluginManager.GetPropertyValue(name) : null;

@@ -68,19 +68,6 @@ namespace DiyFfbPedal.UIFunction
             DockPanel.SetDock(robot, Dock.Left);
             warningRow.Children.Add(robot);
 
-            // bubble tail pointing at the robot's mouth
-            var tail = new System.Windows.Shapes.Polygon
-            {
-                Points = new PointCollection { new Point(0, 12), new Point(12, 4), new Point(12, 20) },
-                Fill = bubbleBackground,
-                Stroke = yellow,
-                StrokeThickness = 1,
-                VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(2, 20, -1, 0),
-            };
-            DockPanel.SetDock(tail, Dock.Left);
-            warningRow.Children.Add(tail);
-
             var bubble = new Border
             {
                 BorderBrush = yellow,
@@ -114,13 +101,38 @@ namespace DiyFfbPedal.UIFunction
             _ack.Unchecked += (s, e) => StoreAck();
             warningText.Children.Add(_ack);
             bubble.Child = warningText;
-            warningRow.Children.Add(bubble);
+
+            // bubble with a tail pointing at the robot's mouth. The tail lies on top of the
+            // bubble's left border and covers it, so the bubble and tail form one outline.
+            var bubbleHost = new Grid { Margin = new Thickness(12, 0, 0, 0) };
+            bubbleHost.Children.Add(bubble);
+            var tail = new Canvas
+            {
+                Width = 14,
+                Height = 18,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(-12, 20, 0, 0),
+            };
+            tail.Children.Add(new System.Windows.Shapes.Polygon
+            {
+                Points = new PointCollection { new Point(0, 9), new Point(14, 1), new Point(14, 17) },
+                Fill = bubbleBackground,
+            });
+            tail.Children.Add(new System.Windows.Shapes.Polyline
+            {
+                Points = new PointCollection { new Point(12.5, 1), new Point(0.5, 9), new Point(12.5, 17) },
+                Stroke = yellow,
+                StrokeThickness = 1,
+            });
+            bubbleHost.Children.Add(tail);
+            warningRow.Children.Add(bubbleHost);
             root.Children.Add(warningRow);
 
             // slot list
             var slotRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
             slotRow.Children.Add(new TextBlock { Text = Loc.T("TextScriptSlot", "Script:"), VerticalAlignment = VerticalAlignment.Center, Width = 50 });
-            _slotList = new ComboBox { Width = 180, Height = 22 };
+            _slotList = new ComboBox { Width = 140, Height = 22 };
             _slotList.SelectionChanged += (s, e) =>
             {
                 if (_updating) return;
@@ -147,6 +159,13 @@ namespace DiyFfbPedal.UIFunction
             _remove = SmallButton(Loc.T("TextScriptRemove", "Remove"));
             _remove.Click += (s, e) => RemoveSlot();
             slotRow.Children.Add(_remove);
+            var testButton = SmallButton(Loc.T("TextScriptTest", "Test"));
+            testButton.ToolTip = Loc.T("TextScriptTestTooltip", "Try the effects without a game: simulated values and scenarios");
+            testButton.Click += (s, e) =>
+            {
+                if (_plugin != null) EffectTestWindow.ShowFor(_plugin, Window.GetWindow(this), () => _slot);
+            };
+            slotRow.Children.Add(testButton);
             var plotButton = SmallButton(Loc.T("TextScriptLivePlot", "Live plot"));
             plotButton.Click += (s, e) =>
             {
