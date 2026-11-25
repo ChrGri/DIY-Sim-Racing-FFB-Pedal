@@ -450,14 +450,6 @@
                                         </TabControl.Resources>
 
 
-                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
-                                            <TabItem.Header>
-                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Scripts"  FontFamily="Arial Black" FontSize="10" Height="30" Width="81" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip="Scripted effects (ABS, engine, wheel slip, ... from the effect library or your own)"  />
-                                                </Border>
-                                            </TabItem.Header>
-                                            <localFunction:PipelineScriptPanel x:Name="ScriptEffects_Panel" Width="640" Height="238" HorizontalAlignment="Left"/>
-                                        </TabItem>
 
                                         <TabItem Width="81" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
@@ -474,6 +466,16 @@
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:EffectsTab_BitePoint x:Name="EffectsBitePoint_Tab" ConfigChanged="Tab_ConfigChanged" CalculationChanged="Tab_CalculationChanged"/>
+                                        </TabItem>
+                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
+                                            <TabItem.Header>
+                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="Scripts"  FontFamily="Arial Black" FontSize="10" Height="30" Width="81" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip="Scripted effects (ABS, engine, wheel slip, ... from the effect library or your own)"  />
+                                                </Border>
+                                            </TabItem.Header>
+                                            <Border Style="{StaticResource Card}" Margin="0" Padding="0,0,0,6" Height="240">
+                                                <localFunction:PipelineScriptPanel x:Name="ScriptEffects_Panel" Width="640" Height="232" HorizontalAlignment="Left"/>
+                                            </Border>
                                         </TabItem>
 
                                     </TabControl>
