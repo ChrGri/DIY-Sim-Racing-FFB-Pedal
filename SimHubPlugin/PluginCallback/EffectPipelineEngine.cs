@@ -35,8 +35,9 @@ namespace DiyFfbPedal
         public const double MaxForce_N = 60.0;
         public const double MaxAngle_deg = 2.0;
         public const double MaxForceRelative = 0.8;
-        // highest oscillator frequency; the pedal plays 500 Hz samples, more makes no sense
-        public const double MaxFrequency_Hz = 150.0;
+        // highest frequency of the phase oscillator (frequency field): the pedal damps
+        // vibrations above ~40 Hz strongly (servo, 5 ms effect smoothing in the firmware)
+        public const double MaxFrequency_Hz = 40.0;
 
         public const int OutputTypes = 3; // Force_N, Angle_deg, ForceRelative
         private const int SamplesPerPacket = Constants.effectPipelineSamplesPerPacket;

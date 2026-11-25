@@ -35,7 +35,7 @@ Scripts can be written in **NCalc** (short formulas, sections 1–6) or
 | Language | NCalc or JavaScript |
 | Output | what the result means: **Pedal angle offset (deg)**, **Force offset (N)** or **Relative force** |
 | Gain | multiplies the result (0 … 10) |
-| Frequency (Hz) for phase | optional script; drives the `phase` variable (see below) |
+| Frequency (Hz) for phase | optional script; drives the `phase` variable (see below), limited to 40 Hz |
 | Script | NCalc formula or JavaScript function body, evaluated 500 times per second |
 
 Output conventions:
@@ -69,6 +69,8 @@ Notes:
 - SimHub properties update with the telemetry (~60 Hz), the script runs at 500 Hz.
   Vibrations should therefore come from `t` or `phase`, the properties only set
   strength and frequency.
+- Keep vibrations at **40 Hz or below**: the pedal damps faster ones strongly
+  (servo and the effect smoothing in the pedal), they are hardly felt.
 - Use `phase` (with the frequency field) instead of `Sin(2 * pi * f * t)` whenever
   `f` changes, e.g. with RPM. With `t` the waveform jumps on every frequency change.
 - Missing properties count as 0, `true`/`false` as 1/0.
