@@ -8,40 +8,42 @@ using System.Windows.Threading;
 
 namespace DiyFfbPedal.UIFunction
 {
-    // Small animated 8-bit robot (angry eyes, teeth, horns) holding a danger sign,
-    // shown above the script effects. Original pixel art drawn in code (no image files).
-    // Two frames: the sign bobs, eyes and chest core blink alternately.
+    // Small animated 8-bit robot (boxy head, antennas, grinning teeth, glowing red eyes)
+    // next to a danger sign, shown above the script effects. Original pixel art drawn
+    // in code (no image files). Two frames: eyes, antenna tips and chest light pulse,
+    // the sign bobs.
     public class PixelDangerRobot : UserControl
     {
         private const int Px = 3; // screen pixels per art pixel
         private const int ArtWidth = 33;
         private const int ArtHeight = 22;
 
-        // . transparent  K outline  D dark metal  G body  S highlight  W teeth
-        // E eyes  A chest core  Y yellow  B black  P pole
+        // . transparent  K outline  L face  G body  W teeth  Y yellow  B black  P pole
+        // E eye core  e eye glow  A chest light  T antenna tip   (E, e, A, T pulse)
         private static readonly string[] Robot =
         {
-            ".K............K.",
-            ".KK..........KK.",
-            "..KK.KKKKKK.KK..",
-            "...KKDDDDDDKK...",
-            "...KEEDDDDEEK...",
-            "...KDEEDDEEDK...",
-            "...KDDDDDDDDK...",
-            "...KDWDWDWDWK...",
-            "...KWKWKWKWDK...",
-            "....KKKKKKKK....",
-            "KK...KGGGGK...KK",
-            "KGKKKKKKKKKKKKGK",
-            "KGGGGGGGGGGGGGGK",
-            "KGGSGGGAAGGGSGGK",
-            "KGGGSGGAAGGSGGGK",
-            "KKGGGGGGGGGGGGKK",
-            ".KKKKKKKKKKKKKK.",
-            "..KGGK....KGGK..",
-            "..KGGK....KGGK..",
-            ".KKGGKK..KKGGKK.",
-            ".KSSSSK..KSSSSK.",
+            "..T...........T..",
+            "...K.........K...",
+            "....K.......K....",
+            "..KKKKKKKKKKKKK..",
+            "..KLLLLLLLLLLLK..",
+            "..KLeeeLLLeeeLK..",
+            "..KLeEeLLLeEeLK..",
+            "..KLeeeLLLeeeLK..",
+            "..KLLLLLLLLLLLK..",
+            "..KLKWKWKWKWKLK..",
+            "..KLWKWKWKWKWLK..",
+            "..KKKKKKKKKKKKK..",
+            ".....KKKKKKK.....",
+            "KKKKKKKKKKKKKKKKK",
+            "KGKGGGGGGGGGGGKGK",
+            "KGKGGKKKKKKKGGKGK",
+            "KGKGGKAAAAAKGGKGK",
+            "KGKGGKKKKKKKGGKGK",
+            "KGKGGGGGGGGGGGKGK",
+            "KKKKKKKKKKKKKKKKK",
+            "K.K..KGK.KGK..K.K",
+            "....KKKK.KKKK....",
         };
 
         private static readonly string[] Sign =
@@ -66,21 +68,38 @@ namespace DiyFfbPedal.UIFunction
             "......P......",
             "......P......",
             "......P......",
+            "......P......",
         };
 
         private static readonly Dictionary<char, Color> Palette = new Dictionary<char, Color>
         {
-            { 'K', Color.FromRgb(0x1E, 0x1E, 0x1E) },
-            { 'D', Color.FromRgb(0x45, 0x4D, 0x55) },
-            { 'G', Color.FromRgb(0x6B, 0x76, 0x80) },
-            { 'S', Color.FromRgb(0x9A, 0xA4, 0xAE) },
-            { 'W', Color.FromRgb(0xE8, 0xE8, 0xE8) },
+            { 'K', Color.FromRgb(0x16, 0x16, 0x16) },
+            { 'L', Color.FromRgb(0xB8, 0xC0, 0xC8) },
+            { 'G', Color.FromRgb(0x8E, 0x99, 0xA4) },
+            { 'W', Color.FromRgb(0xF0, 0xF0, 0xF0) },
             { 'Y', Color.FromRgb(0xFF, 0xC1, 0x07) },
-            { 'B', Color.FromRgb(0x1E, 0x1E, 0x1E) },
+            { 'B', Color.FromRgb(0x16, 0x16, 0x16) },
             { 'P', Color.FromRgb(0x79, 0x55, 0x48) },
         };
-        private static readonly Color EyeOn = Color.FromRgb(0xFF, 0x30, 0x00);
-        private static readonly Color EyeOff = Color.FromRgb(0x70, 0x10, 0x00);
+
+        // pulsing colors per frame: eye core, eye glow, chest light, antenna tip
+        private static readonly Dictionary<char, Color>[] FrameColors =
+        {
+            new Dictionary<char, Color>
+            {
+                { 'E', Color.FromRgb(0xFF, 0xEB, 0xC8) },
+                { 'e', Color.FromRgb(0xFF, 0x28, 0x00) },
+                { 'A', Color.FromRgb(0xFF, 0x28, 0x00) },
+                { 'T', Color.FromRgb(0xFF, 0x28, 0x00) },
+            },
+            new Dictionary<char, Color>
+            {
+                { 'E', Color.FromRgb(0xFF, 0x78, 0x3C) },
+                { 'e', Color.FromRgb(0xAA, 0x1E, 0x0A) },
+                { 'A', Color.FromRgb(0x6E, 0x0F, 0x00) },
+                { 'T', Color.FromRgb(0x5A, 0x14, 0x0A) },
+            },
+        };
 
         private readonly Canvas[] _frames = new Canvas[2];
         private readonly DispatcherTimer _timer;
@@ -113,21 +132,14 @@ namespace DiyFfbPedal.UIFunction
 
         private static Canvas BuildFrame(int frame)
         {
-            var canvas = new Canvas { Width = ArtWidth * Px, Height = ArtHeight * Px };
-            DrawArt(canvas, Robot, 0, 1, frame);
+            var canvas = new Canvas { Width = ArtWidth * Px, Height = ArtHeight * Px, ClipToBounds = true };
+            DrawArt(canvas, Robot, 0, 0, frame);
             // the sign bobs up by one pixel in the second frame
-            DrawArt(canvas, Sign, 19, 1, frame, frame == 0 ? 0 : 1);
-            // arm from the shoulder to the pole, claw around it
-            const int armY = 13;
-            for (int x = 16; x < 25; x++) AddPixel(canvas, x, armY, Palette['G']);
-            AddPixel(canvas, 24, armY - 1, Palette['K']);
-            AddPixel(canvas, 25, armY - 1, Palette['K']);
-            AddPixel(canvas, 24, armY + 1, Palette['K']);
-            AddPixel(canvas, 25, armY + 1, Palette['K']);
+            DrawArt(canvas, Sign, 19, 1 - frame, frame);
             return canvas;
         }
 
-        private static void DrawArt(Canvas canvas, string[] art, int offsetX, int offsetY, int frame, int lift = 0)
+        private static void DrawArt(Canvas canvas, string[] art, int offsetX, int offsetY, int frame)
         {
             for (int y = 0; y < art.Length; y++)
             {
@@ -136,16 +148,15 @@ namespace DiyFfbPedal.UIFunction
                     char c = art[y][x];
                     if (c == '.') continue;
                     Color color;
-                    if (c == 'E') color = frame == 0 ? EyeOn : EyeOff;
-                    else if (c == 'A') color = frame == 0 ? EyeOff : EyeOn;
-                    else color = Palette[c];
-                    AddPixel(canvas, offsetX + x, offsetY + y - lift, color);
+                    if (!FrameColors[frame].TryGetValue(c, out color)) color = Palette[c];
+                    AddPixel(canvas, offsetX + x, offsetY + y, color);
                 }
             }
         }
 
         private static void AddPixel(Canvas canvas, int x, int y, Color color)
         {
+            if (x < 0 || y < 0 || x >= ArtWidth || y >= ArtHeight) return;
             var r = new Rectangle { Width = Px, Height = Px, Fill = new SolidColorBrush(color) };
             Canvas.SetLeft(r, x * Px);
             Canvas.SetTop(r, y * Px);
