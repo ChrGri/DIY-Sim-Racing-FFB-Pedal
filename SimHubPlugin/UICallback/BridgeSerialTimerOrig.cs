@@ -288,6 +288,7 @@ namespace DiyFfbPedal
                                     //update Pedal status
                                     double valueMax_u16 = 65535;
                                     Plugin.PedalStatusInstance.PedalForceInPercent[pedalSelected] = ((double)pedalState_read_st.payloadPedalBasicState_.pedalForce_u16 / (double)valueMax_u16 * 100.0d);
+                                    Plugin.PedalStatusInstance.PedalTravelInPercent[pedalSelected] = ((double)pedalState_read_st.payloadPedalBasicState_.pedalPosition_u16 / (double)valueMax_u16 * 100.0d);
                                     Plugin.PedalStatusInstance.PedalMaxForce[pedalSelected] = (int)dap_config_st[pedalSelected].payloadPedalConfig_.maxForce;
                                     Plugin.PedalStatusInstance.PedalMinForce[pedalSelected] = (int)dap_config_st[pedalSelected].payloadPedalConfig_.preloadForce;
                                     Plugin.PedalStatusInstance.UpdatePedalStatus();

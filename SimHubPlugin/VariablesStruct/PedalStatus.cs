@@ -14,6 +14,8 @@ namespace DiyFfbPedal
         public double[] PedalMaxForce { get; set; }
         public double[] PedalMinForce { get; set; }
         public double[] PedalForceInKg { get; set; }
+        // pedal travel (pedal angle between the configured min and max position), 0..100 %
+        public double[] PedalTravelInPercent { get; set; }
         public string[] PedalConnectionStatus { get; set; }
 
         public PedalStatus()
@@ -22,6 +24,7 @@ namespace DiyFfbPedal
             PedalMaxForce = new double[3] { 0, 0, 0 };
             PedalMinForce = new double[3] { 0, 0, 0 };
             PedalForceInKg = new double[3] { 0, 0, 0 };
+            PedalTravelInPercent = new double[3] { 0, 0, 0 };
             PedalConnectionStatus = new string[3] { "Disconnected", "Disconnected", "Disconnected" };
         }
 
@@ -51,7 +54,7 @@ namespace DiyFfbPedal
                     {
                         for (int i = 0; i < 3; i++)
                         {
-                            string tmp = $"PedalStatus.{prop.Name}.{PedalConstStrings.PedalID[i]}";
+                            string tmp = $"PedalStatus.{PedalConstStrings.PedalID[i]}.{prop.Name}"; // e.g. PedalStatus.Brake.PedalForceInKg
 
                             object itemValue = arrayValue.GetValue(i);
                             pluginManager.SetPropertyValue(tmp, Name.GetType(), itemValue);
@@ -74,7 +77,7 @@ namespace DiyFfbPedal
                     {
                         for (int i = 0; i < 3; i++)
                         {
-                            string tmp = $"PedalStatus.{prop.Name}.{PedalConstStrings.PedalID[i]}";
+                            string tmp = $"PedalStatus.{PedalConstStrings.PedalID[i]}.{prop.Name}"; // e.g. PedalStatus.Brake.PedalForceInKg
 
                             object itemValue = arrayValue.GetValue(i);
                             pluginManager.AddProperty(tmp, Name.GetType(), itemValue);

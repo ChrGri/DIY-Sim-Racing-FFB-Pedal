@@ -389,3 +389,42 @@ if([DataCorePlugin.GameData.ABSActive] > 0, 0.08 * (0.2 + 0.8 * [DataCorePlugin.
 
 Note: at the very end of the travel (pedal pressed into the endstop) effects
 currently lose most of their effect, built-in and scripted alike.
+
+## 10. Values of the pedals themselves
+
+The plugin publishes the state of each pedal as SimHub properties. They can be
+used in scripts, but also anywhere else in SimHub (dashboards, ShakeIt, other
+plugins). Replace `Brake` with `Clutch` or `Throttle` for the other pedals.
+(Until version 26.47 the names had the pedal at the end, e.g.
+`PedalStatus.PedalForceInKg.Brake`.)
+
+| Property | Meaning |
+|---|---|
+| `DIY_FFB_Pedal.PedalStatus.Brake.PedalTravelInPercent` | pedal travel 0 … 100 % |
+| `DIY_FFB_Pedal.PedalStatus.Brake.PedalForceInPercent` | force between preload and max force, 0 … 100 % |
+| `DIY_FFB_Pedal.PedalStatus.Brake.PedalForceInKg` | force in kg |
+| `DIY_FFB_Pedal.PedalStatus.Brake.PedalMaxForce` / `.PedalMinForce` | configured max force / preload in kg |
+| `DIY_FFB_Pedal.PedalStatus.Brake.PedalConnectionStatus` | connection state as text |
+
+They update with the telemetry (~60 Hz). The measured force contains the effects
+themselves: a **force** script that reacts to the measured force can push itself
+up or start to oscillate. Use pedal angle output for such effects and a hysteresis.
+
+**Threshold braking trainer** (brake, Output: Pedal angle, JavaScript): a light buzz
+in the target window of 80 … 90 % force, a hard knock above 95 %.
+
+```js
+var f = $prop('DIY_FFB_Pedal.PedalStatus.Brake.PedalForceInPercent') || 0;
+if (f > 95) root.over = true;
+if (f < 92) root.over = false;
+if (root.over) return 0.08 * ((t * 12) % 1 < 0.15 ? 1 : 0);
+if (f > 80 && f < 90) return 0.01 * Math.sin(2 * pi * 40 * t);
+return 0;
+```
+
+**Bite point on the clutch** (clutch, Output: Pedal angle, NCalc): a short buzz
+between 40 and 50 % travel.
+
+```
+if([DIY_FFB_Pedal.PedalStatus.Clutch.PedalTravelInPercent] > 40 and [DIY_FFB_Pedal.PedalStatus.Clutch.PedalTravelInPercent] < 50, 0.02 * Sin(2 * pi * 30 * t), 0)
+```
