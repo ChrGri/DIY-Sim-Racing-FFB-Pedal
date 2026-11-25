@@ -239,6 +239,8 @@
     <Compile Include="UIFunction\PipelineScriptPanel.cs" />
     <Compile Include="UIFunction\EffectPipelinePlotWindow.cs" />
     <Compile Include="UIFunction\PixelDangerRobot.cs" />
+    <Compile Include="UIFunction\EffectLibraryWindow.cs" />
+    <Compile Include="PluginCallback\EffectLibrary.cs" />
     <Compile Include="PluginCallback\PipelineScriptSlot.cs" />
     <Compile Include="PluginCallback\JintScriptHost.cs" />
     <Compile Include="VariablesStruct\DAP_effect_pipeline_st.cs" />
@@ -263,32 +265,14 @@
     <Compile Include="UIFunction\CurveTab_Rudder.xaml.cs">
       <DependentUpon>CurveTab_Rudder.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UIFunction\EffectsTab_ABS.xaml.cs">
-      <DependentUpon>EffectsTab_ABS.xaml</DependentUpon>
-    </Compile>
     <Compile Include="UIFunction\EffectsTab_BitePoint.xaml.cs">
       <DependentUpon>EffectsTab_BitePoint.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UIFunction\EffectsTab_Custom.xaml.cs">
-      <DependentUpon>EffectsTab_Custom.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UIFunction\EffectsTab_GForce.xaml.cs">
-      <DependentUpon>EffectsTab_GForce.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UIFunction\EffectsTab_RoadImpact.xaml.cs">
-      <DependentUpon>EffectsTab_RoadImpact.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UIFunction\EffectsTab_RPM.xaml.cs">
-      <DependentUpon>EffectsTab_RPM.xaml</DependentUpon>
     </Compile>
     <Compile Include="UIFunction\EffectsTab_RPMRudder.xaml.cs">
       <DependentUpon>EffectsTab_RPMRudder.xaml</DependentUpon>
     </Compile>
     <Compile Include="UIFunction\EffectsTab_RudderACC.xaml.cs">
       <DependentUpon>EffectsTab_RudderACC.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UIFunction\EffectsTab_WheelSlip.xaml.cs">
-      <DependentUpon>EffectsTab_WheelSlip.xaml</DependentUpon>
     </Compile>
     <Compile Include="UIFunction\FirmwareFlasherWindow.xaml.cs" />
     <Compile Include="UIFunction\GeneralSetting_RudderDynamics.xaml.cs">
@@ -467,27 +451,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="UIFunction\EffectsTab_ABS.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="UIFunction\EffectsTab_BitePoint.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UIFunction\EffectsTab_Custom.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="UIFunction\EffectsTab_GForce.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UIFunction\EffectsTab_RoadImpact.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UIFunction\EffectsTab_RPM.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -496,10 +460,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\EffectsTab_RudderACC.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UIFunction\EffectsTab_WheelSlip.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

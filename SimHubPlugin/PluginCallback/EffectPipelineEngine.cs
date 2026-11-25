@@ -115,7 +115,8 @@ namespace DiyFfbPedal
 
         // ---- slot list, changed from the UI ----
 
-        public PipelineScriptSlot AddSlot(int pedal, PipelineScriptSlot template)
+        // template null: empty script; keepName: from the effect library (else: "... copy")
+        public PipelineScriptSlot AddSlot(int pedal, PipelineScriptSlot template, bool keepName = false)
         {
             lock (_sync)
             {
@@ -130,7 +131,7 @@ namespace DiyFfbPedal
                 }
                 else
                 {
-                    slot.Name = (template.Name ?? "") + " copy";
+                    if (!keepName) slot.Name = (template.Name ?? "") + " copy";
                     slot.Enabled = false;
                 }
                 settings.Pipeline_slots.Add(slot);

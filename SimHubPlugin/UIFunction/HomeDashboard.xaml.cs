@@ -169,15 +169,15 @@ namespace DiyFfbPedal.UIFunction
         {
             List<string> names = new List<string>();
             DIYFFBPedalSettings settings = plugin.Settings;
-            if (settings.ABS_enable_flag[pedal] == 1) names.Add("ABS");
-            if (settings.RPM_enable_flag[pedal] == 1) names.Add("RPM");
-            if (settings.G_force_enable_flag[pedal] == 1) names.Add("G-force");
-            if (settings.WS_enable_flag[pedal] == 1) names.Add("Slip");
-            if (settings.Road_impact_enable_flag[pedal] == 1) names.Add("Road");
-            if (settings.CV1_enable_flag[pedal]) names.Add("Custom 1");
-            if (settings.CV2_enable_flag[pedal]) names.Add("Custom 2");
-            if (settings.CV3_enable_flag[pedal]) names.Add("Custom 3");
-            if (settings.CV4_enable_flag[pedal]) names.Add("Custom 4");
+            // all vehicle effects are scripts now: list the enabled scripts of this pedal
+            if (settings != null && settings.Pipeline_slots != null && settings.Pipeline_warning_ack)
+            {
+                foreach (PipelineScriptSlot slot in settings.Pipeline_slots.ToArray())
+                {
+                    if (slot.Pedal == pedal && slot.Enabled)
+                        names.Add(string.IsNullOrWhiteSpace(slot.Name) ? "Script" : slot.Name.Trim());
+                }
+            }
             return names.Count == 0 ? "none" : String.Join(", ", names.ToArray());
         }
 

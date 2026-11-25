@@ -1,12 +1,16 @@
 # Script effects (effect pipelines) – examples
 
-Script effects let you build your own pedal effects from any SimHub property,
-without a firmware change. The plugin evaluates your script for every sample on a
-500 Hz clock, streams the samples to the pedal and the pedal plays them back on top
-of its force curve and the built-in effects.
+All vehicle effects of the pedal are scripts: ABS/TC, engine, speed rumble,
+G-force, wheel slip, bumps and your own. The plugin evaluates the scripts for every
+sample on a 500 Hz clock, streams the samples to the pedal and the pedal plays them
+back on top of its force curve. Only the bite point and the rudder effects are
+still built into the pedal.
 
-Where: **Effects → Custom → SCRIPTS**, for the pedal selected at the top. Each pedal
-can have any number of scripts (**+ New**, **Duplicate**, **Remove**); all enabled
+Where: **Effects → Scripts**, for the pedal selected at the top. The **Library**
+button opens the ready-made effects (the former built-in effects and more); a
+preset is added switched off, with its parameters as variables at the top of the
+script. Each pedal can have any number of scripts (**+ New**, **Duplicate**,
+**Remove**); all enabled
 scripts of a pedal are added up per output type. The **Live plot** button opens a
 window with the last 5 s that were sent to each pedal.
 
@@ -15,7 +19,7 @@ window with the last 5 s that were sent to each pedal.
 > energy into it. A wrong sign, unit or typo can mean full force or a hard kick. Start
 > with small values and gain 1, test with your foot on the pedal and disable the script
 > at the first surprise. Scripts only run after you ticked *"I understand, let me
-> script"* in the SCRIPTS tab.
+> script"* in the Scripts tab.
 
 Scripts can be written in **NCalc** (short formulas, sections 1–6) or
 **JavaScript** (variables, steps, state over time, section 8).
@@ -191,12 +195,6 @@ in ShakeIt Motors; the export is 0 … 100):
 [ShakeITMotorsV3Plugin.Export.wheelsliplock.All] / 100 * 0.06 * Sin(2 * pi * 30 * t)
 ```
 
-**Wheel slip from this plugin's own wheel slip detection**:
-
-```
-[DIY_FFB_Pedal.WheelSlipEffectReading] / 100 * 0.06 * Sin(2 * pi * 35 * t)
-```
-
 **Traction control on the throttle**:
 
 ```
@@ -259,8 +257,7 @@ All enabled scripts of a pedal are summed per output type. A typical brake setup
 - "Lockup" (Pedal angle): wheel lock from section 4
 - "Weight transfer" (Relative force): from section 3
 
-Everything is summed with the built-in effects (ABS/TC, RPM, G-force, …). If you
-rebuild an effect as a script, switch the built-in one off.
+The presets from the library are scripts like these; combine them freely.
 
 ## 8. JavaScript
 
@@ -328,8 +325,8 @@ return lock > threshold ? 0.06 * Math.sin(2 * pi * 30 * t) : 0;
 
 ## 9. ABS deluxe (JavaScript)
 
-A complete ABS effect for the brake pedal, built only from a script. Switch the
-built-in ABS off when you use it. Output: Pedal angle, Gain 1.
+A complete ABS effect for the brake pedal, built only from a script. The
+"ABS" preset in the library is the same script. Output: Pedal angle, Gain 1.
 
 - **Pulse waveform**: a quick kick towards the foot (12 % of the period) and a
   smooth return, like an ABS pump.
@@ -388,7 +385,7 @@ if([DataCorePlugin.GameData.ABSActive] > 0, 0.08 * (0.2 + 0.8 * [DataCorePlugin.
 ```
 
 Note: at the very end of the travel (pedal pressed into the endstop) effects
-currently lose most of their effect, built-in and scripted alike.
+currently lose most of their effect.
 
 ## 10. Values of the pedals themselves
 

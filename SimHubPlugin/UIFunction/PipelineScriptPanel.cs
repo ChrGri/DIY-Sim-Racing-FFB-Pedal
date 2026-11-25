@@ -95,13 +95,24 @@ namespace DiyFfbPedal.UIFunction
             // slot list
             var slotRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
             slotRow.Children.Add(new TextBlock { Text = "Script:", VerticalAlignment = VerticalAlignment.Center, Width = 50 });
-            _slotList = new ComboBox { Width = 190, Height = 22 };
+            _slotList = new ComboBox { Width = 180, Height = 22 };
             _slotList.SelectionChanged += (s, e) =>
             {
                 if (_updating) return;
                 ShowSlot(_slotList.SelectedItem is ComboBoxItem item ? item.Tag as PipelineScriptSlot : null);
             };
             slotRow.Children.Add(_slotList);
+            var library = SmallButton("Library");
+            library.ToolTip = "Ready-made effects: ABS, engine, wheel slip, bumps, ...";
+            library.Click += (s, e) =>
+            {
+                if (_plugin == null) return;
+                EffectLibraryWindow.ShowFor(_plugin, Window.GetWindow(this), slot =>
+                {
+                    if (slot != null && slot.Pedal == Pedal) RefreshList(slot);
+                });
+            };
+            slotRow.Children.Add(library);
             var add = SmallButton("+ New");
             add.Click += (s, e) => AddSlot(null);
             slotRow.Children.Add(add);
@@ -122,7 +133,7 @@ namespace DiyFfbPedal.UIFunction
 
             _empty = new TextBlock
             {
-                Text = "No script effect for this pedal yet. Click \"+ New\". All enabled scripts of a pedal are added up.",
+                Text = "No effect for this pedal yet. Pick one from the \"Library\" or write your own with \"+ New\". All enabled scripts of a pedal are added up.",
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 6, 0, 0),
             };

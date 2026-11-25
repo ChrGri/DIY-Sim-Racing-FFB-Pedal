@@ -453,18 +453,10 @@
                                         <TabItem Width="81" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
                                                 <Border  Width="81" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="ABS/TC"  FontFamily="Arial Black" FontSize="10" Height="30" Width="81" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip="Parameter of the ABS/TC effect "  />
+                                                    <Label Content="Scripts"  FontFamily="Arial Black" FontSize="10" Height="30" Width="81" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip="Scripted effects (ABS, engine, wheel slip, ... from the effect library or your own)"  />
                                                 </Border>
                                             </TabItem.Header>
-                                            <localFunction:EffectsTab_ABS x:Name="EffectsABS_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged" />
-                                        </TabItem>
-                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
-                                            <TabItem.Header>
-                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="ENG/SPD"  FontFamily="Arial Black" FontSize="10" Height="30" Width="81" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip="Parameter of Engine or Speed rumble"  />
-                                                </Border>
-                                            </TabItem.Header>
-                                            <localFunction:EffectsTab_RPM x:Name="EffectsRPM_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged"/>
+                                            <localFunction:PipelineScriptPanel x:Name="ScriptEffects_Panel" Width="640" Height="238" HorizontalAlignment="Left"/>
                                         </TabItem>
 
                                         <TabItem Width="81" Height="30" Padding="0,0,0,0">
@@ -476,38 +468,6 @@
                                             <localFunction:EffectsTab_BitePoint x:Name="EffectsBitePoint_Tab" ConfigChanged="Tab_ConfigChanged" CalculationChanged="Tab_CalculationChanged"/>
                                         </TabItem>
 
-                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
-                                            <TabItem.Header>
-                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="G-Force"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Parameter of G force effect" Width="81"  />
-                                                </Border>
-                                            </TabItem.Header>
-                                            <localFunction:EffectsTab_GForce x:Name="EffectsGFroce_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged"/>
-                                        </TabItem>
-                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
-                                            <TabItem.Header>
-                                                <Border  Width="81" Height="30" Margin="0,0,0,0" HorizontalAlignment="Center" >
-                                                    <Label Content="Wheel Slip"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="81"  />
-                                                </Border>
-                                            </TabItem.Header>
-                                            <localFunction:EffectsTab_WheelSlip x:Name="EffectsWheelSlip_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged"/>
-                                        </TabItem>
-                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
-                                            <TabItem.Header>
-                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Impact"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="81" HorizontalAlignment="Center"  />
-                                                </Border>
-                                            </TabItem.Header>
-                                            <localFunction:EffectsTab_RoadImpact x:Name="EffectsRoadImpact_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged"/>
-                                        </TabItem>
-                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
-                                            <TabItem.Header>
-                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Custom"  FontFamily="Arial Black" FontSize="10" Height="30" Width="81" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip=" "  />
-                                                </Border>
-                                            </TabItem.Header>
-                                            <localFunction:EffectsTab_Custom x:Name="EffectsCustom_tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
-                                        </TabItem>
                                     </TabControl>
                                 </StackPanel>
                             </StackPanel>
