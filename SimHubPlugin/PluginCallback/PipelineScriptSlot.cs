@@ -29,7 +29,7 @@ namespace DiyFfbPedal
 
         public string DisplayName(int number)
         {
-            string name = string.IsNullOrWhiteSpace(Name) ? "Script " + number : Name.Trim();
+            string name = string.IsNullOrWhiteSpace(Name) ? Loc.T("TextScriptDefaultName", "Script") + " " + number : Name.Trim();
             string type;
             switch ((EffectPipelineOffsetType)OffsetType)
             {
@@ -38,7 +38,7 @@ namespace DiyFfbPedal
                 default: type = "deg"; break;
             }
             string lang = Language == PipelineScriptLanguage.JavaScript ? ", JS" : "";
-            return number + ": " + name + " (" + type + lang + ")" + (Enabled ? "" : " - off");
+            return number + ": " + name + " (" + type + lang + ")" + (Enabled ? "" : " - " + Loc.T("TextScriptOff", "off"));
         }
 
         // The first version had two fixed script channels per pedal in arrays.

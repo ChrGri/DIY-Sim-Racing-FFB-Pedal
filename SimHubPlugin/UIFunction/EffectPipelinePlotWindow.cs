@@ -31,7 +31,7 @@ namespace DiyFfbPedal.UIFunction
             }
         }
 
-        private static readonly string[] PedalNames = { "Clutch", "Brake", "Throttle" };
+        private static string[] PedalNames => new[] { Loc.T("TextPedalIdClutch", "Clutch"), Loc.T("TextPedalIdBrake", "Brake"), Loc.T("TextPedalIdThrottle", "Throttle") };
         private static readonly Color[] SeriesColors =
         {
             Color.FromRgb(0x4F, 0xC3, 0xF7), // clutch
@@ -58,22 +58,22 @@ namespace DiyFfbPedal.UIFunction
         private EffectPipelinePlotWindow(DIY_FFB_Pedal plugin)
         {
             _plugin = plugin;
-            Title = "Script effects - live offsets (last 5 s)";
+            Title = Loc.T("TextPlotTitle", "Script effects - live offsets (last 5 s)");
             Width = 800;
             Height = 600;
             Background = new SolidColorBrush(Color.FromRgb(0x25, 0x25, 0x25));
 
             var grid = new Grid { Margin = new Thickness(8) };
-            AddSubplot(grid, EffectPipelineOffsetType.Angle_deg, "Pedal angle offset", "deg", 0.05);
-            AddSubplot(grid, EffectPipelineOffsetType.Force_N, "Force offset", "N", 1.0);
-            AddSubplot(grid, EffectPipelineOffsetType.ForceRelative, "Relative force", "", 0.05);
+            AddSubplot(grid, EffectPipelineOffsetType.Angle_deg, Loc.T("TextPlotAngle", "Pedal angle offset"), "deg", 0.05);
+            AddSubplot(grid, EffectPipelineOffsetType.Force_N, Loc.T("TextPlotForce", "Force offset"), "N", 1.0);
+            AddSubplot(grid, EffectPipelineOffsetType.ForceRelative, Loc.T("TextPlotRelative", "Relative force"), "", 0.05);
 
             var legend = new WrapPanel { Margin = new Thickness(0, 4, 0, 0) };
             for (int pedal = 0; pedal < 3; pedal++)
             {
                 var item = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 14, 0) };
                 item.Children.Add(new Rectangle { Width = 14, Height = 3, Fill = new SolidColorBrush(SeriesColors[pedal]), VerticalAlignment = VerticalAlignment.Center });
-                item.Children.Add(new TextBlock { Text = " " + PedalNames[pedal] + " (sum of its scripts)", Foreground = Brushes.LightGray, FontSize = 11 });
+                item.Children.Add(new TextBlock { Text = " " + PedalNames[pedal] + " " + Loc.T("TextPlotLegendSum", "(sum of its scripts)"), Foreground = Brushes.LightGray, FontSize = 11 });
                 legend.Children.Add(item);
             }
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -161,7 +161,7 @@ namespace DiyFfbPedal.UIFunction
             AddLabel(sp.Canvas, "+" + sp.Scale.ToString("0.###", CultureInfo.InvariantCulture) + unit, 4, 2);
             AddLabel(sp.Canvas, "-" + sp.Scale.ToString("0.###", CultureInfo.InvariantCulture) + unit, 4, h - 16);
             AddLabel(sp.Canvas, "-5 s", 4, h / 2 + 2);
-            AddLabel(sp.Canvas, "now", w - 28, h / 2 + 2);
+            AddLabel(sp.Canvas, Loc.T("TextPlotNow", "now"), w - 28, h / 2 + 2);
         }
 
         private static void AddLabel(Canvas canvas, string text, double x, double y)

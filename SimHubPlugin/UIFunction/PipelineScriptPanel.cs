@@ -38,17 +38,17 @@ namespace DiyFfbPedal.UIFunction
         private DIYFFBPedalSettings _shownSettings;
         private PipelineScriptSlot _slot;
 
-        private static readonly string HelpNCalc =
+        private static string HelpNCalc => Loc.T("TextScriptHelpNCalc",
             "NCalc. Variables: t (time in s), dt (0.002 s), prev (last value), phase (radians, from the frequency field), pi, " +
             "and every SimHub property, e.g. [DataCorePlugin.GameData.Rpms]. Functions: Sin, Cos, Abs, Min, Max, Pow, Sqrt, if(cond, a, b).\n" +
             "Example (engine, angle): frequency [DataCorePlugin.GameData.Rpms] / 60, script 0.004 * [DataCorePlugin.GameData.Throttle] / 100 * Sin(phase)\n" +
-            "Example (ABS, angle): if([DataCorePlugin.GameData.ABSActive] > 0, 0.06 * Sin(2 * pi * 25 * t), 0)";
+            "Example (ABS, angle): if([DataCorePlugin.GameData.ABSActive] > 0, 0.06 * Sin(2 * pi * 25 * t), 0)");
 
-        private static readonly string HelpJs =
+        private static string HelpJs => Loc.T("TextScriptHelpJs",
             "JavaScript (ES5, like SimHub's JS formulas). The script is the body of a function(t, dt, prev, phase): use return. " +
             "Properties: $prop('DataCorePlugin.GameData.Rpms'). root keeps values between calls (root.x = ...). Math.sin, Math.min, ...\n" +
             "Runs 500 times per second: keep it short, no loops over large data. 'CPU' shows the cost (10 ms/s = 1 % of a core).\n" +
-            "Example (lockup steps): var l = $prop('ShakeITMotorsV3Plugin.Export.wheelsliplock.All'); var a = l >= 20 ? 0.8 : l >= 10 ? 0.3 : 0; return 0.06 * a * Math.sin(2 * pi * 30 * t);";
+            "Example (lockup steps): var l = $prop('ShakeITMotorsV3Plugin.Export.wheelsliplock.All'); var a = l >= 20 ? 0.8 : l >= 10 ? 0.3 : 0; return 0.06 * a * Math.sin(2 * pi * 30 * t);");
 
         private const string ExamplesUrl =
             "https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/blob/develop/docs/script_effects_examples.md";
@@ -92,7 +92,7 @@ namespace DiyFfbPedal.UIFunction
             titleRow.Children.Add(new PixelDangerSign { Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
             titleRow.Children.Add(new TextBlock
             {
-                Text = "DANGER: robot mode!",
+                Text = Loc.T("TextScriptDangerTitle", "DANGER: robot mode!"),
                 FontWeight = FontWeights.Bold,
                 Foreground = yellow,
                 VerticalAlignment = VerticalAlignment.Center,
@@ -100,14 +100,14 @@ namespace DiyFfbPedal.UIFunction
             warningText.Children.Add(titleRow);
             warningText.Children.Add(new TextBlock
             {
-                Text = "With scripts I move the pedal on my own. I can push your foot and put energy into it instead " +
+                Text = Loc.T("TextScriptDangerText", "With scripts I move the pedal on my own. I can push your foot and put energy into it instead " +
                        "of only reacting to it. A wrong sign, unit or typo can mean full force or a hard kick. " +
-                       "Start with small values and gain 1, keep your foot on the pedal when testing, and disable the script at the first surprise.",
+                       "Start with small values and gain 1, keep your foot on the pedal when testing, and disable the script at the first surprise."),
                 TextWrapping = TextWrapping.Wrap,
                 FontSize = 10,
                 Margin = new Thickness(0, 2, 0, 0),
             });
-            _ack = new CheckBox { Content = "I understand, let me script", Margin = new Thickness(0, 4, 0, 0), FontSize = 11 };
+            _ack = new CheckBox { Content = Loc.T("TextScriptDangerAck", "I understand, let me script"), Margin = new Thickness(0, 4, 0, 0), FontSize = 11 };
             _ack.Checked += (s, e) => StoreAck();
             _ack.Unchecked += (s, e) => StoreAck();
             warningText.Children.Add(_ack);
@@ -117,7 +117,7 @@ namespace DiyFfbPedal.UIFunction
 
             // slot list
             var slotRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
-            slotRow.Children.Add(new TextBlock { Text = "Script:", VerticalAlignment = VerticalAlignment.Center, Width = 50 });
+            slotRow.Children.Add(new TextBlock { Text = Loc.T("TextScriptSlot", "Script:"), VerticalAlignment = VerticalAlignment.Center, Width = 50 });
             _slotList = new ComboBox { Width = 180, Height = 22 };
             _slotList.SelectionChanged += (s, e) =>
             {
@@ -125,8 +125,8 @@ namespace DiyFfbPedal.UIFunction
                 ShowSlot(_slotList.SelectedItem is ComboBoxItem item ? item.Tag as PipelineScriptSlot : null);
             };
             slotRow.Children.Add(_slotList);
-            var library = SmallButton("Library");
-            library.ToolTip = "Ready-made effects: ABS, engine, wheel slip, bumps, ...";
+            var library = SmallButton(Loc.T("TextScriptLibrary", "Library"));
+            library.ToolTip = Loc.T("TextScriptLibraryTooltip", "Ready-made effects: ABS, engine, wheel slip, bumps, ...");
             library.Click += (s, e) =>
             {
                 if (_plugin == null) return;
@@ -136,16 +136,16 @@ namespace DiyFfbPedal.UIFunction
                 });
             };
             slotRow.Children.Add(library);
-            var add = SmallButton("+ New");
+            var add = SmallButton(Loc.T("TextScriptNew", "+ New"));
             add.Click += (s, e) => AddSlot(null);
             slotRow.Children.Add(add);
-            _duplicate = SmallButton("Duplicate");
+            _duplicate = SmallButton(Loc.T("TextScriptDuplicate", "Duplicate"));
             _duplicate.Click += (s, e) => { if (_slot != null) AddSlot(_slot); };
             slotRow.Children.Add(_duplicate);
-            _remove = SmallButton("Remove");
+            _remove = SmallButton(Loc.T("TextScriptRemove", "Remove"));
             _remove.Click += (s, e) => RemoveSlot();
             slotRow.Children.Add(_remove);
-            var plotButton = SmallButton("Live plot");
+            var plotButton = SmallButton(Loc.T("TextScriptLivePlot", "Live plot"));
             plotButton.Click += (s, e) =>
             {
                 if (_plugin != null) EffectPipelinePlotWindow.ShowFor(_plugin, Window.GetWindow(this));
@@ -156,7 +156,7 @@ namespace DiyFfbPedal.UIFunction
 
             _empty = new TextBlock
             {
-                Text = "No effect for this pedal yet. Pick one from the \"Library\" or write your own with \"+ New\". All enabled scripts of a pedal are added up.",
+                Text = Loc.T("TextScriptEmpty", "No effect for this pedal yet. Pick one from the \"Library\" or write your own with \"+ New\". All enabled scripts of a pedal are added up."),
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 6, 0, 0),
             };
@@ -166,15 +166,15 @@ namespace DiyFfbPedal.UIFunction
             root.Children.Add(_editor);
 
             var row1 = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
-            _enable = new CheckBox { Content = "Enabled", VerticalAlignment = VerticalAlignment.Center, Width = 75 };
+            _enable = new CheckBox { Content = Loc.T("TextScriptEnabled", "Enabled"), VerticalAlignment = VerticalAlignment.Center, Width = 75 };
             _enable.Checked += (s, e) => Store();
             _enable.Unchecked += (s, e) => Store();
             row1.Children.Add(_enable);
-            row1.Children.Add(new TextBlock { Text = "Name:", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0) });
+            row1.Children.Add(new TextBlock { Text = Loc.T("TextScriptName", "Name:"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0) });
             _name = new TextBox { Width = 140, Height = 22, VerticalContentAlignment = VerticalAlignment.Center };
             _name.LostFocus += (s, e) => Store();
             row1.Children.Add(_name);
-            row1.Children.Add(new TextBlock { Text = "Language:", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 4, 0) });
+            row1.Children.Add(new TextBlock { Text = Loc.T("TextScriptLanguage", "Language:"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 4, 0) });
             _language = new ComboBox { Width = 100, Height = 22 };
             _language.Items.Add(new ComboBoxItem { Content = "NCalc", Tag = PipelineScriptLanguage.NCalc });
             _language.Items.Add(new ComboBoxItem { Content = "JavaScript", Tag = PipelineScriptLanguage.JavaScript });
@@ -183,21 +183,21 @@ namespace DiyFfbPedal.UIFunction
             _editor.Children.Add(row1);
 
             var row2 = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
-            row2.Children.Add(new TextBlock { Text = "Output:", VerticalAlignment = VerticalAlignment.Center, Width = 50 });
+            row2.Children.Add(new TextBlock { Text = Loc.T("TextScriptOutput", "Output:"), VerticalAlignment = VerticalAlignment.Center, Width = 50 });
             _type = new ComboBox { Width = 190, Height = 22 };
-            _type.Items.Add(new ComboBoxItem { Content = "Pedal angle offset (deg)", Tag = EffectPipelineOffsetType.Angle_deg });
-            _type.Items.Add(new ComboBoxItem { Content = "Force offset (N)", Tag = EffectPipelineOffsetType.Force_N });
-            _type.Items.Add(new ComboBoxItem { Content = "Relative force (0.1 = +10 %)", Tag = EffectPipelineOffsetType.ForceRelative });
+            _type.Items.Add(new ComboBoxItem { Content = Loc.T("TextScriptOutputAngle", "Pedal angle offset (deg)"), Tag = EffectPipelineOffsetType.Angle_deg });
+            _type.Items.Add(new ComboBoxItem { Content = Loc.T("TextScriptOutputForce", "Force offset (N)"), Tag = EffectPipelineOffsetType.Force_N });
+            _type.Items.Add(new ComboBoxItem { Content = Loc.T("TextScriptOutputRelative", "Relative force (0.1 = +10 %)"), Tag = EffectPipelineOffsetType.ForceRelative });
             _type.SelectionChanged += (s, e) => Store();
             row2.Children.Add(_type);
-            row2.Children.Add(new TextBlock { Text = "Gain:", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 4, 0) });
+            row2.Children.Add(new TextBlock { Text = Loc.T("TextScriptGain", "Gain:"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 4, 0) });
             _gain = new TextBox { Width = 50, Height = 22, VerticalContentAlignment = VerticalAlignment.Center };
             _gain.LostFocus += (s, e) => Store();
             row2.Children.Add(_gain);
             _editor.Children.Add(row2);
 
             var freqRow = new DockPanel { Margin = new Thickness(0, 0, 0, 4) };
-            var freqLabel = new TextBlock { Text = "Frequency (Hz) for phase:", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) };
+            var freqLabel = new TextBlock { Text = Loc.T("TextScriptFrequency", "Frequency (Hz) for phase:"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) };
             DockPanel.SetDock(freqLabel, Dock.Left);
             freqRow.Children.Add(freqLabel);
             _frequency = new TextBox { Height = 22, VerticalContentAlignment = VerticalAlignment.Center, FontFamily = new FontFamily("Consolas"), FontSize = 11 };
@@ -233,7 +233,7 @@ namespace DiyFfbPedal.UIFunction
             };
             _editor.Children.Add(_help);
 
-            var link = new Hyperlink(new Run("More examples (GitHub)")) { NavigateUri = new Uri(ExamplesUrl) };
+            var link = new Hyperlink(new Run(Loc.T("TextScriptMoreExamples", "More examples (GitHub)"))) { NavigateUri = new Uri(ExamplesUrl) };
             link.RequestNavigate += (s, e) =>
             {
                 try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true }); }
@@ -332,8 +332,8 @@ namespace DiyFfbPedal.UIFunction
         private void RemoveSlot()
         {
             if (_slot == null || _plugin.EffectPipelines == null) return;
-            string name = string.IsNullOrWhiteSpace(_slot.Name) ? "this script" : "\"" + _slot.Name + "\"";
-            if (MessageBox.Show("Remove " + name + "?", "Script effects", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+            string name = string.IsNullOrWhiteSpace(_slot.Name) ? Loc.T("TextScriptThisScript", "this script") : "\"" + _slot.Name + "\"";
+            if (MessageBox.Show(string.Format(Loc.T("TextScriptRemoveConfirm", "Remove {0}?"), name), Loc.T("TextScriptEffects", "Script effects"), MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
             _plugin.EffectPipelines.RemoveSlot(_slot);
             _slot = null;
             RefreshList(null);
@@ -389,7 +389,7 @@ namespace DiyFfbPedal.UIFunction
         {
             bool js = _slot != null && _slot.Language == PipelineScriptLanguage.JavaScript;
             _help.Text = js ? HelpJs : HelpNCalc;
-            _scriptLabel.Text = js ? "Script (function body, return the value):" : "Script (NCalc formula):";
+            _scriptLabel.Text = js ? Loc.T("TextScriptLabelJs", "Script (function body, return the value):") : Loc.T("TextScriptLabelNCalc", "Script (NCalc formula):");
             if (js)
             {
                 string error;
@@ -402,10 +402,10 @@ namespace DiyFfbPedal.UIFunction
             if (_updating || _slot == null || _plugin == null || _plugin.EffectPipelines == null) return;
             if (string.IsNullOrWhiteSpace(_script.Text))
             {
-                _result.Text = "Script result at t = 0: -";
+                _result.Text = Loc.T("TextScriptResult", "Script result at t = 0:") + " -";
                 return;
             }
-            _result.Text = "Script result at t = 0: " + _plugin.EffectPipelines.TestScript(_slot, _plugin.PluginManager);
+            _result.Text = Loc.T("TextScriptResult", "Script result at t = 0:") + " " + _plugin.EffectPipelines.TestScript(_slot, _plugin.PluginManager);
         }
 
         private void UpdateLive()
@@ -421,8 +421,8 @@ namespace DiyFfbPedal.UIFunction
             string error = _plugin.EffectPipelines.GetError(_slot);
             string cpu = "   CPU: " + _plugin.EffectPipelines.GetEvalTime(_slot).ToString("0.0", CultureInfo.InvariantCulture) + " ms/s";
             _live.Text = error != null
-                ? "Live: error - " + error
-                : "Live output (after gain): " + _plugin.EffectPipelines.GetLastOutput(_slot).ToString("0.###", CultureInfo.InvariantCulture) + cpu;
+                ? Loc.T("TextScriptLiveError", "Live: error -") + " " + error
+                : Loc.T("TextScriptLiveOutput", "Live output (after gain):") + " " + _plugin.EffectPipelines.GetLastOutput(_slot).ToString("0.###", CultureInfo.InvariantCulture) + cpu;
         }
     }
 }

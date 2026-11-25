@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace DiyFfbPedal
 {
@@ -17,12 +18,31 @@ namespace DiyFfbPedal
         public string Script;
         public string FreqScript = "";
 
+        // translation key part, from the English name (e.g. "Wheel lock" -> "WheelLock")
+        public string Id
+        {
+            get
+            {
+                var id = new System.Text.StringBuilder();
+                foreach (string word in Regex.Split(Name ?? "", "[^A-Za-z0-9]+"))
+                {
+                    if (word.Length == 0) continue;
+                    id.Append(char.ToUpperInvariant(word[0])).Append(word.Substring(1).ToLowerInvariant());
+                }
+                return id.ToString();
+            }
+        }
+
+        public string LocalName { get { return Loc.T("TextPreset" + Id + "Name", Name); } }
+        public string LocalDescription { get { return Loc.T("TextPreset" + Id + "Description", Description); } }
+        public string LocalCategory { get { return Loc.T("TextPresetCategory" + Category, Category); } }
+
         public PipelineScriptSlot CreateSlot(int pedal)
         {
             return new PipelineScriptSlot
             {
                 Pedal = pedal,
-                Name = Name,
+                Name = LocalName,
                 Enabled = false, // the user switches it on after a look at the parameters
                 OffsetType = (byte)OffsetType,
                 Gain = 1.0,

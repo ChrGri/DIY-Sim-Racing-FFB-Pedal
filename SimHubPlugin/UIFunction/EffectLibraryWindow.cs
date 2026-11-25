@@ -10,7 +10,7 @@ namespace DiyFfbPedal.UIFunction
     {
         private static EffectLibraryWindow _instance;
 
-        private static readonly string[] PedalNames = { "Clutch", "Brake", "Throttle" };
+        private static string[] PedalNames => new[] { Loc.T("TextPedalIdClutch", "Clutch"), Loc.T("TextPedalIdBrake", "Brake"), Loc.T("TextPedalIdThrottle", "Throttle") };
 
         private readonly DIY_FFB_Pedal _plugin;
         private readonly Action<PipelineScriptSlot> _added;
@@ -42,7 +42,7 @@ namespace DiyFfbPedal.UIFunction
         {
             _plugin = plugin;
             _added = added;
-            Title = "Effect library";
+            Title = Loc.T("TextLibraryTitle", "Effect library");
             Width = 860;
             Height = 560;
             Background = new SolidColorBrush(Color.FromRgb(0x25, 0x25, 0x25));
@@ -66,14 +66,14 @@ namespace DiyFfbPedal.UIFunction
                     category = preset.Category;
                     _list.Items.Add(new ListBoxItem
                     {
-                        Content = category.ToUpperInvariant(),
+                        Content = preset.LocalCategory.ToUpperInvariant(),
                         IsEnabled = false,
                         FontWeight = FontWeights.Bold,
                         Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xC1, 0x07)),
                         Margin = new Thickness(0, 6, 0, 0),
                     });
                 }
-                _list.Items.Add(new ListBoxItem { Content = "  " + preset.Name, Tag = preset, Foreground = Brushes.White });
+                _list.Items.Add(new ListBoxItem { Content = "  " + preset.LocalName, Tag = preset, Foreground = Brushes.White });
             }
             _list.SelectionChanged += (s, e) => ShowPreset();
             Grid.SetColumn(_list, 0);
@@ -93,7 +93,7 @@ namespace DiyFfbPedal.UIFunction
             var footer = new StackPanel { Margin = new Thickness(0, 6, 0, 0) };
             DockPanel.SetDock(footer, Dock.Bottom);
             var buttons = new StackPanel { Orientation = Orientation.Horizontal };
-            buttons.Children.Add(new TextBlock { Text = "Add as script to:", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0), Foreground = Brushes.White });
+            buttons.Children.Add(new TextBlock { Text = Loc.T("TextLibraryAddTo", "Add as script to:"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0), Foreground = Brushes.White });
             for (int pedal = 0; pedal < 3; pedal++)
             {
                 int p = pedal;
@@ -106,8 +106,8 @@ namespace DiyFfbPedal.UIFunction
             footer.Children.Add(_status);
             footer.Children.Add(new TextBlock
             {
-                Text = "The script is added switched off. Adapt the parameters at the top of the script, then enable it. " +
-                       "Start small: the pedal moves on its own.",
+                Text = Loc.T("TextLibraryNote", "The script is added switched off. Adapt the parameters at the top of the script, then enable it. " +
+                       "Start small: the pedal moves on its own."),
                 Foreground = Brushes.Gray,
                 FontSize = 10,
                 TextWrapping = TextWrapping.Wrap,
@@ -161,13 +161,13 @@ namespace DiyFfbPedal.UIFunction
                 _script.Text = "";
                 return;
             }
-            _title.Text = preset.Name;
-            _description.Text = preset.Description;
-            string output = preset.OffsetType == EffectPipelineOffsetType.Force_N ? "Force offset (N)"
-                          : preset.OffsetType == EffectPipelineOffsetType.ForceRelative ? "Relative force"
-                          : "Pedal angle offset (deg)";
-            string pedal = preset.SuggestedPedal >= 0 ? PedalNames[preset.SuggestedPedal] : "any pedal";
-            _details.Text = "Output: " + output + "   |   " + preset.Language + "   |   for: " + pedal;
+            _title.Text = preset.LocalName;
+            _description.Text = preset.LocalDescription;
+            string output = preset.OffsetType == EffectPipelineOffsetType.Force_N ? Loc.T("TextScriptOutputForce", "Force offset (N)")
+                          : preset.OffsetType == EffectPipelineOffsetType.ForceRelative ? Loc.T("TextScriptOutputRelative", "Relative force (0.1 = +10 %)")
+                          : Loc.T("TextScriptOutputAngle", "Pedal angle offset (deg)");
+            string pedal = preset.SuggestedPedal >= 0 ? PedalNames[preset.SuggestedPedal] : Loc.T("TextLibraryAnyPedal", "any pedal");
+            _details.Text = Loc.T("TextScriptOutput", "Output:") + " " + output + "   |   " + preset.Language + "   |   " + Loc.T("TextLibraryFor", "for:") + " " + pedal;
             _script.Text = string.IsNullOrEmpty(preset.FreqScript)
                 ? preset.Script
                 : "// frequency (Hz): " + preset.FreqScript + "\n" + preset.Script;
@@ -181,7 +181,7 @@ namespace DiyFfbPedal.UIFunction
             EffectPreset preset = Selected;
             if (preset == null || _plugin == null || _plugin.EffectPipelines == null) return;
             PipelineScriptSlot slot = _plugin.EffectPipelines.AddSlot(pedal, preset.CreateSlot(pedal), keepName: true);
-            _status.Text = "Added \"" + preset.Name + "\" to the " + PedalNames[pedal].ToLowerInvariant() + " pedal (switched off).";
+            _status.Text = string.Format(Loc.T("TextLibraryAdded", "Added \"{0}\" to {1} (switched off)."), preset.LocalName, PedalNames[pedal]);
             _added?.Invoke(slot);
         }
     }

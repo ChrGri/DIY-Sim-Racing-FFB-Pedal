@@ -127,7 +127,7 @@ namespace DiyFfbPedal
                 {
                     int count = 0;
                     foreach (var s in settings.Pipeline_slots) if (s.Pedal == pedal) count++;
-                    slot.Name = "Script " + (count + 1);
+                    slot.Name = Loc.T("TextScriptDefaultName", "Script") + " " + (count + 1);
                 }
                 else
                 {

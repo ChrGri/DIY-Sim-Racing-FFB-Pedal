@@ -633,4 +633,278 @@
   <data name="DIYFFBPedalPlugin_TextHome" xml:space="preserve">
     <value>HOME</value>
   </data>
+  <data name="DIYFFBPedalPlugin_TextScriptHelpNCalc" xml:space="preserve">
+    <value>NCalc. Variables: t (time in s), dt (0.002 s), prev (last value), phase (radians, from the frequency field), pi, and every SimHub property, e.g. [DataCorePlugin.GameData.Rpms]. Functions: Sin, Cos, Abs, Min, Max, Pow, Sqrt, if(cond, a, b).
+Example (engine, angle): frequency [DataCorePlugin.GameData.Rpms] / 60, script 0.004 * [DataCorePlugin.GameData.Throttle] / 100 * Sin(phase)
+Example (ABS, angle): if([DataCorePlugin.GameData.ABSActive] &gt; 0, 0.06 * Sin(2 * pi * 25 * t), 0)</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptHelpJs" xml:space="preserve">
+    <value>JavaScript (ES5, like SimHub's JS formulas). The script is the body of a function(t, dt, prev, phase): use return. Properties: $prop('DataCorePlugin.GameData.Rpms'). root keeps values between calls (root.x = ...). Math.sin, Math.min, ...
+Runs 500 times per second: keep it short, no loops over large data. 'CPU' shows the cost (10 ms/s = 1 % of a core).
+Example (lockup steps): var l = $prop('ShakeITMotorsV3Plugin.Export.wheelsliplock.All'); var a = l &gt;= 20 ? 0.8 : l &gt;= 10 ? 0.3 : 0; return 0.06 * a * Math.sin(2 * pi * 30 * t);</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptDangerTitle" xml:space="preserve">
+    <value>DANGER: robot mode!</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptDangerText" xml:space="preserve">
+    <value>With scripts I move the pedal on my own. I can push your foot and put energy into it instead of only reacting to it. A wrong sign, unit or typo can mean full force or a hard kick. Start with small values and gain 1, keep your foot on the pedal when testing, and disable the script at the first surprise.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptDangerAck" xml:space="preserve">
+    <value>I understand, let me script</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptSlot" xml:space="preserve">
+    <value>Script:</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptLibrary" xml:space="preserve">
+    <value>Library</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptLibraryTooltip" xml:space="preserve">
+    <value>Ready-made effects: ABS, engine, wheel slip, bumps, ...</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptNew" xml:space="preserve">
+    <value>+ New</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptDuplicate" xml:space="preserve">
+    <value>Duplicate</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptRemove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptLivePlot" xml:space="preserve">
+    <value>Live plot</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptEmpty" xml:space="preserve">
+    <value>No effect for this pedal yet. Pick one from the "Library" or write your own with "+ New". All enabled scripts of a pedal are added up.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptEnabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptName" xml:space="preserve">
+    <value>Name:</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptLanguage" xml:space="preserve">
+    <value>Language:</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptOutput" xml:space="preserve">
+    <value>Output:</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptOutputAngle" xml:space="preserve">
+    <value>Pedal angle offset (deg)</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptOutputForce" xml:space="preserve">
+    <value>Force offset (N)</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptOutputRelative" xml:space="preserve">
+    <value>Relative force (0.1 = +10 %)</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptGain" xml:space="preserve">
+    <value>Gain:</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptFrequency" xml:space="preserve">
+    <value>Frequency (Hz) for phase:</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptMoreExamples" xml:space="preserve">
+    <value>More examples (GitHub)</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptThisScript" xml:space="preserve">
+    <value>this script</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptRemoveConfirm" xml:space="preserve">
+    <value>Remove {0}?</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptEffects" xml:space="preserve">
+    <value>Script effects</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptLabelJs" xml:space="preserve">
+    <value>Script (function body, return the value):</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptLabelNCalc" xml:space="preserve">
+    <value>Script (NCalc formula):</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptResult" xml:space="preserve">
+    <value>Script result at t = 0:</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptLiveError" xml:space="preserve">
+    <value>Live: error -</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptLiveOutput" xml:space="preserve">
+    <value>Live output (after gain):</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextLibraryTitle" xml:space="preserve">
+    <value>Effect library</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextLibraryAddTo" xml:space="preserve">
+    <value>Add as script to:</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextLibraryNote" xml:space="preserve">
+    <value>The script is added switched off. Adapt the parameters at the top of the script, then enable it. Start small: the pedal moves on its own.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextLibraryAnyPedal" xml:space="preserve">
+    <value>any pedal</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextLibraryFor" xml:space="preserve">
+    <value>for:</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextLibraryAdded" xml:space="preserve">
+    <value>Added "{0}" to {1} (switched off).</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPlotTitle" xml:space="preserve">
+    <value>Script effects - live offsets (last 5 s)</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPlotAngle" xml:space="preserve">
+    <value>Pedal angle offset</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPlotForce" xml:space="preserve">
+    <value>Force offset</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPlotRelative" xml:space="preserve">
+    <value>Relative force</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPlotLegendSum" xml:space="preserve">
+    <value>(sum of its scripts)</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPlotNow" xml:space="preserve">
+    <value>now</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptDefaultName" xml:space="preserve">
+    <value>Script</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptOff" xml:space="preserve">
+    <value>off</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetCategoryBrake" xml:space="preserve">
+    <value>Brake</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetAbsName" xml:space="preserve">
+    <value>ABS</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetAbsDescription" xml:space="preserve">
+    <value>ABS pump: pulse waveform (quick kick, smooth return), signal held for 100 ms against flicker, 5/15 ms fade in/out, stronger with brake pressure, faded out at low speed.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetAbsSimpleName" xml:space="preserve">
+    <value>ABS simple</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetAbsSimpleDescription" xml:space="preserve">
+    <value>Plain sine while ABS is active, like the former built-in ABS effect.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetWheelLockName" xml:space="preserve">
+    <value>Wheel lock</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetWheelLockDescription" xml:space="preserve">
+    <value>Vibration growing with wheel lock. Needs the 'wheelsliplock' effect exported in ShakeIt Motors.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetWheelLockInStepsName" xml:space="preserve">
+    <value>Wheel lock in steps</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetWheelLockInStepsDescription" xml:space="preserve">
+    <value>Lock-up warning in steps with hysteresis: 10 % lock gives 30 %, 20 % lock 80 % intensity.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetDecelerationLoadGForceName" xml:space="preserve">
+    <value>Deceleration load (G-force)</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetDecelerationLoadGForceDescription" xml:space="preserve">
+    <value>Brake gets heavier with deceleration, like the former G-force effect. Check the sign of the acceleration in your game with the live plot.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetThresholdBrakingTrainerName" xml:space="preserve">
+    <value>Threshold braking trainer</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetThresholdBrakingTrainerDescription" xml:space="preserve">
+    <value>Light buzz in the target window of the pedal force, hard knock when pressing too much.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetCategoryThrottle" xml:space="preserve">
+    <value>Throttle</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetTractionControlName" xml:space="preserve">
+    <value>Traction control</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetTractionControlDescription" xml:space="preserve">
+    <value>Vibration while traction control cuts in, stronger with more throttle.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetWheelSpinName" xml:space="preserve">
+    <value>Wheel spin</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetWheelSpinDescription" xml:space="preserve">
+    <value>Vibration growing with wheel spin. Needs the 'wheelsliplock' effect exported in ShakeIt Motors.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetCategoryEngine" xml:space="preserve">
+    <value>Engine</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetEngineVibrationName" xml:space="preserve">
+    <value>Engine vibration</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetEngineVibrationDescription" xml:space="preserve">
+    <value>Vibration at crank frequency (RPM / 60), stronger with RPM and throttle, like the former RPM effect.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetRevLimiterName" xml:space="preserve">
+    <value>Rev limiter</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetRevLimiterDescription" xml:space="preserve">
+    <value>Hard knock while the rev limiter / red line is reached.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetShiftCueName" xml:space="preserve">
+    <value>Shift cue</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetShiftCueDescription" xml:space="preserve">
+    <value>Short buzz when the shift lights are close to the shift point.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetCategoryRoad" xml:space="preserve">
+    <value>Road</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetSpeedRumbleName" xml:space="preserve">
+    <value>Speed rumble</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetSpeedRumbleDescription" xml:space="preserve">
+    <value>Road rumble whose frequency rises with speed, like the former speed mode of the RPM effect.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetBumpsRoadImpactName" xml:space="preserve">
+    <value>Bumps (road impact)</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetBumpsRoadImpactDescription" xml:space="preserve">
+    <value>Kicks on sudden vertical hits, from the fast part of the heave acceleration, like the former road impact effect. Check the unit of the heave acceleration in your game and adapt gain.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetKerbsIracingName" xml:space="preserve">
+    <value>Kerbs (iRacing)</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetKerbsIracingDescription" xml:space="preserve">
+    <value>iRacing reports the rumble strip pitch per tyre; the front tyres drive the vibration frequency.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetCategoryMisc" xml:space="preserve">
+    <value>Misc</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetSteeringForceBlendIracingName" xml:space="preserve">
+    <value>Steering force blend (iRacing)</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetSteeringForceBlendIracingDescription" xml:space="preserve">
+    <value>Part of the steering wheel force on the brake pedal (iRacing).</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetPitLaneReminderName" xml:space="preserve">
+    <value>Pit lane reminder</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetPitLaneReminderDescription" xml:space="preserve">
+    <value>Short pulse every second while in the pit lane.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetCustomTriggerName" xml:space="preserve">
+    <value>Custom trigger</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetCustomTriggerDescription" xml:space="preserve">
+    <value>Vibrates while any SimHub property is above a threshold, like the former custom effects 1-4.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetCategoryTest" xml:space="preserve">
+    <value>Test</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetDirectionCheckName" xml:space="preserve">
+    <value>Direction check</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetDirectionCheckDescription" xml:space="preserve">
+    <value>Constant 0.2 degrees (about 1 mm sled travel): the pedal should move slightly towards you.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetSlowSweepName" xml:space="preserve">
+    <value>Slow sweep</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextPresetSlowSweepDescription" xml:space="preserve">
+    <value>0.5 Hz sine, easy to follow in the live plot.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TabTextScripts" xml:space="preserve">
+    <value>Scripts</value>
+  </data>
 </root>
