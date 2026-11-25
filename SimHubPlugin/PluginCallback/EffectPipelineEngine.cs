@@ -42,6 +42,10 @@ namespace DiyFfbPedal
         private const int SamplesPerPacket = Constants.effectPipelineSamplesPerPacket;
         private const double SamplePeriod_s = Constants.effectPipelineSamplePeriod_s;
         private const double MinSendInterval_s = 0.010;
+        // samples computed ahead of now (~one telemetry update); the rest of a packet repeats
+        // the last computed value and is replaced by the next packets before the pedal plays it
+        private const int LeadSamples = 8;
+        private const int RingSize = 128;
 
         private readonly DIY_FFB_Pedal _plugin;
         private readonly Stopwatch _clock = Stopwatch.StartNew();
@@ -59,15 +63,17 @@ namespace DiyFfbPedal
             public JintScriptHost Js;
 
             public double Phase;
-            public double[] LastPhases = new double[0];
+            // every sample is computed exactly once, in time order (scripts keep state in
+            // prev, phase and the JavaScript root object). Ring of the computed raw values.
+            public bool HasNext;
+            public uint NextIndex;
+            public readonly double[] Ring = new double[RingSize];
+            public readonly uint[] RingIndex = new uint[RingSize];
             public double Prev;
             public double T;
             public double LastOutput;
             public string Error;
             public double EvalTime_ms; // per second of samples, smoothed
-            // raw values of the last packet, so prev continues from the sample before the next one
-            public uint LastStartIndex;
-            public double[] LastValues = new double[0];
         }
 
         private readonly Dictionary<PipelineScriptSlot, SlotState> _states = new Dictionary<PipelineScriptSlot, SlotState>();
@@ -424,15 +430,20 @@ namespace DiyFfbPedal
                     {
                         state.LastOutput = 0.0;
                         state.Prev = 0.0;
+                        state.HasNext = false;
                         continue;
                     }
 
                     long ticks = Stopwatch.GetTimestamp();
-                    bool ok = ComputeSlot(slot, state, startIndex, values);
+                    int computed;
+                    bool ok = ComputeSlot(slot, state, startIndex, values, out computed);
                     double ms = (Stopwatch.GetTimestamp() - ticks) * 1000.0 / Stopwatch.Frequency;
-                    // one packet covers SamplesPerPacket * dt seconds of samples
-                    double msPerSecond = ms / (SamplesPerPacket * SamplePeriod_s);
-                    state.EvalTime_ms += 0.1 * (msPerSecond - state.EvalTime_ms);
+                    if (computed > 0)
+                    {
+                        // cost per second of samples
+                        double msPerSecond = ms / (computed * SamplePeriod_s);
+                        state.EvalTime_ms += 0.1 * (msPerSecond - state.EvalTime_ms);
+                    }
                     if (!ok) continue;
 
                     if (sums[t] == null) sums[t] = new double[SamplesPerPacket];
@@ -599,50 +610,64 @@ namespace DiyFfbPedal
             return value;
         }
 
-        // values: raw script results (before gain) for the samples of the next packet
-        private bool ComputeSlot(PipelineScriptSlot slot, SlotState state, uint startIndex, double[] values)
+        // values: raw script results (before gain) for the samples [nowIndex, nowIndex + values.Length).
+        // Computes the new samples up to nowIndex + LeadSamples in time order, each one once:
+        // recomputing overlapping samples would run stateful scripts (root, filters,
+        // oscillators) ahead of time and make them jump at every packet.
+        private bool ComputeSlot(PipelineScriptSlot slot, SlotState state, uint nowIndex, double[] values, out int computed)
         {
+            computed = 0;
             if (!Compile(slot, state)) return false;
 
-            // the packets overlap: continue from the value computed for the sample right before
-            uint before = startIndex - 1;
-            if (state.LastValues.Length > 0 && before >= state.LastStartIndex &&
-                before - state.LastStartIndex < (uint)state.LastValues.Length)
-                state.Prev = state.LastValues[before - state.LastStartIndex];
+            uint endIndex = nowIndex + LeadSamples;
+            int behind = (int)(endIndex - state.NextIndex);
+            if (!state.HasNext || behind > RingSize / 2 || behind < -RingSize / 2)
+            {
+                // first run or after a pause: start at now
+                state.HasNext = true;
+                state.NextIndex = nowIndex;
+                for (int r = 0; r < RingSize; r++) state.RingIndex[r] = uint.MaxValue;
+            }
 
-            double[] phases = new double[values.Length];
             try
             {
-                // oscillator: frequency evaluated once per packet, phase integrated per sample
-                // and continued from the previous packet, so frequency changes don't jump
-                double phaseStep = 0.0;
-                if (HasFrequency(state))
+                if ((int)(endIndex - state.NextIndex) >= 0)
                 {
-                    state.T = startIndex * SamplePeriod_s;
-                    double freq = EvaluateFrequency(state);
-                    if (double.IsNaN(freq) || double.IsInfinity(freq)) freq = 0.0;
-                    freq = Math.Max(0.0, Math.Min(MaxFrequency_Hz, freq));
-                    phaseStep = 2.0 * Math.PI * freq * SamplePeriod_s;
-                    if (state.LastPhases.Length > 0 && before >= state.LastStartIndex &&
-                        before - state.LastStartIndex < (uint)state.LastPhases.Length)
-                        state.Phase = state.LastPhases[before - state.LastStartIndex] + phaseStep;
+                    // oscillator: frequency evaluated once per update, phase integrated per sample
+                    double phaseStep = 0.0;
+                    if (HasFrequency(state))
+                    {
+                        state.T = state.NextIndex * SamplePeriod_s;
+                        double freq = EvaluateFrequency(state);
+                        if (double.IsNaN(freq) || double.IsInfinity(freq)) freq = 0.0;
+                        freq = Math.Max(0.0, Math.Min(MaxFrequency_Hz, freq));
+                        phaseStep = 2.0 * Math.PI * freq * SamplePeriod_s;
+                    }
+
+                    for (uint idx = state.NextIndex; (int)(endIndex - idx) >= 0; idx++)
+                    {
+                        state.T = idx * SamplePeriod_s;
+                        state.Phase = (state.Phase + phaseStep) % (2.0 * Math.PI);
+                        double value = EvaluateMain(state);
+                        if (double.IsNaN(value) || double.IsInfinity(value)) value = 0.0;
+                        state.Prev = value;
+                        int r = (int)(idx % RingSize);
+                        state.Ring[r] = value;
+                        state.RingIndex[r] = idx;
+                        computed++;
+                    }
+                    state.NextIndex = endIndex + 1;
                 }
 
+                double last = 0.0;
                 for (int i = 0; i < values.Length; i++)
                 {
-                    state.T = (startIndex + (uint)i) * SamplePeriod_s;
-                    if (i > 0) state.Phase += phaseStep;
-                    state.Phase %= 2.0 * Math.PI;
-                    phases[i] = state.Phase;
-                    double value = EvaluateMain(state);
-                    if (double.IsNaN(value) || double.IsInfinity(value)) value = 0.0;
-                    state.Prev = value;
-                    values[i] = value;
+                    uint idx = nowIndex + (uint)i;
+                    int r = (int)(idx % RingSize);
+                    if (i <= LeadSamples && state.RingIndex[r] == idx) last = state.Ring[r];
+                    values[i] = last; // beyond the lead: hold, overwritten by the next packets
                 }
                 state.LastOutput = values[0] * slot.Gain;
-                state.LastStartIndex = startIndex;
-                state.LastValues = (double[])values.Clone();
-                state.LastPhases = phases;
                 state.Error = null;
                 return true;
             }
@@ -650,6 +675,7 @@ namespace DiyFfbPedal
             {
                 state.Error = ex.Message;
                 state.LastOutput = 0.0;
+                state.HasNext = false;
                 return false;
             }
         }
