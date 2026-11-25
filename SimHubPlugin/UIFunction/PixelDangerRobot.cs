@@ -8,14 +8,13 @@ using System.Windows.Threading;
 
 namespace DiyFfbPedal.UIFunction
 {
-    // Small animated 8-bit robot (boxy head, antennas, grinning teeth, glowing red eyes)
-    // next to a danger sign, shown above the script effects. Original pixel art drawn
-    // in code (no image files). Two frames: eyes, antenna tips and chest light pulse,
-    // the sign bobs.
+    // Small animated 8-bit robot (boxy head, antennas, grinning teeth, glowing red eyes),
+    // shown next to the script effects warning (its speech bubble). Original pixel art
+    // drawn in code (no image files). Two frames: eyes, antenna tips and chest light pulse.
     public class PixelDangerRobot : UserControl
     {
         private const int Px = 3; // screen pixels per art pixel
-        private const int ArtWidth = 33;
+        private const int ArtWidth = 17;
         private const int ArtHeight = 22;
 
         // . transparent  K outline  L face  G body  W teeth  Y yellow  B black  P pole
@@ -46,7 +45,7 @@ namespace DiyFfbPedal.UIFunction
             "....KKKK.KKKK....",
         };
 
-        private static readonly string[] Sign =
+        internal static readonly string[] Sign =
         {
             "......K......",
             ".....KYK.....",
@@ -59,16 +58,6 @@ namespace DiyFfbPedal.UIFunction
             "..KYYYBYYYK..",
             ".KYYYYYYYYYK.",
             "KKKKKKKKKKKKK",
-            "......P......",
-            "......P......",
-            "......P......",
-            "......P......",
-            "......P......",
-            "......P......",
-            "......P......",
-            "......P......",
-            "......P......",
-            "......P......",
         };
 
         private static readonly Dictionary<char, Color> Palette = new Dictionary<char, Color>
@@ -134,12 +123,10 @@ namespace DiyFfbPedal.UIFunction
         {
             var canvas = new Canvas { Width = ArtWidth * Px, Height = ArtHeight * Px, ClipToBounds = true };
             DrawArt(canvas, Robot, 0, 0, frame);
-            // the sign bobs up by one pixel in the second frame
-            DrawArt(canvas, Sign, 19, 1 - frame, frame);
             return canvas;
         }
 
-        private static void DrawArt(Canvas canvas, string[] art, int offsetX, int offsetY, int frame)
+        internal static void DrawArt(Canvas canvas, string[] art, int offsetX, int offsetY, int frame, int px = Px, int width = ArtWidth, int height = ArtHeight)
         {
             for (int y = 0; y < art.Length; y++)
             {
@@ -149,18 +136,36 @@ namespace DiyFfbPedal.UIFunction
                     if (c == '.') continue;
                     Color color;
                     if (!FrameColors[frame].TryGetValue(c, out color)) color = Palette[c];
-                    AddPixel(canvas, offsetX + x, offsetY + y, color);
+                    AddPixel(canvas, offsetX + x, offsetY + y, color, px, width, height);
                 }
             }
         }
 
-        private static void AddPixel(Canvas canvas, int x, int y, Color color)
+        private static void AddPixel(Canvas canvas, int x, int y, Color color, int px, int width, int height)
         {
-            if (x < 0 || y < 0 || x >= ArtWidth || y >= ArtHeight) return;
-            var r = new Rectangle { Width = Px, Height = Px, Fill = new SolidColorBrush(color) };
-            Canvas.SetLeft(r, x * Px);
-            Canvas.SetTop(r, y * Px);
+            if (x < 0 || y < 0 || x >= width || y >= height) return;
+            var r = new Rectangle { Width = px, Height = px, Fill = new SolidColorBrush(color) };
+            Canvas.SetLeft(r, x * px);
+            Canvas.SetTop(r, y * px);
             canvas.Children.Add(r);
+        }
+    }
+
+    // The danger sign from the robot's art as a small static icon (speech bubble title).
+    public class PixelDangerSign : UserControl
+    {
+        private const int Px = 2;
+
+        public PixelDangerSign()
+        {
+            int width = PixelDangerRobot.Sign[0].Length;
+            int height = PixelDangerRobot.Sign.Length;
+            var canvas = new Canvas { Width = width * Px, Height = height * Px };
+            PixelDangerRobot.DrawArt(canvas, PixelDangerRobot.Sign, 0, 0, 0, Px, width, height);
+            Content = canvas;
+            Width = width * Px;
+            Height = height * Px;
+            SnapsToDevicePixels = true;
         }
     }
 }

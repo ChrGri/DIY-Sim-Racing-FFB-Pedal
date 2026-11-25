@@ -57,40 +57,63 @@ namespace DiyFfbPedal.UIFunction
         {
             var root = new StackPanel { Margin = new Thickness(4) };
 
-            // warning: scripts turn the pedal into an active device
-            var warning = new Border
-            {
-                BorderBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0xC1, 0x07)),
-                BorderThickness = new Thickness(1),
-                Padding = new Thickness(4),
-                Margin = new Thickness(0, 0, 0, 6),
-            };
-            var warningRow = new DockPanel();
-            var robot = new PixelDangerRobot { Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Top };
+            // warning: scripts turn the pedal into an active device.
+            // The robot says it in a speech bubble.
+            var yellow = new SolidColorBrush(Color.FromRgb(0xFF, 0xC1, 0x07));
+            var bubbleBackground = new SolidColorBrush(Color.FromRgb(0x2E, 0x2A, 0x1E));
+            var warningRow = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
+            var robot = new PixelDangerRobot { Margin = new Thickness(0, 4, 0, 0), VerticalAlignment = VerticalAlignment.Top };
             DockPanel.SetDock(robot, Dock.Left);
             warningRow.Children.Add(robot);
+
+            // bubble tail pointing at the robot's mouth
+            var tail = new System.Windows.Shapes.Polygon
+            {
+                Points = new PointCollection { new Point(0, 12), new Point(12, 4), new Point(12, 20) },
+                Fill = bubbleBackground,
+                Stroke = yellow,
+                StrokeThickness = 1,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(2, 20, -1, 0),
+            };
+            DockPanel.SetDock(tail, Dock.Left);
+            warningRow.Children.Add(tail);
+
+            var bubble = new Border
+            {
+                BorderBrush = yellow,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                Background = bubbleBackground,
+                Padding = new Thickness(8, 4, 8, 4),
+            };
             var warningText = new StackPanel();
-            warningText.Children.Add(new TextBlock
+            var titleRow = new StackPanel { Orientation = Orientation.Horizontal };
+            titleRow.Children.Add(new PixelDangerSign { Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
+            titleRow.Children.Add(new TextBlock
             {
-                Text = "DANGER: robot mode",
+                Text = "DANGER: robot mode!",
                 FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xC1, 0x07)),
+                Foreground = yellow,
+                VerticalAlignment = VerticalAlignment.Center,
             });
+            warningText.Children.Add(titleRow);
             warningText.Children.Add(new TextBlock
             {
-                Text = "Scripts make the pedal move on its own. It can push your foot and put energy into it instead " +
+                Text = "With scripts I move the pedal on my own. I can push your foot and put energy into it instead " +
                        "of only reacting to it. A wrong sign, unit or typo can mean full force or a hard kick. " +
-                       "Start with small values, test with your foot on the pedal and gain 1, and disable the script at the first surprise.",
+                       "Start with small values and gain 1, keep your foot on the pedal when testing, and disable the script at the first surprise.",
                 TextWrapping = TextWrapping.Wrap,
                 FontSize = 10,
+                Margin = new Thickness(0, 2, 0, 0),
             });
             _ack = new CheckBox { Content = "I understand, let me script", Margin = new Thickness(0, 4, 0, 0), FontSize = 11 };
             _ack.Checked += (s, e) => StoreAck();
             _ack.Unchecked += (s, e) => StoreAck();
             warningText.Children.Add(_ack);
-            warningRow.Children.Add(warningText);
-            warning.Child = warningRow;
-            root.Children.Add(warning);
+            bubble.Child = warningText;
+            warningRow.Children.Add(bubble);
+            root.Children.Add(warningRow);
 
             // slot list
             var slotRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
