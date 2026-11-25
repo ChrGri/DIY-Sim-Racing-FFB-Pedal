@@ -41,12 +41,14 @@ namespace DiyFfbPedal.UIFunction
         private static string HelpNCalc => Loc.T("TextScriptHelpNCalc",
             "NCalc. Variables: t (time in s), dt (0.002 s), prev (last value), phase (radians, from the frequency field), pi, " +
             "and every SimHub property, e.g. [DataCorePlugin.GameData.Rpms]. Functions: Sin, Cos, Abs, Min, Max, Pow, Sqrt, if(cond, a, b).\n" +
+            "Pedal values (force, travel, ...): SimHub > Available properties, search \"diy_ffb_pedal\".\n" +
             "Example (engine, angle): frequency [DataCorePlugin.GameData.Rpms] / 60, script 0.004 * [DataCorePlugin.GameData.Throttle] / 100 * Sin(phase)\n" +
             "Example (ABS, angle): if([DataCorePlugin.GameData.ABSActive] > 0, 0.06 * Sin(2 * pi * 25 * t), 0)");
 
         private static string HelpJs => Loc.T("TextScriptHelpJs",
             "JavaScript (ES5, like SimHub's JS formulas). The script is the body of a function(t, dt, prev, phase): use return. " +
             "Properties: $prop('DataCorePlugin.GameData.Rpms'). root keeps values between calls (root.x = ...). Math.sin, Math.min, ...\n" +
+            "Pedal values (force, travel, ...): SimHub > Available properties, search \"diy_ffb_pedal\".\n" +
             "Runs 500 times per second: keep it short, no loops over large data. 'CPU' shows the cost (10 ms/s = 1 % of a core).\n" +
             "Example (lockup steps): var l = $prop('ShakeITMotorsV3Plugin.Export.wheelsliplock.All'); var a = l >= 20 ? 0.8 : l >= 10 ? 0.3 : 0; return 0.06 * a * Math.sin(2 * pi * 30 * t);");
 

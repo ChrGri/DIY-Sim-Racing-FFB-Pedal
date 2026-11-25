@@ -74,7 +74,8 @@ Notes:
 - Missing properties count as 0, `true`/`false` as 1/0.
 - Property names are case sensitive. Check them in SimHub under
   **Available properties** (enable "Show game specific properties" for
-  `GameRawData`). Example: it is `ShakeITMotorsV3Plugin`, not `ShakeItMotorsV3Plugin`.
+  `GameRawData`). The values of the pedals themselves are found there with the
+  search `diy_ffb_pedal` (see section 10). Example: it is `ShakeITMotorsV3Plugin`, not `ShakeItMotorsV3Plugin`.
 - Start small (Gain 1, amplitudes below 0.1° / 10 N) and raise slowly.
 
 ## 1. Tests
@@ -394,6 +395,9 @@ currently lose most of their effect.
 The plugin publishes the state of each pedal as SimHub properties. They can be
 used in scripts, but also anywhere else in SimHub (dashboards, ShakeIt, other
 plugins). Replace `Brake` with `Clutch` or `Throttle` for the other pedals.
+
+To see all of them with their live values: SimHub → **Available properties** →
+type `diy_ffb_pedal` into the search field. Click a property to copy its name.
 (Until version 26.47 the names had the pedal at the end, e.g.
 `PedalStatus.PedalForceInKg.Brake`.)
 
