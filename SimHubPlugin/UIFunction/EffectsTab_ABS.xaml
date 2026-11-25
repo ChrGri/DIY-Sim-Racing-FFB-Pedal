@@ -1,0 +1,58 @@
+<UserControl x:Class="DiyFfbPedal.UIFunction.EffectsTab_ABS"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DiyFfbPedal.UIFunction"
+             xmlns:localUI="clr-namespace:DiyFfbPedal.UIElement"
+             xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins" mc:Ignorable="d" 
+             xmlns:controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+             d:DesignHeight="240" d:DesignWidth="648">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/DiyFfbPedal;component/UIStyles/DefaultStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Border Style="{StaticResource Card}" Margin="0" Height="240" Padding="0,0,0,8">
+            <StackPanel HorizontalAlignment="Left" Height="232" VerticalAlignment="Top" Width="648">
+                <StackPanel Height="20" Width="648" Orientation="Horizontal">
+                    <styles:SHToggleButton x:Name="checkbox_enable_ABS" Content="" Checked="checkbox_enable_ABS_Checked" Unchecked="checkbox_enable_ABS_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" Margin="15,0,0,0" ToolTip="Trigger is evaluated in the plugin; no need to send the config to the pedal."/>
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSTittle, 'ABS/TC Effect'}" Height="15" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial Black" HorizontalAlignment="Left" Margin="6,0,0,0"/>
+                </StackPanel>
+
+                <Canvas x:Name="canvas_plot_ABS" Height="50" Width="510" Background="#141414" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center" Margin="0,2,0,0" >
+                    <Polyline x:Name="Polyline_plot_ABS" Height="50" Width="510" Points="0,25 102,25 204,25 306,25 408,25 510,25" Stroke="{DynamicResource AccentColorBrush}" Opacity="0.7" HorizontalAlignment="Left" VerticalAlignment="Center" StrokeThickness="2" />
+                </Canvas>
+
+                <StackPanel Height="36" Width="510" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,3,0,0">
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSEffectProfile, 'Waveform:'}" Height="20" Width="70" FontSize="10" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
+                    <ComboBox x:Name="AbsPattern" SelectionChanged="AbsPattern_SelectionChanged" Width="90" Height="20" FontSize="10" SelectedIndex="0" Margin="8,0,0,0" BorderThickness="0,0,0,0">
+                        <ComboBoxItem Content="Sine"/>
+                        <ComboBoxItem Content="Sawtooth"/>
+                    </ComboBox>
+                    <Button Style="{StaticResource ModernPillButton}" x:Name="btn_testABS" Content="{SLoc DIYFFBPedalPlugin_TextEffectABSTestABS, 'Test ABS/TC'}" Click="btn_testABS_Click" Height="20" FontWeight="Bold" FontSize="9" Width="85" HorizontalAlignment="Left" Margin="15,0,0,0" ToolTip="Click for testing ABS/TC, click again to cancel" MinHeight="20" FontFamily="Arial" Padding="0,0,0,0" VerticalContentAlignment="Center"/>
+                    <CheckBox Width="30" x:Name="TestAbs_check" IsEnabled="False" Height="20" FontSize="8" Foreground="White" Content="" HorizontalAlignment="Left" Margin="4,0,0,0"/>
+                </StackPanel>
+
+                <StackPanel Height="36" Width="510" Orientation="Horizontal" Margin="0,2,0,0">
+                    <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSEffectApply, 'Modulates:'}" Height="25" Width="80" FontSize="10" FontFamily="Arial" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Left" Padding="0,0,0,0"/>
+                    <ComboBox x:Name="EffectAppliedOnForceOrTravel_combobox" SelectionChanged="EffectAppliedOnForceOrTravel_combobox_SelectionChanged" Width="90" Height="20" FontSize="10" SelectedIndex="0" BorderThickness="0,0,0,0" Margin="8,0,0,0">
+                        <ComboBoxItem Content="Force"/>
+                        <ComboBoxItem Content="Travel"/>
+                    </ComboBox>
+                    <StackPanel Height="20" Width="200" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="15,0,0,0">
+                        <styles:SHToggleButton x:Name="Simulate_ABS_check" Content="" Checked="Simulate_ABS_check_Checked" Unchecked="Simulate_ABS_check_Unchecked" IsChecked="False" FontSize="10" Width="35" Height="15" HorizontalAlignment="Left" FontFamily="Arial" ToolTip="Triggers the ABS effect in the pedal whenever the pedal force exceeds the ABS threshold set on the force curve." RenderTransformOrigin="0.5,0.5" Margin="0,0,0,0" />
+                        <Label Content="{SLoc DIYFFBPedalPlugin_TextEffectABSSimulateABS, 'ABS above force threshold'}" Height="20" Width="150" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" HorizontalAlignment="Left" FontSize="10" Margin="6,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <localUI:SliderWithLabel x:Name="Slider_ABS_AMP" Width="510" Height="40" SliderLength="510" MaxValue="20" TickFrequency="0.1" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectABSSliderAmp, 'ABS/TC Amplitude'}" Unit="%" SliderValueChanged="Slider_ABS_AMP_SliderValueChanged" Margin="0,2,0,0"/>
+                <localUI:SliderWithLabel x:Name="Slider_ABS_freq" Width="510" Height="40" SliderLength="510" SliderName="{SLoc DIYFFBPedalPlugin_TextEffectABSSliderFreq, 'ABS/TC Frequency'}" MaxValue="50" Unit="Hz" SliderValueChanged="Slider_ABS_freq_SliderValueChanged" Margin="0,2,0,0"/>
+
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

@@ -91,6 +91,7 @@ namespace DiyFfbPedal
                 //ControlStrategy_Tab.dap_config_st = tmp_struct;
                 //PID_Tab.dap_config_st = tmp_struct;
                 //MPC_tab.dap_config_st = tmp_struct;
+                EffectsABS_Tab.dap_config_st = tmp_struct;
                 EffectsBitePoint_Tab.dap_config_st = tmp_struct;
                 //EffectsCustom2_Tab.dap_config_st = tmp_struct;
                 PedalForceTravel_Tab.dap_config_st = tmp_struct;
@@ -108,6 +109,7 @@ namespace DiyFfbPedal
 
 
                 Misc_Tab.Settings = Plugin.Settings;
+                EffectsABS_Tab.Settings = Plugin.Settings;
                 //EffectsCustom_Tab.Settings = Plugin.Settings;
 
                 PedalForceTravel_Tab.Settings = Plugin.Settings;
@@ -128,6 +130,7 @@ namespace DiyFfbPedal
                 PedalInfo.Settings = Plugin.Settings;
 
 
+                EffectsABS_Tab.calculation = Plugin._calculations;
                 EffectsBitePoint_Tab.calculation = Plugin._calculations;
                 //EffectsCustom2_Tab.calculation = Plugin._calculations;
                 Misc_Tab.calculation = Plugin._calculations;

@@ -265,6 +265,9 @@
     <Compile Include="UIFunction\CurveTab_Rudder.xaml.cs">
       <DependentUpon>CurveTab_Rudder.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIFunction\EffectsTab_ABS.xaml.cs">
+      <DependentUpon>EffectsTab_ABS.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UIFunction\EffectsTab_BitePoint.xaml.cs">
       <DependentUpon>EffectsTab_BitePoint.xaml</DependentUpon>
     </Compile>
@@ -448,6 +451,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UIFunction\CurveTab_Rudder.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UIFunction\EffectsTab_ABS.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

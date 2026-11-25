@@ -1,10 +1,12 @@
 # Script effects (effect pipelines) – examples
 
-All vehicle effects of the pedal are scripts: ABS/TC, engine, speed rumble,
-G-force, wheel slip, bumps and your own. The plugin evaluates the scripts for every
-sample on a 500 Hz clock, streams the samples to the pedal and the pedal plays them
-back on top of its force curve. Only the bite point and the rudder effects are
-still built into the pedal.
+The vehicle effects of the pedal are scripts: engine, speed rumble, G-force, wheel
+slip, bumps and your own. The plugin evaluates the scripts for every sample on a
+500 Hz clock, streams the samples to the pedal and the pedal plays them back on top
+of its force curve. The time critical effects stay built into the pedal: ABS/TC
+(Effects → ABS/TC) and the bite point, plus the rudder effects. The ABS presets in
+the library are an alternative with more options, but react later (the samples are
+played with ~25 ms delay plus the telemetry delay).
 
 Where: **Effects → Scripts**, for the pedal selected at the top. The **Library**
 button opens the ready-made effects (the former built-in effects and more); a

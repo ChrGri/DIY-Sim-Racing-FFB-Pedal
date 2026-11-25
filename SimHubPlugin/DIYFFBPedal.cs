@@ -593,17 +593,86 @@ namespace DiyFfbPedal
 
             if (ConsoleEffectPolicy.ShouldProcess(isConsole, effectTelemetryActive, data.NewData != data.OldData))
             {
-                // The vehicle effects (ABS/TC, engine/speed, G-force, wheel slip, road impact,
-                // custom 1-4) are scripts now (effect pipelines, presets in the effect library).
-                // The pedals no longer get action packets for them; the firmware effects stay
-                // unused. Bite point and the rudder effects are unchanged.
-                if (Settings.rudderMode == 3)
+                // ABS/TC stays a firmware effect (time critical: triggered directly, played by the
+                // pedal without the script playout delay). The other vehicle effects (engine/speed,
+                // G-force, wheel slip, road impact, custom 1-4) are scripts now (effect library).
+                // Bite point and the rudder effects are unchanged.
+                for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
                 {
-                    Rudder_brake_status = Rudder_status;
-                }
-                else if (Settings.rudderMode != 2)
-                {
-                    Rudder_brake_status = false;
+                    bool update_flag = false;
+                    DAP_action_st tmp;
+                    tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
+                    tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
+                    tmp.payloadHeader_.PedalTag = (byte)pedalIdx;
+                    tmp.payloadHeader_.storeToEeprom = 0;
+                    tmp.payloadPedalAction_ = default;
+                    tmp.payloadPedalAction_.G_value = 128;
+                    tmp.payloadPedalAction_.Rudder_brake_action = (byte)(Rudder_status ? (Settings.rudderMode == 3 ? 2 : (Settings.rudderMode == 2 ? (Rudder_brake_status ? 2 : 3) : 0)) : 0);
+                    if (Settings.rudderMode == 3)
+                    {
+                        Rudder_brake_status = Rudder_status;
+                    }
+                    else if (Settings.rudderMode != 2)
+                    {
+                        Rudder_brake_status = false;
+                    }
+
+                    //ABS on clutch/brake, TC on throttle
+                    if (pedalIdx == 0 || pedalIdx == 1)
+                    {
+                        if (sendAbsSignal_local_b && Settings.ABS_enable_flag[pedalIdx] == 1)
+                        {
+                            tmp.payloadPedalAction_.triggerAbs_u8 = (byte)(TrackSurfaceCondition + 1);
+                            update_flag = true;
+                        }
+                    }
+                    if (pedalIdx == 2)
+                    {
+                        if (sendTcSignal_local_b && Settings.ABS_enable_flag[pedalIdx] == 1)
+                        {
+                            tmp.payloadPedalAction_.triggerAbs_u8 = 1;
+                            update_flag = true;
+                        }
+                    }
+                    if (isConsole && update_flag)
+                    {
+                        update_flag = ConsoleEffectPolicy.IsDue(DateTime.UtcNow, consoleLastEffectAt[pedalIdx]);
+                    }
+                    // check the update interval
+                    // if connect with HID bridge, ignore the fps limit, update all the time.
+                    if (update_flag && !isConsole && !BridgeHidService.IsConnected)
+                    {
+                        Action_currentTime[pedalIdx] = DateTime.UtcNow;
+                        TimeSpan diff_action = Action_currentTime[pedalIdx] - Action_lastTime[pedalIdx];
+                        int millisceonds_action = (int)diff_action.TotalMilliseconds;
+                        float time_interval = (1000.0f / Settings.Pedal_action_fps[pedalIdx]) - actionIntervalTolerance;
+                        if (millisceonds_action <= time_interval)
+                        {
+                            update_flag = false;
+                        }
+                        else
+                        {
+                            Action_lastTime[pedalIdx] = DateTime.UtcNow;
+                        }
+                    }
+
+                    if (update_flag && !Rudder_status)
+                    {
+                        DAP_action_st* v = &tmp;
+                        tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
+                        tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
+                        tmp.payloadHeader_.startOfFrame0_u8 = STARTOFFRAMCHAR[0];
+                        tmp.payloadHeader_.startOfFrame1_u8 = STARTOFFRAMCHAR[1];
+
+                        byte* p = (byte*)v;
+                        tmp.payloadFooter_.checkSum = checksumCalc(p, sizeof(payloadHeader) + sizeof(payloadPedalAction));
+                        bool queued = SendPedalAction(tmp, (byte)pedalIdx, isConsole);
+                        if (isConsole)
+                        {
+                            consoleLastEffectAt[pedalIdx] = DateTime.UtcNow;
+                            if (queued) consoleQueuedActions[pedalIdx]++;
+                        }
+                    }
                 }
 
                 // offset samples from the user effect scripts (effect pipelines)

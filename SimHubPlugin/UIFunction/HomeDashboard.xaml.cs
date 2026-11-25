@@ -169,7 +169,8 @@ namespace DiyFfbPedal.UIFunction
         {
             List<string> names = new List<string>();
             DIYFFBPedalSettings settings = plugin.Settings;
-            // all vehicle effects are scripts now: list the enabled scripts of this pedal
+            if (settings != null && settings.ABS_enable_flag[pedal] == 1) names.Add(pedal == 2 ? "TC" : "ABS");
+            // the other vehicle effects are scripts: list the enabled scripts of this pedal
             if (settings != null && settings.Pipeline_slots != null && settings.Pipeline_warning_ack)
             {
                 foreach (PipelineScriptSlot slot in settings.Pipeline_slots.ToArray())
