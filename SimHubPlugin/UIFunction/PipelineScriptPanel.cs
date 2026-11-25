@@ -42,7 +42,8 @@ namespace DiyFfbPedal.UIFunction
             "NCalc. Variables: t (time in s), dt (0.002 s), prev (last value), phase (radians, from the frequency field), pi, " +
             "and every SimHub property, e.g. [DataCorePlugin.GameData.Rpms]. Functions: Sin, Cos, Abs, Min, Max, Pow, Sqrt, if(cond, a, b).\n" +
             "Pedal values (force, travel, ...): SimHub > Available properties, search \"diy_ffb_pedal\".\n" +
-            "Example (engine, angle): frequency [DataCorePlugin.GameData.Rpms] / 60, script 0.004 * [DataCorePlugin.GameData.Throttle] / 100 * Sin(phase)\n" +
+            "Example (engine, angle): frequency 10 + 30 * [DataCorePlugin.GameData.Rpms] / [DataCorePlugin.GameData.MaxRpm], script 0.03 * Sin(phase)\n" +
+            "Vibrations above ~40 Hz are damped strongly by the pedal.\n" +
             "Example (ABS, angle): if([DataCorePlugin.GameData.ABSActive] > 0, 0.06 * Sin(2 * pi * 25 * t), 0)");
 
         private static string HelpJs => Loc.T("TextScriptHelpJs",

@@ -636,7 +636,8 @@
   <data name="DIYFFBPedalPlugin_TextScriptHelpNCalc" xml:space="preserve">
     <value>NCalc. Variables: t (time in s), dt (0.002 s), prev (last value), phase (radians, from the frequency field), pi, and every SimHub property, e.g. [DataCorePlugin.GameData.Rpms]. Functions: Sin, Cos, Abs, Min, Max, Pow, Sqrt, if(cond, a, b).
 Pedal values (force, travel, ...): SimHub &gt; Available properties, search "diy_ffb_pedal".
-Example (engine, angle): frequency [DataCorePlugin.GameData.Rpms] / 60, script 0.004 * [DataCorePlugin.GameData.Throttle] / 100 * Sin(phase)
+Example (engine, angle): frequency 10 + 30 * [DataCorePlugin.GameData.Rpms] / [DataCorePlugin.GameData.MaxRpm], script 0.03 * Sin(phase)
+Vibrations above ~40 Hz are damped strongly by the pedal.
 Example (ABS, angle): if([DataCorePlugin.GameData.ABSActive] &gt; 0, 0.06 * Sin(2 * pi * 25 * t), 0)</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextScriptHelpJs" xml:space="preserve">
@@ -835,7 +836,7 @@ Example (lockup steps): var l = $prop('ShakeITMotorsV3Plugin.Export.wheelsliploc
     <value>Engine vibration</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextPresetEngineVibrationDescription" xml:space="preserve">
-    <value>Vibration at crank frequency (RPM / 60), stronger with RPM and throttle, like the former RPM effect.</value>
+    <value>Engine vibration like the former RPM effect: the frequency rises with RPM from fMin to fMax, stronger with RPM and throttle. Keep fMax at about 40 Hz: the pedal damps faster vibrations strongly.</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextPresetRevLimiterName" xml:space="preserve">
     <value>Rev limiter</value>

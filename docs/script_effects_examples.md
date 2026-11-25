@@ -119,39 +119,26 @@ The pedal should rotate 0.2° (about 1 mm sled travel) towards you.
 
 ## 2. Engine
 
-**Physics-based engine vibration**: crank frequency (RPM / 60), stronger with throttle.
+Note: the pedal damps vibrations above about **40 Hz** strongly (servo and the
+smoothing in the pedal control). The real crank frequency (RPM / 60 = 50–150 Hz)
+is therefore hardly felt; map the RPM to 10–40 Hz instead, like the former RPM effect.
+
+**Engine vibration**: frequency 10 … 40 Hz with RPM, stronger with throttle.
 Output: Pedal angle.
 
 Frequency:
 ```
-[DataCorePlugin.GameData.Rpms] / 60
+10 + 30 * Min(1, [DataCorePlugin.GameData.Rpms] / [DataCorePlugin.GameData.MaxRpm])
 ```
 Script:
 ```
-0.004 * (0.3 + 0.7 * [DataCorePlugin.GameData.Throttle] / 100) * Sin(phase)
+0.03 * (0.4 + 0.6 * [DataCorePlugin.GameData.Throttle] / 100) * Sin(phase)
 ```
 
-**Engine with firing frequency** of a 4-cylinder 4-stroke (2 ignitions per
-revolution), limited to what the servo can do:
+**Engine only near the shift point** (last 15 % before max RPM, 35 Hz):
 
-Frequency:
 ```
-Min([DataCorePlugin.GameData.Rpms] / 60 * 2, 120)
-```
-Script:
-```
-0.003 * Sin(phase)
-```
-
-**Engine only near the shift point** (last 15 % before max RPM):
-
-Frequency:
-```
-[DataCorePlugin.GameData.Rpms] / 60
-```
-Script:
-```
-0.008 * Max(0, ([DataCorePlugin.GameData.Rpms] / [DataCorePlugin.GameData.MaxRpm] - 0.85) / 0.15) * Sin(phase)
+0.04 * Max(0, ([DataCorePlugin.GameData.Rpms] / [DataCorePlugin.GameData.MaxRpm] - 0.85) / 0.15) * Sin(2 * pi * 35 * t)
 ```
 
 **Rev limiter / redline pulse** (rough 8 Hz knock while the redline is reached):
@@ -228,7 +215,7 @@ pitch of the front tyres as frequency, capped for the servo.
 
 Frequency:
 ```
-Min(Max([DataCorePlugin.GameRawData.Telemetry.TireLF_RumblePitch], [DataCorePlugin.GameRawData.Telemetry.TireRF_RumblePitch]), 60)
+Min(Max([DataCorePlugin.GameRawData.Telemetry.TireLF_RumblePitch], [DataCorePlugin.GameRawData.Telemetry.TireRF_RumblePitch]), 40)
 ```
 Script:
 ```
@@ -438,7 +425,7 @@ var f = $prop('DIY_FFB_Pedal.PedalStatus.Brake.PedalForceInPercent') || 0;
 if (f > 95) root.over = true;
 if (f < 92) root.over = false;
 if (root.over) return 0.08 * ((t * 12) % 1 < 0.15 ? 1 : 0);
-if (f > 80 && f < 90) return 0.01 * Math.sin(2 * pi * 40 * t);
+if (f > 80 && f < 90) return 0.02 * Math.sin(2 * pi * 30 * t);
 return 0;
 ```
 

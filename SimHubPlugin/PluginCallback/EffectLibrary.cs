@@ -181,7 +181,7 @@ var f = $prop('DIY_FFB_Pedal.PedalStatus.Brake.PedalForceInPercent') || 0;
 if (f > over) root.over = true;
 if (f < over - 3) root.over = false;
 if (root.over) return 0.08 * ((t * 12) % 1 < 0.15 ? 1 : 0);
-if (f > windowLow && f < windowHigh) return 0.01 * Math.sin(2 * pi * 40 * t);
+if (f > windowLow && f < windowHigh) return 0.02 * Math.sin(2 * pi * 30 * t);
 return 0;",
             },
 
@@ -223,18 +223,23 @@ return amp * x * Math.sin(2 * pi * f * t);",
             {
                 Category = "Engine",
                 Name = "Engine vibration",
-                Description = "Vibration at crank frequency (RPM / 60), stronger with RPM and throttle, like the former RPM effect.",
+                Description = "Engine vibration like the former RPM effect: the frequency rises with RPM from fMin to fMax, " +
+                              "stronger with RPM and throttle. Keep fMax at about 40 Hz: the pedal damps faster vibrations strongly.",
                 Script =
 @"// ---- parameters ----
-var amp = 0.006;     // degrees at max RPM and full throttle
-var fMax = 120;      // Hz, cap for the servo
+var amp = 0.03;      // degrees at max RPM and full throttle (0.03 deg = about 0.15 mm)
+var fMin = 10;       // Hz at idle
+var fMax = 40;       // Hz at max RPM (more is damped by the pedal)
+var idleShare = 0.4; // amplitude share without throttle
 // --------------------
 var rpm = $prop('DataCorePlugin.GameData.Rpms') || 0;
 var maxRpm = $prop('DataCorePlugin.GameData.MaxRpm') || 8000;
+if (rpm < 100) return 0;
+var x = Math.min(1, rpm / maxRpm);
 var thr = ($prop('DataCorePlugin.GameData.Throttle') || 0) / 100;
-var f = Math.min(fMax, rpm / 60);
+var f = fMin + (fMax - fMin) * x;
 root.ph = ((root.ph || 0) + 2 * pi * f * dt) % (2 * pi);
-return amp * (0.3 + 0.7 * thr) * Math.min(1, rpm / maxRpm) * Math.sin(root.ph);",
+return amp * (0.7 + 0.3 * x) * (idleShare + (1 - idleShare) * thr) * Math.sin(root.ph);",
             },
             new EffectPreset
             {
@@ -273,10 +278,10 @@ return (shift > 0 && rpm >= shift * start) ? amp * Math.sin(2 * pi * f * t) : 0;
                 Description = "Road rumble whose frequency rises with speed, like the former speed mode of the RPM effect.",
                 Script =
 @"// ---- parameters ----
-var amp = 0.01;       // degrees at vFull
-var hzPer100 = 30;    // Hz per 100 km/h
+var amp = 0.02;       // degrees at vFull
+var hzPer100 = 15;    // Hz per 100 km/h
 var fMin = 5;         // Hz
-var fMax = 60;        // Hz
+var fMax = 40;        // Hz (more is damped by the pedal)
 var vFull = 200;      // km/h for full amplitude
 // --------------------
 var v = $prop('DataCorePlugin.GameData.SpeedKmh') || 0;
@@ -309,7 +314,7 @@ return Math.max(-max, Math.min(max, (h - root.lp) * gain));",
                 Script =
 @"// ---- parameters ----
 var amp = 0.06;    // degrees
-var fMax = 60;     // Hz
+var fMax = 40;     // Hz (more is damped by the pedal)
 // --------------------
 var p = Math.max($prop('DataCorePlugin.GameRawData.Telemetry.TireLF_RumblePitch') || 0,
                  $prop('DataCorePlugin.GameRawData.Telemetry.TireRF_RumblePitch') || 0);
