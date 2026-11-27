@@ -1038,10 +1038,11 @@ private:
     (void)len;
     DapActionOta_t otaLocal;
     memcpy(&otaLocal, data, sizeof(DapActionOta_t));
+    // Skip DAP_VERSION_CONFIG_U8 check so newer plugins can trigger wireless OTA
+    // on older pedal firmware (matching the USB serial path; CRC still guards integrity).
     if (otaLocal.payloadHeader_st.payloadType_u8 !=
-            DAP_PAYLOAD_TYPE_ACTION_OTA_U8 ||
-        otaLocal.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8) {
-      logDebug("RX Ota dropped: bad type/version");
+        DAP_PAYLOAD_TYPE_ACTION_OTA_U8) {
+      logDebug("RX Ota dropped: bad type");
       return;
     }
     uint16_t crc = checksumCalculator_u16(
