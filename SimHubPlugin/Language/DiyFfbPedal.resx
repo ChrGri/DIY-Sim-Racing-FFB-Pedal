@@ -691,6 +691,9 @@ Example (lockup steps): var l = $prop('ShakeITMotorsV3Plugin.Export.wheelsliploc
   <data name="DIYFFBPedalPlugin_TextCancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="DIYFFBPedalPlugin_TextProfileGuideLink" xml:space="preserve">
+    <value>Profile guide (GitHub)</value>
+  </data>
   <data name="DIYFFBPedalPlugin_TextScriptSlot" xml:space="preserve">
     <value>Script:</value>
   </data>

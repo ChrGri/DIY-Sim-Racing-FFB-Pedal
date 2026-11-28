@@ -144,6 +144,11 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
+                    <TextBlock Margin="15,6,0,0" FontSize="10" FontFamily="Arial">
+                        <Hyperlink NavigateUri="https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/blob/develop/docs/profile_usage_guide.md" RequestNavigate="ProfileGuide_RequestNavigate">
+                            <Run Text="{SLoc DIYFFBPedalPlugin_TextProfileGuideLink, 'Profile guide (GitHub)'}"/>
+                        </Hyperlink>
+                    </TextBlock>
                 </StackPanel>
                 <StackPanel Orientation="Vertical">
 

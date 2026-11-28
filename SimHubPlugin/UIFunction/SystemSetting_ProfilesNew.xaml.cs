@@ -495,5 +495,15 @@ namespace DiyFfbPedal.UIFunction
                 UpdateScriptsButtonCounts();
             }
         }
+
+        private void ProfileGuide_RequestNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+            }
+            catch { }
+            e.Handled = true;
+        }
     }
 }
