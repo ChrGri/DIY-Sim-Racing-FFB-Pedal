@@ -11,7 +11,12 @@ played with ~25 ms delay plus the telemetry delay).
 Where: **Effects → Scripts**, for the pedal selected at the top. The **Library**
 button opens the ready-made effects (the former built-in effects and more); a
 preset is added switched off, with its parameters as variables at the top of the
-script. Each pedal can have any number of scripts (**+ New**, **Duplicate**,
+script. The library shows the files in
+`SimHub\PluginsData\Common\DiyFfbPedal\effects` (one `.js` or `.ncalc` file per
+effect, with `// @name:`, `// @category:`, `// @pedal:`, `// @output:`,
+`// @description:` header lines); the plugin writes its own presets there, and
+own files appear in the library after **Reload** (see `README.txt` in the folder).
+Each pedal can have any number of scripts (**+ New**, **Duplicate**,
 **Remove**); all enabled
 scripts of a pedal are added up per output type. The **Live plot** button opens a
 window with the last 5 s that were sent to each pedal.

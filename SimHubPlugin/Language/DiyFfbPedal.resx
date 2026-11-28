@@ -958,4 +958,13 @@ Example (lockup steps): var l = $prop('ShakeITMotorsV3Plugin.Export.wheelsliploc
   <data name="DIYFFBPedalPlugin_TextTestScenarioWheelSpin" xml:space="preserve">
     <value>Wheel spin and TC</value>
   </data>
+  <data name="DIYFFBPedalPlugin_TextLibraryOpenFolder" xml:space="preserve">
+    <value>Open effects folder</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextLibraryReload" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextLibraryFileErrors" xml:space="preserve">
+    <value>Some effect files could not be read:</value>
+  </data>
 </root>

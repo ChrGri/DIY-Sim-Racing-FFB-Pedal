@@ -241,6 +241,7 @@
     <Compile Include="UIFunction\PixelDangerRobot.cs" />
     <Compile Include="UIFunction\EffectLibraryWindow.cs" />
     <Compile Include="PluginCallback\EffectLibrary.cs" />
+    <Compile Include="PluginCallback\EffectPresetFiles.cs" />
     <Compile Include="PluginCallback\Loc.cs" />
     <Compile Include="PluginCallback\EffectTestScenarios.cs" />
     <Compile Include="UIFunction\EffectTestWindow.cs" />

@@ -17,14 +17,27 @@ namespace DiyFfbPedal
         public PipelineScriptLanguage Language = PipelineScriptLanguage.JavaScript;
         public string Script;
         public string FreqScript = "";
+        // translation key part; null: derived from the name (built-in presets),
+        // empty: no translation (user files without @id)
+        public string TranslationId;
+        // file the preset was loaded from (null for the built-in list)
+        public string FilePath;
 
         // translation key part, from the English name (e.g. "Wheel lock" -> "WheelLock")
         public string Id
         {
             get
             {
+                if (TranslationId != null) return TranslationId;
+                return DeriveId(Name);
+            }
+        }
+
+        public static string DeriveId(string name)
+        {
+            {
                 var id = new System.Text.StringBuilder();
-                foreach (string word in Regex.Split(Name ?? "", "[^A-Za-z0-9]+"))
+                foreach (string word in Regex.Split(name ?? "", "[^A-Za-z0-9]+"))
                 {
                     if (word.Length == 0) continue;
                     id.Append(char.ToUpperInvariant(word[0])).Append(word.Substring(1).ToLowerInvariant());
@@ -33,8 +46,8 @@ namespace DiyFfbPedal
             }
         }
 
-        public string LocalName { get { return Loc.T("TextPreset" + Id + "Name", Name); } }
-        public string LocalDescription { get { return Loc.T("TextPreset" + Id + "Description", Description); } }
+        public string LocalName { get { return string.IsNullOrEmpty(Id) ? Name : Loc.T("TextPreset" + Id + "Name", Name); } }
+        public string LocalDescription { get { return string.IsNullOrEmpty(Id) ? Description : Loc.T("TextPreset" + Id + "Description", Description); } }
         public string LocalCategory { get { return Loc.T("TextPresetCategory" + Category, Category); } }
 
         public PipelineScriptSlot CreateSlot(int pedal)
@@ -55,6 +68,8 @@ namespace DiyFfbPedal
 
     public static class EffectLibrary
     {
+        // the presets shipped with the plugin; written as files into the effects folder
+        // (EffectPresetFiles), the library shows the files
         public static readonly IReadOnlyList<EffectPreset> Presets = new List<EffectPreset>
         {
             // ---------------- brake ----------------

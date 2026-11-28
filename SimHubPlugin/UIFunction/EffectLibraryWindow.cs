@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -58,23 +60,6 @@ namespace DiyFfbPedal.UIFunction
                 Foreground = Brushes.White,
                 Margin = new Thickness(0, 0, 8, 0),
             };
-            string category = null;
-            foreach (EffectPreset preset in EffectLibrary.Presets)
-            {
-                if (preset.Category != category)
-                {
-                    category = preset.Category;
-                    _list.Items.Add(new ListBoxItem
-                    {
-                        Content = preset.LocalCategory.ToUpperInvariant(),
-                        IsEnabled = false,
-                        FontWeight = FontWeights.Bold,
-                        Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xC1, 0x07)),
-                        Margin = new Thickness(0, 6, 0, 0),
-                    });
-                }
-                _list.Items.Add(new ListBoxItem { Content = "  " + preset.LocalName, Tag = preset, Foreground = Brushes.White });
-            }
             _list.SelectionChanged += (s, e) => ShowPreset();
             Grid.SetColumn(_list, 0);
             grid.Children.Add(_list);
@@ -102,6 +87,22 @@ namespace DiyFfbPedal.UIFunction
                 buttons.Children.Add(_addButtons[p]);
             }
             footer.Children.Add(buttons);
+            var fileButtons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
+            var openFolder = new Button { Content = Loc.T("TextLibraryOpenFolder", "Open effects folder"), Height = 24, Padding = new Thickness(10, 0, 10, 0), Margin = new Thickness(0, 0, 6, 0) };
+            openFolder.Click += (s, e) =>
+            {
+                try
+                {
+                    System.IO.Directory.CreateDirectory(EffectPresetFiles.FolderPath);
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(EffectPresetFiles.FolderPath) { UseShellExecute = true });
+                }
+                catch (Exception ex) { _status.Text = ex.Message; }
+            };
+            fileButtons.Children.Add(openFolder);
+            var reload = new Button { Content = Loc.T("TextLibraryReload", "Reload"), Height = 24, Padding = new Thickness(10, 0, 10, 0) };
+            reload.Click += (s, e) => FillList();
+            fileButtons.Children.Add(reload);
+            footer.Children.Add(fileButtons);
             _status = new TextBlock { Foreground = Brushes.LightGreen, FontSize = 11, Margin = new Thickness(0, 4, 0, 0), TextWrapping = TextWrapping.Wrap };
             footer.Children.Add(_status);
             footer.Children.Add(new TextBlock
@@ -131,16 +132,54 @@ namespace DiyFfbPedal.UIFunction
             grid.Children.Add(right);
             Content = grid;
 
-            // select the first preset
-            foreach (object item in _list.Items)
+            FillList();
+        }
+
+        // presets from the files in the effects folder (built-in ones are written there first)
+        private void FillList()
+        {
+            string selectedName = Selected != null ? Selected.Name : null;
+            List<EffectPreset> presets;
+            List<string> errors;
+            string folderError = EffectPresetFiles.EnsureBuiltIns();
+            presets = EffectPresetFiles.Load(out errors);
+            if (presets.Count == 0)
             {
-                if (item is ListBoxItem li && li.Tag is EffectPreset)
-                {
-                    _list.SelectedItem = li;
-                    break;
-                }
+                // folder not writable / readable: show the built-in list
+                presets = EffectLibrary.Presets.ToList();
             }
+
+            _list.Items.Clear();
+            string category = null;
+            ListBoxItem select = null;
+            foreach (EffectPreset preset in presets)
+            {
+                if (!string.Equals(preset.Category, category, StringComparison.OrdinalIgnoreCase))
+                {
+                    category = preset.Category;
+                    _list.Items.Add(new ListBoxItem
+                    {
+                        Content = preset.LocalCategory.ToUpperInvariant(),
+                        IsEnabled = false,
+                        FontWeight = FontWeights.Bold,
+                        Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xC1, 0x07)),
+                        Margin = new Thickness(0, 6, 0, 0),
+                    });
+                }
+                var item = new ListBoxItem { Content = "  " + preset.LocalName, Tag = preset, Foreground = Brushes.White };
+                _list.Items.Add(item);
+                if (select == null && (selectedName == null || preset.Name == selectedName)) select = item;
+            }
+            if (select != null) _list.SelectedItem = select;
             ShowPreset();
+
+            var problems = new List<string>();
+            if (folderError != null) problems.Add(folderError);
+            problems.AddRange(errors);
+            _status.Foreground = problems.Count > 0 ? Brushes.Orange : Brushes.LightGreen;
+            _status.Text = problems.Count > 0
+                ? Loc.T("TextLibraryFileErrors", "Some effect files could not be read:") + " " + string.Join("; ", problems)
+                : "";
         }
 
         private EffectPreset Selected
@@ -171,6 +210,7 @@ namespace DiyFfbPedal.UIFunction
             _script.Text = string.IsNullOrEmpty(preset.FreqScript)
                 ? preset.Script
                 : "// frequency (Hz): " + preset.FreqScript + "\n" + preset.Script;
+            if (preset.FilePath != null) _details.Text += "   |   " + System.IO.Path.GetFileName(preset.FilePath);
             for (int p = 0; p < 3; p++)
                 _addButtons[p].FontWeight = p == preset.SuggestedPedal ? FontWeights.Bold : FontWeights.Normal;
             _status.Text = "";
@@ -181,6 +221,7 @@ namespace DiyFfbPedal.UIFunction
             EffectPreset preset = Selected;
             if (preset == null || _plugin == null || _plugin.EffectPipelines == null) return;
             PipelineScriptSlot slot = _plugin.EffectPipelines.AddSlot(pedal, preset.CreateSlot(pedal), keepName: true);
+            _status.Foreground = Brushes.LightGreen;
             _status.Text = string.Format(Loc.T("TextLibraryAdded", "Added \"{0}\" to {1} (switched off)."), preset.LocalName, PedalNames[pedal]);
             _added?.Invoke(slot);
         }
