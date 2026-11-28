@@ -109,12 +109,12 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
       constrain(endstopDetectionThreshold_u8, 10, 50);
   Serial.printf("InvertStepperDir: %d\n", invertMotorDir_b);
 
-// 2. Power on the servo if a hardware power pin is configured
+// 2. Power on the servo. Boards with a servo power switch power it up from a
+// defined state (see powerCycleServo()), which includes the 2 s boot wait.
 #ifdef SERVO_POWER_PIN
   gpio_set_direction((gpio_num_t)SERVO_POWER_PIN, GPIO_MODE_OUTPUT);
-  gpio_set_level((gpio_num_t)SERVO_POWER_PIN, 1);
-#endif
-
+  powerCycleServo();
+#else
   // Power-on stabilization delay: Give the iSV57 internal DSP, power rails, and
   // encoder ample time (2.0s) to complete internal self-checks without
   // premature bus traffic.
@@ -122,6 +122,10 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
     ActiveSerial->println(
         "Waiting for servo DSP power-on self-test to stabilize (2.0s)...");
   delay(2000);
+#endif
+
+  // Without a ready signal to go by, the slow slave ID sweep has to run
+  bool allowSlaveIdSweep_b = true;
 
 #ifdef ALM_PORT_GPIO
   // ==============================================================================
@@ -169,6 +173,8 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
           "Stable servo ready signal not detected. Proceeding anyway, since "
           "servo parameters might not have been flashed yet.");
   }
+  // No ready signal: the servo is probably unpowered, keep TX released
+  allowSlaveIdSweep_b = isStableReady;
   // ==============================================================================
 #endif
 
@@ -182,11 +188,9 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
   _stepper->setExpectedCycleTimeUs(
       REPETITION_INTERVAL_PEDAL_UPDATE_TASK_IN_US_I64);
 
-  // Start the servo UART after the boot wait
-  isv57.begin();
-
   // 3. Attempt to discover the Modbus Slave ID of the connected iSV57 servo
-  // with retry window
+  // with retry window. The UART only runs for each attempt: its idle HIGH on TX
+  // back-feeds a servo that is still unpowered and blocks its power-on reset.
   if (ActiveSerial)
     ActiveSerial->println("Connecting to iSV57 servo...");
   bool isv57slaveIdFound_b = false;
@@ -194,22 +198,50 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
   // Allow up to 3.5 seconds for the servo power supply and internal DSP to
   // stabilize
   while ((millis() - startDiscoveryTime < 3500) && !isv57slaveIdFound_b) {
-    if (isv57.findServosSlaveId()) {
+    isv57.begin();
+    if (isv57.findServoAtDefaultSlaveId()) {
       isv57slaveIdFound_b = true;
       break;
     }
-    delay(100);
+    isv57.end();
+    delay(400);
+  }
+
+  // Servo with a non-default slave ID
+  if (!isv57slaveIdFound_b && allowSlaveIdSweep_b) {
+    isv57.begin();
+    isv57slaveIdFound_b = isv57.findServosSlaveId();
   }
 
   ActiveSerial->print("iSV57 slaveId found:  ");
   ActiveSerial->println(isv57slaveIdFound_b);
 
-  // Critical failure: If the servo isn't found after retry window, restart ESP.
-  if (!isv57slaveIdFound_b) {
-    ActiveSerial->println("No servo found after retry window! Restarting ESP");
-    ESP.restart();
+  // 4. Configure the servo, or keep waiting for it. No ESP restart: with the
+  // ESP32 on USB and the servo powered later, the restart loop kept the USB
+  // COM port disappearing and drove TX into the unpowered servo on every boot.
+  // The servo task retries the discovery with the UART released in between.
+  if (!isv57slaveIdFound_b || !finishServoConnection()) {
+    isv57.end();
+    servoFound_b = false;
+    isv57LifeSignal_b = false;
+    servoStatus = SERVO_NOT_CONNECTED;
+    lastServoDiscoveryAttemptMs_u32 = millis();
+    ActiveSerial->println(
+        "No servo found. Waiting for the servo (no restart), retrying every "
+        "few seconds...");
   }
 
+  // 5. Spawn the dedicated FreeRTOS task for continuous Modbus telemetry
+  // polling (and the servo discovery while no servo is connected)
+  xTaskCreatePinnedToCore(
+      this->servoCommunicationTask, "servoCommunicationTask", 4096, this,
+      TASK_PRIORITY_SERVO_COMMUNICATION_TASK_UBASETYPE,
+      &task_iSV_Communication, CORE_ID_SERVO_COMMUNICATION_TASK_U8);
+}
+
+// Clears startup alarms, checks the lifeline and configures the servo after
+// its slave ID has been found. Returns false if the servo does not answer.
+bool StepperWithLimits::finishServoConnection() {
   // Reset any transient power-on / line noise alarms immediately
   isv57.clearServoAlarms();
   delay(50);
@@ -217,25 +249,85 @@ StepperWithLimits::StepperWithLimits(uint8_t pinStep, uint8_t pinDirection,
                             // wiped
   delay(50);
 
-  // 4. Verify the communication lifeline and configure servo parameters
+  // Verify the communication lifeline and configure servo parameters
   setLifelineSignal();
   if (getLifelineSignal() == false) {
-    ActiveSerial->println("No lifeline detected! Restarting ESP");
-    ESP.restart();
-  } else {
-    // 5. Configure servo registers, cyclic telemetry, parameters, and enable
-    // axis
-    configureServoRegistersAfterPowerOn();
-    ActiveSerial->print("iSV57 communication state:  ");
-    ActiveSerial->println(getLifelineSignal());
-
-    // 6. Spawn the dedicated FreeRTOS task for continuous Modbus telemetry
-    // polling
-    xTaskCreatePinnedToCore(
-        this->servoCommunicationTask, "servoCommunicationTask", 4096, this,
-        TASK_PRIORITY_SERVO_COMMUNICATION_TASK_UBASETYPE,
-        &task_iSV_Communication, CORE_ID_SERVO_COMMUNICATION_TASK_U8);
+    ActiveSerial->println("No lifeline detected!");
+    return false;
   }
+
+  // Configure servo registers, cyclic telemetry, parameters, and enable axis
+  configureServoRegistersAfterPowerOn();
+  ActiveSerial->print("iSV57 communication state:  ");
+  ActiveSerial->println(getLifelineSignal());
+  servoFound_b = true;
+  return true;
+}
+
+// Boards with a servo power switch (MOSFET): switch the servo off with the
+// UART released (no back-feed while off), set the UART idle level (TX HIGH,
+// RX pull-up), power the servo a few ms later and give it 2 s to boot. The
+// servo then always starts from a clean power-on reset with a defined UART
+// line, no matter whether the ESP32 or the 24 V supply came first.
+void StepperWithLimits::powerCycleServo() {
+#ifdef SERVO_POWER_PIN
+  isv57.end();
+  gpio_set_level((gpio_num_t)SERVO_POWER_PIN, 0);
+  delay(SERVO_POWER_OFF_TIME_MS);
+
+  isv57.begin(); // TX idle HIGH, RX pull-up, UART running
+  delay(SERVO_POWER_ON_DELAY_AFTER_TX_MS);
+  gpio_set_level((gpio_num_t)SERVO_POWER_PIN, 1);
+
+  if (ActiveSerial)
+    ActiveSerial->println(
+        "Servo powered, waiting for its power-on self-test (2.0s)...");
+  delay(SERVO_BOOT_TIME_MS);
+#endif
+}
+
+// Called by the servo task while no servo has been found. Each attempt runs
+// the UART only briefly at the default slave ID and releases the pins again,
+// so a servo that gets powered later still sees a clean power-on reset. The
+// slow sweep over all slave IDs keeps TX active for several seconds and only
+// runs rarely.
+void StepperWithLimits::retryServoDiscovery() {
+  uint32_t now_u32 = millis();
+  if ((now_u32 - lastServoDiscoveryAttemptMs_u32) <
+      SERVO_REDISCOVERY_INTERVAL_MS) {
+    return;
+  }
+  lastServoDiscoveryAttemptMs_u32 = now_u32;
+  servoDiscoveryAttempts_u32++;
+
+#ifdef SERVO_POWER_PIN
+  // power the servo up again from a defined state (the 24 V may have come
+  // only now); leaves the UART running
+  powerCycleServo();
+#else
+  isv57.begin();
+#endif
+  bool found_b = isv57.findServoAtDefaultSlaveId();
+
+  bool sweepAllowed_b = true;
+#ifdef ALM_PORT_GPIO
+  sweepAllowed_b = (digitalRead(ALM_PORT_GPIO) == LOW); // servo ready
+#endif
+  if (!found_b && sweepAllowed_b &&
+      ((servoDiscoveryAttempts_u32 % SERVO_REDISCOVERY_SWEEP_EVERY_N) == 0)) {
+    ActiveSerial->println("Servo discovery: trying all slave IDs");
+    found_b = isv57.findServosSlaveId();
+  }
+
+  if (found_b && finishServoConnection()) {
+    ActiveSerial->println("Servo found -> continuing pedal startup");
+    servoDiscoveryAttempts_u32 = 0;
+    return;
+  }
+
+  isv57.end();
+  isv57LifeSignal_b = false;
+  lastServoDiscoveryAttemptMs_u32 = millis();
 }
 
 // ==============================================================================
@@ -685,6 +777,9 @@ void IRAM_ATTR StepperWithLimits::processPendingCommands() {
     isv57.clearServoAlarms();
     isv57.readAlarmHistory();
     clearAllServoAlarms_b = false;
+    // read the active alarm right away so the plugin shows the result
+    // without waiting for the next regular poll
+    lastServoAlarmPollMs_u32 = millis() - SERVO_ALARM_POLL_INTERVAL_MS;
   }
 
   if (resetServoRegistersToFactoryValues_b) {
@@ -851,6 +946,11 @@ void IRAM_ATTR StepperWithLimits::handleConnectionLoss() {
   if (servoStatus == SERVO_NOT_CONNECTED) {
     ActiveSerial->println("Servo communication lost!");
   }
+
+  // alarm state is unknown without communication, read it again right after
+  // the servo is back
+  servoAlarmCode_u16 = 0;
+  lastServoAlarmPollMs_u32 = millis() - SERVO_ALARM_POLL_INTERVAL_MS;
 
   previousIsv57LifeSignal_b = false;
   servoPosInitialized_b = false; // Require re-sync on next valid packet
@@ -1137,12 +1237,36 @@ bool IRAM_ATTR StepperWithLimits::consumeOvercurrentTripFlag() {
   return tripped_b;
 }
 
+// Reads the currently active servo alarm (what the red ALM LED shows) and
+// keeps it in servoAlarmCode_u16 for the pedal state packet.
+void StepperWithLimits::pollServoAlarm() {
+  uint32_t now_u32 = millis();
+  if ((now_u32 - lastServoAlarmPollMs_u32) < SERVO_ALARM_POLL_INTERVAL_MS) {
+    return;
+  }
+  lastServoAlarmPollMs_u32 = now_u32;
+
+  int32_t alarmCode_i32 = isv57.readCurrentAlarmCode();
+  if (alarmCode_i32 < 0) {
+    return; // no answer, the lifeline handling covers a lost servo
+  }
+
+  uint16_t alarmCode_u16 = (uint16_t)alarmCode_i32;
+  if (alarmCode_u16 != servoAlarmCode_u16) {
+    ActiveSerial->printf("Servo alarm changed: Er.%03X (%s)\n", alarmCode_u16,
+                         decodeServoAlarmString(alarmCode_u16));
+  }
+  servoAlarmCode_u16 = alarmCode_u16;
+}
+
 // Wraps all data gathering, decoding, and analytical functions for the servo
 void IRAM_ATTR
 StepperWithLimits::processActiveServo(FunctionProfiler *profiler) {
   if (servoStatus != SERVO_IDLE_NOT_CONNECTED) {
     servoStatus = SERVO_CONNECTED;
   }
+
+  pollServoAlarm();
 
   // Perform requested axis restarts
   if (restartServo) {
@@ -1266,6 +1390,15 @@ void IRAM_ATTR StepperWithLimits::servoCommunicationTask(void *pvParameters) {
       profiler_servoCommunication.start(0);
 
       self->timeNow_isv57SerialCommunicationTask_l = millis();
+
+      // No servo yet (e.g. ESP32 on USB, servo powered later): only retry the
+      // discovery, everything else needs a configured servo
+      if (!self->servoFound_b) {
+        self->retryServoDiscovery();
+        profiler_servoCommunication.end(0);
+        taskYIELD();
+        continue;
+      }
 
       // Execute modular logic steps
       self->processPendingCommands();

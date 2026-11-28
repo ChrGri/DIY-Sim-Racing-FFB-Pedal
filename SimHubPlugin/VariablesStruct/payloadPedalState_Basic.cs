@@ -21,5 +21,6 @@ namespace DiyFfbPedal
         public byte pedalStatus;
         public byte pedalContrlBoardType;
         public byte rudderSyncDelay_ms;
+        public UInt16 servoAlarmCode_u16; // active iSV57 alarm (lower 12 bits, 0 = none)
     };
 }

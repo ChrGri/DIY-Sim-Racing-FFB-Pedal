@@ -450,6 +450,7 @@
                                         </TabControl.Resources>
 
 
+
                                         <TabItem Width="81" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
                                                 <Border  Width="81" Height="30" Margin="0,0,0,0" >
@@ -461,53 +462,22 @@
                                         <TabItem Width="81" Height="30" Padding="0,0,0,0">
                                             <TabItem.Header>
                                                 <Border  Width="81" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="ENG/SPD"  FontFamily="Arial Black" FontSize="10" Height="30" Width="81" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip="Parameter of Engine or Speed rumble"  />
-                                                </Border>
-                                            </TabItem.Header>
-                                            <localFunction:EffectsTab_RPM x:Name="EffectsRPM_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged"/>
-                                        </TabItem>
-
-                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
-                                            <TabItem.Header>
-                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
                                                     <Label Content="Bite Point"  FontFamily="Arial Black" FontSize="10" Height="30" Width="81" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip="Parameter of Bite point vibration"  />
                                                 </Border>
                                             </TabItem.Header>
                                             <localFunction:EffectsTab_BitePoint x:Name="EffectsBitePoint_Tab" ConfigChanged="Tab_ConfigChanged" CalculationChanged="Tab_CalculationChanged"/>
                                         </TabItem>
+                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
+                                            <TabItem.Header>
+                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
+                                                    <Label Content="{SLoc DIYFFBPedalPlugin_TabTextScripts, 'Scripts'}"  FontFamily="Arial Black" FontSize="10" Height="30" Width="81" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip="Scripted effects (ABS, engine, wheel slip, ... from the effect library or your own)"  />
+                                                </Border>
+                                            </TabItem.Header>
+                                            <Border Style="{StaticResource Card}" Margin="0" Padding="0,0,0,6" Height="240">
+                                                <localFunction:PipelineScriptPanel x:Name="ScriptEffects_Panel" Width="640" Height="232" HorizontalAlignment="Left"/>
+                                            </Border>
+                                        </TabItem>
 
-                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
-                                            <TabItem.Header>
-                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="G-Force"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" ToolTip="Parameter of G force effect" Width="81"  />
-                                                </Border>
-                                            </TabItem.Header>
-                                            <localFunction:EffectsTab_GForce x:Name="EffectsGFroce_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged"/>
-                                        </TabItem>
-                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
-                                            <TabItem.Header>
-                                                <Border  Width="81" Height="30" Margin="0,0,0,0" HorizontalAlignment="Center" >
-                                                    <Label Content="Wheel Slip"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="81"  />
-                                                </Border>
-                                            </TabItem.Header>
-                                            <localFunction:EffectsTab_WheelSlip x:Name="EffectsWheelSlip_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged"/>
-                                        </TabItem>
-                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
-                                            <TabItem.Header>
-                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Impact"  FontFamily="Arial Black" FontSize="10" Height="30" Padding="0,0,0,0" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" UseLayoutRounding="True" Width="81" HorizontalAlignment="Center"  />
-                                                </Border>
-                                            </TabItem.Header>
-                                            <localFunction:EffectsTab_RoadImpact x:Name="EffectsRoadImpact_Tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged"/>
-                                        </TabItem>
-                                        <TabItem Width="81" Height="30" Padding="0,0,0,0">
-                                            <TabItem.Header>
-                                                <Border  Width="81" Height="30" Margin="0,0,0,0" >
-                                                    <Label Content="Custom"  FontFamily="Arial Black" FontSize="10" Height="30" Width="81" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ToolTip=" "  />
-                                                </Border>
-                                            </TabItem.Header>
-                                            <localFunction:EffectsTab_Custom x:Name="EffectsCustom_tab" ConfigChanged="Tab_ConfigChanged" SettingsChanged="Tab_SettingsChanged" CalculationChanged="Tab_CalculationChanged"/>
-                                        </TabItem>
                                     </TabControl>
                                 </StackPanel>
                             </StackPanel>
@@ -913,7 +883,6 @@
                                     <Border Style="{StaticResource Card}" Padding="0,0,0,0" Margin="0,0,0,5" Width="202" HorizontalAlignment="Center">
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Width="192" Margin="0,0,0,5">
                                             <localFunction:InfoSection_System x:Name="SystemInfo" Margin="0,5,0,0" />
-                                            <TextBlock x:Name="ConsoleTelemetryStatus" Visibility="Collapsed" TextWrapping="Wrap" FontSize="10" Margin="0,4,0,4" />
                                             <StackPanel HorizontalAlignment="Left" Height="22" VerticalAlignment="Top" Width="192" Orientation="Horizontal" Margin="0,2,0,0">
                                                 <ComboBox x:Name="SerialPortSelection_ESPNow" DropDownOpened="ESPNow_SerialPortSelection_DropDownOpened" SelectionChanged="ESPNow_SerialPortSelectionChanged" Width="130" ItemsSource="{Binding}" DisplayMemberPath="Display" SelectedValuePath="Value" FontSize="8" Height="20" HorizontalAlignment="Left" MinHeight="20"/>
                                                 <Button x:Name="btn_connect_espnow_port" Style="{StaticResource ConnectPillButton}" Click="btn_connect_espnow_port_Click" Width="55" Content="Connect" Height="20" Margin="3,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" Padding="0,0,0,0" VerticalContentAlignment="Center" FontFamily="Arial" FontSize="10" MinHeight="20" />

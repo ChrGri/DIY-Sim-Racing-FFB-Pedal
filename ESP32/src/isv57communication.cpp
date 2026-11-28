@@ -6,72 +6,58 @@ Modbus modbus(Serial2);
 
 Stream *ActiveSerialForServoCommunication = nullptr;
 
-void printDecodedAlarmString(uint16_t alarm_code) {
+const char *decodeServoAlarmString(uint16_t alarm_code) {
 
   switch (alarm_code & 0x0FFF) { // Mask to get lower 12 bits
   case 0x000:
-    ActiveSerial->println("Normal\n");
-    break;
+    return "Normal";
   case 0x0E1:
   case 0x0E0:
-    ActiveSerial->println("Overcurrent\n");
-    break;
+    return "Overcurrent";
   case 0x100:
-    ActiveSerial->println("Overload\n");
-    break;
+    return "Overload";
   case 0x180:
-    ActiveSerial->println("Excessive position deviation\n");
-    break;
+    return "Excessive position deviation";
   case 0x1A0:
-    ActiveSerial->println("Overspeed\n");
-    break;
+    return "Overspeed";
   case 0x1A1:
-    ActiveSerial->println("Motor out of control\n");
-    break;
+    return "Motor out of control";
   case 0x0D0:
-    ActiveSerial->println("Undervoltage\n");
-    break;
+    return "Undervoltage";
   case 0x0C0:
-    ActiveSerial->println("Overvoltage\n");
-    break;
+    return "Overvoltage";
   case 0x171:
   case 0x172:
-    ActiveSerial->println("Encoder parameter error\n");
-    break;
+    return "Encoder parameter error";
   case 0x190:
-    ActiveSerial->println("Excessive motor vibration\n");
-    break;
+    return "Excessive motor vibration";
   case 0x150:
-    ActiveSerial->println("Encoder disconnected\n");
-    break;
+    return "Encoder disconnected";
   case 0x151:
   case 0x170:
-    ActiveSerial->println("Encoder data error\n");
-    break;
+    return "Encoder data error";
   case 0x152:
-    ActiveSerial->println("Encoder HALL signal error\n");
-    break;
+    return "Encoder HALL signal error";
   case 0x240:
-    ActiveSerial->println("Parameter saving error\n");
-    break;
+    return "Parameter saving error";
   case 0x570:
-    ActiveSerial->println("Emergency stop\n");
-    break;
+    return "Emergency stop";
   case 0x120:
-    ActiveSerial->println("Regenerative energy overload\n");
-    break;
+    return "Regenerative energy overload";
   case 0x153:
-    ActiveSerial->println("Encoder battery error\n");
-    break;
+    return "Encoder battery error";
   case 0x210:
   case 0x211:
   case 0x212:
-    ActiveSerial->println("Input configuration error (Repeated/wrong input)\n");
-    break;
+    return "Input configuration error (Repeated/wrong input)";
   default:
-    ActiveSerial->println("Unknown or refer to Chapter 9\n");
-    break;
+    return "Unknown or refer to Chapter 9";
   }
+}
+
+void printDecodedAlarmString(uint16_t alarm_code) {
+  ActiveSerial->println(decodeServoAlarmString(alarm_code));
+  ActiveSerial->println();
 }
 
 Isv57Communication::Isv57Communication() {}
@@ -81,7 +67,7 @@ void Isv57Communication::begin() {
 #if defined(ISV57_TXPIN) && (ISV57_TXPIN >= 0)
   pinMode(ISV57_TXPIN, OUTPUT);
   digitalWrite(ISV57_TXPIN,
-               HIGH); // Assert idle UART state before serial controller init
+               ISV57_TX_IDLE_LEVEL); // Assert idle UART state before serial controller init
 #endif
 #if defined(ISV57_RXPIN) && (ISV57_RXPIN >= 0)
   // Serial2.begin() only enables RX as input and keeps the pull state set
@@ -89,20 +75,34 @@ void Isv57Communication::begin() {
   pinMode(ISV57_RXPIN, INPUT_PULLUP);
 #endif
 
-#if PCB_VERSION == 10 || PCB_VERSION == 9 || PCB_VERSION == 12 ||              \
-    PCB_VERSION == 13 || PCB_VERSION == 14 || PCB_VERSION == 15
+  // Modbus serial, inverted on boards with the servo wired directly (Main.h)
   Serial2.begin(38400, SERIAL_8N1, ISV57_RXPIN, ISV57_TXPIN,
-                false); // Modbus serial
-#else
-  Serial2.begin(38400, SERIAL_8N1, ISV57_RXPIN, ISV57_TXPIN,
-                true); // Modbus serial
-#endif
+                ISV57_UART_INVERT_FLAG);
 
   Serial2.setTimeout(12); // 12 ms timeout for ISR-driven non-blocking reception
 
   ActiveSerialForServoCommunication = &Serial2;
 
   modbus.initialize(true);
+}
+
+// Stop the UART and leave its pins high-Z, so a still unpowered servo is not
+// back-fed through TX.
+void Isv57Communication::end() {
+  Serial2.end();
+#if defined(ISV57_TXPIN) && (ISV57_TXPIN >= 0)
+#ifdef ISV57_UART_KEEP_TX_IDLE
+  // keep the idle level, e.g. a released TX is a break behind an inverting
+  // RS232 transceiver (Main.h)
+  pinMode(ISV57_TXPIN, OUTPUT);
+  digitalWrite(ISV57_TXPIN, ISV57_TX_IDLE_LEVEL);
+#else
+  pinMode(ISV57_TXPIN, INPUT);
+#endif
+#endif
+#if defined(ISV57_RXPIN) && (ISV57_RXPIN >= 0)
+  pinMode(ISV57_RXPIN, INPUT);
+#endif
 }
 
 // send tuned servo parameters
@@ -361,21 +361,27 @@ void Isv57Communication::sendTunedServoParameters(
   }
 }
 
-bool Isv57Communication::findServosSlaveId() {
-  bool slaveIdFound = false;
-
-  // typically the servo address is 63, so start with that
+bool Isv57Communication::findServoAtDefaultSlaveId() {
+  // typically the servo address is 63
   int slaveIdTest = 63;
   if (modbus.sendRequestAndReceiveResponse(slaveIdTest, 0x03, 0x0000, 2) > 0) {
     slaveId = slaveIdTest;
-    slaveIdFound = true;
     ActiveSerial->print("Found servo slave ID:");
     ActiveSerial->print(slaveId);
     ActiveSerial->print("\r\n");
+    return true;
   }
+  return false;
+}
+
+bool Isv57Communication::findServosSlaveId() {
+  bool slaveIdFound = findServoAtDefaultSlaveId();
 
   if (false == slaveIdFound) {
-    for (slaveIdTest = 0; slaveIdTest < 256; slaveIdTest++) {
+    // With the regular 100 ms reply timeout the sweep would take 27 s without a
+    // servo. The cyclic state read gets its reply within 12 ms.
+    modbus.setSerialTimeout(20);
+    for (int slaveIdTest = 0; slaveIdTest < 256; slaveIdTest++) {
       if (modbus.sendRequestAndReceiveResponse(slaveIdTest, 0x03, 0x0000, 2) >
           0) {
         slaveId = slaveIdTest;
@@ -388,6 +394,7 @@ bool Isv57Communication::findServosSlaveId() {
 
       delay(5);
     }
+    modbus.setSerialTimeout(100);
   }
 
   return slaveIdFound;
@@ -538,17 +545,23 @@ bool Isv57Communication::clearServoAlarms() {
   return (modbus.writeHoldingRegisterToDevice(slaveId, 0x019A, 0x1111) > 0);
 }
 
-bool Isv57Communication::readCurrentAlarm() {
+// Reads the currently active alarm (0 = no alarm, the same state the red ALM
+// LED on the drive shows). Returns -1 if the servo did not answer.
+int32_t Isv57Communication::readCurrentAlarmCode() {
   int bytesReceived_i =
       modbus.sendRequestAndReceiveResponse(slaveId, 0x03, 0x01F2, 1);
-  if (bytesReceived_i == (2)) {
-    for (uint8_t regIdx = 0; regIdx < 1; regIdx++) {
-      uint16_t tmp =
-          modbus.convertRxBufferToInt16(regIdx) &
-          0x0FFF; // mask the first half byte as it does not contain info
-      ActiveSerial->print("Current iSV57 alarm: ");
-      ActiveSerial->println(tmp, HEX);
-    }
+  if (bytesReceived_i != 2) {
+    return -1;
+  }
+  // mask the first half byte as it does not contain info
+  return (int32_t)(modbus.convertRxBufferToInt16(0) & 0x0FFF);
+}
+
+bool Isv57Communication::readCurrentAlarm() {
+  int32_t alarmCode_i32 = readCurrentAlarmCode();
+  if (alarmCode_i32 >= 0) {
+    ActiveSerial->print("Current iSV57 alarm: ");
+    ActiveSerial->println((uint16_t)alarmCode_i32, HEX);
   }
 
   return 1;

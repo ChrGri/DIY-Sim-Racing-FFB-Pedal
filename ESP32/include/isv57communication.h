@@ -99,11 +99,15 @@ struct isv57dynamicStates {
     bool servo_receivedPacketIsValid_b = false;
 };
 
+// Human readable text for an iSV57 alarm code (lower 12 bits).
+const char *decodeServoAlarmString(uint16_t alarm_code);
+
 class Isv57Communication {
 	
 	public:
     Isv57Communication();
     void begin();
+    void end();
     void setupServoStateReading();
     // Cyclic read slot 2 (0x0192) streams the current by default. For debugging it
     // can stream the unfiltered feedback velocity instead; the current reading is
@@ -114,10 +118,12 @@ class Isv57Communication {
     void readAllServoParameters();
     void readServoStates();
     bool checkCommunication();
+    bool findServoAtDefaultSlaveId();
     bool findServosSlaveId();
     bool clearServoAlarms();
     bool readAlarmHistory();
     bool readCurrentAlarm();
+    int32_t readCurrentAlarmCode();
     void resetToFactoryParams();
     bool setServoVoltage(uint16_t voltageInVolt_u16);
     // Pr7.31 (tuned mode or 0 = off) and Pr7.32 threshold; true when both are confirmed

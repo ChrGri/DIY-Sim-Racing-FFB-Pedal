@@ -9,7 +9,7 @@ namespace DiyFfbPedal
     static class Constants
     {
         // payload revisiom
-        public const uint pedalConfigPayload_version = 174;
+        public const uint pedalConfigPayload_version = 176;
 
 
         // pyload types
@@ -18,6 +18,11 @@ namespace DiyFfbPedal
         public const uint pedalStateBasicPayload_type = 120;
         public const uint pedalStateExtendedPayload_type = 130;
         public const uint servoConfigPayload_type = 170;
+        public const uint effectPipelinePayload_type = 240;
+        // effect pipelines (PayloadEffectPipeline.h)
+        public const int effectPipelineChannels = 3; // one channel per offset type (channel = type - 1)
+        public const int effectPipelineSamplesPerPacket = 21;
+        public const double effectPipelineSamplePeriod_s = 0.002; // 500 Hz
         public const uint bridgeStatePayloadType = 210;
         public const uint OtaPayloadType = 220;
         public const uint pedalHidMessage_type = 225;
@@ -33,7 +38,7 @@ namespace DiyFfbPedal
         public const byte WIFI_CH_CMD_SET_REQ = 3;
         public const byte WIFI_CH_CMD_SET_ACK = 4;
         public const byte WIFI_CH_CMD_BEACON = 5;
-        public const string pluginVersion = "26.45.06";
+        public const string pluginVersion = "26.47.07";
         public const string version_control_url = "https://raw.githubusercontent.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/develop/OTA/version_control.json";
         public const int DEFAULTBAUD = 921600;
         public const int BAUD3M = 3000000;
@@ -70,7 +75,9 @@ namespace DiyFfbPedal
         OTA_ACTION_NORMAL,
         OTA_ACTION_FORCE_UPDATE,
         OTA_ACTION_UPLOAD_FROM_PLATFORMIO,
-        OTA_ACTION_ESP_BOOT_INTO_DOWNLOAD_MODE
+        OTA_ACTION_ESP_BOOT_INTO_DOWNLOAD_MODE,
+        OTA_ACTION_FLASH_FROM_PIO,
+        OTA_ACTION_FLASH_FROM_PLUGIN_OTA
     };
 
     public enum PedalSystemAction
@@ -167,11 +174,13 @@ namespace DiyFfbPedal
             "FM8",
             "FH4",
             "FH5",
+            "FH6",
             "BeamNgDrive",
             "GranTurismo7",
             "RBR",
             "Automobilista2",
-            "Automobilista"
+            "Automobilista",
+            "RRRE"
 
         };
     }

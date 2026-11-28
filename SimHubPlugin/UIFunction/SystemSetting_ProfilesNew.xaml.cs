@@ -49,8 +49,26 @@ namespace DiyFfbPedal.UIFunction
                 {
                     _tmpProfile = value;
                     OnPropertyChanged();
+                    UpdateScriptsButtonCounts();
                 }
             }
+        }
+
+        public string ClutchScriptsButtonText => FormatScriptsButtonText(0);
+        public string BrakeScriptsButtonText => FormatScriptsButtonText(1);
+        public string ThrottleScriptsButtonText => FormatScriptsButtonText(2);
+
+        private string FormatScriptsButtonText(int pedal)
+        {
+            int count = _tmpProfile?.ScriptBindings == null ? 0 : _tmpProfile.ScriptBindings.Count(b => b != null && b.Pedal == pedal);
+            return Loc.T("TabTextScripts", "Scripts") + " (" + count + ")";
+        }
+
+        private void UpdateScriptsButtonCounts()
+        {
+            OnPropertyChanged(nameof(ClutchScriptsButtonText));
+            OnPropertyChanged(nameof(BrakeScriptsButtonText));
+            OnPropertyChanged(nameof(ThrottleScriptsButtonText));
         }
         private ObservableCollection<ProfileListItem> _itemList;
         public ObservableCollection<ProfileListItem> ItemList
@@ -65,7 +83,6 @@ namespace DiyFfbPedal.UIFunction
             get { return _configList; }
             set { _configList = value; OnPropertyChanged(); }
         }
-        public ObservableCollection<string> GameCodes { get; } = new ObservableCollection<string>();
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
@@ -103,23 +120,6 @@ namespace DiyFfbPedal.UIFunction
                 //this.DataContext = data;
                 ItemList = data.ProfileServicePlugin.ProfileList;
                 ConfigList = data.ConfigService.ConfigList;
-                RefreshGameCodes();
-            }
-        }
-
-        private void RefreshGameCodes()
-        {
-            GameCodes.Clear();
-            foreach (string code in PedalConstStrings.AutoProfileSwitchGameList
-                .Where(code => !String.IsNullOrWhiteSpace(code))
-                .OrderBy(code => code, StringComparer.OrdinalIgnoreCase))
-            {
-                GameCodes.Add(code);
-            }
-            if (_plugin != null && !String.IsNullOrWhiteSpace(_plugin.Current_Game) &&
-                !GameCodes.Contains(_plugin.Current_Game, StringComparer.OrdinalIgnoreCase))
-            {
-                GameCodes.Add(_plugin.Current_Game);
             }
         }
         public SystemSetting_ProfilesNew()
@@ -299,6 +299,7 @@ namespace DiyFfbPedal.UIFunction
                 }
                 //write to system
                 _plugin.ProfileServicePlugin.ApplyProfile(item.FullPath);
+                _plugin.wpfHandle?.ToastNotification("Profile Applied", $"Profile:{item.ListNameOrig} applied.");
             }
         }
 
@@ -450,6 +451,12 @@ namespace DiyFfbPedal.UIFunction
             OnPropertyChanged(nameof(tmpProfile));
         }
 
+        private void SetProfileBinding(string bindingValue)
+        {
+            tmpProfile.BindGameOrCar = bindingValue;
+            OnPropertyChanged(nameof(tmpProfile));
+        }
+
         private void Btn_BindCurrentGame_Click(object sender, RoutedEventArgs e)
         {
             if (_plugin == null || String.IsNullOrWhiteSpace(_plugin.Current_Game))
@@ -459,18 +466,44 @@ namespace DiyFfbPedal.UIFunction
                 return;
             }
 
-            string currentGame = _plugin.Current_Game.Trim();
-            var bindings = (tmpProfile.BindGameOrCar ?? String.Empty)
-                .Split(',')
-                .Select(value => value.Trim())
-                .Where(value => value.Length > 0)
-                .ToList();
-            if (!bindings.Contains(currentGame, StringComparer.OrdinalIgnoreCase))
-                bindings.Add(currentGame);
-            tmpProfile.BindGameOrCar = String.Join(", ", bindings);
-            if (!GameCodes.Contains(currentGame, StringComparer.OrdinalIgnoreCase))
-                GameCodes.Add(currentGame);
-            OnPropertyChanged(nameof(tmpProfile));
+            SetProfileBinding(_plugin.Current_Game.Trim());
+        }
+
+        private void Btn_BindCurrentCar_Click(object sender, RoutedEventArgs e)
+        {
+            if (_plugin == null || String.IsNullOrWhiteSpace(_plugin.Current_Car))
+            {
+                System.Windows.MessageBox.Show("SimHub is not currently detecting a car ID.",
+                    "No car detected", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            SetProfileBinding(_plugin.Current_Car.Trim());
+        }
+
+        private void Btn_ScriptsClutch_Click(object sender, RoutedEventArgs e) => OpenScriptsBindingWindow(0);
+        private void Btn_ScriptsBrake_Click(object sender, RoutedEventArgs e) => OpenScriptsBindingWindow(1);
+        private void Btn_ScriptsThrottle_Click(object sender, RoutedEventArgs e) => OpenScriptsBindingWindow(2);
+
+        private void OpenScriptsBindingWindow(int pedal)
+        {
+            if (tmpProfile == null) tmpProfile = new DAP_system_profile_cls();
+            var win = new ProfileScriptBindingWindow(tmpProfile, pedal);
+            win.Owner = Window.GetWindow(this);
+            if (win.ShowDialog() == true)
+            {
+                UpdateScriptsButtonCounts();
+            }
+        }
+
+        private void ProfileGuide_RequestNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+            }
+            catch { }
+            e.Handled = true;
         }
     }
 }

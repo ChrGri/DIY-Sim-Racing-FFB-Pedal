@@ -12,9 +12,9 @@ namespace DiyFfbPedal
 
         // A live game without a local process is using external telemetry.
         // GT7 is identified while waiting for its first packet, too.
-        internal static bool IsConsoleSession(string game, bool running, bool processDetected, bool hasData)
+        internal static bool IsConsoleSession(string game, bool running, bool processDetected, bool hasData, bool replay = false)
         {
-            return IsGt7(game) || (running && hasData && !processDetected);
+            return IsGt7(game) || (running && hasData && !processDetected && !replay);
         }
 
         // GameRunning describes telemetry availability, not a local Windows process.

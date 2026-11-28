@@ -19,6 +19,8 @@ namespace DiyFfbPedal
         public uint[] connect_flag = new uint[3] { 0, 0, 0 };
         public uint RPM_effect_type = 0;
         public uint table_selected = 0;
+        // Main tab selection: 0 = Home, 1 = Pedals, 2 = Rudder, 3 = System, 4 = LivePlot
+        public int main_tab_selected = 0;
         public int[] auto_connect_flag = new int[3] { 0, 0, 0 };
         public int[] selectedComPortNamesInt = new int[3] { -1, -1, -1 };
         public int[] ABS_enable_flag = new int[3] { 0, 0, 0 };
@@ -48,6 +50,17 @@ namespace DiyFfbPedal
         public bool[] CV4_enable_flag = new bool[3] { false, false, false };
         public int[] CV4_trigger = new int[3] { 0, 0, 0 };
         public string[] CV4_bindings = new string[3] { "", "", "" };
+        // Effect pipeline script slots (any number per pedal, see PipelineScriptSlot)
+        public System.Collections.Generic.List<PipelineScriptSlot> Pipeline_slots = new System.Collections.Generic.List<PipelineScriptSlot>();
+        public bool Pipeline_slots_migrated = false;
+        // the user accepted the warning that scripts move the pedal actively; scripts only run after that
+        public bool Pipeline_warning_ack = false;
+        // Legacy: two fixed script channels per pedal (index = pedal * 2 + channel), only read once to migrate them into Pipeline_slots
+        public bool[] Pipeline_enable_flag = new bool[6];
+        public byte[] Pipeline_offset_type = new byte[6] { 2, 2, 2, 2, 2, 2 }; // EffectPipelineOffsetType, default position (mm)
+        public double[] Pipeline_gain = new double[6] { 1, 1, 1, 1, 1, 1 };
+        public string[] Pipeline_scripts = new string[6] { "", "", "", "", "", "" };
+        public string[] Pipeline_freq_scripts = new string[6] { "", "", "", "", "", "" }; // Hz, drives the phase variable
         public string ESPNow_port = "";
         public bool[] Pedal_ESPNow_Sync_flag = new bool[3] { false, false, false };
         public bool IsBridgeAutoConnect = false;

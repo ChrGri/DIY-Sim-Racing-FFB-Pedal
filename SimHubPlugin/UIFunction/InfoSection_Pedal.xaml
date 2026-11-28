@@ -19,7 +19,11 @@
         <StackPanel HorizontalAlignment="Center" Height="85" VerticalAlignment="Top" Width="192">
             <StackPanel Height="15" Width="192" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                 <Label Content="{SLoc DIYFFBPedalPlugin_TextPedalInfoTitle, 'Pedal Info'}"  FontFamily="Arial Black" FontSize="12" Height="15" Width="80" Padding="0,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Left" VerticalContentAlignment="Center"  />
-                <Label x:Name="Label_RSSI" Content=""  FontFamily="Arial" FontSize="8" Height="15" Width="35" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="29,0,0,0"  />
+                <StackPanel x:Name="ServoLedPanel" Orientation="Horizontal" Width="29" Height="15" VerticalAlignment="Center" ToolTip="Servo: no connection">
+                    <Ellipse x:Name="ServoPwrLed" Width="8" Height="8" Fill="#FF2A3038" Stroke="#FF3A424C" StrokeThickness="1" VerticalAlignment="Center" Margin="3,0,4,0"/>
+                    <Ellipse x:Name="ServoAlmLed" Width="8" Height="8" Fill="#FF2A3038" Stroke="#FF3A424C" StrokeThickness="1" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Label x:Name="Label_RSSI" Content=""  FontFamily="Arial" FontSize="8" Height="15" Width="35" Padding="0,0,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" VerticalContentAlignment="Center"  />
                 <localUI:RSSIBar x:Name="rssibar" />
             </StackPanel>
             <StackPanel Height="70" Width="192" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">

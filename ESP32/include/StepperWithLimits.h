@@ -15,6 +15,20 @@ static const float STEPPER_WAKEUP_FORCE = 1.0f;                     // Force in 
 // ==============================================================================
 // Enumerations
 // ==============================================================================
+// The active servo alarm changes rarely, so it is read far less often than the
+// cyclic servo states to keep the Modbus bus free for the control loop.
+#define SERVO_ALARM_POLL_INTERVAL_MS 2000u
+
+// While no servo is found: interval between discovery attempts, and every how
+// many attempts the slow sweep over all slave IDs runs (~1 min)
+#define SERVO_REDISCOVERY_INTERVAL_MS 2000u
+#define SERVO_REDISCOVERY_SWEEP_EVERY_N 30u
+
+// Boards with a servo power switch (SERVO_POWER_PIN): power-up sequence
+#define SERVO_POWER_OFF_TIME_MS 500u          // servo off before powering up (logic must drop out)
+#define SERVO_POWER_ON_DELAY_AFTER_TX_MS 5u   // UART idle level set before power-on
+#define SERVO_BOOT_TIME_MS 2000u              // servo DSP power-on self-test before communication
+
 enum ServoStatus
 {
     SERVO_NOT_CONNECTED,
@@ -116,6 +130,13 @@ private:
     void updateLifeline();
     void processActiveServo(FunctionProfiler* profiler);
     void handleConnectionLoss();
+    void pollServoAlarm();
+    bool finishServoConnection();
+    void powerCycleServo();
+    void retryServoDiscovery();
+    uint32_t lastServoDiscoveryAttemptMs_u32 = 0;  // millis() of the last discovery attempt while no servo is found
+    uint32_t servoDiscoveryAttempts_u32 = 0;       // discovery attempts since the servo went missing
+    uint32_t lastServoAlarmPollMs_u32 = 0;         // millis() of the last current-alarm readout
     void readAndFormatServoPosition();
     void unwrapServoPosition();
     void calculateTrackingErrorChange();
@@ -123,6 +144,8 @@ private:
 
 public:
     volatile uint8_t servoStatus = 0;              // Current global state of the servo — volatile: written Core 0 (servoCommunicationTask) and Core 1 (pedalUpdateTask)
+    volatile bool servoFound_b = false;            // Servo discovered and configured; false = still waiting for it (no ESP restart)
+    volatile uint16_t servoAlarmCode_u16 = 0;      // Active iSV57 alarm (0 = none, red ALM LED on the drive), polled every SERVO_ALARM_POLL_INTERVAL_MS
     uint8_t endstopDetectionThreshold_u8 = 30;     // Current threshold (in percent) to detect a physical block
 
     // Constructor

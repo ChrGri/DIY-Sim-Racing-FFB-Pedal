@@ -131,6 +131,11 @@
                             Style="{StaticResource PrimaryToolbarButtonStyle}"
                             Click="Btn_LoadFromServo_Click"
                             ToolTip="Sequentially reads all registers from the servo"/>
+                    <Button Content="Clear alarms"
+                            x:Name="Btn_ClearServoAlarms"
+                            Style="{StaticResource ToolbarButtonStyle}"
+                            Click="Btn_ClearServoAlarms_Click"
+                            ToolTip="Clears the active servo alarm (red ALM LED). The alarm history is printed to the pedal's serial console."/>
                     <Button Content="Reset to recommended"
                             x:Name="Btn_ResetToRecommended"
                             Style="{StaticResource ToolbarButtonStyle}"

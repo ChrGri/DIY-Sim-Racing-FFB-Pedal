@@ -526,6 +526,11 @@ public:
       handleAssignmentPacket(data);
       return;
     }
+
+    if (len == sizeof(DapEffectPipeline_t)) {
+      handleEffectPipelinePacket(data);
+      return;
+    }
   }
 
   void handleSent(const esp_now_send_info_t *info,
@@ -1033,10 +1038,11 @@ private:
     (void)len;
     DapActionOta_t otaLocal;
     memcpy(&otaLocal, data, sizeof(DapActionOta_t));
+    // Skip DAP_VERSION_CONFIG_U8 check so newer plugins can trigger wireless OTA
+    // on older pedal firmware (matching the USB serial path; CRC still guards integrity).
     if (otaLocal.payloadHeader_st.payloadType_u8 !=
-            DAP_PAYLOAD_TYPE_ACTION_OTA_U8 ||
-        otaLocal.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8) {
-      logDebug("RX Ota dropped: bad type/version");
+        DAP_PAYLOAD_TYPE_ACTION_OTA_U8) {
+      logDebug("RX Ota dropped: bad type");
       return;
     }
     uint16_t crc = checksumCalculator_u16(
@@ -1120,6 +1126,24 @@ private:
       }
     }
     logDebug("RX Assignment accepted");
+  }
+
+  // Offset samples from the plugin effect scripts (streamed, no log output)
+  void handleEffectPipelinePacket(const uint8_t *data) {
+    DapEffectPipeline_t pkt;
+    memcpy(&pkt, data, sizeof(DapEffectPipeline_t));
+    if (pkt.payloadHeader_st.payloadType_u8 !=
+            DAP_PAYLOAD_TYPE_EFFECT_PIPELINE_U8 ||
+        pkt.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8) {
+      return;
+    }
+    uint16_t crc = checksumCalculator_u16(
+        (uint8_t *)(&(pkt.payloadHeader_st)),
+        sizeof(pkt.payloadHeader_st) + sizeof(pkt.payloadEffectPipeline_st));
+    if (crc != pkt.payloadFooter_st.checkSum_u16) {
+      return;
+    }
+    g_effectPipeline_st.receive(pkt.payloadEffectPipeline_st);
   }
 
   void handleServoConfigPacket(const uint8_t *data) {

@@ -12,6 +12,8 @@ namespace DiyFfbPedal.UIFunction
     {
         private static readonly Brush DisconnectedBrush = CreateFrozenBrush(171, 180, 190);
 
+        private static readonly Brush ServoErrorTextBrush = CreateFrozenBrush(255, 120, 120);
+
         private readonly Queue<KeyValuePair<DateTime, double>>[] history =
         {
             new Queue<KeyValuePair<DateTime, double>>(),
@@ -104,6 +106,7 @@ namespace DiyFfbPedal.UIFunction
                 status.Foreground = connected ? Brushes.LightGreen : DisconnectedBrush;
                 lastConnected[pedal] = connected;
             }
+            UpdateServoLeds(pedal, connected);
             bar.Value = percent;
             if (lastPercent[pedal] != roundedPercent)
             {
@@ -142,19 +145,40 @@ namespace DiyFfbPedal.UIFunction
             effectsText.Text = "Effects: " + GetEffects(pedal);
         }
 
+        private void UpdateServoLeds(int pedal, bool connected)
+        {
+            Ellipse pwrLed = pedal == 0 ? ServoPwrLed0 : pedal == 1 ? ServoPwrLed1 : ServoPwrLed2;
+            Ellipse almLed = pedal == 0 ? ServoAlmLed0 : pedal == 1 ? ServoAlmLed1 : ServoAlmLed2;
+            TextBlock servoText = pedal == 0 ? ServoText0 : pedal == 1 ? ServoText1 : ServoText2;
+
+            CalculationVariables calc = plugin._calculations;
+            ServoLedIndicator.State state = ServoLedIndicator.GetState(calc, pedal, connected);
+            ServoLedIndicator.Apply(pwrLed, almLed, state);
+
+            string text = ServoLedIndicator.GetText(calc, pedal, connected, state);
+            if (servoText.Text != text)
+            {
+                servoText.Text = text;
+                servoText.Foreground = state == ServoLedIndicator.State.Ok ? Brushes.LightGreen
+                    : state == ServoLedIndicator.State.Error ? ServoErrorTextBrush
+                    : DisconnectedBrush;
+            }
+        }
+
         private string GetEffects(int pedal)
         {
             List<string> names = new List<string>();
             DIYFFBPedalSettings settings = plugin.Settings;
-            if (settings.ABS_enable_flag[pedal] == 1) names.Add("ABS");
-            if (settings.RPM_enable_flag[pedal] == 1) names.Add("RPM");
-            if (settings.G_force_enable_flag[pedal] == 1) names.Add("G-force");
-            if (settings.WS_enable_flag[pedal] == 1) names.Add("Slip");
-            if (settings.Road_impact_enable_flag[pedal] == 1) names.Add("Road");
-            if (settings.CV1_enable_flag[pedal]) names.Add("Custom 1");
-            if (settings.CV2_enable_flag[pedal]) names.Add("Custom 2");
-            if (settings.CV3_enable_flag[pedal]) names.Add("Custom 3");
-            if (settings.CV4_enable_flag[pedal]) names.Add("Custom 4");
+            if (settings != null && settings.ABS_enable_flag[pedal] == 1) names.Add(pedal == 2 ? "TC" : "ABS");
+            // the other vehicle effects are scripts: list the enabled scripts of this pedal
+            if (settings != null && settings.Pipeline_slots != null && settings.Pipeline_warning_ack)
+            {
+                foreach (PipelineScriptSlot slot in settings.Pipeline_slots.ToArray())
+                {
+                    if (slot.Pedal == pedal && slot.Enabled)
+                        names.Add(string.IsNullOrWhiteSpace(slot.Name) ? "Script" : slot.Name.Trim());
+                }
+            }
             return names.Count == 0 ? "none" : String.Join(", ", names.ToArray());
         }
 
@@ -193,7 +217,9 @@ namespace DiyFfbPedal.UIFunction
                 plugin._calculations.ProfileSelected = item.FileName;
                 parent.SystemProfile_TabNew.ApplyProfileOnUiWithPath(item.FullPath);
                 parent.updateTheGuiFromConfig();
-                ApplyFeedback.Text = String.Format("{0} applied · settings and effects updated", String.IsNullOrWhiteSpace(item.ListNameOrig) ? item.FileName : item.ListNameOrig);
+                string profileName = String.IsNullOrWhiteSpace(item.ListNameOrig) ? item.FileName : item.ListNameOrig;
+                ApplyFeedback.Text = String.Format("{0} applied · settings and effects updated", profileName);
+                parent.ToastNotification("Profile Applied", $"Profile:{profileName} applied.");
                 UpdateDashboard(true);
             }
             catch (Exception ex)

@@ -40,7 +40,6 @@ namespace DiyFfbPedal
         public bool[] dumpPedalToResponseFile_clearFile;
         public bool[] dumpPedalToResponseFile;
         public string current_profile = "NA";
-        public bool ForceUpdate_b;
 
         public DAP_state_extended_st[] pedalState_extended = new DAP_state_extended_st[3];
         public long[] pedalState_extended_counter = new long[3] { 0, 0, 0 };
@@ -56,6 +55,12 @@ namespace DiyFfbPedal
         public bool OTASettingUpdate_b;
         public int[] rssi;
         public byte[] ServoStatus;
+        // UTC ticks of the last pedal state packet reporting a lost servo connection (error code 12), per pedal.
+        public long[] ServoErrorLastTicks;
+        // UTC ticks of the last pedal state packet reporting an active servo alarm (error code 13), per pedal.
+        public long[] ServoAlarmLastTicks;
+        // Last active servo alarm code reported by each pedal (lower 12 bits, 0 = none).
+        public ushort[] ServoAlarmCode;
         public string[] pluginVersionReading;
         public string[] updateChannelString = new[] { "main", "dev-build", "daily-build" };
         public bool versionCheck_b;
@@ -145,7 +150,6 @@ namespace DiyFfbPedal
             btn_SendConfig_tooltip = "Send Config to Pedal and save in storage";
             dumpPedalToResponseFile_clearFile = new bool[3] { false, false, false };
             dumpPedalToResponseFile = new bool[3] { false, false, false };
-            ForceUpdate_b = false;
             //UpdateChannel = 0;
             _rssi_value = 0;
             _systemStatusString = "";
@@ -162,6 +166,9 @@ namespace DiyFfbPedal
             OTASettingUpdate_b = false;
             rssi = new int[3] { 0, 0, 0 };
             ServoStatus = new byte[3] { 0, 0, 0 };
+            ServoErrorLastTicks = new long[3] { 0, 0, 0 };
+            ServoAlarmLastTicks = new long[3] { 0, 0, 0 };
+            ServoAlarmCode = new ushort[3] { 0, 0, 0 };
             pluginVersionReading = new string[3] { "", "", ""};
             versionCheck_b = false;
             verisonCreate_b = false;
@@ -183,5 +190,41 @@ namespace DiyFfbPedal
         }
 
 
+    
+
+        // Pedal error code sent while the pedal gets no answer from the servo (see firmware getLifelineSignal()).
+        public const byte ServoLostConnectionErrorCode = 12;
+        // Pedal error code sent while the servo drive reports an active alarm (red ALM LED on the drive).
+        public const byte ServoAlarmErrorCode = 13;
+
+        public void UpdateServoErrorState(int pedal, byte errorCode, ushort servoAlarmCode)
+        {
+            if (ServoErrorLastTicks == null || ServoAlarmLastTicks == null || pedal < 0 || pedal >= ServoErrorLastTicks.Length) return;
+            if (ServoAlarmCode != null) ServoAlarmCode[pedal] = (ushort)(servoAlarmCode & 0x0FFF);
+            if (errorCode == ServoLostConnectionErrorCode)
+            {
+                System.Threading.Interlocked.Exchange(ref ServoErrorLastTicks[pedal], DateTime.UtcNow.Ticks);
+            }
+            else if (errorCode == ServoAlarmErrorCode)
+            {
+                System.Threading.Interlocked.Exchange(ref ServoAlarmLastTicks[pedal], DateTime.UtcNow.Ticks);
+            }
+        }
+
+        public bool HasRecentServoAlarm(int pedal, TimeSpan holdTime)
+        {
+            if (ServoAlarmLastTicks == null || pedal < 0 || pedal >= ServoAlarmLastTicks.Length) return false;
+            long last = System.Threading.Interlocked.Read(ref ServoAlarmLastTicks[pedal]);
+            return last != 0 && (DateTime.UtcNow.Ticks - last) < holdTime.Ticks;
+        }
+
+        // The error code is repeated in every state packet while the fault persists, so a short hold time
+        // bridges single lost packets without keeping the fault alive after it has cleared.
+        public bool HasRecentServoError(int pedal, TimeSpan holdTime)
+        {
+            if (ServoErrorLastTicks == null || pedal < 0 || pedal >= ServoErrorLastTicks.Length) return false;
+            long last = System.Threading.Interlocked.Read(ref ServoErrorLastTicks[pedal]);
+            return last != 0 && (DateTime.UtcNow.Ticks - last) < holdTime.Ticks;
+        }
     }
 }

@@ -18,11 +18,9 @@ namespace DiyFfbPedal
         {
             public ObservableCollection<ProfileListItem> ProfileList { get; set; } = new ObservableCollection<ProfileListItem>();
 
-            private Dictionary<string, ProfileDictionaryStruct> _bindNameLookup;
-            private Dictionary<string, ProfileDictionaryStruct> _bindGameLookup;
+            private Dictionary<string, ProfileDictionaryStruct> _bindLookup;
             private DIY_FFB_Pedal _plugin;
-            private string lastCarName = string.Empty;
-            private string lastGameName = string.Empty;
+            private string _lastMatchedKey = string.Empty;
             public bool[] GamePofileConfigChange_b = new bool[3] { false, false, false };
             public string[] GameConfigPathBuffer = new string[3] { string.Empty, string.Empty , string.Empty };
             public DAP_config_st[] ConfigBuffer = new DAP_config_st[3];
@@ -45,8 +43,7 @@ namespace DiyFfbPedal
 
             private void RebuildLookupDictionary()
             {
-                _bindNameLookup = new Dictionary<string, ProfileDictionaryStruct>(StringComparer.OrdinalIgnoreCase);
-                _bindGameLookup = new Dictionary<string, ProfileDictionaryStruct>(StringComparer.OrdinalIgnoreCase);
+                _bindLookup = new Dictionary<string, ProfileDictionaryStruct>(StringComparer.OrdinalIgnoreCase);
                 foreach (var item in ProfileList)
                 {
                     try
@@ -57,34 +54,11 @@ namespace DiyFfbPedal
                             FullPath = item.FullPath,
                             ProfileListItem = item
                         };
-                        string rawKeys = tempProfile.BindGameOrCar;
+                        string keyName = (tempProfile.BindGameOrCar ?? string.Empty).Trim();
 
-                        if (!string.IsNullOrEmpty(rawKeys))
+                        if (!string.IsNullOrEmpty(keyName) && !_bindLookup.ContainsKey(keyName))
                         {
-                            string[] keyParts = rawKeys.Split(',');
-
-                            foreach (var part in keyParts)
-                            {
-                                string keyName = part.Trim();
-                                if (!string.IsNullOrEmpty(keyName))
-                                {
-                                    if (PedalConstStrings.AutoProfileSwitchGameList.Contains(keyName))
-                                    {
-                                        if (!_bindGameLookup.ContainsKey(keyName))
-                                        {
-                                            _bindGameLookup.Add(keyName, tempStruct);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (!_bindNameLookup.ContainsKey(keyName))
-                                        {
-                                            _bindNameLookup.Add(keyName, tempStruct);
-                                        }
-                                    }
-
-                                }
-                            }
+                            _bindLookup.Add(keyName, tempStruct);
                         }
                     }
                     catch (Exception ex)
@@ -95,87 +69,92 @@ namespace DiyFfbPedal
                 }
             }
 
-            public ProfileDictionaryStruct GetProfileByNameFast(string key)
+            public ProfileDictionaryStruct GetProfileByKeyFast(string key)
             {
-                if (_bindNameLookup.TryGetValue(key, out ProfileDictionaryStruct profileItem))
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    return new ProfileDictionaryStruct { FullPath = string.Empty, ProfileListItem = new ProfileListItem() };
+                }
+
+                if (_bindLookup.TryGetValue(key.Trim(), out ProfileDictionaryStruct profileItem))
                 {
                     return profileItem;
                 }
                 return new ProfileDictionaryStruct { FullPath = string.Empty, ProfileListItem = new ProfileListItem() };
             }
 
-            public ProfileDictionaryStruct GetProfileByGameFast(string key)
+            public void ApplyProfileAuto(string gameName, string carId)
             {
-                if (_bindGameLookup.TryGetValue(key, out ProfileDictionaryStruct profileItem))
+                string matchedKey = null;
+                ProfileDictionaryStruct profileItem = default;
+                bool isCarMatch = false;
+
+                // Match CarID first; only fall back to Game if CarID does not match.
+                if (!string.IsNullOrWhiteSpace(carId))
                 {
-                    return profileItem;
-                }
-                return new ProfileDictionaryStruct { FullPath = string.Empty, ProfileListItem = new ProfileListItem() };
-            }
-            public void ApplyProfileAutoForCar(string carName)
-            {
-                bool excuteChecker = true;
-                if (carName == "") excuteChecker = false;
-                if (carName == lastCarName) excuteChecker = false;
-
-
-
-                if (excuteChecker)
-                {
-                    lastCarName = carName;
-                    ProfileDictionaryStruct profileItem = GetProfileByNameFast(carName);
-                    string ProfilePath = profileItem.FullPath;
-                    if (ProfilePath != string.Empty) //if carmodel matched
+                    profileItem = GetProfileByKeyFast(carId);
+                    if (!string.IsNullOrEmpty(profileItem.FullPath))
                     {
-                        if (File.Exists(ProfilePath))
-                        {
-                            var item = ProfileList.FirstOrDefault(founditem => founditem.FullPath == ProfilePath);
-                            if (item != null)
-                            {
-                                _plugin._calculations.ProfileEditing = item.FileName;
-                            }
-                            ApplyProfile(ProfilePath);
-                            UpdateProfileUi(item);
-                            UpdateProfileLabelDefaultAndEditing();
-                            _plugin.wpfHandle.ToastNotification("Profile Applied", $"Profile:{item.ListNameOrig} for Car:{carName} applied.");
-                        }
+                        matchedKey = carId;
+                        isCarMatch = true;
                     }
-
                 }
 
-            }
-            public void ApplyProfileAutoForGame(string gameName)
-            {
-                bool excuteChecker = true;
-                if (gameName == "") excuteChecker = false;
-                if (gameName == lastGameName) excuteChecker = false;
-
-
-
-                if (excuteChecker)
+                if (!isCarMatch && !string.IsNullOrWhiteSpace(gameName))
                 {
-                    lastGameName = gameName;
-                    ProfileDictionaryStruct profileItem = GetProfileByGameFast(gameName);
-                    string ProfilePath = profileItem.FullPath;
-                    if (ProfilePath != string.Empty) //if carmodel matched
+                    profileItem = GetProfileByKeyFast(gameName);
+                    if (!string.IsNullOrEmpty(profileItem.FullPath))
                     {
-                        if (File.Exists(ProfilePath))
-                        {
-                            var item = ProfileList.FirstOrDefault(founditem => founditem.FullPath == ProfilePath);
-                            if (item != null)
-                            {
-                                _plugin._calculations.ProfileEditing = item.FileName;
-                            }
-                            ApplyProfileForGame(ProfilePath);
-                            CurrentGameProfile= item.FileName;
-                            UpdateProfileUi(item);
-                            UpdateProfileLabelDefaultAndEditing();
-                            //_plugin.wpfHandle.ToastNotification("Profile Applied", $"Profile:{item.ListNameOrig} for Game:{gameName} applied.");
-                        }
+                        matchedKey = gameName;
                     }
-
                 }
 
+                if (string.IsNullOrEmpty(matchedKey) || matchedKey == _lastMatchedKey)
+                {
+                    return;
+                }
+
+                _lastMatchedKey = matchedKey;
+                string profilePath = profileItem.FullPath;
+                if (!File.Exists(profilePath))
+                {
+                    return;
+                }
+
+                var item = ProfileList.FirstOrDefault(founditem => founditem.FullPath == profilePath);
+                if (item != null)
+                {
+                    _plugin._calculations.ProfileEditing = item.FileName;
+                }
+
+                if (isCarMatch)
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        GamePofileConfigChange_b[i] = false;
+                    }
+                    ApplyProfile(profilePath);
+                    UpdateProfileUi(item);
+                    UpdateProfileLabelDefaultAndEditing();
+                    if (item != null && _plugin.wpfHandle != null)
+                    {
+                        _plugin.wpfHandle.ToastNotification("Profile Applied", $"Profile:{item.ListNameOrig} for Car:{matchedKey} applied.");
+                    }
+                }
+                else
+                {
+                    ApplyProfileForGame(profilePath);
+                    if (item != null)
+                    {
+                        CurrentGameProfile = item.FileName;
+                    }
+                    UpdateProfileUi(item);
+                    UpdateProfileLabelDefaultAndEditing();
+                    if (item != null && _plugin.wpfHandle != null)
+                    {
+                        _plugin.wpfHandle.ToastNotification("Profile Applied", $"Profile:{item.ListNameOrig} for Game:{matchedKey} applied.");
+                    }
+                }
             }
 
             public DAP_system_profile_cls LoadProfileFromJsonFile(string filePath)
@@ -200,23 +179,32 @@ namespace DiyFfbPedal
             }
             public void ApplyProfile(string profilePath)
             {
-                DAP_system_profile_cls tmpProfile = new DAP_system_profile_cls();
-                tmpProfile = LoadProfileFromJsonFile(profilePath);
+                DAP_system_profile_cls tmpProfile = LoadProfileFromJsonFile(profilePath);
                 for (int i = 0; i < 3; i++)
                 {
-                    if (tmpProfile.ConfigPath[i] != "" && File.Exists(tmpProfile.ConfigPath[i]))
+                    if (!string.IsNullOrEmpty(tmpProfile.ConfigPath[i]) && File.Exists(tmpProfile.ConfigPath[i]))
                     {
                         DAP_config_st tmpConfig = _plugin.ConfigService.ReadConfig(tmpProfile.ConfigPath[i]);
-                        _plugin.wpfHandle.dap_config_st[i] = tmpConfig;
+                        if (_plugin.wpfHandle != null)
+                        {
+                            _plugin.wpfHandle.dap_config_st[i] = tmpConfig;
+                        }
                         _plugin.SendConfigWithoutSaveToEEPROM(tmpConfig, (byte)i);
-                        _plugin._calculations.ConfigEditing[i] = _plugin.ConfigService.ConfigList.FirstOrDefault(item => item.FullPath == tmpProfile.ConfigPath[i]).FileName;
+                        var matchedConfig = _plugin.ConfigService.ConfigList.FirstOrDefault(item =>
+                            string.Equals(item.FullPath, tmpProfile.ConfigPath[i], StringComparison.OrdinalIgnoreCase));
+                        if (matchedConfig != null)
+                        {
+                            _plugin._calculations.ConfigEditing[i] = matchedConfig.FileName;
+                        }
                         _plugin._calculations.IsModifiedConfigNotSave[i] = false;
                         _plugin._calculations.IsApplyingConfig = true;
                         _plugin._calculations.configApplyLockLast = DateTime.Now;
                         //System.Threading.Thread.Sleep(100);
                     }
                     ApplyProfileEffects(tmpProfile, i);
+                    ApplyProfileScripts(tmpProfile, i);
                 }
+                RefreshScriptsUi();
                 
                 _plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                 //wpfHandle.updateTheGuiFromConfig();
@@ -244,23 +232,65 @@ namespace DiyFfbPedal
                         //System.Threading.Thread.Sleep(100);
                     }
                     ApplyProfileEffects(tmpProfile, i);
+                    ApplyProfileScripts(tmpProfile, i);
                 }
+                RefreshScriptsUi();
                 _plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                 //wpfHandle.updateTheGuiFromConfig();
             }
 
             private void ApplyProfileEffects(DAP_system_profile_cls profile, int pedal)
             {
+                if (profile?.Effects == null || pedal < 0 || pedal >= profile.Effects.Length || profile.Effects[pedal] == null)
+                {
+                    return;
+                }
                 bool[] effects = profile.Effects[pedal];
-                _plugin.Settings.ABS_enable_flag[pedal] = _plugin.BoolToInt(effects[0]);
-                _plugin.Settings.RPM_enable_flag[pedal] = _plugin.BoolToInt(effects[1]);
-                if (pedal == 1) _plugin.Settings.G_force_enable_flag[pedal] = _plugin.BoolToInt(effects[3]);
-                _plugin.Settings.WS_enable_flag[pedal] = _plugin.BoolToInt(effects[4]);
-                _plugin.Settings.Road_impact_enable_flag[pedal] = _plugin.BoolToInt(effects[5]);
-                _plugin.Settings.CV1_enable_flag[pedal] = effects[6];
-                _plugin.Settings.CV2_enable_flag[pedal] = effects[7];
-                _plugin.Settings.CV3_enable_flag[pedal] = effects[8];
-                _plugin.Settings.CV4_enable_flag[pedal] = effects[9];
+                if (effects.Length > 0) _plugin.Settings.ABS_enable_flag[pedal] = _plugin.BoolToInt(effects[0]);
+                if (effects.Length > 1) _plugin.Settings.RPM_enable_flag[pedal] = _plugin.BoolToInt(effects[1]);
+                if (pedal == 1 && effects.Length > 3) _plugin.Settings.G_force_enable_flag[pedal] = _plugin.BoolToInt(effects[3]);
+                if (effects.Length > 4) _plugin.Settings.WS_enable_flag[pedal] = _plugin.BoolToInt(effects[4]);
+                if (effects.Length > 5) _plugin.Settings.Road_impact_enable_flag[pedal] = _plugin.BoolToInt(effects[5]);
+                if (effects.Length > 6) _plugin.Settings.CV1_enable_flag[pedal] = effects[6];
+                if (effects.Length > 7) _plugin.Settings.CV2_enable_flag[pedal] = effects[7];
+                if (effects.Length > 8) _plugin.Settings.CV3_enable_flag[pedal] = effects[8];
+                if (effects.Length > 9) _plugin.Settings.CV4_enable_flag[pedal] = effects[9];
+            }
+
+            private void ApplyProfileScripts(DAP_system_profile_cls profile, int pedal)
+            {
+                if (profile == null || _plugin.EffectPipelines == null) return;
+                bool hasBindings = profile.HasScriptBindings || (profile.ScriptBindings != null && profile.ScriptBindings.Count > 0);
+                if (!hasBindings) return;
+
+                var slots = new List<PipelineScriptSlot>();
+                if (profile.ScriptBindings != null)
+                {
+                    foreach (var binding in profile.ScriptBindings)
+                    {
+                        if (binding == null || binding.Pedal != pedal || string.IsNullOrWhiteSpace(binding.ScriptFile)) continue;
+                        EffectPreset preset = EffectPresetFiles.FindByFileName(binding.ScriptFile);
+                        if (preset == null)
+                        {
+                            SimHub.Logging.Current.Warn($"Profile script file not found: {binding.ScriptFile}");
+                            continue;
+                        }
+                        var slot = preset.CreateSlot(pedal);
+                        slot.Enabled = binding.Enabled;
+                        slot.Gain = Math.Max(0.0, Math.Min(10.0, binding.Gain));
+                        slots.Add(slot);
+                    }
+                }
+                _plugin.EffectPipelines.ReplacePedalSlots(pedal, slots);
+            }
+
+            private void RefreshScriptsUi()
+            {
+                if (_plugin.wpfHandle?.ScriptEffects_Panel == null) return;
+                _plugin.wpfHandle.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    _plugin.wpfHandle.ScriptEffects_Panel.RefreshFromExternal();
+                }));
             }
 
             private void UpdateProfileUi(ProfileListItem item)
@@ -367,8 +397,7 @@ namespace DiyFfbPedal
 
             public void ClearAutoSwitchStatus()
             {
-                lastCarName = string.Empty;
-                lastGameName = string.Empty;
+                _lastMatchedKey = string.Empty;
                 CurrentGameProfile = string.Empty;
             }
         }

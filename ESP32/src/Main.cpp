@@ -77,6 +77,8 @@ DapEspPairing_t dap_esppairing_st;  // saving
 DapEspPairing_t dap_esppairing_lcl; // sending
 DapActionOta_t dap_action_ota_st;   // OTA command(do not check version)
 volatile uint8_t g_pedalOperationalState_u8 = (uint8_t)PEDAL_STATE_ACTIVE_E;
+// Set at boot when the servo was not found: home as soon as it shows up
+volatile bool g_homingAfterServoFound_b = false;
 
 /**********************************************************************************************/
 /*                                                                                            */
@@ -280,6 +282,7 @@ bool splineDebug_b = false;
 #define EEPROM_OFFSET_U32 15U
 
 #include "ABSOscillation.h"
+#include "EffectPipeline.h"
 #include "Rudder.h"
 ABSOscillation absOscillation;
 RpmOscillation_t g_rpmOscillation_st;
@@ -291,6 +294,8 @@ CustomVibration_t g_customVibration1_st;
 CustomVibration_t g_customVibration2_st;
 CustomVibration_t g_customVibration3_st;
 CustomVibration_t g_customVibration4_st;
+// offset samples from the plugin effect scripts
+EffectPipeline_t g_effectPipeline_st;
 Rudder_t g_rudder_st;
 HelicoptersRudder_t g_helicopterRudder_st;
 RudderGForce_t g_rudderGForce_st;
@@ -445,7 +450,6 @@ uint8_t g_newAssignedRole_u8 = PEDAL_ID_UNKNOWN;
 #ifdef OTA_update
 // #include "ota.h"
 #include "OTA_ArduinoOTA.h"
-#include "OTA_Pull.h"
 
 char *g_apHost_pc;
 #endif
@@ -855,6 +859,60 @@ static void uart_event_task(void *pvParameters) {
 
 #endif
 
+// The pedal task (which sends the pedal state) is blocked while homing runs in
+// it, so the plugin got no servo status for several seconds (its servo LEDs
+// went off). This heartbeat keeps sending the last basic state with the
+// current servo fields while homing.
+static DapStateBasic_t s_lastBasicState_st = {};
+static uint8_t s_homingHeartbeatPedalTag_u8 = 0;
+#define HOMING_STATUS_HEARTBEAT_INTERVAL_US 100000
+
+static void homingStatusHeartbeatCallback(void *arg) {
+  (void)arg;
+  if (stepper == nullptr) {
+    return;
+  }
+  DapStateBasic_t st = s_lastBasicState_st;
+  st.payloadHeader_st.startOfFrame0_u8 = SOF_BYTE_0_U8;
+  st.payloadHeader_st.startOfFrame1_u8 = SOF_BYTE_1_U8;
+  st.payloadFooter_st.enfOfFrame0_u8 = EOF_BYTE_0_U8;
+  st.payloadFooter_st.enfOfFrame1_u8 = EOF_BYTE_1_U8;
+  st.payloadHeader_st.payloadType_u8 = DAP_PAYLOAD_TYPE_STATE_BASIC_U8;
+  st.payloadHeader_st.version_u8 = DAP_VERSION_CONFIG_U8;
+  st.payloadHeader_st.pedalTag_u8 = s_homingHeartbeatPedalTag_u8;
+  st.payloadPedalStateBasic_st.pedalFirmwareVersion_au8[0] = g_versionMajor;
+  st.payloadPedalStateBasic_st.pedalFirmwareVersion_au8[1] = g_versionMinor;
+  st.payloadPedalStateBasic_st.pedalFirmwareVersion_au8[2] = g_versionPatch;
+
+  // same servo fields as in the pedal task
+  st.payloadPedalStateBasic_st.servoStatus_u8 = stepper->servoStatus;
+  st.payloadPedalStateBasic_st.servoAlarmCode_u16 = stepper->servoAlarmCode_u16;
+  st.payloadPedalStateBasic_st.errorCode_u8 = 0;
+  if ((stepper->servoAlarmCode_u16 != 0) &&
+      (stepper->servoStatus != SERVO_IDLE_NOT_CONNECTED)) {
+    st.payloadPedalStateBasic_st.errorCode_u8 = 13;
+  }
+  if ((stepper->getLifelineSignal() == false) &&
+      (stepper->servoStatus != SERVO_IDLE_NOT_CONNECTED)) {
+    st.payloadPedalStateBasic_st.errorCode_u8 = 12;
+  }
+
+  TxMessage_t txMsg;
+  memset(&txMsg, 0, sizeof(txMsg));
+  txMsg.type = TX_MSG_PEDAL_STATE;
+  txMsg.payload.pedalState.basic_st = st;
+  txMsg.payload.pedalState.sendBasicFlag_b = true;
+  txMsg.payload.pedalState.sendExtendedFlag_b = false;
+  if (s_unifiedTxQueue != NULL) {
+    xQueueSend(s_unifiedTxQueue, &txMsg, (TickType_t)0);
+  }
+#ifdef ESPNOW_Enable
+  if (s_espnowStateQueue != NULL) {
+    xQueueOverwrite(s_espnowStateQueue, &txMsg.payload.pedalState);
+  }
+#endif
+}
+
 static void homingTimeoutCallback(void *arg) {
   if (ActiveSerial) {
     ActiveSerial->println("homing timeout");
@@ -873,6 +931,19 @@ void performPedalHomingSequence(DapConfig_t dap_config_st_homing) {
     }
   }
 #endif
+
+  // keep reporting the servo status to the plugin while homing blocks the
+  // pedal task
+  s_homingHeartbeatPedalTag_u8 =
+      dap_config_st_homing.payloadPedalConfig_st.pedalType_u8;
+  esp_timer_create_args_t heartbeatTimerArgs_st = {};
+  heartbeatTimerArgs_st.callback = &homingStatusHeartbeatCallback;
+  heartbeatTimerArgs_st.name = "homing_status";
+  esp_timer_handle_t heartbeatTimer_st = NULL;
+  if (esp_timer_create(&heartbeatTimerArgs_st, &heartbeatTimer_st) == ESP_OK) {
+    esp_timer_start_periodic(heartbeatTimer_st,
+                             HOMING_STATUS_HEARTBEAT_INTERVAL_US);
+  }
 
   if (stepper != nullptr) {
     stepper->servoWakeAction();
@@ -916,21 +987,39 @@ void performPedalHomingSequence(DapConfig_t dap_config_st_homing) {
   }
 #endif
 
+  if (heartbeatTimer_st != NULL) {
+    esp_timer_stop(heartbeatTimer_st);
+    esp_timer_delete(heartbeatTimer_st);
+  }
+
   pedalLED.setPixelColor(0, 0x00, 0xFF, 0x00); // Green (ready)
   pedalLED.show();
 }
 
 void setup() {
-// 1. Immediately clamp all control & communication pins to prevent floating
-// state / glitches
+// 1. Immediately clamp all control pins to prevent floating state / glitches.
+// The servo UART pins stay high-Z (no drive, no pull-up) until the servo has
+// booted: its tuning UART is not isolated, and driving TX HIGH into an unpowered
+// servo back-feeds its logic, so it misses its power-on reset (solid red LED, no
+// alarm code). Isv57Communication::begin() sets the idle levels.
 #if defined(ISV57_TXPIN) && (ISV57_TXPIN >= 0)
+#ifdef ISV57_UART_KEEP_TX_IDLE
+  // TX at its idle level as early as possible, e.g. a floating TX is a break
+  // behind an inverting RS232 transceiver (see Main.h)
   pinMode(ISV57_TXPIN, OUTPUT);
-  digitalWrite(ISV57_TXPIN, HIGH); // HIGH is the idle state for UART (Marking)
+  digitalWrite(ISV57_TXPIN, ISV57_TX_IDLE_LEVEL);
+#else
+  pinMode(ISV57_TXPIN, INPUT);
+#endif
+#endif
+#ifdef SERVO_POWER_PIN
+  // Keep the servo off until StepperWithLimits powers it up from a defined
+  // state (UART idle level first, then power, see powerCycleServo())
+  pinMode(SERVO_POWER_PIN, OUTPUT);
+  digitalWrite(SERVO_POWER_PIN, LOW);
 #endif
 #if defined(ISV57_RXPIN) && (ISV57_RXPIN >= 0)
-  // Pull up RX line to prevent floating UART noise. Required on PCBA V2: the
-  // UART driver does not set a pull-up on RX itself.
-  pinMode(ISV57_RXPIN, INPUT_PULLUP);
+  pinMode(ISV57_RXPIN, INPUT);
 #endif
 #if defined(STEP_PIN_STEPPER_U8) && (STEP_PIN_STEPPER_U8 >= 0)
   pinMode(STEP_PIN_STEPPER_U8, OUTPUT);
@@ -1349,8 +1438,20 @@ void setup() {
   kalman_2nd_order = new KalmanFilter2ndOrder(loadcell->getVarianceEstimate());
   kalman_imm = new KalmanFilterIMM(loadcell->getVarianceEstimate());
 
+  // Servo not found (e.g. ESP32 on USB, servo powered later): wait in standby
+  // instead of restarting the ESP. The servo task keeps looking for the servo,
+  // the pedal task starts homing once it is found.
+  if (!stepper->servoFound_b) {
+    g_pedalOperationalState_u8 =
+        (uint8_t)PEDAL_STATE_STANDBY_WAITING_FOR_WAKEUP_E;
+    g_homingAfterServoFound_b =
+        (dap_config_st_local.payloadPedalConfig_st.wakeOnPluginOnly_u8 != 1);
+    pedalLED.setPixelColor(0, 0x80, 0x20, 0x00); // orange (waiting for servo)
+    pedalLED.show();
+    ActiveSerial->println("Pedal waiting for the servo...");
+  }
   // Check if wakeup only by plugin trigger is requested
-  if (dap_config_st_local.payloadPedalConfig_st.wakeOnPluginOnly_u8 == 1) {
+  else if (dap_config_st_local.payloadPedalConfig_st.wakeOnPluginOnly_u8 == 1) {
     stepper->servoIdleAction();
     stepper->servoStatus = SERVO_IDLE_NOT_CONNECTED;
     g_pedalOperationalState_u8 =
@@ -1667,7 +1768,9 @@ void setup() {
       dap_config_st_local.payloadPedalConfig_st.pedalType_u8);
 #endif
   ActiveSerial->println("Setup end");
-  if (g_pedalOperationalState_u8 ==
+  if (!stepper->servoFound_b) {
+    pedalLED.setPixelColor(0, 0x80, 0x20, 0x00); // orange (waiting for servo)
+  } else if (g_pedalOperationalState_u8 ==
       (uint8_t)PEDAL_STATE_STANDBY_WAITING_FOR_WAKEUP_E) {
     pedalLED.setPixelColor(0, 0x00, 0x20, 0x80); // Soft Blue (standby)
   } else {
@@ -2454,8 +2557,17 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
 #else
       bool wirelessReadyForHoming_b = true;
 #endif
+      // servo showed up after boot -> start the homing that was skipped
+      if (g_homingAfterServoFound_b && stepper->servoFound_b) {
+        g_homingAfterServoFound_b = false;
+        if (g_pedalOperationalState_u8 ==
+            (uint8_t)PEDAL_STATE_STANDBY_WAITING_FOR_WAKEUP_E) {
+          g_pedalOperationalState_u8 = (uint8_t)PEDAL_STATE_HOMING_E;
+        }
+      }
+      // homing needs the servo; a wakeup request without servo waits for it
       if (g_pedalOperationalState_u8 == (uint8_t)PEDAL_STATE_HOMING_E &&
-          wirelessReadyForHoming_b) {
+          wirelessReadyForHoming_b && stepper->servoFound_b) {
         Buzzer.single_beep_tone(770, 100);
         delay(300);
         Buzzer.single_beep_tone(770, 100);
@@ -2571,6 +2683,29 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         effect_pos_fl32 += g_customVibration3_st.customVibrationOffset_fl32;
         effect_pos_fl32 += g_customVibration4_st.customVibrationOffset_fl32;
         effect_pos_fl32 += g_rpmOscillation_st.rpmPositionOffset_i32;
+
+        // offsets computed by the plugin effect scripts
+        float stepsPerMm_fl32 = 0.0f;
+        if (dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                .spindlePitch_mmPerRev_u8 > 0) {
+          stepsPerMm_fl32 =
+              (float)dap_calculationVariables_st.stepsPerMotorRevolution_u32 /
+              (float)dap_config_pedalUpdateTask_st.payloadPedalConfig_st
+                  .spindlePitch_mmPerRev_u8;
+        }
+        // local sled travel per degree pedal angle (central difference, +-0.5 mm)
+        float sledMmPerDeg_fl32 = 0.0f;
+        if (g_effectPipeline_st.hasAngleChannel()) {
+          float degPerMm_fl32 = fabsf(
+              pedalInclineAngleDeg(sledPosition + 0.5f,
+                                   &dap_config_pedalUpdateTask_st) -
+              pedalInclineAngleDeg(sledPosition - 0.5f,
+                                   &dap_config_pedalUpdateTask_st));
+          if (degPerMm_fl32 > 0.01f) sledMmPerDeg_fl32 = 1.0f / degPerMm_fl32;
+        }
+        g_effectPipeline_st.addOffsets(filteredReading, stepsPerMm_fl32,
+                                       sledMmPerDeg_fl32, effect_force_fl32,
+                                       effect_pos_fl32);
       }
       // effect_pos_fl32 *= EFFECT_POSITION_SCALING_FACTOR_FL32;
       // write the effect offsets into a struct for debug output and potential
@@ -3387,6 +3522,8 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         // servo status update
         dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st
             .servoStatus_u8 = stepper->servoStatus;
+        dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st
+            .servoAlarmCode_u16 = stepper->servoAlarmCode_u16;
 
 #ifdef ESPNOW_Enable
         dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st
@@ -3400,6 +3537,17 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
         dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st
             .rudderSyncDelay_ms = 0;
 #endif
+
+        // servo reports an active alarm (red ALM LED on the drive); one-shot
+        // communication error codes take precedence, the alarm is repeated in
+        // every packet anyway
+        if ((stepper->servoAlarmCode_u16 != 0) &&
+            (stepper->servoStatus != SERVO_IDLE_NOT_CONNECTED) &&
+            (dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st
+                 .errorCode_u8 == 0)) {
+          dap_state_basic_st_lcl_pedalUpdateTask.payloadPedalStateBasic_st
+              .errorCode_u8 = 13;
+        }
 
         if ((stepper->getLifelineSignal() == false) &&
             (stepper->servoStatus != SERVO_IDLE_NOT_CONNECTED)) {
@@ -3536,6 +3684,10 @@ void IRAM_ATTR_FLAG pedalUpdateTask(void *pvParameters) {
           dap_state_extended_st_lcl_pedalUpdateTask;
       txMsg.payload.pedalState.sendBasicFlag_b = sendBasicFlag_b;
       txMsg.payload.pedalState.sendExtendedFlag_b = sendExtendedFlag_b;
+      if (sendBasicFlag_b) {
+        // template for the status heartbeat while homing blocks this task
+        s_lastBasicState_st = dap_state_basic_st_lcl_pedalUpdateTask;
+      }
 
       if (sendBasicFlag_b || sendExtendedFlag_b) {
         if (s_unifiedTxQueue != NULL) {
@@ -3666,6 +3818,8 @@ static inline size_t getExpectedPacketSize(uint8_t payloadType) {
     return sizeof(DapWifiChannel_t);
   case DAP_PAYLOAD_TYPE_MAC_ADDRESSES_U8:
     return sizeof(DapMacAddresses_t);
+  case DAP_PAYLOAD_TYPE_EFFECT_PIPELINE_U8:
+    return sizeof(DapEffectPipeline_t);
   // Add other packet types here in the future
   default:
     return 0;
@@ -3995,26 +4149,23 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
 #ifdef OTA_update
           if (dap_action_ota_st.payloadHeader_st.payloadType_u8 ==
               DAP_PAYLOAD_TYPE_ACTION_OTA_U8) {
-            if (dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 ==
-                sct_dap_config_st.payloadPedalConfig_st.pedalType_u8) {
-              g_SSID =
-                  new char[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8 +
-                           1];
-              g_PASS =
-                  new char[dap_action_ota_st.payloadOtaInfo_st.passLength_u8 +
-                           1];
-              memcpy(g_SSID, dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8,
-                     dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8);
-              memcpy(g_PASS, dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8,
-                     dap_action_ota_st.payloadOtaInfo_st.passLength_u8);
-              g_SSID[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8] = 0;
-              g_PASS[dap_action_ota_st.payloadOtaInfo_st.passLength_u8] = 0;
-              g_OTA_enable_b = true;
-              g_OTA_enable_start = true;
+            g_SSID =
+                new char[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8 +
+                         1];
+            g_PASS =
+                new char[dap_action_ota_st.payloadOtaInfo_st.passLength_u8 +
+                         1];
+            memcpy(g_SSID, dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8,
+                   dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8);
+            memcpy(g_PASS, dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8,
+                   dap_action_ota_st.payloadOtaInfo_st.passLength_u8);
+            g_SSID[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8] = 0;
+            g_PASS[dap_action_ota_st.payloadOtaInfo_st.passLength_u8] = 0;
+            g_OTA_enable_b = true;
+            g_OTA_enable_start = true;
 #ifdef ESPNOW_Enable
-              g_espNowOtaEnable_b = false;
+            g_espNowOtaEnable_b = false;
 #endif
-            }
           }
 #else
           ActiveSerial->println("The command is not supported");
@@ -4042,6 +4193,24 @@ void IRAM_ATTR_FLAG serialCommunicationTaskRx(void *pvParameters) {
               xQueueSend(s_servoConfigRxQueue, &received_servo_config,
                          (TickType_t)0);
             }
+          }
+          break;
+        }
+        case DAP_PAYLOAD_TYPE_EFFECT_PIPELINE_U8: {
+          DapEffectPipeline_t received_pipeline;
+          memcpy(&received_pipeline, packet_start, sizeof(DapEffectPipeline_t));
+          calculated_crc = checksumCalculator_u16(
+              (uint8_t *)(&(received_pipeline.payloadHeader_st)),
+              sizeof(received_pipeline.payloadHeader_st) +
+                  sizeof(received_pipeline.payloadEffectPipeline_st));
+          received_crc = received_pipeline.payloadFooter_st.checkSum_u16;
+          if (calculated_crc != received_crc ||
+              received_pipeline.payloadHeader_st.version_u8 !=
+                  DAP_VERSION_CONFIG_U8) {
+            structIsValid = false;
+          } else {
+            g_effectPipeline_st.receive(
+                received_pipeline.payloadEffectPipeline_st);
           }
           break;
         }
@@ -4347,7 +4516,6 @@ void otaUpdateTask(void *pvParameters) {
   uint16_t OTA_count = 0;
   unsigned long ota_debug_messaage_last = 0;
   bool message_out_b = false;
-  int OTA_update_status = 99;
 
   for (;;) {
     if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) {
@@ -4372,46 +4540,42 @@ void otaUpdateTask(void *pvParameters) {
           server.handleClient();
 #endif
 #ifdef OTA_update
-          if (OTA_update_status == 0) {
-            Buzzer.play_melody_tone(melody_victory_theme,
-                                    sizeof(melody_victory_theme) /
-                                        sizeof(melody_victory_theme[0]),
-                                    melody_durations_Victory_theme);
-            ESP.restart();
-          } else {
-            if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
-                OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD) {
-              ActiveSerial->println(
-                  "Entering dedicated OTA mode... stopping hardware tasks.");
-              // (Optional, aber empfohlen: Hier den Motor einmalig disablen,
-              // damit das Pedal nicht unerwartet zuckt, während der Chip
-              // blockiert ist)
+          if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
+                  OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD ||
+              dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
+                  OTA_ACTION_FLASH_FROM_PIO ||
+              dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
+                  OTA_ACTION_FLASH_FROM_PLUGIN_OTA) {
+            ActiveSerial->println(
+                "Entering dedicated OTA mode... stopping hardware tasks.");
+            // (Optional, aber empfohlen: Hier den Motor einmalig disablen,
+            // damit das Pedal nicht unerwartet zuckt, während der Chip
+            // blockiert ist)
 
-              // Wir fangen das Programm in einer Endlosschleife.
-              // KEINE Sensor- oder FFB-Logik wird ab hier mehr ausgeführt!
-              while (true) {
-                ArduinoOTA.handle();
+            // Wir fangen das Programm in einer Endlosschleife.
+            // KEINE Sensor- oder FFB-Logik wird ab hier mehr ausgeführt!
+            while (true) {
+              ArduinoOTA.handle();
 
-                if (millis() - ota_debug_messaage_last > 1000) {
-                  ActiveSerial->println("Wait for ota update...");
-                  ota_debug_messaage_last = millis();
-                }
-
-                // LEBENSWICHTIG: Gibt dem FreeRTOS-Betriebssystem 10
-                // Millisekunden Zeit, um die WLAN-Pakete vom PC fehlerfrei in
-                // den Flash-Speicher zu schreiben.
-                delay(10);
+              if (millis() - ota_debug_messaage_last > 1000) {
+                ActiveSerial->println("Wait for ota update...");
+                ota_debug_messaage_last = millis();
               }
-            } else {
-              // show ota error
-              Buzzer.single_beep_tone(770, 100);
-              pedalLED.setPixelColor(0, 0xff, 0x00, 0x00);
-              pedalLED.show();
-              delay(500);
-              pedalLED.setPixelColor(0, 0x00, 0x00, 0x00);
-              pedalLED.show();
-              delay(500);
+
+              // LEBENSWICHTIG: Gibt dem FreeRTOS-Betriebssystem 10
+              // Millisekunden Zeit, um die WLAN-Pakete vom PC fehlerfrei in
+              // den Flash-Speicher zu schreiben.
+              delay(10);
             }
+          } else {
+            // show ota error
+            Buzzer.single_beep_tone(770, 100);
+            pedalLED.setPixelColor(0, 0xff, 0x00, 0x00);
+            pedalLED.show();
+            delay(500);
+            pedalLED.setPixelColor(0, 0x00, 0x00, 0x00);
+            pedalLED.show();
+            delay(500);
           }
 
 #endif
@@ -4436,6 +4600,25 @@ void otaUpdateTask(void *pvParameters) {
             ESP.restart();
 #endif
           }
+#ifdef OTA_update
+          const char *otaHost = "pedal_ota";
+          if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
+              OTA_ACTION_FLASH_FROM_PLUGIN_OTA) {
+            uint8_t targetRole = (dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 <= PEDAL_ID_THROTTLE)
+                                     ? dap_action_ota_st.payloadOtaInfo_st.deviceId_u8
+                                     : ota_dap_config_st.payloadPedalConfig_st.pedalType_u8;
+            otaHost = get_ota_hostname(targetRole);
+          } else {
+            otaHost = get_ota_hostname_pio();
+          }
+#else
+          const char *otaHost = (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 == OTA_ACTION_FLASH_FROM_PLUGIN_OTA) ? "pedal" : "pedal_ota";
+#endif
+          ActiveSerial->printf("OTA mDNS address: %s.local (http://%s.local)\n", otaHost, otaHost);
+#ifdef ESPNOW_Enable
+          wirelessComm.sendLogToBridge("OTA mDNS address: %s.local (http://%s.local)", otaHost, otaHost);
+          delay(100);
+#endif
           esp_err_t result;
           ActiveSerial->println("de-initialize espnow");
           ActiveSerial->println("wait...");
@@ -4464,71 +4647,17 @@ void otaUpdateTask(void *pvParameters) {
 #ifdef OTA_update
             wifi_initialized(g_SSID, g_PASS);
             delay(2000);
-            // sendESPNOWLog("Wifi Connected");
-            if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 !=
-                OTA_ACTION_PLATFORMIO_DIRECT_UPLOAD) {
-              ESP32OTAPull ota;
-              int ret;
-              ota.SetCallback(OTAcallback);
-              ota.OverrideBoard(CONTROL_BOARD);
-              char *versionTag_pc;
-              if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
-                  OTA_ACTION_FORCE_UPDATE) {
-                const char *versionTagSource_pc;
-                if (PCB_VERSION == 3 || PCB_VERSION == 5 || PCB_VERSION == 9)
-                  versionTagSource_pc = "0.90.16"; // for those board which
-                                                   // change the partition table
-                else
-                  versionTagSource_pc = "0.0.0";
-                versionTag_pc = new char[strlen(versionTagSource_pc) + 1];
-                strcpy(versionTag_pc, versionTagSource_pc);
-                ActiveSerial->println("Force update");
-              }
-              if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
-                  OTA_ACTION_NORMAL) {
-                versionTag_pc = new char[strlen(DAP_FIRMWARE_VERSION) + 1];
-                strcpy(versionTag_pc, DAP_FIRMWARE_VERSION);
-                // version_tag=DAP_FIRMWARE_VERSION;
-              }
-              switch (dap_action_ota_st.payloadOtaInfo_st.modeSelect_u8) {
-              case 1:
-                ActiveSerial->printf("Flashing to latest release, checking %s "
-                                     "to see if an update is available...\n",
-                                     OTA_JSON_URL_MAIN);
-                ret = ota.CheckForOTAUpdate(OTA_JSON_URL_MAIN, versionTag_pc,
-                                            ESP32OTAPull::UPDATE_BUT_NO_BOOT);
-                ActiveSerial->printf("CheckForOTAUpdate returned %d (%s)\n\n",
-                                     ret, errtext(ret));
-                OTA_update_status = ret;
-                break;
-              case 2:
-                ActiveSerial->printf("Flashing to latest dev build, checking "
-                                     "%s to see if an update is available...\n",
-                                     OTA_JSON_URL_DEV);
-                ret = ota.CheckForOTAUpdate(OTA_JSON_URL_DEV, versionTag_pc,
-                                            ESP32OTAPull::UPDATE_BUT_NO_BOOT);
-                ActiveSerial->printf("CheckForOTAUpdate returned %d (%s)\n\n",
-                                     ret, errtext(ret));
-                OTA_update_status = ret;
-                break;
-              case 3:
-                ActiveSerial->printf("Flashing to test build, checking %s to "
-                                     "see if an update is available...\n",
-                                     OTA_JSON_URL_TEST);
-                ret = ota.CheckForOTAUpdate(OTA_JSON_URL_TEST, versionTag_pc,
-                                            ESP32OTAPull::UPDATE_BUT_NO_BOOT);
-                ActiveSerial->printf("CheckForOTAUpdate returned %d (%s)\n\n",
-                                     ret, errtext(ret));
-                OTA_update_status = ret;
-                break;
-              default:
-                break;
-                delete[] versionTag_pc;
-              }
+            // initialize ota for platformIO or plugin upload
+            if (dap_action_ota_st.payloadOtaInfo_st.otaAction_u8 ==
+                OTA_ACTION_FLASH_FROM_PLUGIN_OTA) {
+              ActiveSerial->println("OTA from plugin OTA");
+              uint8_t targetRole = (dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 <= PEDAL_ID_THROTTLE)
+                                       ? dap_action_ota_st.payloadOtaInfo_st.deviceId_u8
+                                       : ota_dap_config_st.payloadPedalConfig_st.pedalType_u8;
+              ota_arduinoota_initialize(targetRole);
             } else {
-              // initialize ota for platformIO upload
               ActiveSerial->println("OTA from platformIO");
-              ota_arduinoota_initialize();
+              ota_arduinoota_initialize_pio();
             }
 #endif
             delay(3000);
@@ -4902,8 +5031,6 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
         if (g_otaUpdateAction_b) {
           ActiveSerial->println("Starting Pedal OTA");
           buzzerBeepAction_b = true;
-          g_OTA_enable_b = true;
-          g_OTA_enable_start = true;
           g_espNowOtaEnable_b = false;
           g_otaUpdateAction_b = false;
 // ActiveSerial->println("get basic wifi info");
@@ -4911,23 +5038,24 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
 #ifdef OTA_update
           if (dap_action_ota_st.payloadHeader_st.payloadType_u8 ==
               DAP_PAYLOAD_TYPE_ACTION_OTA_U8) {
-            if (dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 ==
-                espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8) {
-              g_SSID =
-                  new char[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8 +
-                           1];
-              g_PASS =
-                  new char[dap_action_ota_st.payloadOtaInfo_st.passLength_u8 +
-                           1];
-              memcpy(g_SSID, dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8,
-                     dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8);
-              memcpy(g_PASS, dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8,
-                     dap_action_ota_st.payloadOtaInfo_st.passLength_u8);
-              g_SSID[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8] = 0;
-              g_PASS[dap_action_ota_st.payloadOtaInfo_st.passLength_u8] = 0;
-              g_OTA_enable_b = true;
-            }
+            g_SSID =
+                new char[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8 +
+                         1];
+            g_PASS =
+                new char[dap_action_ota_st.payloadOtaInfo_st.passLength_u8 +
+                         1];
+            memcpy(g_SSID, dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8,
+                   dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8);
+            memcpy(g_PASS, dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8,
+                   dap_action_ota_st.payloadOtaInfo_st.passLength_u8);
+            g_SSID[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8] = 0;
+            g_PASS[dap_action_ota_st.payloadOtaInfo_st.passLength_u8] = 0;
+            g_OTA_enable_b = true;
+            g_OTA_enable_start = true;
           }
+#else
+          g_OTA_enable_b = true;
+          g_OTA_enable_start = true;
 #endif
         }
 
@@ -4962,6 +5090,24 @@ void IRAM_ATTR_FLAG espNowCommunicationTaskTx(void *pvParameters) {
         if (g_getHeliRudderAction_b) {
           g_getHeliRudderAction_b = false;
           Buzzer.single_beep_tone(700, 100);
+        }
+        // report servo alarm changes in the bridge log
+        if (stepper != NULL) {
+          static uint16_t s_lastReportedServoAlarm_u16 = 0;
+          uint16_t servoAlarm_u16 = stepper->servoAlarmCode_u16;
+          if (servoAlarm_u16 != s_lastReportedServoAlarm_u16) {
+            s_lastReportedServoAlarm_u16 = servoAlarm_u16;
+            if (servoAlarm_u16 != 0) {
+              wirelessComm.sendLogToBridge(
+                  "Pedal:%d Servo alarm Er.%03X - %s",
+                  espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8,
+                  servoAlarm_u16, decodeServoAlarmString(servoAlarm_u16));
+            } else {
+              wirelessComm.sendLogToBridge(
+                  "Pedal:%d Servo alarm cleared",
+                  espnow_dap_config_st.payloadPedalConfig_st.pedalType_u8);
+            }
+          }
         }
         if (g_espNowBootIntoDownloadMode_b) {
 #ifdef ESPNow_S3
@@ -5232,12 +5378,6 @@ void miscTask(void *pvParameters) {
     if (buzzerBeepAction_b) {
       Buzzer.single_beep_tone(700, 50);
       buzzerBeepAction_b = false;
-    }
-#endif
-#if defined(OTA_update)
-    if (g_beepForOtaProgress) {
-      Buzzer.single_beep_tone(700, 50);
-      g_beepForOtaProgress = false;
     }
 #endif
     delay(50);

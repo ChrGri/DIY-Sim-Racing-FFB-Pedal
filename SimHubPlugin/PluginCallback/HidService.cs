@@ -193,39 +193,41 @@ namespace DiyFfbPedal
                 }
             }
             private static readonly System.Threading.SemaphoreSlim _sendLock = new System.Threading.SemaphoreSlim(1, 1);
-            public async Task SendLargeDataAsync(byte[] data)
+            // Default write timeout for streamed effect actions: these are resent every frame, so a
+            // dropped report is harmless and a short timeout keeps a busy bridge from stalling the pump.
+            private const int DefaultWriteTimeoutMs = 3;
+            // Reliable transfers (pedal configs) span several reports. A single timed-out chunk makes the
+            // bridge discard the whole packet (length/CRC mismatch) without any feedback, so the config
+            // silently never reaches the pedal. Use a longer timeout and retry the complete transfer.
+            private const int ReliableWriteTimeoutMs = 25;
+            private const int ReliableMaxAttempts = 3;
+
+            public async Task<bool> SendLargeDataAsync(byte[] data, bool reliable = false)
             {
-                if (!IsConnected) return;
+                if (!IsConnected) return false;
+
+                int timeoutMs = reliable ? ReliableWriteTimeoutMs : DefaultWriteTimeoutMs;
+                int maxAttempts = reliable ? ReliableMaxAttempts : 1;
 
                 await _sendLock.WaitAsync();
                 try
                 {
-                    int totalLen = data.Length;
-                    int offset = 0;
-                    while (offset < totalLen)
+                    for (int attempt = 1; attempt <= maxAttempts; attempt++)
                     {
-                        byte[] buffer = new byte[ReportLength];
-                        int chunkLen = Math.Min(PayloadSize, totalLen - offset);
-
-                        byte type;
-                        
-                        if (offset == 0)
-                            type = PKT_TYPE_START;
-                        else
-                            type = PKT_TYPE_CONT; 
-
-                        buffer[0] = ReportId_OUTPUT;
-                        buffer[1] = type;
-                        buffer[2] = (byte)totalLen; 
-                        buffer[3] = (byte)chunkLen;
-
-                        Array.Copy(data, offset, buffer, HeaderOffset, chunkLen);
-                        Write(buffer);
-
-                        offset += chunkLen;
-                        // pace multi-chunk transfers only; a trailing delay just stalls the next send
-                        if (offset < totalLen) await Task.Delay(2);
+                        if (await SendChunksAsync(data, timeoutMs)) return true;
+                        if (!IsConnected) return false;
+                        if (attempt < maxAttempts)
+                        {
+                            SimHub.Logging.Current.Warn($"HID transfer of {data.Length} bytes incomplete, retrying ({attempt}/{maxAttempts})");
+                            // give the bridge time to drop the partial packet before restarting with a START chunk
+                            await Task.Delay(10);
+                        }
                     }
+                    if (reliable)
+                    {
+                        SimHub.Logging.Current.Error($"HID transfer of {data.Length} bytes failed after {maxAttempts} attempts");
+                    }
+                    return false;
                 }
                 finally
                 {
@@ -233,22 +235,53 @@ namespace DiyFfbPedal
                 }
             }
 
-            public void Write(byte[] data)
+            // Sends one complete packet as START + CONT reports. Returns false as soon as a report could
+            // not be written, the remaining chunks are pointless because the bridge cannot reassemble them.
+            private async Task<bool> SendChunksAsync(byte[] data, int timeoutMs)
             {
-                //_stream.WriteTimeout=3;
-                HidStream stream = _stream;
-                if (stream != null)
+                int totalLen = data.Length;
+                int offset = 0;
+                while (offset < totalLen)
                 {
-                    try {
-                        stream.WriteTimeout = 3;
-                        stream.Write(data);
-                    }
-                    catch (Exception ex)
-                    {
-                        SimHub.Logging.Current.Error($"HID error: {ex.Message}");
-                        //throw;
-                    }
-                    
+                    byte[] buffer = new byte[ReportLength];
+                    int chunkLen = Math.Min(PayloadSize, totalLen - offset);
+
+                    byte type;
+
+                    if (offset == 0)
+                        type = PKT_TYPE_START;
+                    else
+                        type = PKT_TYPE_CONT;
+
+                    buffer[0] = ReportId_OUTPUT;
+                    buffer[1] = type;
+                    buffer[2] = (byte)totalLen;
+                    buffer[3] = (byte)chunkLen;
+
+                    Array.Copy(data, offset, buffer, HeaderOffset, chunkLen);
+                    if (!Write(buffer, timeoutMs)) return false;
+
+                    offset += chunkLen;
+                    // pace multi-chunk transfers only; a trailing delay just stalls the next send
+                    if (offset < totalLen) await Task.Delay(2);
+                }
+                return true;
+            }
+
+            public bool Write(byte[] data, int timeoutMs = DefaultWriteTimeoutMs)
+            {
+                HidStream stream = _stream;
+                if (stream == null) return false;
+                try
+                {
+                    stream.WriteTimeout = timeoutMs;
+                    stream.Write(data);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    SimHub.Logging.Current.Error($"HID error: {ex.Message}");
+                    return false;
                 }
             }
 

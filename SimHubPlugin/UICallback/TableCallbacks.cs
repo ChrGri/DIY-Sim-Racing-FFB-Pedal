@@ -30,6 +30,14 @@ namespace DiyFfbPedal
             }
         }
 
+        internal void SelectMainTab(int tabIndex)
+        {
+            if (Function_Tab_seleciton != null && tabIndex >= 0 && tabIndex < Function_Tab_seleciton.Items.Count)
+            {
+                Function_Tab_seleciton.SelectedIndex = tabIndex;
+            }
+        }
+
         private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
 
@@ -57,8 +65,17 @@ namespace DiyFfbPedal
 
         private void Function_Tab_seleciton_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.Source is TabControl)
+            if (ReferenceEquals(e.Source, Function_Tab_seleciton))
             {
+                if (Plugin?.Settings != null && Function_Tab_seleciton.SelectedIndex >= 0)
+                {
+                    if (Plugin.Settings.main_tab_selected != Function_Tab_seleciton.SelectedIndex)
+                    {
+                        Plugin.Settings.main_tab_selected = Function_Tab_seleciton.SelectedIndex;
+                        Plugin.SavePluginSettings();
+                    }
+                }
+
                 bool isLivePlot = Tab_LivePlot != null && Tab_LivePlot.IsSelected;
                 bool isPoppedOut = _livePlotWindow != null && _livePlotWindow.IsLoaded;
                 if (!isPoppedOut)

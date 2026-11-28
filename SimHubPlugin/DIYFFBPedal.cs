@@ -88,6 +88,7 @@ namespace DiyFfbPedal
         public bool Version_Check_Simhub_MSFS = false;
         public byte[] Rudder_Pedal_idx = new byte[2] { 1, 2 };
         public string Current_Game = "";
+        public string Current_Car = "";
         private DateTime lastRunningGameSeenUtc = DateTime.MinValue;
         private bool autoProfileStateCleared = true;
         public byte TrackSurfaceCondition = 0;
@@ -101,6 +102,8 @@ namespace DiyFfbPedal
         public ProfileService ProfileServicePlugin;
         public ConfigListService ConfigService;
         public HidDeviceController BridgeHidService;
+        // user effect scripts streamed as offset samples to the pedals
+        public EffectPipelineEngine EffectPipelines;
         public string currentGame= null;
         public bool[] IsGetConfigSendRequest = new bool[3] { false, false, false };
         public DAP_config_st[] BufferConfig_st = new DAP_config_st[3] { new DAP_config_st(), new DAP_config_st(), new DAP_config_st() };
@@ -344,10 +347,12 @@ namespace DiyFfbPedal
             // SimHub receives console telemetry without a local game process.
             // GT7 remains identifiable even while waiting for its first packet.
             bool isConsole = ConsoleEffectPolicy.IsConsoleSession(selectedGame, data.GameRunning,
-                data.RunningGameProcessDetected, data.NewData != null);
+                data.RunningGameProcessDetected, data.NewData != null, data.GameReplay);
             bool consoleActive = ConsoleEffectPolicy.IsActive(data.GameRunning, data.NewData != null,
                 data.GamePaused, data.GameInMenu, data.GameReplay);
-            bool effectTelemetryActive = isConsole ? consoleActive : data.GameRunning;
+            bool localReplayActive = !ConsoleEffectPolicy.IsGt7(selectedGame) &&
+                data.GameReplay && data.NewData != null && !data.GamePaused && !data.GameInMenu;
+            bool effectTelemetryActive = (isConsole ? consoleActive : data.GameRunning) || localReplayActive;
             consoleLastUpdateAt = DateTime.UtcNow;
             if (isConsole && consoleActive)
             {
@@ -368,10 +373,11 @@ namespace DiyFfbPedal
             }
             else consoleStatus = "";
 
-            bool gameProcessDetected = data.GameRunning || data.RunningGameProcessDetected;
+            string runningGame = null;
+            bool gameProcessDetected = data.GameRunning || data.RunningGameProcessDetected || localReplayActive;
             if (gameProcessDetected)
             {
-                string runningGame = Convert.ToString(pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame"));
+                runningGame = Convert.ToString(pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame"));
                 if (String.IsNullOrWhiteSpace(runningGame) && pluginManager.GameDescription != null)
                     runningGame = pluginManager.GameDescription.Code;
                 if (String.IsNullOrWhiteSpace(runningGame)) runningGame = data.GameName;
@@ -381,17 +387,27 @@ namespace DiyFfbPedal
                     currentGame = runningGame;
                     lastRunningGameSeenUtc = DateTime.UtcNow;
                     autoProfileStateCleared = false;
-                    if (Settings.profileAutoChange)
-                        ProfileServicePlugin.ApplyProfileAutoForGame(runningGame);
                 }
             }
             else if (!autoProfileStateCleared &&
                 DateTime.UtcNow - lastRunningGameSeenUtc > TimeSpan.FromSeconds(2))
             {
                 Current_Game = "";
+                Current_Car = "";
                 currentGame = null;
                 ProfileServicePlugin.ClearAutoSwitchStatus();
                 autoProfileStateCleared = true;
+            }
+
+            if (data.NewData != null && !String.IsNullOrWhiteSpace(data.NewData.CarId))
+            {
+                Current_Car = data.NewData.CarId.Trim();
+            }
+
+            if (Settings.profileAutoChange && (gameProcessDetected || effectTelemetryActive))
+            {
+                string carId = effectTelemetryActive && data.NewData != null ? data.NewData.CarId : null;
+                ProfileServicePlugin.ApplyProfileAuto(runningGame ?? Current_Game, carId);
             }
 
             if (data.GamePaused || !effectTelemetryActive)
@@ -416,13 +432,6 @@ namespace DiyFfbPedal
             // Send ABS signal when triggered by the game
             if (effectTelemetryActive)
             {
-                if (Settings.profileAutoChange)
-                {
-                    // A car-specific profile takes precedence once telemetry is available.
-                    ProfileServicePlugin.ApplyProfileAutoForCar(data.NewData.CarId);
-
-                }
-                
                 //load surface condition
                 TrackSurfaceCondition = 0;
                 if (Current_Game == "IRacing")
@@ -582,28 +591,22 @@ namespace DiyFfbPedal
 
 
 
-            bool update_flag = false;
-
             if (ConsoleEffectPolicy.ShouldProcess(isConsole, effectTelemetryActive, data.NewData != data.OldData))
             {
-                // Send ABS trigger signal via serial
+                // ABS/TC stays a firmware effect (time critical: triggered directly, played by the
+                // pedal without the script playout delay). The other vehicle effects (engine/speed,
+                // G-force, wheel slip, road impact, custom 1-4) are scripts now (effect library).
+                // Bite point and the rudder effects are unchanged.
                 for (uint pedalIdx = 0; pedalIdx < 3; pedalIdx++)
                 {
-                    if (isConsole) update_flag = false;
+                    bool update_flag = false;
                     DAP_action_st tmp;
                     tmp.payloadHeader_.version = (byte)Constants.pedalConfigPayload_version;
                     tmp.payloadHeader_.payloadType = (byte)Constants.pedalActionPayload_type;
                     tmp.payloadHeader_.PedalTag = (byte)pedalIdx;
-                    tmp.payloadPedalAction_.triggerAbs_u8 = 0;
-                    tmp.payloadPedalAction_.RPM_u8 = (Byte)rpm_last_value[pedalIdx];
-
-                    tmp.payloadPedalAction_.WS_u8 = 0;
-                    tmp.payloadPedalAction_.impact_value = 0;
-                    tmp.payloadPedalAction_.Trigger_CV_1 = 0;
-                    tmp.payloadPedalAction_.Trigger_CV_2 = 0;
-                    tmp.payloadPedalAction_.Trigger_CV_3 = 0;
-                    tmp.payloadPedalAction_.Trigger_CV_4 = 0;
-                    tmp.payloadPedalAction_.Rudder_action = 0;
+                    tmp.payloadHeader_.storeToEeprom = 0;
+                    tmp.payloadPedalAction_ = default;
+                    tmp.payloadPedalAction_.G_value = 128;
                     tmp.payloadPedalAction_.Rudder_brake_action = (byte)(Rudder_status ? (Settings.rudderMode == 3 ? 2 : (Settings.rudderMode == 2 ? (Rudder_brake_status ? 2 : 3) : 0)) : 0);
                     if (Settings.rudderMode == 3)
                     {
@@ -613,280 +616,26 @@ namespace DiyFfbPedal
                     {
                         Rudder_brake_status = false;
                     }
-                    if (Settings.G_force_enable_flag[pedalIdx] == 1)
-                    {
-                        tmp.payloadPedalAction_.G_value = (Byte)g_force_last_value;
-                    }
-                    else
-                    {
-                        tmp.payloadPedalAction_.G_value = 128;
-                    }
 
-
-                    if (Settings.RPM_enable_flag[pedalIdx] == 1)
-                    {
-                        if (Math.Abs(RPM_value - rpm_last_value[pedalIdx]) > 3 )
-                        {
-                            //update rpm value every frame when HID bridge is connected
-                            tmp.payloadPedalAction_.RPM_u8 = isConsole
-                                ? ConsoleEffectPolicy.ClampPercent(RPM_value) : (Byte)RPM_value;
-                            update_flag = true;
-                            rpm_last_value[pedalIdx] = tmp.payloadPedalAction_.RPM_u8;
-                        }
-                    }
-                    else
-                    {
-                        tmp.payloadPedalAction_.RPM_u8 = 0;
-                        if (rpm_last_value[pedalIdx] != 0)
-                        {
-                            update_flag = true;
-                        }
-                        rpm_last_value[pedalIdx] = 0;
-                    }
-
-                    //G force effect only effect on brake
-                    if (pedalIdx == 1)
-                    {
-
-                        GTrigger_currentTime = DateTime.UtcNow;
-                        TimeSpan diff_G = GTrigger_currentTime - GTrigger_lastTime;
-                        int millisceonds_G = (int)diff_G.TotalMilliseconds;
-                        if (millisceonds <= 10)
-                        {
-                            _G_force = g_force_last_value;
-                        }
-                        else
-                        {
-                            GTrigger_lastTime = DateTime.UtcNow;
-                        }
-                        if (Settings.G_force_enable_flag[pedalIdx] == 1)
-                        {
-                            //double value_check_g = 1 - _G_force / ((double)g_force_last_value);
-                            double value_check_g = (_G_force - (double)g_force_last_value);
-                            if (Math.Abs(value_check_g) > 2)
-                            {
-                                tmp.payloadPedalAction_.G_value = (Byte)_G_force;
-                                update_flag = true;
-                                g_force_last_value = (Byte)_G_force;
-                            }
-
-                        }
-                    }
-
-                    //Wheel slip
-
-                    if (Settings.WS_enable_flag[pedalIdx] == 1)
-                    {
-                        if (pluginManager.GetPropertyValue(Settings.WSeffect_bind) != null)
-                        {
-                            /*object tmp_ws = (pluginManager.GetPropertyValue(Settings.WSeffect_bind));
-                            int tmp_ws_number = Int32.Parse(tmp_ws.ToString());
-                            WS_value = (byte)tmp_ws_number;
-                            */
-                            WS_value = Convert.ToByte(pluginManager.GetPropertyValue(Settings.WSeffect_bind));
-                            //pluginManager.SetPropertyValue("Wheelslip-test", this.GetType(), WS_value);
-                            if (WS_value >= (Settings.WS_trigger))
-                            {
-                                tmp.payloadPedalAction_.WS_u8 = 1;
-                                update_flag = true;
-                            }
-                        }
-                    }
-                    //Road impact
-                    if (Settings.Road_impact_enable_flag[pedalIdx] == 1)
-                    {
-                        if (pluginManager.GetPropertyValue(Settings.Road_impact_bind) != null)
-                        {
-                            Road_impact_value = Convert.ToByte(pluginManager.GetPropertyValue(Settings.Road_impact_bind));
-
-                            RoadTrigger_currentTime = DateTime.UtcNow;
-                            TimeSpan diff_Road = RoadTrigger_currentTime - RoadTrigger_lastTime;
-                            int millisceonds_G = (int)diff_Road.TotalMilliseconds;
-                            if (millisceonds <= 10)
-                            {
-                                Road_impact_value = Road_impact_last;
-                            }
-                            else
-                            {
-                                RoadTrigger_lastTime = DateTime.UtcNow;
-                            }
-                            if (true)
-                            {
-                                //double value_check_g = 1 - _G_force / ((double)g_force_last_value);
-                                double value_check_road = Road_impact_value - Road_impact_last;
-                                if (Math.Abs(value_check_road) > 2)
-                                {
-                                    tmp.payloadPedalAction_.impact_value = Road_impact_value;
-                                    update_flag = true;
-                                    Road_impact_last = Road_impact_value;
-                                    debug_value = Road_impact_value;
-                                }
-
-                            }
-                        }
-                    }
-                    //custom effcts
-                    if (Settings.CV1_enable_flag[pedalIdx] == true)
-                    {
-                        try
-                        {
-                            //CV1_value = Convert.ToByte(pluginManager.GetPropertyValue(Settings.CV1_bindings[pedalIdx]));
-                            string temp_string = Ncalc_reading(Settings.CV1_bindings[pedalIdx]);
-                            if (temp_string != "Error")
-                            {
-                                CV1_value = Convert.ToDouble(temp_string);
-                            }
-                            else
-                            {
-                                CV1_value = 0;
-                                SimHub.Logging.Current.Error("CV1 Reading error");
-                            }
-                            if (CV1_value > Byte.MaxValue)
-                            {
-                                SimHub.Logging.Current.Error("CV1 value exceed limit");
-                            }
-
-                            if (CV1_value > (Settings.CV1_trigger[pedalIdx]))
-                            {
-                                tmp.payloadPedalAction_.Trigger_CV_1 = 1;
-                                update_flag = true;
-                            }
-                        }
-                        catch (Exception caughtEx)
-                        {
-                            CV1_value = 0;
-                            SimHub.Logging.Current.Error("CV1 Reading error:" + caughtEx);
-                        }
-
-                    }
-                    if (Settings.CV2_enable_flag[pedalIdx] == true)
-                    {
-
-                        //CV2_value = Convert.ToByte(pluginManager.GetPropertyValue(Settings.CV2_bindings[pedalIdx]));
-                        try
-                        {
-                            string temp_string = Ncalc_reading(Settings.CV2_bindings[pedalIdx]);
-                            if (temp_string != "Error")
-                            {
-                                CV2_value = Convert.ToDouble(temp_string);
-                            }
-                            else
-                            {
-                                CV2_value = 0;
-                                SimHub.Logging.Current.Error("CV2 Reading error");
-                            }
-                            if (CV2_value > Byte.MaxValue)
-                            {
-                                SimHub.Logging.Current.Error("CV2 value exceed limit");
-                            }
-                            if (CV2_value > (Settings.CV2_trigger[pedalIdx]))
-                            {
-                                tmp.payloadPedalAction_.Trigger_CV_2 = 1;
-                                update_flag = true;
-                            }
-                        }
-                        catch (Exception caughtEx)
-                        {
-                            CV2_value = 0;
-                            SimHub.Logging.Current.Error("CV2 Reading error:"+ caughtEx);
-                        }
-                    }
-                    if (Settings.CV3_enable_flag[pedalIdx] == true)
-                    {
-
-                        //CV2_value = Convert.ToByte(pluginManager.GetPropertyValue(Settings.CV2_bindings[pedalIdx]));
-                        try
-                        {
-                            string temp_string = Ncalc_reading(Settings.CV3_bindings[pedalIdx]);
-                            if (temp_string != "Error")
-                            {
-                                CV3_value = Convert.ToDouble(temp_string);
-                            }
-                            else
-                            {
-                                CV3_value = 0;
-                                SimHub.Logging.Current.Error("CV3 Reading error");
-                            }
-                            if (CV3_value > Byte.MaxValue)
-                            {
-                                SimHub.Logging.Current.Error("CV3 value exceed limit");
-                            }
-                            if (CV3_value > (Settings.CV3_trigger[pedalIdx]))
-                            {
-                                tmp.payloadPedalAction_.Trigger_CV_3 = 1;
-                                update_flag = true;
-                            }
-                        }
-                        catch (Exception caughtEx)
-                        {
-                            CV3_value = 0;
-                            SimHub.Logging.Current.Error("CV3 Reading error:" + caughtEx);
-                        }
-                    }
-                    if (Settings.CV4_enable_flag[pedalIdx] == true)
-                    {
-
-                        //CV4_value = Convert.ToByte(pluginManager.GetPropertyValue(Settings.CV2_bindings[pedalIdx]));
-                        try
-                        {
-                            string temp_string = Ncalc_reading(Settings.CV4_bindings[pedalIdx]);
-                            if (temp_string != "Error")
-                            {
-                                CV4_value = Convert.ToDouble(temp_string);
-                            }
-                            else
-                            {
-                                CV4_value = 0;
-                                SimHub.Logging.Current.Error("CV4 Reading error");
-                            }
-                            if (CV4_value > Byte.MaxValue)
-                            {
-                                SimHub.Logging.Current.Error("CV4 value exceed limit");
-                            }
-                            if (CV4_value > (Settings.CV4_trigger[pedalIdx]))
-                            {
-                                tmp.payloadPedalAction_.Trigger_CV_4 = 1;
-                                update_flag = true;
-                            }
-                        }
-                        catch (Exception caughtEx)
-                        {
-                            CV4_value = 0;
-                            SimHub.Logging.Current.Error("CV4 Reading error:" + caughtEx);
-                        }
-                    }
-                    //ABS/TC function
-                    if (pedalIdx == 1)
+                    //ABS on clutch/brake, TC on throttle
+                    if (pedalIdx == 0 || pedalIdx == 1)
                     {
                         if (sendAbsSignal_local_b && Settings.ABS_enable_flag[pedalIdx] == 1)
                         {
-                            //_serialPort[1].Write("2");
-
-                            // compute checksum
-                            tmp.payloadPedalAction_.triggerAbs_u8 = (byte)(TrackSurfaceCondition +1);
+                            tmp.payloadPedalAction_.triggerAbs_u8 = (byte)(TrackSurfaceCondition + 1);
                             update_flag = true;
-
                         }
                     }
                     if (pedalIdx == 2)
                     {
                         if (sendTcSignal_local_b && Settings.ABS_enable_flag[pedalIdx] == 1)
                         {
-                            // compute checksum
-
                             tmp.payloadPedalAction_.triggerAbs_u8 = 1;
-                            //tmp.payloadPedalAction_.RPM_u8 = 20;
                             update_flag = true;
-
                         }
                     }
-                    // Console telemetry samples need no OldData object and may reuse the same object.
-                    // Refresh even at constant RPM, including zero values after disabling an effect.
-                    if (isConsole)
+                    if (isConsole && update_flag)
                     {
-                        tmp.payloadPedalAction_.RPM_u8 = Settings.RPM_enable_flag[pedalIdx] == 1
-                            ? ConsoleEffectPolicy.ClampPercent(RPM_value) : (byte)0;
-                        rpm_last_value[pedalIdx] = tmp.payloadPedalAction_.RPM_u8;
                         update_flag = ConsoleEffectPolicy.IsDue(DateTime.UtcNow, consoleLastEffectAt[pedalIdx]);
                     }
                     // check the update interval
@@ -896,24 +645,19 @@ namespace DiyFfbPedal
                         Action_currentTime[pedalIdx] = DateTime.UtcNow;
                         TimeSpan diff_action = Action_currentTime[pedalIdx] - Action_lastTime[pedalIdx];
                         int millisceonds_action = (int)diff_action.TotalMilliseconds;
-                        float time_interval= (1000.0f / Settings.Pedal_action_fps[pedalIdx])-actionIntervalTolerance;
-                        if (millisceonds_action <= time_interval )
+                        float time_interval = (1000.0f / Settings.Pedal_action_fps[pedalIdx]) - actionIntervalTolerance;
+                        if (millisceonds_action <= time_interval)
                         {
                             update_flag = false;
                         }
                         else
                         {
                             Action_lastTime[pedalIdx] = DateTime.UtcNow;
-                            
                         }
-
-                        
                     }
-
 
                     if (update_flag && !Rudder_status)
                     {
-
                         DAP_action_st* v = &tmp;
                         tmp.payloadFooter_.enfOfFrame0_u8 = ENDOFFRAMCHAR[0];
                         tmp.payloadFooter_.enfOfFrame1_u8 = ENDOFFRAMCHAR[1];
@@ -929,8 +673,11 @@ namespace DiyFfbPedal
                             if (queued) consoleQueuedActions[pedalIdx]++;
                         }
                     }
-                    
                 }
+
+                // offset samples from the user effect scripts (effect pipelines)
+                EffectPipelines?.Update(pluginManager,
+                    effectTelemetryActive && !data.GamePaused && !data.GameInMenu);
 
                 if (((string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame")) == "FlightSimulator2020" || ((string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame")) == "FlightSimulator2024"|| ((string)pluginManager.GetPropertyValue("DataCorePlugin.CurrentGame")) == "DCS")
                 {
@@ -1522,6 +1269,7 @@ namespace DiyFfbPedal
 
             pluginHandle = pluginManager;
             _calculations = new CalculationVariables();
+            EffectPipelines = new EffectPipelineEngine(this);
             SimHub.Logging.Current.Info("Starting DIY FFB pedal plugin");
 
             // Load settings
@@ -1544,6 +1292,8 @@ namespace DiyFfbPedal
                 }
                 Settings.PedalDetectedChannel = newChs;
             }
+            PipelineScriptSlot.MigrateLegacySettings(Settings);
+            EffectPresetFiles.SyncSlotsFromFiles(Settings);
             Simhub_version = (String)pluginManager.GetPropertyValue("DataCorePlugin.SimHubVersion");
             // Declare a property available in the property list, this gets evaluated "on demand" (when shown or used in formulas)
             //this.AttachDelegate("CurrentDateTime", () => DateTime.Now);

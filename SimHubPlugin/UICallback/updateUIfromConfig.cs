@@ -12,6 +12,27 @@ namespace DiyFfbPedal
 {
     public partial class DIYFFBPedalControlUI : System.Windows.Controls.UserControl
     {
+        private string _lastConsoleTelemetryKey = "";
+
+        private void UpdateConsoleTelemetryLog(string status)
+        {
+            if (String.IsNullOrEmpty(status))
+            {
+                _lastConsoleTelemetryKey = "";
+                return;
+            }
+
+            // Ignore high-frequency RPM and TX queued counters so the log only records state/route changes.
+            string key = System.Text.RegularExpressions.Regex.Replace(status, @"(RPM |TX queued )\d+", "$1*");
+            if (key == _lastConsoleTelemetryKey) return;
+
+            _lastConsoleTelemetryKey = key;
+            string timestamp = DateTime.Now.ToString("HH:mm:ss");
+            string singleLine = status.Replace("\r\n", " | ").Replace("\n", " | ");
+            TextBox_serialMonitor_bridge.AppendText($"[{timestamp}] CONSOLE: {singleLine}\n");
+            TextBox_serialMonitor_bridge.ScrollToEnd();
+        }
+
         //manually fresh the UI element
         public void CheckSerialAvailability()
         {
@@ -71,12 +92,7 @@ namespace DiyFfbPedal
                 //PID_Tab.dap_config_st = tmp_struct;
                 //MPC_tab.dap_config_st = tmp_struct;
                 EffectsABS_Tab.dap_config_st = tmp_struct;
-                EffectsRPM_Tab.dap_config_st = tmp_struct;
                 EffectsBitePoint_Tab.dap_config_st = tmp_struct;
-                EffectsGFroce_Tab.dap_config_st = tmp_struct;
-                EffectsWheelSlip_Tab.dap_config_st = tmp_struct;
-                EffectsRoadImpact_Tab.dap_config_st = tmp_struct;
-                EffectsCustom_tab.dap_config_st = tmp_struct;
                 //EffectsCustom2_Tab.dap_config_st = tmp_struct;
                 PedalForceTravel_Tab.dap_config_st = tmp_struct;
                 PedalJoystick_Tab.dap_config_st= tmp_struct;
@@ -94,11 +110,6 @@ namespace DiyFfbPedal
 
                 Misc_Tab.Settings = Plugin.Settings;
                 EffectsABS_Tab.Settings = Plugin.Settings;
-                EffectsRPM_Tab.Settings = Plugin.Settings;
-                EffectsGFroce_Tab.Settings = Plugin.Settings;
-                EffectsWheelSlip_Tab.Settings = Plugin.Settings;
-                EffectsRoadImpact_Tab.Settings = Plugin.Settings;
-                EffectsCustom_tab.Settings = Plugin.Settings;
                 //EffectsCustom_Tab.Settings = Plugin.Settings;
 
                 PedalForceTravel_Tab.Settings = Plugin.Settings;
@@ -121,7 +132,6 @@ namespace DiyFfbPedal
 
                 EffectsABS_Tab.calculation = Plugin._calculations;
                 EffectsBitePoint_Tab.calculation = Plugin._calculations;
-                EffectsCustom_tab.calculation = Plugin._calculations;
                 //EffectsCustom2_Tab.calculation = Plugin._calculations;
                 Misc_Tab.calculation = Plugin._calculations;
                 PedalForceTravel_Tab.calculation = Plugin._calculations;
@@ -131,14 +141,12 @@ namespace DiyFfbPedal
 
                 //SettingOTA_Tab.calculation = Plugin._calculations;
                 SystemInfo.calculation = Plugin._calculations;
-                ConsoleTelemetryStatus.Text = Plugin.ConsoleEffectStatus;
-                ConsoleTelemetryStatus.Visibility = String.IsNullOrEmpty(ConsoleTelemetryStatus.Text)
-                    ? Visibility.Collapsed : Visibility.Visible;
+                UpdateConsoleTelemetryLog(Plugin.ConsoleEffectStatus);
                 PedalInfo.calculation = Plugin._calculations;
                 RudderInfo.calculation = Plugin._calculations;
+                ScriptEffects_Panel.Bind(Plugin);
                 if (firstAssignPlugin)
                 {
-                    EffectsCustom_tab.Plugin = Plugin;
                     //EffectsCustom2_Tab.Plugin = Plugin;
                     Listbox_PedalConfig.Plugin = Plugin;
                     SystemProfile_TabNew.Plugin = Plugin;

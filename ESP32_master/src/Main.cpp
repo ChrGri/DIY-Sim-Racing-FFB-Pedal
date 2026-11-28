@@ -26,7 +26,6 @@
   #include "soc/rtc_cntl_reg.h"
 #endif
 #include "FanatecInterface.h"
-#include "OTA_Pull.h"
 #include "Version_Board.h"
 #include <EEPROM.h>
 #include <DiyActivePedal_types.h>
@@ -76,6 +75,22 @@ DAP_servo_config_st_t dap_servo_config_st[3];          // packets from host to s
 DAP_servo_config_st_t dap_servo_config_response_st[3]; // packets from servo to host (responses)
 bool update_servo_config[3] = {false, false, false};
 bool send_servo_config_to_host[3] = {false, false, false}; // Muss in ESPNOW_lib.cpp bei RX gesetzt werden
+
+// Effect pipeline samples from the host: only the newest set per pedal and
+// channel is kept, the sets overlap, so an older unsent one is not needed.
+DapEffectPipeline_t dap_effect_pipeline_st[3][EFFECT_PIPELINE_CHANNELS_U8];
+volatile bool update_effect_pipeline[3][EFFECT_PIPELINE_CHANNELS_U8] = {};
+
+void storeEffectPipelineFromHost(const DapEffectPipeline_t &pkt)
+{
+  uint8_t pedalIdx = pkt.payloadHeader_st.pedalTag_u8;
+  uint8_t channel = pkt.payloadEffectPipeline_st.channel_u8;
+  if (pedalIdx < 3 && channel < EFFECT_PIPELINE_CHANNELS_U8)
+  {
+    memcpy(&dap_effect_pipeline_st[pedalIdx][channel], &pkt, sizeof(DapEffectPipeline_t));
+    update_effect_pipeline[pedalIdx][channel] = true;
+  }
+}
 bool firstDebugMessage_b = false;
 
 
@@ -115,10 +130,6 @@ bool isSerialConfigGet[3]={false, false, false};
 #ifdef Fanatec_comunication
   FanatecInterface fanatec(Fanatec_serial_RX, Fanatec_serial_TX, Fanatec_plug); // RX: GPIO18, TX: GPIO17, PLUG: GPIO16
   bool Fanatec_Mode=false;
-#endif
-
-#ifdef OTA_Update
-  void otaUpdateTask(void *pvParameters);
 #endif
 
 
@@ -187,12 +198,10 @@ void setup()
 
    Serial.println("[L]This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.");
    Serial.println("[L]Please check github repo for more detail: https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal");
-  #ifdef OTA_Update
-    Serial.print("[L]Board:");
-    Serial.println(BRIDGE_BOARD);
-    Serial.print("[L]Version:");
-    Serial.println(BRIDGE_FIRMWARE_VERSION);
-  #endif
+  Serial.print("[L]Board:");
+  Serial.println(BRIDGE_BOARD);
+  Serial.print("[L]Version:");
+  Serial.println(BRIDGE_FIRMWARE_VERSION);
   parse_version(BRIDGE_FIRMWARE_VERSION,&versionMajor,&versionMinor,&versionPatch);
   delay(5);
   #ifdef USB_JOYSTICK
@@ -338,10 +347,6 @@ void setup()
     delay(500);
   #endif
 
-  #ifdef OTA_Update
-    taskScheduler.addScheduledTask(otaUpdateTask, "OTA Update", REPETITION_INTERVAL_OTA_UPDATE_TASK, TASK_PRIORITY_OTA_UPDATE_TASK, CORE_ID_OTA_UPDATE_TASK, STACK_SIZE_OTA_UPDATE_TASK);
-  #endif
-  
   //initialize wifi 
   for(uint i=0;i<30;i++)
   {
@@ -660,6 +665,24 @@ void espNowCommunicationTxTask( void * pvParameters )
           }
         }
 
+        // --- Forward effect pipeline samples (streamed, no retry) ---
+        for(int s=0; s<3 && !sentThisCycle; s++)
+        {
+          for(int c=0; c<EFFECT_PIPELINE_CHANNELS_U8 && !sentThisCycle; c++)
+          {
+            if(update_effect_pipeline[s][c])
+            {
+              update_effect_pipeline[s][c] = false;
+              if(dap_bridge_state_st.payloadBridgeState_st.pedalAvailability_au8[s]==1)
+              {
+                DapEffectPipeline_t pkt = dap_effect_pipeline_st[s][c];
+                wirelessComm.sendEffectPipelineToPedal(s, pkt);
+                sentThisCycle = true;
+              }
+            }
+          }
+        }
+
         // --- ADDED: Forward Servo Config to Pedals ---
         for(int s=0; s<3 && !sentThisCycle; s++)
         {
@@ -893,6 +916,8 @@ static inline size_t getExpectedPacketSize(uint8_t payloadType) {
             return sizeof(DapWifiChannel_t);
         case DAP_PAYLOAD_TYPE_MAC_ADDRESSES_U8:
             return sizeof(DapMacAddresses_t);
+        case DAP_PAYLOAD_TYPE_EFFECT_PIPELINE_U8:
+            return sizeof(DapEffectPipeline_t);
         // Add other packet types here in the future
         default:
             return 0;
@@ -1239,56 +1264,16 @@ void serialCommunicationRxTask( void * pvParameters)
             #ifndef USB_JOYSTICK
               Serial.println("[L]get OTA command and its info");
               memcpy(&dap_action_ota_st, packet_start, sizeof(DapActionOta_t));
-              //Serial.readBytes((char *)&dap_action_ota_st, sizeof(DapActionOta_t));
-              #ifdef OTA_Update
-                bool structChecker_b = true;
-                if (dap_action_ota_st.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_ACTION_OTA_U8)
-                {
-                  structChecker_b = false;
-                  structIsValid = false;
-                }
-                if (structChecker_b)
-                {
-                  SSID = new char[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8 + 1];
-                  PASS = new char[dap_action_ota_st.payloadOtaInfo_st.passLength_u8 + 1];
-                  memcpy(SSID, dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8, dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8);
-                  memcpy(PASS, dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8, dap_action_ota_st.payloadOtaInfo_st.passLength_u8);
-                  SSID[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8] = 0;
-                  PASS[dap_action_ota_st.payloadOtaInfo_st.passLength_u8] = 0;
-                  /*
-                  Serial.printf("[L]Device ID:%d\n",dap_action_ota_st.payloadOtaInfo_st.deviceId_u8);
-                  Serial.print("[L]SSID(uint)=");
-                  for(uint i=0; i<dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8;i++)
-                  {
-                    Serial.print(dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8[i]);
-                    Serial.print(",");
-                  }
-                  Serial.println(" ");
-                  Serial.print("[L]PASS(uint)=");
-                  for(uint i=0; i<dap_action_ota_st.payloadOtaInfo_st.passLength_u8;i++)
-                  {
-                    Serial.print(dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8[i]);
-                    Serial.print(",");
-                  }
-                  Serial.println(" ");
-
-                  Serial.print("[L]SSID=");
-                  Serial.println(SSID);
-                  Serial.print("[L]PASS=");
-                  Serial.println(PASS);
-                  */
-                }
-
-                if (dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 == DEVICE_ID && structChecker_b == true)
-                {
-                  OTA_enable_b = true;
-                  Serial.println("[L] Bridge OTA begin.");
-                }
-                else if (structChecker_b)
-                {
-                  g_pedalOtaAction_b = true;
-                }
-              #endif
+              bool structChecker_b = true;
+              if (dap_action_ota_st.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_ACTION_OTA_U8)
+              {
+                structChecker_b = false;
+                structIsValid = false;
+              }
+              if (structChecker_b && dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 != DEVICE_ID)
+              {
+                g_pedalOtaAction_b = true;
+              }
             #endif
             break;
           }
@@ -1526,6 +1511,25 @@ void serialCommunicationRxTask( void * pvParameters)
               reply.payloadFooter_st.checkSum_u16 = checksumCalculator((uint8_t*)&reply.payloadHeader_st, sizeof(reply.payloadHeader_st) + sizeof(reply.payloadMacAddresses_st));
               Serial.write((char*)&reply, sizeof(DapMacAddresses_t));
             }
+            break;
+          }
+          // effect pipeline samples for one pedal channel
+          case DAP_PAYLOAD_TYPE_EFFECT_PIPELINE_U8:
+          {
+            #ifndef USB_JOYSTICK
+              DapEffectPipeline_t pipeline_local;
+              memcpy(&pipeline_local, packet_start, sizeof(DapEffectPipeline_t));
+              uint16_t crc = checksumCalculator((uint8_t *)(&(pipeline_local.payloadHeader_st)), sizeof(pipeline_local.payloadHeader_st) + sizeof(pipeline_local.payloadEffectPipeline_st));
+              if (pipeline_local.payloadHeader_st.version_u8 != DAP_VERSION_CONFIG_U8 ||
+                  crc != pipeline_local.payloadFooter_st.checkSum_u16)
+              {
+                structIsValid = false;
+              }
+              else
+              {
+                storeEffectPipelineFromHost(pipeline_local);
+              }
+            #endif
             break;
           }
           //case action for servo config
@@ -1892,14 +1896,9 @@ void joystickUpdateTask( void * pvParameters )
             SetControllerOutputValueAccelerator(clutchVal);
             SetControllerOutputValueBrake(brakeVal);
             SetControllerOutputValueThrottle(throttleVal);
-            SetControllerOutputValueRudder(JOYSTICK_CENTER);
-            SetControllerOutputValueRudder_brake(JOYSTICK_CENTER, JOYSTICK_CENTER);
           }
           if (g_pedalStatus_u8 == 1)
           {
-            SetControllerOutputValueAccelerator(JOYSTICK_MIN_VALUE);
-            SetControllerOutputValueBrake(JOYSTICK_MIN_VALUE);
-            SetControllerOutputValueThrottle(JOYSTICK_MIN_VALUE);
             // No deadzone here by design: rudderValue already comes from the
             // pedal's own joystick-mapping curve (Main.cpp on the pedal,
             // mirrored symmetrically for left/right), which has its own
@@ -1913,20 +1912,16 @@ void joystickUpdateTask( void * pvParameters )
           }
           if (g_pedalStatus_u8 == 2)
           {
-            SetControllerOutputValueAccelerator(JOYSTICK_MIN_VALUE);
-            SetControllerOutputValueBrake(JOYSTICK_MIN_VALUE);
-            SetControllerOutputValueThrottle(JOYSTICK_MIN_VALUE);
-
             uint16_t leftBrakeVal = (dap_bridge_state_st.payloadBridgeState_st.pedalAvailability_au8[0] == 1 && wirelessComm.isPedalWirelessSyncEnabled(0))
                                       ? g_pedalClutchValue_u16
                                       : (wirelessComm.isPedalWirelessSyncEnabled(1) ? g_pedalBrakeValue_u16 : JOYSTICK_MIN_VALUE);
             uint16_t rightBrakeVal = wirelessComm.isPedalWirelessSyncEnabled(2) ? g_pedalThrottleValue_u16 : JOYSTICK_MIN_VALUE;
 
             // In Toe Brake mode, the pedals act purely as independent wheel brakes:
-            // Rudder yaw (X-axis) remains neutral (centered) with zero connection between pedals
+            // Rudder yaw (Rz-axis) remains neutral (centered) with zero connection between pedals
             SetControllerOutputValueRudder(JOYSTICK_CENTER);
 
-            // Output independent left and right wheel brakes on Y and Z axes
+            // Output independent left and right wheel brakes on Rx and Ry axes
             SetControllerOutputValueRudder_brake(leftBrakeVal, rightBrakeVal);
           }
           joystickSendState();
@@ -1992,106 +1987,6 @@ uint16_t OTA_count=0;
 bool message_out_b=false;
 bool OTA_enable_start=false;
 uint32_t otaTask_stackSizeIdx_u32 = 0;
-void otaUpdateTask( void * pvParameters )
-{
-
-  for(;;)
-  {
-    if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0)
-    {
-      #ifdef OTA_Update
-        if(OTA_count>200)
-        {
-          message_out_b=true;
-          OTA_count=0;
-        }
-        else
-        {
-          OTA_count++;
-        }
-
-        
-        if(OTA_enable_b)
-        {
-          if(message_out_b)
-          {
-            message_out_b=false;
-            Serial.println("[L]OTA enable flag on");
-          }
-          if(OTA_status)
-          {
-            
-            //server.handleClient();
-          }
-          else
-          {
-            Serial.println("[L]de-initialize espnow");
-            Serial.println("[L]wait...");
-            esp_err_t result= wirelessComm.deinit();
-            delay(200);
-            if(result==ESP_OK)
-            {
-              OTA_status=true;
-              delay(1000);
-              //ota_wifi_initialize(APhost);
-              wifi_initialized(SSID,PASS);
-              delay(2000);
-              ESP32OTAPull ota;
-              char* Version_tag;
-              int ret;
-              ota.SetCallback(OTAcallback);
-              ota.OverrideBoard(BRIDGE_BOARD);
-              Version_tag=BRIDGE_FIRMWARE_VERSION;
-              if(dap_action_ota_st.payloadOtaInfo_st.otaAction_u8==1)
-              {
-                Version_tag="0.0.0";
-                Serial.println("Force update");
-              }
-              switch (dap_action_ota_st.payloadOtaInfo_st.modeSelect_u8)
-              {
-                case 1:
-                  Serial.printf("[L]Flashing to latest Main, checking %s to see if an update is available...\n", JSON_URL_main);
-                  ret = ota.CheckForOTAUpdate(JSON_URL_main, Version_tag);
-                  Serial.printf("[L]CheckForOTAUpdate returned %d (%s)\n\n", ret, errtext(ret));
-                  break;
-                case 2:
-                  Serial.printf("[L]Flashing to latest Dev, checking %s to see if an update is available...\n", JSON_URL_dev);
-                  ret = ota.CheckForOTAUpdate(JSON_URL_dev, Version_tag);
-                  Serial.printf("[L]CheckForOTAUpdate returned %d (%s)\n\n", ret, errtext(ret));
-                  break;
-                case 3:
-                  Serial.printf("[L]Flashing to Daily build, checking %s to see if an update is available...\n", JSON_URL_dev);
-                  ret = ota.CheckForOTAUpdate(JSON_URL_daily, Version_tag);
-                  Serial.printf("[L]CheckForOTAUpdate returned %d (%s)\n\n", ret, errtext(ret));
-                  break;
-                default:
-                break;
-              }
-
-              delay(3000);
-            }
-
-          }
-        }
-        
-        //delay(2);
-      #endif
-
-      #ifdef PRINT_TASK_FREE_STACKSIZE_IN_WORDS
-        if( otaTask_stackSizeIdx_u32 == 1000)
-        {
-          UBaseType_t stackHighWaterMark = uxTaskGetStackHighWaterMark(NULL);
-          Serial.print("StackSize (OTA): ");
-          Serial.println(stackHighWaterMark);
-          otaTask_stackSizeIdx_u32 = 0;
-        }
-        otaTask_stackSizeIdx_u32++;
-      #endif
-      //delay(2);
-    }
-  }
-}
-
 //LED task
 
 void ledUpdateTask( void * pvParameters)
@@ -2519,32 +2414,11 @@ void hidCommunicaitonRxTask(void *pvParameters)
         {
           tinyusbJoystick_.printf("Get OTA Packet");
           memcpy(&dap_action_ota_st, &tinyusbJoystick_.tmpOtaAction, sizeof(DapActionOta_t));
-          #ifdef OTA_Update
-          bool structChecker_b = true;
-          if (dap_action_ota_st.payloadHeader_st.payloadType_u8 != DAP_PAYLOAD_TYPE_ACTION_OTA_U8)
-          {
-            structChecker_b = false;
-            //structIsValid = false;
-          }
-          if (structChecker_b)
-          {
-            SSID = new char[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8 + 1];
-            PASS = new char[dap_action_ota_st.payloadOtaInfo_st.passLength_u8 + 1];
-            memcpy(SSID, dap_action_ota_st.payloadOtaInfo_st.wifiSsid_au8, dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8);
-            memcpy(PASS, dap_action_ota_st.payloadOtaInfo_st.wifiPass_au8, dap_action_ota_st.payloadOtaInfo_st.passLength_u8);
-            SSID[dap_action_ota_st.payloadOtaInfo_st.ssidLength_u8] = 0;
-            PASS[dap_action_ota_st.payloadOtaInfo_st.passLength_u8] = 0;
-          }
-          if (dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 == DEVICE_ID && structChecker_b == true)
-          {
-            OTA_enable_b = true;
-            tinyusbJoystick_.printf("Bridge OTA begin.");
-          }
-          else if (structChecker_b)
+          if (dap_action_ota_st.payloadHeader_st.payloadType_u8 == DAP_PAYLOAD_TYPE_ACTION_OTA_U8 &&
+              dap_action_ota_st.payloadOtaInfo_st.deviceId_u8 != DEVICE_ID)
           {
             g_pedalOtaAction_b = true;
           }
-          #endif
           tinyusbJoystick_.isOtaActionGet = false;    
         }
       #endif
