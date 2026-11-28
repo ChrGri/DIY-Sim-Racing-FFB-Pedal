@@ -1293,6 +1293,7 @@ namespace DiyFfbPedal
                 Settings.PedalDetectedChannel = newChs;
             }
             PipelineScriptSlot.MigrateLegacySettings(Settings);
+            EffectPresetFiles.SyncSlotsFromFiles(Settings);
             Simhub_version = (String)pluginManager.GetPropertyValue("DataCorePlugin.SimHubVersion");
             // Declare a property available in the property list, this gets evaluated "on demand" (when shown or used in formulas)
             //this.AttachDelegate("CurrentDateTime", () => DateTime.Now);

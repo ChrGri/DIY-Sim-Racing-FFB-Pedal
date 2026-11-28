@@ -213,6 +213,115 @@ namespace DiyFfbPedal
             return sb.ToString();
         }
 
+        private static string ToUserText(EffectPreset preset)
+        {
+            var sb = new StringBuilder();
+            sb.Append("// @name: ").Append(preset.Name ?? "").Append("\r\n");
+            sb.Append("// @category: ").Append(string.IsNullOrWhiteSpace(preset.Category) ? "Custom" : preset.Category).Append("\r\n");
+            sb.Append("// @pedal: ").Append(preset.SuggestedPedal == 0 ? "clutch" : preset.SuggestedPedal == 1 ? "brake" : preset.SuggestedPedal == 2 ? "throttle" : "any").Append("\r\n");
+            sb.Append("// @output: ").Append(preset.OffsetType == EffectPipelineOffsetType.Force_N ? "force"
+                : preset.OffsetType == EffectPipelineOffsetType.ForceRelative ? "relative" : "angle").Append("\r\n");
+            if (!string.IsNullOrWhiteSpace(preset.Description))
+                sb.Append("// @description: ").Append(preset.Description.Replace("\r", " ").Replace("\n", " ")).Append("\r\n");
+            if (!string.IsNullOrWhiteSpace(preset.FreqScript))
+                sb.Append("// @frequency: ").Append(preset.FreqScript).Append("\r\n");
+            if (!string.IsNullOrWhiteSpace(preset.TranslationId))
+                sb.Append("// @id: ").Append(preset.TranslationId).Append("\r\n");
+            sb.Append("\r\n");
+            sb.Append((preset.Script ?? "").Replace("\r\n", "\n").Replace("\n", "\r\n")).Append("\r\n");
+            return sb.ToString();
+        }
+
+        public static string SanitizeFileName(string name, PipelineScriptLanguage lang)
+        {
+            string ext = lang == PipelineScriptLanguage.JavaScript ? ".js" : ".ncalc";
+            string raw = (name ?? "Script").Trim();
+            foreach (char c in Path.GetInvalidFileNameChars())
+                raw = raw.Replace(c, '_');
+            if (string.IsNullOrWhiteSpace(raw)) raw = "Script";
+            if (!raw.EndsWith(".js", StringComparison.OrdinalIgnoreCase) && !raw.EndsWith(".ncalc", StringComparison.OrdinalIgnoreCase))
+                raw += ext;
+            else
+                raw = Path.GetFileNameWithoutExtension(raw) + ext;
+            return raw;
+        }
+
+        // Saves a user effect file (without @builtin) into FolderPath and returns its file name.
+        public static string SaveUserPreset(EffectPreset preset, string fileName = null)
+        {
+            Directory.CreateDirectory(FolderPath);
+            string targetName = string.IsNullOrWhiteSpace(fileName)
+                ? SanitizeFileName(preset.Name, preset.Language)
+                : SanitizeFileName(fileName, preset.Language);
+            string path = Path.Combine(FolderPath, targetName);
+            File.WriteAllText(path, ToUserText(preset), new UTF8Encoding(false));
+            preset.FilePath = path;
+            return targetName;
+        }
+
+        public static bool DeleteUserPreset(string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName)) return false;
+            string path = Path.Combine(FolderPath, Path.GetFileName(fileName));
+            if (!File.Exists(path)) return false;
+            File.Delete(path);
+            return true;
+        }
+
+        public static EffectPreset FindByFileName(string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName)) return null;
+            string path = Path.Combine(FolderPath, Path.GetFileName(fileName));
+            if (!File.Exists(path)) return null;
+            try
+            {
+                return Parse(path, File.ReadAllText(path));
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        // Ensures built-in files exist, migrates any legacy inline slots without ScriptFile
+        // to user files in effects\, and refreshes slot definitions from their linked files.
+        public static void SyncSlotsFromFiles(DIYFFBPedalSettings settings)
+        {
+            if (settings == null || settings.Pipeline_slots == null) return;
+            EnsureBuiltIns();
+            foreach (PipelineScriptSlot slot in settings.Pipeline_slots)
+            {
+                if (string.IsNullOrWhiteSpace(slot.ScriptFile))
+                {
+                    if (string.IsNullOrWhiteSpace(slot.Script)) continue;
+                    string baseName = SanitizeFileName(string.IsNullOrWhiteSpace(slot.Name) ? "CustomScript" : slot.Name, slot.Language);
+                    string candidate = baseName;
+                    int suffix = 1;
+                    while (File.Exists(Path.Combine(FolderPath, candidate)))
+                    {
+                        candidate = Path.GetFileNameWithoutExtension(baseName) + "_" + suffix + Path.GetExtension(baseName);
+                        suffix++;
+                    }
+                    var preset = new EffectPreset
+                    {
+                        Category = "Custom",
+                        Name = string.IsNullOrWhiteSpace(slot.Name) ? Path.GetFileNameWithoutExtension(candidate) : slot.Name,
+                        SuggestedPedal = slot.Pedal,
+                        OffsetType = (EffectPipelineOffsetType)slot.OffsetType,
+                        Language = slot.Language,
+                        Script = slot.Script ?? "",
+                        FreqScript = slot.FreqScript ?? "",
+                    };
+                    slot.ScriptFile = SaveUserPreset(preset, candidate);
+                }
+                else
+                {
+                    EffectPreset preset = FindByFileName(slot.ScriptFile);
+                    if (preset != null) slot.ApplyFromPreset(preset);
+                }
+            }
+        }
+
         private const string Readme =
 @"DIY FFB pedal - effect library
 

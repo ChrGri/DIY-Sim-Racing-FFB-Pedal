@@ -14,6 +14,7 @@ namespace DiyFfbPedal
     public class PipelineScriptSlot
     {
         public int Pedal = 1;                       // 0 clutch, 1 brake, 2 throttle
+        public string ScriptFile = "";              // file name in effects\ (e.g. "Abs.js"), shared across pedals
         public string Name = "";
         public bool Enabled = false;
         public byte OffsetType = (byte)EffectPipelineOffsetType.Angle_deg;
@@ -21,6 +22,18 @@ namespace DiyFfbPedal
         public PipelineScriptLanguage Language = PipelineScriptLanguage.NCalc;
         public string Script = "";
         public string FreqScript = "";               // Hz, drives the phase variable; empty = no oscillator
+
+        public void ApplyFromPreset(EffectPreset preset)
+        {
+            if (preset == null) return;
+            Name = preset.LocalName;
+            OffsetType = (byte)preset.OffsetType;
+            Language = preset.Language;
+            Script = preset.Script ?? "";
+            FreqScript = preset.FreqScript ?? "";
+            if (!string.IsNullOrEmpty(preset.FilePath))
+                ScriptFile = System.IO.Path.GetFileName(preset.FilePath);
+        }
 
         public PipelineScriptSlot Clone()
         {

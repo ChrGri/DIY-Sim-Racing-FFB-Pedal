@@ -302,6 +302,53 @@ namespace DiyFfbPedal
             }
         }
 
+        // Replaces all slots of a single pedal (e.g. when applying a Profile) and drops stale states.
+        public void ReplacePedalSlots(int pedal, IEnumerable<PipelineScriptSlot> newSlots)
+        {
+            lock (_sync)
+            {
+                DIYFFBPedalSettings settings = _plugin.Settings;
+                if (settings == null) return;
+                if (settings.Pipeline_slots == null) settings.Pipeline_slots = new List<PipelineScriptSlot>();
+
+                for (int i = settings.Pipeline_slots.Count - 1; i >= 0; i--)
+                {
+                    if (settings.Pipeline_slots[i].Pedal == pedal)
+                    {
+                        _states.Remove(settings.Pipeline_slots[i]);
+                        settings.Pipeline_slots.RemoveAt(i);
+                    }
+                }
+                if (newSlots != null)
+                {
+                    foreach (var s in newSlots)
+                    {
+                        if (s == null) continue;
+                        s.Pedal = pedal;
+                        settings.Pipeline_slots.Add(s);
+                    }
+                }
+            }
+        }
+
+        // Syncs all mounted slots referencing fileName across all pedals after an edit in ScriptEditorWindow.
+        public void ReloadFromPresetFile(string fileName, EffectPreset preset)
+        {
+            if (string.IsNullOrWhiteSpace(fileName) || preset == null) return;
+            lock (_sync)
+            {
+                DIYFFBPedalSettings settings = _plugin.Settings;
+                if (settings == null || settings.Pipeline_slots == null) return;
+                foreach (var slot in settings.Pipeline_slots)
+                {
+                    if (string.Equals(slot.ScriptFile, fileName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        slot.ApplyFromPreset(preset);
+                    }
+                }
+            }
+        }
+
         // ---- status for the UI ----
 
         public double GetLastOutput(PipelineScriptSlot slot)

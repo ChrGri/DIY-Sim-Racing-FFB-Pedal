@@ -202,7 +202,9 @@ namespace DiyFfbPedal
                         //System.Threading.Thread.Sleep(100);
                     }
                     ApplyProfileEffects(tmpProfile, i);
+                    ApplyProfileScripts(tmpProfile, i);
                 }
+                RefreshScriptsUi();
                 
                 _plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                 //wpfHandle.updateTheGuiFromConfig();
@@ -230,7 +232,9 @@ namespace DiyFfbPedal
                         //System.Threading.Thread.Sleep(100);
                     }
                     ApplyProfileEffects(tmpProfile, i);
+                    ApplyProfileScripts(tmpProfile, i);
                 }
+                RefreshScriptsUi();
                 _plugin.ConfigService.UpdateConfigLabelDefaultAndEditing();
                 //wpfHandle.updateTheGuiFromConfig();
             }
@@ -251,6 +255,42 @@ namespace DiyFfbPedal
                 if (effects.Length > 7) _plugin.Settings.CV2_enable_flag[pedal] = effects[7];
                 if (effects.Length > 8) _plugin.Settings.CV3_enable_flag[pedal] = effects[8];
                 if (effects.Length > 9) _plugin.Settings.CV4_enable_flag[pedal] = effects[9];
+            }
+
+            private void ApplyProfileScripts(DAP_system_profile_cls profile, int pedal)
+            {
+                if (profile == null || _plugin.EffectPipelines == null) return;
+                bool hasBindings = profile.HasScriptBindings || (profile.ScriptBindings != null && profile.ScriptBindings.Count > 0);
+                if (!hasBindings) return;
+
+                var slots = new List<PipelineScriptSlot>();
+                if (profile.ScriptBindings != null)
+                {
+                    foreach (var binding in profile.ScriptBindings)
+                    {
+                        if (binding == null || binding.Pedal != pedal || string.IsNullOrWhiteSpace(binding.ScriptFile)) continue;
+                        EffectPreset preset = EffectPresetFiles.FindByFileName(binding.ScriptFile);
+                        if (preset == null)
+                        {
+                            SimHub.Logging.Current.Warn($"Profile script file not found: {binding.ScriptFile}");
+                            continue;
+                        }
+                        var slot = preset.CreateSlot(pedal);
+                        slot.Enabled = binding.Enabled;
+                        slot.Gain = Math.Max(0.0, Math.Min(10.0, binding.Gain));
+                        slots.Add(slot);
+                    }
+                }
+                _plugin.EffectPipelines.ReplacePedalSlots(pedal, slots);
+            }
+
+            private void RefreshScriptsUi()
+            {
+                if (_plugin.wpfHandle?.ScriptEffects_Panel == null) return;
+                _plugin.wpfHandle.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    _plugin.wpfHandle.ScriptEffects_Panel.RefreshFromExternal();
+                }));
             }
 
             private void UpdateProfileUi(ProfileListItem item)

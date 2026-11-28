@@ -3,71 +3,42 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace DiyFfbPedal.UIFunction
 {
-    // Editor for the script effect slots of the selected pedal.
+    // Compact Scripts tab panel: dropdown, mounted scripts summary, enable toggle, Test, Live plot, and Edit popup.
     // Built in code; the custom effects tab hosts it in the SCRIPTS tab.
     public class PipelineScriptPanel : UserControl
     {
         private DIY_FFB_Pedal _plugin;
         private readonly ComboBox _slotList;
-        private readonly Button _remove;
-        private readonly Button _duplicate;
-        private readonly StackPanel _editor;
-        private readonly TextBlock _empty;
-        private readonly TextBox _name;
         private readonly CheckBox _enable;
-        private readonly ComboBox _language;
-        private readonly ComboBox _type;
-        private readonly TextBox _gain;
-        private readonly TextBox _script;
-        private readonly TextBox _frequency;
-        private readonly TextBlock _scriptLabel;
-        private readonly TextBlock _result;
+        private readonly TextBlock _empty;
+        private readonly TextBlock _mountedSummary;
         private readonly TextBlock _live;
-        private readonly TextBlock _help;
         private readonly DispatcherTimer _liveTimer;
-        private readonly CheckBox _ack;
+        private readonly CheckBox _ackFull;
+        private readonly CheckBox _ackCompact;
+        private readonly DockPanel _warningRow;
         private readonly StackPanel _slotRow;
         private bool _updating;
         private int _shownPedal = -1;
         private DIYFFBPedalSettings _shownSettings;
         private PipelineScriptSlot _slot;
 
-        private static string HelpNCalc => Loc.T("TextScriptHelpNCalc",
-            "NCalc. Variables: t (time in s), dt (0.002 s), prev (last value), phase (radians, from the frequency field), pi, " +
-            "and every SimHub property, e.g. [DataCorePlugin.GameData.Rpms]. Functions: Sin, Cos, Abs, Min, Max, Pow, Sqrt, if(cond, a, b).\n" +
-            "Pedal values (force, travel, ...): SimHub > Available properties, search \"diy_ffb_pedal\".\n" +
-            "Example (engine, angle): frequency 10 + 30 * [DataCorePlugin.GameData.Rpms] / [DataCorePlugin.GameData.MaxRpm], script 0.03 * Sin(phase)\n" +
-            "Vibrations above ~40 Hz are damped strongly by the pedal.\n" +
-            "Example (ABS, angle): if([DataCorePlugin.GameData.ABSActive] > 0, 0.06 * Sin(2 * pi * 25 * t), 0)");
-
-        private static string HelpJs => Loc.T("TextScriptHelpJs",
-            "JavaScript (ES5, like SimHub's JS formulas). The script is the body of a function(t, dt, prev, phase): use return. " +
-            "Properties: $prop('DataCorePlugin.GameData.Rpms'). root keeps values between calls (root.x = ...). Math.sin, Math.min, ...\n" +
-            "Pedal values (force, travel, ...): SimHub > Available properties, search \"diy_ffb_pedal\".\n" +
-            "Runs 500 times per second: keep it short, no loops over large data. 'CPU' shows the cost (10 ms/s = 1 % of a core).\n" +
-            "Example (lockup steps): var l = $prop('ShakeITMotorsV3Plugin.Export.wheelsliplock.All'); var a = l >= 20 ? 0.8 : l >= 10 ? 0.3 : 0; return 0.06 * a * Math.sin(2 * pi * 30 * t);");
-
-        private const string ExamplesUrl =
-            "https://github.com/ChrGri/DIY-Sim-Racing-FFB-Pedal/blob/develop/docs/script_effects_examples.md";
-
         public PipelineScriptPanel()
         {
             var root = new StackPanel { Margin = new Thickness(4) };
 
-            // warning: scripts turn the pedal into an active device.
-            // The robot says it in a speech bubble.
+            // Warning: scripts turn the pedal into an active device (full robot bubble when unchecked).
             var yellow = new SolidColorBrush(Color.FromRgb(0xFF, 0xC1, 0x07));
             var bubbleBackground = new SolidColorBrush(Color.FromRgb(0x2E, 0x2A, 0x1E));
-            var warningRow = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
+            _warningRow = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
             var robot = new PixelDangerRobot { Margin = new Thickness(0, 4, 0, 0), VerticalAlignment = VerticalAlignment.Top };
             DockPanel.SetDock(robot, Dock.Left);
-            warningRow.Children.Add(robot);
+            _warningRow.Children.Add(robot);
 
             var bubble = new Border
             {
@@ -92,19 +63,23 @@ namespace DiyFfbPedal.UIFunction
             {
                 Text = Loc.T("TextScriptDangerText", "With scripts I move the pedal on my own. I can push your foot and put energy into it instead " +
                        "of only reacting to it. A wrong sign, unit or typo can mean full force or a hard kick. " +
-                       "Start with small values and gain 1, keep your foot on the pedal when testing, and disable the script at the first surprise."),
+                       "Start with small values and gain 1, keep your foot on the pedal when testing, and disable the script at the first surprise. " +
+                       "Any injury or damage is solely your own responsibility."),
                 TextWrapping = TextWrapping.Wrap,
                 FontSize = 10,
                 Margin = new Thickness(0, 2, 0, 0),
             });
-            _ack = new CheckBox { Content = Loc.T("TextScriptDangerAck", "I understand, let me script"), Margin = new Thickness(0, 4, 0, 0), FontSize = 11 };
-            _ack.Checked += (s, e) => StoreAck();
-            _ack.Unchecked += (s, e) => StoreAck();
-            warningText.Children.Add(_ack);
+            _ackFull = new CheckBox
+            {
+                Content = Loc.T("TextScriptDangerAck", "I understand, let me script"),
+                Margin = new Thickness(0, 4, 0, 0),
+                FontSize = 11,
+            };
+            _ackFull.Checked += (s, e) => StoreAck(true);
+            _ackFull.Unchecked += (s, e) => StoreAck(false);
+            warningText.Children.Add(_ackFull);
             bubble.Child = warningText;
 
-            // bubble with a tail pointing at the robot's mouth. The tail lies on top of the
-            // bubble's left border and covers it, so the bubble and tail form one outline.
             var bubbleHost = new Grid { Margin = new Thickness(12, 0, 0, 0) };
             bubbleHost.Children.Add(bubble);
             var tail = new Canvas
@@ -127,142 +102,94 @@ namespace DiyFfbPedal.UIFunction
                 StrokeThickness = 1,
             });
             bubbleHost.Children.Add(tail);
-            warningRow.Children.Add(bubbleHost);
-            root.Children.Add(warningRow);
+            _warningRow.Children.Add(bubbleHost);
+            root.Children.Add(_warningRow);
 
-            // slot list
-            var slotRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
-            slotRow.Children.Add(new TextBlock { Text = Loc.T("TextScriptSlot", "Script:"), VerticalAlignment = VerticalAlignment.Center, Width = 50 });
+            // Simplified single-line acknowledgment shown when already checked.
+            _ackCompact = new CheckBox
+            {
+                Content = Loc.T("TextScriptDangerAckShort", "I understand the safety risks and take full responsibility for any injury or damage."),
+                Margin = new Thickness(0, 0, 0, 6),
+                FontSize = 10,
+                Foreground = yellow,
+                Visibility = Visibility.Collapsed,
+            };
+            _ackCompact.Checked += (s, e) => StoreAck(true);
+            _ackCompact.Unchecked += (s, e) => StoreAck(false);
+            root.Children.Add(_ackCompact);
+
+            // Control row: dropdown + Enabled + Script Library and Editor + Test + Live plot
+            _slotRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
+            _slotRow.Children.Add(new TextBlock { Text = Loc.T("TextScriptSlot", "Script:"), VerticalAlignment = VerticalAlignment.Center, Width = 45 });
             _slotList = new ComboBox { Width = 140, Height = 22 };
             _slotList.SelectionChanged += (s, e) =>
             {
                 if (_updating) return;
                 ShowSlot(_slotList.SelectedItem is ComboBoxItem item ? item.Tag as PipelineScriptSlot : null);
             };
-            slotRow.Children.Add(_slotList);
-            var library = SmallButton(Loc.T("TextScriptLibrary", "Library"));
-            library.ToolTip = Loc.T("TextScriptLibraryTooltip", "Ready-made effects: ABS, engine, wheel slip, bumps, ...");
-            library.Click += (s, e) =>
+            _slotRow.Children.Add(_slotList);
+
+            _enable = new CheckBox { Content = Loc.T("TextScriptEnabled", "Enabled"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
+            _enable.Checked += (s, e) => ToggleEnabled(true);
+            _enable.Unchecked += (s, e) => ToggleEnabled(false);
+            _slotRow.Children.Add(_enable);
+
+            var editButton = SmallButton(Loc.T("TextScriptLibraryAndEditor", "Script Library and Editor"));
+            editButton.MinWidth = 155;
+            editButton.Padding = new Thickness(10, 0, 10, 0);
+            editButton.Click += (s, e) =>
             {
-                if (_plugin == null) return;
-                EffectLibraryWindow.ShowFor(_plugin, Window.GetWindow(this), slot =>
+                if (_plugin == null)
                 {
-                    if (slot != null && slot.Pedal == Pedal) RefreshList(slot);
-                });
+                    MessageBox.Show("Plugin is not initialized yet.", "Script Library and Editor", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                int pedal = Pedal >= 0 ? Pedal : 1;
+                try
+                {
+                    ScriptEditorWindow.ShowFor(_plugin, Window.GetWindow(this), pedal, _slot, () => RefreshList(_slot));
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString(), "Script Library and Editor", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             };
-            slotRow.Children.Add(library);
-            var add = SmallButton(Loc.T("TextScriptNew", "+ New"));
-            add.Click += (s, e) => AddSlot(null);
-            slotRow.Children.Add(add);
-            _duplicate = SmallButton(Loc.T("TextScriptDuplicate", "Duplicate"));
-            _duplicate.Click += (s, e) => { if (_slot != null) AddSlot(_slot); };
-            slotRow.Children.Add(_duplicate);
-            _remove = SmallButton(Loc.T("TextScriptRemove", "Remove"));
-            _remove.Click += (s, e) => RemoveSlot();
-            slotRow.Children.Add(_remove);
+            _slotRow.Children.Add(editButton);
+
             var testButton = SmallButton(Loc.T("TextScriptTest", "Test"));
             testButton.ToolTip = Loc.T("TextScriptTestTooltip", "Try the effects without a game: simulated values and scenarios");
             testButton.Click += (s, e) =>
             {
                 if (_plugin != null) EffectTestWindow.ShowFor(_plugin, Window.GetWindow(this), () => _slot);
             };
-            slotRow.Children.Add(testButton);
+            _slotRow.Children.Add(testButton);
+
             var plotButton = SmallButton(Loc.T("TextScriptLivePlot", "Live plot"));
             plotButton.Click += (s, e) =>
             {
                 if (_plugin != null) EffectPipelinePlotWindow.ShowFor(_plugin, Window.GetWindow(this));
             };
-            slotRow.Children.Add(plotButton);
-            root.Children.Add(slotRow);
-            _slotRow = slotRow;
+            _slotRow.Children.Add(plotButton);
+            root.Children.Add(_slotRow);
 
             _empty = new TextBlock
             {
                 Text = Loc.T("TextScriptEmpty", "No effect for this pedal yet. Pick one from the \"Library\" or write your own with \"+ New\". All enabled scripts of a pedal are added up."),
                 TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 6, 0, 0),
+                Margin = new Thickness(0, 4, 0, 4),
             };
             root.Children.Add(_empty);
 
-            _editor = new StackPanel();
-            root.Children.Add(_editor);
-
-            var row1 = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
-            _enable = new CheckBox { Content = Loc.T("TextScriptEnabled", "Enabled"), VerticalAlignment = VerticalAlignment.Center, Width = 75 };
-            _enable.Checked += (s, e) => Store();
-            _enable.Unchecked += (s, e) => Store();
-            row1.Children.Add(_enable);
-            row1.Children.Add(new TextBlock { Text = Loc.T("TextScriptName", "Name:"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0) });
-            _name = new TextBox { Width = 140, Height = 22, VerticalContentAlignment = VerticalAlignment.Center };
-            _name.LostFocus += (s, e) => Store();
-            row1.Children.Add(_name);
-            row1.Children.Add(new TextBlock { Text = Loc.T("TextScriptLanguage", "Language:"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 4, 0) });
-            _language = new ComboBox { Width = 100, Height = 22 };
-            _language.Items.Add(new ComboBoxItem { Content = "NCalc", Tag = PipelineScriptLanguage.NCalc });
-            _language.Items.Add(new ComboBoxItem { Content = "JavaScript", Tag = PipelineScriptLanguage.JavaScript });
-            _language.SelectionChanged += (s, e) => { Store(); UpdateHelp(); TestScript(); };
-            row1.Children.Add(_language);
-            _editor.Children.Add(row1);
-
-            var row2 = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
-            row2.Children.Add(new TextBlock { Text = Loc.T("TextScriptOutput", "Output:"), VerticalAlignment = VerticalAlignment.Center, Width = 50 });
-            _type = new ComboBox { Width = 190, Height = 22 };
-            _type.Items.Add(new ComboBoxItem { Content = Loc.T("TextScriptOutputAngle", "Pedal angle offset (deg)"), Tag = EffectPipelineOffsetType.Angle_deg });
-            _type.Items.Add(new ComboBoxItem { Content = Loc.T("TextScriptOutputForce", "Force offset (N)"), Tag = EffectPipelineOffsetType.Force_N });
-            _type.Items.Add(new ComboBoxItem { Content = Loc.T("TextScriptOutputRelative", "Relative force (0.1 = +10 %)"), Tag = EffectPipelineOffsetType.ForceRelative });
-            _type.SelectionChanged += (s, e) => Store();
-            row2.Children.Add(_type);
-            row2.Children.Add(new TextBlock { Text = Loc.T("TextScriptGain", "Gain:"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 4, 0) });
-            _gain = new TextBox { Width = 50, Height = 22, VerticalContentAlignment = VerticalAlignment.Center };
-            _gain.LostFocus += (s, e) => Store();
-            row2.Children.Add(_gain);
-            _editor.Children.Add(row2);
-
-            var freqRow = new DockPanel { Margin = new Thickness(0, 0, 0, 4) };
-            var freqLabel = new TextBlock { Text = Loc.T("TextScriptFrequency", "Frequency (Hz) for phase:"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) };
-            DockPanel.SetDock(freqLabel, Dock.Left);
-            freqRow.Children.Add(freqLabel);
-            _frequency = new TextBox { Height = 22, VerticalContentAlignment = VerticalAlignment.Center, FontFamily = new FontFamily("Consolas"), FontSize = 11 };
-            _frequency.TextChanged += (s, e) => Store();
-            freqRow.Children.Add(_frequency);
-            _editor.Children.Add(freqRow);
-
-            _scriptLabel = new TextBlock { FontSize = 10, Opacity = 0.7 };
-            _editor.Children.Add(_scriptLabel);
-            _script = new TextBox
+            _mountedSummary = new TextBlock
             {
-                Height = 90,
-                AcceptsReturn = true,
-                AcceptsTab = true,
-                TextWrapping = TextWrapping.Wrap,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                FontFamily = new FontFamily("Consolas"),
                 FontSize = 11,
-            };
-            _script.TextChanged += (s, e) => { Store(); TestScript(); };
-            _editor.Children.Add(_script);
-
-            _result = new TextBlock { FontSize = 10, Margin = new Thickness(0, 2, 0, 0) };
-            _editor.Children.Add(_result);
-            _live = new TextBlock { FontSize = 10, TextWrapping = TextWrapping.Wrap };
-            _editor.Children.Add(_live);
-            _help = new TextBlock
-            {
-                FontSize = 9,
                 TextWrapping = TextWrapping.Wrap,
-                Opacity = 0.7,
-                Margin = new Thickness(0, 4, 0, 0),
+                Margin = new Thickness(0, 2, 0, 4),
             };
-            _editor.Children.Add(_help);
+            root.Children.Add(_mountedSummary);
 
-            var link = new Hyperlink(new Run(Loc.T("TextScriptMoreExamples", "More examples (GitHub)"))) { NavigateUri = new Uri(ExamplesUrl) };
-            link.RequestNavigate += (s, e) =>
-            {
-                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true }); }
-                catch { }
-                e.Handled = true;
-            };
-            root.Children.Add(new TextBlock(link) { FontSize = 10, Margin = new Thickness(0, 2, 0, 0) });
+            _live = new TextBlock { FontSize = 10, TextWrapping = TextWrapping.Wrap, Opacity = 0.85 };
+            root.Children.Add(_live);
 
             Content = new ScrollViewer { Content = root, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
 
@@ -294,25 +221,37 @@ namespace DiyFfbPedal.UIFunction
             _shownPedal = Pedal;
             _shownSettings = _plugin.Settings;
             _updating = true;
-            _ack.IsChecked = _plugin.Settings.Pipeline_warning_ack;
+            bool ack = _plugin.Settings.Pipeline_warning_ack;
+            _ackFull.IsChecked = ack;
+            _ackCompact.IsChecked = ack;
             _updating = false;
             UpdateAckState();
             RefreshList(null);
         }
 
-        private void StoreAck()
+        public void RefreshFromExternal()
+        {
+            if (_plugin == null || Pedal < 0) return;
+            RefreshList(_slot);
+        }
+
+        private void StoreAck(bool ack)
         {
             if (_updating || _plugin == null || _plugin.Settings == null) return;
-            _plugin.Settings.Pipeline_warning_ack = _ack.IsChecked == true;
+            _plugin.Settings.Pipeline_warning_ack = ack;
+            _updating = true;
+            _ackFull.IsChecked = ack;
+            _ackCompact.IsChecked = ack;
+            _updating = false;
             UpdateAckState();
         }
 
-        // without the accepted warning the scripts can't be edited and don't run
         private void UpdateAckState()
         {
             bool ack = _plugin != null && _plugin.Settings != null && _plugin.Settings.Pipeline_warning_ack;
+            _warningRow.Visibility = ack ? Visibility.Collapsed : Visibility.Visible;
+            _ackCompact.Visibility = ack ? Visibility.Visible : Visibility.Collapsed;
             _slotRow.IsEnabled = ack;
-            _editor.IsEnabled = ack;
         }
 
         private void RefreshList(PipelineScriptSlot select)
@@ -331,109 +270,64 @@ namespace DiyFfbPedal.UIFunction
                 if (slots[i] == select) _slotList.SelectedItem = item;
             }
             _updating = false;
+            UpdateMountedSummary(slots);
             ShowSlot(select);
         }
 
-        // updates the entry of the shown slot (name, type, on/off) without rebuilding the list
-        private void RefreshListEntry()
+        private void UpdateMountedSummary(List<PipelineScriptSlot> slots)
         {
-            for (int i = 0; i < _slotList.Items.Count; i++)
+            if (slots == null || slots.Count == 0)
             {
-                if (_slotList.Items[i] is ComboBoxItem item && item.Tag == _slot)
-                    item.Content = _slot.DisplayName(i + 1);
+                _mountedSummary.Visibility = Visibility.Collapsed;
+                return;
             }
-        }
-
-        private void AddSlot(PipelineScriptSlot template)
-        {
-            if (Pedal < 0 || _plugin.EffectPipelines == null) return;
-            PipelineScriptSlot slot = _plugin.EffectPipelines.AddSlot(Pedal, template);
-            RefreshList(slot);
-        }
-
-        private void RemoveSlot()
-        {
-            if (_slot == null || _plugin.EffectPipelines == null) return;
-            string name = string.IsNullOrWhiteSpace(_slot.Name) ? Loc.T("TextScriptThisScript", "this script") : "\"" + _slot.Name + "\"";
-            if (MessageBox.Show(string.Format(Loc.T("TextScriptRemoveConfirm", "Remove {0}?"), name), Loc.T("TextScriptEffects", "Script effects"), MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
-            _plugin.EffectPipelines.RemoveSlot(_slot);
-            _slot = null;
-            RefreshList(null);
+            var parts = new List<string>();
+            for (int i = 0; i < slots.Count; i++)
+            {
+                string name = string.IsNullOrWhiteSpace(slots[i].Name)
+                    ? Loc.T("TextScriptDefaultName", "Script") + " " + (i + 1)
+                    : slots[i].Name.Trim();
+                parts.Add(name + (slots[i].Enabled ? " (ON)" : " (off)"));
+            }
+            _mountedSummary.Text = Loc.T("TextScriptMountedList", "Mounted:") + " " + string.Join(", ", parts);
+            _mountedSummary.Visibility = Visibility.Visible;
         }
 
         private void ShowSlot(PipelineScriptSlot slot)
         {
             _slot = slot;
             bool has = slot != null;
-            _editor.Visibility = has ? Visibility.Visible : Visibility.Collapsed;
+            _enable.IsEnabled = has;
             _empty.Visibility = has ? Visibility.Collapsed : Visibility.Visible;
-            _remove.IsEnabled = has;
-            _duplicate.IsEnabled = has;
-            if (!has) return;
+            _live.Visibility = has ? Visibility.Visible : Visibility.Collapsed;
+            if (!has)
+            {
+                _updating = true;
+                _enable.IsChecked = false;
+                _updating = false;
+                return;
+            }
 
             _updating = true;
             _enable.IsChecked = slot.Enabled;
-            _name.Text = slot.Name ?? "";
-            _language.SelectedIndex = slot.Language == PipelineScriptLanguage.JavaScript ? 1 : 0;
-            _type.SelectedIndex = 0;
-            for (int i = 0; i < _type.Items.Count; i++)
-            {
-                if ((byte)(EffectPipelineOffsetType)((ComboBoxItem)_type.Items[i]).Tag == slot.OffsetType)
-                    _type.SelectedIndex = i;
-            }
-            _gain.Text = slot.Gain.ToString("0.###", CultureInfo.InvariantCulture);
-            _script.Text = slot.Script ?? "";
-            _frequency.Text = slot.FreqScript ?? "";
             _updating = false;
-            UpdateHelp();
-            TestScript();
         }
 
-        private void Store()
+        private void ToggleEnabled(bool enabled)
         {
-            if (_updating || _slot == null) return;
-            _slot.Enabled = _enable.IsChecked == true;
-            _slot.Name = _name.Text;
-            if (_language.SelectedItem is ComboBoxItem lang)
-                _slot.Language = (PipelineScriptLanguage)lang.Tag;
-            if (_type.SelectedItem is ComboBoxItem item)
-                _slot.OffsetType = (byte)(EffectPipelineOffsetType)item.Tag;
-            double gain;
-            if (double.TryParse(_gain.Text.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out gain))
-                _slot.Gain = Math.Max(0.0, Math.Min(10.0, gain));
-            _gain.Text = _slot.Gain.ToString("0.###", CultureInfo.InvariantCulture);
-            _slot.Script = _script.Text;
-            _slot.FreqScript = _frequency.Text;
-            RefreshListEntry();
-        }
-
-        private void UpdateHelp()
-        {
-            bool js = _slot != null && _slot.Language == PipelineScriptLanguage.JavaScript;
-            _help.Text = js ? HelpJs : HelpNCalc;
-            _scriptLabel.Text = js ? Loc.T("TextScriptLabelJs", "Script (function body, return the value):") : Loc.T("TextScriptLabelNCalc", "Script (NCalc formula):");
-            if (js)
+            if (_updating || _slot == null || _plugin?.EffectPipelines == null) return;
+            _slot.Enabled = enabled;
+            for (int i = 0; i < _slotList.Items.Count; i++)
             {
-                string error;
-                if (!JintScriptHost.IsAvailable(out error)) _help.Text = error + "\n" + HelpJs;
+                if (_slotList.Items[i] is ComboBoxItem item && item.Tag == _slot)
+                    item.Content = _slot.DisplayName(i + 1);
             }
-        }
-
-        private void TestScript()
-        {
-            if (_updating || _slot == null || _plugin == null || _plugin.EffectPipelines == null) return;
-            if (string.IsNullOrWhiteSpace(_script.Text))
-            {
-                _result.Text = Loc.T("TextScriptResult", "Script result at t = 0:") + " -";
-                return;
-            }
-            _result.Text = Loc.T("TextScriptResult", "Script result at t = 0:") + " " + _plugin.EffectPipelines.TestScript(_slot, _plugin.PluginManager);
+            UpdateMountedSummary(_plugin.EffectPipelines.GetSlots(Pedal));
         }
 
         private void UpdateLive()
         {
             if (_plugin == null || _plugin.EffectPipelines == null) return;
-            // the selected pedal may have changed without a Bind call
             if (Pedal != _shownPedal && Pedal >= 0)
             {
                 _shownPedal = Pedal;

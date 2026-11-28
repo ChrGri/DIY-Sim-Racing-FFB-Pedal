@@ -650,10 +650,46 @@ Example (lockup steps): var l = $prop('ShakeITMotorsV3Plugin.Export.wheelsliploc
     <value>DANGER: robot mode!</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextScriptDangerText" xml:space="preserve">
-    <value>With scripts I move the pedal on my own. I can push your foot and put energy into it instead of only reacting to it. A wrong sign, unit or typo can mean full force or a hard kick. Start with small values and gain 1, keep your foot on the pedal when testing, and disable the script at the first surprise.</value>
+    <value>With scripts I move the pedal on my own. I can push your foot and put energy into it instead of only reacting to it. A wrong sign, unit or typo can mean full force or a hard kick. Start with small values and gain 1, keep your foot on the pedal when testing, and disable the script at the first surprise. Any injury or damage is solely your own responsibility.</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextScriptDangerAck" xml:space="preserve">
     <value>I understand, let me script</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptDangerAckShort" xml:space="preserve">
+    <value>I understand the safety risks and take full responsibility for any injury or damage.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptEdit" xml:space="preserve">
+    <value>Edit...</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptLibraryAndEditor" xml:space="preserve">
+    <value>Script Library and Editor</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptSave" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptSavedTo" xml:space="preserve">
+    <value>Saved to effects\{0}</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptEditorTitle" xml:space="preserve">
+    <value>Script Editor</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextScriptMountedList" xml:space="preserve">
+    <value>Mounted:</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextProfileScriptsTitle" xml:space="preserve">
+    <value>Profile Scripts</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextProfileScriptsAdd" xml:space="preserve">
+    <value>+ Add</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextProfileScriptsEmpty" xml:space="preserve">
+    <value>No scripts bound to this pedal yet. Pick one above and click '+ Add'.</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextOk" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="DIYFFBPedalPlugin_TextCancel" xml:space="preserve">
+    <value>Cancel</value>
   </data>
   <data name="DIYFFBPedalPlugin_TextScriptSlot" xml:space="preserve">
     <value>Script:</value>

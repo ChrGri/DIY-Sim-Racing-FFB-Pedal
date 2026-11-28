@@ -49,8 +49,26 @@ namespace DiyFfbPedal.UIFunction
                 {
                     _tmpProfile = value;
                     OnPropertyChanged();
+                    UpdateScriptsButtonCounts();
                 }
             }
+        }
+
+        public string ClutchScriptsButtonText => FormatScriptsButtonText(0);
+        public string BrakeScriptsButtonText => FormatScriptsButtonText(1);
+        public string ThrottleScriptsButtonText => FormatScriptsButtonText(2);
+
+        private string FormatScriptsButtonText(int pedal)
+        {
+            int count = _tmpProfile?.ScriptBindings == null ? 0 : _tmpProfile.ScriptBindings.Count(b => b != null && b.Pedal == pedal);
+            return Loc.T("TabTextScripts", "Scripts") + " (" + count + ")";
+        }
+
+        private void UpdateScriptsButtonCounts()
+        {
+            OnPropertyChanged(nameof(ClutchScriptsButtonText));
+            OnPropertyChanged(nameof(BrakeScriptsButtonText));
+            OnPropertyChanged(nameof(ThrottleScriptsButtonText));
         }
         private ObservableCollection<ProfileListItem> _itemList;
         public ObservableCollection<ProfileListItem> ItemList
@@ -461,6 +479,21 @@ namespace DiyFfbPedal.UIFunction
             }
 
             SetProfileBinding(_plugin.Current_Car.Trim());
+        }
+
+        private void Btn_ScriptsClutch_Click(object sender, RoutedEventArgs e) => OpenScriptsBindingWindow(0);
+        private void Btn_ScriptsBrake_Click(object sender, RoutedEventArgs e) => OpenScriptsBindingWindow(1);
+        private void Btn_ScriptsThrottle_Click(object sender, RoutedEventArgs e) => OpenScriptsBindingWindow(2);
+
+        private void OpenScriptsBindingWindow(int pedal)
+        {
+            if (tmpProfile == null) tmpProfile = new DAP_system_profile_cls();
+            var win = new ProfileScriptBindingWindow(tmpProfile, pedal);
+            win.Owner = Window.GetWindow(this);
+            if (win.ShowDialog() == true)
+            {
+                UpdateScriptsButtonCounts();
+            }
         }
     }
 }

@@ -237,6 +237,8 @@
     <Compile Include="UIFunction\ServoLedIndicator.cs" />
     <Compile Include="PluginCallback\EffectPipelineEngine.cs" />
     <Compile Include="UIFunction\PipelineScriptPanel.cs" />
+    <Compile Include="UIFunction\ScriptEditorWindow.cs" />
+    <Compile Include="UIFunction\ProfileScriptBindingWindow.cs" />
     <Compile Include="UIFunction\EffectPipelinePlotWindow.cs" />
     <Compile Include="UIFunction\PixelDangerRobot.cs" />
     <Compile Include="UIFunction\EffectLibraryWindow.cs" />

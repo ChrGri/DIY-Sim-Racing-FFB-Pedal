@@ -7,6 +7,27 @@ using System.Threading.Tasks;
 
 namespace DiyFfbPedal
 {
+    public class ProfileScriptBinding
+    {
+        public int Pedal { get; set; } = 1; // 0: Clutch, 1: Brake, 2: Throttle
+        public string ScriptFile { get; set; } = string.Empty;
+        public bool Enabled { get; set; } = true;
+        public double Gain { get; set; } = 1.0;
+
+        public ProfileScriptBinding() { }
+
+        public ProfileScriptBinding Clone()
+        {
+            return new ProfileScriptBinding
+            {
+                Pedal = Pedal,
+                ScriptFile = ScriptFile ?? string.Empty,
+                Enabled = Enabled,
+                Gain = Gain,
+            };
+        }
+    }
+
     public class DAP_system_profile_cls
     {
         public string BindGameOrCar { get; set; } = string.Empty;
@@ -14,6 +35,10 @@ namespace DiyFfbPedal
         public string[] ConfigPath { get; set; }
 
         public bool[][] Effects { get; set; }
+
+        public bool HasScriptBindings { get; set; } = false;
+
+        public List<ProfileScriptBinding> ScriptBindings { get; set; } = new List<ProfileScriptBinding>();
 
         public DAP_system_profile_cls()
         {
@@ -23,6 +48,7 @@ namespace DiyFfbPedal
             {
                 Effects[i] = new bool[10];
             }
+            ScriptBindings = new List<ProfileScriptBinding>();
         }
         [OnDeserialized]
         internal void OnDeserializedMethod(StreamingContext context)
@@ -62,6 +88,11 @@ namespace DiyFfbPedal
                 {
                     Array.Resize(ref Effects[i], 10);
                 }
+            }
+
+            if (ScriptBindings == null)
+            {
+                ScriptBindings = new List<ProfileScriptBinding>();
             }
         }
     }

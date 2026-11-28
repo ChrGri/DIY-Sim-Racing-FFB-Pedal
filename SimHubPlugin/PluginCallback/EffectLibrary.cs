@@ -55,6 +55,7 @@ namespace DiyFfbPedal
             return new PipelineScriptSlot
             {
                 Pedal = pedal,
+                ScriptFile = string.IsNullOrEmpty(FilePath) ? "" : System.IO.Path.GetFileName(FilePath),
                 Name = LocalName,
                 Enabled = false, // the user switches it on after a look at the parameters
                 OffsetType = (byte)OffsetType,
